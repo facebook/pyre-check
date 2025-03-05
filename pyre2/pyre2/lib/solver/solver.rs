@@ -311,6 +311,7 @@ impl Solver {
         want: &Type,
         got: &Type,
         errors: &ErrorCollector,
+        error_kind: ErrorKind,
         loc: TextRange,
         tcc: &TypeCheckContext,
     ) {
@@ -319,7 +320,7 @@ impl Solver {
         errors.add(
             loc,
             tcc.kind.format_error(&got, &want),
-            ErrorKind::Unknown,
+            error_kind,
             tcc.context.as_ref(),
         );
     }
@@ -413,7 +414,14 @@ impl Solver {
                 drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
-                    self.error(&t, &got, errors, loc, &TypeCheckContext::unknown());
+                    self.error(
+                        &t,
+                        &got,
+                        errors,
+                        ErrorKind::TypeMismatch,
+                        loc,
+                        &TypeCheckContext::unknown(),
+                    );
                 }
             }
             _ => {

@@ -473,7 +473,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else if self.solver().is_subset_eq(got, want, self.type_order()) {
             got.clone()
         } else {
-            self.solver().error(want, got, errors, loc, tcc);
+            self.solver()
+                .error(want, got, errors, ErrorKind::TypeMismatch, loc, tcc);
             want.clone()
         }
     }

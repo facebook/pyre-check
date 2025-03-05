@@ -104,6 +104,8 @@ pub enum ErrorKind {
     ReadOnly,
     /// An error related to type alias usage or definition.
     TypeAliasError,
+    /// An error raised when one type is expected but another is found instead.
+    TypeMismatch,
     /// An error caused by a keyword argument used in the wrong place.
     UnexpectedKeyword,
     /// Attemping to apply an operator to arguments that do not support it.

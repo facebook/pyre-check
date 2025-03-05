@@ -441,7 +441,7 @@
       "concise_description": "EXPECTED Literal[42] <: UserId",
       "description": "EXPECTED Literal[42] <: UserId",
       "line": 12,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 12
     },
@@ -451,7 +451,7 @@
       "concise_description": "EXPECTED int <: UserId",
       "description": "EXPECTED int <: UserId",
       "line": 13,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 13
     },
@@ -735,7 +735,7 @@
       "concise_description": "EXPECTED ScopedTypeAlias[GoodAlias1, type[int]] <: UnionType | type | tuple[Unknown, ...]",
       "description": "EXPECTED ScopedTypeAlias[GoodAlias1, type[int]] <: UnionType | type | tuple[Unknown, ...]",
       "line": 31,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 31
     },
@@ -887,7 +887,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 17,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 67,
       "stop_line": 17
     },
@@ -897,7 +897,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[S]], type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[S]], type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 18,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 79,
       "stop_line": 18
     },
@@ -907,7 +907,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 19,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 83,
       "stop_line": 19
     },
@@ -917,7 +917,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 23,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 33,
       "stop_line": 23
     },
@@ -1007,7 +1007,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 43,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 65,
       "stop_line": 43
     },
@@ -1017,7 +1017,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[S]], type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[S]], type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 45,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 65,
       "stop_line": 45
     },
@@ -1027,7 +1027,7 @@
       "concise_description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "description": "EXPECTED tuple[type[TypeVar[T]]] <: tuple[ParamSpec | TypeVar | TypeVarTuple, ...]",
       "line": 47,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 76,
       "stop_line": 47
     }
@@ -1234,7 +1234,7 @@
       "concise_description": "EXPECTED None <: C",
       "description": "EXPECTED None <: C",
       "line": 51,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 39,
       "stop_line": 51
     },
@@ -1244,7 +1244,7 @@
       "concise_description": "EXPECTED Literal[False] <: C",
       "description": "EXPECTED Literal[False] <: C",
       "line": 54,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 54
     },
@@ -1254,7 +1254,7 @@
       "concise_description": "EXPECTED Literal[3] <: A",
       "description": "EXPECTED Literal[3] <: A",
       "line": 57,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 57
     },
@@ -1264,7 +1264,7 @@
       "concise_description": "EXPECTED Literal[3] <: A",
       "description": "EXPECTED Literal[3] <: A",
       "line": 66,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 66
     },
@@ -1274,7 +1274,7 @@
       "concise_description": "EXPECTED Literal[True] <: None",
       "description": "EXPECTED Literal[True] <: None",
       "line": 71,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 71
     },
@@ -1284,7 +1284,7 @@
       "concise_description": "EXPECTED B <: A",
       "description": "EXPECTED B <: A",
       "line": 75,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 75
     },
@@ -1314,7 +1314,7 @@
       "concise_description": "EXPECTED Generator[A, None, None] <: Iterator[B]",
       "description": "EXPECTED Generator[A, None, None] <: Iterator[B]",
       "line": 118,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 118
     },
@@ -1324,7 +1324,7 @@
       "concise_description": "EXPECTED Generator[int, None, None] <: Iterator[B]",
       "description": "EXPECTED Generator[int, None, None] <: Iterator[B]",
       "line": 119,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 119
     },
@@ -1334,7 +1334,7 @@
       "concise_description": "EXPECTED Generator[None, int, None] <: Generator[None, str, None]",
       "description": "EXPECTED Generator[None, int, None] <: Generator[None, str, None]",
       "line": 135,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 135
     },
@@ -1354,7 +1354,7 @@
       "concise_description": "EXPECTED None <: int",
       "description": "EXPECTED None <: int",
       "line": 187,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 187
     }
@@ -1560,7 +1560,7 @@
       "concise_description": "EXPECTED Literal[2] <: str",
       "description": "EXPECTED Literal[2] <: str",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 26
     },
@@ -1670,7 +1670,7 @@
       "concise_description": "EXPECTED () -> str <: (int, ...) -> str",
       "description": "EXPECTED () -> str <: (int, ...) -> str",
       "line": 91,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 91
     },
@@ -1680,7 +1680,7 @@
       "concise_description": "EXPECTED (*, a: int) -> str <: (int, ...) -> str",
       "description": "EXPECTED (*, a: int) -> str <: (int, ...) -> str",
       "line": 93,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 93
     },
@@ -1690,7 +1690,7 @@
       "concise_description": "EXPECTED Proto3 <: Proto4[Ellipsis]",
       "description": "EXPECTED Proto3 <: Proto4[Ellipsis]",
       "line": 155,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 26,
       "stop_line": 155
     },
@@ -1700,7 +1700,7 @@
       "concise_description": "EXPECTED Proto4[Ellipsis] <: Proto3",
       "description": "EXPECTED Proto4[Ellipsis] <: Proto3",
       "line": 156,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 156
     },
@@ -1710,7 +1710,7 @@
       "concise_description": "EXPECTED Proto7 <: Proto6",
       "description": "EXPECTED Proto7 <: Proto6",
       "line": 157,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 157
     },
@@ -1720,7 +1720,7 @@
       "concise_description": "EXPECTED Proto8 <: Proto5[Any]",
       "description": "EXPECTED Proto8 <: Proto5[Any]",
       "line": 159,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 159
     },
@@ -1770,7 +1770,7 @@
       "concise_description": "EXPECTED (int, str) -> str <: (str, ...) -> str",
       "description": "EXPECTED (int, str) -> str <: (str, ...) -> str",
       "line": 187,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 50,
       "stop_line": 187
     },
@@ -1862,7 +1862,7 @@
       "concise_description": "EXPECTED str <: int",
       "description": "EXPECTED str <: int",
       "line": 58,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 20,
       "stop_line": 58
     },
@@ -1872,7 +1872,7 @@
       "concise_description": "EXPECTED int | str <: int",
       "description": "EXPECTED int | str <: int",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 61
     },
@@ -1882,7 +1882,7 @@
       "concise_description": "EXPECTED int | str <: str",
       "description": "EXPECTED int | str <: str",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 61
     },
@@ -1902,7 +1902,7 @@
       "concise_description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
       "description": "EXPECTED int <: Unpack[TypedDict[TD2]]",
       "line": 63,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 63
     },
@@ -1912,7 +1912,7 @@
       "concise_description": "EXPECTED Literal[1] <: str",
       "description": "EXPECTED Literal[1] <: str",
       "line": 64,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 64
     },
@@ -1942,7 +1942,7 @@
       "concise_description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
       "description": "EXPECTED int <: Unpack[TypedDict[TD1]]",
       "line": 65,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 65
     },
@@ -1952,7 +1952,7 @@
       "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol5",
       "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol5",
       "line": 103,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 103
     }
@@ -1964,7 +1964,7 @@
       "concise_description": "EXPECTED (x: int) -> None <: Proto4",
       "description": "EXPECTED (x: int) -> None <: Proto4",
       "line": 97,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 97
     },
@@ -1974,7 +1974,7 @@
       "concise_description": "EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: NotProto6",
       "description": "EXPECTED (*bytes, *, max_len: int | None) -> list[bytes] <: NotProto6",
       "line": 121,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 26,
       "stop_line": 121
     },
@@ -1984,7 +1984,7 @@
       "concise_description": "EXPECTED (x: int) -> Any <: Proto8",
       "description": "EXPECTED (x: int) -> Any <: Proto8",
       "line": 169,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 169
     },
@@ -1994,7 +1994,7 @@
       "concise_description": "EXPECTED Literal['str'] <: int",
       "description": "EXPECTED Literal['str'] <: int",
       "line": 186,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 186
     },
@@ -2024,7 +2024,7 @@
       "concise_description": "EXPECTED (int, str) -> Any <: Proto11",
       "description": "EXPECTED (int, str) -> Any <: Proto11",
       "line": 238,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 238
     },
@@ -2034,7 +2034,7 @@
       "concise_description": "EXPECTED (path: str) -> str <: Proto13_Default",
       "description": "EXPECTED (path: str) -> str <: Proto13_Default",
       "line": 284,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 42,
       "stop_line": 284
     }
@@ -2046,7 +2046,7 @@
       "concise_description": "EXPECTED (int) -> int <: (float) -> float",
       "description": "EXPECTED (int) -> int <: (float) -> float",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 39,
       "stop_line": 26
     },
@@ -2056,7 +2056,7 @@
       "concise_description": "EXPECTED (float) -> float <: (int) -> int",
       "description": "EXPECTED (float) -> float <: (int) -> int",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 29
     },
@@ -2066,7 +2066,7 @@
       "concise_description": "EXPECTED PosOnly2 <: Standard2",
       "description": "EXPECTED PosOnly2 <: Standard2",
       "line": 51,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 51
     },
@@ -2076,7 +2076,7 @@
       "concise_description": "EXPECTED KwOnly2 <: Standard2",
       "description": "EXPECTED KwOnly2 <: Standard2",
       "line": 52,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 52
     },
@@ -2086,7 +2086,7 @@
       "concise_description": "EXPECTED KwOnly2 <: PosOnly2",
       "description": "EXPECTED KwOnly2 <: PosOnly2",
       "line": 55,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 55
     },
@@ -2096,7 +2096,7 @@
       "concise_description": "EXPECTED PosOnly2 <: KwOnly2",
       "description": "EXPECTED PosOnly2 <: KwOnly2",
       "line": 58,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 58
     },
@@ -2106,7 +2106,7 @@
       "concise_description": "EXPECTED NoArgs3 <: IntArgs3",
       "description": "EXPECTED NoArgs3 <: IntArgs3",
       "line": 82,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 82
     },
@@ -2116,7 +2116,7 @@
       "concise_description": "EXPECTED NoArgs3 <: FloatArgs3",
       "description": "EXPECTED NoArgs3 <: FloatArgs3",
       "line": 85,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 85
     },
@@ -2126,7 +2126,7 @@
       "concise_description": "EXPECTED IntArgs3 <: FloatArgs3",
       "description": "EXPECTED IntArgs3 <: FloatArgs3",
       "line": 86,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 86
     },
@@ -2136,7 +2136,7 @@
       "concise_description": "EXPECTED IntArgs4 <: PosOnly4",
       "description": "EXPECTED IntArgs4 <: PosOnly4",
       "line": 116,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 116
     },
@@ -2146,7 +2146,7 @@
       "concise_description": "EXPECTED StrArgs4 <: IntStrArgs4",
       "description": "EXPECTED StrArgs4 <: IntStrArgs4",
       "line": 119,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 119
     },
@@ -2156,7 +2156,7 @@
       "concise_description": "EXPECTED IntArgs4 <: IntStrArgs4",
       "description": "EXPECTED IntArgs4 <: IntStrArgs4",
       "line": 120,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 120
     },
@@ -2166,7 +2166,7 @@
       "concise_description": "EXPECTED IntArgs4 <: StrArgs4",
       "description": "EXPECTED IntArgs4 <: StrArgs4",
       "line": 122,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 122
     },
@@ -2176,7 +2176,7 @@
       "concise_description": "EXPECTED StrArgs4 <: IntArgs4",
       "description": "EXPECTED StrArgs4 <: IntArgs4",
       "line": 124,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 124
     },
@@ -2186,7 +2186,7 @@
       "concise_description": "EXPECTED IntStrArgs4 <: Standard4",
       "description": "EXPECTED IntStrArgs4 <: Standard4",
       "line": 125,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 34,
       "stop_line": 125
     },
@@ -2196,7 +2196,7 @@
       "concise_description": "EXPECTED StrArgs4 <: Standard4",
       "description": "EXPECTED StrArgs4 <: Standard4",
       "line": 126,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 126
     },
@@ -2206,7 +2206,7 @@
       "concise_description": "EXPECTED NoKwargs5 <: IntKwargs5",
       "description": "EXPECTED NoKwargs5 <: IntKwargs5",
       "line": 151,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 151
     },
@@ -2216,7 +2216,7 @@
       "concise_description": "EXPECTED NoKwargs5 <: FloatKwargs5",
       "description": "EXPECTED NoKwargs5 <: FloatKwargs5",
       "line": 154,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 33,
       "stop_line": 154
     },
@@ -2226,7 +2226,7 @@
       "concise_description": "EXPECTED IntKwargs5 <: FloatKwargs5",
       "description": "EXPECTED IntKwargs5 <: FloatKwargs5",
       "line": 155,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 34,
       "stop_line": 155
     },
@@ -2236,7 +2236,7 @@
       "concise_description": "EXPECTED IntKwargs6 <: KwOnly6",
       "description": "EXPECTED IntKwargs6 <: KwOnly6",
       "line": 187,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 187
     },
@@ -2246,7 +2246,7 @@
       "concise_description": "EXPECTED StrKwargs6 <: IntStrKwargs6",
       "description": "EXPECTED StrKwargs6 <: IntStrKwargs6",
       "line": 190,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 190
     },
@@ -2256,7 +2256,7 @@
       "concise_description": "EXPECTED IntKwargs6 <: IntStrKwargs6",
       "description": "EXPECTED IntKwargs6 <: IntStrKwargs6",
       "line": 191,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 191
     },
@@ -2266,7 +2266,7 @@
       "concise_description": "EXPECTED IntKwargs6 <: StrKwargs6",
       "description": "EXPECTED IntKwargs6 <: StrKwargs6",
       "line": 193,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 193
     },
@@ -2276,7 +2276,7 @@
       "concise_description": "EXPECTED StrKwargs6 <: IntKwargs6",
       "description": "EXPECTED StrKwargs6 <: IntKwargs6",
       "line": 195,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 195
     },
@@ -2286,7 +2286,7 @@
       "concise_description": "EXPECTED IntStrKwargs6 <: Standard6",
       "description": "EXPECTED IntStrKwargs6 <: Standard6",
       "line": 196,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 196
     },
@@ -2296,7 +2296,7 @@
       "concise_description": "EXPECTED StrKwargs6 <: Standard6",
       "description": "EXPECTED StrKwargs6 <: Standard6",
       "line": 197,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 197
     },
@@ -2326,7 +2326,7 @@
       "concise_description": "EXPECTED NoDefaultArg8 <: DefaultArg8",
       "description": "EXPECTED NoDefaultArg8 <: DefaultArg8",
       "line": 236,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 236
     },
@@ -2336,7 +2336,7 @@
       "concise_description": "EXPECTED NoX8 <: DefaultArg8",
       "description": "EXPECTED NoX8 <: DefaultArg8",
       "line": 237,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 237
     },
@@ -2346,7 +2346,7 @@
       "concise_description": "EXPECTED NoX8 <: NoDefaultArg8",
       "description": "EXPECTED NoX8 <: NoDefaultArg8",
       "line": 240,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 240
     },
@@ -2356,7 +2356,7 @@
       "concise_description": "EXPECTED NoDefaultArg8 <: NoX8",
       "description": "EXPECTED NoDefaultArg8 <: NoX8",
       "line": 243,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 243
     },
@@ -2366,7 +2366,7 @@
       "concise_description": "EXPECTED Overloaded9 <: FloatArg9",
       "description": "EXPECTED Overloaded9 <: FloatArg9",
       "line": 273,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 273
     },
@@ -2376,7 +2376,7 @@
       "concise_description": "EXPECTED StrArg10 <: Overloaded10",
       "description": "EXPECTED StrArg10 <: Overloaded10",
       "line": 297,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 297
     }
@@ -2418,7 +2418,7 @@
       "concise_description": "EXPECTED dict[@_, @_] <: list[str]",
       "description": "EXPECTED dict[@_, @_] <: list[str]",
       "line": 52,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 52
     },
@@ -2468,7 +2468,7 @@
       "concise_description": "EXPECTED ProtoAImpl <: ProtoA",
       "description": "EXPECTED ProtoAImpl <: ProtoA",
       "line": 134,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 134
     }
@@ -2522,7 +2522,7 @@
       "concise_description": "EXPECTED float <: int",
       "description": "EXPECTED float <: int",
       "line": 21,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 21
     },
@@ -2532,7 +2532,7 @@
       "concise_description": "EXPECTED Class4[str] <: Class4[int]",
       "description": "EXPECTED Class4[str] <: Class4[int]",
       "line": 56,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 56
     },
@@ -2592,7 +2592,7 @@
       "concise_description": "EXPECTED Class6[int, str] <: Class6[TypeVar[V1], TypeVar[V2]]",
       "description": "EXPECTED Class6[int, str] <: Class6[TypeVar[V1], TypeVar[V2]]",
       "line": 92,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 92
     },
@@ -2612,7 +2612,7 @@
       "concise_description": "EXPECTED Class7[str, int] <: Class7[TypeVar[V2], TypeVar[V1]]",
       "description": "EXPECTED Class7[str, int] <: Class7[TypeVar[V2], TypeVar[V1]]",
       "line": 100,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 100
     },
@@ -2634,7 +2634,7 @@
       "concise_description": "Function declared to return `Class1`, actually returns `object`",
       "description": "Function declared to return `Class1`, actually returns `object`",
       "line": 20,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 20
     },
@@ -2674,7 +2674,7 @@
       "concise_description": "Function declared to return `Class2`, actually returns `object`",
       "description": "Function declared to return `Class2`, actually returns `object`",
       "line": 33,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 33
     },
@@ -2694,7 +2694,7 @@
       "concise_description": "Function declared to return `Class3`, actually returns `object`",
       "description": "Function declared to return `Class3`, actually returns `object`",
       "line": 48,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 48
     },
@@ -2724,7 +2724,7 @@
       "concise_description": "Function declared to return `Class4`, actually returns `object`",
       "description": "Function declared to return `Class4`, actually returns `object`",
       "line": 62,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 62
     },
@@ -2756,7 +2756,7 @@
       "concise_description": "Function declared to return `Class1[?_TypeVar]`, actually returns `object`",
       "description": "Function declared to return `Class1[?_TypeVar]`, actually returns `object`",
       "line": 16,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 16
     },
@@ -2776,7 +2776,7 @@
       "concise_description": "EXPECTED float <: int",
       "description": "EXPECTED float <: int",
       "line": 21,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 21
     },
@@ -2786,7 +2786,7 @@
       "concise_description": "Function declared to return `Class2[?_TypeVar]`, actually returns `object`",
       "description": "Function declared to return `Class2[?_TypeVar]`, actually returns `object`",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 29
     },
@@ -2866,7 +2866,7 @@
       "concise_description": "EXPECTED type[Class11[str]] <: type[Class11[int]]",
       "description": "EXPECTED type[Class11[str]] <: type[Class11[int]]",
       "line": 145,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 13,
       "stop_line": 145
     }
@@ -2878,7 +2878,7 @@
       "concise_description": "Function declared to return `Class1`, actually returns `object`",
       "description": "Function declared to return `Class1`, actually returns `object`",
       "line": 25,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 48,
       "stop_line": 25
     },
@@ -2908,7 +2908,7 @@
       "concise_description": "Function declared to return `Class2`, actually returns `object`",
       "description": "Function declared to return `Class2`, actually returns `object`",
       "line": 35,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 35
     },
@@ -3060,7 +3060,7 @@
       "concise_description": "EXPECTED type[Class1] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class1] <: (ParamSpec(@_)) -> @_",
       "line": 35,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 35
     },
@@ -3120,7 +3120,7 @@
       "concise_description": "EXPECTED type[Class2] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class2] <: (ParamSpec(@_)) -> @_",
       "line": 48,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 48
     },
@@ -3170,7 +3170,7 @@
       "concise_description": "EXPECTED type[Class3] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class3] <: (ParamSpec(@_)) -> @_",
       "line": 62,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 62
     },
@@ -3240,7 +3240,7 @@
       "concise_description": "EXPECTED type[Class4] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class4] <: (ParamSpec(@_)) -> @_",
       "line": 76,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 76
     },
@@ -3300,7 +3300,7 @@
       "concise_description": "Function declared to return `Class5`, actually returns `object`",
       "description": "Function declared to return `Class5`, actually returns `object`",
       "line": 93,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 93
     },
@@ -3320,7 +3320,7 @@
       "concise_description": "EXPECTED type[Class5] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class5] <: (ParamSpec(@_)) -> @_",
       "line": 96,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 96
     },
@@ -3380,7 +3380,7 @@
       "concise_description": "EXPECTED type[Class6] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class6] <: (ParamSpec(@_)) -> @_",
       "line": 124,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 124
     },
@@ -3440,7 +3440,7 @@
       "concise_description": "EXPECTED type[Class6Any] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class6Any] <: (ParamSpec(@_)) -> @_",
       "line": 141,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 141
     },
@@ -3480,7 +3480,7 @@
       "concise_description": "EXPECTED type[Class7] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class7] <: (ParamSpec(@_)) -> @_",
       "line": 160,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 160
     },
@@ -3540,7 +3540,7 @@
       "concise_description": "Function declared to return `Class8[?_TypeVar]`, actually returns `object`",
       "description": "Function declared to return `Class8[?_TypeVar]`, actually returns `object`",
       "line": 178,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 178
     },
@@ -3560,7 +3560,7 @@
       "concise_description": "EXPECTED type[Class8] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class8] <: (ParamSpec(@_)) -> @_",
       "line": 181,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 181
     },
@@ -3610,7 +3610,7 @@
       "concise_description": "EXPECTED type[Class9] <: (ParamSpec(@_)) -> @_",
       "description": "EXPECTED type[Class9] <: (ParamSpec(@_)) -> @_",
       "line": 192,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 192
     },
@@ -3662,7 +3662,7 @@
       "concise_description": "Function declared to return `Class1`, actually returns `object`",
       "description": "Function declared to return `Class1`, actually returns `object`",
       "line": 22,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 22
     },
@@ -3684,7 +3684,7 @@
       "concise_description": "EXPECTED Literal[3] <: Desc1",
       "description": "EXPECTED Literal[3] <: Desc1",
       "line": 35,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 35
     }
@@ -3730,7 +3730,7 @@
       "concise_description": "EXPECTED DC1 <: Hashable",
       "description": "EXPECTED DC1 <: Hashable",
       "line": 15,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 15
     },
@@ -3740,7 +3740,7 @@
       "concise_description": "EXPECTED DC3 <: Hashable",
       "description": "EXPECTED DC3 <: Hashable",
       "line": 32,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 32
     }
@@ -3893,7 +3893,7 @@
       "concise_description": "EXPECTED float <: int",
       "description": "EXPECTED float <: int",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 61
     },
@@ -3915,7 +3915,7 @@
       "concise_description": "EXPECTED DC2 <: DC1",
       "description": "EXPECTED DC2 <: DC1",
       "line": 50,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 50
     }
@@ -3927,7 +3927,7 @@
       "concise_description": "EXPECTED Literal[3] <: InitVar[int]",
       "description": "EXPECTED Literal[3] <: InitVar[int]",
       "line": 23,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 23
     },
@@ -3937,7 +3937,7 @@
       "concise_description": "EXPECTED Literal[''] <: InitVar[str]",
       "description": "EXPECTED Literal[''] <: InitVar[str]",
       "line": 23,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 23
     }
@@ -4031,7 +4031,7 @@
       "concise_description": "EXPECTED Literal[3] <: str",
       "description": "EXPECTED Literal[3] <: str",
       "line": 66,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 66
     },
@@ -4151,7 +4151,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 82,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 82
     },
@@ -4203,7 +4203,7 @@
       "concise_description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
       "description": "EXPECTED tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: () -> S | None) -> T]] <: tuple[(...) -> Any | type[Any], ...]",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 53,
       "stop_line": 29
     },
@@ -4213,7 +4213,7 @@
       "concise_description": "EXPECTED () -> int <: (@_) -> int",
       "description": "EXPECTED () -> int <: (@_) -> int",
       "line": 48,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 55,
       "stop_line": 48
     },
@@ -4223,7 +4223,7 @@
       "concise_description": "EXPECTED (*, x: int) -> int <: (@_) -> int",
       "description": "EXPECTED (*, x: int) -> int <: (@_) -> int",
       "line": 49,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 55,
       "stop_line": 49
     },
@@ -4233,7 +4233,7 @@
       "concise_description": "EXPECTED type[ConverterClass] <: (@_) -> @_",
       "description": "EXPECTED type[ConverterClass] <: (@_) -> @_",
       "line": 102,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 102
     },
@@ -4243,7 +4243,7 @@
       "concise_description": "EXPECTED type[dict] <: (@_) -> @_",
       "description": "EXPECTED type[dict] <: (@_) -> @_",
       "line": 104,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 56,
       "stop_line": 104
     },
@@ -4293,7 +4293,7 @@
       "concise_description": "EXPECTED Literal['f1'] <: int",
       "description": "EXPECTED Literal['f1'] <: int",
       "line": 114,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 114
     },
@@ -4303,7 +4303,7 @@
       "concise_description": "EXPECTED Literal['f6'] <: ConverterClass",
       "description": "EXPECTED Literal['f6'] <: ConverterClass",
       "line": 115,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 115
     },
@@ -4313,7 +4313,7 @@
       "concise_description": "EXPECTED Literal[b'f6'] <: ConverterClass",
       "description": "EXPECTED Literal[b'f6'] <: ConverterClass",
       "line": 116,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 116
     },
@@ -4323,7 +4323,7 @@
       "concise_description": "EXPECTED Literal[1] <: ConverterClass",
       "description": "EXPECTED Literal[1] <: ConverterClass",
       "line": 119,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 119
     },
@@ -4343,7 +4343,7 @@
       "concise_description": "EXPECTED Literal[1] <: str | None",
       "description": "EXPECTED Literal[1] <: str | None",
       "line": 130,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 68,
       "stop_line": 130
     },
@@ -4353,7 +4353,7 @@
       "concise_description": "EXPECTED type[str] <: () -> str | None",
       "description": "EXPECTED type[str] <: () -> str | None",
       "line": 132,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 78,
       "stop_line": 132
     },
@@ -4363,7 +4363,7 @@
       "concise_description": "EXPECTED type[int] <: () -> str | None",
       "description": "EXPECTED type[int] <: () -> str | None",
       "line": 133,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 78,
       "stop_line": 133
     }
@@ -4457,7 +4457,7 @@
       "concise_description": "EXPECTED Literal[3] <: str",
       "description": "EXPECTED Literal[3] <: str",
       "line": 57,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 57
     },
@@ -4711,7 +4711,7 @@
       "concise_description": "EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto",
       "description": "EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto",
       "line": 35,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 41,
       "stop_line": 35
     },
@@ -4731,7 +4731,7 @@
       "concise_description": "EXPECTED Literal['price'] <: float",
       "description": "EXPECTED Literal['price'] <: float",
       "line": 51,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 51
     },
@@ -4751,7 +4751,7 @@
       "concise_description": "EXPECTED Literal[0] <: InitVar[int]",
       "description": "EXPECTED Literal[0] <: InitVar[int]",
       "line": 72,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 72
     },
@@ -4821,7 +4821,7 @@
       "concise_description": "EXPECTED DC15 <: DataclassProto",
       "description": "EXPECTED DC15 <: DataclassProto",
       "line": 205,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 26,
       "stop_line": 205
     }
@@ -4949,7 +4949,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 15,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 15
     },
@@ -4959,7 +4959,7 @@
       "concise_description": "EXPECTED str <: int",
       "description": "EXPECTED str <: int",
       "line": 25,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 25
     },
@@ -4969,7 +4969,7 @@
       "concise_description": "Function declared to return `None`, actually returns `Literal[1]`",
       "description": "Function declared to return `None`, actually returns `Literal[1]`",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 13,
       "stop_line": 26
     },
@@ -4979,7 +4979,7 @@
       "concise_description": "EXPECTED Literal[b'invalid'] <: int",
       "description": "EXPECTED Literal[b'invalid'] <: int",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 29
     },
@@ -4989,7 +4989,7 @@
       "concise_description": "EXPECTED Literal[b'arguments'] <: str",
       "description": "EXPECTED Literal[b'arguments'] <: str",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 29
     },
@@ -5083,7 +5083,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 11,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 11
     },
@@ -5116,7 +5116,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 16,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 16
     }
@@ -5128,7 +5128,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 14,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 14
     }
@@ -5140,7 +5140,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 40
     },
@@ -5150,7 +5150,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 45,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 45
     }
@@ -5162,7 +5162,7 @@
       "concise_description": "EXPECTED EnumMeta <: type[@_]",
       "description": "EXPECTED EnumMeta <: type[@_]",
       "line": 19,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 19
     },
@@ -5172,7 +5172,7 @@
       "concise_description": "EXPECTED int <: str",
       "description": "EXPECTED int <: str",
       "line": 19,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 19
     },
@@ -5339,7 +5339,7 @@
       "concise_description": "EXPECTED int <: str",
       "description": "EXPECTED int <: str",
       "line": 85,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 85
     },
@@ -5645,7 +5645,7 @@
       "concise_description": "EXPECTED SymbolTable <: dict[str, list[object]]",
       "description": "EXPECTED SymbolTable <: dict[str, list[object]]",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 26
     },
@@ -5697,7 +5697,7 @@
       "concise_description": "EXPECTED bytes <: str",
       "description": "EXPECTED bytes <: str",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 40
     },
@@ -5707,7 +5707,7 @@
       "concise_description": "EXPECTED str <: bytes",
       "description": "EXPECTED str <: bytes",
       "line": 41,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 41
     },
@@ -5737,7 +5737,7 @@
       "concise_description": "EXPECTED str <: MyStr",
       "description": "EXPECTED str <: MyStr",
       "line": 68,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 68
     },
@@ -5747,7 +5747,7 @@
       "concise_description": "EXPECTED bytes <: MyStr",
       "description": "EXPECTED bytes <: MyStr",
       "line": 69,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 69
     },
@@ -5757,7 +5757,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 157,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 9,
       "stop_line": 157
     },
@@ -5767,7 +5767,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 158,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 9,
       "stop_line": 158
     }
@@ -6041,7 +6041,7 @@
       "concise_description": "EXPECTED Literal[''] <: TypeVar[DefaultStrT]",
       "description": "EXPECTED Literal[''] <: TypeVar[DefaultStrT]",
       "line": 36,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 36
     },
@@ -6051,7 +6051,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 37,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 37
     },
@@ -6061,7 +6061,7 @@
       "concise_description": "EXPECTED Literal[1] <: TypeVar[DefaultStrT]",
       "description": "EXPECTED Literal[1] <: TypeVar[DefaultStrT]",
       "line": 37,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 37
     },
@@ -6277,7 +6277,7 @@
       "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "line": 96,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 96
     },
@@ -6287,7 +6287,7 @@
       "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "line": 97,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 97
     },
@@ -6297,7 +6297,7 @@
       "concise_description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "description": "EXPECTED (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int",
       "line": 98,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 98
     }
@@ -6339,7 +6339,7 @@
       "concise_description": "EXPECTED Literal['A'] <: bool",
       "description": "EXPECTED Literal['A'] <: bool",
       "line": 27,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 27
     },
@@ -6349,7 +6349,7 @@
       "concise_description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
       "description": "EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int",
       "line": 46,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 20,
       "stop_line": 46
     },
@@ -6359,7 +6359,7 @@
       "concise_description": "EXPECTED (*, y: int) -> int <: (*, x: int) -> int",
       "description": "EXPECTED (*, y: int) -> int <: (*, x: int) -> int",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 61
     },
@@ -6369,7 +6369,7 @@
       "concise_description": "EXPECTED Literal[1] <: str",
       "description": "EXPECTED Literal[1] <: str",
       "line": 98,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 5,
       "stop_line": 98
     },
@@ -6379,7 +6379,7 @@
       "concise_description": "EXPECTED Literal[1] <: bool",
       "description": "EXPECTED Literal[1] <: bool",
       "line": 108,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 5,
       "stop_line": 108
     },
@@ -6389,7 +6389,7 @@
       "concise_description": "EXPECTED Literal[1] <: str",
       "description": "EXPECTED Literal[1] <: str",
       "line": 120,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 5,
       "stop_line": 120
     },
@@ -6399,7 +6399,7 @@
       "concise_description": "EXPECTED (x: str) -> int <: (int, ParamSpec(@_)) -> int",
       "description": "EXPECTED (x: str) -> int <: (int, ParamSpec(@_)) -> int",
       "line": 127,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 127
     },
@@ -6409,7 +6409,7 @@
       "concise_description": "EXPECTED (*, x: int) -> int <: (int, ParamSpec(@_)) -> int",
       "description": "EXPECTED (*, x: int) -> int <: (int, ParamSpec(@_)) -> int",
       "line": 132,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 132
     },
@@ -6419,7 +6419,7 @@
       "concise_description": "EXPECTED (**int) -> int <: (int, ParamSpec(@_)) -> int",
       "description": "EXPECTED (**int) -> int <: (int, ParamSpec(@_)) -> int",
       "line": 137,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 137
     }
@@ -6441,7 +6441,7 @@
       "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 53,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 53
     },
@@ -6451,7 +6451,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 53,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 53
     },
@@ -6461,7 +6461,7 @@
       "concise_description": "EXPECTED Literal[''] <: bool",
       "description": "EXPECTED Literal[''] <: bool",
       "line": 53,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 53
     },
@@ -6481,7 +6481,7 @@
       "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 54,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 54
     },
@@ -6491,7 +6491,7 @@
       "concise_description": "EXPECTED Literal[''] <: bool",
       "description": "EXPECTED Literal[''] <: bool",
       "line": 54,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 54
     },
@@ -6511,7 +6511,7 @@
       "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 55,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 55
     },
@@ -6521,7 +6521,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 55,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 55
     },
@@ -6531,7 +6531,7 @@
       "concise_description": "EXPECTED Literal[''] <: bool",
       "description": "EXPECTED Literal[''] <: bool",
       "line": 55,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 55
     },
@@ -6551,7 +6551,7 @@
       "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 59,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 59
     },
@@ -6561,7 +6561,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 59,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 59
     },
@@ -6571,7 +6571,7 @@
       "concise_description": "EXPECTED Literal[''] <: bool",
       "description": "EXPECTED Literal[''] <: bool",
       "line": 59,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 59
     },
@@ -6591,7 +6591,7 @@
       "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 60,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 60
     },
@@ -6601,7 +6601,7 @@
       "concise_description": "EXPECTED Literal[''] <: bool",
       "description": "EXPECTED Literal[''] <: bool",
       "line": 60,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 60
     },
@@ -6621,7 +6621,7 @@
       "concise_description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "description": "EXPECTED ClassC[(int, str, bool)] <: int",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 61
     },
@@ -6631,7 +6631,7 @@
       "concise_description": "EXPECTED Literal[0] <: str",
       "description": "EXPECTED Literal[0] <: str",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 61
     },
@@ -6641,7 +6641,7 @@
       "concise_description": "EXPECTED Literal[''] <: bool",
       "description": "EXPECTED Literal[''] <: bool",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 61
     },
@@ -6663,7 +6663,7 @@
       "concise_description": "EXPECTED Literal['a'] <: int",
       "description": "EXPECTED Literal['a'] <: int",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 13,
       "stop_line": 29
     },
@@ -6777,7 +6777,7 @@
       "concise_description": "EXPECTED LinkedList[int] <: Self | None",
       "description": "EXPECTED LinkedList[int] <: Self | None",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 26
     },
@@ -6787,7 +6787,7 @@
       "concise_description": "EXPECTED OrdinalLinkedList <: Self | None",
       "description": "EXPECTED OrdinalLinkedList <: Self | None",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 52,
       "stop_line": 29
     },
@@ -6797,7 +6797,7 @@
       "concise_description": "EXPECTED LinkedList[int] <: Self | None",
       "description": "EXPECTED LinkedList[int] <: Self | None",
       "line": 32,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 50,
       "stop_line": 32
     }
@@ -6881,7 +6881,7 @@
       "concise_description": "EXPECTED BadReturnType <: ShapeProtocol",
       "description": "EXPECTED BadReturnType <: ShapeProtocol",
       "line": 61,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 34,
       "stop_line": 61
     }
@@ -6893,7 +6893,7 @@
       "concise_description": "EXPECTED (self: CallableAttribute) -> int <: (Self) -> int",
       "description": "EXPECTED (self: CallableAttribute) -> int <: (Self) -> int",
       "line": 50,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 50
     },
@@ -6913,7 +6913,7 @@
       "concise_description": "EXPECTED HasNestedFunction <: Self",
       "description": "EXPECTED HasNestedFunction <: Self",
       "line": 63,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 63
     },
@@ -7099,7 +7099,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]",
       "description": "EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]",
       "line": 28,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 28
     },
@@ -7109,7 +7109,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant1[float] <: ShouldBeCovariant1[int]",
       "description": "EXPECTED ShouldBeCovariant1[float] <: ShouldBeCovariant1[int]",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 29
     },
@@ -7119,7 +7119,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]",
       "description": "EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]",
       "line": 36,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 36
     },
@@ -7129,7 +7129,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant2[float] <: ShouldBeCovariant2[int]",
       "description": "EXPECTED ShouldBeCovariant2[float] <: ShouldBeCovariant2[int]",
       "line": 37,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 37
     },
@@ -7139,7 +7139,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]",
       "description": "EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]",
       "line": 45,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 45
     },
@@ -7149,7 +7149,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant3[float] <: ShouldBeCovariant3[int]",
       "description": "EXPECTED ShouldBeCovariant3[float] <: ShouldBeCovariant3[int]",
       "line": 46,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 46
     },
@@ -7159,7 +7159,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]",
       "description": "EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]",
       "line": 54,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 54
     },
@@ -7169,7 +7169,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant4[float] <: ShouldBeCovariant4[int]",
       "description": "EXPECTED ShouldBeCovariant4[float] <: ShouldBeCovariant4[int]",
       "line": 55,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 55
     },
@@ -7179,7 +7179,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]",
       "description": "EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]",
       "line": 67,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 67
     },
@@ -7189,7 +7189,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant5[float] <: ShouldBeCovariant5[int]",
       "description": "EXPECTED ShouldBeCovariant5[float] <: ShouldBeCovariant5[int]",
       "line": 68,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 68
     },
@@ -7199,7 +7199,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]",
       "description": "EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]",
       "line": 78,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 78
     },
@@ -7209,7 +7209,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant6[float] <: ShouldBeCovariant6[int]",
       "description": "EXPECTED ShouldBeCovariant6[float] <: ShouldBeCovariant6[int]",
       "line": 79,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 79
     },
@@ -7219,7 +7219,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "line": 95,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 95
     },
@@ -7229,7 +7229,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant1[float] <: ShouldBeInvariant1[int]",
       "description": "EXPECTED ShouldBeInvariant1[float] <: ShouldBeInvariant1[int]",
       "line": 96,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 96
     },
@@ -7239,7 +7239,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant2[int] <: ShouldBeInvariant2[float]",
       "description": "EXPECTED ShouldBeInvariant2[int] <: ShouldBeInvariant2[float]",
       "line": 110,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 110
     },
@@ -7249,7 +7249,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant2[float] <: ShouldBeInvariant2[int]",
       "description": "EXPECTED ShouldBeInvariant2[float] <: ShouldBeInvariant2[int]",
       "line": 111,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 111
     },
@@ -7259,7 +7259,7 @@
       "concise_description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
       "description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 118,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 118
     },
@@ -7269,7 +7269,7 @@
       "concise_description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
       "description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
       "line": 119,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 119
     },
@@ -7279,7 +7279,7 @@
       "concise_description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
       "description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 120,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 120
     },
@@ -7289,7 +7289,7 @@
       "concise_description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
       "description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
       "line": 121,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 121
     },
@@ -7299,7 +7299,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant4[int] <: ShouldBeInvariant4[float]",
       "description": "EXPECTED ShouldBeInvariant4[int] <: ShouldBeInvariant4[float]",
       "line": 129,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 129
     },
@@ -7309,7 +7309,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant5[int] <: ShouldBeInvariant5[float]",
       "description": "EXPECTED ShouldBeInvariant5[int] <: ShouldBeInvariant5[float]",
       "line": 137,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 137
     },
@@ -7319,7 +7319,7 @@
       "concise_description": "EXPECTED ShouldBeContravariant1[int] <: ShouldBeContravariant1[float]",
       "description": "EXPECTED ShouldBeContravariant1[int] <: ShouldBeContravariant1[float]",
       "line": 148,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 75,
       "stop_line": 148
     },
@@ -7329,7 +7329,7 @@
       "concise_description": "EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]",
       "description": "EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]",
       "line": 149,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 77,
       "stop_line": 149
     }
@@ -7403,7 +7403,7 @@
       "concise_description": "EXPECTED Literal[''] <: int | None",
       "description": "EXPECTED Literal[''] <: int | None",
       "line": 38,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 38
     },
@@ -7413,7 +7413,7 @@
       "concise_description": "EXPECTED Literal[0] <: str | None",
       "description": "EXPECTED Literal[0] <: str | None",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 40
     },
@@ -7485,7 +7485,7 @@
       "concise_description": "EXPECTED tuple[Literal[0], Literal['']] <: tuple[*@_, Env]",
       "description": "EXPECTED tuple[Literal[0], Literal['']] <: tuple[*@_, Env]",
       "line": 33,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 33
     },
@@ -7495,7 +7495,7 @@
       "concise_description": "EXPECTED tuple[Literal[0], Literal['']] <: tuple[*@_, Env]",
       "description": "EXPECTED tuple[Literal[0], Literal['']] <: tuple[*@_, Env]",
       "line": 34,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 34
     },
@@ -7505,7 +7505,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal['2'], Literal[3]] <: tuple[int, ...]",
       "description": "EXPECTED tuple[Literal[1], Literal['2'], Literal[3]] <: tuple[int, ...]",
       "line": 48,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 6,
       "stop_line": 48
     },
@@ -7515,7 +7515,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *tuple[str, ...], str]",
       "description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *tuple[str, ...], str]",
       "line": 57,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 6,
       "stop_line": 57
     },
@@ -7525,7 +7525,7 @@
       "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[int, *tuple[str, ...], str]",
       "description": "EXPECTED tuple[Literal[1]] <: tuple[int, *tuple[str, ...], str]",
       "line": 58,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 6,
       "stop_line": 58
     },
@@ -7535,7 +7535,7 @@
       "concise_description": "EXPECTED tuple[Literal['']] <: tuple[int, *tuple[str, ...], str]",
       "description": "EXPECTED tuple[Literal['']] <: tuple[int, *tuple[str, ...], str]",
       "line": 59,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 6,
       "stop_line": 59
     },
@@ -7545,7 +7545,7 @@
       "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[int, str]",
       "description": "EXPECTED tuple[Literal[1]] <: tuple[int, str]",
       "line": 67,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 6,
       "stop_line": 67
     },
@@ -7555,7 +7555,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[2]] <: tuple[*tuple[int]]",
       "description": "EXPECTED tuple[Literal[1], Literal[2]] <: tuple[*tuple[int]]",
       "line": 75,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 75
     },
@@ -7565,7 +7565,7 @@
       "concise_description": "EXPECTED tuple[Literal['1']] <: tuple[*tuple[int]]",
       "description": "EXPECTED tuple[Literal['1']] <: tuple[*tuple[int]]",
       "line": 76,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 76
     }
@@ -7577,7 +7577,7 @@
       "concise_description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]",
       "description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]",
       "line": 36,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 56,
       "stop_line": 36
     },
@@ -7587,7 +7587,7 @@
       "concise_description": "EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]",
       "description": "EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]",
       "line": 37,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 37
     },
@@ -7597,7 +7597,7 @@
       "concise_description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
       "description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
       "line": 38,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 2,
       "stop_line": 40
     },
@@ -7607,7 +7607,7 @@
       "concise_description": "EXPECTED int <: tuple[*@_]",
       "description": "EXPECTED int <: tuple[*@_]",
       "line": 42,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 43,
       "stop_line": 42
     },
@@ -7617,7 +7617,7 @@
       "concise_description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Batch, Height, Width]]",
       "description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Batch, Height, Width]]",
       "line": 43,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 43
     },
@@ -7627,7 +7627,7 @@
       "concise_description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
       "description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
       "line": 44,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 2,
       "stop_line": 46
     },
@@ -7677,7 +7677,7 @@
       "concise_description": "EXPECTED tuple[float] <: tuple[*tuple[int]]",
       "description": "EXPECTED tuple[float] <: tuple[*tuple[int]]",
       "line": 85,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 85
     },
@@ -7687,7 +7687,7 @@
       "concise_description": "EXPECTED tuple[Literal['0']] <: tuple[*tuple[int]]",
       "description": "EXPECTED tuple[Literal['0']] <: tuple[*tuple[int]]",
       "line": 89,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 89
     },
@@ -7697,7 +7697,7 @@
       "concise_description": "EXPECTED tuple[Literal[0]] <: tuple[*tuple[int, int]]",
       "description": "EXPECTED tuple[Literal[0]] <: tuple[*tuple[int, int]]",
       "line": 90,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 90
     },
@@ -7707,7 +7707,7 @@
       "concise_description": "EXPECTED Array[tuple[Width]] <: Array[tuple[*tuple[Height]]]",
       "description": "EXPECTED Array[tuple[Width]] <: Array[tuple[*tuple[Height]]]",
       "line": 99,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 99
     },
@@ -7717,7 +7717,7 @@
       "concise_description": "EXPECTED Array[tuple[Height, Width]] <: Array[tuple[*tuple[Height]]]",
       "description": "EXPECTED Array[tuple[Height, Width]] <: Array[tuple[*tuple[Height]]]",
       "line": 100,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 100
     }
@@ -7729,7 +7729,7 @@
       "concise_description": "EXPECTED tuple[Literal[''], Literal[0]] <: tuple[*tuple[int, str]]",
       "description": "EXPECTED tuple[Literal[''], Literal[0]] <: tuple[*tuple[int, str]]",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 26
     }
@@ -7741,7 +7741,7 @@
       "concise_description": "Function declared to return `tuple[*?_TypeVarTuple, ?_TypeVar]`, actually returns `tuple[*tuple[Unknown, ...], Unknown]`",
       "description": "Function declared to return `tuple[*?_TypeVarTuple, ?_TypeVar]`, actually returns `tuple[*tuple[Unknown, ...], Unknown]`",
       "line": 56,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 56
     }
@@ -8247,7 +8247,7 @@
       "concise_description": "EXPECTED Array[tuple[Batch]] <: Array[tuple[Batch, *tuple[Any, ...], Channels]]",
       "description": "EXPECTED Array[tuple[Batch]] <: Array[tuple[Batch, *tuple[Any, ...], Channels]]",
       "line": 30,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 30
     }
@@ -8259,7 +8259,7 @@
       "concise_description": "EXPECTED ?_TypeVar <: Sized",
       "description": "EXPECTED ?_TypeVar <: Sized",
       "line": 31,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 13,
       "stop_line": 31
     },
@@ -8269,7 +8269,7 @@
       "concise_description": "EXPECTED ?_TypeVar <: Sized",
       "description": "EXPECTED ?_TypeVar <: Sized",
       "line": 31,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 31
     },
@@ -8289,7 +8289,7 @@
       "concise_description": "EXPECTED set[int] <: list[int]",
       "description": "EXPECTED set[int] <: list[int]",
       "line": 43,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 43
     },
@@ -8323,7 +8323,7 @@
       "concise_description": "EXPECTED ClassA[float, int, int] <: ClassA[int, int, int]",
       "description": "EXPECTED ClassA[float, int, int] <: ClassA[int, int, int]",
       "line": 24,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 24
     },
@@ -8333,7 +8333,7 @@
       "concise_description": "EXPECTED ClassA[float, int, int] <: ClassA[float, float, int]",
       "description": "EXPECTED ClassA[float, int, int] <: ClassA[float, float, int]",
       "line": 25,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 39,
       "stop_line": 25
     },
@@ -8343,7 +8343,7 @@
       "concise_description": "EXPECTED ClassA[float, int, int] <: ClassA[float, int, float]",
       "description": "EXPECTED ClassA[float, int, int] <: ClassA[float, int, float]",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 39,
       "stop_line": 26
     },
@@ -8353,7 +8353,7 @@
       "concise_description": "EXPECTED ClassA[int, float, float] <: ClassA[int, int, int]",
       "description": "EXPECTED ClassA[int, float, float] <: ClassA[int, int, int]",
       "line": 28,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 28
     },
@@ -8363,7 +8363,7 @@
       "concise_description": "EXPECTED ClassA[int, float, float] <: ClassA[int, int, float]",
       "description": "EXPECTED ClassA[int, float, float] <: ClassA[int, int, float]",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 29
     },
@@ -8373,7 +8373,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]",
       "description": "EXPECTED ShouldBeCovariant1[int] <: ShouldBeCovariant1[float]",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 40
     },
@@ -8383,7 +8383,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant1[float] <: ShouldBeCovariant1[int]",
       "description": "EXPECTED ShouldBeCovariant1[float] <: ShouldBeCovariant1[int]",
       "line": 41,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 41
     },
@@ -8393,7 +8393,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]",
       "description": "EXPECTED ShouldBeCovariant2[int] <: ShouldBeCovariant2[float]",
       "line": 48,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 48
     },
@@ -8403,7 +8403,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant2[float] <: ShouldBeCovariant2[int]",
       "description": "EXPECTED ShouldBeCovariant2[float] <: ShouldBeCovariant2[int]",
       "line": 49,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 49
     },
@@ -8413,7 +8413,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]",
       "description": "EXPECTED ShouldBeCovariant3[int] <: ShouldBeCovariant3[float]",
       "line": 57,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 57
     },
@@ -8423,7 +8423,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant3[float] <: ShouldBeCovariant3[int]",
       "description": "EXPECTED ShouldBeCovariant3[float] <: ShouldBeCovariant3[int]",
       "line": 58,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 58
     },
@@ -8433,7 +8433,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]",
       "description": "EXPECTED ShouldBeCovariant4[int] <: ShouldBeCovariant4[float]",
       "line": 66,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 66
     },
@@ -8443,7 +8443,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant4[float] <: ShouldBeCovariant4[int]",
       "description": "EXPECTED ShouldBeCovariant4[float] <: ShouldBeCovariant4[int]",
       "line": 67,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 67
     },
@@ -8453,7 +8453,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]",
       "description": "EXPECTED ShouldBeCovariant5[int] <: ShouldBeCovariant5[float]",
       "line": 79,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 79
     },
@@ -8463,7 +8463,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant5[float] <: ShouldBeCovariant5[int]",
       "description": "EXPECTED ShouldBeCovariant5[float] <: ShouldBeCovariant5[int]",
       "line": 80,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 62,
       "stop_line": 80
     },
@@ -8473,7 +8473,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "description": "EXPECTED ShouldBeInvariant1[int] <: ShouldBeInvariant1[float]",
       "line": 96,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 96
     },
@@ -8483,7 +8483,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant1[float] <: ShouldBeInvariant1[int]",
       "description": "EXPECTED ShouldBeInvariant1[float] <: ShouldBeInvariant1[int]",
       "line": 97,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 97
     },
@@ -8493,7 +8493,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant2[int] <: ShouldBeInvariant2[float]",
       "description": "EXPECTED ShouldBeInvariant2[int] <: ShouldBeInvariant2[float]",
       "line": 111,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 111
     },
@@ -8503,7 +8503,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant2[float] <: ShouldBeInvariant2[int]",
       "description": "EXPECTED ShouldBeInvariant2[float] <: ShouldBeInvariant2[int]",
       "line": 112,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 112
     },
@@ -8513,7 +8513,7 @@
       "concise_description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
       "description": "EXPECTED dict[int, str] <: ShouldBeInvariant3[float, str]",
       "line": 119,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 119
     },
@@ -8523,7 +8523,7 @@
       "concise_description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
       "description": "EXPECTED dict[float, str] <: ShouldBeInvariant3[int, str]",
       "line": 120,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 120
     },
@@ -8533,7 +8533,7 @@
       "concise_description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
       "description": "EXPECTED dict[str, int] <: ShouldBeInvariant3[str, float]",
       "line": 121,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 121
     },
@@ -8543,7 +8543,7 @@
       "concise_description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
       "description": "EXPECTED dict[str, float] <: ShouldBeInvariant3[str, int]",
       "line": 122,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 73,
       "stop_line": 122
     },
@@ -8553,7 +8553,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant4[int] <: ShouldBeInvariant4[float]",
       "description": "EXPECTED ShouldBeInvariant4[int] <: ShouldBeInvariant4[float]",
       "line": 130,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 130
     },
@@ -8563,7 +8563,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant5[int] <: ShouldBeInvariant5[float]",
       "description": "EXPECTED ShouldBeInvariant5[int] <: ShouldBeInvariant5[float]",
       "line": 138,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 64,
       "stop_line": 138
     },
@@ -8573,7 +8573,7 @@
       "concise_description": "EXPECTED ShouldBeContravariant1[int] <: ShouldBeContravariant1[float]",
       "description": "EXPECTED ShouldBeContravariant1[int] <: ShouldBeContravariant1[float]",
       "line": 149,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 75,
       "stop_line": 149
     },
@@ -8583,7 +8583,7 @@
       "concise_description": "EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]",
       "description": "EXPECTED ShouldBeContravariant1[float] <: ShouldBeContravariant1[int]",
       "line": 150,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 77,
       "stop_line": 150
     },
@@ -8593,7 +8593,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant6[float] <: ShouldBeInvariant6[int]",
       "description": "EXPECTED ShouldBeInvariant6[float] <: ShouldBeInvariant6[int]",
       "line": 169,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 58,
       "stop_line": 169
     },
@@ -8603,7 +8603,7 @@
       "concise_description": "EXPECTED ShouldBeInvariant6[int] <: ShouldBeInvariant6[float]",
       "description": "EXPECTED ShouldBeInvariant6[int] <: ShouldBeInvariant6[float]",
       "line": 170,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 58,
       "stop_line": 170
     },
@@ -8613,7 +8613,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant6[float] <: ShouldBeCovariant6[int]",
       "description": "EXPECTED ShouldBeCovariant6[float] <: ShouldBeCovariant6[int]",
       "line": 181,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 58,
       "stop_line": 181
     },
@@ -8623,7 +8623,7 @@
       "concise_description": "EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]",
       "description": "EXPECTED ShouldBeCovariant6[int] <: ShouldBeCovariant6[float]",
       "line": 182,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 58,
       "stop_line": 182
     },
@@ -8633,7 +8633,7 @@
       "concise_description": "EXPECTED ShouldBeContravariant2[float] <: ShouldBeContravariant2[int]",
       "description": "EXPECTED ShouldBeContravariant2[float] <: ShouldBeContravariant2[int]",
       "line": 193,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 193
     },
@@ -8643,7 +8643,7 @@
       "concise_description": "EXPECTED ShouldBeContravariant2[int] <: ShouldBeContravariant2[float]",
       "description": "EXPECTED ShouldBeContravariant2[int] <: ShouldBeContravariant2[float]",
       "line": 194,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 66,
       "stop_line": 194
     }
@@ -8716,7 +8716,7 @@
       "concise_description": "EXPECTED Matrix[Literal[3], Literal[7]] <: Matrix[Literal[3], TypeVar[C]]",
       "description": "EXPECTED Matrix[Literal[3], Literal[7]] <: Matrix[Literal[3], TypeVar[C]]",
       "line": 71,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 71
     },
@@ -8736,7 +8736,7 @@
       "concise_description": "EXPECTED str <: Literal['ABORTED', 'MALFORMED']",
       "description": "EXPECTED str <: Literal['ABORTED', 'MALFORMED']",
       "line": 106,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 41,
       "stop_line": 106
     }
@@ -8768,7 +8768,7 @@
       "concise_description": "EXPECTED Literal['two'] <: Literal['']",
       "description": "EXPECTED Literal['two'] <: Literal['']",
       "line": 43,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 43
     },
@@ -8828,7 +8828,7 @@
       "concise_description": "EXPECTED str <: LiteralString",
       "description": "EXPECTED str <: LiteralString",
       "line": 66,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 66
     },
@@ -8848,7 +8848,7 @@
       "concise_description": "EXPECTED Literal[3] <: LiteralString",
       "description": "EXPECTED Literal[3] <: LiteralString",
       "line": 74,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 26,
       "stop_line": 74
     },
@@ -8858,7 +8858,7 @@
       "concise_description": "EXPECTED Literal[b'test'] <: LiteralString",
       "description": "EXPECTED Literal[b'test'] <: LiteralString",
       "line": 75,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 75
     },
@@ -8888,7 +8888,7 @@
       "concise_description": "EXPECTED Container[str] <: Container[LiteralString]",
       "description": "EXPECTED Container[str] <: Container[LiteralString]",
       "line": 130,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 130
     },
@@ -8898,7 +8898,7 @@
       "concise_description": "EXPECTED Container[str] <: Container[LiteralString]",
       "description": "EXPECTED Container[str] <: Container[LiteralString]",
       "line": 134,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 53,
       "stop_line": 134
     },
@@ -8928,7 +8928,7 @@
       "concise_description": "EXPECTED list[LiteralString] <: list[str]",
       "description": "EXPECTED list[LiteralString] <: list[str]",
       "line": 171,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 171
     }
@@ -9130,7 +9130,7 @@
       "concise_description": "EXPECTED Literal[Color.RED] <: Literal['Color.RED']",
       "description": "EXPECTED Literal[Color.RED] <: Literal['Color.RED']",
       "line": 65,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 33,
       "stop_line": 65
     }
@@ -9142,7 +9142,7 @@
       "concise_description": "EXPECTED Literal[4] <: Literal[3]",
       "description": "EXPECTED Literal[4] <: Literal[3]",
       "line": 10,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 10
     },
@@ -9152,7 +9152,7 @@
       "concise_description": "EXPECTED Literal[0] <: Literal[False]",
       "description": "EXPECTED Literal[0] <: Literal[False]",
       "line": 24,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 24
     },
@@ -9162,7 +9162,7 @@
       "concise_description": "EXPECTED Literal[False] <: Literal[0]",
       "description": "EXPECTED Literal[False] <: Literal[0]",
       "line": 25,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 23,
       "stop_line": 25
     },
@@ -9224,7 +9224,7 @@
       "concise_description": "EXPECTED Literal[''] <: int",
       "description": "EXPECTED Literal[''] <: int",
       "line": 46,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 46
     },
@@ -9234,7 +9234,7 @@
       "concise_description": "EXPECTED Literal[3] <: str",
       "description": "EXPECTED Literal[3] <: str",
       "line": 47,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 47
     },
@@ -9274,7 +9274,7 @@
       "concise_description": "EXPECTED float <: str",
       "description": "EXPECTED float <: str",
       "line": 98,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 98
     },
@@ -9366,7 +9366,7 @@
       "concise_description": "EXPECTED Literal['1'] <: int",
       "description": "EXPECTED Literal['1'] <: int",
       "line": 36,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 36
     },
@@ -9396,7 +9396,7 @@
       "concise_description": "EXPECTED Literal['1'] <: int",
       "description": "EXPECTED Literal['1'] <: int",
       "line": 42,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 42
     },
@@ -9406,7 +9406,7 @@
       "concise_description": "EXPECTED float <: int",
       "description": "EXPECTED float <: int",
       "line": 43,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 20,
       "stop_line": 43
     },
@@ -9458,7 +9458,7 @@
       "concise_description": "EXPECTED Point <: tuple[int, int]",
       "description": "EXPECTED Point <: tuple[int, int]",
       "line": 22,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 22
     },
@@ -9468,7 +9468,7 @@
       "concise_description": "EXPECTED Point <: tuple[int, str, str]",
       "description": "EXPECTED Point <: tuple[int, str, str]",
       "line": 23,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 23
     }
@@ -9592,7 +9592,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: (object) -> str",
       "description": "EXPECTED (val: object) -> TypeGuard[int] <: (object) -> str",
       "line": 128,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 128
     },
@@ -9602,7 +9602,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: CallableStrProto",
       "description": "EXPECTED (val: object) -> TypeGuard[int] <: CallableStrProto",
       "line": 148,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 42,
       "stop_line": 148
     }
@@ -9614,7 +9614,7 @@
       "concise_description": "Function declared to return `TypeIs[tuple[?_TypeVar, ?_TypeVar]]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[tuple[?_TypeVar, ?_TypeVar]]`, actually returns `bool`",
       "line": 15,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 15
     },
@@ -9634,7 +9634,7 @@
       "concise_description": "Function declared to return `TypeIs[Awaitable[Any]]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[Awaitable[Any]]`, actually returns `bool`",
       "line": 28,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 28
     },
@@ -9664,7 +9664,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "line": 45,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 45
     },
@@ -9674,7 +9674,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "line": 49,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 49
     },
@@ -9684,7 +9684,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "line": 53,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 53
     },
@@ -9694,7 +9694,7 @@
       "concise_description": "Function declared to return `TypeIs[A]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[A]`, actually returns `bool`",
       "line": 56,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 43,
       "stop_line": 56
     },
@@ -9704,7 +9704,7 @@
       "concise_description": "Function declared to return `TypeIs[?_TypeVar]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[?_TypeVar]`, actually returns `bool`",
       "line": 59,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 43,
       "stop_line": 59
     },
@@ -9784,7 +9784,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `Literal[False]`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `Literal[False]`",
       "line": 106,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 106
     },
@@ -9794,7 +9794,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `Literal[False]`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `Literal[False]`",
       "line": 111,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 111
     },
@@ -9804,7 +9804,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "line": 128,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 128
     },
@@ -9814,7 +9814,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeIs[int] <: (object) -> str",
       "description": "EXPECTED (val: object) -> TypeIs[int] <: (object) -> str",
       "line": 132,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 132
     },
@@ -9824,7 +9824,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeIs[int] <: CallableStrProto",
       "description": "EXPECTED (val: object) -> TypeIs[int] <: CallableStrProto",
       "line": 152,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 42,
       "stop_line": 152
     },
@@ -9834,7 +9834,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "line": 163,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 163
     },
@@ -9844,7 +9844,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeIs[int] <: (object) -> TypeGuard[int]",
       "description": "EXPECTED (val: object) -> TypeIs[int] <: (object) -> TypeGuard[int]",
       "line": 169,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 169
     },
@@ -9854,7 +9854,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeGuard[int] <: (object) -> TypeIs[int]",
       "description": "EXPECTED (val: object) -> TypeGuard[int] <: (object) -> TypeIs[int]",
       "line": 170,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 170
     },
@@ -9864,7 +9864,7 @@
       "concise_description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[int]`, actually returns `bool`",
       "line": 183,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 183
     },
@@ -9874,7 +9874,7 @@
       "concise_description": "Function declared to return `TypeIs[bool]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[bool]`, actually returns `bool`",
       "line": 187,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 33,
       "stop_line": 187
     },
@@ -9884,7 +9884,7 @@
       "concise_description": "EXPECTED (val: object) -> TypeIs[bool] <: (object) -> TypeIs[int]",
       "description": "EXPECTED (val: object) -> TypeIs[bool] <: (object) -> TypeIs[int]",
       "line": 191,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 191
     },
@@ -9894,7 +9894,7 @@
       "concise_description": "Function declared to return `TypeIs[str]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[str]`, actually returns `bool`",
       "line": 196,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 196
     },
@@ -9904,7 +9904,7 @@
       "concise_description": "Function declared to return `TypeIs[list[int]]`, actually returns `bool`",
       "description": "Function declared to return `TypeIs[list[int]]`, actually returns `bool`",
       "line": 200,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 46,
       "stop_line": 200
     }
@@ -9948,7 +9948,7 @@
       "concise_description": "EXPECTED type[ConcreteA] <: ProtoA1",
       "description": "EXPECTED type[ConcreteA] <: ProtoA1",
       "line": 58,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 58
     },
@@ -9958,7 +9958,7 @@
       "concise_description": "EXPECTED type[ConcreteB] <: ProtoB1",
       "description": "EXPECTED type[ConcreteB] <: ProtoB1",
       "line": 74,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 74
     }
@@ -9970,7 +9970,7 @@
       "concise_description": "EXPECTED list[int] <: Iterable[SupportsClose]",
       "description": "EXPECTED list[int] <: Iterable[SupportsClose]",
       "line": 30,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 14,
       "stop_line": 30
     },
@@ -9990,7 +9990,7 @@
       "concise_description": "EXPECTED Concrete2_Bad1 <: Template2",
       "description": "EXPECTED Concrete2_Bad1 <: Template2",
       "line": 114,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 114
     },
@@ -10000,7 +10000,7 @@
       "concise_description": "EXPECTED Concrete2_Bad2 <: Template2",
       "description": "EXPECTED Concrete2_Bad2 <: Template2",
       "line": 115,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 115
     },
@@ -10010,7 +10010,7 @@
       "concise_description": "EXPECTED Concrete2_Bad3 <: Template2",
       "description": "EXPECTED Concrete2_Bad3 <: Template2",
       "line": 116,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 116
     },
@@ -10020,7 +10020,7 @@
       "concise_description": "EXPECTED Concrete3_Bad1 <: Template3",
       "description": "EXPECTED Concrete3_Bad1 <: Template3",
       "line": 156,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 156
     },
@@ -10030,7 +10030,7 @@
       "concise_description": "EXPECTED Concrete3_Bad3 <: Template3",
       "description": "EXPECTED Concrete3_Bad3 <: Template3",
       "line": 158,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 158
     },
@@ -10040,7 +10040,7 @@
       "concise_description": "EXPECTED Concrete3_Bad4 <: Template3",
       "description": "EXPECTED Concrete3_Bad4 <: Template3",
       "line": 159,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 159
     },
@@ -10050,7 +10050,7 @@
       "concise_description": "EXPECTED Concrete3_Bad5 <: Template3",
       "description": "EXPECTED Concrete3_Bad5 <: Template3",
       "line": 160,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 160
     },
@@ -10060,7 +10060,7 @@
       "concise_description": "EXPECTED Concrete4_Bad1 <: Template4",
       "description": "EXPECTED Concrete4_Bad1 <: Template4",
       "line": 218,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 218
     },
@@ -10070,7 +10070,7 @@
       "concise_description": "EXPECTED Concrete4_Bad2 <: Template4",
       "description": "EXPECTED Concrete4_Bad2 <: Template4",
       "line": 219,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 219
     },
@@ -10080,7 +10080,7 @@
       "concise_description": "EXPECTED Concrete5_Good2 <: Template5",
       "description": "EXPECTED Concrete5_Good2 <: Template5",
       "line": 281,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 40,
       "stop_line": 281
     },
@@ -10090,7 +10090,7 @@
       "concise_description": "EXPECTED Concrete5_Bad1 <: Template5",
       "description": "EXPECTED Concrete5_Bad1 <: Template5",
       "line": 285,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 285
     },
@@ -10100,7 +10100,7 @@
       "concise_description": "EXPECTED Concrete5_Bad2 <: Template5",
       "description": "EXPECTED Concrete5_Bad2 <: Template5",
       "line": 286,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 286
     },
@@ -10110,7 +10110,7 @@
       "concise_description": "EXPECTED Concrete5_Bad3 <: Template5",
       "description": "EXPECTED Concrete5_Bad3 <: Template5",
       "line": 287,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 287
     },
@@ -10120,7 +10120,7 @@
       "concise_description": "EXPECTED Concrete5_Bad4 <: Template5",
       "description": "EXPECTED Concrete5_Bad4 <: Template5",
       "line": 288,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 288
     },
@@ -10130,7 +10130,7 @@
       "concise_description": "EXPECTED Concrete5_Bad5 <: Template5",
       "description": "EXPECTED Concrete5_Bad5 <: Template5",
       "line": 289,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 289
     },
@@ -10140,7 +10140,7 @@
       "concise_description": "EXPECTED Concrete6_Bad1 <: Template6",
       "description": "EXPECTED Concrete6_Bad1 <: Template6",
       "line": 339,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 339
     }
@@ -10174,7 +10174,7 @@
       "concise_description": "EXPECTED Concrete1 <: Proto1[int, str]",
       "description": "EXPECTED Concrete1 <: Proto1[int, str]",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 40
     },
@@ -10194,7 +10194,7 @@
       "concise_description": "EXPECTED Box[float] <: Box[int]",
       "description": "EXPECTED Box[float] <: Box[int]",
       "line": 56,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 56
     },
@@ -10204,7 +10204,7 @@
       "concise_description": "EXPECTED Sender[int] <: Sender[float]",
       "description": "EXPECTED Sender[int] <: Sender[float]",
       "line": 66,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 66
     },
@@ -10214,7 +10214,7 @@
       "concise_description": "EXPECTED AttrProto[int] <: AttrProto[float]",
       "description": "EXPECTED AttrProto[int] <: AttrProto[float]",
       "line": 74,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 74
     },
@@ -10224,7 +10224,7 @@
       "concise_description": "EXPECTED AttrProto[float] <: AttrProto[int]",
       "description": "EXPECTED AttrProto[float] <: AttrProto[int]",
       "line": 75,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 75
     },
@@ -10244,7 +10244,7 @@
       "concise_description": "EXPECTED ConcreteHasProperty1 <: HasPropertyProto",
       "description": "EXPECTED ConcreteHasProperty1 <: HasPropertyProto",
       "line": 144,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 144
     },
@@ -10254,7 +10254,7 @@
       "concise_description": "EXPECTED ConcreteHasProperty2 <: HasPropertyProto",
       "description": "EXPECTED ConcreteHasProperty2 <: HasPropertyProto",
       "line": 145,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 145
     },
@@ -10264,7 +10264,7 @@
       "concise_description": "EXPECTED ConcreteHasProperty3 <: HasPropertyProto",
       "description": "EXPECTED ConcreteHasProperty3 <: HasPropertyProto",
       "line": 146,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 146
     },
@@ -10274,7 +10274,7 @@
       "concise_description": "EXPECTED ConcreteHasProperty4 <: HasPropertyProto",
       "description": "EXPECTED ConcreteHasProperty4 <: HasPropertyProto",
       "line": 147,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 147
     }
@@ -10286,7 +10286,7 @@
       "concise_description": "EXPECTED SCConcrete2 <: SizedAndClosable1",
       "description": "EXPECTED SCConcrete2 <: SizedAndClosable1",
       "line": 52,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 52
     },
@@ -10296,7 +10296,7 @@
       "concise_description": "EXPECTED SCConcrete2 <: SizedAndClosable2",
       "description": "EXPECTED SCConcrete2 <: SizedAndClosable2",
       "line": 53,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 53
     },
@@ -10306,7 +10306,7 @@
       "concise_description": "EXPECTED SCConcrete2 <: SizedAndClosable3",
       "description": "EXPECTED SCConcrete2 <: SizedAndClosable3",
       "line": 54,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 54
     },
@@ -10326,7 +10326,7 @@
       "concise_description": "EXPECTED SCConcrete1 <: SizedAndClosable4",
       "description": "EXPECTED SCConcrete1 <: SizedAndClosable4",
       "line": 83,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 83
     }
@@ -10338,7 +10338,7 @@
       "concise_description": "EXPECTED Module[_protocols_modules1] <: Options1",
       "description": "EXPECTED Module[_protocols_modules1] <: Options1",
       "line": 25,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 25
     },
@@ -10348,7 +10348,7 @@
       "concise_description": "EXPECTED Module[_protocols_modules1] <: Options2",
       "description": "EXPECTED Module[_protocols_modules1] <: Options2",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 26
     },
@@ -10358,7 +10358,7 @@
       "concise_description": "EXPECTED Module[_protocols_modules2] <: Reporter2",
       "description": "EXPECTED Module[_protocols_modules2] <: Reporter2",
       "line": 48,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 48
     },
@@ -10368,7 +10368,7 @@
       "concise_description": "EXPECTED Module[_protocols_modules2] <: Reporter3",
       "description": "EXPECTED Module[_protocols_modules2] <: Reporter3",
       "line": 49,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 49
     }
@@ -10380,7 +10380,7 @@
       "concise_description": "EXPECTED ImplB <: ProtoA[Never, @_]",
       "description": "EXPECTED ImplB <: ProtoA[Never, @_]",
       "line": 80,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 80
     },
@@ -10403,7 +10403,7 @@
       "concise_description": "EXPECTED One <: Copyable",
       "description": "EXPECTED One <: Copyable",
       "line": 32,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 32
     },
@@ -10413,7 +10413,7 @@
       "concise_description": "EXPECTED Other <: Copyable",
       "description": "EXPECTED Other <: Copyable",
       "line": 33,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 33
     },
@@ -10423,7 +10423,7 @@
       "concise_description": "EXPECTED C2[str] <: P2Parent[str]",
       "description": "EXPECTED C2[str] <: P2Parent[str]",
       "line": 72,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 72
     },
@@ -10433,7 +10433,7 @@
       "concise_description": "EXPECTED C2[str] <: P2Child[str]",
       "description": "EXPECTED C2[str] <: P2Child[str]",
       "line": 73,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 73
     }
@@ -10445,7 +10445,7 @@
       "concise_description": "EXPECTED Proto2 <: Concrete2",
       "description": "EXPECTED Proto2 <: Concrete2",
       "line": 38,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 23,
       "stop_line": 38
     },
@@ -10455,7 +10455,7 @@
       "concise_description": "EXPECTED Proto2 <: Proto3",
       "description": "EXPECTED Proto2 <: Proto3",
       "line": 55,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 20,
       "stop_line": 55
     },
@@ -10465,7 +10465,7 @@
       "concise_description": "EXPECTED Proto5[int] <: Proto4[int, float]",
       "description": "EXPECTED Proto5[int] <: Proto4[int, float]",
       "line": 79,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 36,
       "stop_line": 79
     },
@@ -10475,7 +10475,7 @@
       "concise_description": "EXPECTED Proto4[int, int] <: Proto5[float]",
       "description": "EXPECTED Proto4[int, int] <: Proto5[float]",
       "line": 80,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 80
     },
@@ -10485,7 +10485,7 @@
       "concise_description": "EXPECTED Proto6[float, float] <: Proto7[int, float]",
       "description": "EXPECTED Proto6[float, float] <: Proto7[int, float]",
       "line": 102,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 32,
       "stop_line": 102
     },
@@ -10495,7 +10495,7 @@
       "concise_description": "EXPECTED Proto6[float, float] <: Proto7[float, object]",
       "description": "EXPECTED Proto6[float, float] <: Proto7[float, object]",
       "line": 103,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 103
     }
@@ -10812,7 +10812,7 @@
       "concise_description": "EXPECTED (self: Base2) -> None <: TypeVar[_T]",
       "description": "EXPECTED (self: Base2) -> None <: TypeVar[_T]",
       "line": 26,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 26
     },
@@ -10822,7 +10822,7 @@
       "concise_description": "EXPECTED classmethod[(cls: type[Base2]) -> None] <: TypeVar[_T]",
       "description": "EXPECTED classmethod[(cls: type[Base2]) -> None] <: TypeVar[_T]",
       "line": 30,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 30
     },
@@ -10832,7 +10832,7 @@
       "concise_description": "EXPECTED staticmethod[() -> None] <: TypeVar[_T]",
       "description": "EXPECTED staticmethod[() -> None] <: TypeVar[_T]",
       "line": 35,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 35
     },
@@ -10842,7 +10842,7 @@
       "concise_description": "EXPECTED (self: Base2, x: int | str) -> int | str <: TypeVar[_T]",
       "description": "EXPECTED (self: Base2, x: int | str) -> int | str <: TypeVar[_T]",
       "line": 50,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 50
     },
@@ -10892,7 +10892,7 @@
       "concise_description": "EXPECTED (self: Derived3, x: str) -> str <: TypeVar[_T]",
       "description": "EXPECTED (self: Derived3, x: str) -> str <: TypeVar[_T]",
       "line": 85,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 85
     },
@@ -10912,7 +10912,7 @@
       "concise_description": "EXPECTED (self: Base5_2, v: int) -> None <: TypeVar[_T]",
       "description": "EXPECTED (self: Base5_2, v: int) -> None <: TypeVar[_T]",
       "line": 111,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 111
     },
@@ -10932,7 +10932,7 @@
       "concise_description": "EXPECTED () -> int <: TypeVar[_T]",
       "description": "EXPECTED () -> int <: TypeVar[_T]",
       "line": 125,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 7,
       "stop_line": 125
     }
@@ -10966,7 +10966,7 @@
       "concise_description": "Function declared to return `NoReturn` but is missing an explicit `return`",
       "description": "Function declared to return `NoReturn` but is missing an explicit `return`",
       "line": 19,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 30,
       "stop_line": 19
     },
@@ -10976,7 +10976,7 @@
       "concise_description": "Function declared to return `int`, actually returns `Literal['whatever works']`",
       "description": "Function declared to return `int`, actually returns `Literal['whatever works']`",
       "line": 32,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 32
     },
@@ -10986,7 +10986,7 @@
       "concise_description": "EXPECTED list[Never] <: list[int]",
       "description": "EXPECTED list[Never] <: list[int]",
       "line": 86,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 86
     },
@@ -10996,7 +10996,7 @@
       "concise_description": "Function declared to return `ClassC[?_TypeVar]`, actually returns `ClassC[Never]`",
       "description": "Function declared to return `ClassC[?_TypeVar]`, actually returns `ClassC[Never]`",
       "line": 105,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 105
     }
@@ -11008,7 +11008,7 @@
       "concise_description": "EXPECTED type <: None",
       "description": "EXPECTED type <: None",
       "line": 21,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 21
     },
@@ -11018,7 +11018,7 @@
       "concise_description": "EXPECTED None <: Iterable[Error]",
       "description": "EXPECTED None <: Iterable[Error]",
       "line": 27,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 23,
       "stop_line": 27
     },
@@ -11028,7 +11028,7 @@
       "concise_description": "EXPECTED type[object] <: type[None]",
       "description": "EXPECTED type[object] <: type[None]",
       "line": 39,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 39
     },
@@ -11038,7 +11038,7 @@
       "concise_description": "EXPECTED type <: type[None]",
       "description": "EXPECTED type <: type[None]",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 40
     },
@@ -11048,7 +11048,7 @@
       "concise_description": "EXPECTED None <: type[None]",
       "description": "EXPECTED None <: type[None]",
       "line": 41,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 41
     }
@@ -11092,7 +11092,7 @@
       "concise_description": "EXPECTED type[TeamUser] <: type[BasicUser | ProUser]",
       "description": "EXPECTED type[TeamUser] <: type[BasicUser | ProUser]",
       "line": 56,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 56
     },
@@ -11322,7 +11322,7 @@
       "concise_description": "EXPECTED type <: (...) -> Any",
       "description": "EXPECTED type <: (...) -> Any",
       "line": 165,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 165
     },
@@ -11332,7 +11332,7 @@
       "concise_description": "EXPECTED type <: (int, int) -> int",
       "description": "EXPECTED type <: (int, int) -> int",
       "line": 166,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 166
     },
@@ -11342,7 +11342,7 @@
       "concise_description": "EXPECTED type <: type[int]",
       "description": "EXPECTED type <: type[int]",
       "line": 169,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 169
     },
@@ -11352,7 +11352,7 @@
       "concise_description": "EXPECTED type <: type[Any]",
       "description": "EXPECTED type <: type[Any]",
       "line": 170,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 170
     },
@@ -11362,7 +11362,7 @@
       "concise_description": "Function declared to return `type[?_TypeVar]`, actually returns `type`",
       "description": "Function declared to return `type[?_TypeVar]`, actually returns `type`",
       "line": 175,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 175
     }
@@ -11374,7 +11374,7 @@
       "concise_description": "EXPECTED tuple[float, complex] <: tuple[int, int]",
       "description": "EXPECTED tuple[float, complex] <: tuple[int, int]",
       "line": 15,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 29,
       "stop_line": 15
     },
@@ -11384,7 +11384,7 @@
       "concise_description": "EXPECTED tuple[int, ...] <: tuple[int, *tuple[int, ...]]",
       "description": "EXPECTED tuple[int, ...] <: tuple[int, *tuple[int, ...]]",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 29
     },
@@ -11394,7 +11394,7 @@
       "concise_description": "EXPECTED tuple[int, *tuple[int, ...]] <: tuple[int]",
       "description": "EXPECTED tuple[int, *tuple[int, ...]] <: tuple[int]",
       "line": 32,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 32
     },
@@ -11404,7 +11404,7 @@
       "concise_description": "EXPECTED tuple[int, ...] <: tuple[int]",
       "description": "EXPECTED tuple[int, ...] <: tuple[int]",
       "line": 33,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 33
     },
@@ -11414,7 +11414,7 @@
       "concise_description": "EXPECTED tuple[int, ...] <: tuple[int]",
       "description": "EXPECTED tuple[int, ...] <: tuple[int]",
       "line": 43,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 43
     },
@@ -11424,7 +11424,7 @@
       "concise_description": "EXPECTED tuple[Any] <: tuple[int, int]",
       "description": "EXPECTED tuple[Any] <: tuple[int, int]",
       "line": 59,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 45,
       "stop_line": 59
     },
@@ -11434,7 +11434,7 @@
       "concise_description": "EXPECTED tuple[int, ...] <: tuple[int, int]",
       "description": "EXPECTED tuple[int, ...] <: tuple[int, int]",
       "line": 62,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 62
     },
@@ -11574,7 +11574,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, str]",
       "description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, str]",
       "line": 144,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 144
     },
@@ -11584,7 +11584,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *tuple[str, ...]]",
       "description": "EXPECTED tuple[Literal[1], Literal[1], Literal['']] <: tuple[int, *tuple[str, ...]]",
       "line": 149,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 149
     },
@@ -11594,7 +11594,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[int, *tuple[str, ...]]",
       "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[int, *tuple[str, ...]]",
       "line": 150,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 150
     },
@@ -11604,7 +11604,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, *tuple[str, ...], int]",
       "description": "EXPECTED tuple[Literal[1], Literal[''], Literal['']] <: tuple[int, *tuple[str, ...], int]",
       "line": 156,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 17,
       "stop_line": 156
     },
@@ -11614,7 +11614,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, *tuple[str, ...], int]",
       "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[''], float] <: tuple[int, *tuple[str, ...], int]",
       "line": 157,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 22,
       "stop_line": 157
     },
@@ -11624,7 +11624,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[*tuple[str, ...], int]",
       "description": "EXPECTED tuple[Literal[1], Literal[''], Literal[1]] <: tuple[*tuple[str, ...], int]",
       "line": 162,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 162
     },
@@ -11634,7 +11634,7 @@
       "concise_description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[*tuple[str, ...], int]",
       "description": "EXPECTED tuple[Literal[''], Literal[''], float] <: tuple[*tuple[str, ...], int]",
       "line": 163,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 19,
       "stop_line": 163
     },
@@ -11644,7 +11644,7 @@
       "concise_description": "EXPECTED tuple[str, str] <: tuple[str, str, int]",
       "description": "EXPECTED tuple[str, str] <: tuple[str, str, int]",
       "line": 168,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 41,
       "stop_line": 168
     },
@@ -11654,7 +11654,7 @@
       "concise_description": "EXPECTED tuple[str, str] <: tuple[str, str, str, *tuple[str, ...]]",
       "description": "EXPECTED tuple[str, str] <: tuple[str, str, str, *tuple[str, ...]]",
       "line": 171,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 51,
       "stop_line": 171
     },
@@ -11664,7 +11664,7 @@
       "concise_description": "EXPECTED tuple[str, str] <: tuple[*tuple[str, ...], str, str, str]",
       "description": "EXPECTED tuple[str, str] <: tuple[*tuple[str, ...], str, str, str]",
       "line": 175,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 51,
       "stop_line": 175
     }
@@ -11676,7 +11676,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[2]] <: tuple[int]",
       "description": "EXPECTED tuple[Literal[1], Literal[2]] <: tuple[int]",
       "line": 12,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 12
     },
@@ -11686,7 +11686,7 @@
       "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[int, int]",
       "description": "EXPECTED tuple[Literal[1]] <: tuple[int, int]",
       "line": 14,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 10,
       "stop_line": 14
     },
@@ -11696,7 +11696,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal['']] <: tuple[int, int]",
       "description": "EXPECTED tuple[Literal[1], Literal['']] <: tuple[int, int]",
       "line": 15,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 13,
       "stop_line": 15
     },
@@ -11706,7 +11706,7 @@
       "concise_description": "EXPECTED tuple[Literal[1]] <: tuple[()]",
       "description": "EXPECTED tuple[Literal[1]] <: tuple[()]",
       "line": 25,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 25
     },
@@ -11716,7 +11716,7 @@
       "concise_description": "EXPECTED tuple[Literal[1], Literal[2], Literal[3], Literal['']] <: tuple[int, ...]",
       "description": "EXPECTED tuple[Literal[1], Literal[2], Literal[3], Literal['']] <: tuple[int, ...]",
       "line": 36,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 20,
       "stop_line": 36
     },
@@ -12067,7 +12067,7 @@
       "concise_description": "EXPECTED float <: int",
       "description": "EXPECTED float <: int",
       "line": 29,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 48,
       "stop_line": 29
     },
@@ -12221,7 +12221,7 @@
       "concise_description": "EXPECTED TypedDict[A1] <: TypedDict[B1]",
       "description": "EXPECTED TypedDict[A1] <: TypedDict[B1]",
       "line": 37,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 37
     },
@@ -12231,7 +12231,7 @@
       "concise_description": "EXPECTED TypedDict[A1] <: TypedDict[C1]",
       "description": "EXPECTED TypedDict[A1] <: TypedDict[C1]",
       "line": 40,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 40
     },
@@ -12241,7 +12241,7 @@
       "concise_description": "EXPECTED TypedDict[C2] <: TypedDict[A2]",
       "description": "EXPECTED TypedDict[C2] <: TypedDict[A2]",
       "line": 79,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 79
     },
@@ -12251,7 +12251,7 @@
       "concise_description": "EXPECTED TypedDict[C2] <: TypedDict[B2]",
       "description": "EXPECTED TypedDict[C2] <: TypedDict[B2]",
       "line": 82,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 82
     },
@@ -12261,7 +12261,7 @@
       "concise_description": "EXPECTED TypedDict[A2] <: TypedDict[C2]",
       "description": "EXPECTED TypedDict[A2] <: TypedDict[C2]",
       "line": 84,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 84
     },
@@ -12271,7 +12271,7 @@
       "concise_description": "EXPECTED TypedDict[B2] <: TypedDict[C2]",
       "description": "EXPECTED TypedDict[B2] <: TypedDict[C2]",
       "line": 85,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 15,
       "stop_line": 85
     }
@@ -12343,7 +12343,7 @@
       "concise_description": "EXPECTED Literal[3] <: str",
       "description": "EXPECTED Literal[3] <: str",
       "line": 83,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 83
     },
@@ -12431,7 +12431,7 @@
       "concise_description": "EXPECTED TypedDict[B2] <: TypedDict[A2]",
       "description": "EXPECTED TypedDict[B2] <: TypedDict[A2]",
       "line": 38,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 12,
       "stop_line": 38
     },
@@ -12441,7 +12441,7 @@
       "concise_description": "EXPECTED TypedDict[A3] <: TypedDict[B3]",
       "description": "EXPECTED TypedDict[A3] <: TypedDict[B3]",
       "line": 65,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 8,
       "stop_line": 65
     },
@@ -12461,7 +12461,7 @@
       "concise_description": "EXPECTED TypedDict[B3] <: dict[str, int]",
       "description": "EXPECTED TypedDict[B3] <: dict[str, int]",
       "line": 76,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 76
     },
@@ -12471,7 +12471,7 @@
       "concise_description": "EXPECTED TypedDict[B3] <: dict[str, object]",
       "description": "EXPECTED TypedDict[B3] <: dict[str, object]",
       "line": 77,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 77
     },
@@ -12481,7 +12481,7 @@
       "concise_description": "EXPECTED TypedDict[B3] <: dict[Any, Any]",
       "description": "EXPECTED TypedDict[B3] <: dict[Any, Any]",
       "line": 78,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 24,
       "stop_line": 78
     },
@@ -12491,7 +12491,7 @@
       "concise_description": "EXPECTED TypedDict[B3] <: Mapping[str, int]",
       "description": "EXPECTED TypedDict[B3] <: Mapping[str, int]",
       "line": 82,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 82
     },
@@ -12501,7 +12501,7 @@
       "concise_description": "EXPECTED object | @_ <: str",
       "description": "EXPECTED object | @_ <: str",
       "line": 91,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 91
     },
@@ -12511,7 +12511,7 @@
       "concise_description": "EXPECTED object | @_ <: int",
       "description": "EXPECTED object | @_ <: int",
       "line": 92,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 33,
       "stop_line": 92
     },
@@ -12521,7 +12521,7 @@
       "concise_description": "EXPECTED object | None <: str | None",
       "description": "EXPECTED object | None <: str | None",
       "line": 97,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 97
     },
@@ -12531,7 +12531,7 @@
       "concise_description": "EXPECTED object | None <: str",
       "description": "EXPECTED object | None <: str",
       "line": 101,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 31,
       "stop_line": 101
     },
@@ -12541,7 +12541,7 @@
       "concise_description": "EXPECTED object | @_ <: int",
       "description": "EXPECTED object | @_ <: int",
       "line": 103,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 33,
       "stop_line": 103
     },
@@ -12551,7 +12551,7 @@
       "concise_description": "EXPECTED object | @_ <: int | str",
       "description": "EXPECTED object | @_ <: int | str",
       "line": 105,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 41,
       "stop_line": 105
     },
@@ -12561,7 +12561,7 @@
       "concise_description": "EXPECTED object | @_ <: int",
       "description": "EXPECTED object | @_ <: int",
       "line": 107,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 35,
       "stop_line": 107
     },
@@ -12571,7 +12571,7 @@
       "concise_description": "EXPECTED Literal[1] <: str",
       "description": "EXPECTED Literal[1] <: str",
       "line": 126,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 57,
       "stop_line": 126
     },
@@ -12581,7 +12581,7 @@
       "concise_description": "EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]",
       "description": "EXPECTED dict[str, int] <: Literal[''] | TypedDict[Inner3]",
       "line": 151,
-      "name": "unknown",
+      "name": "type-mismatch",
       "stop_column": 37,
       "stop_line": 151
     }
