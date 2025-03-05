@@ -303,9 +303,10 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     }
 
     fn get_call_attr(&mut self, protocol: &ClassType) -> Option<Type> {
-        self.type_order
-            .try_lookup_attr(protocol.clone().to_type(), &dunder::CALL)
-            .and_then(|attr| self.type_order.resolve_as_instance_method(attr))
+        let attr = self
+            .type_order
+            .try_lookup_attr(protocol.clone().to_type(), &dunder::CALL);
+        attr.and_then(|attr| self.type_order.resolve_as_instance_method(attr))
     }
 
     pub fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
@@ -321,13 +322,10 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 // Protocols can't be instantiated
                 continue;
             }
-            if let Some(got) = to.try_lookup_attr(got.clone(), &name)
-                && let Some(want) = to.try_lookup_attr(protocol.clone().to_type(), &name)
-                && to.is_attr_subset(&got, &want, &mut |got, want| self.is_subset_eq(got, want))
-            {
-                continue;
-            } else if matches!(got, Type::Callable(_, _))
-                && name == dunder::CALL
+            if matches!(
+                got,
+                Type::Callable(_, _) | Type::BoundMethod(_) | Type::Overload(_)
+            ) && name == dunder::CALL
                 && let Some(want) = self.get_call_attr(&protocol)
             {
                 if let Type::BoundMethod(box ref method) = want
@@ -339,6 +337,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 } else if !self.is_subset_eq(&got, &want) {
                     return false;
                 }
+            } else if let Some(got) = to.try_lookup_attr(got.clone(), &name)
+                && let Some(want) = to.try_lookup_attr(protocol.clone().to_type(), &name)
+                && to.is_attr_subset(&got, &want, &mut |got, want| self.is_subset_eq(got, want))
+            {
+                continue;
             } else {
                 return false;
             }

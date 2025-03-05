@@ -1949,6 +1949,26 @@
     {
       "code": -2,
       "column": 19,
+      "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol3",
+      "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol3",
+      "line": 101,
+      "name": "type-mismatch",
+      "stop_column": 24,
+      "stop_line": 101
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol4",
+      "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol4",
+      "line": 102,
+      "name": "type-mismatch",
+      "stop_column": 24,
+      "stop_line": 102
+    },
+    {
+      "code": -2,
+      "column": 19,
       "concise_description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol5",
       "description": "EXPECTED (**Unpack[TypedDict[TD2]]) -> None <: TDProtocol5",
       "line": 103,
@@ -1958,6 +1978,76 @@
     }
   ],
   "callables_protocol.py": [
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*bytes, *, max_items: int | None) -> list[bytes] <: Proto1",
+      "description": "EXPECTED (*bytes, *, max_items: int | None) -> list[bytes] <: Proto1",
+      "line": 35,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*bytes) -> list[bytes] <: Proto1",
+      "description": "EXPECTED (*bytes) -> list[bytes] <: Proto1",
+      "line": 36,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*bytes, *, max_len: str | None) -> list[bytes] <: Proto1",
+      "description": "EXPECTED (*bytes, *, max_len: str | None) -> list[bytes] <: Proto1",
+      "line": 37,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*bytes) -> None <: Proto2",
+      "description": "EXPECTED (*bytes) -> None <: Proto2",
+      "line": 67,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 67
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*str, **str) -> None <: Proto2",
+      "description": "EXPECTED (*str, **str) -> None <: Proto2",
+      "line": 68,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 68
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (*bytes, **bytes) -> None <: Proto2",
+      "description": "EXPECTED (*bytes, **bytes) -> None <: Proto2",
+      "line": 69,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 69
+    },
+    {
+      "code": -2,
+      "column": 7,
+      "concise_description": "EXPECTED (**str) -> None <: Proto2",
+      "description": "EXPECTED (**str) -> None <: Proto2",
+      "line": 70,
+      "name": "type-mismatch",
+      "stop_column": 15,
+      "stop_line": 70
+    },
     {
       "code": -2,
       "column": 16,
@@ -2030,6 +2120,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "EXPECTED (*Any, *, kwarg0: Any) -> None <: Proto12",
+      "description": "EXPECTED (*Any, *, kwarg0: Any) -> None <: Proto12",
+      "line": 260,
+      "name": "type-mismatch",
+      "stop_column": 17,
+      "stop_line": 260
+    },
+    {
+      "code": -2,
       "column": 27,
       "concise_description": "EXPECTED (path: str) -> str <: Proto13_Default",
       "description": "EXPECTED (path: str) -> str <: Proto13_Default",
@@ -2037,6 +2137,16 @@
       "name": "type-mismatch",
       "stop_column": 42,
       "stop_line": 284
+    },
+    {
+      "code": -2,
+      "column": 27,
+      "concise_description": "EXPECTED (*, path: str) -> str <: Proto14_Default",
+      "description": "EXPECTED (*, path: str) -> str <: Proto14_Default",
+      "line": 311,
+      "name": "type-mismatch",
+      "stop_column": 42,
+      "stop_line": 311
     }
   ],
   "callables_subtyping.py": [
@@ -4705,16 +4815,6 @@
     }
   ],
   "dataclasses_usage.py": [
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto",
-      "description": "EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto",
-      "line": 35,
-      "name": "type-mismatch",
-      "stop_column": 41,
-      "stop_line": 35
-    },
     {
       "code": -2,
       "column": 6,

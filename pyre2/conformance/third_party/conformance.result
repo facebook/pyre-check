@@ -143,22 +143,10 @@
     "Line 188: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]"
   ],
   "callables_kwargs.py": [
-    "Line 101: Expected 1 errors",
-    "Line 102: Expected 1 errors",
     "Line 111: Expected 1 errors",
     "Line 122: Expected 1 errors"
   ],
-  "callables_protocol.py": [
-    "Line 35: Expected 1 errors",
-    "Line 36: Expected 1 errors",
-    "Line 37: Expected 1 errors",
-    "Line 67: Expected 1 errors",
-    "Line 68: Expected 1 errors",
-    "Line 69: Expected 1 errors",
-    "Line 70: Expected 1 errors",
-    "Line 260: Expected 1 errors",
-    "Line 311: Expected 1 errors"
-  ],
+  "callables_protocol.py": [],
   "callables_subtyping.py": [
     "Line 211: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
     "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]"
@@ -343,7 +331,6 @@
     "Lines 58, 61: Expected error (tag 'DC1')",
     "Lines 64, 67: Expected error (tag 'DC2')",
     "Lines 70, 73: Expected error (tag 'DC3')",
-    "Line 35: Unexpected errors ['EXPECTED BoundMethod[InventoryItem, (self: InventoryItem, name: str, unit_price: float, quantity_on_hand: int) -> None] <: InventoryItemInitProto']",
     "Line 72: Unexpected errors ['EXPECTED Literal[0] <: InitVar[int]']",
     "Line 106: Unexpected errors ['assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed']",
     "Line 205: Unexpected errors ['EXPECTED DC15 <: DataclassProto']"
