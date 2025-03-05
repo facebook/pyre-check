@@ -21,10 +21,7 @@ import {
   setGetDefFunction,
   setHoverFunctionForMonaco,
 } from './configured-monaco';
-import FlowJsServices from './flow-services';
-import flowLanguageConfiguration from './flow-configuration.json';
 
-const TRY_FLOW_LAST_CONTENT_STORAGE_KEY = 'TryPyre2LastContent';
 const DEFAULT_PYTHON_PROGRAM = `
 # Pyre is being run in gradual typing mode: https://pyre-check.org/docs/types-in-python/#gradual-typing
 # Use the \`# pyre-strict\` header to run in strict mode, which requires annotations.
@@ -52,12 +49,7 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   })
   .catch(e => console.log(e));
 
-export default component TryPyre2(
-  defaultFlowVersion: string,
-  flowVersions: $ReadOnlyArray<string>,
-  editorHeight: number,
-  codeSample: string,
-) {
+export default component TryPyre2(editorHeight: number, codeSample: string) {
   const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
   const [internalError, setInternalError] = useState('');
