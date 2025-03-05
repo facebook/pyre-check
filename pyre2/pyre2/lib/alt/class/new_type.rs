@@ -24,18 +24,15 @@ use crate::types::class::ClassType;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
-    fn get_new_type_field_params(&self, cls: &Class, base_class: ClassType) -> Param {
-        let required = Required::Required;
-        Param::Pos(
-            Name::new(Identifier::new("_x", cls.range())),
-            base_class.to_type(),
-            required,
-        )
-    }
-
     fn get_new_type_init(&self, cls: &Class, base: ClassType) -> ClassSynthesizedField {
-        let mut params = vec![cls.self_param()];
-        params.push(self.get_new_type_field_params(cls, base));
+        let params = vec![
+            cls.self_param(),
+            Param::Pos(
+                Name::new(Identifier::new("_x", cls.range())),
+                base.to_type(),
+                Required::Required,
+            ),
+        ];
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
             CallableKind::Def,
