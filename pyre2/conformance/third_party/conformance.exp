@@ -2388,7 +2388,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int, str]`",
       "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int, str]`",
       "line": 38,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 29,
       "stop_line": 38
     },
@@ -2428,7 +2428,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
       "line": 55,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 30,
       "stop_line": 55
     },
@@ -2438,7 +2438,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`",
       "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`",
       "line": 61,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 41,
       "stop_line": 61
     },
@@ -2458,7 +2458,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[str]`",
       "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[str]`",
       "line": 72,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 33,
       "stop_line": 72
     },
@@ -5655,7 +5655,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Generic[T]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Generic[T]`",
       "line": 29,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 24,
       "stop_line": 29
     },
@@ -6869,7 +6869,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Self[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Self[int]`",
       "line": 67,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 35,
       "stop_line": 67
     }
@@ -7361,7 +7361,7 @@
       "concise_description": "TODO: StmtNonlocal - Bindings::stmt",
       "description": "TODO: StmtNonlocal - Bindings::stmt",
       "line": 61,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 23,
       "stop_line": 61
     },
@@ -7371,7 +7371,7 @@
       "concise_description": "TODO: StmtGlobal - Bindings::stmt",
       "description": "TODO: StmtGlobal - Bindings::stmt",
       "line": 66,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 21,
       "stop_line": 66
     },
@@ -9510,7 +9510,7 @@
       "concise_description": "TODO: StmtDelete - Bindings::stmt",
       "description": "TODO: StmtDelete - Bindings::stmt",
       "line": 42,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 8,
       "stop_line": 42
     },
@@ -9520,7 +9520,7 @@
       "concise_description": "TODO: StmtDelete - Bindings::stmt",
       "description": "TODO: StmtDelete - Bindings::stmt",
       "line": 43,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 9,
       "stop_line": 43
     },
@@ -10628,7 +10628,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
       "line": 98,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 31,
       "stop_line": 98
     },
@@ -10638,7 +10638,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
       "line": 100,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 28,
       "stop_line": 100
     },
@@ -10648,7 +10648,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Required[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Required[int]`",
       "line": 110,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 31,
       "stop_line": 110
     },
@@ -10658,7 +10658,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `NotRequired[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `NotRequired[int]`",
       "line": 112,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 34,
       "stop_line": 112
     }
@@ -10670,7 +10670,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Final[str, int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Final[str, int]`",
       "line": 18,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 22,
       "stop_line": 18
     },
@@ -10710,7 +10710,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
       "line": 118,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 19,
       "stop_line": 118
     },
@@ -10790,7 +10790,7 @@
       "concise_description": "TODO: StmtGlobal - Bindings::stmt",
       "description": "TODO: StmtGlobal - Bindings::stmt",
       "line": 139,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 15,
       "stop_line": 139
     },
@@ -12117,7 +12117,7 @@
       "concise_description": "TODO: StmtDelete - Bindings::stmt",
       "description": "TODO: StmtDelete - Bindings::stmt",
       "line": 49,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 18,
       "stop_line": 49
     },
@@ -12147,7 +12147,7 @@
       "concise_description": "TODO: StmtDelete - Bindings::stmt",
       "description": "TODO: StmtDelete - Bindings::stmt",
       "line": 64,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 27,
       "stop_line": 64
     }
@@ -12199,7 +12199,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `NotRequired[ReadOnly[int]]`",
       "description": "TODO: Answers::apply_special_form cannot handle `NotRequired[ReadOnly[int]]`",
       "line": 56,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 47,
       "stop_line": 56
     },
@@ -12399,7 +12399,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Required[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Required[int]`",
       "line": 68,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 31,
       "stop_line": 68
     },
@@ -12409,7 +12409,7 @@
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`",
       "line": 70,
-      "name": "unknown",
+      "name": "unsupported",
       "stop_column": 46,
       "stop_line": 70
     },

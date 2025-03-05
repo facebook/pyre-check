@@ -169,13 +169,18 @@ impl ErrorCollector {
         let s = format!("{v:?}");
         if s == format!("{:?}", v.range()) {
             // The v is just a range, so don't add the constructor
-            self.add(v.range(), format!("TODO: {msg}"), ErrorKind::Unknown, None);
+            self.add(
+                v.range(),
+                format!("TODO: {msg}"),
+                ErrorKind::Unsupported,
+                None,
+            );
         } else {
             let prefix = s.split_once(' ').map_or(s.as_str(), |x| x.0);
             self.add(
                 v.range(),
                 format!("TODO: {prefix} - {msg}"),
-                ErrorKind::Unknown,
+                ErrorKind::Unsupported,
                 None,
             );
         }
@@ -212,31 +217,31 @@ mod tests {
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
-            ErrorKind::Unknown,
+            ErrorKind::InternalError,
             None,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
-            ErrorKind::Unknown,
+            ErrorKind::InternalError,
             None,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "a".to_owned(),
-            ErrorKind::Unknown,
+            ErrorKind::InternalError,
             None,
         );
         errors.add(
             TextRange::new(TextSize::new(2), TextSize::new(3)),
             "a".to_owned(),
-            ErrorKind::Unknown,
+            ErrorKind::InternalError,
             None,
         );
         errors.add(
             TextRange::new(TextSize::new(1), TextSize::new(3)),
             "b".to_owned(),
-            ErrorKind::Unknown,
+            ErrorKind::InternalError,
             None,
         );
         assert_eq!(errors.collect().map(|x| x.msg()), vec!["a", "b", "a"]);
