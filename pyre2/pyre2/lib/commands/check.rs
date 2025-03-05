@@ -44,7 +44,7 @@ use crate::state::state::State;
 use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
-use crate::util::globs::Globs;
+use crate::util::listing::FileList;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::VecExt;
 use crate::util::watcher::Watcher;
@@ -171,7 +171,7 @@ impl Args {
     pub fn run(
         self,
         watcher: Option<Box<dyn Watcher>>,
-        files_to_check: Globs,
+        files_to_check: impl FileList + Clone,
         config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
@@ -186,7 +186,7 @@ impl Args {
     fn run_watch(
         self,
         mut watcher: Box<dyn Watcher>,
-        files_to_check: Globs,
+        files_to_check: impl FileList + Clone,
         config_finder: &dyn Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
         for path in files_to_check.roots() {
@@ -210,7 +210,7 @@ impl Args {
 
     fn run_inner(
         self,
-        files_to_check: Globs,
+        files_to_check: impl FileList,
         // TODO: use this to calculate the config for each checked file
         config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
@@ -218,7 +218,7 @@ impl Args {
         let args = self;
         let include = args.include;
 
-        let expanded_file_list = files_to_check.resolve()?;
+        let expanded_file_list = files_to_check.files()?;
         if expanded_file_list.is_empty() {
             return Ok(CommandExitStatus::Success);
         }

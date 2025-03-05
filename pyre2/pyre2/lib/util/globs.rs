@@ -13,6 +13,7 @@ use anyhow::Context;
 use starlark_map::small_set::SmallSet;
 
 use crate::util::fs_anyhow;
+use crate::util::listing::FileList;
 use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone)]
@@ -23,37 +24,7 @@ impl Globs {
         Self(patterns)
     }
 
-    /// Given a glob pattern, return the directories that can contain files that match the pattern.
-    pub fn roots(&self) -> Vec<PathBuf> {
-        self.0.map(|pattern| {
-            let mut path = PathBuf::new();
-            for component in pattern.split(path::is_separator) {
-                if component.contains('*') {
-                    break;
-                }
-                path.push(component);
-            }
-            if path.extension().is_some() {
-                path.pop();
-            }
-            path
-        })
-    }
-
-    pub fn resolve(&self) -> anyhow::Result<Vec<PathBuf>> {
-        let mut result = SmallSet::new();
-        for pattern in &self.0 {
-            let res = Self::resolve_pattern(pattern)
-                .with_context(|| format!("When resolving pattern `{pattern}`"))?;
-            if res.is_empty() {
-                return Err(anyhow::anyhow!("No files matched pattern `{}`", pattern));
-            }
-            result.extend(res);
-        }
-        Ok(result.into_iter().collect())
-    }
-
-    pub fn resolve_dir(path: &Path, results: &mut Vec<PathBuf>) -> anyhow::Result<()> {
+    fn resolve_dir(path: &Path, results: &mut Vec<PathBuf>) -> anyhow::Result<()> {
         for entry in fs_anyhow::read_dir(path)? {
             let entry = entry
                 .with_context(|| format!("When iterating over directory `{}`", path.display()))?;
@@ -81,6 +52,38 @@ impl Globs {
             }
         }
         Ok(result)
+    }
+}
+
+impl FileList for Globs {
+    /// Given a glob pattern, return the directories that can contain files that match the pattern.
+    fn roots(&self) -> Vec<PathBuf> {
+        self.0.map(|pattern| {
+            let mut path = PathBuf::new();
+            for component in pattern.split(path::is_separator) {
+                if component.contains('*') {
+                    break;
+                }
+                path.push(component);
+            }
+            if path.extension().is_some() {
+                path.pop();
+            }
+            path
+        })
+    }
+
+    fn files(&self) -> anyhow::Result<Vec<PathBuf>> {
+        let mut result = SmallSet::new();
+        for pattern in &self.0 {
+            let res = Self::resolve_pattern(pattern)
+                .with_context(|| format!("When resolving pattern `{pattern}`"))?;
+            if res.is_empty() {
+                return Err(anyhow::anyhow!("No files matched pattern `{}`", pattern));
+            }
+            result.extend(res);
+        }
+        Ok(result.into_iter().collect())
     }
 }
 
