@@ -114,7 +114,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         match &check {
             Some((want, tcc, check_errors)) if !want.is_any() => {
-                let got = self.expr_infer_with_hint(x, Some(want), errors);
+                let got = self.expr_infer_with_hint(x, Some((want, tcc)), errors);
                 self.check_type(want, &got, x.range(), check_errors, tcc)
             }
             _ => self.expr_infer(x, errors),
@@ -622,7 +622,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[arg], &[], range, errors)
     }
 
-    fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
+    fn expr_infer_with_hint(
+        &self,
+        x: &Expr,
+        hint: Option<(&Type, &TypeCheckContext)>,
+        errors: &ErrorCollector,
+    ) -> Type {
         let ty = match x {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
             Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint, errors),
@@ -671,7 +676,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 let return_hint = hint
                     .iter()
-                    .flat_map(|ty| self.decompose_lambda(ty, &param_vars))
+                    .flat_map(|(ty, _)| self.decompose_lambda(ty, &param_vars))
                     .next();
                 let params = param_vars.into_map(|(name, var)| {
                     Param::Pos(
@@ -681,7 +686,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     )
                 });
                 let params = Params::List(ParamList::new(params));
-                let ret = self.expr_infer_with_hint(&lambda.body, return_hint.as_ref(), errors);
+                let tcc = TypeCheckContext::unknown();
+                let ret = self.expr_infer_with_hint(
+                    &lambda.body,
+                    return_hint.as_ref().map(|t| (t, &tcc)),
+                    errors,
+                );
                 Type::Callable(Box::new(Callable { params, ret }), CallableKind::Anon)
             }
             Expr::If(x) => {
@@ -698,12 +708,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::Tuple(x) => {
                 // These hints could be more precise
                 let hint_ts = match hint {
-                    Some(Type::Tuple(Tuple::Concrete(elts))) => elts,
-                    Some(Type::Tuple(Tuple::Unpacked(box (prefix, _, _)))) => prefix,
+                    Some((Type::Tuple(Tuple::Concrete(elts)), _)) => elts,
+                    Some((Type::Tuple(Tuple::Unpacked(box (prefix, _, _))), _)) => prefix,
                     _ => &Vec::new(),
                 };
                 let default_hint = match hint {
-                    Some(Type::Tuple(Tuple::Unbounded(box elt))) => Some(elt),
+                    Some((Type::Tuple(Tuple::Unbounded(box elt)), _)) => Some(elt),
                     _ => None,
                 };
                 let mut prefix = Vec::new();
@@ -754,10 +764,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                         _ => {
+                            let tcc = TypeCheckContext::unknown();
                             let ty = self.expr_infer_with_hint(
                                 elt,
                                 if unbounded.is_empty() {
-                                    hint_ts.get(hint_ts_idx).or(default_hint)
+                                    hint_ts.get(hint_ts_idx).or(default_hint).map(|t| (t, &tcc))
                                 } else {
                                     None
                                 },
@@ -794,7 +805,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::List(x) => {
-                let elt_hint = hint.and_then(|ty| self.decompose_list(ty));
+                let elt_hint = hint.and_then(|(ty, _)| self.decompose_list(ty));
                 if x.is_empty() {
                     let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
                     self.stdlib.list(elem_ty).to_type()
@@ -815,14 +826,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 )
                             }
                         }
-                        _ => self.expr_infer_with_hint_promote(x, elt_hint.as_ref(), errors),
+                        _ => {
+                            let tcc = TypeCheckContext::unknown();
+                            self.expr_infer_with_hint_promote(
+                                x,
+                                elt_hint.as_ref().map(|t| (t, &tcc)),
+                                errors,
+                            )
+                        }
                     });
                     self.stdlib.list(self.unions(elem_tys)).to_type()
                 }
             }
             Expr::Dict(x) => {
                 let flattened_items = Ast::flatten_dict_items(&x.items);
-                if let Some(hint @ Type::TypedDict(box typed_dict)) = hint {
+                if let Some((hint @ Type::TypedDict(box typed_dict), _)) = hint {
                     self.check_dict_items_against_typed_dict(
                         flattened_items,
                         typed_dict,
@@ -832,7 +850,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     hint.clone()
                 } else {
                     let (key_hint, value_hint) =
-                        hint.map_or((None, None), |ty| self.decompose_dict(ty));
+                        hint.map_or((None, None), |(ty, _)| self.decompose_dict(ty));
                     if x.is_empty() {
                         let key_ty = key_hint.unwrap_or_else(|| {
                             self.solver().fresh_contained(self.uniques).to_type()
@@ -846,14 +864,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         let mut value_tys = Vec::new();
                         flattened_items.iter().for_each(|x| match &x.key {
                             Some(key) => {
+                                let tcc = TypeCheckContext::unknown();
                                 let key_t = self.expr_infer_with_hint_promote(
                                     key,
-                                    key_hint.as_ref(),
+                                    key_hint.as_ref().map(|t| (t, &tcc)),
                                     errors,
                                 );
                                 let value_t = self.expr_infer_with_hint_promote(
                                     &x.value,
-                                    value_hint.as_ref(),
+                                    value_hint.as_ref().map(|t| (t, &tcc)),
                                     errors,
                                 );
                                 key_tys.push(key_t);
@@ -882,44 +901,72 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Set(x) => {
-                let hint = hint.and_then(|ty| self.decompose_set(ty));
+                let hint = hint.and_then(|(ty, _)| self.decompose_set(ty));
                 if x.is_empty() {
                     let elem_ty = hint
                         .unwrap_or_else(|| self.solver().fresh_contained(self.uniques).to_type());
                     self.stdlib.set(elem_ty).to_type()
                 } else {
-                    let elem_tys = x
-                        .elts
-                        .map(|x| self.expr_infer_with_hint_promote(x, hint.as_ref(), errors));
+                    let elem_tys = x.elts.map(|x| {
+                        let tcc = TypeCheckContext::unknown();
+                        self.expr_infer_with_hint_promote(
+                            x,
+                            hint.as_ref().map(|t| (t, &tcc)),
+                            errors,
+                        )
+                    });
                     self.stdlib.set(self.unions(elem_tys)).to_type()
                 }
             }
             Expr::ListComp(x) => {
-                let hint = hint.and_then(|ty| self.decompose_list(ty));
+                let hint = hint.and_then(|(ty, _)| self.decompose_list(ty));
                 self.ifs_infer(&x.generators, errors);
-                let elem_ty = self.expr_infer_with_hint_promote(&x.elt, hint.as_ref(), errors);
+                let tcc = TypeCheckContext::unknown();
+                let elem_ty = self.expr_infer_with_hint_promote(
+                    &x.elt,
+                    hint.as_ref().map(|t| (t, &tcc)),
+                    errors,
+                );
                 self.stdlib.list(elem_ty).to_type()
             }
             Expr::SetComp(x) => {
-                let hint = hint.and_then(|ty| self.decompose_set(ty));
+                let hint = hint.and_then(|(ty, _)| self.decompose_set(ty));
                 self.ifs_infer(&x.generators, errors);
                 self.ifs_infer(&x.generators, errors);
-                let elem_ty = self.expr_infer_with_hint_promote(&x.elt, hint.as_ref(), errors);
+                let tcc = TypeCheckContext::unknown();
+                let elem_ty = self.expr_infer_with_hint_promote(
+                    &x.elt,
+                    hint.as_ref().map(|t| (t, &tcc)),
+                    errors,
+                );
                 self.stdlib.set(elem_ty).to_type()
             }
             Expr::DictComp(x) => {
                 let (key_hint, value_hint) =
-                    hint.map_or((None, None), |ty| self.decompose_dict(ty));
+                    hint.map_or((None, None), |(ty, _)| self.decompose_dict(ty));
                 self.ifs_infer(&x.generators, errors);
-                let key_ty = self.expr_infer_with_hint_promote(&x.key, key_hint.as_ref(), errors);
-                let value_ty =
-                    self.expr_infer_with_hint_promote(&x.value, value_hint.as_ref(), errors);
+                let tcc = TypeCheckContext::unknown();
+                let key_ty = self.expr_infer_with_hint_promote(
+                    &x.key,
+                    key_hint.as_ref().map(|t| (t, &tcc)),
+                    errors,
+                );
+                let value_ty = self.expr_infer_with_hint_promote(
+                    &x.value,
+                    value_hint.as_ref().map(|t| (t, &tcc)),
+                    errors,
+                );
                 self.stdlib.dict(key_ty, value_ty).to_type()
             }
             Expr::Generator(x) => {
-                let yield_hint = hint.and_then(|ty| self.decompose_generator_yield(ty));
+                let yield_hint = hint.and_then(|(ty, _)| self.decompose_generator_yield(ty));
                 self.ifs_infer(&x.generators, errors);
-                let yield_ty = self.expr_infer_with_hint(&x.elt, yield_hint.as_ref(), errors);
+                let tcc = TypeCheckContext::unknown();
+                let yield_ty = self.expr_infer_with_hint(
+                    &x.elt,
+                    yield_hint.as_ref().map(|t| (t, &tcc)),
+                    errors,
+                );
                 self.stdlib
                     .generator(yield_ty, Type::None, Type::None)
                     .to_type()
@@ -1289,14 +1336,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn expr_infer_with_hint_promote(
         &self,
         x: &Expr,
-        hint: Option<&Type>,
+        hint: Option<(&Type, &TypeCheckContext)>,
         errors: &ErrorCollector,
     ) -> Type {
         let ty = self.expr_infer_with_hint(x, hint, errors);
-        if let Some(hint) = hint
-            && self.solver().is_subset_eq(&ty, hint, self.type_order())
+        if let Some((want, _)) = hint
+            && self.solver().is_subset_eq(&ty, want, self.type_order())
         {
-            hint.clone()
+            want.clone()
         } else {
             ty.promote_literals(self.stdlib)
         }
