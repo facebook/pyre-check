@@ -600,7 +600,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~profiler
           ~analysis:Backward
           ~step
-          ~call_target:target
+          ~call_target:(Some target)
           ~location:call_location
           ~argument:(Some argument)
           ~f

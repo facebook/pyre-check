@@ -101,7 +101,7 @@ end
 module Make (Analysis : Analysis) = struct
   module ApplyCallStepEvent = struct
     type t = {
-      target: Target.t;
+      target: Target.t option;
       location: Location.t;
       analysis: analysis;
       step: Analysis.ApplyCallStep.t;
@@ -111,7 +111,7 @@ module Make (Analysis : Analysis) = struct
 
     module Key = struct
       type t = {
-        target: Target.t;
+        target: Target.t option;
         location: Location.t;
         analysis: analysis;
         step: Analysis.ApplyCallStep.t;
@@ -491,7 +491,7 @@ module Make (Analysis : Analysis) = struct
             iterations
             seconds
             (seconds /. total_seconds *. 100.0)
-            Target.pp_pretty
+            (pp_option Target.pp_pretty)
             target
             Analysis.ApplyCallStep.pp_short
             step

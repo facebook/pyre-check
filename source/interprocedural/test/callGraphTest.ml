@@ -145,6 +145,7 @@ let assert_higher_order_call_graph_of_define
       ~define
       ~initial_state
       ~get_callee_model:(fun _ -> None)
+      ~profiler:CallGraphProfiler.disabled
     |> HigherOrderCallGraphForTest.from_actual
   in
   assert_equal

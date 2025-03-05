@@ -56,7 +56,7 @@ module Make (Analysis : Analysis) : sig
     :  profiler:t ->
     analysis:analysis ->
     step:Analysis.ApplyCallStep.t ->
-    call_target:Target.t ->
+    call_target:Target.t option ->
     location:Location.t ->
     argument:Expression.t option ->
     f:(unit -> 'a) ->

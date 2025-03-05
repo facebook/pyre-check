@@ -526,6 +526,7 @@ val higher_order_call_graph_of_define
   define:Ast.Statement.Define.t ->
   initial_state:HigherOrderCallGraph.State.t ->
   get_callee_model:(Target.t -> HigherOrderCallGraph.t option) ->
+  profiler:CallGraphProfiler.t ->
   HigherOrderCallGraph.t
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its

@@ -531,7 +531,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~profiler
           ~analysis:Forward
           ~step
-          ~call_target:target
+          ~call_target:(Some target)
           ~location:call_location
           ~argument:(Some argument)
           ~f
@@ -662,7 +662,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~profiler
         ~analysis:Forward
         ~step:ApplyCallForReturn
-        ~call_target:target
+        ~call_target:(Some target)
         ~location:call_location
         ~argument:None
         ~f:(fun () ->
@@ -792,7 +792,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~profiler
         ~analysis:Forward
         ~step:ApplyCallEffects
-        ~call_target:target
+        ~call_target:(Some target)
         ~location:call_location
         ~argument:None
         ~f:(fun () ->

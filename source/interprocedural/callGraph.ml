@@ -4108,6 +4108,8 @@ module HigherOrderCallGraph = struct
 
     val callables_to_definitions_map : Target.DefinesSharedMemory.ReadOnly.t
 
+    val profiler : CallGraphProfiler.t
+
     val input_define_call_graph : DefineCallGraph.t
 
     (* Outputs. *)
@@ -4164,6 +4166,16 @@ module HigherOrderCallGraph = struct
 
 
       let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
+        let track_apply_call_step step f =
+          CallGraphProfiler.track_apply_call_step
+            ~profiler:Context.profiler
+            ~analysis:Forward
+            ~step
+            ~call_target:None
+            ~location
+            ~argument:None
+            ~f
+        in
         let formal_arguments_if_non_stub target =
           if Target.is_override target || Target.is_object target then
             (* TODO(T204630385): It is possible for a target to be an `Override`, which we do not
@@ -4260,7 +4272,8 @@ module HigherOrderCallGraph = struct
           |> CallTarget.Set.elements
         in
         let state, argument_callees =
-          List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state
+          track_apply_call_step AnalyzeArguments (fun () ->
+              List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state)
         in
         let create_call_target = function
           | Some callee_target :: parameter_targets ->
@@ -4314,12 +4327,13 @@ module HigherOrderCallGraph = struct
           | list -> List.map ~f:(fun target -> Some target) list
         in
         let parameterized_call_targets =
-          argument_callees
-          |> List.map ~f:(fun call_targets ->
-                 call_targets |> CallTarget.Set.elements |> to_option_list)
-          |> List.cons (to_option_list call_targets_from_callee)
-          |> Algorithms.cartesian_product
-          |> List.filter_map ~f:create_call_target
+          track_apply_call_step CreateParameterizedTargets (fun () ->
+              argument_callees
+              |> List.map ~f:(fun call_targets ->
+                     call_targets |> CallTarget.Set.elements |> to_option_list)
+              |> List.cons (to_option_list call_targets_from_callee)
+              |> Algorithms.cartesian_product
+              |> List.filter_map ~f:create_call_target)
         in
         (* Do not keep keep higher order parameters if each call target is parameterized. *)
         let higher_order_parameters =
@@ -4355,7 +4369,8 @@ module HigherOrderCallGraph = struct
                 unresolved;
               }
             !Context.output_define_call_graph;
-        returned_callables parameterized_call_targets, state
+        track_apply_call_step FetchReturnedCallables (fun () ->
+            returned_callables parameterized_call_targets, state)
 
 
       (* Return possible callees and the new state. *)
@@ -4370,7 +4385,7 @@ module HigherOrderCallGraph = struct
           expression.Node.value
           State.pp
           state;
-        let call_targets, state =
+        let analyze_expression_inner () =
           match redirect_expressions ~pyre_in_context ~location value with
           | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
           | BinaryOperator _ -> CallTarget.Set.bottom, state
@@ -4457,6 +4472,13 @@ module HigherOrderCallGraph = struct
               let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
               ( callees,
                 store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state )
+        in
+        let call_targets, state =
+          CallGraphProfiler.track_expression_analysis
+            ~profiler:Context.profiler
+            ~analysis:Forward
+            ~expression
+            ~f:analyze_expression_inner
         in
         log
           "Finished analyzing expression `%a`: `%a`"
@@ -4592,14 +4614,19 @@ module HigherOrderCallGraph = struct
 
 
       let forward ~statement_key state ~statement =
-        let pyre_in_context =
-          PyrePysaEnvironment.InContext.create_at_statement_key
-            Context.pyre_api
-            ~define_name:Context.define_name
-            ~define:Context.define
-            ~statement_key
-        in
-        analyze_statement ~pyre_in_context ~state ~statement
+        CallGraphProfiler.track_statement_analysis
+          ~profiler:Context.profiler
+          ~analysis:Forward
+          ~statement
+          ~f:(fun () ->
+            let pyre_in_context =
+              PyrePysaEnvironment.InContext.create_at_statement_key
+                Context.pyre_api
+                ~define_name:Context.define_name
+                ~define:Context.define
+                ~statement_key
+            in
+            analyze_statement ~pyre_in_context ~state ~statement)
 
 
       let backward ~statement_key:_ _ ~statement:_ = failwith "unused"
@@ -4621,6 +4648,7 @@ let higher_order_call_graph_of_define
     ~define
     ~initial_state
     ~get_callee_model
+    ~profiler
   =
   let module Context = struct
     let input_define_call_graph = define_call_graph
@@ -4640,6 +4668,8 @@ let higher_order_call_graph_of_define
     let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define
 
     let callables_to_definitions_map = callables_to_definitions_map
+
+    let profiler = profiler
   end
   in
   log

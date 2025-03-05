@@ -28,3 +28,4 @@ module SaveLoadSharedMemory = SaveLoadSharedMemory
 module NewlineDelimitedJson = NewlineDelimitedJson
 module RepositoryPath = RepositoryPath
 module IntraproceduralProfiler = IntraproceduralProfiler
+module CallGraphProfiler = CallGraphProfiler
