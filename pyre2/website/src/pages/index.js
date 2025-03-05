@@ -53,7 +53,53 @@ export default component Home() {
           </section>
         </div>
       </header>
-      <main></main>
+      <main>
+        <section className={styles.info}>
+          <div className={styles.quote}>
+            <h3>Lorem Ipsum</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+              reprehenderit in voluptate velit esse cillum dolore
+            </p>
+            <hr />
+            <p>Quote about it</p>
+          </div>
+          <div className={styles.photo}>Photo or Chart</div>
+        </section>
+        <section className={styles.info}>
+          <div className={styles.photo}>Photo or Chart</div>
+          <div className={styles.quote}>
+            <h3>Lorem Ipsum</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+              reprehenderit in voluptate velit esse cillum dolore
+            </p>
+            <hr />
+            <p>Quote about it</p>
+          </div>
+        </section>
+        <section className={styles.info}>
+          <div className={styles.quote}>
+            <h3>Lorem Ipsum</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
+              reprehenderit in voluptate velit esse cillum dolore
+            </p>
+            <hr />
+            <p>Quote about it</p>
+          </div>
+          <div className={styles.photo}>Photo or Chart</div>
+        </section>
+      </main>
     </Layout>
   );
 }

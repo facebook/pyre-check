@@ -372,3 +372,20 @@
   color: #fff;
   text-decoration: underline;
 }
+
+
+/* MM: Adding custom layout / styles */
+.info {
+  padding: 4rem 3rem 3rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.info .photo {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.info .quote {
+
+}
