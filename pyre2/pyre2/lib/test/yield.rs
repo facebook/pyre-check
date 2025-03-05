@@ -286,3 +286,22 @@ yield 0  # E: Invalid `yield` outside of a function
 yield from 0  # E: Invalid `yield from` outside of a function
 "#,
 );
+
+testcase!(
+    test_missing_return,
+    r#"
+from typing import Generator
+def f() -> Generator[None, None, int]:  # E: Function declared to return `int` but is missing an explicit `return`
+    yield None
+    "#,
+);
+
+testcase!(
+    test_bad_return,
+    r#"
+from typing import Generator
+def f() -> Generator[None, None, int]:
+    yield None
+    return "oops"  # E: Function declared to return `int`, actually returns `Literal['oops']`
+    "#,
+);

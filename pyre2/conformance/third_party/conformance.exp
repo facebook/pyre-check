@@ -1231,8 +1231,8 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "EXPECTED None <: C",
-      "description": "EXPECTED None <: C",
+      "concise_description": "Function declared to return `C`, but one or more paths are missing an explicit `return`",
+      "description": "Function declared to return `C`, but one or more paths are missing an explicit `return`",
       "line": 51,
       "name": "type-mismatch",
       "stop_column": 39,
@@ -1241,8 +1241,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "EXPECTED Literal[False] <: C",
-      "description": "EXPECTED Literal[False] <: C",
+      "concise_description": "Function declared to return `C`, actually returns `Literal[False]`",
+      "description": "Function declared to return `C`, actually returns `Literal[False]`",
       "line": 54,
       "name": "type-mismatch",
       "stop_column": 21,
@@ -1271,8 +1271,8 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "EXPECTED Literal[True] <: None",
-      "description": "EXPECTED Literal[True] <: None",
+      "concise_description": "Function declared to return `None`, actually returns `Literal[True]`",
+      "description": "Function declared to return `None`, actually returns `Literal[True]`",
       "line": 71,
       "name": "type-mismatch",
       "stop_column": 16,

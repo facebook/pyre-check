@@ -858,7 +858,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &implicit_return,
                                 *range,
                                 errors,
-                                &TypeCheckContext::unknown(),
+                                &TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
+                                    !x.returns.is_empty(),
+                                )),
                             );
                         } else {
                             self.error(
@@ -943,7 +945,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     } else if x.is_generator {
                         let hint =
                             hint.and_then(|ty| self.decompose_generator(ty).map(|(_, _, r)| r));
-                        let tcc = TypeCheckContext::unknown();
+                        let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
                         self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
                     } else if matches!(hint, Some(Type::TypeGuard(_))) {
                         let hint = Some(Type::ClassType(self.stdlib.bool()));
