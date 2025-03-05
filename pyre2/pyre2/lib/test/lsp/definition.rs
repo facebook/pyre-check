@@ -69,7 +69,9 @@ class B(A): pass
 # main.py
 4 | def f(x: list[int], y: str, z: Literal[42]):
         ^
-Definition Result: None
+Definition Result:
+4 | def f(x: list[int], y: str, z: Literal[42]):
+        ^
 
 4 | def f(x: list[int], y: str, z: Literal[42]):
                                     ^
@@ -125,7 +127,9 @@ bar = f([1], "", 42) # todo: ideally should jump through the import
 # main.py
 3 | from .import_provider import f
                                  ^
-Definition Result: None
+Definition Result:
+3 | from .import_provider import f
+                                 ^
 
 6 | foo: Literal[1] = 1 # todo: ideally should jump through the import
              ^
@@ -359,7 +363,9 @@ def f[T](input: T):
 # main.py
 2 | def f[T](input: T):
           ^
-Definition Result: None
+Definition Result:
+2 | def f[T](input: T):
+          ^
 
 2 | def f[T](input: T):
                     ^

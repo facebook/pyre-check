@@ -151,6 +151,13 @@ impl State {
         handle: &Handle,
         position: TextSize,
     ) -> Option<TextRangeWithModuleInfo> {
+        if let Some(key) = self.definition_at(handle, position) {
+            let (handle, range) = self.key_to_definition(handle, &key, 20)?;
+            return Some(TextRangeWithModuleInfo::new(
+                self.get_module_info(&handle)?,
+                range,
+            ));
+        }
         if let Some(id) = self.identifier_at(handle, position) {
             if !self.get_bindings(handle)?.is_valid_usage(&id) {
                 return None;
