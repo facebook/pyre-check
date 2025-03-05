@@ -870,7 +870,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &implicit_return,
                             *range,
                             errors,
-                            &TypeCheckContext::unknown(),
+                            &TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
+                                !x.returns.is_empty(),
+                            )),
                         );
                     }
                     ty

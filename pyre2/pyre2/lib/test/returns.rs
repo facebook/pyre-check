@@ -11,7 +11,7 @@ testcase!(
     test_missing_return,
     r#"
 
-def f() -> int:  # E: EXPECTED None <: int
+def f() -> int:  # E: Function declared to return `int` but is missing an explicit `return`
     pass
 "#,
 );
@@ -54,7 +54,7 @@ testcase!(
     r#"
 from typing import assert_type
 
-def f(b: bool) -> int:  # E: EXPECTED None <: int
+def f(b: bool) -> int:  # E: Function declared to return `int`, but one or more paths are missing an explicit `return`
     if b:
         return 1
     else:
@@ -108,7 +108,7 @@ testcase!(
 def does_not_fail() -> None:
     return None
 
-def f(b: bool) -> int: # E: EXPECTED None <: int
+def f(b: bool) -> int: # E: Function declared to return `int`, but one or more paths are missing an explicit `return`
     if b:
         return 1
     else:
@@ -122,7 +122,7 @@ testcase!(
 def fail():
     pass
 
-def f() -> int: # E: EXPECTED None <: int
+def f() -> int: # E: Function declared to return `int` but is missing an explicit `return`
    fail()
 "#,
 );
@@ -130,7 +130,7 @@ def f() -> int: # E: EXPECTED None <: int
 testcase!(
     test_return_if_no_else_real,
     r#"
-def f(b: bool) -> int:  # E: EXPECTED None <: int
+def f(b: bool) -> int:  # E: Function declared to return `int`, but one or more paths are missing an explicit `return`
     if b:
         return 1
 "#,
@@ -148,7 +148,7 @@ def f(b: bool) -> None:
 testcase!(
     test_return_then_dead_code,
     r#"
-def f(b: bool) -> int:  # E: EXPECTED None <: int
+def f(b: bool) -> int:  # E: Function declared to return `int`, but one or more paths are missing an explicit `return`
     return 1
     # This code is unreachable. A linter should spot this.
     # But for now, it's perfectly reasonble to say the `pass`

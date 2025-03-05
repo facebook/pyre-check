@@ -41,6 +41,19 @@ impl TypeCheckKind {
                     ctx.display(got)
                 )
             }
+            Self::ImplicitFunctionReturn(has_explicit_return) => {
+                if *has_explicit_return {
+                    format!(
+                        "Function declared to return `{}`, but one or more paths are missing an explicit `return`",
+                        ctx.display(want),
+                    )
+                } else {
+                    format!(
+                        "Function declared to return `{}` but is missing an explicit `return`",
+                        ctx.display(want)
+                    )
+                }
+            }
             Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }

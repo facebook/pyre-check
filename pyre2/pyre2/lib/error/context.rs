@@ -56,6 +56,9 @@ pub enum TypeCheckKind {
     /// Return type check on a named function. `Option<Type>` is the type that the function is
     /// defined on, if it is a method of a class.
     FunctionReturn(Name, Option<Type>),
+    /// Implicit return via a path with no explicit return statement. The bool indicates whether
+    /// the function has *any* explicit return.
+    ImplicitFunctionReturn(bool),
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]

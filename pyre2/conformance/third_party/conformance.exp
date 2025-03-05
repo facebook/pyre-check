@@ -10963,8 +10963,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "EXPECTED None <: NoReturn",
-      "description": "EXPECTED None <: NoReturn",
+      "concise_description": "Function declared to return `NoReturn` but is missing an explicit `return`",
+      "description": "Function declared to return `NoReturn` but is missing an explicit `return`",
       "line": 19,
       "name": "unknown",
       "stop_column": 30,
