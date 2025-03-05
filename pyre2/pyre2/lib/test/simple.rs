@@ -1165,6 +1165,17 @@ x: L["foo"] = "foo"
 );
 
 testcase!(
+    test_literal_string_infer,
+    r#"
+from typing import LiteralString, assert_type
+def f(x: LiteralString):
+    assert_type(["foo"], list[str])
+    assert_type([x], list[LiteralString])
+    xs: list[str] = [x]
+"#,
+);
+
+testcase!(
     test_assert_type_forward_ref,
     r#"
 from typing import assert_type
