@@ -28,7 +28,7 @@ with Foo() as foo:
     assert_type(foo, int)
 
 bar: str = "abc"
-with Foo() as bar: # E: EXPECTED int <: str
+with Foo() as bar: # E: `int` is not assignable to variable `bar` with type `str`
     assert_type(bar, str)
     "#,
 );
