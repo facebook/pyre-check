@@ -212,15 +212,15 @@ def _read(position: FilePosition) -> bytes:
     return handle.read(position.length)
 
 
-def _filter_taint_tree(
-    taint_tree: List[Dict[str, Any]],
+def _filter_taint_conditions(
+    taint_conditions: List[Dict[str, Any]],
     frame_predicate: Callable[[str, Dict[str, Any]], bool],
 ) -> List[Dict[str, Any]]:
-    new_taint_tree = []
-    for taint in taint_tree:
-        caller_port = taint["port"]
+    new_taint_conditions = []
+    for condition in taint_conditions:
+        caller_port = condition["port"]
         new_local_taints = []
-        for local_taint in taint["taint"]:
+        for local_taint in condition["taint"]:
             new_kinds = [
                 frame
                 for frame in local_taint["kinds"]
@@ -232,20 +232,22 @@ def _filter_taint_tree(
                 new_local_taints.append(new_local_taint)
 
         if len(new_local_taints) > 0:
-            new_taint = taint.copy()
-            new_taint["taint"] = new_local_taints
-            new_taint_tree.append(new_taint)
+            new_condition = condition.copy()
+            new_condition["taint"] = new_local_taints
+            new_taint_conditions.append(new_condition)
 
-    return new_taint_tree
+    return new_taint_conditions
 
 
 def filter_model(
     model: Dict[str, Any], frame_predicate: Callable[[str, Dict[str, Any]], bool]
 ) -> Dict[str, Any]:
     model = model.copy()
-    model["sources"] = _filter_taint_tree(model.get("sources", []), frame_predicate)
-    model["sinks"] = _filter_taint_tree(model.get("sinks", []), frame_predicate)
-    model["tito"] = _filter_taint_tree(model.get("tito", []), frame_predicate)
+    model["sources"] = _filter_taint_conditions(
+        model.get("sources", []), frame_predicate
+    )
+    model["sinks"] = _filter_taint_conditions(model.get("sinks", []), frame_predicate)
+    model["tito"] = _filter_taint_conditions(model.get("tito", []), frame_predicate)
     return model
 
 
@@ -263,21 +265,21 @@ def filter_model_kind(model: Dict[str, Any], kind: str) -> Dict[str, Any]:
     return filter_model(model, predicate)
 
 
-def _map_taint_tree(
-    taint_tree: List[Dict[str, Any]],
+def _map_taint_conditions(
+    taint_conditions: List[Dict[str, Any]],
     frame_map: Callable[[str, Dict[str, Any]], None],
     local_taint_map: Callable[[str, Dict[str, Any]], None],
 ) -> List[Dict[str, Any]]:
-    taint_tree = copy.deepcopy(taint_tree)
+    taint_conditions = copy.deepcopy(taint_conditions)
 
-    for taint in taint_tree:
-        caller_port = taint["port"]
-        for local_taint in taint["taint"]:
+    for condition in taint_conditions:
+        caller_port = condition["port"]
+        for local_taint in condition["taint"]:
             local_taint_map(caller_port, local_taint)
             for frame in local_taint["kinds"]:
                 frame_map(caller_port, frame)
 
-    return taint_tree
+    return taint_conditions
 
 
 def map_model(
@@ -286,11 +288,15 @@ def map_model(
     local_taint_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
 ) -> Dict[str, Any]:
     model = model.copy()
-    model["sources"] = _map_taint_tree(
+    model["sources"] = _map_taint_conditions(
         model.get("sources", []), frame_map, local_taint_map
     )
-    model["sinks"] = _map_taint_tree(model.get("sinks", []), frame_map, local_taint_map)
-    model["tito"] = _map_taint_tree(model.get("tito", []), frame_map, local_taint_map)
+    model["sinks"] = _map_taint_conditions(
+        model.get("sinks", []), frame_map, local_taint_map
+    )
+    model["tito"] = _map_taint_conditions(
+        model.get("tito", []), frame_map, local_taint_map
+    )
     return model
 
 
@@ -604,11 +610,11 @@ def print_frame(frame: Dict[str, Any], indent: str) -> None:
         print(f"{indent}  Leaves: {leaves}")
 
 
-def print_taint_tree(taint_tree: List[Dict[str, Any]], is_tito: bool) -> None:
-    for taint in taint_tree:
+def print_taint_conditions(conditions: List[Dict[str, Any]], is_tito: bool) -> None:
+    for condition in conditions:
         label = "CallerPort" if not is_tito else "ParameterPath"
-        print(f'  {label}: {green(taint["port"])}')
-        for local_taint in taint["taint"]:
+        print(f'  {label}: {green(condition["port"])}')
+        for local_taint in condition["taint"]:
             print_call_info(local_taint, indent=" " * 4)
             print_local_taint(local_taint, indent=" " * 4)
 
@@ -629,11 +635,11 @@ def print_model(
     elif options.format == "text":
         print(f"Model for {green(model['callable'])}")
         print("Sources:")
-        print_taint_tree(model.get("sources", []), is_tito=False)
+        print_taint_conditions(model.get("sources", []), is_tito=False)
         print("Sinks:")
-        print_taint_tree(model.get("sinks", []), is_tito=False)
+        print_taint_conditions(model.get("sinks", []), is_tito=False)
         print("Tito:")
-        print_taint_tree(model.get("tito", []), is_tito=True)
+        print_taint_conditions(model.get("tito", []), is_tito=True)
         if "global_sanitizer" in model:
             print(f"GlobalSanitizers: {model['global_sanitizer']}")
         if "parameters_sanitizer" in model:
