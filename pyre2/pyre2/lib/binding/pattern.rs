@@ -26,6 +26,7 @@ use crate::binding::bindings::BindingsBuilder;
 use crate::binding::narrow::NarrowOp;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::narrow::NarrowVal;
+use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
 
 impl<'a> BindingsBuilder<'a> {
@@ -189,6 +190,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.error(
                             pattern.range(),
                             "Only the last subpattern in MatchOr may be irrefutable".to_owned(),
+                            ErrorKind::MatchError,
                         )
                     }
                     let mut base = self.scopes.current().flow.clone();

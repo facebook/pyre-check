@@ -32,6 +32,7 @@ use crate::binding::scope::Flow;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::dunder;
+use crate::error::kind::ErrorKind;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
@@ -64,7 +65,11 @@ impl<'a> BindingsBuilder<'a> {
             }
             None => {
                 // Name wasn't found. Record a type error and fall back to `Any`.
-                self.error(name.range, format!("Could not find name `{name}`"));
+                self.error(
+                    name.range,
+                    format!("Could not find name `{name}`"),
+                    ErrorKind::UnknownName,
+                );
                 self.table.insert(key, Binding::AnyType(AnyStyle::Error));
             }
         }
@@ -206,7 +211,11 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(func);
                 for kw in keywords {
                     self.ensure_expr(&mut kw.value);
-                    unexpected_keyword(&|msg| self.error(*range, msg), "super", kw);
+                    unexpected_keyword(
+                        &|msg| self.error(*range, msg, ErrorKind::UnexpectedKeyword),
+                        "super",
+                        kw,
+                    );
                 }
                 let nargs = posargs.len();
                 let style = if nargs == 0 {
@@ -231,6 +240,7 @@ impl<'a> BindingsBuilder<'a> {
                                 *range,
                                 "`super` call with no arguments is valid only inside a method"
                                     .to_owned(),
+                                ErrorKind::InvalidSuperCall,
                             );
                             SuperStyle::Any
                         }
@@ -251,6 +261,7 @@ impl<'a> BindingsBuilder<'a> {
                         self.error(
                             *range,
                             format!("`super` takes at most 2 arguments, got {}", nargs),
+                            ErrorKind::InvalidSuperCall,
                         );
                     }
                     for arg in posargs {
@@ -370,6 +381,7 @@ impl<'a> BindingsBuilder<'a> {
                                 "Could not parse type string: {}, got {e}",
                                 literal.value.to_str()
                             ),
+                            ErrorKind::ParseError,
                         );
                     }
                 }

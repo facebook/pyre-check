@@ -77,7 +77,7 @@
       "concise_description": "Could not parse type string: , got Expected an expression at byte range 2504..2504",
       "description": "Could not parse type string: , got Expected an expression at byte range 2504..2504",
       "line": 79,
-      "name": "unknown",
+      "name": "parse-error",
       "stop_column": 28,
       "stop_line": 79
     },
@@ -127,7 +127,7 @@
       "concise_description": "Could not find name `a`",
       "description": "Could not find name `a`",
       "line": 83,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 23,
       "stop_line": 83
     },
@@ -137,7 +137,7 @@
       "concise_description": "Could not find name `b`",
       "description": "Could not find name `b`",
       "line": 83,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 28,
       "stop_line": 83
     },
@@ -481,7 +481,7 @@
       "concise_description": "Expected string literal \"GoodName\"",
       "description": "Expected string literal \"GoodName\"",
       "line": 32,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 29,
       "stop_line": 32
     },
@@ -755,7 +755,7 @@
       "concise_description": "Could not parse type string: , got Expected an expression at byte range 791..791",
       "description": "Could not parse type string: , got Expected an expression at byte range 791..791",
       "line": 37,
-      "name": "unknown",
+      "name": "parse-error",
       "stop_column": 29,
       "stop_line": 37
     },
@@ -805,7 +805,7 @@
       "concise_description": "Could not find name `a`",
       "description": "Could not find name `a`",
       "line": 41,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 24,
       "stop_line": 41
     },
@@ -815,7 +815,7 @@
       "concise_description": "Could not find name `b`",
       "description": "Could not find name `b`",
       "line": 41,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 29,
       "stop_line": 41
     },
@@ -1192,7 +1192,7 @@
       "concise_description": "Could not find name `ClassF`",
       "description": "Could not find name `ClassF`",
       "line": 80,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 19,
       "stop_line": 80
     },
@@ -1408,7 +1408,7 @@
       "concise_description": "Could not parse type string: , got Expected an expression at byte range 2016..2016",
       "description": "Could not parse type string: , got Expected an expression at byte range 2016..2016",
       "line": 88,
-      "name": "unknown",
+      "name": "parse-error",
       "stop_column": 16,
       "stop_line": 88
     },
@@ -2408,7 +2408,7 @@
       "concise_description": "Could not find name `var`",
       "description": "Could not find name `var`",
       "line": 40,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 17,
       "stop_line": 40
     },
@@ -5561,7 +5561,7 @@
       "concise_description": "Could not find name `reveal_type`",
       "description": "Could not find name `reveal_type`",
       "line": 128,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 20,
       "stop_line": 128
     },
@@ -7067,7 +7067,7 @@
       "concise_description": "Could not find name `S`",
       "description": "Could not find name `S`",
       "line": 81,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 24,
       "stop_line": 81
     }
@@ -9416,7 +9416,7 @@
       "concise_description": "Duplicate field `a`",
       "description": "Duplicate field `a`",
       "line": 52,
-      "name": "unknown",
+      "name": "bad-class-definition",
       "stop_column": 34,
       "stop_line": 52
     },
@@ -9426,7 +9426,7 @@
       "concise_description": "`def` is not a valid identifier",
       "description": "`def` is not a valid identifier",
       "line": 53,
-      "name": "unknown",
+      "name": "bad-class-definition",
       "stop_column": 38,
       "stop_line": 53
     },
@@ -9436,7 +9436,7 @@
       "concise_description": "`def` is not a valid identifier",
       "description": "`def` is not a valid identifier",
       "line": 54,
-      "name": "unknown",
+      "name": "bad-class-definition",
       "stop_column": 38,
       "stop_line": 54
     },
@@ -10548,7 +10548,7 @@
       "concise_description": "Could not find name `a`",
       "description": "Could not find name `a`",
       "line": 46,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 19,
       "stop_line": 46
     },
@@ -10558,7 +10558,7 @@
       "concise_description": "Could not find name `b`",
       "description": "Could not find name `b`",
       "line": 46,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 24,
       "stop_line": 46
     },
@@ -10568,7 +10568,7 @@
       "concise_description": "Could not find name `var1`",
       "description": "Could not find name `var1`",
       "line": 50,
-      "name": "unknown",
+      "name": "unknown-name",
       "stop_column": 21,
       "stop_line": 50
     },
@@ -10720,7 +10720,7 @@
       "concise_description": "Expected first item to be a string literal",
       "description": "Expected first item to be a string literal",
       "line": 131,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 24,
       "stop_line": 131
     },
@@ -10730,7 +10730,7 @@
       "concise_description": "Expected first item to be a string literal",
       "description": "Expected first item to be a string literal",
       "line": 131,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 34,
       "stop_line": 131
     },
@@ -11840,7 +11840,7 @@
       "concise_description": "Expected valid functional typed dictionary definition",
       "description": "Expected valid functional typed dictionary definition",
       "line": 23,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 14,
       "stop_line": 23
     },
@@ -11850,7 +11850,7 @@
       "concise_description": "Expected first item to be a string literal",
       "description": "Expected first item to be a string literal",
       "line": 27,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 46,
       "stop_line": 27
     },
@@ -11860,7 +11860,7 @@
       "concise_description": "Expected string literal \"BadTypedDict3\"",
       "description": "Expected string literal \"BadTypedDict3\"",
       "line": 31,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 38,
       "stop_line": 31
     },
@@ -11870,7 +11870,7 @@
       "concise_description": "Unrecognized argument for typed dictionary definition",
       "description": "Unrecognized argument for typed dictionary definition",
       "line": 35,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 83,
       "stop_line": 35
     },
@@ -11880,7 +11880,7 @@
       "concise_description": "Expected valid functional typed dictionary definition",
       "description": "Expected valid functional typed dictionary definition",
       "line": 41,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 7,
       "stop_line": 41
     },
@@ -11890,7 +11890,7 @@
       "concise_description": "Unrecognized argument for typed dictionary definition",
       "description": "Unrecognized argument for typed dictionary definition",
       "line": 41,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 38,
       "stop_line": 41
     },
@@ -11900,7 +11900,7 @@
       "concise_description": "Unrecognized argument for typed dictionary definition",
       "description": "Unrecognized argument for typed dictionary definition",
       "line": 41,
-      "name": "unknown",
+      "name": "invalid-argument",
       "stop_column": 48,
       "stop_line": 41
     },

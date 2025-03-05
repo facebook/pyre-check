@@ -32,6 +32,7 @@ use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::FlowStyle;
 use crate::binding::scope::LoopExit;
 use crate::binding::scope::ScopeKind;
+use crate::error::kind::ErrorKind;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::module_name::ModuleName;
@@ -55,10 +56,18 @@ impl<'a> BindingsBuilder<'a> {
     fn check_functional_definition_name(&mut self, name: &Name, arg: &Expr) {
         if let Expr::StringLiteral(x) = arg {
             if x.value.to_str() != name.as_str() {
-                self.error(arg.range(), format!("Expected string literal \"{}\"", name));
+                self.error(
+                    arg.range(),
+                    format!("Expected string literal \"{}\"", name),
+                    ErrorKind::InvalidArgument,
+                );
             }
         } else {
-            self.error(arg.range(), format!("Expected string literal \"{}\"", name));
+            self.error(
+                arg.range(),
+                format!("Expected string literal \"{}\"", name),
+                ErrorKind::InvalidArgument,
+            );
         }
     }
 
@@ -384,6 +393,7 @@ impl<'a> BindingsBuilder<'a> {
                                  attr.value.display_with(&self.module_info),
                                  attr.attr.id,
                              ),
+                             ErrorKind::BadAssignment,
                          );
                     }
                     if let Some(box mut v) = x.value {
@@ -578,7 +588,7 @@ impl<'a> BindingsBuilder<'a> {
                 for x in x.names {
                     let m = ModuleName::from_name(&x.name.id);
                     if let Err(err) = self.lookup.get(m) {
-                        self.error(x.range, err.display(m));
+                        self.error(x.range, err.display(m), ErrorKind::MissingModuleAttribute);
                     }
                     match x.asname {
                         Some(asname) => {
@@ -629,6 +639,7 @@ impl<'a> BindingsBuilder<'a> {
                                             self.error(
                                                 x.range,
                                                 format!("Could not import `{name}` from `{m}`"),
+                                                ErrorKind::MissingModuleAttribute,
                                             );
                                             Binding::AnyType(AnyStyle::Error)
                                         };
@@ -658,6 +669,7 @@ impl<'a> BindingsBuilder<'a> {
                                                     "Could not import `{}` from `{m}`",
                                                     x.name.id
                                                 ),
+                                                ErrorKind::MissingModuleAttribute,
                                             );
                                             Binding::AnyType(AnyStyle::Error)
                                         }
@@ -671,7 +683,7 @@ impl<'a> BindingsBuilder<'a> {
                             }
                         }
                         Err(err) => {
-                            self.error(x.range, err.display(m));
+                            self.error(x.range, err.display(m), ErrorKind::MissingModuleAttribute);
                             self.bind_unimportable_names(&x);
                         }
                     }
@@ -682,6 +694,7 @@ impl<'a> BindingsBuilder<'a> {
                             "Could not resolve relative import `{}`",
                             ".".repeat(x.level as usize)
                         ),
+                        ErrorKind::ImportError,
                     );
                     self.bind_unimportable_names(&x);
                 }
@@ -702,9 +715,11 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Continue(x) => {
                 self.add_loop_exitpoint(LoopExit::Continue, x.range);
             }
-            Stmt::IpyEscapeCommand(x) => {
-                self.error(x.range, "IPython escapes are not supported".to_owned())
-            }
+            Stmt::IpyEscapeCommand(x) => self.error(
+                x.range,
+                "IPython escapes are not supported".to_owned(),
+                ErrorKind::Unsupported,
+            ),
         }
     }
 }

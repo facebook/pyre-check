@@ -42,6 +42,7 @@ use crate::binding::scope::InstanceAttribute;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::dunder;
+use crate::error::kind::ErrorKind;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassIndex;
@@ -90,6 +91,7 @@ impl<'a> BindingsBuilder<'a> {
                             "Cannot use string annotation `{}` as a base class",
                             v.value.to_str()
                         ),
+                        ErrorKind::InvalidInheritance,
                     );
                 }
                 _ => {}
@@ -111,6 +113,7 @@ impl<'a> BindingsBuilder<'a> {
                             "The use of unpacking in class header of `{}` is not supported",
                             x.name
                         ),
+                        ErrorKind::InvalidInheritance,
                     )
                 }
             });
@@ -183,7 +186,7 @@ impl<'a> BindingsBuilder<'a> {
                                 },
                             );
                         } else if annotation.is_some() {
-                            self.error(range, format!("Attribute `{name}` is declared in the class body, so the assignment here should not have an annotation."));
+                            self.error(range, format!("Attribute `{name}` is declared in the class body, so the assignment here should not have an annotation."), ErrorKind::InvalidAnnotation);
                         }
                     }
                 }
@@ -223,7 +226,11 @@ impl<'a> BindingsBuilder<'a> {
             .filter_map(|item| match item {
                 Expr::StringLiteral(x) => Some((x.value.to_string(), x.range(), None)),
                 _ => {
-                    self.error(item.range(), "Expected a string literal".to_owned());
+                    self.error(
+                        item.range(),
+                        "Expected a string literal".to_owned(),
+                        ErrorKind::InvalidLiteral,
+                    );
                     None
                 }
             })
@@ -245,16 +252,25 @@ impl<'a> BindingsBuilder<'a> {
                         self.error(
                             k.range(),
                             "Expected first item to be a string literal".to_owned(),
+                            ErrorKind::InvalidArgument,
                         );
                         None
                     }
                     _ => {
-                        self.error(item.range(), "Expected a pair".to_owned());
+                        self.error(
+                            item.range(),
+                            "Expected a pair".to_owned(),
+                            ErrorKind::InvalidArgument,
+                        );
                         None
                     }
                 },
                 _ => {
-                    self.error(item.range(), "Expected a tuple".to_owned());
+                    self.error(
+                        item.range(),
+                        "Expected a tuple".to_owned(),
+                        ErrorKind::InvalidArgument,
+                    );
                     None
                 }
             })
@@ -301,7 +317,11 @@ impl<'a> BindingsBuilder<'a> {
                 match illegal_identifier_handling {
                     IllegalIdentifierHandling::Allow => {}
                     IllegalIdentifierHandling::Error => {
-                        self.error(range, format!("`{member_name}` is not a valid identifier"));
+                        self.error(
+                            range,
+                            format!("`{member_name}` is not a valid identifier"),
+                            ErrorKind::BadClassDefinition,
+                        );
                         continue;
                     }
                     IllegalIdentifierHandling::Rename => member_name = format!("_{idx}"),
@@ -309,7 +329,11 @@ impl<'a> BindingsBuilder<'a> {
             }
             let member_name = Name::new(member_name);
             if fields.contains_key(&member_name) {
-                self.error(range, format!("Duplicate field `{member_name}`"));
+                self.error(
+                    range,
+                    format!("Duplicate field `{member_name}`"),
+                    ErrorKind::BadClassDefinition,
+                );
                 continue;
             }
             fields.insert(
@@ -420,11 +444,16 @@ impl<'a> BindingsBuilder<'a> {
                             self.error(
                                 k.range(),
                                 "Expected first item to be a string literal".to_owned(),
+                                ErrorKind::InvalidArgument,
                             );
                             None
                         }
                         _ => {
-                            self.error(item.range(), "Expected a key-value pair".to_owned());
+                            self.error(
+                                item.range(),
+                                "Expected a key-value pair".to_owned(),
+                                ErrorKind::InvalidArgument,
+                            );
                             None
                         }
                     })
@@ -433,6 +462,7 @@ impl<'a> BindingsBuilder<'a> {
                     self.error(
                         class_name.range,
                         "Expected valid functional enum definition".to_owned(),
+                        ErrorKind::InvalidArgument,
                     );
                     Vec::new()
                 }
@@ -492,6 +522,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.error(
                     class_name.range,
                     "Expected valid functional named tuple definition".to_owned(),
+                    ErrorKind::InvalidArgument,
                 );
                 Vec::new()
             }
@@ -520,6 +551,7 @@ impl<'a> BindingsBuilder<'a> {
                             "Too many defaults values: expected up to {}, got {}",
                             n_members, n_defaults
                         ),
+                        ErrorKind::InvalidArgument,
                     );
                     let n_to_drop = n_defaults - n_members;
                     defaults = elts[n_to_drop..].map(|x| Some(x.clone()));
@@ -530,6 +562,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.error(
                     kw.value.range(),
                     "Unrecognized argument for typed dictionary definition".to_owned(),
+                    ErrorKind::InvalidArgument,
                 );
             }
         }
@@ -577,6 +610,7 @@ impl<'a> BindingsBuilder<'a> {
                     self.error(
                         class_name.range,
                         "Expected valid functional named tuple definition".to_owned(),
+                        ErrorKind::InvalidArgument,
                     );
                     Vec::new()
                 }
@@ -636,6 +670,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.error(
                     kw.value.range(),
                     "Unrecognized argument for typed dictionary definition".to_owned(),
+                    ErrorKind::InvalidArgument,
                 );
             }
         }
@@ -656,11 +691,16 @@ impl<'a> BindingsBuilder<'a> {
                             self.error(
                                 k.range(),
                                 "Expected first item to be a string literal".to_owned(),
+                                ErrorKind::InvalidArgument,
                             );
                             None
                         }
                         _ => {
-                            self.error(item.range(), "Expected a key-value pair".to_owned());
+                            self.error(
+                                item.range(),
+                                "Expected a key-value pair".to_owned(),
+                                ErrorKind::InvalidArgument,
+                            );
                             None
                         }
                     }
@@ -670,6 +710,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.error(
                     class_name.range,
                     "Expected valid functional typed dictionary definition".to_owned(),
+                    ErrorKind::InvalidArgument,
                 );
                 Vec::new()
             }

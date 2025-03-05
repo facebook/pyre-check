@@ -26,6 +26,10 @@ pub enum ErrorKind {
     BadArgumentType,
     /// Assigning a value of the wrong type to a variable.
     BadAssignment,
+    /// A class definition has some typing-related error.
+    /// e.g. multiple fields with the same name.
+    /// Errors related specifically to inheritance should use InvalidInheritance.
+    BadClassDefinition,
     /// A function definition has some typing-related error.
     /// e.g. putting a non-default argument after a default argument.
     BadFunctionDefinition,
@@ -46,6 +50,9 @@ pub enum ErrorKind {
     MatchError,
     /// Attempting to access an attribute that does not exist.
     MissingAttribute,
+    /// An error related to the import machinery.
+    /// e.g. failed to import a module.
+    ImportError,
     /// Attemping to access a container with an incorrect index.
     /// This only occurs when pyre can statically verify that the index is incorrect.
     IndexError,
@@ -79,6 +86,8 @@ pub enum ErrorKind {
     MissingArgument,
     /// Accessing an attribute that does not exist on a module.
     MissingModuleAttribute,
+    /// Attempting to use a name that is not defined.
+    UnknownName,
     /// An error related to TypedDict keys.
     /// e.g. attempting to access a TypedDict with a key that does not exist.
     TypedDictKeyError,
