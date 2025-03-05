@@ -106,9 +106,6 @@ function shouldCollapse(cursorPosition: Position, json: mixed): boolean {
 }
 
 export default component TryPyre2Results(
-  flowVersion: string,
-  flowVersions: $ReadOnlyArray<string>,
-  changeFlowVersion: (SyntheticInputEvent<>) => void,
   loading: boolean,
   errors: $ReadOnlyArray<FlowJsError>,
   internalError: string,
@@ -146,19 +143,6 @@ export default component TryPyre2Results(
             AST
           </li>
         </ul>
-        <div className={styles.version}>
-          {flowVersion !== flowVersions[0] &&
-          flowVersion !== flowVersions[1] ? (
-            <span className={styles.versionWarning}>old version selected</span>
-          ) : null}
-          <select value={flowVersion} onChange={changeFlowVersion}>
-            {flowVersions.map(version => (
-              <option key={version} value={version}>
-                {version}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
       {loading && (
         <div>
