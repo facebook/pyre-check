@@ -66,19 +66,19 @@ pub enum ErrorKind {
     InvalidAnnotation,
     /// Passing an argument that is invalid for reasons besides type.
     InvalidArgument,
-    /// Attempting to use a value that is not a valid kind of Literal.
-    InvalidLiteral,
     /// An error caused by incorrect inheritance in a class or type definition.
     /// e.g. a metaclass that is not a subclass of `type`.
     InvalidInheritance,
+    /// Attempting to use a value that is not a valid kind of Literal.
+    InvalidLiteral,
+    /// An error caused by incorrect usage of the @overload decorator.
+    /// e.g. not defining multiple variants for an overlaoded function.
+    InvalidOverload,
     /// An error related to ParamSpec definition or usage.
     InvalidParamSpec,
     /// Attempting to call `super()` in a way that is not allowed.
     /// e.g. calling `super(Y, x)` on an object `x` that does not match the class `Y`.
     InvalidSuperCall,
-    /// An error caused by incorrect usage of the @overload decorator.
-    /// e.g. not defining multiple variants for an overlaoded function.
-    InvalidOverload,
     /// An error caused by incorrect usage or definition of a TypeVar.
     InvalidTypeVar,
     /// An error caused by incorrect usage or definition of a TypeVarTuple.
@@ -91,11 +91,6 @@ pub enum ErrorKind {
     MissingArgument,
     /// Accessing an attribute that does not exist on a module.
     MissingModuleAttribute,
-    /// Attempting to use a name that is not defined.
-    UnknownName,
-    /// An error related to TypedDict keys.
-    /// e.g. attempting to access a TypedDict with a key that does not exist.
-    TypedDictKeyError,
     /// The attribute exists but does not support this access pattern.
     NoAccess,
     /// Attempting to call an overloaded function, but none of the signatures match.
@@ -115,10 +110,15 @@ pub enum ErrorKind {
     RevealType,
     /// An error related to type alias usage or definition.
     TypeAliasError,
+    /// An error related to TypedDict keys.
+    /// e.g. attempting to access a TypedDict with a key that does not exist.
+    TypedDictKeyError,
     /// An error raised when one type is expected but another is found instead.
     TypeMismatch,
     /// An error caused by a keyword argument used in the wrong place.
     UnexpectedKeyword,
+    /// Attempting to use a name that is not defined.
+    UnknownName,
     /// Attemping to apply an operator to arguments that do not support it.
     UnsupportedOperand,
     /// Attempting to use a feature that is not yet supported.
