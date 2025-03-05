@@ -107,12 +107,12 @@ impl ErrorCollector {
         &self,
         range: TextRange,
         msg: String,
-        error_kind: ErrorKind,
-        error_context: Option<&ErrorContext>,
+        kind: ErrorKind,
+        context: Option<&ErrorContext>,
     ) {
         let source_range = self.module_info.source_range(range);
         let is_ignored = self.module_info.is_ignored(&source_range, &msg);
-        let full_msg = match error_context {
+        let full_msg = match context {
             Some(ctx) => vec1![ctx.format(), msg],
             None => vec1![msg],
         };
@@ -122,7 +122,7 @@ impl ErrorCollector {
                 source_range,
                 full_msg,
                 is_ignored,
-                error_kind,
+                kind,
             );
             self.errors.lock().push(err);
         }
