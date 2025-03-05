@@ -45,7 +45,7 @@ c4: Coord = {"x": 1, "y": "foo"}  # E: `Literal['foo']` is not assignable to Typ
 c5: Coord = {"x": 1}  # E: Missing required key `y` for TypedDict `Coord`
 c6: Coord = {"x": 1, **{"y": 2, **{"z": 3}}}
 d: dict[str, int] = {}
-c7: Coord = {"x": 1, **d}  # E: `dict[str, int]` is not assignable to type `TypedDict[Coord]`
+c7: Coord = {"x": 1, **d}  # E: EXPECTED dict[str, int] <: TypedDict[Coord]
 
 def foo(c: Coord) -> None:
     pass

@@ -47,6 +47,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         typed_dict: &TypedDict,
         range: TextRange,
         errors: &ErrorCollector,
+        tcc: &TypeCheckContext,
     ) {
         let fields = typed_dict.fields();
         let mut has_expansion = false;
@@ -95,10 +96,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 has_expansion = true;
                 self.expr(
                     &x.value,
-                    Some((
-                        &Type::TypedDict(Box::new(typed_dict.clone())),
-                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
-                    )),
+                    Some((&Type::TypedDict(Box::new(typed_dict.clone())), tcc)),
                     errors,
                 );
             }

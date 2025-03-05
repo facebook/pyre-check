@@ -495,7 +495,7 @@ x2: list[A]
 (x2 := [B()])
 
 x3: B
-(x3 := A())  # E: `A` is not assignable to type `B`
+(x3 := A())  # E: `A` is not assignable to variable `x3` with type `B`
     "#,
 );
 

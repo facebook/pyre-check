@@ -803,25 +803,37 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
         match binding {
             Binding::Expr(ann, e) => {
-                let ty = ann.map(|k| self.get_idx(k));
-                let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation);
+                let ty = ann.map(|k| {
+                    let annot = self.get_idx(k);
+                    let tcc = TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(
+                        &annot.target,
+                    ));
+                    (annot, tcc)
+                });
                 self.expr(
                     e,
-                    ty.as_ref().and_then(|x| x.ty().map(|t| (t, &tcc))),
+                    ty.as_ref().and_then(|(x, tcc)| x.ty().map(|t| (t, tcc))),
                     errors,
                 )
             }
             Binding::TypeVar(ann, name, x) => {
                 let ty = Type::type_form(self.typevar_from_call(name.clone(), x, errors).to_type());
                 if let Some(k) = ann
-                    && let Some(want) = &self.get_idx(*k).ty()
+                    && let AnnotationWithTarget {
+                        target,
+                        annotation:
+                            Annotation {
+                                ty: Some(want),
+                                qualifiers: _,
+                            },
+                    } = &*self.get_idx(*k)
                 {
                     self.check_type(
                         want,
                         &ty,
                         x.range,
                         errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
+                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
                     )
                 } else {
                     ty
@@ -831,14 +843,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty =
                     Type::type_form(self.paramspec_from_call(name.clone(), x, errors).to_type());
                 if let Some(k) = ann
-                    && let Some(want) = &self.get_idx(*k).ty()
+                    && let AnnotationWithTarget {
+                        target,
+                        annotation:
+                            Annotation {
+                                ty: Some(want),
+                                qualifiers: _,
+                            },
+                    } = &*self.get_idx(*k)
                 {
                     self.check_type(
                         want,
                         &ty,
                         x.range,
                         errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
+                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
                     )
                 } else {
                     ty
@@ -850,14 +869,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .to_type(),
                 );
                 if let Some(k) = ann
-                    && let Some(want) = &self.get_idx(*k).ty()
+                    && let AnnotationWithTarget {
+                        target,
+                        annotation:
+                            Annotation {
+                                ty: Some(want),
+                                qualifiers: _,
+                            },
+                    } = &*self.get_idx(*k)
                 {
                     self.check_type(
                         want,
                         &ty,
                         x.range,
                         errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::ExplicitTypeAnnotation),
+                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
                     )
                 } else {
                     ty

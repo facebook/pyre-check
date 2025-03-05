@@ -840,12 +840,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Dict(x) => {
                 let flattened_items = Ast::flatten_dict_items(&x.items);
-                if let Some((hint @ Type::TypedDict(box typed_dict), _)) = hint {
+                if let Some((hint @ Type::TypedDict(box typed_dict), tcc)) = hint {
                     self.check_dict_items_against_typed_dict(
                         flattened_items,
                         typed_dict,
                         x.range,
                         errors,
+                        tcc,
                     );
                     hint.clone()
                 } else {

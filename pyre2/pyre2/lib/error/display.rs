@@ -76,9 +76,10 @@ impl TypeCheckKind {
                 attr,
                 ctx.display(want),
             ),
-            Self::ExplicitTypeAnnotation => format!(
-                "`{}` is not assignable to type `{}`",
+            Self::AnnotatedName(var) => format!(
+                "`{}` is not assignable to variable `{}` with type `{}`",
                 ctx.display(got),
+                var,
                 ctx.display(want),
             ),
             Self::Unknown => {

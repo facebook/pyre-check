@@ -7,6 +7,7 @@
 
 use ruff_python_ast::name::Name;
 
+use crate::binding::binding::AnnotationTarget;
 use crate::types::types::Type;
 
 /// General context for an error. For many errors, the root cause is some steps removed from what
@@ -70,11 +71,21 @@ pub enum TypeCheckKind {
     TypedDictKey(Name),
     /// Check of an attribute assignment against its type.
     Attribute(Name),
-    /// A check against a user-declared type annotation. Use this only when there is no other
-    /// useful information to include about the check.
-    ExplicitTypeAnnotation,
+    /// A check against a user-declared type annotation on a variable name.
+    AnnotatedName(Name),
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]
     Test,
+}
+
+impl TypeCheckKind {
+    pub fn from_annotation_target(target: &AnnotationTarget) -> Self {
+        match target {
+            AnnotationTarget::Param(_) => Self::Unknown,
+            AnnotationTarget::Return(_func) => Self::ExplicitFunctionReturn,
+            AnnotationTarget::Assign(name) => Self::AnnotatedName(name.clone()),
+            AnnotationTarget::ClassMember(member) => Self::Attribute(member.clone()),
+        }
+    }
 }
