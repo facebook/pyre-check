@@ -791,7 +791,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match binding {
             Binding::Expr(ann, e) => {
                 let ty = ann.map(|k| self.get_idx(k));
-                self.expr(e, ty.as_ref().and_then(|x| x.ty.as_ref()), errors)
+                let tcc = TypeCheckContext::unknown();
+                self.expr(
+                    e,
+                    ty.as_ref().and_then(|x| x.ty.as_ref().map(|t| (t, &tcc))),
+                    errors,
+                )
             }
             Binding::TypeVar(ann, name, x) => {
                 let ty = Type::type_form(self.typevar_from_call(name.clone(), x, errors).to_type());
@@ -938,12 +943,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     } else if x.is_generator {
                         let hint =
                             hint.and_then(|ty| self.decompose_generator(ty).map(|(_, _, r)| r));
-                        self.expr(expr, hint.as_ref(), errors)
+                        let tcc = TypeCheckContext::unknown();
+                        self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
                     } else if matches!(hint, Some(Type::TypeGuard(_))) {
                         let hint = Some(Type::ClassType(self.stdlib.bool()));
-                        self.expr(expr, hint.as_ref(), errors)
+                        let tcc = TypeCheckContext::unknown();
+                        self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
                     } else {
-                        self.expr(expr, hint, errors)
+                        let tcc = TypeCheckContext::unknown();
+                        self.expr(expr, hint.map(|t| (t, &tcc)), errors)
                     }
                 } else {
                     Type::None
@@ -1051,8 +1059,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 let hint =
                     ty.and_then(|x| x.ty.clone().map(|ty| self.stdlib.iterable(ty).to_type()));
-                let iterables =
-                    self.iterate(&self.expr(e, hint.as_ref(), errors), e.range(), errors);
+                let tcc = TypeCheckContext::unknown();
+                let iterables = self.iterate(
+                    &self.expr(e, hint.as_ref().map(|t| (t, &tcc)), errors),
+                    e.range(),
+                    errors,
+                );
                 let mut values = Vec::new();
                 for iterable in iterables {
                     match iterable {
@@ -1335,7 +1347,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::NameAssign(name, annot_key, expr) => {
                 let annot = annot_key.map(|k| self.get_idx(k));
-                let ty = self.expr(expr, annot.as_ref().and_then(|x| x.ty.as_ref()), errors);
+                let tcc = TypeCheckContext::unknown();
+                let ty = self.expr(
+                    expr,
+                    annot
+                        .as_ref()
+                        .and_then(|x| x.ty.as_ref().map(|t| (t, &tcc))),
+                    errors,
+                );
                 let expr_range = expr.range();
                 match (annot, &ty) {
                     (Some(annot), _) if annot.qualifiers.contains(&Qualifier::TypeAlias) => self
@@ -1539,7 +1558,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if x.kind != FunctionKind::Stub
                     || !matches!(default.as_ref(), Expr::EllipsisLiteral(_))
                 {
-                    self.expr(default, Some(ty), errors);
+                    self.expr(default, Some((ty, &TypeCheckContext::unknown())), errors);
                 }
             }
             required
@@ -1769,7 +1788,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 });
                 if let Some((yield_hint, send_ty)) = hint {
                     let yield_ty = if let Some(expr) = x.value.as_ref() {
-                        self.expr(expr, Some(&yield_hint), errors)
+                        self.expr(
+                            expr,
+                            Some((&yield_hint, &TypeCheckContext::unknown())),
+                            errors,
+                        )
                     } else {
                         self.check_type(
                             &yield_hint,

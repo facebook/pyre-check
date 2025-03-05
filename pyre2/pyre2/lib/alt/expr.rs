@@ -97,26 +97,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.unions(types)
     }
 
-    pub fn expr(&self, x: &Expr, check: Option<&Type>, errors: &ErrorCollector) -> Type {
-        self.expr_with_separate_check_errors(x, check.map(|ty| (ty, errors)), errors)
+    pub fn expr(
+        &self,
+        x: &Expr,
+        check: Option<(&Type, &TypeCheckContext)>,
+        errors: &ErrorCollector,
+    ) -> Type {
+        self.expr_with_separate_check_errors(x, check.map(|(ty, tcc)| (ty, tcc, errors)), errors)
     }
 
     pub fn expr_with_separate_check_errors(
         &self,
         x: &Expr,
-        check: Option<(&Type, &ErrorCollector)>,
+        check: Option<(&Type, &TypeCheckContext, &ErrorCollector)>,
         errors: &ErrorCollector,
     ) -> Type {
         match &check {
-            Some((want, check_errors)) if !want.is_any() => {
+            Some((want, tcc, check_errors)) if !want.is_any() => {
                 let got = self.expr_infer_with_hint(x, Some(want), errors);
-                self.check_type(
-                    want,
-                    &got,
-                    x.range(),
-                    check_errors,
-                    &TypeCheckContext::unknown(),
-                )
+                self.check_type(want, &got, x.range(), check_errors, tcc)
             }
             _ => self.expr_infer(x, errors),
         }

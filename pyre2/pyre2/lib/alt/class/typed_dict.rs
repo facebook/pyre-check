@@ -23,6 +23,7 @@ use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
@@ -55,7 +56,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if let Type::Literal(Lit::String(name)) = key_type {
                     let key_name = Name::new(name.clone());
                     if let Some(field) = fields.get(&key_name) {
-                        self.expr(&x.value, Some(&field.ty), errors);
+                        self.expr(
+                            &x.value,
+                            Some((&field.ty, &TypeCheckContext::unknown())),
+                            errors,
+                        );
                     } else {
                         self.error(
                             errors,
@@ -84,7 +89,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 has_expansion = true;
                 self.expr(
                     &x.value,
-                    Some(&Type::TypedDict(Box::new(typed_dict.clone()))),
+                    Some((
+                        &Type::TypedDict(Box::new(typed_dict.clone())),
+                        &TypeCheckContext::unknown(),
+                    )),
                     errors,
                 );
             }

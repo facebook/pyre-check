@@ -18,6 +18,7 @@ use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
@@ -369,7 +370,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 AttributeInner::ReadWrite(want) => match got {
                     Either::Left(got) => {
-                        self.expr(got, Some(&want), errors);
+                        self.expr(got, Some((&want, &TypeCheckContext::unknown())), errors);
                     }
                     Either::Right(got) => {
                         if !self.solver().is_subset_eq(got, &want, self.type_order()) {

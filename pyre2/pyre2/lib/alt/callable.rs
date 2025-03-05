@@ -140,7 +140,11 @@ impl CallArgPreEval<'_> {
             }
             Self::Expr(x, done) => {
                 *done = true;
-                solver.expr_with_separate_check_errors(x, Some((hint, call_errors)), arg_errors);
+                solver.expr_with_separate_check_errors(
+                    x,
+                    Some((hint, &TypeCheckContext::unknown(), call_errors)),
+                    arg_errors,
+                );
             }
             Self::Star(ty, done) => {
                 *done = vararg;
@@ -505,9 +509,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             format!("Unexpected keyword argument `{}`", id.id),
                         );
                     }
+                    let tcc = TypeCheckContext::unknown();
                     self.expr_with_separate_check_errors(
                         &kw.value,
-                        hint.map(|ty| (ty, call_errors)),
+                        hint.map(|ty| (ty, &tcc, call_errors)),
                         arg_errors,
                     );
                 }
