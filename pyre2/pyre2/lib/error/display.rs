@@ -58,6 +58,12 @@ impl TypeCheckKind {
                 "Expected type guard function to return `bool`, actually returns `{}`",
                 ctx.display(got)
             ),
+            Self::FunctionParameterDefault(param) => format!(
+                "Parameter `{}` declared with type `{}`, cannot assign default `{}`",
+                param,
+                ctx.display(want),
+                ctx.display(got)
+            ),
             Self::TypedDictKey(key) => format!(
                 "TypedDict key `{}` declared with type `{}`, cannot assign `{}`",
                 key,

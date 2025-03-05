@@ -258,10 +258,18 @@ test(0, 1, "foo", 2) # E: Expected 3 positional arguments
 );
 
 testcase!(
+    test_bad_default,
+    r#"
+def f(x: int = ""):  # E: Parameter `x` declared with type `int`, cannot assign default `Literal['']`
+    pass
+    "#,
+);
+
+testcase!(
     test_default_ellipsis,
     r#"
 def stub(x: int = ...): ... # OK
-def err(x: int = ...): pass # E: EXPECTED Ellipsis <: int
+def err(x: int = ...): pass # E: Parameter `x` declared with type `int`, cannot assign default `Ellipsis`
 "#,
 );
 

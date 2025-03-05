@@ -1571,14 +1571,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         x: &FunctionBinding,
         errors: &ErrorCollector,
     ) -> Arc<DecoratedFunction> {
-        let check_default = |default: &Option<Box<Expr>>, ty: &Type| {
+        let check_default = |name: &Identifier, default: &Option<Box<Expr>>, ty: &Type| {
             let mut required = Required::Required;
             if let Some(default) = default {
                 required = Required::Optional;
                 if x.kind != FunctionKind::Stub
                     || !matches!(default.as_ref(), Expr::EllipsisLiteral(_))
                 {
-                    self.expr(default, Some((ty, &TypeCheckContext::unknown())), errors);
+                    self.expr(
+                        default,
+                        Some((
+                            ty,
+                            &TypeCheckContext::of_kind(TypeCheckKind::FunctionParameterDefault(
+                                name.id.clone(),
+                            )),
+                        )),
+                        errors,
+                    );
                 }
             }
             required
@@ -1632,12 +1641,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut params = Vec::with_capacity(x.def.parameters.len());
         params.extend(x.def.parameters.posonlyargs.iter().map(|x| {
             let ty = get_param_ty(&x.parameter.name);
-            let required = check_default(&x.default, &ty);
+            let required = check_default(&x.parameter.name, &x.default, &ty);
             Param::PosOnly(ty, required)
         }));
         params.extend(x.def.parameters.args.iter().map(|x| {
             let ty = get_param_ty(&x.parameter.name);
-            let required = check_default(&x.default, &ty);
+            let required = check_default(&x.parameter.name, &x.default, &ty);
             Param::Pos(x.parameter.name.id.clone(), ty, required)
         }));
         params.extend(x.def.parameters.vararg.iter().map(|x| {
@@ -1663,7 +1672,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         params.extend(x.def.parameters.kwonlyargs.iter().map(|x| {
             let ty = get_param_ty(&x.parameter.name);
-            let required = check_default(&x.default, &ty);
+            let required = check_default(&x.parameter.name, &x.default, &ty);
             Param::KwOnly(x.parameter.name.id.clone(), ty, required)
         }));
         params.extend(x.def.parameters.kwarg.iter().map(|x| {
