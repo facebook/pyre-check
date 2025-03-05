@@ -43,4 +43,4 @@ mod type_var_tuple;
 mod typed_dict;
 mod util;
 mod with;
-mod r#yield;
+mod yields;
