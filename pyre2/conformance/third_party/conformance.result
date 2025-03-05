@@ -648,12 +648,7 @@
   ],
   "literals_literalstring.py": [
     "Line 120: Expected 1 errors",
-    "Line 48: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 57: Unexpected errors ['`LiteralString` has no attribute `__iadd__`']",
-    "Line 58: Unexpected errors ['`LiteralString` has no attribute `__iadd__`']",
-    "Line 63: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 68: Unexpected errors ['assert_type(Any, str) failed']",
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
     "Line 116: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 130: Unexpected errors ['EXPECTED Container[str] <: Container[LiteralString]']",

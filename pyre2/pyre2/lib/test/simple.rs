@@ -520,12 +520,12 @@ x = f"abc{f(1)}def"  # E: EXPECTED Literal[1] <: str
 testcase!(
     test_fstring_literal,
     r#"
-from typing import assert_type, Literal
+from typing import assert_type, Literal, LiteralString
 x0 = f"abc"
 assert_type(x0, Literal["abc"])
 
 x1 = f"abc{x0}"
-assert_type(x1, str)
+assert_type(x1, LiteralString)
 
 x2 = f"abc" "def"
 assert_type(x2, Literal["abcdef"])
@@ -537,7 +537,7 @@ x4 = "abc" f"def"
 assert_type(x4, Literal["abcdef"])
 
 x5 = "abc" f"def{x0}g" "hij" f"klm"
-assert_type(x5, str)
+assert_type(x5, LiteralString)
 "#,
 );
 

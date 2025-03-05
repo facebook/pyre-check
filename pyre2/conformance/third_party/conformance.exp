@@ -8877,50 +8877,10 @@
       "column": 5,
       "concise_description": "assert_type(str, LiteralString) failed",
       "description": "assert_type(str, LiteralString) failed",
-      "line": 48,
-      "name": "assert-type",
-      "stop_column": 38,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(str, LiteralString) failed",
-      "description": "assert_type(str, LiteralString) failed",
       "line": 52,
       "name": "assert-type",
       "stop_column": 49,
       "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "`LiteralString` has no attribute `__iadd__`",
-      "description": "`LiteralString` has no attribute `__iadd__`",
-      "line": 57,
-      "name": "missing-attribute",
-      "stop_column": 17,
-      "stop_line": 57
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "`LiteralString` has no attribute `__iadd__`",
-      "description": "`LiteralString` has no attribute `__iadd__`",
-      "line": 58,
-      "name": "missing-attribute",
-      "stop_column": 11,
-      "stop_line": 58
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(str, LiteralString) failed",
-      "description": "assert_type(str, LiteralString) failed",
-      "line": 63,
-      "name": "assert-type",
-      "stop_column": 43,
-      "stop_line": 63
     },
     {
       "code": -2,
@@ -8931,16 +8891,6 @@
       "name": "type-mismatch",
       "stop_column": 47,
       "stop_line": 66
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, str) failed",
-      "description": "assert_type(Any, str) failed",
-      "line": 68,
-      "name": "assert-type",
-      "stop_column": 33,
-      "stop_line": 68
     },
     {
       "code": -2,

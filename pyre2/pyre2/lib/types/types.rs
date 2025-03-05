@@ -405,6 +405,14 @@ impl Type {
         matches!(self, Type::Literal(_))
     }
 
+    pub fn is_literal_string(&self) -> bool {
+        match self {
+            Type::LiteralString => true,
+            Type::Literal(l) if l.is_string() => true,
+            _ => false,
+        }
+    }
+
     pub fn is_unpack(&self) -> bool {
         matches!(self, Type::Unpack(_))
     }

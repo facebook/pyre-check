@@ -160,6 +160,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && let Some(r) = self.untype_opt(rhs.clone(), x.right.range())
         {
             return Type::type_form(self.union(l, r));
+        } else if x.op == Operator::Add
+            && ((lhs == Type::LiteralString && rhs.is_literal_string())
+                || (rhs == Type::LiteralString && lhs.is_literal_string()))
+        {
+            return Type::LiteralString;
         }
         self.distribute_over_union(&lhs, |lhs| binop_call(x.op, lhs, rhs.clone(), x.range))
     }
@@ -1070,11 +1075,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
+                let mut all_literal_strings = true;
                 Visitors::visit_fstring_expr(x, |x| {
-                    self.expr_infer(x, errors);
+                    let fstring_expr_ty = self.expr_infer(x, errors);
+                    if !fstring_expr_ty.is_literal_string() {
+                        all_literal_strings = false;
+                    }
                 });
                 match Lit::from_fstring(x) {
                     Some(lit) => lit.to_type(),
+                    _ if all_literal_strings => Type::LiteralString,
                     _ => self.stdlib.str().to_type(),
                 }
             }

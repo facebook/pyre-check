@@ -13,6 +13,7 @@ use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Identifier;
+use ruff_python_ast::Operator;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -1071,6 +1072,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::AugAssign(x) => {
                 let base = self.expr_infer(&x.target, errors);
+                if x.op == Operator::Add
+                    && base.is_literal_string()
+                    && self.expr_infer(&x.value, errors).is_literal_string()
+                {
+                    return Type::LiteralString;
+                }
                 self.call_method_or_error(
                     &base,
                     &inplace_dunder(x.op),
