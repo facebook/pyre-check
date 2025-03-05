@@ -18,7 +18,7 @@ $ yarn install
 Start a local development server:
 
 ```bash
-$ ./start.sh
+$ ./scripts/start.sh
 ```
 
 Go to the following uri in your browser:
