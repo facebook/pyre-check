@@ -570,7 +570,7 @@
     "Line 36: Unexpected errors ['EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]']",
     "Line 37: Unexpected errors ['EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]']",
     "Line 38: Unexpected errors ['EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]']",
-    "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[*tuple[int]]']"
+    "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[int]']"
   ],
   "generics_typevartuple_callable.py": [],
   "generics_typevartuple_concat.py": [

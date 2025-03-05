@@ -183,6 +183,11 @@ impl Solver {
     pub fn deep_force_mut(&self, t: &mut Type) {
         self.deep_force_mut_with_limit(t, TYPE_LIMIT, &Recurser::new());
         // After forcing, we might be able to simplify some unions
+        self.simplify_mut(t);
+    }
+
+    /// Simplify a type as much as we can.
+    fn simplify_mut(&self, t: &mut Type) {
         t.transform_mut(|x| {
             if let Type::Union(xs) = x {
                 *x = unions(mem::take(xs));
@@ -315,11 +320,15 @@ impl Solver {
         loc: TextRange,
         tcc: &TypeCheckContext,
     ) {
-        let got = self.expand(got.clone()).deterministic_printing();
-        let want = self.expand(want.clone()).deterministic_printing();
+        let prepare = |t: &Type| {
+            let mut t = self.expand(t.clone());
+            self.simplify_mut(&mut t);
+            t.deterministic_printing()
+        };
+
         errors.add(
             loc,
-            tcc.kind.format_error(&got, &want),
+            tcc.kind.format_error(&prepare(got), &prepare(want)),
             error_kind,
             tcc.context.as_ref(),
         );
