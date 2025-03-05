@@ -33,6 +33,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
+use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingLegacyTypeParam;
@@ -678,7 +679,11 @@ impl<'a> BindingsBuilder<'a> {
         let annot = x.annotation().map(|x| {
             self.table.insert(
                 KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                BindingAnnotation::AnnotateExpr(x.clone(), self_type),
+                BindingAnnotation::AnnotateExpr(
+                    AnnotationTarget::Param(name.id.clone()),
+                    x.clone(),
+                    self_type,
+                ),
             )
         });
         let (annot, def) = match annot {
@@ -687,7 +692,10 @@ impl<'a> BindingsBuilder<'a> {
                 let var = self.solver.fresh_contained(self.uniques);
                 let annot = self.table.insert(
                     KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                    BindingAnnotation::Type(var.to_type()),
+                    BindingAnnotation::Type(
+                        AnnotationTarget::Param(name.id.clone()),
+                        var.to_type(),
+                    ),
                 );
                 (annot, Either::Right((var, function_idx)))
             }

@@ -17,6 +17,7 @@ use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 
 use crate::ast::Ast;
+use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingYield;
@@ -126,7 +127,11 @@ impl<'a> BindingsBuilder<'a> {
                 x.range(),
                 self.table.insert(
                     KeyAnnotation::ReturnAnnotation(ShortIdentifier::new(&func_name)),
-                    BindingAnnotation::AnnotateExpr(*x, self_type),
+                    BindingAnnotation::AnnotateExpr(
+                        AnnotationTarget::Return(func_name.id.clone()),
+                        *x,
+                        self_type,
+                    ),
                 ),
             )
         });

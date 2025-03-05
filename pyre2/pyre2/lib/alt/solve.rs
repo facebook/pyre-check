@@ -170,7 +170,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Arc<Annotation> {
         match binding {
-            BindingAnnotation::AnnotateExpr(x, self_type) => {
+            BindingAnnotation::AnnotateExpr(_, x, self_type) => {
                 let mut ann = self.expr_annotation(x, errors);
                 if let Some(self_type) = self_type
                     && let Some(ty) = &mut ann.ty
@@ -180,7 +180,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Arc::new(ann)
             }
-            BindingAnnotation::Type(x) => Arc::new(Annotation::new_type(x.clone())),
+            BindingAnnotation::Type(_, x) => Arc::new(Annotation::new_type(x.clone())),
         }
     }
 

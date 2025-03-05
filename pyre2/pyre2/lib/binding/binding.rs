@@ -75,7 +75,7 @@ mod check_size {
 
     assert_eq_size!(Binding, [usize; 9]);
     assert_eq_size!(BindingExpect, [usize; 8]);
-    assert_eq_size!(BindingAnnotation, [usize; 9]);
+    assert_eq_size!(BindingAnnotation, [usize; 13]);
     assert_eq_size!(BindingClass, [usize; 22]);
     assert_eq_size!(BindingClassMetadata, [usize; 8]);
     assert_eq_size!(BindingClassField, [usize; 22]);
@@ -916,20 +916,38 @@ impl DisplayWith<Bindings> for Binding {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum AnnotationTarget {
+    /// A function parameter with a type annotation
+    #[expect(dead_code)]
+    Param(Name),
+    /// A return type annotation on a function. The name is that of the function
+    #[expect(dead_code)]
+    Return(Name),
+    /// An annotated assignment. For attribute assignments, the name is the attribute name ("attr" in "x.attr")
+    #[expect(dead_code)]
+    Assign(Name),
+    /// A member of a class
+    #[expect(dead_code)]
+    ClassMember(Name),
+}
+
 /// Values that return an annotation.
 #[derive(Clone, Debug)]
 pub enum BindingAnnotation {
     /// The type is annotated to be this key, will have the outer type removed.
     /// Optionally occuring within a class, in which case Self refers to this class.
-    AnnotateExpr(Expr, Option<Idx<Key>>),
+    #[expect(dead_code)]
+    AnnotateExpr(AnnotationTarget, Expr, Option<Idx<Key>>),
     /// A literal type we know statically.
-    Type(Type),
+    #[expect(dead_code)]
+    Type(AnnotationTarget, Type),
 }
 
 impl DisplayWith<Bindings> for BindingAnnotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         match self {
-            Self::AnnotateExpr(x, self_type) => write!(
+            Self::AnnotateExpr(_, x, self_type) => write!(
                 f,
                 "_: {}{}",
                 ctx.module_info().display(x),
@@ -938,7 +956,7 @@ impl DisplayWith<Bindings> for BindingAnnotation {
                     Some(t) => format!(" (self {})", ctx.display(*t)),
                 }
             ),
-            Self::Type(t) => write!(f, "type {t}"),
+            Self::Type(_, t) => write!(f, "type {t}"),
         }
     }
 }
