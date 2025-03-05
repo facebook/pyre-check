@@ -215,9 +215,9 @@ def f(x: tuple[int, str]) -> None:
 testcase!(
     test_for_literal_string,
     r#"
-from typing import assert_type
+from typing import assert_type, LiteralString
 for i in "abcd":
-    assert_type(i, str)
+    assert_type(i, LiteralString)
     "#,
 );
 

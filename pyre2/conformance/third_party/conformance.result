@@ -650,8 +650,6 @@
     "Line 120: Expected 1 errors",
     "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
-    "Line 116: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 130: Unexpected errors ['EXPECTED Container[str] <: Container[LiteralString]']",
     "Line 166: Unexpected errors ['assert_type(C, B) failed']",
     "Line 167: Unexpected errors ['assert_type(C, A) failed']"
   ],

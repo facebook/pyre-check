@@ -8924,26 +8924,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(str, LiteralString) failed",
-      "description": "assert_type(str, LiteralString) failed",
-      "line": 116,
-      "name": "assert-type",
-      "stop_column": 35,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "EXPECTED Container[str] <: Container[LiteralString]",
-      "description": "EXPECTED Container[str] <: Container[LiteralString]",
-      "line": 130,
-      "name": "type-mismatch",
-      "stop_column": 47,
-      "stop_line": 130
-    },
-    {
-      "code": -2,
       "column": 41,
       "concise_description": "EXPECTED Container[str] <: Container[LiteralString]",
       "description": "EXPECTED Container[str] <: Container[LiteralString]",
