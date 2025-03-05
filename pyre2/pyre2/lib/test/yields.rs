@@ -6,25 +6,19 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    r#"
-TODO zeina: use assert_type instead of reveal_type after I support most of these cases.
-
-TODO: next keyword currently unsupported. Shelving for now as it requires other pyre features to be supported first.
-    "#,
+testcase!(
     test_generator,
     r#"
-from typing import assert_type, Generator, Literal, Any, reveal_type
+from typing import assert_type, Generator, Literal, Any
 
 def yielding():
     yield 1
 
 f = yielding()
 
-next_f = next(f) # E: Could not find name `next`
-reveal_type(next_f) # E: revealed type: Error
+next_f = next(f)
+assert_type(next_f, int)
 assert_type(f, Generator[Literal[1], Any, None])
 
 "#,

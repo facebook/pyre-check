@@ -183,7 +183,7 @@ from typing import Any, Callable, override
 
 def wrapper(func: Callable[..., Any], /) -> Any:
     def wrapped(*args: Any, **kwargs: Any) -> Any:
-        raise NotImplementedError # E: Could not find name `NotImplementedError`
+        raise NotImplementedError
 
     return wrapped
 

@@ -120,7 +120,7 @@ class A(B0, B1):  # E:  Class `A` has metaclass `M0` which is not a subclass of 
 testcase!(
     test_duplicate_class_keyword,
     r#"
-class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "foo" # E: EXPECTED Literal[5] <: str
+class A(foo="x" + 5, foo=True):  # E: Parse error: Duplicate keyword argument "foo" # E: No matching overload found
     pass
 "#,
 );

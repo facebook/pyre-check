@@ -119,7 +119,7 @@ from enum import Enum
 class E(Enum):
     X = 1
     Y = 2
-for e in E:  # E: `type[E]` is not iterable
+for e in E:  # E: EXPECTED EnumMeta <: type[@_] # E: EXPECTED int <: str
     assert_type(e, E)  # E: assert_type(Any, E)
     "#,
 );

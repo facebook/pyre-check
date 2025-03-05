@@ -646,7 +646,7 @@ class D:
 def f(x: list[int], y: dict[str, bool]) -> None:
     assert_type(x[0], int)
     assert_type(y["test"], bool)
-    x["foo"]  # E: Literal['foo'] <: int
+    x["foo"]  # E: No matching overload
     c = C()
     c[0]  # E: `C` has no attribute `__getitem__`
     d = D()

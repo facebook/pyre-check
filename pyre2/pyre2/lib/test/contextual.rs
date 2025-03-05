@@ -318,14 +318,14 @@ xs: list[A] = []
 );
 
 testcase_with_bug!(
-    "TODO: No context propagated to subscript assignment target",
+    "TODO: No context propagated to subscript assignment target, error message is bad",
     test_context_assign_subscript,
     r#"
 class A: ...
 class B(A): ...
 
 xs: list[list[A]] = [[]]
-xs[0] = [B()] # E: EXPECTED list[B] <: list[A]
+xs[0] = [B()] # E: No matching overload found
 "#,
 );
 

@@ -544,7 +544,7 @@ except int:  # E: EXPECTED int <: BaseException
 except Exception as e2:
     reveal_type(e2)  # E: revealed type: Exception
 except ExceptionGroup as e3:
-    reveal_type(e3)  # E: revealed type: ExceptionGroup[Error]
+    reveal_type(e3)  # E: revealed type: ExceptionGroup[Exception]
 except (Exception1, Exception2) as e4:
     reveal_type(e4)  # E: revealed type: Exception1 | Exception2
 except Exception1 as e5:
@@ -571,7 +571,7 @@ except* int as e1:  # E: EXPECTED int <: BaseException
 except* Exception as e2:
     reveal_type(e2)  # E: revealed type: ExceptionGroup[Exception]
 except* ExceptionGroup as e3:  # E: Exception handler annotation in `except*` clause may not extend `BaseExceptionGroup`
-    reveal_type(e3)  # E: ExceptionGroup[ExceptionGroup[Error]]
+    reveal_type(e3)  # E: ExceptionGroup[ExceptionGroup[Exception]]
 except* (Exception1, Exception2) as e4:
     reveal_type(e4)  # E: ExceptionGroup[Exception1 | Exception2]
 except* Exception1 as e5:

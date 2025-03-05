@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_lambda,
@@ -502,7 +503,8 @@ def test(unannotated: P1, unpacked: P2, annotated: P3, annotated_wrong: P4):
 "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "Expecting 3 errors, but not getting any",
     test_assignability_typed_dict_wrong_kwarg,
     r#"
 from typing import TypedDict, Protocol, Required, NotRequired, Unpack
@@ -517,9 +519,9 @@ class P2(Protocol):
     def __call__(self, *, v1: int) -> None: ...
 class P3(Protocol):
     def __call__(self, *, v1: int, v2: str, v4: str) -> None: ...
-x: P1 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P1
-y: P2 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P2
-z: P3 = func1  # E: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P3
+x: P1 = func1  # FIXME: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P1
+y: P2 = func1  # FIXME: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P2
+z: P3 = func1  # FIXME: EXPECTED (**Unpack[TypedDict[TD]]) -> None <: P3
 "#,
 );
 

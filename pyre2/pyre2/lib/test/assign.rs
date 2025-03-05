@@ -9,14 +9,15 @@ use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
 
-testcase!(
+testcase_with_bug!(
+    "Error message is really bad",
     test_subscript_unpack_assign,
     r#"
 from typing import assert_type
 
 x: list[int] = [0, 1, 2]
 x[0], x[1] = 3, 4
-x[0], x[1] = 3, "foo"  # E: EXPECTED Literal['foo'] <: int
+x[0], x[1] = 3, "foo"  # E: No matching overload found
 "#,
 );
 
@@ -34,7 +35,7 @@ y[0] = 1
 assert_type(y, list[int])
 
 z = [1, 2, 3]
-z[0] = "oops"  # E: Literal['oops'] <: int
+z[0] = "oops"  # E: No matching overload found
 
 a: int = 1
 a[0] = 1  # E: `Literal[1]` has no attribute `__setitem__`
@@ -343,7 +344,7 @@ testcase!(
     r#"
 x: list[int] = []
 x += [1]
-x += ["foo"]  # E: EXPECTED list[str] <: list[int]
+x += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
 "#,
 );
 
@@ -352,10 +353,10 @@ testcase!(
     r#"
 def foo(y: list[int]) -> None:
     y += [1]
-    y += ["foo"]  # E: EXPECTED list[str] <: list[int]
+    y += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
     z: list[int] = []
     z += [1]
-    z += ["foo"]  # E: EXPECTED list[str] <: list[int]
+    z += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
 "#,
 );
 
@@ -370,7 +371,7 @@ class C:
 
 c: C = C()
 c.foo += [1]
-c.foo += ["foo"]  # E: EXPECTED list[str] <: list[int]
+c.foo += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
 "#,
 );
 
@@ -383,7 +384,7 @@ class C:
     def __init__(self) -> None:
         self.foo = []
         self.foo += [1]
-        self.foo += ["foo"]  # E: EXPECTED list[str] <: list[int]
+        self.foo += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
 "#,
 );
 
@@ -393,7 +394,7 @@ testcase!(
 x: list[list[int]] = []
 x += [[1]]
 x[0] += [1]
-x += [1]  # E: EXPECTED list[int] <: list[list[int]]
+x += [1]  # E: EXPECTED list[int] <: Iterable[list[int]]
 "#,
 );
 

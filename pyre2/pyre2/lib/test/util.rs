@@ -25,6 +25,7 @@ use starlark_map::small_map::SmallMap;
 use crate::binding::binding::KeyExport;
 use crate::error::style::ErrorStyle;
 use crate::metadata::RuntimeMetadata;
+use crate::module::bundled::typeshed;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
@@ -36,7 +37,6 @@ use crate::state::subscriber::TestSubscriber;
 use crate::types::class::Class;
 use crate::types::types::Type;
 use crate::util::rayon::init_rayon;
-use crate::util::reduced_stdlib::lookup_stdlib;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -81,17 +81,8 @@ macro_rules! testcase_with_bug {
     };
 }
 
-enum TestPathStyle {
-    Source,
-    Stub,
-}
-
-fn default_path(module: ModuleName, style: TestPathStyle) -> PathBuf {
-    let ext = match style {
-        TestPathStyle::Source => "py",
-        TestPathStyle::Stub => "pyi",
-    };
-    PathBuf::from(format!("{}.{}", module.as_str().replace('.', "/"), ext))
+fn default_path(module: ModuleName) -> PathBuf {
+    PathBuf::from(format!("{}.py", module.as_str().replace('.', "/")))
 }
 
 #[derive(Debug, Default, Clone)]
@@ -116,7 +107,7 @@ impl TestEnv {
 
     pub fn add(&mut self, name: &str, code: &str) {
         let module_name = ModuleName::from_str(name);
-        let relative_path = ModulePath::memory(default_path(module_name, TestPathStyle::Source));
+        let relative_path = ModulePath::memory(default_path(module_name));
         self.0
             .insert(module_name, (relative_path, Some(code.to_owned())));
     }
@@ -301,14 +292,10 @@ pub fn get_batched_lsp_operations_report_allow_error(
 
 impl Loader for TestEnv {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        let style = ErrorStyle::Delayed;
         if let Some((path, _)) = self.0.get(&module) {
-            Ok((path.dupe(), style))
-        } else if lookup_stdlib(module).is_some() {
-            Ok((
-                ModulePath::memory(default_path(module, TestPathStyle::Stub)),
-                style,
-            ))
+            Ok((path.dupe(), ErrorStyle::Delayed))
+        } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
+            Ok((path, ErrorStyle::Never))
         } else {
             Err(FindError::new(anyhow!("Module not given in test suite")))
         }
@@ -325,9 +312,7 @@ impl Loader for TestEnv {
                 return Some(Arc::new(c.clone()));
             }
         }
-        Some(Arc::new(
-            lookup_stdlib(ModuleName::from_str(path.file_stem()?.to_str()?))?.to_owned(),
-        ))
+        None
     }
 }
 
