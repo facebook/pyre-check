@@ -13,7 +13,6 @@ import clsx from 'clsx';
 import Editor from '@monaco-editor/react';
 import * as LZString from 'lz-string';
 import styles from './TryPyre2.module.css';
-import TryPyre2ConfigEditor from './TryPyre2ConfigEditor';
 import TryPyre2Results from './TryPyre2Results';
 import {
   monaco,

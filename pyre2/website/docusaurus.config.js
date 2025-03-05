@@ -10,7 +10,6 @@
 const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 const webpack = require('webpack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-const allFlowVersions = require('./src/js/flow-versions');
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
@@ -168,10 +167,6 @@ module.exports = {
     },
   },
   customFields: {
-    /* The latest release is in the second slot, but it might be unavailable if
-       INCLUDE_PAST_RELEASES env var is not on. In that case, we default to master. */
-    flowVersion: allFlowVersions[1] || allFlowVersions[0],
-    allFlowVersions,
     fbRepoName: 'fbsource',
   },
   presets: [
@@ -187,10 +182,6 @@ module.exports = {
             external:
               'https://github.com/facebook/pyre-check/pyre2/edit/main/website/',
           }),
-          remarkPlugins: [
-            [require('@docusaurus/remark-plugin-npm2yarn'), {sync: true}],
-            require('./src/js/flow-check-remark-plugin'),
-          ],
         },
         staticDocsProject: 'Pyrefly',
         theme: {
