@@ -330,11 +330,6 @@ class _version_info(tuple[int, int, int, str, int]): ...
 version_info: _version_info
 "#;
 
-static PYRE_EXTENSIONS: &str = r#"
-class PyreReadOnly[T]:
-    pass
-"#;
-
 static COLLECTIONS: &str = r#"
 from typing import Iterable, Any
 def namedtuple(
@@ -354,7 +349,6 @@ static STDLIB: &[(&str, &str)] = &[
     ("enum", ENUM),
     ("dataclasses", DATACLASSES),
     ("sys", SYS),
-    ("pyre_extensions", PYRE_EXTENSIONS),
     ("collections", COLLECTIONS),
 ];
 

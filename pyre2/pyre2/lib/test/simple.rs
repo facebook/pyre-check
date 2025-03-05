@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
 
@@ -1121,6 +1122,7 @@ class C:
 
 testcase!(
     test_pyrereadonly,
+    TestEnv::one("pyre_extensions", "class PyreReadOnly[T]: pass"),
     r#"
 from pyre_extensions import PyreReadOnly
 def f(x: PyreReadOnly[str]):
