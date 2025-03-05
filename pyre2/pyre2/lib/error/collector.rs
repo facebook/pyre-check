@@ -148,16 +148,8 @@ impl ErrorCollector {
         let mut map = SmallMap::new();
         for x in xs {
             for err in x.errors.lock().iter() {
-                // Lots of error messages have names in them, e.g. "Can't find module `foo`".
-                // We want to summarise those together, so replace bits of text inside `...` with `...`.
-                let clean_msg = err
-                    .msg()
-                    .split('`')
-                    .enumerate()
-                    .map(|(i, x)| if i % 2 == 0 { x } else { "..." })
-                    .collect::<Vec<_>>()
-                    .join("`");
-                *map.entry(clean_msg).or_default() += 1;
+                let kind = err.error_kind().to_string();
+                *map.entry(kind).or_default() += 1;
             }
         }
         let mut res = map.into_iter().collect::<Vec<_>>();
