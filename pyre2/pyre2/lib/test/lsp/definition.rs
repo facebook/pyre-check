@@ -232,6 +232,27 @@ Definition Result: None
 }
 
 #[test]
+fn goto_def_dead_code() {
+    let code: &str = r#"
+if False:
+    x
+#   ^
+"#;
+
+    let report = get_batched_lsp_operations_report_allow_error(&[("main", code)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+3 |     x
+        ^
+Definition Result: None
+"#
+        .trim(),
+        report.trim()
+    );
+}
+
+#[test]
 fn multi_definition_test() {
     let code = r#"
 if True:
