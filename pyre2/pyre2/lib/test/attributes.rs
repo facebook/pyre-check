@@ -16,7 +16,7 @@ class A:
     x: int
 def f(a: A):
     a.x = 1  # OK
-    a.x = "oops"  # E: EXPECTED Literal['oops'] <: int
+    a.x = "oops"  # E: Attribute `x` has type `int`, cannot assign `Literal['oops']`
     "#,
 );
 
@@ -45,12 +45,23 @@ def f(a: A):
 );
 
 testcase!(
+    test_unannotated_attribute_bad_assignment,
+    r#"
+class A:
+    def __init__(self):
+        self.x = 0
+    def f(self):
+        self.x = "oops"  # E: Attribute `x` has type `int`, cannot assign `Literal['oops']`
+    "#,
+);
+
+testcase!(
     test_self_attribute_assign_twice,
     r#"
 from typing import assert_type
 class A:
     def f(self, x: str):
-        self.x = x  # E: EXPECTED str <: int
+        self.x = x  # E: Attribute `x` has type `int`, cannot assign `str`
     def __init__(self, x: int):
         self.x = x
     "#,
@@ -92,7 +103,7 @@ class C3:
     def f(x: int, /) -> str:
         return ""
 def foo(x: Callable[[int], str], c: C, c2: C2, c3: C3):
-    C.f = x  # E: EXPECTED (int) -> str <: (C, int) -> str
+    C.f = x  # E: Attribute `f` has type `(C, int) -> str`, cannot assign `(int) -> str`
     c.f = x
     C2.f = x
     c2.f = x
@@ -132,7 +143,7 @@ from typing import assert_type
 class A:
     x: str
     def __init__(self, x: int):
-        self.x = x  # E: EXPECTED int <: str
+        self.x = x  # E: Attribute `x` has type `str`, cannot assign `int`
     "#,
 );
 
@@ -143,7 +154,7 @@ from typing import assert_type
 
 class A:
     def __init__(self, x: str):
-        self.x: int = x  # E: EXPECTED str <: int
+        self.x: int = x  # E: Attribute `x` has type `int`, cannot assign `str`
 def f(a: A):
     assert_type(a.x, int)
     "#,
@@ -209,7 +220,7 @@ from typing import assert_type
 class A:
     def __init__(self, x: str):
         self.x: int
-        self.x = x  # E: EXPECTED str <: int
+        self.x = x  # E: Attribute `x` has type `int`, cannot assign `str`
 def f(a: A):
     assert_type(a.x, int)
     "#,

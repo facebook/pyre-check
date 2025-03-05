@@ -64,6 +64,12 @@ impl TypeCheckKind {
                 ctx.display(want),
                 ctx.display(got),
             ),
+            Self::Attribute(attr) => format!(
+                "Attribute `{}` has type `{}`, cannot assign `{}`",
+                attr,
+                ctx.display(want),
+                ctx.display(got)
+            ),
             Self::ExplicitTypeAnnotation => format!(
                 "Expected declared type `{}`, got `{}`",
                 ctx.display(want),

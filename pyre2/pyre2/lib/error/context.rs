@@ -66,6 +66,8 @@ pub enum TypeCheckKind {
     TypeGuardReturn,
     /// Check against type of a TypedDict key.
     TypedDictKey(Name),
+    /// Check of an attribute assignment against its type.
+    Attribute(Name),
     /// A check against a user-declared type annotation. Use this only when there is no other
     /// useful information to include about the check.
     ExplicitTypeAnnotation,

@@ -309,9 +309,9 @@
     "Line 102: Unexpected errors ['EXPECTED type[ConverterClass] <: (@_) -> @_']",
     "Line 104: Unexpected errors ['EXPECTED type[dict] <: (@_) -> @_']",
     "Line 112: Unexpected errors ['Expected 0 positional arguments, got 5']",
-    "Line 114: Unexpected errors [\"EXPECTED Literal['f1'] <: int\"]",
-    "Line 115: Unexpected errors [\"EXPECTED Literal['f6'] <: ConverterClass\"]",
-    "Line 116: Unexpected errors [\"EXPECTED Literal[b'f6'] <: ConverterClass\"]",
+    "Line 114: Unexpected errors [\"Attribute `field0` has type `int`, cannot assign `Literal['f1']`\"]",
+    "Line 115: Unexpected errors [\"Attribute `field3` has type `ConverterClass`, cannot assign `Literal['f6']`\"]",
+    "Line 116: Unexpected errors [\"Attribute `field3` has type `ConverterClass`, cannot assign `Literal[b'f6']`\"]",
     "Line 121: Unexpected errors ['Expected 0 positional arguments, got 6']",
     "Line 132: Unexpected errors ['EXPECTED type[str] <: () -> str | None']"
   ],
@@ -495,7 +495,7 @@
     "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed']"
   ],
   "generics_self_attributes.py": [
-    "Line 29: Unexpected errors ['EXPECTED OrdinalLinkedList <: Self | None']"
+    "Line 29: Unexpected errors ['Attribute `next` has type `Self | None`, cannot assign `OrdinalLinkedList`']"
   ],
   "generics_self_basic.py": [
     "Line 20: Expected 1 errors",
