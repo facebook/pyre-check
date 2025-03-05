@@ -129,7 +129,7 @@ module Analysis = struct
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     let profiler =
       if Ast.Statement.Define.dump_perf (Ast.Node.value define) then
-        TaintProfiler.start ~callable ()
+        TaintProfiler.start ~enable_perf:true ~callable ()
       else
         TaintProfiler.disabled
     in

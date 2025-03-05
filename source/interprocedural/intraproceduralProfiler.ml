@@ -135,7 +135,7 @@ module Make (Analysis : Analysis) = struct
     mutable apply_call_step_events: ApplyCallStepEvent.t list;
     whole_timer: Timer.t;
     mutable current_expression: ExpressionTimer.t;
-    perf_profiler: PerfProfiler.t;
+    perf_profiler: PerfProfiler.t option;
   }
 
   type t = profiler option
@@ -143,19 +143,23 @@ module Make (Analysis : Analysis) = struct
   (* A profiler that does nothing. *)
   let disabled = None
 
-  let start ~callable () =
+  let start ~enable_perf ~callable () =
     Log.dump "Starting to profile the analysis of %a" Target.pp_pretty callable;
 
     let perf_profiler =
-      PerfProfiler.start
-        ~filename:
-          (Format.asprintf
-             "perf.%s.%a.%d.data"
-             Analysis.perf_data_file_name
-             Target.pp_pretty
-             callable
-             (Int.of_float (CamlUnix.time ())))
-        ()
+      if enable_perf then
+        Some
+          (PerfProfiler.start
+             ~filename:
+               (Format.asprintf
+                  "perf.%s.%a.%d.data"
+                  Analysis.perf_data_file_name
+                  Target.pp_pretty
+                  callable
+                  (Int.of_float (CamlUnix.time ())))
+             ())
+      else
+        None
     in
 
     Some
@@ -258,7 +262,9 @@ module Make (Analysis : Analysis) = struct
           perf_profiler;
         } ->
         let total_seconds = Timer.stop_in_sec whole_timer in
-        PerfProfiler.stop perf_profiler;
+        (match perf_profiler with
+        | Some perf_profiler -> PerfProfiler.stop perf_profiler
+        | None -> ());
         Log.dump "Performance metrics:";
         Log.dump "Total time: %.2fs" total_seconds;
 

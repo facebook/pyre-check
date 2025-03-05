@@ -27,7 +27,7 @@ module Make (Analysis : Analysis) : sig
   (* A profiler that does nothing. *)
   val disabled : t
 
-  val start : callable:Target.t -> unit -> t
+  val start : enable_perf:bool -> callable:Target.t -> unit -> t
 
   val track_duration : profiler:t -> name:string -> f:(unit -> 'a) -> 'a
 

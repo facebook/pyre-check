@@ -119,7 +119,7 @@ module CallGraphAnalysis = struct
       in
       let profiler =
         if Ast.Statement.Define.dump_perf_higher_order_call_graph define then
-          CallGraphProfiler.start ~callable ()
+          CallGraphProfiler.start ~enable_perf:false ~callable ()
         else
           CallGraphProfiler.disabled
       in
