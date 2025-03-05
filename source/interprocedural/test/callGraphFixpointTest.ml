@@ -966,7 +966,9 @@ let test_higher_order_call_graph_fixpoint =
      def foo(f):
        return baz
      def bar():
-       return foo(foo)  # Test skip analysis
+       def g():
+         return
+       return foo(g)  # Test skip analysis
   |}
            ~skip_analysis_targets:
              (Target.Set.of_list
@@ -981,7 +983,7 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "7:9-7:17",
+                     ( "9:9-9:15",
                        LocationCallees.Singleton
                          (ExpressionCallees.from_call
                             (CallCallees.create
@@ -996,19 +998,9 @@ let test_higher_order_call_graph_fixpoint =
                                           [
                                             ( create_positional_parameter 0 "f",
                                               Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal }
+                                                { name = "test.bar.g"; kind = Normal }
                                               |> Target.from_regular );
                                           ]);
-                                 ]
-                               ())) );
-                     ( "7:13-7:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
                                  ]
                                ())) );
                    ];

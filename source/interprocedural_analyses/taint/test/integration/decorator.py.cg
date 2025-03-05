@@ -6,16 +6,15 @@ Call dependencies
   ],
   "decorator.Foo.bar (method)": [ "print (fun)" ],
   "decorator.Foo.bar@decorated (method)": [
-    "decorator.with_logging_args_kwargs (fun)[formal(f, position=0)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]",
-    "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.bar (method)]",
-    "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]]"
+    "decorator.with_logging_args_kwargs (fun)[formal(f, position=0)=decorator.Foo.bar (method)]",
+    "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]"
   ],
   "decorator.Foo.foo (method)": [ "decorator.Foo.sink_method (method)" ],
   "decorator.Foo.foo@decorated (method)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.foo (method)]"
   ],
   "decorator.Foo.self_has_generic_type (method)": [
-    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]]"
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]"
   ],
   "decorator.Foo.self_has_generic_type@decorated (method)": [
     "decorator.with_logging_args_kwargs_no_sink (fun)[formal(f, position=0)=decorator.Foo.self_has_generic_type (method)]"
@@ -85,7 +84,7 @@ Call dependencies
     "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.foo (method)]",
     "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.self_has_generic_type (method)]",
     "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.some_class_method (method)]",
-    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]]",
+    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]",
     "decorator.with_logging_async.inner (fun)[local($parameter$f)=decorator.foo_async (fun)]",
     "decorator.with_logging_first_parameter.inner (fun)[local($parameter$f)=decorator.foo_log_first_parameter (fun)]",
     "decorator.with_logging_helper_functions.inner (fun)[local($parameter$f)=decorator.foo_with_helper_function (fun)]",
@@ -122,15 +121,11 @@ Call dependencies
     "_test_sink (fun)", "decorator.foo (fun)"
   ],
   "decorator.with_logging_args_kwargs.inner (fun)": [ "_test_sink (fun)" ],
+  "decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]": [
+    "_test_sink (fun)", "decorator.Foo.bar (method)"
+  ],
   "decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.foo_args_kwargs (fun)]": [
     "_test_sink (fun)", "decorator.foo_args_kwargs (fun)"
-  ],
-  "decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]": [
-    "_test_sink (fun)",
-    "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]"
-  ],
-  "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]": [
-    "decorator.Foo.bar (method)"
   ],
   "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.foo (method)]": [
     "decorator.Foo.foo (method)"
@@ -144,8 +139,8 @@ Call dependencies
   "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.foo_args_kwargs_with_sink (fun)]": [
     "decorator.foo_args_kwargs_with_sink (fun)"
   ],
-  "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]]": [
-    "decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]"
+  "decorator.with_logging_args_kwargs_no_sink.inner (fun)[local($parameter$f)=decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]]": [
+    "decorator.with_logging_args_kwargs.inner (fun)[local($parameter$f)=decorator.Foo.bar (method)]"
   ],
   "decorator.with_logging_async.inner (fun)": [ "_test_sink (fun)" ],
   "decorator.with_logging_async.inner (fun)[local($parameter$f)=decorator.foo_async (fun)]": [

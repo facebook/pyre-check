@@ -133,11 +133,70 @@ let test_pretty_print _ =
   ()
 
 
+let test_contain_recursive_targets _ =
+  let assert_contain_recursive_target ~result ~target =
+    assert_equal ~printer:Bool.to_string result (Target.contain_recursive_target target)
+  in
+  assert_contain_recursive_target
+    ~result:false
+    ~target:(Target.Regular.Function { name = "foo"; kind = Normal } |> Target.from_regular);
+  assert_contain_recursive_target
+    ~result:false
+    ~target:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "foo"; kind = Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Regular.Function { name = "bar"; kind = Normal } |> Target.from_regular );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         });
+  assert_contain_recursive_target
+    ~result:true
+    ~target:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "foo"; kind = Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Regular.Function { name = "foo"; kind = Normal } |> Target.from_regular );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         });
+  assert_contain_recursive_target
+    ~result:true
+    ~target:
+      (Target.Parameterized
+         {
+           regular = Target.Regular.Function { name = "foo"; kind = Normal };
+           parameters =
+             [
+               ( AccessPath.Root.Variable "x",
+                 Target.Parameterized
+                   {
+                     regular = Target.Regular.Function { name = "bar"; kind = Normal };
+                     parameters =
+                       [
+                         ( AccessPath.Root.Variable "y",
+                           Target.Regular.Function { name = "foo"; kind = Normal }
+                           |> Target.from_regular );
+                       ]
+                       |> Target.ParameterMap.of_alist_exn;
+                   } );
+             ]
+             |> Target.ParameterMap.of_alist_exn;
+         })
+
+
 let () =
   "callable"
   >::: [
          "get_module_and_definition" >:: test_get_module_and_definition;
          "resolve_method" >:: test_resolve_method;
          "pretty_print" >:: test_pretty_print;
+         "contain_recursive_targets" >:: test_contain_recursive_targets;
        ]
   |> Test.run

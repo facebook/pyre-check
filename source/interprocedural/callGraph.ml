@@ -4165,6 +4165,10 @@ module HigherOrderCallGraph = struct
         decorated_targets, non_decorated_targets
 
 
+      let validate_target target =
+        if Target.contain_recursive_target target then None else Some target
+
+
       let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
         let track_apply_call_step step f =
           CallGraphProfiler.track_apply_call_step
@@ -4311,12 +4315,9 @@ module HigherOrderCallGraph = struct
                    `higher_order_parameters`. *)
                 Some { callee_target with CallTarget.target = Target.Regular callee_regular }
               else
-                Some
-                  {
-                    callee_target with
-                    CallTarget.target =
-                      Target.Parameterized { regular = callee_regular; parameters };
-                  }
+                Target.Parameterized { regular = callee_regular; parameters }
+                |> validate_target
+                >>| fun target -> { callee_target with CallTarget.target }
           | _ -> None
         in
         (* Treat an empty list as a single element list so that in each result of the cartesian
@@ -4564,7 +4565,7 @@ module HigherOrderCallGraph = struct
                     else
                       parameters_targets
                       |> Algorithms.cartesian_product
-                      |> List.map ~f:(fun parameters_targets ->
+                      |> List.filter_map ~f:(fun parameters_targets ->
                              Target.Parameterized
                                {
                                  regular = regular_target;
@@ -4573,7 +4574,8 @@ module HigherOrderCallGraph = struct
                                    |> List.zip_exn parameters_roots
                                    |> Target.ParameterMap.of_alist_exn;
                                }
-                             |> CallTarget.create)
+                             |> validate_target
+                             >>| CallTarget.create)
                       |> CallTarget.Set.of_list
                 | _ ->
                     regular_target

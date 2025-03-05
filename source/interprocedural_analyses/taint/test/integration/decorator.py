@@ -185,7 +185,6 @@ class Foo:
 
     @with_logging_args_kwargs_no_sink
     @with_logging_args_kwargs
-    @with_logging_args_kwargs_no_sink
     def bar(self, x: str) -> None:
         print(x)
 

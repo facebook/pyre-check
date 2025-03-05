@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 216,
+    "line": 215,
     "start": 32,
     "end": 46,
     "filename": "decorator.py",
@@ -26,7 +26,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 216,
+              "line": 215,
               "start": 32,
               "end": 46
             }
@@ -48,7 +48,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 216,
+                "line": 215,
                 "start": 32,
                 "end": 46
               },
@@ -56,7 +56,7 @@
                 "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]"
               ],
               "port": "formal(*args, position=0)",
-              "call_site": "216:4-216:47"
+              "call_site": "215:4-215:47"
             }
           }
         ]
@@ -78,9 +78,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 204,
+    "line": 203,
     "start": 18,
     "end": 32,
     "filename": "decorator.py",
@@ -101,7 +101,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 204,
+              "line": 203,
               "start": 18,
               "end": 32
             }
@@ -127,7 +127,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 204,
+                "line": 203,
                 "start": 18,
                 "end": 32
               },
@@ -135,7 +135,7 @@
                 "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "204:4-204:33"
+              "call_site": "203:4-203:33"
             }
           }
         ]
@@ -160,9 +160,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 220,
+    "line": 219,
     "start": 29,
     "end": 43,
     "filename": "decorator.py",
@@ -183,7 +183,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 220,
+              "line": 219,
               "start": 29,
               "end": 43
             }
@@ -205,7 +205,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 220,
+                "line": 219,
                 "start": 29,
                 "end": 43
               },
@@ -213,7 +213,7 @@
                 "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]"
               ],
               "port": "formal(*args, position=0)",
-              "call_site": "220:4-220:53"
+              "call_site": "219:4-219:53"
             }
           }
         ]
@@ -235,9 +235,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 218,
+    "line": 217,
     "start": 28,
     "end": 42,
     "filename": "decorator.py",
@@ -258,7 +258,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 218,
+              "line": 217,
               "start": 28,
               "end": 42
             }
@@ -284,7 +284,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 218,
+                "line": 217,
                 "start": 28,
                 "end": 42
               },
@@ -292,7 +292,7 @@
                 "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]"
               ],
               "port": "formal(first_parameter, position=0)",
-              "call_site": "218:4-218:52"
+              "call_site": "217:4-217:52"
             }
           }
         ]
@@ -317,9 +317,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 205,
+    "line": 204,
     "start": 20,
     "end": 34,
     "filename": "decorator.py",
@@ -340,7 +340,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 205,
+              "line": 204,
               "start": 20,
               "end": 34
             }
@@ -362,7 +362,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 205,
+                "line": 204,
                 "start": 20,
                 "end": 34
               },
@@ -370,7 +370,7 @@
                 "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]"
               ],
               "port": "formal(y, position=0)",
-              "call_site": "205:10-205:35"
+              "call_site": "204:10-204:35"
             }
           }
         ]
@@ -392,9 +392,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 224,
+    "line": 223,
     "start": 16,
     "end": 30,
     "filename": "decorator.py",
@@ -415,7 +415,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 224,
+              "line": 223,
               "start": 16,
               "end": 30
             }
@@ -437,15 +437,15 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 224,
+                "line": 223,
                 "start": 16,
                 "end": 30
               },
               "resolves_to": [
-                "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.bar]]]"
+                "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]"
               ],
               "port": "formal(**kwargs)",
-              "call_site": "224:4-224:31"
+              "call_site": "223:4-223:31"
             }
           }
         ]
@@ -456,20 +456,20 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.bar]]]",
+      "callee": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
       "index": 0,
       "parameter": "formal(**kw)"
     },
-    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter:e4bbc13f5bfd03867404d87a74a9b26a"
+    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]|0|formal(**kw):6fcba06399a3a02d3e9f18ef6c367057"
   }
 }
 {
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 229,
+    "line": 228,
     "start": 26,
     "end": 40,
     "filename": "decorator.py",
@@ -490,7 +490,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 229,
+              "line": 228,
               "start": 26,
               "end": 40
             }
@@ -512,7 +512,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 229,
+                "line": 228,
                 "start": 26,
                 "end": 40
               },
@@ -520,7 +520,7 @@
                 "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]"
               ],
               "port": "formal(*args, position=0)[0]",
-              "call_site": "229:4-229:41"
+              "call_site": "228:4-228:41"
             }
           }
         ]
@@ -542,9 +542,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 227,
+    "line": 226,
     "start": 47,
     "end": 61,
     "filename": "decorator.py",
@@ -565,7 +565,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 227,
+              "line": 226,
               "start": 47,
               "end": 61
             }
@@ -587,7 +587,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 227,
+                "line": 226,
                 "start": 47,
                 "end": 61
               },
@@ -595,7 +595,7 @@
                 "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]"
               ],
               "port": "formal(**kwargs)[x]",
-              "call_site": "227:4-227:62"
+              "call_site": "226:4-226:62"
             }
           }
         ]
@@ -617,9 +617,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 222,
+    "line": 221,
     "start": 14,
     "end": 28,
     "filename": "decorator.py",
@@ -640,7 +640,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 222,
+              "line": 221,
               "start": 14,
               "end": 28
             }
@@ -662,7 +662,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 222,
+                "line": 221,
                 "start": 14,
                 "end": 28
               },
@@ -670,7 +670,7 @@
                 "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]"
               ],
               "port": "formal(*args, position=0)[0]",
-              "call_site": "222:4-222:29"
+              "call_site": "221:4-221:29"
             }
           }
         ]
@@ -692,9 +692,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 212,
+    "line": 211,
     "start": 39,
     "end": 53,
     "filename": "decorator.py",
@@ -715,7 +715,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 212,
+              "line": 211,
               "start": 39,
               "end": 53
             }
@@ -741,7 +741,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 212,
+                "line": 211,
                 "start": 39,
                 "end": 53
               },
@@ -749,7 +749,7 @@
                 "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]"
               ],
               "port": "formal(*args, position=0)[1]",
-              "call_site": "212:4-212:54"
+              "call_site": "211:4-211:54"
             }
           }
         ]
@@ -774,9 +774,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 207,
+    "line": 206,
     "start": 22,
     "end": 36,
     "filename": "decorator.py",
@@ -797,7 +797,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 207,
+              "line": 206,
               "start": 22,
               "end": 36
             }
@@ -819,7 +819,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 207,
+                "line": 206,
                 "start": 22,
                 "end": 36
               },
@@ -827,7 +827,7 @@
                 "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]"
               ],
               "port": "formal(**kwargs)",
-              "call_site": "207:4-207:37"
+              "call_site": "206:4-206:37"
             }
           }
         ]
@@ -849,9 +849,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.main",
-    "callable_line": 202,
+    "callable_line": 201,
     "code": 5002,
-    "line": 203,
+    "line": 202,
     "start": 8,
     "end": 22,
     "filename": "decorator.py",
@@ -872,7 +872,7 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 203,
+              "line": 202,
               "start": 8,
               "end": 22
             }
@@ -898,7 +898,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 203,
+                "line": 202,
                 "start": 8,
                 "end": 22
               },
@@ -906,7 +906,7 @@
                 "decorator.with_logging.inner[local($parameter$f)=decorator.foo]"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "203:4-203:23"
+              "call_site": "202:4-202:23"
             }
           }
         ]
@@ -1020,7 +1020,7 @@
   "data": {
     "callable": "decorator.Foo.self_has_generic_type",
     "filename": "decorator.py",
-    "callable_line": 193,
+    "callable_line": 192,
     "sinks": [
       {
         "port": "formal(x, position=2)",
@@ -1036,15 +1036,15 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 194,
+                "line": 193,
                 "start": 20,
                 "end": 21
               },
               "resolves_to": [
-                "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.bar]]]"
+                "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]"
               ],
               "port": "formal(**kwargs)",
-              "call_site": "194:8-194:22"
+              "call_site": "193:8-193:22"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -1092,7 +1092,7 @@
   "data": {
     "callable": "decorator.Foo.some_class_method",
     "filename": "decorator.py",
-    "callable_line": 198,
+    "callable_line": 197,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1108,13 +1108,13 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 199,
+                "line": 198,
                 "start": 26,
                 "end": 27
               },
               "resolves_to": [ "decorator.Foo.sink_method" ],
               "port": "formal(x, position=1)",
-              "call_site": "199:8-199:28"
+              "call_site": "198:8-198:28"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
@@ -1144,13 +1144,13 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 274,
+                "line": 273,
                 "start": 20,
                 "end": 28
               },
               "resolves_to": [ "decorator.decorated" ],
               "port": "formal(into_sink, position=1)",
-              "call_site": "274:8-274:29"
+              "call_site": "273:8-273:29"
             }
           }
         ]
@@ -1169,13 +1169,13 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 274,
+                "line": 273,
                 "start": 13,
                 "end": 18
               },
               "resolves_to": [ "decorator.decorated" ],
               "port": "formal(into_sink, position=1)",
-              "call_site": "274:8-274:29"
+              "call_site": "273:8-273:29"
             }
           }
         ]
@@ -1188,7 +1188,7 @@
   "data": {
     "callable": "decorator.decorated",
     "filename": "decorator.py",
-    "callable_line": 280,
+    "callable_line": 279,
     "sinks": [
       {
         "port": "formal(into_sink, position=1)",
@@ -1203,11 +1203,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 281,
+              "line": 280,
               "start": 15,
               "end": 24
             },
-            "call_site": "281:4-281:25"
+            "call_site": "280:4-280:25"
           }
         ]
       }
@@ -1306,7 +1306,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator",
     "filename": "decorator.py",
-    "callable_line": 256,
+    "callable_line": 255,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -1321,11 +1321,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 257,
+              "line": 256,
               "start": 15,
               "end": 19
             },
-            "call_site": "257:4-257:20"
+            "call_site": "256:4-256:20"
           }
         ]
       }
@@ -1342,9 +1342,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator",
-    "callable_line": 256,
+    "callable_line": 255,
     "code": 5002,
-    "line": 257,
+    "line": 256,
     "start": 15,
     "end": 19,
     "filename": "decorator.py",
@@ -1367,11 +1367,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 256,
+              "line": 255,
               "start": 60,
               "end": 69
             },
-            "call_site": "256:0-257:20"
+            "call_site": "255:0-256:20"
           }
         ]
       },
@@ -1388,11 +1388,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 257,
+              "line": 256,
               "start": 15,
               "end": 19
             },
-            "call_site": "257:4-257:20"
+            "call_site": "256:4-256:20"
           }
         ]
       }
@@ -1412,7 +1412,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
     "filename": "decorator.py",
-    "callable_line": 261,
+    "callable_line": 260,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -1431,7 +1431,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 267,
+                "line": 266,
                 "start": 4,
                 "end": 11
               },
@@ -1456,9 +1456,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
-    "callable_line": 261,
+    "callable_line": 260,
     "code": 5002,
-    "line": 267,
+    "line": 266,
     "start": 4,
     "end": 11,
     "filename": "decorator.py",
@@ -1481,11 +1481,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 262,
+              "line": 261,
               "start": 15,
               "end": 24
             },
-            "call_site": "261:0-267:11"
+            "call_site": "260:0-266:11"
           }
         ]
       },
@@ -1507,7 +1507,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 267,
+                "line": 266,
                 "start": 4,
                 "end": 11
               },
@@ -1537,7 +1537,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner.inner",
     "filename": "decorator.py",
-    "callable_line": 264,
+    "callable_line": 263,
     "sinks": [
       {
         "port": "captured_variable($parameter$arg2)",
@@ -1553,11 +1553,11 @@
             "local_features": [ { "always-via": "captured-variable" } ],
             "origin": {
               "filename": "decorator.py",
-              "line": 265,
+              "line": 264,
               "start": 19,
               "end": 23
             },
-            "call_site": "265:8-265:24"
+            "call_site": "264:8-264:24"
           }
         ]
       }
@@ -1569,7 +1569,7 @@
   "data": {
     "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
     "filename": "decorator.py",
-    "callable_line": 244,
+    "callable_line": 243,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -1584,11 +1584,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 245,
+              "line": 244,
               "start": 15,
               "end": 19
             },
-            "call_site": "245:4-245:20"
+            "call_site": "244:4-244:20"
           }
         ]
       }
@@ -1605,9 +1605,9 @@
   "kind": "issue",
   "data": {
     "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
-    "callable_line": 244,
+    "callable_line": 243,
     "code": 5002,
-    "line": 245,
+    "line": 244,
     "start": 15,
     "end": 19,
     "filename": "decorator.py",
@@ -1630,11 +1630,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 244,
+              "line": 243,
               "start": 69,
               "end": 78
             },
-            "call_site": "244:0-245:20"
+            "call_site": "243:0-244:20"
           }
         ]
       },
@@ -1651,11 +1651,11 @@
             ],
             "origin": {
               "filename": "decorator.py",
-              "line": 245,
+              "line": 244,
               "start": 15,
               "end": 19
             },
-            "call_site": "245:4-245:20"
+            "call_site": "244:4-244:20"
           }
         ]
       }
@@ -1675,7 +1675,7 @@
   "data": {
     "callable": "decorator.using_decorated",
     "filename": "decorator.py",
-    "callable_line": 284,
+    "callable_line": 283,
     "sinks": [
       {
         "port": "formal(into_decorated, position=0)",
@@ -1691,7 +1691,7 @@
             "call": {
               "position": {
                 "filename": "decorator.py",
-                "line": 285,
+                "line": 284,
                 "start": 14,
                 "end": 28
               },
@@ -1699,7 +1699,7 @@
                 "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]"
               ],
               "port": "formal(*args, position=0)[0]",
-              "call_site": "285:4-285:29"
+              "call_site": "284:4-284:29"
             }
           }
         ]
@@ -1807,7 +1807,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+    "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -1836,7 +1836,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.bar]]",
+    "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -2105,7 +2105,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.bar]]]",
+    "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -2126,7 +2126,7 @@
                 "end": 25
               },
               "resolves_to": [
-                "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.bar]]"
+                "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]"
               ],
               "port": "formal(**kwargs)",
               "call_site": "75:8-75:26"

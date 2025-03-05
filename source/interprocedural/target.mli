@@ -155,6 +155,11 @@ val is_normal : t -> bool
 
 val is_decorated : t -> bool
 
+(* A parameterized target contains recursive targets if one of its `regular` part also appears in
+   one of its `parameters` part. Such recursion may lead to non-termination in high-order call graph
+   building. *)
+val contain_recursive_target : t -> bool
+
 val for_issue_handle : t -> t
 
 (** Return the define name of a Function or Method target. Note that multiple targets can match to
