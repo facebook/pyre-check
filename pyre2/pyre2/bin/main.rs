@@ -95,6 +95,8 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
     match status {
         CommandExitStatus::Success => ExitCode::SUCCESS,
         CommandExitStatus::UserError => ExitCode::FAILURE,
+        // Exit code 2 is reserved for Meta-internal usages
+        CommandExitStatus::InfraError => ExitCode::from(3),
     }
 }
 

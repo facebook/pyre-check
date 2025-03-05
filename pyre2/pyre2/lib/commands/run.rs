@@ -15,4 +15,7 @@ pub enum CommandExitStatus {
     Success,
     /// The command completed, but problems (e.g. type errors) were found.
     UserError,
+    /// An error occurred in the environment or the underlying infrastructure,
+    /// which prevents the command from completing.
+    InfraError,
 }
