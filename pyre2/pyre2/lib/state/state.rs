@@ -628,16 +628,17 @@ impl State {
             }
         }
 
-        if self.parallel {
-            rayon::scope(|s| {
-                for _ in 1..rayon::current_num_threads() {
-                    s.spawn(|_| self.work());
-                }
-                self.work();
-            });
+        let thread_count = if self.parallel {
+            rayon::current_num_threads()
         } else {
-            self.work();
-        }
+            1
+        };
+        rayon::scope(|s| {
+            for _ in 0..thread_count {
+                // Only run work on Rayon threads, as we increased their stack limit
+                s.spawn(|_| self.work());
+            }
+        });
     }
 
     fn ensure_loaders(&mut self, handles: &[Handle]) {
