@@ -545,17 +545,14 @@ let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
     else
       -2
   in
+  let multiple_definitions = ref [] in
   let resolve_multiple_defines left right =
     if
       warn_multiple_definitions
       && (not (Define.is_stub left.Node.value))
       && not (Define.is_stub right.Node.value)
     then
-      Log.warning
-        "Found multiple definitions for the given symbol: `%a`. We will only consider the last \
-         definition."
-        Reference.pp
-        define_name;
+      multiple_definitions := define_name :: !multiple_definitions;
     let left_priority = get_priority left.Node.value in
     let right_priority = get_priority right.Node.value in
     if left_priority > right_priority then
@@ -565,6 +562,15 @@ let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
     else
       right
   in
+  if warn_multiple_definitions then
+    !multiple_definitions
+    |> List.dedup_and_sort ~compare:Reference.compare
+    |> List.iter ~f:(fun define_name ->
+           Log.warning
+             "Found multiple definitions for the given symbol: `%a`. We will only consider the \
+              last definition."
+             Reference.pp
+             define_name);
   {
     qualifier;
     callables =
