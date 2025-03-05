@@ -6651,6 +6651,25 @@ module State (Context : Context) = struct
     in
     let global_resolution = Resolution.global_resolution resolution in
     let maybe_current_class_name = Option.map maybe_current_class_reference ~f:Reference.show in
+
+    let unbound_names =
+      match maybe_current_class_name with
+      | Some current_class_name ->
+          let generic_parameters =
+            GlobalResolution.generic_parameters global_resolution current_class_name
+            |> Option.value ~default:[]
+          in
+          List.filter
+            ~f:(fun p ->
+              not
+                (List.exists
+                   ~f:(fun param ->
+                     String.equal (Type.GenericParameter.parameter_name param) p.name)
+                   generic_parameters))
+            unbound_names
+      | None -> unbound_names
+    in
+
     let look_up_current_class_variance =
       match maybe_current_class_name with
       | Some current_class_name ->
