@@ -76,6 +76,10 @@ impl<K: Eq + Hash + 'static, V: Dupe + 'static> LockedMap<K, V> {
             .map(|x| &x.1)
     }
 
+    /// Ensure that the value `K` has an entry in the map, and return a reference to it.
+    /// If the value is not present, create it using the provided function.
+    /// Note that the provided function may be called even if we don't create a new entry,
+    /// if someone else is simultaneously inserting a value for the same key.
     pub fn ensure(&self, key: &K, value: impl FnOnce() -> V) -> &V
     where
         K: Dupe,

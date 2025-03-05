@@ -374,14 +374,18 @@ impl State {
 
     /// Return the module, plus true if the module was newly created.
     fn get_module_ex(&self, handle: &Handle) -> (ArcId<ModuleData>, bool) {
-        let mut created = false;
+        let mut created = None;
         let res = self
             .modules
             .ensure(handle, || {
-                created = true;
-                ArcId::new(ModuleData::new(handle.dupe(), self.now))
+                let res = ArcId::new(ModuleData::new(handle.dupe(), self.now));
+                created = Some(res.dupe());
+                res
             })
             .dupe();
+        // Due to race conditions, we might create two ModuleData, but only the first is returned.
+        // Figure out if we won the race, and thus are the person who actually did the creation.
+        let created = Some(&res) == created.as_ref();
         if created && let Some(subscriber) = &self.subscriber {
             subscriber.start_work(handle.dupe());
         }
