@@ -584,6 +584,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn solve_binding(&self, binding: &Binding, errors: &ErrorCollector) -> Arc<Type> {
+        // Special case for forward, as we don't want to re-expand the type
+        if let Binding::Forward(fwd) = binding {
+            return self.get_idx(*fwd);
+        }
+
         // Replace any solved recursive variables with their answers.
         // We call self.unions() to simplify cases like
         // v = @1 | int, @1 = int.
