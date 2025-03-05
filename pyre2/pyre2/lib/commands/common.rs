@@ -6,9 +6,9 @@
  */
 
 use clap::Parser;
-use tracing::debug;
 
 use crate::clap_env;
+use crate::util::rayon::init_rayon;
 
 #[derive(Debug, Parser, Clone)]
 pub struct CommonArgs {
@@ -20,14 +20,12 @@ impl CommonArgs {
     /// Sets up the parallelism and returns what you should pass to driver.
     /// You can call this function at most once.
     pub fn parallel(&self) -> bool {
-        let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
-        if self.threads != 0 {
-            builder = builder.num_threads(self.threads);
-        }
-        // This fails if we call it twice, but we probably called it previously with the same
-        // value, so don't worry about it.
-        let _ = builder.build_global();
-        debug!("Running with `{}` threads", rayon::current_num_threads());
-        self.threads != 1
+        let threads = if self.threads == 0 {
+            None
+        } else {
+            Some(self.threads)
+        };
+        init_rayon(threads);
+        rayon::current_num_threads() != 1
     }
 }
