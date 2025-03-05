@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_typed_dict,
@@ -346,8 +345,7 @@ def foo(x: Coord, **kwargs: Unpack[Coord]):
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler) We should correctly account for requireness of a field in requiredness of `__init__` args",
+testcase!(
     test_requireness_in_init,
     r#"
 from typing import TypedDict, NotRequired
