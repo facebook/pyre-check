@@ -16,6 +16,7 @@ use std::process::ExitCode;
 use clap::Parser;
 use pyre2::clap_env;
 use pyre2::get_args_expanded;
+use pyre2::init_rayon;
 use pyre2::init_tracing;
 use pyre2::run::Command;
 use pyre2::run::CommandExitStatus;
@@ -35,6 +36,10 @@ struct Args {
     /// Will run the command repeatedly.
     #[clap(long = "profiling", global = true, hide = true, env = clap_env("PROFILING"))]
     profiling: bool,
+
+    /// Number of threads to use for parallelization.
+    #[clap(long, short = 'j', default_value = "0", global = true, env = clap_env("THREADS"))]
+    threads: usize,
 
     #[command(subcommand)]
     command: Command,
@@ -119,6 +124,11 @@ fn run() -> anyhow::Result<ExitCode> {
         }
     } else {
         init_tracing(args.verbose, false);
+        init_rayon(if args.threads == 0 {
+            None
+        } else {
+            Some(args.threads)
+        });
         run_command(args.command, true).map(to_exit_code)
     }
 }

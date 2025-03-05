@@ -16,7 +16,6 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::clap_env;
-use crate::commands::common::CommonArgs;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::metadata::PythonVersion;
@@ -38,9 +37,6 @@ pub struct Args {
     /// Path to output JSON file
     #[arg(long = "output", short = 'o', env = clap_env("OUTPUT_PATH"))]
     output_path: Option<PathBuf>,
-
-    #[clap(flatten)]
-    common: CommonArgs,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -58,11 +54,7 @@ fn read_input_file(path: &Path) -> anyhow::Result<InputFile> {
     Ok(input_file)
 }
 
-fn compute_errors(
-    config: RuntimeMetadata,
-    sourcedb: BuckSourceDatabase,
-    common: &CommonArgs,
-) -> Vec<Error> {
+fn compute_errors(config: RuntimeMetadata, sourcedb: BuckSourceDatabase) -> Vec<Error> {
     let modules = sourcedb.modules_to_check();
     let loader = LoaderId::new(sourcedb);
     let modules_to_check = modules.into_map(|(name, path)| {
@@ -73,7 +65,6 @@ fn compute_errors(
             loader.dupe(),
         )
     });
-    common.parallel();
     let mut state = State::new();
     state.run_one_shot(&modules_to_check, None);
     state.collect_errors()
@@ -110,7 +101,7 @@ impl Args {
             input_file.dependencies.as_slice(),
             input_file.typeshed.as_slice(),
         )?;
-        let type_errors = compute_errors(config, sourcedb, &self.common);
+        let type_errors = compute_errors(config, sourcedb);
         info!("Found {} type errors", type_errors.len());
         write_output(&type_errors, self.output_path.as_deref())?;
         Ok(CommandExitStatus::Success)

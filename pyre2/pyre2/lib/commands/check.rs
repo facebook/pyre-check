@@ -23,7 +23,6 @@ use starlark_map::small_map::SmallMap;
 use tracing::info;
 
 use crate::clap_env;
-use crate::commands::common::CommonArgs;
 use crate::commands::util::module_from_path;
 use crate::config::ConfigFile;
 use crate::error::error::Error;
@@ -87,9 +86,6 @@ pub struct Args {
     /// Check against any `E:` lines in the file.
     #[clap(long, env = clap_env("EXPECTATIONS"))]
     expectations: bool,
-
-    #[clap(flatten)]
-    common: CommonArgs,
 }
 
 #[derive(Debug, Clone)]
@@ -234,7 +230,6 @@ impl Args {
 
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
-        args.common.parallel();
         let state = State::new();
         let mut holder = Forgetter::new(state, allow_forget);
         let state = holder.as_mut();

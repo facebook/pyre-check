@@ -7,7 +7,6 @@
 
 pub mod buck_check;
 pub mod check;
-pub mod common;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod lsp;
 #[cfg(not(target_arch = "wasm32"))]
