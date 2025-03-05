@@ -34,9 +34,7 @@
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']"
   ],
   "aliases_newtype.py": [
-    "Line 11: Expected 1 errors",
-    "Line 47: Expected 1 errors",
-    "Line 13: Unexpected errors ['EXPECTED int <: UserId']"
+    "Line 47: Expected 1 errors"
   ],
   "aliases_recursive.py": [
     "Line 19: Expected 1 errors",
@@ -554,9 +552,6 @@
     "Line 59: Expected 1 errors",
     "Line 66: Expected 1 errors",
     "Line 106: Expected 1 errors",
-    "Line 36: Unexpected errors ['EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]']",
-    "Line 37: Unexpected errors ['EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]']",
-    "Line 38: Unexpected errors ['EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]']",
     "Line 85: Unexpected errors ['EXPECTED tuple[float] <: tuple[int]']"
   ],
   "generics_typevartuple_callable.py": [],

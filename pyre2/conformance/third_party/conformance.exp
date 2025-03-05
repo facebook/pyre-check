@@ -437,6 +437,16 @@
   "aliases_newtype.py": [
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "EXPECTED Literal['user'] <: int",
+      "description": "EXPECTED Literal['user'] <: int",
+      "line": 11,
+      "name": "type-mismatch",
+      "stop_column": 14,
+      "stop_line": 11
+    },
+    {
+      "code": -2,
       "column": 14,
       "concise_description": "EXPECTED Literal[42] <: UserId",
       "description": "EXPECTED Literal[42] <: UserId",
@@ -444,16 +454,6 @@
       "name": "type-mismatch",
       "stop_column": 16,
       "stop_line": 12
-    },
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "EXPECTED int <: UserId",
-      "description": "EXPECTED int <: UserId",
-      "line": 13,
-      "name": "type-mismatch",
-      "stop_column": 24,
-      "stop_line": 13
     },
     {
       "code": -2,
@@ -7673,39 +7673,9 @@
   "generics_typevartuple_basic.py": [
     {
       "code": -2,
-      "column": 28,
-      "concise_description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]",
-      "description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Height, Width]]",
-      "line": 36,
-      "name": "type-mismatch",
-      "stop_column": 56,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 35,
-      "concise_description": "EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]",
-      "description": "EXPECTED Array[tuple[int, int, int]] <: Array[tuple[Batch, Height, Width]]",
-      "line": 37,
-      "name": "type-mismatch",
-      "stop_column": 73,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 41,
-      "concise_description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
-      "description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
-      "line": 38,
-      "name": "type-mismatch",
-      "stop_column": 2,
-      "stop_line": 40
-    },
-    {
-      "code": -2,
       "column": 34,
-      "concise_description": "EXPECTED int <: @_",
-      "description": "EXPECTED int <: @_",
+      "concise_description": "EXPECTED Height <: @_",
+      "description": "EXPECTED Height <: @_",
       "line": 42,
       "name": "type-mismatch",
       "stop_column": 43,
@@ -7714,8 +7684,8 @@
     {
       "code": -2,
       "column": 35,
-      "concise_description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Batch, Height, Width]]",
-      "description": "EXPECTED Array[tuple[int, int]] <: Array[tuple[Batch, Height, Width]]",
+      "concise_description": "EXPECTED Array[tuple[Batch, Width]] <: Array[tuple[Batch, Height, Width]]",
+      "description": "EXPECTED Array[tuple[Batch, Width]] <: Array[tuple[Batch, Height, Width]]",
       "line": 43,
       "name": "type-mismatch",
       "stop_column": 62,
@@ -7724,8 +7694,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
-      "description": "EXPECTED Array[tuple[int, int, int, int]] <: Array[tuple[Time, Batch, Height, Width]]",
+      "concise_description": "EXPECTED Array[tuple[Time, Batch, Width, Height]] <: Array[tuple[Time, Batch, Height, Width]]",
+      "description": "EXPECTED Array[tuple[Time, Batch, Width, Height]] <: Array[tuple[Time, Batch, Height, Width]]",
       "line": 44,
       "name": "type-mismatch",
       "stop_column": 2,
