@@ -9,11 +9,14 @@ open Core
 open OUnit2
 module BaseConfiguration = Commands.BaseConfiguration
 
+let dummy_maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth
+
 let dummy_base_json =
   [
     "log_path", `String "/log";
     "source_paths", `List [`String "/source"];
     "global_root", `String "/project";
+    "maximum_target_depth", `Int dummy_maximum_target_depth;
   ]
 
 

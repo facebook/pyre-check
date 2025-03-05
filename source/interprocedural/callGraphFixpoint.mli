@@ -25,6 +25,7 @@ val compute
   method_kinds:CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.DefinesSharedMemory.t ->
   max_iterations:int ->
+  maximum_target_depth:int ->
   t
 
 val analyzed_callables : fixpoint -> Target.t list

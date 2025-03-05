@@ -331,10 +331,14 @@ module StaticAnalysis : sig
     scheduler_policies: SchedulerPolicies.t;
     higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
+    maximum_target_depth: int;
   }
+
+  val default_maximum_target_depth : int
 
   val create
     :  Analysis.t ->
+    maximum_target_depth:int ->
     ?repository_root:PyrePath.t ->
     ?save_results_to:PyrePath.t ->
     ?output_format:TaintOutputFormat.t ->

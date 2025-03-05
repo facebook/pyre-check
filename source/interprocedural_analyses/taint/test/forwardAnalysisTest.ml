@@ -23,7 +23,12 @@ let assert_taint ?models ?models_source ~context source expect =
   in
   let project = Test.ScratchProject.setup ~context sources in
   let configuration = Test.ScratchProject.configuration_of project in
-  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
+  let static_analysis_configuration =
+    Configuration.StaticAnalysis.create
+      ~maximum_target_depth:Configuration.StaticAnalysis.default_maximum_target_depth
+      configuration
+      ()
+  in
   let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
   let source =
     PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier

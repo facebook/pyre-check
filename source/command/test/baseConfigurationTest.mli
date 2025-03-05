@@ -8,3 +8,5 @@
 val dummy_base_json : (string * Yojson.Safe.t) list
 
 val dummy_base_configuration : Commands.BaseConfiguration.t
+
+val dummy_maximum_target_depth : int

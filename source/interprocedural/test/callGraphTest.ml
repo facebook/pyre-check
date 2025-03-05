@@ -14,8 +14,18 @@ open Test
 open Interprocedural
 open CallGraph
 
-let compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configuration ~object_targets =
-  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
+let compute_define_call_graph
+    ~maximum_target_depth
+    ~define
+    ~source
+    ~module_name
+    ~pyre_api
+    ~configuration
+    ~object_targets
+  =
+  let static_analysis_configuration =
+    Configuration.StaticAnalysis.create ~maximum_target_depth configuration ()
+  in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
@@ -82,6 +92,7 @@ let find_define_exn ~define_name ~module_name source =
 
 let assert_call_graph_of_define
     ?(object_targets = [])
+    ?(maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth)
     ~source
     ~define_name
     ~expected
@@ -95,7 +106,14 @@ let assert_call_graph_of_define
   in
   let define = find_define_exn ~define_name ~module_name source in
   let actual, _ =
-    compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configuration ~object_targets
+    compute_define_call_graph
+      ~maximum_target_depth
+      ~define
+      ~source
+      ~module_name
+      ~pyre_api
+      ~configuration
+      ~object_targets
   in
   assert_equal
     ~cmp
@@ -132,8 +150,16 @@ let assert_higher_order_call_graph_of_define
   in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
+  let maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth in
   let define_call_graph, callables_to_definitions_map =
-    compute_define_call_graph ~define ~source ~module_name ~pyre_api ~configuration ~object_targets
+    compute_define_call_graph
+      ~maximum_target_depth
+      ~define
+      ~source
+      ~module_name
+      ~pyre_api
+      ~configuration
+      ~object_targets
   in
   let actual =
     CallGraph.higher_order_call_graph_of_define
@@ -146,6 +172,7 @@ let assert_higher_order_call_graph_of_define
       ~initial_state
       ~get_callee_model:(fun _ -> None)
       ~profiler:CallGraphProfiler.disabled
+      ~maximum_target_depth
     |> HigherOrderCallGraphForTest.from_actual
   in
   assert_equal

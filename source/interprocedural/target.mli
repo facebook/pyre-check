@@ -160,6 +160,9 @@ val is_decorated : t -> bool
    building. *)
 val contain_recursive_target : t -> bool
 
+(* Return the level of target nestedness within a given target. *)
+val depth : t -> int
+
 val for_issue_handle : t -> t
 
 (** Return the define name of a Function or Method target. Note that multiple targets can match to

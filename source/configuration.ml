@@ -797,10 +797,14 @@ module StaticAnalysis = struct
     scheduler_policies: SchedulerPolicies.t;
     higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
+    maximum_target_depth: int;
   }
+
+  let default_maximum_target_depth = 10
 
   let create
       configuration
+      ~maximum_target_depth
       ?repository_root
       ?save_results_to
       ?(output_format = TaintOutputFormat.Json)
@@ -879,5 +883,6 @@ module StaticAnalysis = struct
       scheduler_policies;
       higher_order_call_graph;
       higher_order_call_graph_max_iterations;
+      maximum_target_depth;
     }
 end

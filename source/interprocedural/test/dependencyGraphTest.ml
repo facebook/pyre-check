@@ -34,7 +34,12 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   let source, pyre_api, environment, configuration =
     setup ~other_sources ~context ~handle source_text
   in
-  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
+  let static_analysis_configuration =
+    Configuration.StaticAnalysis.create
+      ~maximum_target_depth:Configuration.StaticAnalysis.default_maximum_target_depth
+      configuration
+      ()
+  in
   let override_graph = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph in
   let () =

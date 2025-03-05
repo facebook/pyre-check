@@ -4110,6 +4110,8 @@ module HigherOrderCallGraph = struct
 
     val profiler : CallGraphProfiler.t
 
+    val maximum_target_depth : int
+
     val input_define_call_graph : DefineCallGraph.t
 
     (* Outputs. *)
@@ -4166,7 +4168,8 @@ module HigherOrderCallGraph = struct
 
 
       let validate_target target =
-        if Target.contain_recursive_target target then None else Some target
+        let exceed_depth target = Target.depth target > Context.maximum_target_depth in
+        if Target.contain_recursive_target target || exceed_depth target then None else Some target
 
 
       let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
@@ -4651,6 +4654,7 @@ let higher_order_call_graph_of_define
     ~initial_state
     ~get_callee_model
     ~profiler
+    ~maximum_target_depth
   =
   let module Context = struct
     let input_define_call_graph = define_call_graph
@@ -4672,6 +4676,8 @@ let higher_order_call_graph_of_define
     let callables_to_definitions_map = callables_to_definitions_map
 
     let profiler = profiler
+
+    let maximum_target_depth = maximum_target_depth
   end
   in
   log

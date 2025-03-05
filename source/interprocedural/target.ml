@@ -426,6 +426,18 @@ let contain_recursive_target target =
   contain_recursive_target [] target
 
 
+(* Return the level of target nestedness within a given target. *)
+let rec depth = function
+  | Regular _ -> 1
+  | Parameterized { parameters; _ } ->
+      1
+      + (parameters
+        |> ParameterMap.data
+        |> List.map ~f:depth
+        |> List.max_elt ~compare:Int.compare
+        |> Option.value ~default:0)
+
+
 let rec for_issue_handle = function
   | Regular regular -> regular |> Regular.override_to_method |> from_regular
   | Parameterized { regular; parameters } ->

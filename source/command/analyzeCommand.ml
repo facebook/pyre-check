@@ -65,6 +65,7 @@ module AnalyzeConfiguration = struct
     scheduler_policies: Configuration.SchedulerPolicies.t;
     higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
+    maximum_target_depth: int;
   }
   [@@deriving sexp, compare, hash]
 
@@ -88,6 +89,12 @@ module AnalyzeConfiguration = struct
           let higher_order_call_graph = bool_member "higher_order_call_graph" ~default:false json in
           let higher_order_call_graph_max_iterations =
             optional_int_member "higher_order_call_graph_max_iterations" json
+          in
+          let maximum_target_depth =
+            (* TODO(T216993814): Use `int_member` *)
+            json
+            |> optional_int_member "maximum_target_depth"
+            |> Option.value ~default:Configuration.StaticAnalysis.default_maximum_target_depth
           in
           let inline_decorators = bool_member "inline_decorators" ~default:false json in
           if higher_order_call_graph && inline_decorators then
@@ -209,6 +216,7 @@ module AnalyzeConfiguration = struct
               scheduler_policies;
               higher_order_call_graph;
               higher_order_call_graph_max_iterations;
+              maximum_target_depth;
             }
     with
     | Type_error (message, _)
@@ -286,6 +294,7 @@ module AnalyzeConfiguration = struct
         scheduler_policies;
         higher_order_call_graph;
         higher_order_call_graph_max_iterations;
+        maximum_target_depth;
       }
     =
     let configuration =
@@ -360,6 +369,7 @@ module AnalyzeConfiguration = struct
       scheduler_policies;
       higher_order_call_graph;
       higher_order_call_graph_max_iterations;
+      maximum_target_depth;
     }
 end
 

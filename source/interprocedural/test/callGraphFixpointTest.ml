@@ -24,6 +24,7 @@ end
 let assert_higher_order_call_graph_fixpoint
     ?(max_iterations = 10)
     ?(skip_analysis_targets = Target.Set.empty)
+    ?(maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth)
     ~source
     ~expected
     ()
@@ -32,7 +33,9 @@ let assert_higher_order_call_graph_fixpoint
   let source, _, pyre_api, configuration =
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
-  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
+  let static_analysis_configuration =
+    Configuration.StaticAnalysis.create ~maximum_target_depth configuration ()
+  in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
@@ -113,6 +116,7 @@ let assert_higher_order_call_graph_fixpoint
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~callables_to_definitions_map
       ~max_iterations
+      ~maximum_target_depth
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
       let actual_call_graph =
