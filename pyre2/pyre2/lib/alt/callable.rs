@@ -129,6 +129,7 @@ impl CallArgPreEval<'_> {
     fn post_check<Ans: LookupAnswer>(
         &mut self,
         solver: &AnswersSolver<Ans>,
+        callable_name: Option<&FuncId>,
         hint: &Type,
         param_name: Option<&Name>,
         vararg: bool,
@@ -136,7 +137,10 @@ impl CallArgPreEval<'_> {
         arg_errors: &ErrorCollector,
         call_errors: &ErrorCollector,
     ) {
-        let tcc = TypeCheckContext::of_kind(TypeCheckKind::CallArgument(param_name.cloned()));
+        let tcc = TypeCheckContext::of_kind(TypeCheckKind::CallArgument(
+            param_name.cloned(),
+            callable_name.cloned(),
+        ));
         match self {
             Self::Type(ty, done) => {
                 *done = true;
@@ -203,6 +207,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // See comment on `callable_infer` about `arg_errors` and `call_errors`.
     fn callable_infer_params(
         &self,
+        callable_name: Option<FuncId>,
         params: &ParamList,
         self_arg: Option<CallArg>,
         args: &[CallArg],
@@ -254,6 +259,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 match param {
                     Some((hint, name, vararg)) => arg_pre.post_check(
                         self,
+                        callable_name.as_ref(),
                         hint,
                         name,
                         vararg,
@@ -551,7 +557,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn callable_infer(
         &self,
         callable: Callable,
-        _callable_name: Option<FuncId>,
+        callable_name: Option<FuncId>,
         self_arg: Option<CallArg>,
         args: &[CallArg],
         keywords: &[Keyword],
@@ -562,6 +568,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match callable.params {
             Params::List(params) => {
                 self.callable_infer_params(
+                    callable_name,
                     &params,
                     self_arg,
                     args,
@@ -585,6 +592,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 match p {
                     Type::ParamSpecValue(params) => self.callable_infer_params(
+                        callable_name,
                         &params.prepend_types(&concatenate),
                         self_arg,
                         args,
@@ -609,6 +617,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         } else {
                             self.callable_infer_params(
+                                callable_name,
                                 &ParamList::new_types(&concatenate),
                                 self_arg,
                                 &args[0..args.len() - 1],

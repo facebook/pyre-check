@@ -144,7 +144,6 @@ pub struct FuncId {
 }
 
 impl FuncId {
-    #[expect(dead_code)]
     pub fn format(&self, current_module: ModuleName) -> String {
         let module_prefix =
             if self.module == current_module || self.module == ModuleName::builtins() {

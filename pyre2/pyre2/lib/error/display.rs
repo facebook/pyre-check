@@ -7,6 +7,7 @@
 
 use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckKind;
+use crate::module::module_name::ModuleName;
 use crate::types::display::TypeDisplayContext;
 use crate::types::types::Type;
 
@@ -21,7 +22,7 @@ impl ErrorContext {
 }
 
 impl TypeCheckKind {
-    pub fn format_error(&self, got: &Type, want: &Type) -> String {
+    pub fn format_error(&self, got: &Type, want: &Type, current_module: ModuleName) -> String {
         let mut ctx = TypeDisplayContext::new();
         ctx.add(got);
         ctx.add(want);
@@ -58,16 +59,21 @@ impl TypeCheckKind {
                 "Returned type `{}` is not assignable to expected return type `bool` of type guard functions",
                 ctx.display(got)
             ),
-            Self::CallArgument(param) => {
+            Self::CallArgument(param, func_id) => {
                 let param_desc = match param {
                     Some(name) => format!("parameter `{name}`"),
                     None => "parameter".to_owned(),
                 };
+                let func_desc = match func_id {
+                    Some(func) => format!(" in function `{}`", func.format(current_module)),
+                    None => "".to_owned(),
+                };
                 format!(
-                    "Argument `{}` is not assignable to {} with type `{}`",
+                    "Argument `{}` is not assignable to {} with type `{}`{}",
                     ctx.display(got),
                     param_desc,
-                    ctx.display(want)
+                    ctx.display(want),
+                    func_desc,
                 )
             }
             Self::FunctionParameterDefault(param) => format!(

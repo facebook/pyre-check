@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::test::util::TestEnv;
 use crate::testcase;
 
 testcase!(
@@ -532,5 +533,32 @@ def f(x: int) -> int:
 # This assertion (correctly) fails because x is a positional parameter rather than a positional-only one.
 # This test verifies that we produce a sensible error message that shows the mismatch.
 assert_type(f, Callable[[int], int])  # E: assert_type((x: int) -> int, (int) -> int) failed
+    "#,
+);
+
+testcase!(
+    test_function_name_in_error,
+    TestEnv::one("foo", "def f(x: int): ..."),
+    r#"
+import foo
+foo.f("")  # E: in function `foo.f`
+
+def f(x: int): ...
+f("")  # E: in function `f`
+
+class A:
+    def f(self, x: int): ...
+    @classmethod
+    def g(cls, x: int): ...
+    @staticmethod
+    def h(x: int): ...
+A().f("")  # E: in function `A.f`
+A.f(A(), "")  # E: in function `A.f`
+A.g("")  # E: in function `A.g`
+A.h("")  # E: in function `A.h`
+
+class B(A):
+    pass
+B().f("")  # E: in function `A.f`
     "#,
 );

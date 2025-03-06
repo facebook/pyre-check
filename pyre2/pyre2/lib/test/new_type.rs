@@ -14,7 +14,7 @@ testcase!(
 from typing import NewType, assert_type
 
 UserId = NewType("UserId", int)
-UserId("user")  # E: Argument `Literal['user']` is not assignable to parameter `_x` with type `int`
+UserId("user")  # E: Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__init__`  # E: Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__new__`
 u1: UserId = 42 # E: `Literal[42]` is not assignable to `UserId`
 u2: UserId = UserId(42)
 

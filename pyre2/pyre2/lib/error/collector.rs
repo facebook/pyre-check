@@ -128,6 +128,10 @@ impl ErrorCollector {
         }
     }
 
+    pub fn module_info(&self) -> &ModuleInfo {
+        &self.module_info
+    }
+
     pub fn style(&self) -> ErrorStyle {
         self.style
     }

@@ -143,7 +143,7 @@ class C:
         pass
 C(5)
 C()     # E: Missing argument `x`
-C("5")  # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int`
+C("5")  # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int` in function `C.__init__` # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int` in function `C.__new__`
     "#,
 );
 

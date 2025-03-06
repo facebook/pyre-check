@@ -328,7 +328,8 @@ impl Solver {
 
         errors.add(
             loc,
-            tcc.kind.format_error(&prepare(got), &prepare(want)),
+            tcc.kind
+                .format_error(&prepare(got), &prepare(want), errors.module_info().name()),
             error_kind,
             tcc.context.as_ref(),
         );

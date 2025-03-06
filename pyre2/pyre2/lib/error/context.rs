@@ -8,6 +8,7 @@
 use ruff_python_ast::name::Name;
 
 use crate::binding::binding::AnnotationTarget;
+use crate::types::callable::FuncId;
 use crate::types::types::Type;
 
 /// General context for an error. For many errors, the root cause is some steps removed from what
@@ -69,7 +70,7 @@ pub enum TypeCheckKind {
     /// Return in a type guard function.
     TypeGuardReturn,
     /// Function call argument against parameter type.
-    CallArgument(Option<Name>),
+    CallArgument(Option<Name>, Option<FuncId>),
     /// Check of a parameter's default value against its type annotation.
     FunctionParameterDefault(Name),
     /// Check against type of a TypedDict key.
