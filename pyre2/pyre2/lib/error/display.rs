@@ -70,14 +70,14 @@ impl TypeCheckKind {
                     ctx.display(got),
                     param_desc,
                     ctx.display(want),
-                    func_suffix(func_id.as_ref(), current_module),
+                    function_suffix(func_id.as_ref(), current_module),
                 )
             }
             Self::CallVarArgs(func_id) => format!(
                 "Unpacked argument `{}` is not assignable to varargs type `{}`{}",
                 ctx.display(got),
                 ctx.display(want),
-                func_suffix(func_id.as_ref(), current_module)
+                function_suffix(func_id.as_ref(), current_module)
             ),
             Self::CallKwArgs(arg, param, func_id) => {
                 let arg_desc = match arg {
@@ -94,7 +94,7 @@ impl TypeCheckKind {
                     ctx.display(got),
                     param_desc,
                     ctx.display(want),
-                    func_suffix(func_id.as_ref(), current_module),
+                    function_suffix(func_id.as_ref(), current_module),
                 )
             }
             Self::FunctionParameterDefault(param) => format!(
@@ -148,7 +148,7 @@ impl TypeCheckKind {
     }
 }
 
-fn func_suffix(func_id: Option<&FuncId>, current_module: ModuleName) -> String {
+pub fn function_suffix(func_id: Option<&FuncId>, current_module: ModuleName) -> String {
     match func_id {
         Some(func) => format!(" in function `{}`", func.format(current_module)),
         None => "".to_owned(),

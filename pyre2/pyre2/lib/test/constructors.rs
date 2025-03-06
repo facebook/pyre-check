@@ -142,7 +142,9 @@ class C:
     def __init__(self, x: int):
         pass
 C(5)
-C()     # E: Missing argument `x`
+# TODO: it's technically correct but not very helpful to report both of these errors. We should
+# combine them when `__new__` and `__init__` are defined on the same class with the same signature.
+C()     # E: Missing argument `x` in function `C.__init__`  # E: Missing argument `x` in function `C.__new__`
 C("5")  # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int` in function `C.__init__` # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int` in function `C.__new__`
     "#,
 );
@@ -162,7 +164,7 @@ class BadChild(Parent1):
     # Incompatible with inherited __init__
     def __new__[T](cls: type[T], x: int) -> T: ...
 GoodChild(0)
-GoodChild()  # E: Missing argument `x`
+GoodChild()  # E: Missing argument `x` in function `GoodChild.__new__`  # E: Missing argument `x` in function `Parent2.__init__`
 # Both of these calls error at runtime.
 BadChild()   # E: Missing argument `x`
 BadChild(0)  # E: Expected 0 positional arguments

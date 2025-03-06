@@ -158,7 +158,7 @@ class Pair(NamedTuple):
     x: int
     y: str = "y"
 Pair(x=5)
-Pair(y="foo")  # E: Missing argument `x`
+Pair(y="foo")  # E: Missing argument `x` in function `Pair.__init__`  # E: Missing argument `x` in function `Pair.__new__`
     "#,
 );
 
