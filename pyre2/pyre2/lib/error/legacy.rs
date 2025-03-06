@@ -30,6 +30,7 @@ pub struct LegacyError {
 impl LegacyError {
     pub fn from_error(error: &Error) -> Self {
         let error_range = error.source_range();
+        let msg = error.msg();
         Self {
             line: error_range.start.row.get(),
             column: error_range.start.column.get(),
@@ -39,8 +40,8 @@ impl LegacyError {
             // -2 is chosen because it's an unused error code in Pyre1
             code: -2, // TODO: replace this dummy value
             name: error.error_kind().to_name(),
-            description: error.msg().to_owned(),
-            concise_description: error.msg().to_owned(),
+            description: msg.clone(),
+            concise_description: msg,
         }
     }
 }
