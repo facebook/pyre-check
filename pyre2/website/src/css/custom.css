@@ -29,7 +29,14 @@
   font-style: normal;
 }
 
-@import url('https://fonts.googleapis.com/css?family=Montserrat');
+@font-face {
+  font-family: 'Montserrat';
+  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
 :root {
   --ifm-color-primary: #dc2319;
   --ifm-color-primary-dark: #dc2319;
@@ -47,6 +54,7 @@
   --flow-green: #9cd732;
   --flow-red: #dc2319;
   --off-white: #edecdf;
+  --ifm-footer-background-color:#2d343a;
 }
 
 .docusaurus-highlight-code-line {
@@ -145,4 +153,8 @@
     margin-right: calc(-50vw + var(--ifm-container-width-xl) /  2);
     max-width: initial !important;
   }
+}
+
+.footer--dark {
+  background-color: #2d343a;
 }

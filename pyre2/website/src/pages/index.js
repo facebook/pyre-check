@@ -50,50 +50,6 @@ export default component Home() {
           </section>
         </div>
       </header>
-      <main>
-        <section className={styles.info}>
-          <div className={styles.quote}>
-            <h3>Ship Faster</h3>
-            <p>
-              Built from the ground up to support gradual typing and deliver
-              responsive incremental checks. Performant on large codebases with
-              millions of lines of Python.
-            </p>
-          </div>
-          <div className={styles.photo}>
-            <img
-              className={clsx(styles.imgFluid, 'rounded')}
-              src={useBaseUrl('img/featurette-faster.gif')}
-            />
-          </div>
-        </section>
-        <section className={styles.info}>
-          <div className={styles.photo}>
-            <img
-              className={clsx(styles.imgFluid, 'rounded')}
-              src={useBaseUrl('img/featurette-smarter.gif')}
-            />
-          </div>
-          <div className={styles.quote}>
-            <h3>Integrated</h3>
-            <p>
-              Designed to help improve code quality and development speed by
-              flagging type errors interactively in your terminal or live in
-              your favorite editor.
-            </p>
-          </div>
-        </section>
-        <section className={styles.info}>
-          <div className={styles.quote}>
-            <h3>Fully Featured</h3>
-            <p>
-              Follows the typing standards introduced in PEPs 484, 526, 612, and
-              is being actively developed and constantly improved.
-            </p>
-          </div>
-          <div className={styles.photo}></div>
-        </section>
-      </main>
     </Layout>
   );
 }
