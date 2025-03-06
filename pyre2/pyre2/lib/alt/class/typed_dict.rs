@@ -194,7 +194,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),
-            CallableKind::Def,
+            CallableKind::Def(Box::new((self.module_info().name(), dunder::INIT))),
         );
         ClassSynthesizedField::new(ty)
     }

@@ -145,7 +145,7 @@ pub enum CallableKind {
     ClassMethod,
     Overload,
     Override,
-    Def,
+    Def(Box<(ModuleName, Name)>),
     Anon,
     Cast,
     AssertType,
@@ -362,7 +362,7 @@ impl CallableKind {
             ("typing", "cast") => Self::Cast,
             ("typing", "assert_type") => Self::AssertType,
             ("typing", "reveal_type") => Self::RevealType,
-            _ => Self::Def,
+            _ => Self::Def(Box::new((module, name.clone()))),
         }
     }
 }

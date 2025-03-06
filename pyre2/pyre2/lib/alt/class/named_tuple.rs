@@ -72,7 +72,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
-            CallableKind::Def,
+            CallableKind::Def(Box::new((self.module_info().name(), dunder::NEW))),
         );
         ClassSynthesizedField::new(ty)
     }
@@ -82,7 +82,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
-            CallableKind::Def,
+            CallableKind::Def(Box::new((self.module_info().name(), dunder::INIT))),
         );
         ClassSynthesizedField::new(ty)
     }
@@ -98,7 +98,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ParamList::new(params),
                 Type::ClassType(self.stdlib.iterable(self.unions(element_types))),
             )),
-            CallableKind::Def,
+            CallableKind::Def(Box::new((self.module_info().name(), dunder::ITER))),
         );
         ClassSynthesizedField::new(ty)
     }
