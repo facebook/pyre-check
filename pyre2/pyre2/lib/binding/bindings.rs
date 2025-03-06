@@ -41,6 +41,7 @@ use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyLegacyTypeParam;
@@ -673,7 +674,7 @@ impl<'a> BindingsBuilder<'a> {
         &mut self,
         x: AnyParameterRef,
         function_idx: Idx<KeyFunction>,
-        self_type: Option<Idx<Key>>,
+        self_type: Option<Idx<KeyClass>>,
     ) {
         let name = x.name();
         let annot = x.annotation().map(|x| {

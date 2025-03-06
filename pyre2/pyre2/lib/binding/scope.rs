@@ -26,6 +26,7 @@ use crate::binding::binding::Binding;
 use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
+use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyFunction;
 use crate::binding::bindings::BindingTable;
@@ -193,8 +194,8 @@ pub struct ClassBodyInner {
 }
 
 impl ClassBodyInner {
-    pub fn as_self_type_key(&self) -> Key {
-        Key::SelfType(ShortIdentifier::new(&self.name))
+    pub fn as_self_type_key(&self) -> KeyClass {
+        KeyClass(ShortIdentifier::new(&self.name))
     }
 
     pub fn as_class_metadata_key(&self) -> KeyClassMetadata {

@@ -153,8 +153,6 @@ pub enum Key {
     Import(Name, TextRange),
     /// I am defined in this module at this location.
     Definition(ShortIdentifier),
-    /// I am the self type for a particular class.
-    SelfType(ShortIdentifier),
     /// The type at a specific return point.
     ReturnExplicit(TextRange),
     /// The implicit return type of a function, either Type::None or Type::Never.
@@ -191,7 +189,6 @@ impl Ranged for Key {
         match self {
             Self::Import(_, r) => *r,
             Self::Definition(x) => x.range(),
-            Self::SelfType(x) => x.range(),
             Self::ReturnExplicit(r) => *r,
             Self::ReturnImplicit(x) => x.range(),
             Self::ReturnType(x) => x.range(),
@@ -211,7 +208,6 @@ impl DisplayWith<ModuleInfo> for Key {
         match self {
             Self::Import(n, r) => write!(f, "import {n} {r:?}"),
             Self::Definition(x) => write!(f, "{} {:?}", ctx.display(x), x.range()),
-            Self::SelfType(x) => write!(f, "self {} {:?}", ctx.display(x), x.range()),
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::StmtExpr(r) => write!(f, "stmt expr {r:?}"),
@@ -573,7 +569,7 @@ pub struct FunctionBinding {
     /// A function definition, but with the return/body stripped out.
     pub def: StmtFunctionDef,
     pub kind: FunctionKind,
-    pub self_type: Option<Idx<Key>>,
+    pub self_type: Option<Idx<KeyClass>>,
     pub decorators: Box<[Idx<Key>]>,
     pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
     pub successor: Option<Idx<KeyFunction>>,
@@ -633,7 +629,7 @@ pub enum SuperStyle {
     /// A `super(cls, obj)` call. The keys are the arguments.
     ExplicitArgs(Idx<Key>, Idx<Key>),
     /// A no-argument `super()` call. The key is the `Self` type of the class we are in.
-    ImplicitArgs(Idx<Key>),
+    ImplicitArgs(Idx<KeyClass>),
     /// `super(Any, Any)`. Useful when we encounter an error.
     Any,
 }
@@ -696,8 +692,6 @@ pub enum Binding {
     Import(ModuleName, Name),
     /// A class definition, points to a BindingClass and any decorators.
     ClassDef(Idx<KeyClass>, Box<[Idx<Key>]>),
-    /// The Self type for a class, must point at a class.
-    SelfType(Idx<KeyClass>),
     /// A forward reference to another binding.
     Forward(Idx<Key>),
     /// A phi node, representing the union of several alternative keys.
@@ -823,7 +817,6 @@ impl DisplayWith<Bindings> for Binding {
             Self::Function(x, _pred, _class) => write!(f, "{}", ctx.display(*x)),
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(x, _) => write!(f, "{}", ctx.display(*x)),
-            Self::SelfType(k) => write!(f, "self {}", ctx.display(*k)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::AugAssign(s) => write!(f, "augmented_assign {:?}", s),
             Self::AnyType(s) => write!(f, "anytype {s}"),
@@ -974,7 +967,7 @@ impl Display for AnnotationTarget {
 pub enum BindingAnnotation {
     /// The type is annotated to be this key, will have the outer type removed.
     /// Optionally occuring within a class, in which case Self refers to this class.
-    AnnotateExpr(AnnotationTarget, Expr, Option<Idx<Key>>),
+    AnnotateExpr(AnnotationTarget, Expr, Option<Idx<KeyClass>>),
     /// A literal type we know statically.
     Type(AnnotationTarget, Type),
 }

@@ -234,7 +234,7 @@ impl<'a> BindingsBuilder<'a> {
                         }
                     }
                     match self_type {
-                        Some(key) => SuperStyle::ImplicitArgs(self.table.types.0.insert(key)),
+                        Some(key) => SuperStyle::ImplicitArgs(self.table.classes.0.insert(key)),
                         None => {
                             self.error(
                                 *range,

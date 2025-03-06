@@ -31,7 +31,6 @@ use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::ClassBinding;
 use crate::binding::binding::ClassFieldInitialValue;
-use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassField;
@@ -195,9 +194,6 @@ impl<'a> BindingsBuilder<'a> {
         } else {
             unreachable!("Expected class body scope, got {:?}", last_scope.kind);
         }
-
-        let self_binding = Binding::SelfType(definition_key);
-        self.table.insert(Key::SelfType(class_name), self_binding);
 
         let legacy_tparams = legacy_tparam_builder.lookup_keys();
 
@@ -383,9 +379,6 @@ impl<'a> BindingsBuilder<'a> {
                 },
             );
         }
-        let self_binding = Binding::SelfType(definition_key);
-        self.table
-            .insert(Key::SelfType(short_class_name), self_binding);
         self.bind_definition(
             &class_name,
             Binding::ClassDef(definition_key, Box::new([])),

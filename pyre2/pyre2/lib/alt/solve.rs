@@ -178,7 +178,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     && let Some(ty) = &mut ann.ty
                 {
                     let self_type = &*self.get_idx(*self_type);
-                    ty.subst_self_type_mut(self_type);
+                    if let Some(cls) = &self_type.0 {
+                        ty.subst_self_type_mut(&cls.self_type());
+                    }
                 }
                 Arc::new(AnnotationWithTarget {
                     target: target.clone(),
@@ -1347,10 +1349,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ty
                 }
             },
-            Binding::SelfType(k) => match &self.get_idx(*k).0 {
-                None => Type::any_implicit(),
-                Some(cls) => cls.self_type(),
-            },
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),
             Binding::Phi(ks) => {
                 if ks.len() == 1 {
@@ -1604,15 +1602,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ),
                         }
                     }
-                    SuperStyle::ImplicitArgs(self_binding) => match &*self.get_idx(*self_binding) {
-                        Type::ClassType(obj_cls) => {
-                            let lookup_cls = self
-                                .get_super_lookup_class(obj_cls.class_object(), obj_cls)
-                                .unwrap();
-                            Type::SuperInstance(Box::new(lookup_cls), Box::new(obj_cls.clone()))
+                    SuperStyle::ImplicitArgs(self_binding) => {
+                        match &self.get_idx(*self_binding).0 {
+                            Some(obj_cls) => {
+                                let obj_type = ClassType::new(
+                                    obj_cls.dupe(),
+                                    self.create_default_targs(obj_cls, None),
+                                );
+                                let lookup_cls =
+                                    self.get_super_lookup_class(obj_cls, &obj_type).unwrap();
+                                Type::SuperInstance(Box::new(lookup_cls), Box::new(obj_type))
+                            }
+                            None => Type::any_implicit(),
                         }
-                        _ => Type::any_implicit(),
-                    },
+                    }
                     SuperStyle::Any => Type::any_implicit(),
                 }
             }
@@ -1650,7 +1653,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // __new__ is a staticmethod, and does not take a self parameter.
             None
         } else {
-            x.self_type.map(|idx| self.get_idx(idx).arc_clone())
+            x.self_type
+                .and_then(|idx| self.get_idx(idx).0.as_ref().map(|cls| cls.self_type()))
         };
 
         // Look for a @classmethod or @staticmethod decorator and change the "self" type
