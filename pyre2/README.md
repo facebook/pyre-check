@@ -42,6 +42,36 @@ distributions. This also means that you can pip install `maturin` and use
 `maturin build` and `maturin develop` for local development. `pip install .` in
 the `pyre2/pyre2` directory works as well.
 
+### Deploying to PyPI
+
+We don't yet have an automatic deployment process set up, so we have to upload
+new versions manually to PyPI. This must be done by a Meta internal developer.
+
+Prerequisites:
+
+- Have permission to run GitHub workflows and download workflow artifacts in
+  https://github.com/facebook/pyre-check.
+- Have permission to upload to https://pypi.org/project/pyrefly/.
+- Have created a PyPI upload token and a `.pypirc` file (steps 2-3 of this
+  [tutorial](https://kynan.github.io/blog/2020/05/23/how-to-upload-your-package-to-the-python-package-index-pypi-test-server)).
+
+Steps:
+
+1. Bump `CARGO_PACKAGE_VERSION` in the `TARGETS` file.
+1. Run `arc autocargo .` in the directory containing `Cargo.toml` to regenerate
+   it.
+1. Check in your changes.
+1. Once the version bump has been exported to GitHub, run the "Build binaries"
+   workflow:
+   https://github.com/facebook/pyre-check/actions/workflows/build_pyre2_binaries.yml.
+1. Once the workflow has completed, download and unzip the `dist` artifact.
+1. Run these commands in a virtual environment to upload to PyPI:
+
+```
+$ pip install twine
+$ twine upload dist/*
+```
+
 ## Coding conventions
 
 We follow the
