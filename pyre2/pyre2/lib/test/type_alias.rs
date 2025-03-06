@@ -7,6 +7,7 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_type_alias_simple,
@@ -316,5 +317,15 @@ from typing import assert_type
 X: typing.TypeAlias = int
 def f(x: X | str):
     assert_type(x, int | str)
+    "#,
+);
+
+testcase_with_bug!(
+    "TODO zeina: Consider a huristic of when to interpret the RHS of an assignment as a type.",
+    test_type_alias_union,
+    r#"
+from typing import Union
+class Y: pass
+X = Union[int, "Y"] # E: Expected a type form, got instance of `Literal['Y']`
     "#,
 );
