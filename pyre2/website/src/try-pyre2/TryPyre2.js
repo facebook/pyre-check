@@ -23,9 +23,6 @@ import {
 import BrowserOnly from '@docusaurus/BrowserOnly';
 
 const DEFAULT_PYTHON_PROGRAM = `
-# Pyre is being run in gradual typing mode: https://pyre-check.org/docs/types-in-python/#gradual-typing
-# Use the \`# pyre-strict\` header to run in strict mode, which requires annotations.
-
 from typing import *
 
 # reveal_type will produce a type error that tells you the type Pyre has

@@ -13,10 +13,9 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
-  title: 'Pyre2',
+  title: 'Pyrefly',
   tagline: 'A Static Type Checker for Python',
-  // TODO: to be updated
-  url: 'https://pyre2.github.io',
+  url: 'https://pyrefly.org',
   baseUrl: process.env.DOCUSAURUS_BASE_URL || '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',

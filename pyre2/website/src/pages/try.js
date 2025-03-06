@@ -21,7 +21,7 @@ export default component TryPyre2Page() {
   return (
     <Layout
       // $FlowFixMe[prop-missing]
-      title="Try Pyre2: the Pyre2 Playground"
+      title="Try Pyrefly: the Pyrefly Playground"
       // $FlowFixMe[prop-missing]
       description={siteConfig.description}
       noFooter>
