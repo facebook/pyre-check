@@ -33,6 +33,18 @@ function setHoverFunctionForMonaco(f: (_l: number, _c: number) => any): void {
   hoverFunctionForMonaco = f;
 }
 
+let inlayHintsProvider: interface {  dispose():void } = { dispose(){} };
+
+function setInlayHintFunctionForMonaco(f: () => any): void {
+  inlayHintsProvider.dispose();
+  inlayHintsProvider = monaco.languages.registerInlayHintsProvider('python', {
+    provideInlayHints(model) {
+      const hints = f();
+      return {hints};
+    },
+  });
+}
+
 monaco.languages.register({
   id: 'python',
   extensions: ['.py'],
@@ -152,4 +164,5 @@ export {
   setAutoCompleteFunction,
   setGetDefFunction,
   setHoverFunctionForMonaco,
+  setInlayHintFunctionForMonaco,
 };

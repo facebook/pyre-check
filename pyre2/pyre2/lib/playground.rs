@@ -11,11 +11,13 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use dupe::Dupe;
+use ruff_source_file::SourceLocation;
 use serde::Serialize;
 use starlark_map::small_map::SmallMap;
 
 use crate::error::style::ErrorStyle;
 use crate::metadata::RuntimeMetadata;
+use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
@@ -23,7 +25,25 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
+use crate::util::prelude::VecExt;
 use crate::util::reduced_stdlib::lookup_stdlib;
+
+#[derive(Serialize)]
+pub struct Position {
+    #[serde(rename(serialize = "column"))]
+    pub column: i32,
+    #[serde(rename(serialize = "lineNumber"))]
+    pub line: i32,
+}
+
+impl Position {
+    fn new(position: SourceLocation) -> Self {
+        Self {
+            line: position.row.to_zero_indexed() as i32 + 1,
+            column: position.column.to_zero_indexed() as i32 + 1,
+        }
+    }
+}
 
 #[derive(Serialize)]
 pub struct Range {
@@ -35,6 +55,17 @@ pub struct Range {
     pub end_line: i32,
     #[serde(rename(serialize = "endColumn"))]
     pub end_col: i32,
+}
+
+impl Range {
+    fn new(range: SourceRange) -> Self {
+        Self {
+            start_line: range.start.row.to_zero_indexed() as i32 + 1,
+            start_col: range.start.column.to_zero_indexed() as i32 + 1,
+            end_line: range.end.row.to_zero_indexed() as i32 + 1,
+            end_col: range.end.column.to_zero_indexed() as i32 + 1,
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -66,6 +97,12 @@ pub struct TypeQueryResult {
 pub struct AutoCompletionItem {
     label: String,
     detail: String,
+}
+
+#[derive(Serialize)]
+pub struct InlayHint {
+    label: String,
+    position: Position,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -216,15 +253,11 @@ impl LanguageServiceState {
             .map(|info| info.to_text_size((line - 1) as u32, (column - 1) as u32))
             .and_then(|position| self.state.goto_definition(&handle, position))
             .map(|range_with_mod_info| {
-                let range = range_with_mod_info
-                    .module_info
-                    .source_range(range_with_mod_info.range);
-                Range {
-                    start_line: range.start.row.to_zero_indexed() as i32 + 1,
-                    start_col: range.start.column.to_zero_indexed() as i32 + 1,
-                    end_line: range.end.row.to_zero_indexed() as i32 + 1,
-                    end_col: range.end.column.to_zero_indexed() as i32 + 1,
-                }
+                Range::new(
+                    range_with_mod_info
+                        .module_info
+                        .source_range(range_with_mod_info.range),
+                )
             })
     }
 
@@ -242,5 +275,19 @@ impl LanguageServiceState {
                 detail: item.as_ref().to_owned(),
             })
             .collect::<Vec<_>>()
+    }
+
+    pub fn inlay_hint(&mut self) -> Vec<InlayHint> {
+        let handle = self.handle.dupe();
+        self.state
+            .get_module_info(&handle)
+            .zip(self.state.inlay_hints(&handle))
+            .map(|(info, hints)| {
+                hints.into_map(|(position, label)| {
+                    let position = Position::new(info.source_location(position));
+                    InlayHint { label, position }
+                })
+            })
+            .unwrap_or_default()
     }
 }

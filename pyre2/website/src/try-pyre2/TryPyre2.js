@@ -19,6 +19,7 @@ import {
   setAutoCompleteFunction,
   setGetDefFunction,
   setHoverFunctionForMonaco,
+  setInlayHintFunctionForMonaco,
 } from './configured-monaco';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 
@@ -27,12 +28,12 @@ from typing import *
 
 # reveal_type will produce a type error that tells you the type Pyre has
 # computed for the argument (in this case, int)
-def test(x: int) -> str:
+def test(x: int):
   return f"{x}"
 
 reveal_type(test(42))
 
-`;
+`.trimStart();
 
 const pyre2WasmUninitializedPromise =
   // $FlowIgnore[cannot-resolve-name]
@@ -87,6 +88,7 @@ export default component TryPyre2(
     setAutoCompleteFunction((l, c) => pyreService.autoComplete(l, c));
     setGetDefFunction((l, c) => pyreService.gotoDefinition(l, c));
     setHoverFunctionForMonaco((l, c) => pyreService.queryType(l, c));
+    setInlayHintFunctionForMonaco(() => pyreService.inlayHint());
 
     // typecheck on edit
     try {

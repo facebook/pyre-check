@@ -48,4 +48,9 @@ impl State {
     pub fn autocomplete(&mut self, line: i32, column: i32) -> JsValue {
         serde_wasm_bindgen::to_value(&self.0.autocomplete(line, column)).unwrap()
     }
+
+    #[wasm_bindgen(js_name=inlayHint)]
+    pub fn inlay_hint(&mut self) -> JsValue {
+        serde_wasm_bindgen::to_value(&self.0.inlay_hint()).unwrap()
+    }
 }
