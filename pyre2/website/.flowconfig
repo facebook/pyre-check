@@ -13,6 +13,5 @@ libs
 
 [options]
 all=true
-
 component_syntax=true
 experimental.component_syntax.hook_compatibility=false
