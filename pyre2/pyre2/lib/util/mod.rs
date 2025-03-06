@@ -24,7 +24,6 @@ pub mod notify_watcher;
 pub mod prelude;
 pub mod rayon;
 pub mod recurser;
-#[cfg(target_arch = "wasm32")]
 pub mod reduced_stdlib;
 pub mod trace;
 pub mod uniques;
