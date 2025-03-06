@@ -98,6 +98,10 @@ impl ModuleName {
         Self::from_str("enum")
     }
 
+    pub fn dataclasses() -> Self {
+        Self::from_str("dataclasses")
+    }
+
     pub fn from_str(x: &str) -> Self {
         ModuleName(MODULE_NAME_INTERNER.intern(StrRef(x)))
     }

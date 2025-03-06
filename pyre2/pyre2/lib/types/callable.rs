@@ -395,6 +395,63 @@ impl CallableKind {
             })),
         }
     }
+
+    pub fn as_func_id(&self) -> Option<FuncId> {
+        match self {
+            Self::IsInstance => Some(FuncId {
+                module: ModuleName::builtins(),
+                cls: None,
+                func: Name::new_static("isinstance"),
+            }),
+            Self::IsSubclass => Some(FuncId {
+                module: ModuleName::builtins(),
+                cls: None,
+                func: Name::new_static("issubclass"),
+            }),
+            Self::ClassMethod => Some(FuncId {
+                module: ModuleName::builtins(),
+                cls: None,
+                func: Name::new_static("classmethod"),
+            }),
+            Self::Dataclass(_) => Some(FuncId {
+                module: ModuleName::dataclasses(),
+                cls: None,
+                func: Name::new_static("dataclass"),
+            }),
+            Self::DataclassField => Some(FuncId {
+                module: ModuleName::dataclasses(),
+                cls: None,
+                func: Name::new_static("field"),
+            }),
+            Self::Overload => Some(FuncId {
+                module: ModuleName::typing(),
+                cls: None,
+                func: Name::new_static("overload"),
+            }),
+            Self::Override => Some(FuncId {
+                module: ModuleName::typing(),
+                cls: None,
+                func: Name::new_static("override"),
+            }),
+            Self::Cast => Some(FuncId {
+                module: ModuleName::typing(),
+                cls: None,
+                func: Name::new_static("cast"),
+            }),
+            Self::AssertType => Some(FuncId {
+                module: ModuleName::typing(),
+                cls: None,
+                func: Name::new_static("assert_type"),
+            }),
+            Self::RevealType => Some(FuncId {
+                module: ModuleName::typing(),
+                cls: None,
+                func: Name::new_static("reveal_type"),
+            }),
+            Self::Def(func_id) => Some((**func_id).clone()),
+            Self::Anon => None,
+        }
+    }
 }
 
 pub fn unexpected_keyword(error: &dyn Fn(String), func: &str, keyword: &Keyword) {

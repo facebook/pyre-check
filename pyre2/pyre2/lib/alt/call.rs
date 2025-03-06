@@ -21,9 +21,11 @@ use crate::dunder;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
+use crate::module::module_name::ModuleName;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::FuncId;
 use crate::types::callable::Params;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
@@ -43,11 +45,11 @@ pub enum CallStyle<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CallTarget {
     /// A thing whose type is a Callable, usually a function.
-    Callable(Callable),
+    Callable(Callable, CallableKind),
     /// The dataclasses.dataclass function.
     Dataclass(Callable),
     /// Method of a class. The `Type` is the self/cls argument.
-    BoundMethod(Type, Callable),
+    BoundMethod(Type, Callable, CallableKind),
     /// A class object.
     Class(ClassType),
     /// A TypedDict.
@@ -58,10 +60,13 @@ pub enum CallTarget {
 
 impl CallTarget {
     pub fn any(style: AnyStyle) -> Self {
-        Self::Callable(Callable {
-            params: Params::Ellipsis,
-            ret: style.propagate(),
-        })
+        Self::Callable(
+            Callable {
+                params: Params::Ellipsis,
+                ret: style.propagate(),
+            },
+            CallableKind::Anon,
+        )
     }
 }
 
@@ -83,17 +88,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Callable(c, CallableKind::Dataclass(_)) => {
                 Some((Vec::new(), CallTarget::Dataclass(*c)))
             }
-            Type::Callable(c, _) => Some((Vec::new(), CallTarget::Callable(*c))),
+            Type::Callable(c, kind) => Some((Vec::new(), CallTarget::Callable(*c, kind))),
             Type::Overload(overloads) => Some((
                 Vec::new(),
                 CallTarget::Overload(overloads.mapped(|ty| self.as_call_target(ty))),
             )),
             Type::BoundMethod(box BoundMethod { obj, func }) => match self.as_call_target(func) {
-                Some((gs, CallTarget::Callable(c))) => Some((gs, CallTarget::BoundMethod(obj, c))),
+                Some((gs, CallTarget::Callable(c, kind))) => {
+                    Some((gs, CallTarget::BoundMethod(obj, c, kind)))
+                }
                 Some((gs, CallTarget::Overload(overloads))) => {
                     let overloads = overloads.mapped(|x| match x {
-                        Some((gs2, CallTarget::Callable(c))) => {
-                            Some((gs2, CallTarget::BoundMethod(obj.clone(), c)))
+                        Some((gs2, CallTarget::Callable(c, kind))) => {
+                            Some((gs2, CallTarget::BoundMethod(obj.clone(), c, kind)))
                         }
                         _ => None,
                     });
@@ -386,10 +393,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
                 self.construct_typed_dict(td, args, keywords, range, arg_errors)
             }
-            CallTarget::BoundMethod(obj, c) => {
+            CallTarget::BoundMethod(obj, c, kind) => {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(
                     c,
+                    kind.as_func_id(),
                     Some(first_arg),
                     args,
                     keywords,
@@ -398,16 +406,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     call_errors,
                 )
             }
-            CallTarget::Callable(callable) | CallTarget::Dataclass(callable) => self
-                .callable_infer(
-                    callable,
-                    None,
-                    args,
-                    keywords,
-                    range,
-                    arg_errors,
-                    call_errors,
-                ),
+            CallTarget::Callable(callable, kind) => self.callable_infer(
+                callable,
+                kind.as_func_id(),
+                None,
+                args,
+                keywords,
+                range,
+                arg_errors,
+                call_errors,
+            ),
+            CallTarget::Dataclass(callable) => self.callable_infer(
+                callable,
+                Some(FuncId {
+                    module: ModuleName::dataclasses(),
+                    cls: None,
+                    func: Name::new("dataclass"),
+                }),
+                None,
+                args,
+                keywords,
+                range,
+                arg_errors,
+                call_errors,
+            ),
             CallTarget::Overload(overloads) => {
                 // Hack
                 assert!(

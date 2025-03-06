@@ -20,6 +20,7 @@ use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::Callable;
+use crate::types::callable::FuncId;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
@@ -550,6 +551,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn callable_infer(
         &self,
         callable: Callable,
+        _callable_name: Option<FuncId>,
         self_arg: Option<CallArg>,
         args: &[CallArg],
         keywords: &[Keyword],
