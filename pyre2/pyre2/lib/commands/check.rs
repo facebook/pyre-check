@@ -128,11 +128,14 @@ impl OutputFormat {
     }
 
     fn write_error_json_to_file(path: &Path, errors: &[Error]) -> anyhow::Result<()> {
-        let legacy_errors = LegacyErrors::from_errors(errors);
-        let output_bytes = serde_json::to_string_pretty(&legacy_errors)
-            .with_context(|| "failed to serialize JSON value to bytes")?;
-        fs_anyhow::write(path, output_bytes.as_bytes())?;
-        Ok(())
+        fn f(path: &Path, errors: &[Error]) -> anyhow::Result<()> {
+            let legacy_errors = LegacyErrors::from_errors(errors);
+            let mut file = BufWriter::new(File::create(path)?);
+            serde_json::to_writer_pretty(&mut file, &legacy_errors)?;
+            Ok(file.flush()?)
+        }
+        f(path, errors)
+            .with_context(|| format!("while writing JSON errors to `{}`", path.display()))
     }
 
     fn write_errors_to_file(&self, path: &Path, errors: &[Error]) -> anyhow::Result<()> {
