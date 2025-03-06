@@ -28,10 +28,10 @@ class C5:
 def f(proto: P) -> None: ...
 def g(p: P, c1: C1, c2: C2, c3: C3, c4: C4, c5: C5) -> None:
     f(c1)
-    f(c2)  # E: EXPECTED C2 <: P
+    f(c2)  # E: Argument `C2` is not assignable to parameter `proto` with type `P`
     f(c3)
     f(c4)
-    f(c5)  # E: EXPECTED C5 <: P
+    f(c5)  # E: Argument `C5` is not assignable to parameter `proto` with type `P`
     c: C1 = p  # E: `P` is not assignable to `C1`
  "#,
 );
@@ -170,7 +170,7 @@ class C2:
    y: str
 def f(proto: P[str]) -> None: ...
 def g(c1: C1, c2: C2) -> None:
-    f(c1)  # E: EXPECTED C1 <: P[str]
+    f(c1)  # E: Argument `C1` is not assignable to parameter `proto` with type `P[str]`
     f(c2)
 "#,
 );
@@ -293,6 +293,6 @@ class B:
 def f(x: Hashable):
     pass
 f(A())
-f(B())  # E: EXPECTED B <: Hashable
+f(B())  # E: Argument `B` is not assignable to parameter `x` with type `Hashable`
     "#,
 );

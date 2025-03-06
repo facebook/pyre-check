@@ -80,7 +80,7 @@ testcase!(
     r#"
 def f(x: bool) -> bool: ...
 
-class A(foo=f(15)):  # E: EXPECTED Literal[15] <: bool
+class A(foo=f(15)):  # E: Argument `Literal[15]` is not assignable to parameter `x` with type `bool`
     pass
 "#,
 );

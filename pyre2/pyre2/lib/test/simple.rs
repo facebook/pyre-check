@@ -56,7 +56,7 @@ def plus(x: int, y: int) -> int:
     return x
 
 number = input("What is your favourite number?")
-print("It is", plus(number, 1))  # E: str <: int
+print("It is", plus(number, 1))  # E: Argument `str` is not assignable to parameter `x` with type `int`
 "#,
 );
 
@@ -118,7 +118,7 @@ class C[T]: ...
 def append[T](x: C[T], y: T):
     pass
 v: C[int]
-append(v, "test")  # E: Literal['test'] <: int
+append(v, "test")  # E: Argument `Literal['test']` is not assignable to parameter `y` with type `int`
 "#,
 );
 
@@ -131,7 +131,7 @@ class C(Generic[T]): ...
 def append(x: C[T], y: T):
     pass
 v: C[int]
-append(v, "test")  # E: Literal['test'] <: int
+append(v, "test")  # E: Argument `Literal['test']` is not assignable to parameter `y` with type `int`
 "#,
 );
 
@@ -144,7 +144,7 @@ class C(typing.Generic[T]): ...
 def append(x: C[T], y: T):
     pass
 v: C[int]
-append(v, "test")  # E: Literal['test'] <: int
+append(v, "test")  # E: Argument `Literal['test']` is not assignable to parameter `y` with type `int`
 "#,
 );
 
@@ -190,7 +190,7 @@ testcase!(
     test_list_class_inner_generic,
     r#"
 x = [3]
-x.append("test")  # E: Literal['test'] <: int
+x.append("test")  # E: Argument `Literal['test']` is not assignable to parameter with type `int`
 "#,
 );
 
@@ -305,7 +305,7 @@ def f(x: int | str) -> None:
     return None
 f(1)
 f("test")
-f(None)  # E: None <: int | str
+f(None)  # E: Argument `None` is not assignable to parameter `x` with type `int | str`
 "#,
 );
 
@@ -513,7 +513,7 @@ testcase!(
 def f(x: str) -> str:
     return x
 
-x = f"abc{f(1)}def"  # E: EXPECTED Literal[1] <: str
+x = f"abc{f(1)}def"  # E: Argument `Literal[1]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
@@ -734,7 +734,7 @@ testcase_with_bug!(
     "TODO: implement reflective operators",
     test_complex,
     r#"
-z: complex =  3 + 4j # E: EXPECTED complex <: int
+z: complex =  3 + 4j # E: Argument `complex` is not assignable to parameter with type `int`
     "#,
 );
 
@@ -826,7 +826,7 @@ class A:
     def __getitem__(self, s: str) -> str:
         return s
 def f(x: A):
-    for _ in x:  # E: EXPECTED int <: str
+    for _ in x:  # E: Argument `int` is not assignable to parameter `s` with type `str`
         pass
     "#,
 );
@@ -865,7 +865,7 @@ class A:
     def __getitem__(self, i: int) -> int:
         return i
 def f(a: A):
-    return a["oops"]  # E: EXPECTED Literal['oops'] <: int
+    return a["oops"]  # E: Argument `Literal['oops']` is not assignable to parameter `i` with type `int`
     "#,
 );
 
@@ -950,7 +950,7 @@ def test(x: list[str]) -> None:
     y = ([], x)
     # Because we pin down the `[]` first, we end up with a type error.
     # If we had backtracking we wouldn't.
-    foo(y)  # E: EXPECTED tuple[list[int], list[str]] <: tuple[list[int], list[int]] | tuple[list[str], list[str]]
+    foo(y)  # E: Argument `tuple[list[int], list[str]]` is not assignable to parameter `x` with type `tuple[list[int], list[int]] | tuple[list[str], list[str]]`
 "#,
 );
 
@@ -1070,7 +1070,7 @@ x: Literal["little", "big"] = "big"
 testcase!(
     test_compare_int_str_error,
     r#"
-0 < "oops"  # E: EXPECTED Literal['oops'] <: int
+0 < "oops"  # E: Argument `Literal['oops']` is not assignable to parameter with type `int`
     "#,
 );
 
@@ -1082,7 +1082,7 @@ class C:
         return True
 def f(c: C, x: int, y: str):
     x in c  # OK
-    y in c  # E: EXPECTED str <: int
+    y in c  # E: Argument `str` is not assignable to parameter `x` with type `int`
     "#,
 );
 
@@ -1108,7 +1108,7 @@ testcase!(
     test_invalid_return,
     r#"
 def f(x: str): ...
-return f(0) # E: Invalid `return` outside of a function # E: EXPECTED Literal[0] <: str
+return f(0) # E: Invalid `return` outside of a function # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 

@@ -385,7 +385,7 @@ class Parent:
 class Child(Parent):
     pass
 def f1(c: C[Parent, Child]):
-    f2(c)  # E: EXPECTED
+    f2(c)  # E: Argument `C[Parent, Child]` is not assignable to parameter `c` with type `C[Child, Parent]`
 def f2(c: C[Child, Parent]):
     f1(c)
     "#,

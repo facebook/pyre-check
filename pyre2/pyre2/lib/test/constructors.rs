@@ -34,7 +34,7 @@ b3 = Box(f()).wrap().wrap()
 assert_type(b3, Box[Box[Box[int]]])
 
 assert_type(Box[int](1), Box[int])
-Box[int]("oops")  # E: Literal['oops'] <: int
+Box[int]("oops")  # E: Argument `Literal['oops']` is not assignable to parameter `x` with type `int`
 "#,
 );
 
@@ -49,7 +49,7 @@ class Box[T]:
         if x:
             return Box(self, self)  # ok
         else:
-            return Box(self, 42)  # E: EXPECTED Literal[42] <: Box[?_TypeVar]
+            return Box(self, 42)  # E: Argument `Literal[42]` is not assignable to parameter `y` with type `Box[?_TypeVar]`
 b = Box[int]("hello", "world")
 assert_type(b, Box[int])
 assert_type(b.wrap(True), Box[Box[int]])
@@ -65,7 +65,7 @@ class C:
 
 c: C
 C(c)  # OK
-C(0)  # E: EXPECTED Literal[0] <: C
+C(0)  # E: Argument `Literal[0]` is not assignable to parameter `x` with type `C`
     "#,
 );
 
@@ -77,7 +77,7 @@ class C[T1]:
         pass
 c: C[int]
 C[int](c)  # OK
-C[str](c)  # E: EXPECTED C[int] <: C[str]
+C[str](c)  # E: Argument `C[int]` is not assignable to parameter `x` with type `C[str]`
     "#,
 );
 
@@ -91,7 +91,7 @@ class C(metaclass=Meta):
         pass
 C(5)
 C()     # E: Missing argument `x`
-C("5")  # E: EXPECTED Literal['5'] <: int
+C("5")  # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int`
     "#,
 );
 
@@ -130,7 +130,7 @@ class C:
     def __new__[T](cls: type[T], x: int) -> T: ...
 C(5)
 C()     # E: Missing argument `x`
-C("5")  # E: EXPECTED Literal['5'] <: int
+C("5")  # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int`
     "#,
 );
 
@@ -143,7 +143,7 @@ class C:
         pass
 C(5)
 C()     # E: Missing argument `x`
-C("5")  # E: EXPECTED Literal['5'] <: int
+C("5")  # E: Argument `Literal['5']` is not assignable to parameter `x` with type `int`
     "#,
 );
 
@@ -188,7 +188,7 @@ class C[T]:
     def __new__(cls, x: T): ...
 C(0)  # T is implicitly Any
 C[bool](True)
-C[bool](0)  # E: EXPECTED Literal[0] <: bool
+C[bool](0)  # E: Argument `Literal[0]` is not assignable to parameter `x` with type `bool`
     "#,
 );
 
@@ -212,7 +212,7 @@ class A:
     def __init__(self, x: int): pass
 class B(A): pass
 B(1)
-B("")  # E: EXPECTED Literal[''] <: int
+B("")  # E: Argument `Literal['']` is not assignable to parameter `x` with type `int`
     "#,
 );
 

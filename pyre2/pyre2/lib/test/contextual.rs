@@ -213,8 +213,8 @@ testcase!(
 class A: ...
 class B(A): ...
 def takes_int(x: int) -> None: ...
-xs: list[A] = [B()] if True else takes_int("") # E: EXPECTED Literal[''] <: int
-ys: list[A] = takes_int("") if False else [B()] # E: EXPECTED Literal[''] <: int
+xs: list[A] = [B()] if True else takes_int("") # E: Argument `Literal['']` is not assignable to parameter `x` with type `int`
+ys: list[A] = takes_int("") if False else [B()] # E: Argument `Literal['']` is not assignable to parameter `x` with type `int`
 "#,
 );
 
@@ -268,7 +268,7 @@ def g(x: int, y: str):
 x1 = f(g, lambda x, y: None)
 reveal_type(x1) # E: revealed type: (x: int, y: str) -> None
 
-x2 = f(g, lambda x, z: None) # E: EXPECTED (x: int, z: Unknown) -> None <: (x: int, y: str) -> None
+x2 = f(g, lambda x, z: None) # E: Argument `(x: int, z: Unknown) -> None` is not assignable to parameter `g` with type `(x: int, y: str) -> None`
 reveal_type(x2) # E: revealed type: (x: int, y: str) -> None
 "#,
 );

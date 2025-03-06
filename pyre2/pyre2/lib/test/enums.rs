@@ -119,7 +119,7 @@ from enum import Enum
 class E(Enum):
     X = 1
     Y = 2
-for e in E:  # E: EXPECTED EnumMeta <: type[@_] # E: EXPECTED int <: str
+for e in E:  # E: Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` # E: Argument `int` is not assignable to parameter `name` with type `str`
     assert_type(e, E)  # E: assert_type(Any, E)
     "#,
 );

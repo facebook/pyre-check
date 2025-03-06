@@ -61,7 +61,7 @@ class Data:
     x: int
     y: str
 Data(0, "1")  # OK
-Data(0, 1)  # E: EXPECTED Literal[1] <: str
+Data(0, 1)  # E: Argument `Literal[1]` is not assignable to parameter `y` with type `str`
     "#,
 );
 
@@ -106,7 +106,7 @@ class B(A):
     x: str # E:  Class member `x` overrides parent class `A` in an inconsistent manner
 # Overwriting x doesn't change the param order but does change its type
 B('0', 1.0)  # OK
-B(0, 1.0)  # E: EXPECTED Literal[0] <: str
+B(0, 1.0)  # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
     "#,
 );
 
@@ -318,7 +318,7 @@ class D3:
     x: int
 def f(d: D2, e: D2, f: D3):
     if d < e: ...  # OK
-    if e < f: ...  # E: EXPECTED D3 <: D2
+    if e < f: ...  # E: Argument `D3` is not assignable to parameter `other` with type `D2`
     if e != f: ...  # OK: `==` and `!=` never error regardless
     "#,
 );
@@ -443,7 +443,7 @@ f(D1())  # OK
 @dataclass(eq=True, frozen=False)
 class D2:
     pass
-f(D2())  # E: EXPECTED D2 <: Hashable
+f(D2())  # E: Argument `D2` is not assignable to parameter `x` with type `Hashable`
 
 # When eq=False, __hash__ is untouched
 @dataclass(eq=False)
@@ -453,7 +453,7 @@ class D3:
 class D4(Unhashable):
     pass
 f(D3())  # OK
-f(D4())  # E: EXPECTED D4 <: Hashable
+f(D4())  # E: Argument `D4` is not assignable to parameter `x` with type `Hashable`
 
 # unsafe_hash=True forces __hash__ to be created
 @dataclass(eq=False, unsafe_hash=True)

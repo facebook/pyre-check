@@ -344,7 +344,7 @@ testcase!(
     r#"
 x: list[int] = []
 x += [1]
-x += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
+x += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
 "#,
 );
 
@@ -353,10 +353,10 @@ testcase!(
     r#"
 def foo(y: list[int]) -> None:
     y += [1]
-    y += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
+    y += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
     z: list[int] = []
     z += [1]
-    z += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
+    z += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
 "#,
 );
 
@@ -371,7 +371,7 @@ class C:
 
 c: C = C()
 c.foo += [1]
-c.foo += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
+c.foo += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
 "#,
 );
 
@@ -384,7 +384,7 @@ class C:
     def __init__(self) -> None:
         self.foo = []
         self.foo += [1]
-        self.foo += ["foo"]  # E: EXPECTED list[str] <: Iterable[int]
+        self.foo += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
 "#,
 );
 
@@ -394,7 +394,7 @@ testcase!(
 x: list[list[int]] = []
 x += [[1]]
 x[0] += [1]
-x += [1]  # E: EXPECTED list[int] <: Iterable[list[int]]
+x += [1]  # E: Argument `list[int]` is not assignable to parameter with type `Iterable[list[int]]`
 "#,
 );
 
@@ -420,7 +420,7 @@ testcase!(
 from typing import Any
 def expect_str(x: str): ...
 def test(x: Any):
-    x[0] += expect_str(0) # E: EXPECTED Literal[0] <: str
+    x[0] += expect_str(0) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
@@ -430,7 +430,7 @@ testcase!(
 from typing import Any
 def expect_str(x: str): ...
 def test(x: Any):
-    x += expect_str(0) # E: EXPECTED Literal[0] <: str
+    x += expect_str(0) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
@@ -439,7 +439,7 @@ testcase!(
     r#"
 def expect_str(x: str): ...
 def test(x: None):
-    x += expect_str(0) # E: `None` has no attribute `__iadd__` # E: EXPECTED Literal[0] <: str
+    x += expect_str(0) # E: `None` has no attribute `__iadd__` # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
@@ -450,7 +450,7 @@ def expect_str(x: str): ...
 class C:
     __iadd__: None = None
 def test(x: C):
-    x += expect_str(0) # E: Expected `__iadd__` to be a callable, got None # E: EXPECTED Literal[0] <: str
+    x += expect_str(0) # E: Expected `__iadd__` to be a callable, got None # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 

@@ -196,7 +196,7 @@ class ParentA:
 
 class ChildA(ParentA):
 
-    @wrapper # E: EXPECTED override[staticmethod[() -> bool]] <: (...) -> Any
+    @wrapper # E: Argument `override[staticmethod[() -> bool]]` is not assignable to parameter with type `(...) -> Any`
     @override
     @staticmethod
     def static_method1() -> bool: 

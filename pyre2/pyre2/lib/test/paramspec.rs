@@ -72,7 +72,7 @@ reveal_type(f)  # E: revealed type: (a: str, b: bool) -> str
 
 f("A", True)
 f(a="A", b=True)
-f("A", "A")  # E: Literal['A'] <: bool
+f("A", "A")  # E: Argument `Literal['A']` is not assignable to parameter `b` with type `bool`
 assert_type(f("A", True), str)
 "#,
 );
@@ -150,7 +150,7 @@ reveal_type(foo(x_y, x_y)) # E: revealed type: (x: int, y: str) -> bool
                # Should return (x: int, y: str) -> bool
                # (a callable with two positional-or-keyword parameters)
 
-foo(x_y, y_x) # E: EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int
+foo(x_y, y_x) # E: Argument `(y: int, x: str) -> int` is not assignable to parameter `y` with type `(x: int, y: str) -> int`
                # Could return (a: int, b: str, /) -> bool
                # (a callable with two positional-only parameters)
                # This works because both callables have types that are
@@ -159,7 +159,7 @@ foo(x_y, y_x) # E: EXPECTED (y: int, x: str) -> int <: (x: int, y: str) -> int
 
 def keyword_only_x(*, x: int) -> int: ...
 def keyword_only_y(*, y: int) -> int: ...
-foo(keyword_only_x, keyword_only_y) # Rejected # E: EXPECTED (*, y: int) -> int <: (*, x: int) -> int
+foo(keyword_only_x, keyword_only_y) # Rejected # E: Argument `(*, y: int) -> int` is not assignable to parameter `y` with type `(*, x: int) -> int`
 "#,
 );
 
@@ -324,10 +324,10 @@ def twice(f: Callable[P, int], *args: P.args, **kwargs: P.kwargs) -> int:
 def a_int_b_str(a: int, b: str) -> int:
   return a
 
-twice(a_int_b_str, 1, "A")       # Accepted # E: (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int
+twice(a_int_b_str, 1, "A")     # Accepted # E: Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int`
 
-twice(a_int_b_str, b="A", a=1)   # Accepted # E: (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int
+twice(a_int_b_str, b="A", a=1) # Accepted # E: Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int`
 
-twice(a_int_b_str, "A", 1)       # Rejected # E: (a: int, b: str) -> int <: (*Unknown, **Unknown) -> int
+twice(a_int_b_str, "A", 1)     # Rejected # E: Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int`
 "#,
 );

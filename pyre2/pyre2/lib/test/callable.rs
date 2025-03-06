@@ -20,7 +20,7 @@ f4: Callable[[int], None] = lambda x: reveal_type(x)  # E: revealed type: int
 f5: Callable[[int], int] = lambda x: x
 f6: Callable[[int], int] = lambda x: "foo"  # E: `(x: int) -> Literal['foo']` is not assignable to `(int) -> int`
 f7: Callable[[int, int], int] = lambda x: 1  # E: `(x: int) -> Literal[1]` is not assignable to `(int, int) -> int`
-f8: Callable[[int], int] = lambda x: x + "foo" # E: EXPECTED Literal['foo'] <: int
+f8: Callable[[int], int] = lambda x: x + "foo" # E: Argument `Literal['foo']` is not assignable to parameter with type `int`
 "#,
 );
 
@@ -155,15 +155,15 @@ test(f1) # OK
 
 # Lower bound has too many args
 def f2(x: int, y: int, z: int) -> None: ...
-test(f2) # E: EXPECTED (x: int, y: int, z: int) -> None <: (int, int) -> None
+test(f2) # E: Argument `(x: int, y: int, z: int) -> None` is not assignable to parameter `f` with type `(int, int) -> None`
 
 # Lower bound has too few args
 def f3(x: int) -> None: ...
-test(f3) # E: EXPECTED (x: int) -> None <: (int, int) -> None
+test(f3) # E: Argument `(x: int) -> None` is not assignable to parameter `f` with type `(int, int) -> None`
 
 # Lower bound has wrong arg types
 def f4(x: str, y: int) -> None: ...
-test(f4) # E: EXPECTED (x: str, y: int) -> None <: (int, int) -> None
+test(f4) # E: Argument `(x: str, y: int) -> None` is not assignable to parameter `f` with type `(int, int) -> None`
 
 # Lower bound has variadic args of compatible type
 def f5(*args: int) -> None: ...
@@ -171,7 +171,7 @@ test(f5) # OK
 
 # Lower bound has variadic args of incompatible type
 def f6(*args: str) -> None: ...
-test(f6) # E: EXPECTED (*str) -> None <: (int, int) -> None
+test(f6) # E: Argument `(*str) -> None` is not assignable to parameter `f` with type `(int, int) -> None`
 
 # Lower bound has extra kwargs of arbitrary type
 class Arbitrary: pass
@@ -223,7 +223,7 @@ testcase!(
     test_varargs,
     r#"
 def test(*args: int): ...
-test(1, 2, "foo", 4) # E: EXPECTED Literal['foo'] <: int
+test(1, 2, "foo", 4) # E: Argument `Literal['foo']` is not assignable to parameter with type `int`
 "#,
 );
 
@@ -327,7 +327,7 @@ def fixed_same_len_ok(xs: tuple[int, int, int] | tuple[int, int, int]):
     test(*xs) # OK
 
 def fixed_same_len_type_err(xs: tuple[int, int, int] | tuple[int, int, str]):
-    test(*xs) # E: EXPECTED int | str <: int
+    test(*xs) # E: Argument `int | str` is not assignable to parameter `z` with type `int`
 
 def fixed_same_len_too_few(xs: tuple[int, int] | tuple[int, int]):
     test(*xs) # E: Missing argument `z`
@@ -339,7 +339,7 @@ def mixed_same_type(xs: tuple[int, int] | Iterable[int]):
     test(*xs) # OK (treated as Iterable[int])
 
 def mixed_type_err(xs: tuple[int, int] | Iterable[str]):
-    test(*xs) # E: EXPECTED int | str <: int
+    test(*xs) # E: Argument `int | str` is not assignable to parameter `x` with type `int` # E: Argument `int | str` is not assignable to parameter `y` with type `int` # E: Argument `int | str` is not assignable to parameter `z` with type `int`
 "#,
 );
 
@@ -351,7 +351,7 @@ testcase!(
     test_splat_keyword_first,
     r#"
 def test(x: str, y: int, z: int): ...
-test(x="", *(0, 1)) # E: EXPECTED Literal[0] <: str # E: Multiple values for argument `x` # E: Missing argument `z`
+test(x="", *(0, 1)) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str` # E: Multiple values for argument `x` # E: Missing argument `z`
 "#,
 );
 

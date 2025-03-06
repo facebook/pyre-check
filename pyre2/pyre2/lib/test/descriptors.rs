@@ -185,7 +185,7 @@ class classproperty[T, R]:
     def __init__(self, fget: Callable[[type[T]], R]) -> None: ...
     def __get__(self, obj: object, obj_cls_type: type[T]) -> R: ...
 class C:
-    @classproperty    # E: EXPECTED (cls: C) -> int <: (type[@_]) -> int
+    @classproperty    # E: Argument `(cls: C) -> int` is not assignable to parameter `fget` with type `(type[@_]) -> int`
     def cp(cls) -> int:
         return 42
 assert_type(C.cp, int)

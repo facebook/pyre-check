@@ -68,6 +68,8 @@ pub enum TypeCheckKind {
     ExplicitFunctionReturn,
     /// Return in a type guard function.
     TypeGuardReturn,
+    /// Function call argument against parameter type.
+    CallArgument(Option<Name>),
     /// Check of a parameter's default value against its type annotation.
     FunctionParameterDefault(Name),
     /// Check against type of a TypedDict key.

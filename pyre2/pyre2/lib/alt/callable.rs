@@ -17,6 +17,7 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::solve::Iterable;
 use crate::error::collector::ErrorCollector;
 use crate::error::context::TypeCheckContext;
+use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::Callable;
 use crate::types::callable::Param;
@@ -128,36 +129,32 @@ impl CallArgPreEval<'_> {
         &mut self,
         solver: &AnswersSolver<Ans>,
         hint: &Type,
+        param_name: Option<&Name>,
         vararg: bool,
         range: TextRange,
         arg_errors: &ErrorCollector,
         call_errors: &ErrorCollector,
     ) {
+        let tcc = TypeCheckContext::of_kind(TypeCheckKind::CallArgument(param_name.cloned()));
         match self {
             Self::Type(ty, done) => {
                 *done = true;
-                solver.check_type(hint, ty, range, call_errors, &TypeCheckContext::unknown());
+                solver.check_type(hint, ty, range, call_errors, &tcc);
             }
             Self::Expr(x, done) => {
                 *done = true;
                 solver.expr_with_separate_check_errors(
                     x,
-                    Some((hint, &TypeCheckContext::unknown(), call_errors)),
+                    Some((hint, &tcc, call_errors)),
                     arg_errors,
                 );
             }
             Self::Star(ty, done) => {
                 *done = vararg;
-                solver.check_type(hint, ty, range, call_errors, &TypeCheckContext::unknown());
+                solver.check_type(hint, ty, range, call_errors, &tcc);
             }
             Self::Fixed(tys, i) => {
-                solver.check_type(
-                    hint,
-                    &tys[*i],
-                    range,
-                    call_errors,
-                    &TypeCheckContext::unknown(),
-                );
+                solver.check_type(hint, &tys[*i], range, call_errors, &tcc);
                 *i += 1;
             }
         }
@@ -231,13 +228,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Param::PosOnly(ty, _required) => {
                             num_positional_params += 1;
                             iparams.next();
-                            Some((ty, false))
+                            Some((ty, None, false))
                         }
                         Param::Pos(name, ty, _required) => {
                             num_positional_params += 1;
                             seen_names.insert(name.clone(), *p_idx);
                             iparams.next();
-                            Some((ty, false))
+                            Some((ty, Some(name), false))
                         }
                         Param::VarArg(Type::Unpack(box ty)) => {
                             // Store args that get matched to an unpacked *args param
@@ -247,16 +244,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             matched_unpacked_vararg = true;
                             None
                         }
-                        Param::VarArg(ty) => Some((ty, true)),
+                        Param::VarArg(ty) => Some((ty, None, true)),
                         Param::KwOnly(..) | Param::Kwargs(..) => None,
                     }
                 } else {
                     None
                 };
                 match param {
-                    Some((hint, vararg)) => {
-                        arg_pre.post_check(self, hint, vararg, arg.range(), arg_errors, call_errors)
-                    }
+                    Some((hint, name, vararg)) => arg_pre.post_check(
+                        self,
+                        hint,
+                        name,
+                        vararg,
+                        arg.range(),
+                        arg_errors,
+                        call_errors,
+                    ),
                     None if matched_unpacked_vararg => arg_pre.post_skip(),
                     None => {
                         arg_pre.post_infer(self, arg_errors);

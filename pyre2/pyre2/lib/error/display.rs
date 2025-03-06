@@ -58,6 +58,18 @@ impl TypeCheckKind {
                 "Returned type `{}` is not assignable to expected return type `bool` of type guard functions",
                 ctx.display(got)
             ),
+            Self::CallArgument(param) => {
+                let param_desc = match param {
+                    Some(name) => format!("parameter `{name}`"),
+                    None => "parameter".to_owned(),
+                };
+                format!(
+                    "Argument `{}` is not assignable to {} with type `{}`",
+                    ctx.display(got),
+                    param_desc,
+                    ctx.display(want)
+                )
+            }
             Self::FunctionParameterDefault(param) => format!(
                 "Default `{}` is not assignable to parameter `{}` with type `{}`",
                 ctx.display(got),

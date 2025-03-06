@@ -221,7 +221,7 @@ testcase!(
 def f(x: int): pass
 
 def g():
-   return f("test") # E: EXPECTED Literal['test'] <: int
+   return f("test") # E: Argument `Literal['test']` is not assignable to parameter `x` with type `int`
 "#,
 );
 

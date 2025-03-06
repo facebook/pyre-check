@@ -27,7 +27,7 @@ def f(x):
 assert_type(f(1), int)
 
 def anywhere():
-    assert_type(f(1), int)  # E: assert_type # E: EXPECTED Literal[1] <: str
+    assert_type(f(1), int)  # E: assert_type # E: Argument `Literal[1]` is not assignable to parameter `x` with type `str`
     "#,
 );
 
@@ -107,8 +107,8 @@ def f(x: int | str) -> int | str: ...
 def g(x: str) -> int: ...
 def h(x: str) -> str: ...
 
-assert_type(f(g(0)), int) # E: EXPECTED Literal[0] <: str
-assert_type(f(h(0)), str) # E: EXPECTED Literal[0] <: str
+assert_type(f(g(0)), int) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
+assert_type(f(h(0)), str) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 

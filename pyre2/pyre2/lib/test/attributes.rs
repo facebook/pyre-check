@@ -280,7 +280,7 @@ class C:
     def f[T](self: T, x: T):
         pass
 C().f(C())  # OK
-C().f(0)    # E: EXPECTED Literal[0] <: C
+C().f(0)    # E: Argument `Literal[0]` is not assignable to parameter `x` with type `C`
     "#,
 );
 
@@ -327,10 +327,10 @@ def f1(c: Callable[[int], None]):
     pass
 def f2(c: Callable[[C, int], None]):
     pass
-f1(C.f)  # E: EXPECTED (self: C, x: int) -> None <: (int) -> None
+f1(C.f)  # E: Argument `(self: C, x: int) -> None` is not assignable to parameter `c` with type `(int) -> None`
 f1(C().f)
 f2(C.f)
-f2(C().f)  # E: EXPECTED BoundMethod[C, (self: C, x: int) -> None] <: (C, int) -> None
+f2(C().f)  # E: Argument `BoundMethod[C, (self: C, x: int) -> None]` is not assignable to parameter `c` with type `(C, int) -> None`
     "#,
 );
 
