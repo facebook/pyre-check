@@ -1,0 +1,50 @@
+@generated
+Call dependencies
+{
+  "multiple_sources_with_filters.first_source_distance_one (fun)": [
+    "multiple_sources_with_filters.first_source_distance_zero (fun)"
+  ],
+  "multiple_sources_with_filters.first_source_distance_zero (fun)": [
+    "multiple_sources_with_filters.first_source (fun)"
+  ],
+  "multiple_sources_with_filters.second_source_distance_one (fun)": [
+    "multiple_sources_with_filters.second_source_distance_zero (fun)"
+  ],
+  "multiple_sources_with_filters.second_source_distance_zero (fun)": [
+    "multiple_sources_with_filters.second_source (fun)"
+  ],
+  "multiple_sources_with_filters.sink_distance_one (fun)": [
+    "multiple_sources_with_filters.sink_distance_zero (fun)"
+  ],
+  "multiple_sources_with_filters.sink_distance_zero (fun)": [
+    "multiple_sources_with_filters.first_source (fun)",
+    "multiple_sources_with_filters.multi_sink (fun)"
+  ],
+  "multiple_sources_with_filters.test_first_source_one_second_source_one (fun)": [
+    "multiple_sources_with_filters.first_source_distance_zero (fun)",
+    "multiple_sources_with_filters.multi_sink (fun)",
+    "multiple_sources_with_filters.second_source_distance_zero (fun)"
+  ],
+  "multiple_sources_with_filters.test_first_source_two_second_source_two (fun)": [
+    "multiple_sources_with_filters.first_source_distance_one (fun)",
+    "multiple_sources_with_filters.multi_sink (fun)",
+    "multiple_sources_with_filters.second_source_distance_one (fun)"
+  ],
+  "multiple_sources_with_filters.test_first_source_zero_second_source_zero (fun)": [
+    "multiple_sources_with_filters.first_source (fun)",
+    "multiple_sources_with_filters.multi_sink (fun)",
+    "multiple_sources_with_filters.second_source (fun)"
+  ],
+  "multiple_sources_with_filters.test_sink_distance_one (fun)": [
+    "multiple_sources_with_filters.second_source (fun)",
+    "multiple_sources_with_filters.sink_distance_zero (fun)"
+  ],
+  "multiple_sources_with_filters.test_sink_distance_one_second_source_two (fun)": [
+    "multiple_sources_with_filters.second_source_distance_one (fun)",
+    "multiple_sources_with_filters.sink_distance_zero (fun)"
+  ],
+  "multiple_sources_with_filters.test_sink_distance_two (fun)": [
+    "multiple_sources_with_filters.second_source (fun)",
+    "multiple_sources_with_filters.sink_distance_one (fun)"
+  ]
+}
