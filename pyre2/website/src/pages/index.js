@@ -31,25 +31,18 @@ export default component Home() {
           <h1 className={styles.title}>
             pyrefly<span>.</span>
           </h1>
-          <p className={styles.subtitle}>A static type checker for Python.</p>
-          <section className={styles.buttonContainer}>
-            <Link
-              className={styles.featureButton}
-              to={useBaseUrl('en/docs/getting-started')}>
-              Get Started
-            </Link>
-            <Link
-              className={styles.featureButton}
-              to={useBaseUrl('en/docs/install')}>
-              Install Pyrefly
-            </Link>
-            {/* Add font awesome github logo */}
-            <Link
-              className={styles.featureButton}
-              to="https://ghbtns.com/github-btn.html?user=facebook&repo=pyrefly&type=star&count=false&size=large">
-              Github
-            </Link>
-          </section>
+          <p className={styles.subtitle}>A type checker for Python.</p>
+          <p className={clsx(styles.frontText)}>
+            <span>
+              {' '}
+              <a
+                href="https://github.com/facebook/pyrefly/milestone/1"
+                className={styles.yellowLink}>
+                Coming soon
+              </a>{' '}
+              to your IDE: A faster type checker written in Rust
+            </span>
+          </p>
           <section>
             <li className={styles.firefly}></li>
             <li className={styles.firefly}></li>

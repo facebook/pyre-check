@@ -287,6 +287,26 @@
   font-size: 1.3rem;
 }
 
+.frontText {
+  font-size: 1.5rem;
+  z-index: 1000;
+  position: relative;
+  text-align: center;
+  font-family: 'Source Serif Pro';
+}
+
+.yellowLink {
+  color: var(--flow-yellow);
+  text-decoration: underline;
+
+  transition: color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
+}
+
+.yellowLink:hover {
+  color: white;
+  text-decoration: var(--ifm-link-decoration);
+}
+
 .featuretteText {
   color: #55595c;
   font-size: 1.1rem;
