@@ -48,7 +48,7 @@ def f(d: Data[int]):
     assert_type(d.x, int)
 assert_type(Data(x=0), Data[int])
 Data[int](x=0)  # OK
-Data[int](x="")  # E: EXPECTED Literal[''] <: int
+Data[int](x="")  # E: Argument `Literal['']` is not assignable to parameter `x` with type `int` in function `Data.__init__`
     "#,
 );
 
@@ -143,7 +143,7 @@ class A[T]:
 class B(A[int]):
     y: str
 B(x=0, y="1")  # OK
-B(x="0", y="1")  # E: EXPECTED Literal['0'] <: int
+B(x="0", y="1")  # E: Argument `Literal['0']` is not assignable to parameter `x` with type `int` in function `B.__init__`
     "#,
 );
 
@@ -155,7 +155,7 @@ from dataclasses import dataclass
 class C:
     x: int
 C(x=0)  # OK
-C(x='0')  # E: EXPECTED Literal['0'] <: int
+C(x='0')  # E: Argument `Literal['0']` is not assignable to parameter `x` with type `int` in function `C.__init__`
     "#,
 );
 

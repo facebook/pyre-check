@@ -232,7 +232,7 @@ testcase!(
     test_kwargs,
     r#"
 def test(**kwargs: int): ...
-test(x=1, y="foo", z=2) # E: EXPECTED Literal['foo'] <: int
+test(x=1, y="foo", z=2) # E: Keyword argument `y` with type `Literal['foo']` is not assignable to kwargs type `int` in function `test`
 "#,
 );
 
@@ -303,8 +303,8 @@ from typing import assert_type
 
 def test1(*args: *tuple[int, int, int]): ...
 test1(*(1, 2, 3)) # OK
-test1(*(1, 2)) # E: EXPECTED tuple[Literal[1], Literal[2]] <: tuple[int, int, int]
-test1(*(1, 2, 3, 4)) # E: EXPECTED tuple[Literal[1], Literal[2], Literal[3], Literal[4]] <: tuple[int, int, int]
+test1(*(1, 2)) # E: Unpacked argument `tuple[Literal[1], Literal[2]]` is not assignable to varargs type `tuple[int, int, int]` in function `test1`
+test1(*(1, 2, 3, 4)) # E: Unpacked argument `tuple[Literal[1], Literal[2], Literal[3], Literal[4]]` is not assignable to varargs type `tuple[int, int, int]` in function `test1`
 
 def test2[*T](*args: *tuple[int, *T, int]) -> tuple[*T]: ...
 assert_type(test2(*(1, 2, 3)), tuple[int])
@@ -313,7 +313,7 @@ assert_type(test2(*(1, 2, 3, 4)), tuple[int, int])
 assert_type(test2(1, 2, *(3, 4), 5), tuple[int, int, int])
 assert_type(test2(1, *(2, 3), *("4", 5)), tuple[int, int, str])
 assert_type(test2(1, *[2, 3], 4), tuple[int, ...])
-test2(1, *(2, 3), *(4, "5"))  # E: EXPECTED tuple[Literal[1], Literal[2], Literal[3], Literal[4], Literal['5']] <: tuple[int, *@_, int]
+test2(1, *(2, 3), *(4, "5"))  # E: Unpacked argument `tuple[Literal[1], Literal[2], Literal[3], Literal[4], Literal['5']]` is not assignable to varargs type `tuple[int, *@_, int]` in function `test2`
 "#,
 );
 
@@ -373,7 +373,7 @@ def f(x: str, y: int, z: int): ...
 def test(kwargs: dict[str, int]):
     f("foo", **kwargs) # OK
     f(x="foo", **kwargs) # OK
-    f(**kwargs) # E: EXPECTED int <: str
+    f(**kwargs) # E: Unpacked keyword argument `int` is not assignable to parameter `x` with type `str` in function `f`
 "#,
 );
 
@@ -382,7 +382,7 @@ testcase!(
     r#"
 def f(x: int, y: int, z: int): ...
 def test(kwargs1: dict[str, int], kwargs2: dict[str, str]):
-    f(**kwargs1, **kwargs2) # E: EXPECTED str <: int
+    f(**kwargs1, **kwargs2) # E: Unpacked keyword argument `str` is not assignable to parameter `x` with type `int` in function `f` # E: Unpacked keyword argument `str` is not assignable to parameter `y` with type `int` in function `f` # E: Unpacked keyword argument `str` is not assignable to parameter `z` with type `int` in function `f`
 "#,
 );
 
@@ -422,7 +422,7 @@ def f(**kwargs: int): ...
 def g(**kwargs: str): ...
 def test(kwargs: dict[str, int]):
     f(**kwargs) # OK
-    g(**kwargs) # E: EXPECTED int <: str
+    g(**kwargs) # E: Unpacked keyword argument `int` is not assignable to kwargs type `str` in function `g`
 "#,
 );
 

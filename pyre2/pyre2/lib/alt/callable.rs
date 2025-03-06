@@ -335,7 +335,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &unpacked_args_ty,
                 range,
                 arg_errors,
-                &TypeCheckContext::unknown(),
+                &TypeCheckContext::of_kind(TypeCheckKind::CallVarArgs(callable_name.clone())),
             );
         }
         if let Some(arg_range) = extra_arg_pos {
@@ -446,7 +446,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     &field.ty,
                                     kw.range,
                                     call_errors,
-                                    &TypeCheckContext::unknown(),
+                                    &TypeCheckContext::of_kind(TypeCheckKind::CallArgument(
+                                        Some(name.clone()),
+                                        callable_name.clone(),
+                                    )),
                                 );
                             });
                         })
@@ -464,7 +467,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                             &value,
                                             kw.range,
                                             call_errors,
-                                            &TypeCheckContext::unknown(),
+                                            &TypeCheckContext::of_kind(TypeCheckKind::CallKwArgs(
+                                                None,
+                                                None,
+                                                callable_name.clone(),
+                                            )),
                                         );
                                     });
                                     splat_kwargs.push((value, kw.range));
@@ -497,6 +504,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Some(id) => {
                     let mut hint = kwargs;
+                    let mut has_matching_param = false;
                     if let Some(&p_idx) = seen_names.get(&id.id) {
                         self.error(
                             call_errors,
@@ -507,10 +515,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         );
                         params.items()[p_idx].visit(|ty| {
                             hint = Some(ty);
-                        })
+                        });
+                        has_matching_param = true;
                     } else if let Some(&(p_idx, ty, _)) = kwparams.get(&id.id) {
                         seen_names.insert(id.id.clone(), p_idx);
                         hint = Some(ty);
+                        has_matching_param = true;
                     } else if kwargs.is_none() {
                         self.error(
                             call_errors,
@@ -520,7 +530,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             format!("Unexpected keyword argument `{}`", id.id),
                         );
                     }
-                    let tcc = TypeCheckContext::unknown();
+                    let tcc = TypeCheckContext::of_kind(if has_matching_param {
+                        TypeCheckKind::CallArgument(Some(id.id.clone()), callable_name.clone())
+                    } else {
+                        TypeCheckKind::CallKwArgs(Some(id.id.clone()), None, callable_name.clone())
+                    });
                     self.expr_with_separate_check_errors(
                         &kw.value,
                         hint.map(|ty| (ty, &tcc, call_errors)),
@@ -541,7 +555,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
                 for (ty, range) in &splat_kwargs {
-                    self.check_type(want, ty, *range, call_errors, &TypeCheckContext::unknown());
+                    self.check_type(
+                        want,
+                        ty,
+                        *range,
+                        call_errors,
+                        &TypeCheckContext::of_kind(TypeCheckKind::CallKwArgs(
+                            None,
+                            Some(name.clone()),
+                            callable_name.clone(),
+                        )),
+                    );
                 }
             }
         }

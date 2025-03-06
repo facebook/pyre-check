@@ -8,6 +8,7 @@
 use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckKind;
 use crate::module::module_name::ModuleName;
+use crate::types::callable::FuncId;
 use crate::types::display::TypeDisplayContext;
 use crate::types::types::Type;
 
@@ -64,16 +65,36 @@ impl TypeCheckKind {
                     Some(name) => format!("parameter `{name}`"),
                     None => "parameter".to_owned(),
                 };
-                let func_desc = match func_id {
-                    Some(func) => format!(" in function `{}`", func.format(current_module)),
-                    None => "".to_owned(),
-                };
                 format!(
                     "Argument `{}` is not assignable to {} with type `{}`{}",
                     ctx.display(got),
                     param_desc,
                     ctx.display(want),
-                    func_desc,
+                    func_suffix(func_id.as_ref(), current_module),
+                )
+            }
+            Self::CallVarArgs(func_id) => format!(
+                "Unpacked argument `{}` is not assignable to varargs type `{}`{}",
+                ctx.display(got),
+                ctx.display(want),
+                func_suffix(func_id.as_ref(), current_module)
+            ),
+            Self::CallKwArgs(arg, param, func_id) => {
+                let arg_desc = match arg {
+                    Some(arg) => format!("Keyword argument `{arg}` with type"),
+                    None => "Unpacked keyword argument".to_owned(),
+                };
+                let param_desc = match param {
+                    Some(param) => format!("parameter `{param}` with type"),
+                    None => "kwargs type".to_owned(),
+                };
+                format!(
+                    "{} `{}` is not assignable to {} `{}`{}",
+                    arg_desc,
+                    ctx.display(got),
+                    param_desc,
+                    ctx.display(want),
+                    func_suffix(func_id.as_ref(), current_module),
                 )
             }
             Self::FunctionParameterDefault(param) => format!(
@@ -124,5 +145,12 @@ impl TypeCheckKind {
                 )
             }
         }
+    }
+}
+
+fn func_suffix(func_id: Option<&FuncId>, current_module: ModuleName) -> String {
+    match func_id {
+        Some(func) => format!(" in function `{}`", func.format(current_module)),
+        None => "".to_owned(),
     }
 }
