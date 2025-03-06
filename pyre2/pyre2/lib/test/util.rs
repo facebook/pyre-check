@@ -319,7 +319,7 @@ impl Loader for TestEnv {
 pub fn init_test() {
     init_tracing(true, true);
     // Enough threads to see parallelism bugs, but not too many to debug through.
-    init_rayon(Some(5));
+    init_rayon(Some(3));
 }
 
 /// Should only be used from the `testcase!` macro.
