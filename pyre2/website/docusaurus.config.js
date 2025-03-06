@@ -179,8 +179,7 @@ module.exports = {
           editUrl: fbContent({
             internal:
               'https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/pyre2/website/',
-            external:
-              'https://github.com/facebook/pyre-check/pyre2/edit/main/website/',
+            external: 'https://github.com/facebook/pyrefly/edit/main/website/',
           }),
         },
         staticDocsProject: 'Pyrefly',
