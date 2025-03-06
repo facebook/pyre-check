@@ -317,13 +317,19 @@ let generate_issues
       let source_taint =
         match filters with
         | Some { maximum_source_distance = Some maximum_source_distance; _ } ->
-            ForwardTaint.prune_maximum_length maximum_source_distance source_taint
+            ForwardTaint.prune_maximum_length
+              ~global_maximum:(Some maximum_source_distance)
+              ~maximum_per_kind:(fun _ -> None)
+              source_taint
         | _ -> source_taint
       in
       let sink_taint =
         match filters with
         | Some { maximum_sink_distance = Some maximum_sink_distance; _ } ->
-            BackwardTaint.prune_maximum_length maximum_sink_distance sink_taint
+            BackwardTaint.prune_maximum_length
+              ~global_maximum:(Some maximum_sink_distance)
+              ~maximum_per_kind:(fun _ -> None)
+              sink_taint
         | _ -> sink_taint
       in
       { Flow.source_taint; sink_taint }

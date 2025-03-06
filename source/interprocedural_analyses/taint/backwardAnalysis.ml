@@ -2675,6 +2675,7 @@ let extract_tito_and_sink_models
             maximum_tito_collapse_depth;
             _;
           };
+        source_sink_filter;
         _;
       }
     ~existing_backward
@@ -2769,7 +2770,10 @@ let extract_tito_and_sink_models
       let candidate_tree =
         match maximum_tito_depth with
         | Some maximum_tito_depth ->
-            BackwardState.Tree.prune_maximum_length maximum_tito_depth candidate_tree
+            BackwardState.Tree.prune_maximum_length
+              ~global_maximum:(Some maximum_tito_depth)
+              ~maximum_per_kind:(fun _ -> None)
+              candidate_tree
         | _ -> candidate_tree
       in
       let candidate_tree =
@@ -2794,12 +2798,14 @@ let extract_tito_and_sink_models
             accumulator
         | _ ->
             let sink_tree =
-              match maximum_trace_length with
-              | Some maximum_trace_length ->
-                  (* We limit by maximum_trace_length - 1, since the distance will be incremented by
-                     one when the taint is propagated. *)
-                  BackwardState.Tree.prune_maximum_length (maximum_trace_length - 1) sink_tree
-              | _ -> sink_tree
+              (* We limit by maximum_trace_length - 1, since the distance will be incremented by one
+                 when the taint is propagated. *)
+              let decrement x = x - 1 in
+              BackwardState.Tree.prune_maximum_length
+                ~global_maximum:(maximum_trace_length >>| decrement)
+                ~maximum_per_kind:(fun sink ->
+                  sink |> SourceSinkFilter.maximum_sink_distance source_sink_filter >>| decrement)
+                sink_tree
             in
             let sink_tree =
               sink_tree

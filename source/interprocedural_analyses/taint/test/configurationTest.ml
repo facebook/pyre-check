@@ -2668,7 +2668,112 @@ let test_filters _ =
   assert_equal
     ~cmp:(Option.equal Rule.equal_filters)
     (List.hd_exn configuration.rules).filters
-    (Some { Rule.maximum_source_distance = Some 2; maximum_sink_distance = Some 3 })
+    (Some { Rule.maximum_source_distance = Some 2; maximum_sink_distance = Some 3 });
+  assert_equal
+    (SourceSinkFilter.maximum_source_distance
+       configuration.source_sink_filter
+       (Sources.NamedSource "A"))
+    (Some 2);
+  assert_equal
+    (SourceSinkFilter.maximum_source_distance
+       configuration.source_sink_filter
+       (Sources.NamedSource "B"))
+    None;
+  assert_equal
+    (SourceSinkFilter.maximum_sink_distance configuration.source_sink_filter (Sinks.NamedSink "C"))
+    None;
+  assert_equal
+    (SourceSinkFilter.maximum_sink_distance configuration.source_sink_filter (Sinks.NamedSink "D"))
+    (Some 3);
+  let configuration =
+    assert_parse
+      {|
+    { "sources": [
+        { "name": "Source" }
+      ],
+      "sinks": [
+        { "name": "Sink" }
+      ],
+      "rules": [
+        {
+           "name": "test rule",
+           "sources": ["Source"],
+           "sinks": ["Sink"],
+           "code": 1001,
+           "message_format": "whatever",
+           "filters": {
+             "maximum_source_distance": 2,
+             "maximum_sink_distance": 5
+           }
+        },
+        {
+           "name": "test rule",
+           "sources": ["Source"],
+           "sinks": ["Sink"],
+           "code": 1002,
+           "message_format": "whatever",
+           "filters": {
+             "maximum_source_distance": 4,
+             "maximum_sink_distance": 3
+           }
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal
+    (SourceSinkFilter.maximum_source_distance
+       configuration.source_sink_filter
+       (Sources.NamedSource "Source"))
+    (Some 4);
+  assert_equal
+    (SourceSinkFilter.maximum_sink_distance
+       configuration.source_sink_filter
+       (Sinks.NamedSink "Sink"))
+    (Some 5);
+  let configuration =
+    assert_parse
+      {|
+    { "sources": [
+        { "name": "Source" }
+      ],
+      "sinks": [
+        { "name": "Sink" }
+      ],
+      "rules": [
+        {
+           "name": "test rule",
+           "sources": ["Source"],
+           "sinks": ["Sink"],
+           "code": 1001,
+           "message_format": "whatever"
+        },
+        {
+           "name": "test rule",
+           "sources": ["Source"],
+           "sinks": ["Sink"],
+           "code": 1002,
+           "message_format": "whatever",
+           "filters": {
+             "maximum_source_distance": 4,
+             "maximum_sink_distance": 3
+           }
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal
+    (SourceSinkFilter.maximum_source_distance
+       configuration.source_sink_filter
+       (Sources.NamedSource "Source"))
+    None;
+  assert_equal
+    (SourceSinkFilter.maximum_sink_distance
+       configuration.source_sink_filter
+       (Sinks.NamedSink "Sink"))
+    None;
+  ()
 
 
 let () =

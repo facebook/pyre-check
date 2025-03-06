@@ -598,7 +598,11 @@ module type TAINT_DOMAIN = sig
 
   val transform_on_widening_collapse : t -> t
 
-  val prune_maximum_length : TraceLength.t -> t -> t
+  val prune_maximum_length
+    :  global_maximum:TraceLength.t option ->
+    maximum_per_kind:(kind -> TraceLength.t option) ->
+    t ->
+    t
 
   type kind_set
 
@@ -1161,10 +1165,14 @@ end = struct
     |> transform_tito Features.CollapseDepth.Self Map ~f:Features.CollapseDepth.approximate
 
 
-  let prune_maximum_length maximum_length =
-    let filter_flow (_, frame) =
+  let prune_maximum_length ~global_maximum ~maximum_per_kind =
+    let global_maximum = Option.value global_maximum ~default:TraceLength.bottom in
+    let filter_flow (kind, frame) =
       let length = Frame.get Frame.Slots.TraceLength frame in
-      TraceLength.is_bottom length || TraceLength.less_or_equal ~left:maximum_length ~right:length
+      let kind_maximum = maximum_per_kind kind |> Option.value ~default:TraceLength.bottom in
+      TraceLength.is_bottom length
+      || TraceLength.less_or_equal ~left:global_maximum ~right:length
+         && TraceLength.less_or_equal ~left:kind_maximum ~right:length
     in
     transform KindTaintDomain.KeyValue Filter ~f:filter_flow
 
@@ -1662,8 +1670,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     |> Core.Map.Poly.fold ~init:T.bottom ~f:(fun ~key:_ ~data:left right -> T.join left right)
 
 
-  let prune_maximum_length maximum_length =
-    transform Taint.Self Map ~f:(Taint.prune_maximum_length maximum_length)
+  let prune_maximum_length ~global_maximum ~maximum_per_kind =
+    transform Taint.Self Map ~f:(Taint.prune_maximum_length ~global_maximum ~maximum_per_kind)
 
 
   let filter_by_kind ~kind taint_tree =

@@ -3085,6 +3085,7 @@ let extract_source_model
       {
         TaintConfiguration.Heap.analysis_model_constraints =
           { maximum_model_source_tree_width; maximum_trace_length; _ };
+        source_sink_filter;
         _;
       }
     ~callable
@@ -3096,12 +3097,14 @@ let extract_source_model
   let normalized_parameters = AccessPath.normalize_parameters parameters in
   let simplify tree =
     let tree =
-      match maximum_trace_length with
-      | Some maximum_trace_length ->
-          (* We limit by maximum_trace_length - 1, since the distance will be incremented by one
-             when the taint is propagated. *)
-          ForwardState.Tree.prune_maximum_length (maximum_trace_length - 1) tree
-      | _ -> tree
+      (* We limit by maximum_trace_length - 1, since the distance will be incremented by one when
+         the taint is propagated. *)
+      let decrement x = x - 1 in
+      ForwardState.Tree.prune_maximum_length
+        ~global_maximum:(maximum_trace_length >>| decrement)
+        ~maximum_per_kind:(fun source ->
+          source |> SourceSinkFilter.maximum_source_distance source_sink_filter >>| decrement)
+        tree
     in
     if apply_broadening then
       tree

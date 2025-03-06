@@ -59,3 +59,7 @@ val matching_sink_sanitize_transforms
   non_sanitize_transforms:TaintTransforms.t ->
   base:Sources.t ->
   MatchingSanitizeTransforms.t option
+
+val maximum_source_distance : t -> Sources.t -> int option
+
+val maximum_sink_distance : t -> Sinks.t -> int option

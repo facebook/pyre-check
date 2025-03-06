@@ -82,6 +82,8 @@ type t = {
    * sources and sinks as `SanitizeTransform.t`. *)
   matching_source_sanitize_transforms: MatchingSanitizeTransforms.t Sinks.Map.t;
   matching_sink_sanitize_transforms: MatchingSanitizeTransforms.t Sources.Map.t;
+  maximum_source_distances: int Sources.Map.t;
+  maximum_sink_distances: int Sinks.Map.t;
 }
 
 (* Filters everything. *)
@@ -92,6 +94,8 @@ let all =
     possible_tito_transforms = TaintTransforms.Set.empty;
     matching_source_sanitize_transforms = Sinks.Map.empty;
     matching_sink_sanitize_transforms = Sources.Map.empty;
+    maximum_source_distances = Sources.Map.empty;
+    maximum_sink_distances = Sinks.Map.empty;
   }
 
 
@@ -224,6 +228,70 @@ let add_extra_trace_sinks possible_tito_transforms matching_source_sanitize_tran
   TaintTransforms.Set.fold add_sink possible_tito_transforms matching_source_sanitize_transforms
 
 
+module MaximumDistance = struct
+  type t =
+    | Unlimited
+    | Limited of int
+
+  let to_option = function
+    | Unlimited -> None
+    | Limited value -> Some value
+end
+
+let maximum_kind_distance_from_rules ~rules =
+  let add_rule
+      (maximum_source_distances, maximum_sink_distances)
+      { Rule.sources; sinks; filters; _ }
+    =
+    let update_source maximum_source_distances source =
+      match filters with
+      | Some { maximum_source_distance = Some maximum_source_distance; _ } ->
+          Sources.Map.update
+            source
+            (function
+              | None -> Some (MaximumDistance.Limited maximum_source_distance)
+              | Some MaximumDistance.Unlimited -> Some MaximumDistance.Unlimited
+              | Some (MaximumDistance.Limited existing_distance) ->
+                  Some (MaximumDistance.Limited (Int.max existing_distance maximum_source_distance)))
+            maximum_source_distances
+      | _ ->
+          Sources.Map.update
+            source
+            (fun _ -> Some MaximumDistance.Unlimited)
+            maximum_source_distances
+    in
+    let update_sink maximum_sink_distances sink =
+      match filters with
+      | Some { maximum_sink_distance = Some maximum_sink_distance; _ } ->
+          Sinks.Map.update
+            sink
+            (function
+              | None -> Some (MaximumDistance.Limited maximum_sink_distance)
+              | Some MaximumDistance.Unlimited -> Some MaximumDistance.Unlimited
+              | Some (MaximumDistance.Limited existing_distance) ->
+                  Some (MaximumDistance.Limited (Int.max existing_distance maximum_sink_distance)))
+            maximum_sink_distances
+      | _ -> Sinks.Map.update sink (fun _ -> Some MaximumDistance.Unlimited) maximum_sink_distances
+    in
+    (* TODO: handle transforms *)
+    let maximum_source_distances =
+      List.fold ~init:maximum_source_distances ~f:update_source sources
+    in
+    let maximum_sink_distances = List.fold ~init:maximum_sink_distances ~f:update_sink sinks in
+    maximum_source_distances, maximum_sink_distances
+  in
+  let maximum_source_distances, maximum_sink_distances =
+    List.fold ~f:add_rule ~init:(Sources.Map.empty, Sinks.Map.empty) rules
+  in
+  let maximum_source_distances =
+    Sources.Map.filter_map (fun _ -> MaximumDistance.to_option) maximum_source_distances
+  in
+  let maximum_sink_distances =
+    Sinks.Map.filter_map (fun _ -> MaximumDistance.to_option) maximum_sink_distances
+  in
+  maximum_source_distances, maximum_sink_distances
+
+
 let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms =
   let rules =
     filter_rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms rules
@@ -240,12 +308,15 @@ let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filter
   let matching_sink_sanitize_transforms =
     Sources.Map.map MatchingSanitizeTransforms.from_sinks matching_sinks
   in
+  let maximum_source_distances, maximum_sink_distances = maximum_kind_distance_from_rules ~rules in
   {
     matching_sources;
     matching_sinks;
     possible_tito_transforms;
     matching_source_sanitize_transforms;
     matching_sink_sanitize_transforms;
+    maximum_source_distances;
+    maximum_sink_distances;
   }
 
 
@@ -331,3 +402,14 @@ let matching_sources { matching_sources; _ } = matching_sources
 let matching_sinks { matching_sinks; _ } = matching_sinks
 
 let possible_tito_transforms { possible_tito_transforms; _ } = possible_tito_transforms
+
+let maximum_source_distance { maximum_source_distances; _ } source =
+  Sources.Map.find_opt
+    (source |> Sources.discard_sanitize_transforms |> Sources.discard_subkind)
+    maximum_source_distances
+
+
+let maximum_sink_distance { maximum_sink_distances; _ } sink =
+  Sinks.Map.find_opt
+    (sink |> Sinks.discard_sanitize_transforms |> Sinks.discard_subkind)
+    maximum_sink_distances

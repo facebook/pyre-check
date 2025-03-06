@@ -239,41 +239,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "rule_with_filters.sink_distance_three",
-    "filename": "rule_with_filters.py",
-    "callable_line": 25,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "rule_with_filters.py",
-                "line": 26,
-                "start": 22,
-                "end": 23
-              },
-              "resolves_to": [ "rule_with_filters.sink_distance_two" ],
-              "port": "formal(x, position=0)",
-              "call_site": "26:4-26:24"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "rule_with_filters.sink_distance_two",
     "filename": "rule_with_filters.py",
     "callable_line": 21,
@@ -331,40 +296,6 @@
               "line": 10,
               "start": 11,
               "end": 25
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "rule_with_filters.source_distance_two",
-    "filename": "rule_with_filters.py",
-    "callable_line": 13,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "rule_with_filters.py",
-                "line": 14,
-                "start": 11,
-                "end": 32
-              },
-              "resolves_to": [ "rule_with_filters.source_distance_one" ],
-              "port": "result"
             }
           }
         ]
