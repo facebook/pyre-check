@@ -187,7 +187,7 @@ module.exports = {
         },
         googleAnalytics: process.env.INTERNAL_STATIC_DOCS
           ? undefined
-          : {trackingID: 'UA-49208336-4', anonymizeIP: true},
+          : {trackingID: 'G-GSX14JC495', anonymizeIP: true},
       },
     ],
   ],
