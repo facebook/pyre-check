@@ -8,6 +8,7 @@
 use ruff_python_ast::name::Name;
 
 use crate::binding::binding::AnnotationTarget;
+use crate::module::module_name::ModuleName;
 use crate::types::types::Type;
 
 /// General context for an error. For many errors, the root cause is some steps removed from what
@@ -54,6 +55,13 @@ impl TypeCheckContext {
     pub fn test() -> Self {
         Self::of_kind(TypeCheckKind::Test)
     }
+}
+
+#[derive(Debug)]
+pub struct FuncId {
+    pub module: ModuleName,
+    pub cls: Option<Name>,
+    pub func: Name,
 }
 
 #[derive(Debug)]

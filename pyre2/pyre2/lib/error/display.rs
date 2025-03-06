@@ -6,7 +6,9 @@
  */
 
 use crate::error::context::ErrorContext;
+use crate::error::context::FuncId;
 use crate::error::context::TypeCheckKind;
+use crate::module::module_name::ModuleName;
 use crate::types::display::TypeDisplayContext;
 use crate::types::types::Type;
 
@@ -118,5 +120,24 @@ impl TypeCheckKind {
                 )
             }
         }
+    }
+}
+
+impl FuncId {
+    #[expect(dead_code)]
+    pub fn format(&self, current_module: ModuleName) -> String {
+        let module_prefix =
+            if self.module == current_module || self.module == ModuleName::builtins() {
+                "".to_owned()
+            } else {
+                format!("{}.", self.module)
+            };
+        let class_prefix = match &self.cls {
+            Some(cls) => {
+                format!("{cls}.")
+            }
+            None => "".to_owned(),
+        };
+        format!("{module_prefix}{class_prefix}{}", self.func)
     }
 }
