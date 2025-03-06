@@ -79,7 +79,7 @@ use crate::util::upgrade_lock::UpgradeLock;
 use crate::util::upgrade_lock::UpgradeLockExclusiveGuard;
 
 pub struct State {
-    threads: ThreadPool,
+    threads: Option<ThreadPool>,
     uniques: UniqueFactory,
     stdlib: SmallMap<(RuntimeMetadata, LoaderId), Arc<Stdlib>>,
     modules: LockedMap<Handle, ArcId<ModuleData>>,
@@ -634,12 +634,17 @@ impl State {
             }
         }
 
-        self.threads.scope(|s| {
-            for _ in 0..self.threads.current_num_threads() {
-                // Only run work on Rayon threads, as we increased their stack limit
-                s.spawn(|_| self.work());
+        match &self.threads {
+            Some(threads) => {
+                threads.scope(|s| {
+                    for _ in 0..threads.current_num_threads() {
+                        // Only run work on Rayon threads, as we increased their stack limit
+                        s.spawn(|_| self.work());
+                    }
+                })
             }
-        });
+            None => self.work(),
+        }
     }
 
     fn ensure_loaders(&mut self, handles: &[Handle]) {

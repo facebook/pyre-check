@@ -21,7 +21,12 @@ pub fn init_rayon(threads: Option<usize>) {
     *THREADS.lock() = threads;
 }
 
-pub fn thread_pool() -> ThreadPool {
+pub fn thread_pool() -> Option<ThreadPool> {
+    if cfg!(target_arch = "wasm32") {
+        // ThreadPool doesn't work on WASM
+        return None;
+    }
+
     let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
     if let Some(threads) = *THREADS.lock() {
         builder = builder.num_threads(threads);
@@ -29,5 +34,5 @@ pub fn thread_pool() -> ThreadPool {
     let pool = builder.build().expect("To be able to build a thread pool");
     // Only print the message once
     debug!("Running with {} threads", pool.current_num_threads());
-    pool
+    Some(pool)
 }
