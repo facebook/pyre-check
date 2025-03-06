@@ -1293,3 +1293,13 @@ cast(lambda x: x, 1)  # E: First argument to `typing.cast` must be a type
 cast([x for x in []], 1)  # E: First argument to `typing.cast` must be a type  # E: Could not find name `x`
     "#,
 );
+
+testcase_with_bug!(
+    "Dict should be recognised as the dict type and error",
+    test_typing_alias,
+    r#"
+from typing import Dict, assert_type
+y: Dict[str, int] = {"test": "test"}
+assert_type(y, dict[str, int]) # E: assert_type(dict[str, str], dict[str, int]) failed
+"#,
+);
