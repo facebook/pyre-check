@@ -537,9 +537,9 @@ x2 = (Exception1, Exception2)
 
 try:
     pass
-except int as e1:  # E: EXPECTED int <: BaseException
+except int as e1:  # E: Invalid exception class: `int` does not inherit from `BaseException`
     reveal_type(e1)  # E: revealed type: int
-except int:  # E: EXPECTED int <: BaseException
+except int:  # E: Invalid exception class
     pass
 except Exception as e2:
     reveal_type(e2)  # E: revealed type: Exception
@@ -566,7 +566,7 @@ class Exception2(Exception): pass
 
 try:
     pass
-except* int as e1:  # E: EXPECTED int <: BaseException
+except* int as e1:  # E: Invalid exception class
     reveal_type(e1)  # E: revealed type: ExceptionGroup[int]
 except* Exception as e2:
     reveal_type(e2)  # E: revealed type: ExceptionGroup[Exception]

@@ -1055,7 +1055,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &exception,
                         range,
                         errors,
-                        &TypeCheckContext::unknown(),
+                        &TypeCheckContext::of_kind(TypeCheckKind::ExceptionClass),
                     );
                     if let Some(base_exception_group_any_type) =
                         base_exception_group_any_type.as_ref()

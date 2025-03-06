@@ -79,6 +79,8 @@ pub enum TypeCheckKind {
     /// var: SomeType = some_value check. This is separate from AnnotatedName because we can
     /// emit a more compact error message for this case.
     AnnAssign,
+    /// Class used in an `except C` clause.
+    ExceptionClass,
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]

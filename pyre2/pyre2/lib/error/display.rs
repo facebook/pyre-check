@@ -90,6 +90,11 @@ impl TypeCheckKind {
                 ctx.display(got),
                 ctx.display(want)
             ),
+            Self::ExceptionClass => format!(
+                "Invalid exception class: `{}` does not inherit from `{}`",
+                ctx.display(got),
+                ctx.display(want),
+            ),
             Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }
