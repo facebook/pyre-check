@@ -284,26 +284,17 @@
 }
 
 .featureText {
-  font-size: 1.3rem;
-}
-
-.frontText {
-  font-size: 1.5rem;
-  z-index: 1000;
-  position: relative;
-  text-align: center;
-  font-family: 'Source Serif Pro';
+  font-size: 3.5rem;
 }
 
 .yellowLink {
   color: var(--flow-yellow);
   text-decoration: underline;
-
   transition: color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
 }
 
 .yellowLink:hover {
-  color: white;
+  color: #BA8E23;
   text-decoration: var(--ifm-link-decoration);
 }
 
@@ -444,7 +435,7 @@
 
 .subtitle {
   font-weight: bold;
-  font-size: 4.236rem;
+  font-size: 3.5rem;
   text-align: center;
   margin-bottom: rem;
 }
@@ -461,7 +452,7 @@ hr {
 .firefly {
   list-style-type: none;
   border-radius: 50%;
-  background-color: rgb(255, 255, 100);
+  background-color: rgb(232, 189, 54);
   height: 10px;
   width: 10px;
   opacity: 0.1;
@@ -548,12 +539,12 @@ hr {
 @keyframes blinking {
   0%,
   100% {
-      box-shadow: 0 0 1px 1px rgb(255, 255, 180);
+      box-shadow: 0 0 1px 1px rgb(232, 189, 54);
       opacity: 0.1;
   }
 
   50% {
-      box-shadow: 0 0 5px 5px rgb(255, 255, 180);
+      box-shadow: 0 0 5px 5px rgb(232, 189, 54);
       opacity: 1;
   }
 }

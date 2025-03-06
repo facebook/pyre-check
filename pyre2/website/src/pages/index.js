@@ -31,16 +31,15 @@ export default component Home() {
           <h1 className={styles.title}>
             pyrefly<span>.</span>
           </h1>
-          <p className={styles.subtitle}>A type checker for Python.</p>
-          <p className={clsx(styles.frontText)}>
+          <p className={clsx(styles.frontText, styles.subtitle)}>
             <span>
               {' '}
               <a
                 href="https://github.com/facebook/pyrefly/milestone/1"
                 className={styles.yellowLink}>
                 Coming soon
-              </a>{' '}
-              to your IDE: A faster type checker written in Rust
+              </a>
+              : A faster Python type checker written in Rust
             </span>
           </p>
           <section>
