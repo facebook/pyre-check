@@ -9,8 +9,65 @@ import TryPyre2BrowserOnly from '@site/src/try-pyre2/TryPyre2BrowserOnly'
 
 # Give Pyrefly a try with some working examples
 
-Python's type system is a powerful tool that helps you write more maintainable, readable, and efficient code. With the help of type hints, you can catch errors early, improve code completion, and make your code more self-documenting.
+Python's type system allow you to annotate variables so you, your teammates and your type checker can find bugs before you run your code. Think of it as documentation that's automatically validated and will help your IDE help you.
+
+With the help of type hints, you can catch errors early, improve code completion, and make your code more self-documenting.
 In this guide, we'll explore the different features of Python's type system, including generics, protocols, dataclasses, typed dictionaries, and overloads. Each section includes a brief description of the feature, along with a working example that you can try out using Pyrefly.
+
+## The Basics
+
+Python has several built-in types that are essential to understand when working with type hints.
+<pre>
+  <TryPyre2BrowserOnly
+  editorHeight={400}
+  codeSample={`# Example: Basic Types
+
+from typing import reveal_type
+
+age: int = 5
+reveal_type(age) # revealed type: int
+
+age = "oops"
+
+name: str = "John"
+reveal_type(name) # revealed type: str
+
+numbers: list[int] = [1, 2, 3]
+reveal_type(numbers) # revealed type: list[int]
+
+names: list[str] = ["John", "Jane"]
+reveal_type(names) # revealed type: list[str]
+
+person: dict[str, str] = {"name": "John", "age": "30"}
+reveal_type(person) # revealed type: dict[str, str]
+
+is_admin: bool = True
+reveal_type(is_admin) # revealed type: bool
+  `}
+  />
+</pre>
+
+## Functions
+Defining the parameter and return types for a function doesn't just help prevent bugs, but it makes it easier to navigate in other files. You don't always need to define a return type - we'll do our best to infer it for you! We can't always get it right and an explicit return type will help your IDE navigate faster and more accurately.
+<pre>
+  <TryPyre2BrowserOnly
+  editorHeight={400}
+  codeSample={`# Example: Functions
+
+from typing import reveal_type
+
+def greet(name: str) -> str:
+    return f"Hello , {name}!"
+
+greet("Pyrefly")
+
+def whatDoesThisFunctionReturnAgain(a: int, b: int):
+    return a + b
+
+reveal_type(whatDoesThisFunctionReturnAgain(2, 3)) # revealed type: int
+  `}
+  />
+</pre>
 
 ## Generics
 
@@ -21,16 +78,16 @@ Generics allow you to define reusable functions and classes that work with multi
     editorHeight={200}
     codeSample={`# Example: Generic Classes
 
-  from typing import reveal_type
+from typing import reveal_type
 
-  class C[T]:
-      def __init__(self, x: T):
-          self.x = x
-      def box(self) -> list[T]:
-          return [self.x]
+class C[T]:
+    def __init__(self, x: T):
+        self.x = x
+    def box(self) -> list[T]:
+        return [self.x]
 
-  c = C(0)
-  reveal_type(c.box())  # revealed type: list[int]
+c = C(0)
+reveal_type(c.box())  # revealed type: list[int]
   `}
   />
 </pre>
@@ -72,13 +129,16 @@ Protocols enable structural typing, which allows you to define interfaces withou
   <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Dataclasses
-  from dataclasses import dataclass
-  @dataclass
-  class Point:
-      x: float
-      y: float
-  Point(x=0.0, y=0.0)    # OK
-  Point(x=0.0, y="oops") # ERROR!
+
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+Point(x=0.0, y=0.0)    # OK
+Point(x=0.0, y="oops") # ERROR!
     `}
   />
 </pre>
