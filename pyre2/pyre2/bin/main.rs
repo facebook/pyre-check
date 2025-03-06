@@ -88,7 +88,7 @@ fn exit_on_panic() {
 
 fn get_open_source_config(_: &Path) -> ConfigFile {
     // TODO: Implement upward-searching for open source config.
-    ConfigFile
+    ConfigFile::default()
 }
 
 fn to_exit_code(status: CommandExitStatus) -> ExitCode {

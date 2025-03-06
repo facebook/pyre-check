@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::fmt::Display;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -21,12 +22,26 @@ use ruff_python_ast::ExprNumberLiteral;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
 use ruff_python_ast::UnaryOp;
+use serde::Deserialize;
 
 use crate::ast::Ast;
 use crate::util::prelude::SliceExt;
 use crate::util::with_hash::WithHash;
 
-#[derive(Debug, Clone, Copy, Dupe, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub static DEFAULT_PYTHON_PLATFORM: &str = "linux";
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Dupe,
+    Hash,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Deserialize
+)]
 pub struct PythonVersion {
     major: u32,
     minor: u32,
@@ -73,6 +88,25 @@ impl FromStr for PythonVersion {
     }
 }
 
+impl Display for PythonVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self {
+            major,
+            minor,
+            micro,
+        } = self;
+        write!(f, "{major}.{minor}.{micro}")
+    }
+}
+
+impl TryFrom<String> for PythonVersion {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> anyhow::Result<Self> {
+        PythonVersion::from_str(&value[..])
+    }
+}
+
 impl PythonVersion {
     #[allow(dead_code)] // Only used in tests so far
     pub fn new(major: u32, minor: u32, micro: u32) -> Self {
@@ -95,7 +129,7 @@ struct RuntimeMetadataInner {
 
 impl Default for RuntimeMetadata {
     fn default() -> Self {
-        Self::new(PythonVersion::default(), "linux".to_owned())
+        Self::new(PythonVersion::default(), DEFAULT_PYTHON_PLATFORM.to_owned())
     }
 }
 
