@@ -180,7 +180,7 @@ impl Loader for LspLoader {
             }
         }
         if let Some(path) = find_module(module, &self.search_roots) {
-            Ok((path, ErrorStyle::Never))
+            Ok((path, ErrorStyle::Delayed))
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
@@ -330,18 +330,21 @@ impl<'a> Server<'a> {
 
         self.state.lock().run(&handles, None);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
-        for x in self.open_files.lock().keys() {
+        let open_files = self.open_files.lock();
+        for x in open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
         for e in self.state.lock().collect_errors() {
             if let Some(path) = to_real_path(e.path()) {
-                diags.entry(path.to_owned()).or_default().push(Diagnostic {
-                    range: source_range_to_range(e.source_range()),
-                    severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-                    source: Some("Pyre2".to_owned()),
-                    message: e.msg().to_owned(),
-                    ..Default::default()
-                });
+                if open_files.contains_key(path) {
+                    diags.entry(path.to_owned()).or_default().push(Diagnostic {
+                        range: source_range_to_range(e.source_range()),
+                        severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                        source: Some("Pyre2".to_owned()),
+                        message: e.msg().to_owned(),
+                        ..Default::default()
+                    });
+                }
             }
         }
         for (path, diags) in diags {
