@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::collections::HashSet;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -12,12 +13,14 @@ use std::sync::Arc;
 use clap::Parser;
 use dupe::Dupe;
 use lsp_server::Connection;
+use lsp_server::ErrorCode;
 use lsp_server::Message;
 use lsp_server::Notification;
 use lsp_server::Request;
 use lsp_server::RequestId;
 use lsp_server::Response;
 use lsp_server::ResponseError;
+use lsp_types::notification::Cancel;
 use lsp_types::notification::DidChangeTextDocument;
 use lsp_types::notification::DidCloseTextDocument;
 use lsp_types::notification::DidOpenTextDocument;
@@ -48,6 +51,7 @@ use lsp_types::InlayHintParams;
 use lsp_types::Location;
 use lsp_types::MarkupContent;
 use lsp_types::MarkupKind;
+use lsp_types::NumberOrString;
 use lsp_types::OneOf;
 use lsp_types::PublishDiagnosticsParams;
 use lsp_types::Range;
@@ -96,6 +100,7 @@ struct Server<'a> {
     state: Mutex<State>,
     config: RuntimeMetadata,
     loader: LoaderId,
+    canceled_requests: HashSet<RequestId>,
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
 }
 
@@ -129,7 +134,7 @@ pub fn run_lsp(
     };
     let include = args.include;
     let send = |msg| connection.sender.send(msg).unwrap();
-    let server = Server::new(&send, initialization_params, include);
+    let mut server = Server::new(&send, initialization_params, include);
     eprintln!("Reading messages");
     for msg in &connection.receiver {
         if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
@@ -200,9 +205,20 @@ fn to_real_path(path: &ModulePath) -> Option<&Path> {
 }
 
 impl<'a> Server<'a> {
-    fn process(&self, msg: Message) -> anyhow::Result<()> {
+    fn process(&mut self, msg: Message) -> anyhow::Result<()> {
         match msg {
             Message::Request(x) => {
+                if self.canceled_requests.remove(&x.id) {
+                    let message = format!("Request {} is canceled", x.id);
+                    eprintln!("{message}");
+                    self.send_response(Response::new_err(
+                        x.id,
+                        ErrorCode::RequestCanceled as i32,
+                        message,
+                    ));
+                    return Ok(());
+                }
+                eprintln!("Handling non-canceled request ({})", x.id);
                 if let Some(params) = as_request::<GotoDefinition>(&x) {
                     let default_response = GotoDefinitionResponse::Array(Vec::new());
                     self.send_response(new_response(
@@ -241,6 +257,13 @@ impl<'a> Server<'a> {
                     self.did_change(params)
                 } else if let Some(params) = as_notification::<DidCloseTextDocument>(&x) {
                     self.did_close(params)
+                } else if let Some(params) = as_notification::<Cancel>(&x) {
+                    let id = match params.id {
+                        NumberOrString::Number(i) => RequestId::from(i),
+                        NumberOrString::String(s) => RequestId::from(s),
+                    };
+                    self.canceled_requests.insert(id);
+                    Ok(())
                 } else {
                     eprintln!("Unhandled notification: {x:?}");
                     Ok(())
@@ -266,6 +289,7 @@ impl<'a> Server<'a> {
             state: Mutex::new(State::new()),
             config: RuntimeMetadata::default(),
             loader,
+            canceled_requests: HashSet::new(),
             open_files,
         }
     }
