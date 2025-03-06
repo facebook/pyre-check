@@ -714,6 +714,9 @@ testcase_with_bug!(
     "An ignore comment should attach to either the current line or next line, but not both",
     test_ignore_attachment,
     r#"
+# type: ignore
+w: int = "0"
+
 x: int = "1"  # type: ignore
 y: int = "2"  # TODO: this error should not be suppressed
 "#,
