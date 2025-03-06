@@ -1,5 +1,5 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Simple workflow for deploying website
+name: deploy website
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
