@@ -16,7 +16,7 @@ In this guide, we'll explore the different features of Python's type system, inc
 
 ## The Basics
 
-Python has several built-in types that are essential to understand when working with type hints.
+Python's built-in types can be used to write many simple type hints.
 <pre>
   <TryPyre2BrowserOnly
   editorHeight={400}
@@ -100,6 +100,7 @@ Protocols enable structural typing, which allows you to define interfaces withou
   <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Structural Typing with Protocols
+
 from typing import Iterable, Protocol
 
 class Writer(Protocol):
@@ -123,7 +124,7 @@ f(BadWorld())  # ERROR!
 
 ## Dataclasses
 
-Protocols enable structural typing, which allows you to define interfaces without explicit inheritance. This feature helps you write more modular and composable code.
+Dataclasses allow you to create type-safe data structures while minimizing boilerplate.
 
 <pre>
   <TryPyre2BrowserOnly
@@ -146,7 +147,7 @@ Point(x=0.0, y="oops") # ERROR!
 
 ## TypedDict
 
-Typed dictionaries enable you to define dictionaries with specific key-value types. This feature helps you write more robust and maintainable code.
+Typed dictionaries enable you to define dictionaries with specific key-value types. This feature lets you bring type safety to ad-hoc dictionary structures without major refactoring.
 
 <pre>
   <TryPyre2BrowserOnly
@@ -167,12 +168,13 @@ bad_movie: Movie = {"name": "The Room", "year": "2003"}  # ERROR!
 
 ## Overloads
 
-Overloads allow you to define multiple function signatures for a single function. This feature helps you write more flexible and adaptable code.
+Overloads allow you to define multiple function signatures for a single function. Like generics, this feature helps you write more flexible and adaptable code.
 
 <pre>
   <TryPyre2BrowserOnly
     editorHeight={200}
     codeSample={`# Example: Overloads
+
 from typing import overload, reveal_type
 
 @overload
