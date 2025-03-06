@@ -1649,12 +1649,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             required
         };
 
+        let defining_cls = x.self_type.and_then(|k| self.get_idx(k).0.dupe());
         let mut self_type = if x.def.name.id == dunder::NEW {
             // __new__ is a staticmethod, and does not take a self parameter.
             None
         } else {
-            x.self_type
-                .and_then(|idx| self.get_idx(idx).0.as_ref().map(|cls| cls.self_type()))
+            defining_cls.as_ref().map(|cls| cls.self_type())
         };
 
         // Look for a @classmethod or @staticmethod decorator and change the "self" type
@@ -1819,12 +1819,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Quantified(q),
                     ret,
                 )),
-                CallableKind::from_name(self.module_info().name(), &x.def.name.id),
+                CallableKind::from_name(
+                    self.module_info().name(),
+                    defining_cls.as_ref().map(|cls| cls.name()),
+                    &x.def.name.id,
+                ),
             )
         } else {
             Type::Callable(
                 Box::new(Callable::list(ParamList::new(params), ret)),
-                CallableKind::from_name(self.module_info().name(), &x.def.name.id),
+                CallableKind::from_name(
+                    self.module_info().name(),
+                    defining_cls.as_ref().map(|cls| cls.name()),
+                    &x.def.name.id,
+                ),
             )
         };
         let mut ty = callable.forall(self.type_params(x.def.range, tparams, errors));

@@ -137,6 +137,32 @@ pub enum Required {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FuncId {
+    pub module: ModuleName,
+    pub cls: Option<Name>,
+    pub func: Name,
+}
+
+impl FuncId {
+    #[expect(dead_code)]
+    pub fn format(&self, current_module: ModuleName) -> String {
+        let module_prefix =
+            if self.module == current_module || self.module == ModuleName::builtins() {
+                "".to_owned()
+            } else {
+                format!("{}.", self.module)
+            };
+        let class_prefix = match &self.cls {
+            Some(cls) => {
+                format!("{cls}.")
+            }
+            None => "".to_owned(),
+        };
+        format!("{module_prefix}{class_prefix}{}", self.func)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CallableKind {
     IsInstance,
     IsSubclass,
@@ -145,7 +171,7 @@ pub enum CallableKind {
     ClassMethod,
     Overload,
     Override,
-    Def(Box<(ModuleName, Name)>),
+    Def(Box<FuncId>),
     Anon,
     Cast,
     AssertType,
@@ -350,19 +376,23 @@ impl Param {
 }
 
 impl CallableKind {
-    pub fn from_name(module: ModuleName, name: &Name) -> Self {
-        match (module.as_str(), name.as_str()) {
-            ("builtins", "isinstance") => Self::IsInstance,
-            ("builtins", "issubclass") => Self::IsSubclass,
-            ("builtins", "classmethod") => Self::ClassMethod,
-            ("dataclasses", "dataclass") => Self::Dataclass(Box::new(BoolKeywords::new())),
-            ("dataclasses", "field") => Self::DataclassField,
-            ("typing", "overload") => Self::Overload,
-            ("typing", "override") => Self::Override,
-            ("typing", "cast") => Self::Cast,
-            ("typing", "assert_type") => Self::AssertType,
-            ("typing", "reveal_type") => Self::RevealType,
-            _ => Self::Def(Box::new((module, name.clone()))),
+    pub fn from_name(module: ModuleName, cls: Option<&Name>, func: &Name) -> Self {
+        match (module.as_str(), cls, func.as_str()) {
+            ("builtins", None, "isinstance") => Self::IsInstance,
+            ("builtins", None, "issubclass") => Self::IsSubclass,
+            ("builtins", None, "classmethod") => Self::ClassMethod,
+            ("dataclasses", None, "dataclass") => Self::Dataclass(Box::new(BoolKeywords::new())),
+            ("dataclasses", None, "field") => Self::DataclassField,
+            ("typing", None, "overload") => Self::Overload,
+            ("typing", None, "override") => Self::Override,
+            ("typing", None, "cast") => Self::Cast,
+            ("typing", None, "assert_type") => Self::AssertType,
+            ("typing", None, "reveal_type") => Self::RevealType,
+            _ => Self::Def(Box::new(FuncId {
+                module,
+                cls: cls.cloned(),
+                func: func.clone(),
+            })),
         }
     }
 }

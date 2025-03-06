@@ -16,6 +16,7 @@ use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
+use crate::types::callable::FuncId;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -35,7 +36,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ];
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
-            CallableKind::Def(Box::new((self.module_info().name(), dunder::INIT))),
+            CallableKind::Def(Box::new(FuncId {
+                module: self.module_info().name(),
+                cls: Some(cls.name().clone()),
+                func: dunder::INIT,
+            })),
         );
         ClassSynthesizedField::new(ty)
     }
@@ -55,7 +60,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ];
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), cls.self_type())),
-            CallableKind::Def(Box::new((self.module_info().name(), dunder::NEW))),
+            CallableKind::Def(Box::new(FuncId {
+                module: self.module_info().name(),
+                cls: Some(cls.name().clone()),
+                func: dunder::NEW,
+            })),
         );
         ClassSynthesizedField::new(ty)
     }

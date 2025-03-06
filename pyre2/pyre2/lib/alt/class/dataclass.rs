@@ -22,6 +22,7 @@ use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::DataclassKeywords;
+use crate::types::callable::FuncId;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -137,7 +138,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty = Type::Callable(
             Box::new(Callable::list(ParamList::new(params), Type::None)),
-            CallableKind::Def(Box::new((self.module_info().name(), dunder::INIT))),
+            CallableKind::Def(Box::new(FuncId {
+                module: self.module_info().name(),
+                cls: Some(cls.name().clone()),
+                func: dunder::INIT,
+            })),
         );
         ClassSynthesizedField::new(ty)
     }
@@ -183,7 +188,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     name.clone(),
                     ClassSynthesizedField::new(Type::Callable(
                         Box::new(callable.clone()),
-                        CallableKind::Def(Box::new((self.module_info().name(), name.clone()))),
+                        CallableKind::Def(Box::new(FuncId {
+                            module: self.module_info().name(),
+                            cls: Some(cls.name().clone()),
+                            func: name.clone(),
+                        })),
                     )),
                 )
             })
@@ -195,7 +204,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let ret = self.stdlib.int().to_type();
         ClassSynthesizedField::new(Type::Callable(
             Box::new(Callable::list(ParamList::new(params), ret)),
-            CallableKind::Def(Box::new((self.module_info().name(), dunder::HASH))),
+            CallableKind::Def(Box::new(FuncId {
+                module: self.module_info().name(),
+                cls: Some(cls.name().clone()),
+                func: dunder::HASH,
+            })),
         ))
     }
 }
