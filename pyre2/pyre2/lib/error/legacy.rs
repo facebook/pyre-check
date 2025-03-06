@@ -22,7 +22,8 @@ pub struct LegacyError {
     stop_column: usize,
     path: String,
     code: i32,
-    name: String,
+    /// The kebab-case name of the error kind.
+    name: &'static str,
     description: String,
     concise_description: String,
 }
