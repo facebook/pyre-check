@@ -29,21 +29,13 @@ use crate::visitors::Visitors;
 impl State {
     fn get_type(&self, handle: &Handle, key: &Key) -> Option<Type> {
         let idx = self.get_bindings(handle)?.key_to_idx(key);
-        Some(
-            self.get_answers(handle)?
-                .get_idx(idx)?
-                .arc_clone()
-                .deterministic_printing(),
-        )
+        let ans = self.get_answers(handle)?;
+        Some(ans.for_display(ans.get_idx(idx)?.arc_clone()))
     }
 
     fn get_type_trace(&self, handle: &Handle, range: TextRange) -> Option<Type> {
-        Some(
-            self.get_answers(handle)?
-                .get_type_trace(range)?
-                .arc_clone()
-                .deterministic_printing(),
-        )
+        let ans = self.get_answers(handle)?;
+        Some(ans.for_display(ans.get_type_trace(range)?.arc_clone()))
     }
 
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {

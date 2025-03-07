@@ -206,7 +206,7 @@ y = x
 # main.py
 5 | y = x
         ^
-Hover Result: `Literal[5] | @_`
+Hover Result: `Literal[5] | Unknown`
 "#
         .trim(),
         report.trim(),

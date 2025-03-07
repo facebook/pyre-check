@@ -325,6 +325,10 @@ impl Answers {
         self.id_cache.history()
     }
 
+    pub fn for_display(&self, t: Type) -> Type {
+        self.solver.for_display(t)
+    }
+
     pub fn get_type_trace(&self, range: TextRange) -> Option<Arc<Type>> {
         let lock = self.trace.as_ref()?.lock();
         lock.types.get(&range).duped()
