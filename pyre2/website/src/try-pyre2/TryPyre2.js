@@ -27,8 +27,6 @@ import type {PyreflyErrorMessage} from './TryPyre2Results';
 const DEFAULT_PYTHON_PROGRAM = `
 from typing import *
 
-# reveal_type will produce a type error that tells you the type Pyre has
-# computed for the argument (in this case, int)
 def test(x: int):
   return f"{x}"
 `.trimStart();
