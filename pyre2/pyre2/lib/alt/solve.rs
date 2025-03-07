@@ -476,7 +476,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => {}
         }
         let ta = Type::TypeAlias(TypeAlias::new(name.clone(), ty, style));
-        ta.forall(self.type_params(range, tparams, errors))
+        ta.forall(name.clone(), self.type_params(range, tparams, errors))
     }
 
     fn context_value_enter(
@@ -1521,11 +1521,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                     Type::TypeAlias(_) => {
                         let params_range = params.as_ref().map_or(expr_range, |x| x.range);
-                        ta.forall(self.type_params(
-                            params_range,
-                            self.scoped_type_params(params.as_ref(), errors),
-                            errors,
-                        ))
+                        ta.forall(
+                            name.clone(),
+                            self.type_params(
+                                params_range,
+                                self.scoped_type_params(params.as_ref(), errors),
+                                errors,
+                            ),
+                        )
                     }
                     _ => ta,
                 }
@@ -1893,7 +1896,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ),
             )
         };
-        let mut ty = callable.forall(self.type_params(x.def.range, tparams, errors));
+        let mut ty = callable.forall(
+            x.def.name.id.clone(),
+            self.type_params(x.def.range, tparams, errors),
+        );
         let mut is_overload = false;
         for x in x.decorators.iter().rev() {
             ty = self.apply_decorator(*x, ty, &mut is_overload, errors)

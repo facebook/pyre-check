@@ -1174,7 +1174,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         fun = Type::type_form(Type::SpecialForm(SpecialForm::Tuple));
                     }
                     match fun {
-                        Type::Forall(params, ty) => {
+                        Type::Forall(box (_, params, ty)) => {
                             if let Some(p) = params.iter().next()
                                 && params.len() == 1
                                 && p.quantified.is_type_var_tuple()

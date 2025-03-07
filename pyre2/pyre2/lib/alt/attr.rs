@@ -854,7 +854,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::BoundMethod(_) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
-            Type::Forall(_, box base) => self.as_attribute_base(base, stdlib),
+            Type::Forall(box (_, _, base)) => self.as_attribute_base(base, stdlib),
             Type::Var(v) => {
                 if let Some(_guard) = self.recurser.recurse(v) {
                     self.as_attribute_base(self.solver().force_var(v), stdlib)

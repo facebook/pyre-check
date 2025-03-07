@@ -768,7 +768,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::None, _) => {
                 self.is_subset_eq(&self.type_order.stdlib().none_type().to_type(), want)
             }
-            (Type::Forall(_, _), _) => {
+            (Type::Forall(box (_, _, _)), _) => {
                 // FIXME: Probably need to do some kind of substitution here
                 false
             }
