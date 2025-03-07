@@ -43,7 +43,7 @@ reveal_type(person) # revealed type: dict[str, str]
 
 is_admin: bool = True
 reveal_type(is_admin) # revealed type: bool
-  `}
+`}
     showErrorPanel={false}
   />
 </pre>
@@ -66,7 +66,7 @@ def whatDoesThisFunctionReturnAgain(a: int, b: int):
     return a + b
 
 reveal_type(whatDoesThisFunctionReturnAgain(2, 3)) # revealed type: int
-  `}
+`}
     showErrorPanel={false}
   />
 </pre>
@@ -90,7 +90,7 @@ class C[T]:
 
 c = C(0)
 reveal_type(c.box())  # revealed type: list[int]
-  `}
+`}
     showErrorPanel={false}
   />
 </pre>
@@ -121,7 +121,7 @@ def f(writer: Writer):
 
 f(GoodWorld()) # OK
 f(BadWorld())  # ERROR!
-    `}
+`}
     showErrorPanel={false}
   />
 </pre>
@@ -144,7 +144,7 @@ class Point:
 
 Point(x=0.0, y=0.0)    # OK
 Point(x=0.0, y="oops") # ERROR!
-    `}
+`}
     showErrorPanel={false}
   />
 </pre>
@@ -167,7 +167,7 @@ class Movie(TypedDict):
 
 good_movie: Movie = {"name": "Toy Story", "year": 1995} # OK
 bad_movie: Movie = {"name": "The Room", "year": "2003"}  # ERROR!
-    `}
+`}
     showErrorPanel={false}
   />
 </pre>
@@ -194,7 +194,7 @@ def f(x: int | str) -> int | str:
 
 reveal_type(f(0))  # revealed type: int
 reveal_type(f("")) # revealed type: str
-    `}
+`}
     showErrorPanel={false}
   />
 </pre>
