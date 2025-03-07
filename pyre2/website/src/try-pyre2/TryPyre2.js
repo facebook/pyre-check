@@ -22,6 +22,7 @@ import {
   setInlayHintFunctionForMonaco,
 } from './configured-monaco';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import type {PyreflyErrorMessage} from './TryPyre2Results';
 
 const DEFAULT_PYTHON_PROGRAM = `
 from typing import *
@@ -53,10 +54,11 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
 export default component TryPyre2(
   editorHeight: number = 600,
   codeSample: string = DEFAULT_PYTHON_PROGRAM,
+  showErrorPanel: boolean = true,
 ) {
   const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
-  const [errors, setErrors] = useState<any>([]);
+  const [errors, setErrors] = useState<$ReadOnlyArray<PyreflyErrorMessage>>([]);
   const [internalError, setInternalError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
@@ -134,11 +136,13 @@ export default component TryPyre2(
           />
         </div>
       </div>
-      <TryPyre2Results
-        loading={loading}
-        errors={errors}
-        internalError={internalError}
-      />
+      {showErrorPanel && (
+        <TryPyre2Results
+          loading={loading}
+          errors={errors}
+          internalError={internalError}
+        />
+      )}
     </div>
   );
 }

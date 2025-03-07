@@ -15,7 +15,7 @@ import ReactJson from 'react-json-view';
 import clsx from 'clsx';
 import styles from './TryPyre2.module.css';
 
-declare type PyreflyErrorMessage = {
+export type PyreflyErrorMessage = {
   startLineNumber: number,
   startColumn: number,
   endLineNumber: number,

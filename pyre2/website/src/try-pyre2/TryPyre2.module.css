@@ -76,7 +76,6 @@
 .tryEditor {
     display: flex;
     flex: 1;
-    height: calc(100vh - var(--ifm-navbar-height));
 }
 
 .code,
@@ -99,7 +98,6 @@
 .resultBody {
     display: flex;
     flex: 1;
-    height: calc(100vh - var(--ifm-navbar-height) - 40px);
     overflow: auto;
 }
 
