@@ -14,17 +14,25 @@
  *
  * For categories, the first item must be the index page.
  */
+
+// $FlowIgnore[cannot-resolve-module] docusaurus type defaults to any
+const {fbInternalOnly} = require('docusaurus-plugin-internaldocs-fb/internal');
+
 module.exports = {
+  // $FlowIgnore[signature-verification-failure] docusaurus type defaults to any
   docsSidebar: [
     {
       type: 'category',
       label: 'Introduction',
       items: ['getting-started', 'install'],
     },
-    {
-      type: 'category',
-      label: 'Internal Docs',
-      items: ['fb/error-kinds'],
-    },
+    // TODO (T217317240): Go through internal only docs and release the ones that should be public to public
+    ...fbInternalOnly([
+      {
+        type: 'category',
+        label: 'Internal Docs',
+        items: ['fb/error-kinds'],
+      },
+    ]),
   ],
 };
