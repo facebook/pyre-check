@@ -100,6 +100,17 @@ pub struct State {
     retain_memory: bool,
 }
 
+impl Drop for State {
+    fn drop(&mut self) {
+        // ModuleData points at ModuleData via the deps/rdeps, we need to clear these links
+        // or we leak memory.
+        for x in self.modules.values() {
+            x.deps.write().clear();
+            x.rdeps.lock().clear();
+        }
+    }
+}
+
 struct ModuleData {
     handle: Handle,
     state: UpgradeLock<Step, ModuleState>,
