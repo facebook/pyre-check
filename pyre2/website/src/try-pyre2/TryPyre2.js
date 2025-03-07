@@ -38,7 +38,8 @@ reveal_type(test(42))
 const pyre2WasmUninitializedPromise =
   // $FlowIgnore[cannot-resolve-name]
   typeof window !== 'undefined'
-    ? import('./pyre2_wasm')
+    ? // $FlowIgnore[cannot-resolve-module]
+      import('./pyre2_wasm')
     : new Promise(_resolve => {});
 
 const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
