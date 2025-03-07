@@ -538,6 +538,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         kind: ContextManagerKind,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
     ) -> Type {
         match kind {
             ContextManagerKind::Sync => self.call_method_or_error(
@@ -547,7 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &[],
                 &[],
                 errors,
-                None,
+                context,
             ),
             ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
@@ -556,14 +557,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &[],
                 &[],
                 errors,
-                None,
+                context,
             )) {
                 Some(ty) => ty,
                 None => self.error(
                     errors,
                     range,
                     ErrorKind::AsyncError,
-                    None,
+                    context,
                     format!("Expected `{}` to be async", dunder::AENTER),
                 ),
             },
@@ -576,6 +577,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         kind: ContextManagerKind,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
     ) -> Type {
         let base_exception_class_type = Type::type_form(self.stdlib.base_exception().to_type());
         let arg1 = Type::Union(vec![base_exception_class_type, Type::None]);
@@ -594,7 +596,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &exit_arg_types,
                 &[],
                 errors,
-                None,
+                context,
             ),
             ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
@@ -603,14 +605,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &exit_arg_types,
                 &[],
                 errors,
-                None,
+                context,
             )) {
                 Some(ty) => ty,
                 None => self.error(
                     errors,
                     range,
                     ErrorKind::AsyncError,
-                    None,
+                    context,
                     format!("Expected `{}` to be async", dunder::AEXIT),
                 ),
             },
@@ -624,19 +626,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
-        let enter_type = self.context_value_enter(&context_manager_type, kind, range, errors);
-        let exit_type = self.context_value_exit(&context_manager_type, kind, range, errors);
+        let context = ErrorContext::BadContextManager(context_manager_type.clone());
+        let enter_type =
+            self.context_value_enter(&context_manager_type, kind, range, errors, Some(&context));
+        let exit_type =
+            self.context_value_exit(&context_manager_type, kind, range, errors, Some(&context));
         self.check_type(
             &Type::Union(vec![self.stdlib.bool().to_type(), Type::None]),
             &exit_type,
             range,
             errors,
             &TypeCheckContext {
-                kind: TypeCheckKind::MagicMethodReturn(
-                    context_manager_type.clone(),
-                    kind.as_exit_dunder(),
-                ),
-                context: Some(ErrorContext::BadContextManager(context_manager_type)),
+                kind: TypeCheckKind::MagicMethodReturn(context_manager_type, kind.as_exit_dunder()),
+                context: Some(context),
             },
         );
         // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:

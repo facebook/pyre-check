@@ -60,7 +60,7 @@ testcase!(
     test_simple_with_error,
     r#"
 def test_sync() -> None:
-    with 42 as foo:  # E: has no attribute `__enter__` # E: has no attribute `__exit__`
+    with 42 as foo:  # E: Cannot use `Literal[42]` as a context manager\n  Object of class `int` has no attribute `__enter__` # E: has no attribute `__exit__`
         pass
 
 async def test_async() -> None:
