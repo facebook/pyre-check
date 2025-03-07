@@ -1016,6 +1016,16 @@ assert_type(C().p(), str)
 );
 
 testcase!(
+    test_force_default_in_constructor,
+    r#"
+from typing import assert_type, Generic, TypeVar
+T = TypeVar("T", default=str)
+class C(Generic[T]): ...
+assert_type(C(), C[str])
+"#,
+);
+
+testcase!(
     test_identity_applied_to_list,
     r#"
 from typing import assert_type

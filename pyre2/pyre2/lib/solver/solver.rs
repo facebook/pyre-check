@@ -24,14 +24,13 @@ use crate::solver::type_order::TypeOrder;
 use crate::types::callable::Callable;
 use crate::types::callable::Params;
 use crate::types::module::Module;
-use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::simplify::simplify_tuples;
 use crate::types::simplify::unions;
+use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::lock::RwLock;
-use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
@@ -43,7 +42,8 @@ enum Variable {
     /// A variable in a container with an unspecified element type, e.g. `[]: list[V]`
     Contained,
     /// A variable due to generic instantitation, `def f[T](x: T): T` with `f(1)`
-    Quantified(QuantifiedKind),
+    /// The second value is the default value of the type parameter, if one exists
+    Quantified(QuantifiedKind, Option<Type>),
     /// A variable caused by recursion, e.g. `x = f(); def f(): return x`
     Recursive,
     /// A variable that used to decompose a type, e.g. getting T from Awaitable[T]
@@ -57,7 +57,8 @@ impl Display for Variable {
         match self {
             Variable::Unknown => write!(f, "Unknown"),
             Variable::Contained => write!(f, "Contained"),
-            Variable::Quantified(k) => write!(f, "Quantified({k})"),
+            Variable::Quantified(k, Some(t)) => write!(f, "Quantified({k}, default={t})"),
+            Variable::Quantified(k, None) => write!(f, "Quantified({k})"),
             Variable::Recursive => write!(f, "Recursive"),
             Variable::Unwrap => write!(f, "Unwrap"),
             Variable::Answer(t) => write!(f, "{t}"),
@@ -70,7 +71,7 @@ impl Variable {
     /// E.g. `x = 1; while True: x = x` should be `Literal[1]` while
     /// `[1]` should be `List[int]`.
     fn promote<Ans: LookupAnswer>(&self, ty: Type, type_order: TypeOrder<Ans>) -> Type {
-        if matches!(self, Variable::Contained | Variable::Quantified(_)) {
+        if matches!(self, Variable::Contained | Variable::Quantified(_, _)) {
             ty.promote_literals(type_order.stdlib())
         } else {
             ty
@@ -148,14 +149,16 @@ impl Solver {
         match lock.entry(v) {
             Entry::Occupied(ref e) if let Variable::Answer(t) = e.get() => t.clone(),
             e => {
+                let mut default = None;
                 let quantified_kind = if let Entry::Occupied(e) = &e
-                    && let Variable::Quantified(q) = e.get()
+                    && let Variable::Quantified(q, default_value) = e.get()
                 {
+                    default = default_value.clone();
                     *q
                 } else {
                     QuantifiedKind::TypeVar
                 };
-                let res = quantified_kind.empty_value();
+                let res = default.unwrap_or(quantified_kind.empty_value());
                 *e.or_default() = Variable::Answer(res.clone());
                 res
             }
@@ -272,20 +275,24 @@ impl Solver {
     /// Generate fresh variables and substitute them in replacing a `Forall`.
     pub fn fresh_quantified(
         &self,
-        qs: &[Quantified],
+        params: &TParams,
         t: Type,
         uniques: &UniqueFactory,
     ) -> (Vec<Var>, Type) {
-        let vs = qs.map(|_| Var::new(uniques));
+        let vs: Vec<Var> = params.iter().map(|_| Var::new(uniques)).collect();
         let t = t.subst(
-            &qs.iter()
-                .copied()
+            &params
+                .iter()
+                .map(|p| p.quantified)
                 .zip(vs.iter().map(|x| x.to_type()))
                 .collect(),
         );
         let mut lock = self.variables.write();
-        for (v, q) in vs.iter().zip(qs) {
-            lock.insert(*v, Variable::Quantified(q.kind()));
+        for (v, param) in vs.iter().zip(params.iter()) {
+            lock.insert(
+                *v,
+                Variable::Quantified(param.quantified.kind(), param.default.clone()),
+            );
         }
         (vs, t)
     }
@@ -297,7 +304,7 @@ impl Solver {
         let mut lock = self.variables.write();
         for v in vs {
             let e = lock.entry(*v).or_default();
-            if matches!(*e, Variable::Quantified(_)) {
+            if matches!(*e, Variable::Quantified(_, _)) {
                 *e = Variable::Contained;
             }
         }

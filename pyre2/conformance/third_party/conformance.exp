@@ -6038,8 +6038,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(slice[Any, Any, Any], slice[int, int, int | None]) failed",
-      "description": "assert_type(slice[Any, Any, Any], slice[int, int, int | None]) failed",
+      "concise_description": "assert_type(slice[int, TypeVar[StartT], int | None], slice[int, int, int | None]) failed",
+      "description": "assert_type(slice[int, TypeVar[StartT], int | None], slice[int, int, int | None]) failed",
       "line": 24,
       "name": "assert-type",
       "stop_column": 50,
@@ -6126,16 +6126,6 @@
       "name": "bad-specialization",
       "stop_column": 19,
       "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Bar[Any], Bar[str]) failed",
-      "description": "assert_type(Bar[Any], Bar[str]) failed",
-      "line": 46,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 46
     },
     {
       "code": -2,

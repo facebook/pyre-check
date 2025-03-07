@@ -383,7 +383,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let targs = TArgs::new(qs.map(|q| Type::Quantified(*q)));
         let promoted_cls = Type::type_form(self.type_of_instance(cls, targs));
         self.solver()
-            .fresh_quantified(qs.as_slice(), promoted_cls, self.uniques)
+            .fresh_quantified(cls.tparams(), promoted_cls, self.uniques)
             .1
     }
 

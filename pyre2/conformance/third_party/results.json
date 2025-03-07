@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 30,
-  "fail": 103,
+  "pass": 31,
+  "fail": 102,
   "pass_rate": 0.23,
-  "differences": 633,
+  "differences": 632,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -19,6 +19,7 @@
     "enums_expansion.py",
     "enums_member_names.py",
     "enums_member_values.py",
+    "generics_defaults_specialization.py",
     "generics_paramspec_semantics.py",
     "generics_syntax_compatibility.py",
     "generics_type_erasure.py",
@@ -83,7 +84,6 @@
     "generics_basic.py": 7,
     "generics_defaults.py": 16,
     "generics_defaults_referential.py": 11,
-    "generics_defaults_specialization.py": 1,
     "generics_paramspec_basic.py": 5,
     "generics_paramspec_components.py": 7,
     "generics_paramspec_specialization.py": 2,
