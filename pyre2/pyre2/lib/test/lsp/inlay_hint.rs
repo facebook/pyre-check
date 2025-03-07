@@ -18,6 +18,9 @@ def f(x: list[int], y: str, z: Literal[42]):
     return x
 
 yyy = f([1, 2, 3], "test", 42)
+
+def g() -> int:
+    return 42
 "#;
     let files = [("main", code)];
     let (handles, state) = mk_multi_file_state_assert_no_errors(&files);
