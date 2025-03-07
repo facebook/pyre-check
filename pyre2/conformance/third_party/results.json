@@ -3,7 +3,7 @@
   "pass": 30,
   "fail": 103,
   "pass_rate": 0.23,
-  "differences": 647,
+  "differences": 641,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -37,8 +37,8 @@
     "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
-    "aliases_explicit.py": 8,
-    "aliases_implicit.py": 9,
+    "aliases_explicit.py": 7,
+    "aliases_implicit.py": 8,
     "aliases_newtype.py": 1,
     "aliases_recursive.py": 19,
     "aliases_type_statement.py": 12,
@@ -48,7 +48,7 @@
     "annotations_generators.py": 4,
     "annotations_methods.py": 2,
     "annotations_typeexpr.py": 1,
-    "callables_annotation.py": 11,
+    "callables_annotation.py": 7,
     "callables_kwargs.py": 2,
     "callables_subtyping.py": 2,
     "classes_classvar.py": 10,

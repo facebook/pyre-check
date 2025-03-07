@@ -5,9 +5,8 @@
     "Line 85: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 41: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias9`, got 2.', 'ParamSpec cannot be used for type parameter']",
-    "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
-    "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
+    "Line 44: Unexpected errors ['Expected a type form, got instance of `Forall[P, LegacyExplicitTypeAlias[GoodTypeAlias12, type[(ParamSpec(P)) -> None]]]`']",
+    "Line 60: Unexpected errors ['assert_type(Any, (...) -> None) failed']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
@@ -17,9 +16,8 @@
     "Line 112: Expected 1 errors",
     "Line 113: Expected 1 errors",
     "Line 117: Expected 1 errors",
-    "Line 54: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias9`, got 2.', 'ParamSpec cannot be used for type parameter']",
-    "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
-    "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']"
+    "Line 58: Unexpected errors ['Expected a type form, got instance of `Forall[P, LegacyImplicitTypeAlias[GoodTypeAlias13, type[(ParamSpec(P)) -> None]]]`']",
+    "Line 72: Unexpected errors ['assert_type(Any, (...) -> None) failed']"
   ],
   "aliases_newtype.py": [
     "Line 47: Expected 1 errors"
@@ -122,11 +120,7 @@
     "Line 52: Unexpected errors ['assert_type(int, dict[str, int]) failed']",
     "Line 155: Unexpected errors ['`Proto3` is not assignable to `Proto4[Ellipsis]`']",
     "Line 156: Unexpected errors ['`Proto4[Ellipsis]` is not assignable to `Proto3`']",
-    "Line 157: Unexpected errors ['`Proto7` is not assignable to `Proto6`']",
-    "Line 171: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
-    "Line 174: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback1, type[(ParamSpec(ParamSpec[P])) -> str]]\"]",
-    "Line 175: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[Callback2, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]",
-    "Line 188: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[CallbackWithInt, type[(int, ParamSpec(ParamSpec[P])) -> str]]\"]"
+    "Line 157: Unexpected errors ['`Proto7` is not assignable to `Proto6`']"
   ],
   "callables_kwargs.py": [
     "Line 111: Expected 1 errors",
@@ -134,8 +128,8 @@
   ],
   "callables_protocol.py": [],
   "callables_subtyping.py": [
-    "Line 211: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]",
-    "Line 213: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TypeAliasWithP, type[(ParamSpec(ParamSpec[P])) -> None]]\"]"
+    "Line 213: Unexpected errors ['`ProtocolWithP[?_ParamSpec]` is not assignable to `(ParamSpec(?_ParamSpec)) -> None`']",
+    "Line 214: Unexpected errors ['`(ParamSpec(?_ParamSpec)) -> None` is not assignable to `ProtocolWithP[?_ParamSpec]`']"
   ],
   "classes_classvar.py": [
     "Line 45: Expected 1 errors",

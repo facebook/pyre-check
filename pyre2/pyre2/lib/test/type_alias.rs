@@ -119,6 +119,76 @@ def f(x: X[int, str]):
 );
 
 testcase!(
+    test_param_spec_alias_generic,
+    r#"
+from typing import assert_type, Callable
+type X[**P] = Callable[P, None]
+def f(x: X[int, str]):
+    assert_type(x, Callable[[int, str], None])
+def f2(x: X[[int, str]]):
+    assert_type(x, Callable[[int, str], None])
+    "#,
+);
+
+testcase!(
+    test_generic_param_spec_alias_implicit,
+    r#"
+from typing import ParamSpec, Callable, assert_type
+P = ParamSpec('P')
+X = Callable[P, None]
+def f(x: X[int, str]):
+    assert_type(x, Callable[[int, str], None])
+def f2(x: X[[int, str]]):
+    assert_type(x, Callable[[int, str], None])
+    "#,
+);
+
+testcase!(
+    test_generic_param_spec_alias_explicit,
+    r#"
+from typing import Callable, ParamSpec, TypeAlias, assert_type
+P = ParamSpec('P')
+X: TypeAlias = Callable[P, None]
+def f(x: X[int, str]):
+    assert_type(x, Callable[[int, str], None])
+def f2(x: X[[int, str]]):
+    assert_type(x, Callable[[int, str], None])
+    "#,
+);
+
+testcase!(
+    test_param_spec_alias_concatenate_generic,
+    r#"
+from typing import assert_type, Callable, Concatenate
+type X[**P] = Callable[Concatenate[int, P], None]
+def f(x: X[int, str]):
+    assert_type(x, Callable[[int, int, str], None])
+    "#,
+);
+
+testcase!(
+    test_generic_param_spec_alias_concatenate_implicit,
+    r#"
+from typing import ParamSpec, Callable, Concatenate, assert_type
+P = ParamSpec('P')
+X = Callable[Concatenate[int, P], None]
+def f(x: X[int, str]):
+    assert_type(x, Callable[[int, int, str], None])
+    "#,
+);
+
+testcase!(
+    test_generic_param_spec_alias_concatenate_explicit,
+    r#"
+from typing import Callable, ParamSpec, TypeAlias, assert_type, Concatenate
+P = ParamSpec('P')
+X: TypeAlias = Callable[Concatenate[int, P], None]
+def f(x: X[int, str]):
+    assert_type(x, Callable[[int, int, str], None])
+    "#,
+);
+
+testcase!(
     test_generic_alias_callable,
     r#"
 from typing import Callable, TypeVar, assert_type

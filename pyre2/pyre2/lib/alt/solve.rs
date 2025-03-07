@@ -79,6 +79,7 @@ use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
+use crate::types::param_spec::ParamSpec;
 use crate::types::quantified::Quantified;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
@@ -346,6 +347,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ty: &mut Type,
         seen_type_vars: &mut SmallMap<TypeVar, Quantified>,
         seen_type_var_tuples: &mut SmallMap<TypeVarTuple, Quantified>,
+        seen_param_specs: &mut SmallMap<ParamSpec, Quantified>,
         tparams: &mut Vec<TParamInfo>,
     ) {
         match ty {
@@ -355,6 +357,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         t,
                         seen_type_vars,
                         seen_type_var_tuples,
+                        seen_param_specs,
                         tparams,
                     );
                 }
@@ -365,6 +368,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         t,
                         seen_type_vars,
                         seen_type_var_tuples,
+                        seen_param_specs,
                         tparams,
                     );
                 }
@@ -375,10 +379,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         t,
                         seen_type_vars,
                         seen_type_var_tuples,
+                        seen_param_specs,
                         tparams,
                     )
                 };
                 callable.visit_mut(visit);
+            }
+            Type::Concatenate(box prefix, box pspec) => {
+                for t in prefix {
+                    self.tvars_to_tparams_for_type_alias(
+                        t,
+                        seen_type_vars,
+                        seen_type_var_tuples,
+                        seen_param_specs,
+                        tparams,
+                    )
+                }
+                self.tvars_to_tparams_for_type_alias(
+                    pspec,
+                    seen_type_vars,
+                    seen_type_var_tuples,
+                    seen_param_specs,
+                    tparams,
+                )
             }
             Type::Tuple(tuple) => {
                 let visit = |t: &mut Type| {
@@ -386,6 +409,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         t,
                         seen_type_vars,
                         seen_type_var_tuples,
+                        seen_param_specs,
                         tparams,
                     )
                 };
@@ -420,7 +444,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             quantified: q,
                             restriction: Restriction::Unrestricted,
                             default: None,
-                            variance: None,
+                            variance: Some(Variance::Invariant),
+                        });
+                        q
+                    }
+                };
+                *ty = Type::Quantified(q);
+            }
+            Type::ParamSpec(param_spec) => {
+                let q = match seen_param_specs.entry(param_spec.dupe()) {
+                    Entry::Occupied(e) => *e.get(),
+                    Entry::Vacant(e) => {
+                        let q = Quantified::param_spec(self.uniques);
+                        e.insert(q);
+                        tparams.push(TParamInfo {
+                            name: param_spec.qname().id().clone(),
+                            quantified: q,
+                            restriction: Restriction::Unrestricted,
+                            default: None,
+                            variance: Some(Variance::Invariant),
                         });
                         q
                     }
@@ -431,6 +473,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 t,
                 seen_type_vars,
                 seen_type_var_tuples,
+                seen_param_specs,
                 tparams,
             ),
             _ => {}
@@ -465,12 +508,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         let mut seen_type_vars = SmallMap::new();
         let mut seen_type_var_tuples = SmallMap::new();
+        let mut seen_param_specs = SmallMap::new();
         let mut tparams = Vec::new();
         match ty {
             Type::Type(ref mut t) => self.tvars_to_tparams_for_type_alias(
                 t,
                 &mut seen_type_vars,
                 &mut seen_type_var_tuples,
+                &mut seen_param_specs,
                 &mut tparams,
             ),
             _ => {}
