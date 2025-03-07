@@ -25,6 +25,6 @@ jobs:
     # We use rustfmt 2.0 for formatting, which differs from the released
     # version installed by Cargo
     # - run: cargo fmt -- --check
-    - run: cargo clippy
-    - run: cargo build
-    - run: cargo test
+    - run: cargo clippy --release
+    - run: cargo build --release
+    - run: cargo test --release
