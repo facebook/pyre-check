@@ -7576,16 +7576,6 @@
       "name": "missing-attribute",
       "stop_column": 15,
       "stop_line": 46
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bytes) failed",
-      "description": "assert_type(Any, bytes) failed",
-      "line": 56,
-      "name": "assert-type",
-      "stop_column": 28,
-      "stop_line": 56
     }
   ],
   "generics_typevartuple_args.py": [

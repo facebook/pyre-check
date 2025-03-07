@@ -90,8 +90,16 @@ impl ModuleName {
         Self::from_str("typing")
     }
 
+    pub fn typing_extensions() -> Self {
+        Self::from_str("typing_extensions")
+    }
+
     pub fn types() -> Self {
         Self::from_str("types")
+    }
+
+    pub fn collections() -> Self {
+        Self::from_str("collections")
     }
 
     pub fn enum_() -> Self {

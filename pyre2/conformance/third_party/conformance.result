@@ -543,9 +543,7 @@
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
     "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"
   ],
-  "generics_type_erasure.py": [
-    "Line 56: Unexpected errors ['assert_type(Any, bytes) failed']"
-  ],
+  "generics_type_erasure.py": [],
   "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
     "Line 52: Expected 1 errors",

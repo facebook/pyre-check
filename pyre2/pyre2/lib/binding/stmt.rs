@@ -39,6 +39,7 @@ use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::types::alias::resolve_typeshed_alias;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::AnyStyle;
 use crate::util::display::DisplayWith;
@@ -219,6 +220,13 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.current_mut().flow.no_next = true;
             }
             Stmt::Delete(x) => self.todo("Bindings::stmt", &x),
+            Stmt::Assign(ref x)
+                if let [Expr::Name(name)] = x.targets.as_slice()
+                    && let Some((module, forward)) =
+                        resolve_typeshed_alias(self.module_info.name(), &name.id, &x.value) =>
+            {
+                self.bind_assign(name, |_| Binding::Import(module, forward))
+            }
             Stmt::Assign(mut x) => {
                 let name = if x.targets.len() == 1
                     && let Expr::Name(name) = &x.targets[0]

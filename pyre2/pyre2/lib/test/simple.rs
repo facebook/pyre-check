@@ -1294,12 +1294,11 @@ cast([x for x in []], 1)  # E: First argument to `typing.cast` must be a type  #
     "#,
 );
 
-testcase_with_bug!(
-    "Dict should be recognised as the dict type and error",
+testcase!(
     test_typing_alias,
     r#"
 from typing import Dict, assert_type
-y: Dict[str, int] = {"test": "test"}
-assert_type(y, dict[str, int]) # E: assert_type(dict[str, str], dict[str, int]) failed
+y: Dict[str, int] = {"test": "test"} # E: `dict[str, str]` is not assignable to `dict[str, int]`
+assert_type(y, dict[str, int])
 "#,
 );
