@@ -21,13 +21,13 @@ const {fbInternalOnly} = require('docusaurus-plugin-internaldocs-fb/internal');
 module.exports = {
   // $FlowIgnore[signature-verification-failure] docusaurus type defaults to any
   docsSidebar: [
-    {
-      type: 'category',
-      label: 'Introduction',
-      items: ['getting-started', 'install'],
-    },
     // TODO (T217317240): Go through internal only docs and release the ones that should be public to public
     ...fbInternalOnly([
+      {
+        type: 'category',
+        label: 'Introduction',
+        items: ['getting-started', 'install'],
+      },
       {
         type: 'category',
         label: 'Internal Docs',

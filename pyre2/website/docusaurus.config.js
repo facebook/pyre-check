@@ -15,18 +15,12 @@ function getNavBarItems() {
   return [
     process.env.INTERNAL_STATIC_DOCS
       ? {
-          to: 'en/docs/',
-          activeBasePath: 'en/docs/',
+          to: 'en/fb/docs/',
+          activeBasePath: 'en/fb/docs/',
           label: 'Docs',
           position: 'left',
         }
       : null,
-    {
-      to: 'en/docs/',
-      activeBasePath: 'en/docs/',
-      label: 'Docs',
-      position: 'left',
-    },
     {
       to: 'en/docs/learn-python-typing/',
       activeBasePath: 'en/docs/learn-python-typing',
@@ -183,7 +177,7 @@ module.exports = {
       {
         docs: {
           routeBasePath: 'en/docs',
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: false, // TODO (T217317240): add back sidebar when we are ready to publish docs
           editUrl: fbContent({
             internal:
               'https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/pyre2/website/',
