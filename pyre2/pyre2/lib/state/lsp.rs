@@ -174,7 +174,7 @@ impl State {
             .get_answers(handle)?
             .get_type_trace(attribute.value.range())?;
         self.ad_hoc_solve(handle, |solver| {
-            let items = solver.completions(base_type.arc_clone());
+            let items = solver.completions(base_type.arc_clone(), false);
             items.into_iter().find_map(|x| {
                 if x.name == attribute.attr.id {
                     Some(TextRangeWithModuleInfo::new(x.module?, x.range?))
@@ -219,8 +219,8 @@ impl State {
             .get_type_trace(attribute.value.range())?;
         self.ad_hoc_solve(handle, |solver| {
             solver
-                .completions(base_type.arc_clone())
-                .into_map(|x| (x.name, None))
+                .completions(base_type.arc_clone(), true)
+                .into_map(|x| (x.name, x.ty.map(|t| t.to_string())))
         })
     }
 

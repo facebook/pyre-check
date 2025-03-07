@@ -46,13 +46,13 @@ bar.
 5 | foo.
         ^
 Completion Results:
-- x
+- x: int
 
 10 | bar.
          ^
 Completion Results:
-- y
-- x
+- y: int
+- x: int
 "#
         .trim(),
         report.trim(),
