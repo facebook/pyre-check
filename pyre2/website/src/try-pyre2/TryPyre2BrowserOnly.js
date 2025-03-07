@@ -11,7 +11,7 @@ import * as React from 'react';
 const TryPyre2 = React.lazy(() => import('./TryPyre2'));
 
 export default component TryPyre2BrowserOnly(
-    editorHeight: number,
+    editorHeight: number | "auto",
     codeSample: string,
     showErrorPanel: boolean,
 ) {

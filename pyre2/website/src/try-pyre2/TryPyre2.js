@@ -51,7 +51,7 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   .catch(e => console.log(e));
 
 export default component TryPyre2(
-  editorHeight: number = 600,
+  editorHeight: number | 'auto' = 'auto',
   codeSample: string = DEFAULT_PYTHON_PROGRAM,
   showErrorPanel: boolean = true,
 ) {
@@ -63,6 +63,7 @@ export default component TryPyre2(
   const [internalError, setInternalError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
+  const [height, setHeight] = useState(editorHeight);
 
   useEffect(() => {
     setLoading(true);
@@ -112,11 +113,11 @@ export default component TryPyre2(
 
   function onMount(editor: any) {
     forceRecheck();
-
+    if (editorHeight === 'auto') {
+      setHeight(Math.max(50, editor.getContentHeight()));
+    }
     editorRef.current = editor;
   }
-
-  const height = editorHeight;
 
   return (
     <div className={styles.tryEditor}>
@@ -134,6 +135,9 @@ export default component TryPyre2(
               hover: {enabled: true, above: false},
               scrollBeyondLastLine: false,
               overviewRulerBorder: false,
+              scrollbar: {
+                alwaysConsumeMouseWheel: false,
+              },
             }}
           />
         </div>

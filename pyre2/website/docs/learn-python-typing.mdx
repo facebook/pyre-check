@@ -18,7 +18,7 @@ In this guide, we'll explore the different features of Python's type system, inc
 Python's built-in types can be used to write many simple type hints.
 <pre>
   <TryPyre2BrowserOnly
-  editorHeight={450}
+  editorHeight={"auto"}
   codeSample={`# Example: Basic Types
 
 from typing import reveal_type
@@ -51,7 +51,7 @@ reveal_type(is_admin) # revealed type: bool
 Defining the parameter and return types for a function doesn't just help prevent bugs, but it makes it easier to navigate in other files. You don't always need to define a return type - we'll do our best to infer it for you! We can't always get it right and an explicit return type will help your IDE navigate faster and more accurately.
 <pre>
   <TryPyre2BrowserOnly
-  editorHeight={280}
+  editorHeight={"auto"}
   codeSample={`# Example: Functions
 
 from typing import reveal_type
@@ -76,7 +76,7 @@ Generics allow you to define reusable functions and classes that work with multi
 
 <pre>
   <TryPyre2BrowserOnly
-    editorHeight={250}
+    editorHeight={"auto"}
     codeSample={`# Example: Generic Classes
 
 from typing import reveal_type
@@ -100,7 +100,7 @@ Protocols enable structural typing, which allows you to define interfaces withou
 
 <pre>
   <TryPyre2BrowserOnly
-    editorHeight={400}
+    editorHeight={"auto"}
     codeSample={`# Example: Structural Typing with Protocols
 
 from typing import Iterable, Protocol
@@ -131,7 +131,7 @@ Dataclasses allow you to create type-safe data structures while minimizing boile
 
 <pre>
   <TryPyre2BrowserOnly
-    editorHeight={250}
+    editorHeight={"auto"}
     codeSample={`# Example: Dataclasses
 
 from dataclasses import dataclass
@@ -155,7 +155,7 @@ Typed dictionaries enable you to define dictionaries with specific key-value typ
 
 <pre>
   <TryPyre2BrowserOnly
-    editorHeight={200}
+    editorHeight={"auto"}
     codeSample={`# Example: TypedDict
 
 from typing import TypedDict
@@ -177,7 +177,7 @@ Overloads allow you to define multiple function signatures for a single function
 
 <pre>
   <TryPyre2BrowserOnly
-    editorHeight={300}
+    editorHeight={"auto"}
     codeSample={`# Example: Overloads
 
 from typing import overload, reveal_type
