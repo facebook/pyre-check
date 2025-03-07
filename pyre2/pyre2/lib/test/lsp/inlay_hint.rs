@@ -17,8 +17,8 @@ fn basic_test() {
 def f(x: list[int], y: str, z: Literal[42]):
     return x
 
-yyy = f([1, 2, 3], "test", 42) 
- "#;
+yyy = f([1, 2, 3], "test", 42)
+"#;
     let files = [("main", code)];
     let (handles, state) = mk_multi_file_state_assert_no_errors(&files);
     let mut report = String::new();
@@ -41,7 +41,7 @@ yyy = f([1, 2, 3], "test", 42)
 3 | def f(x: list[int], y: str, z: Literal[42]):
                                                ^ inlay-hint: ` -> list[int]`
 
-6 | yyy = f([1, 2, 3], "test", 42) 
+6 | yyy = f([1, 2, 3], "test", 42)
        ^ inlay-hint: `: list[int]`
 "#
         .trim(),
