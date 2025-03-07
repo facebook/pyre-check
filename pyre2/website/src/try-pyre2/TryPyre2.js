@@ -31,8 +31,6 @@ from typing import *
 # computed for the argument (in this case, int)
 def test(x: int):
   return f"{x}"
-
-reveal_type(test(42))
 `.trimStart();
 
 const pyre2WasmUninitializedPromise =
