@@ -26,7 +26,6 @@ use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::FuncId;
-use crate::types::callable::Params;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
@@ -56,18 +55,7 @@ pub enum CallTarget {
     TypedDict(TypedDict),
     /// An overload.
     Overload(Vec1<Option<(Vec<Var>, CallTarget)>>),
-}
-
-impl CallTarget {
-    pub fn any(style: AnyStyle) -> Self {
-        Self::Callable(
-            Callable {
-                params: Params::Ellipsis,
-                ret: style.propagate(),
-            },
-            CallableKind::Anon,
-        )
-    }
+    Any(AnyStyle),
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -79,7 +67,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         error_kind: ErrorKind,
     ) -> (Vec<Var>, CallTarget) {
         errors.add(range, msg, error_kind, None);
-        (Vec::new(), CallTarget::any(AnyStyle::Error))
+        (Vec::new(), CallTarget::Any(AnyStyle::Error))
     }
 
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
@@ -135,7 +123,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 }
             }
-            Type::Any(style) => Some((Vec::new(), CallTarget::any(style))),
+            Type::Any(style) => Some((Vec::new(), CallTarget::Any(style))),
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             Type::ClassType(cls) => self
                 .get_instance_attribute(&cls, &dunder::CALL)
@@ -475,6 +463,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None,
                     "No matching overload found".to_owned(),
                 );
+            }
+            CallTarget::Any(style) => {
+                // Make sure we still catch errors in the arguments.
+                for arg in args {
+                    match arg {
+                        CallArg::Expr(e) | CallArg::Star(e, _) => {
+                            self.expr_infer(e, arg_errors);
+                        }
+                        CallArg::Type(..) => {}
+                    }
+                }
+                for kw in keywords {
+                    self.expr_infer(&kw.value, arg_errors);
+                }
+                style.propagate()
             }
         };
         self.solver().finish_quantified(&call_target.0);
