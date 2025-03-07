@@ -37,7 +37,7 @@ impl State {
         )
     }
 
-    fn get_type_from_trace(&self, handle: &Handle, range: TextRange) -> Option<Type> {
+    fn get_type_trace(&self, handle: &Handle, range: TextRange) -> Option<Type> {
         Some(
             self.get_answers(handle)?
                 .get_type_trace(range)?
@@ -96,7 +96,7 @@ impl State {
             }
         }
         let attribute = self.attribute_at(handle, position)?;
-        self.get_type_from_trace(handle, attribute.range)
+        self.get_type_trace(handle, attribute.range)
     }
 
     fn key_to_definition(
