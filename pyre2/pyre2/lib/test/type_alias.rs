@@ -132,6 +132,16 @@ def f(x1: X1[int], x2: X2[int]):
 );
 
 testcase!(
+    test_generic_alias_checked,
+    r#"
+from typing import Any, assert_type
+type X[T1, T2] = dict[T1, T2]
+def f(x: X[int]):  # E: Expected 2 type arguments for `X`, got 1.
+    assert_type(x, dict[int, Any])
+    "#,
+);
+
+testcase!(
     test_generic_alias_annotated,
     r#"
 from typing import Annotated, TypeVar, assert_type

@@ -1174,22 +1174,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         fun = Type::type_form(Type::SpecialForm(SpecialForm::Tuple));
                     }
                     match fun {
-                        Type::Forall(box (_, params, ty)) => {
-                            if let Some(p) = params.iter().next()
-                                && params.len() == 1
-                                && p.quantified.is_type_var_tuple()
-                            {
-                                let mut param_map = SmallMap::new();
-                                let tys = xs.map(|x| self.expr_untype(x, errors));
-                                param_map.insert(p.quantified, Type::Tuple(Tuple::Concrete(tys)));
-                                ty.subst(&param_map)
-                            } else {
-                                let param_map = params
-                                    .quantified()
-                                    .zip(xs.map(|x| self.expr_untype(x, errors)))
-                                    .collect::<SmallMap<_, _>>();
-                                ty.subst(&param_map)
-                            }
+                        Type::Forall(box (name, params, ty)) => {
+                            let tys = xs.map(|x| self.expr_untype(x, errors));
+                            let targs =
+                                self.check_and_create_targs(&name, &params, tys, x.range, errors);
+                            let param_map = params
+                                .quantified()
+                                .zip(targs.as_slice().iter().cloned())
+                                .collect::<SmallMap<_, _>>();
+                            ty.subst(&param_map)
                         }
                         // Note that we have to check for `builtins.type` by name here because this code runs
                         // when we're bootstrapping the stdlib and don't have access to class objects yet.

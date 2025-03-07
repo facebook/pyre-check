@@ -89,7 +89,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_enum_from_class(class_type.class_object())
     }
 
-    fn check_and_create_targs(
+    pub fn check_and_create_targs(
         &self,
         name: &Name,
         tparams: &TParams,

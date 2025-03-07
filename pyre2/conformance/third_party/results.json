@@ -3,7 +3,7 @@
   "pass": 30,
   "fail": 103,
   "pass_rate": 0.23,
-  "differences": 663,
+  "differences": 647,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -37,8 +37,8 @@
     "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
-    "aliases_explicit.py": 10,
-    "aliases_implicit.py": 11,
+    "aliases_explicit.py": 8,
+    "aliases_implicit.py": 9,
     "aliases_newtype.py": 1,
     "aliases_recursive.py": 19,
     "aliases_type_statement.py": 12,
@@ -83,7 +83,7 @@
     "generics_basic.py": 7,
     "generics_defaults.py": 16,
     "generics_defaults_referential.py": 11,
-    "generics_defaults_specialization.py": 4,
+    "generics_defaults_specialization.py": 3,
     "generics_paramspec_basic.py": 5,
     "generics_paramspec_components.py": 7,
     "generics_paramspec_specialization.py": 2,
@@ -99,7 +99,7 @@
     "generics_typevartuple_basic.py": 5,
     "generics_typevartuple_concat.py": 1,
     "generics_typevartuple_overloads.py": 2,
-    "generics_typevartuple_specialization.py": 22,
+    "generics_typevartuple_specialization.py": 11,
     "generics_upper_bound.py": 3,
     "generics_variance.py": 12,
     "generics_variance_inference.py": 10,

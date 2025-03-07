@@ -3,9 +3,29 @@
   "aliases_explicit.py": [
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "line": 41,
+      "name": "bad-specialization",
+      "stop_column": 41,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "ParamSpec cannot be used for type parameter",
+      "description": "ParamSpec cannot be used for type parameter",
+      "line": 41,
+      "name": "invalid-param-spec",
+      "stop_column": 41,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
-      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
+      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
+      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
       "line": 57,
       "name": "assert-type",
       "stop_column": 53,
@@ -40,6 +60,36 @@
       "name": "bad-specialization",
       "stop_column": 28,
       "stop_line": 68
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias4`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias4`, got 2.",
+      "line": 69,
+      "name": "bad-specialization",
+      "stop_column": 33,
+      "stop_line": 69
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias8`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias8`, got 2.",
+      "line": 70,
+      "name": "bad-specialization",
+      "stop_column": 33,
+      "stop_line": 70
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "line": 71,
+      "name": "bad-specialization",
+      "stop_column": 33,
+      "stop_line": 71
     },
     {
       "code": -2,
@@ -195,9 +245,29 @@
   "aliases_implicit.py": [
     {
       "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "line": 54,
+      "name": "bad-specialization",
+      "stop_column": 41,
+      "stop_line": 54
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "ParamSpec cannot be used for type parameter",
+      "description": "ParamSpec cannot be used for type parameter",
+      "line": 54,
+      "name": "invalid-param-spec",
+      "stop_column": 41,
+      "stop_line": 54
+    },
+    {
+      "code": -2,
       "column": 5,
-      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
-      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed",
+      "concise_description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
+      "description": "assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed",
       "line": 68,
       "name": "assert-type",
       "stop_column": 53,
@@ -232,6 +302,36 @@
       "name": "bad-specialization",
       "stop_column": 28,
       "stop_line": 77
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias4`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias4`, got 2.",
+      "line": 78,
+      "name": "bad-specialization",
+      "stop_column": 33,
+      "stop_line": 78
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias8`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias8`, got 2.",
+      "line": 79,
+      "name": "bad-specialization",
+      "stop_column": 33,
+      "stop_line": 79
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "description": "Expected 1 type argument for `GoodTypeAlias9`, got 2.",
+      "line": 80,
+      "name": "bad-specialization",
+      "stop_column": 33,
+      "stop_line": 80
     },
     {
       "code": -2,
@@ -6140,6 +6240,16 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "Expected 1 type argument for `MyAlias`, got 2.",
+      "description": "Expected 1 type argument for `MyAlias`, got 2.",
+      "line": 30,
+      "name": "bad-specialization",
+      "stop_column": 19,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "assert_type(Bar[Any], Bar[str]) failed",
       "description": "assert_type(Bar[Any], Bar[str]) failed",
       "line": 46,
@@ -7772,12 +7882,12 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(tuple[str, Array[tuple[()]]], tuple[str, Array[tuple[Any, ...]]]) failed",
-      "description": "assert_type(tuple[str, Array[tuple[()]]], tuple[str, Array[tuple[Any, ...]]]) failed",
-      "line": 52,
+      "concise_description": "assert_type(tuple[int, *tuple[Any, ...]], tuple[int]) failed",
+      "description": "assert_type(tuple[int, *tuple[Any, ...]], tuple[int]) failed",
+      "line": 51,
       "name": "assert-type",
-      "stop_column": 42,
-      "stop_line": 52
+      "stop_column": 31,
+      "stop_line": 51
     },
     {
       "code": -2,
@@ -7842,18 +7952,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(tuple[str, *int], tuple[str, int]) failed",
-      "description": "assert_type(tuple[str, *int], tuple[str, int]) failed",
-      "line": 93,
-      "name": "assert-type",
-      "stop_column": 36,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[float, *?_TypeVarTuple], tuple[float]) failed",
-      "description": "assert_type(tuple[float, *?_TypeVarTuple], tuple[float]) failed",
+      "concise_description": "assert_type(tuple[float, *tuple[Any, ...]], tuple[float]) failed",
+      "description": "assert_type(tuple[float, *tuple[Any, ...]], tuple[float]) failed",
       "line": 94,
       "name": "assert-type",
       "stop_column": 33,
@@ -7868,6 +7968,26 @@
       "name": "assert-type",
       "stop_column": 49,
       "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Unpacked argument cannot be used for type parameter T.",
+      "description": "Unpacked argument cannot be used for type parameter T.",
+      "line": 109,
+      "name": "bad-unpacking",
+      "stop_column": 21,
+      "stop_line": 109
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "Unpacked argument cannot be used for type parameter T.",
+      "description": "Unpacked argument cannot be used for type parameter T.",
+      "line": 110,
+      "name": "bad-unpacking",
+      "stop_column": 36,
+      "stop_line": 110
     },
     {
       "code": -2,
@@ -7892,108 +8012,28 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(tuple[Any, bool, ?_TypeVar], tuple[tuple[()], str, bool]) failed",
-      "description": "assert_type(tuple[Any, bool, ?_TypeVar], tuple[tuple[()], str, bool]) failed",
-      "line": 135,
-      "name": "assert-type",
-      "stop_column": 55,
-      "stop_line": 135
+      "concise_description": "Expected 3 type arguments for `TA7`, got 1.",
+      "description": "Expected 3 type arguments for `TA7`, got 1.",
+      "line": 127,
+      "name": "bad-specialization",
+      "stop_column": 13,
+      "stop_line": 127
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "Argument `tuple[*str, bool, ?_TypeVar]` is not assignable to parameter `a` with type `tuple[**@_, bool, ?_TypeVar]` in function `func7`",
-      "description": "Argument `tuple[*str, bool, ?_TypeVar]` is not assignable to parameter `a` with type `tuple[**@_, bool, ?_TypeVar]` in function `func7`",
-      "line": 135,
-      "name": "type-mismatch",
-      "stop_column": 24,
-      "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[Any, bool, float], tuple[tuple[str], bool, float]) failed",
-      "description": "assert_type(tuple[Any, bool, float], tuple[tuple[str], bool, float]) failed",
-      "line": 136,
-      "name": "assert-type",
-      "stop_column": 58,
-      "stop_line": 136
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "Argument `tuple[*str, bool, float]` is not assignable to parameter `a` with type `tuple[**@_, bool, float]` in function `func7`",
-      "description": "Argument `tuple[*str, bool, float]` is not assignable to parameter `a` with type `tuple[**@_, bool, float]` in function `func7`",
-      "line": 136,
-      "name": "type-mismatch",
-      "stop_column": 24,
-      "stop_line": 136
+      "column": 8,
+      "concise_description": "Unpacked argument cannot be used for type parameter T1.",
+      "description": "Unpacked argument cannot be used for type parameter T1.",
+      "line": 153,
+      "name": "bad-unpacking",
+      "stop_column": 29,
+      "stop_line": 153
     },
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(tuple[Any, bool, float], tuple[tuple[str, bool], float, int]) failed",
-      "description": "assert_type(tuple[Any, bool, float], tuple[tuple[str, bool], float, int]) failed",
-      "line": 137,
-      "name": "assert-type",
-      "stop_column": 63,
-      "stop_line": 137
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "Argument `tuple[*str, bool, float]` is not assignable to parameter `a` with type `tuple[**@_, bool, float]` in function `func7`",
-      "description": "Argument `tuple[*str, bool, float]` is not assignable to parameter `a` with type `tuple[**@_, bool, float]` in function `func7`",
-      "line": 137,
-      "name": "type-mismatch",
-      "stop_column": 24,
-      "stop_line": 137
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[Any, str, float, ?_TypeVar], tuple[tuple[()], str, bool, float]) failed",
-      "description": "assert_type(tuple[Any, str, float, ?_TypeVar], tuple[tuple[()], str, bool, float]) failed",
-      "line": 148,
-      "name": "assert-type",
-      "stop_column": 62,
-      "stop_line": 148
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "Argument `tuple[str, *bool, float, ?_TypeVar]` is not assignable to parameter `a` with type `tuple[str, **@_, float, ?_TypeVar]` in function `func9`",
-      "description": "Argument `tuple[str, *bool, float, ?_TypeVar]` is not assignable to parameter `a` with type `tuple[str, **@_, float, ?_TypeVar]` in function `func9`",
-      "line": 148,
-      "name": "type-mismatch",
-      "stop_column": 24,
-      "stop_line": 148
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[Any, str, float, int], tuple[tuple[bool], str, float, int]) failed",
-      "description": "assert_type(tuple[Any, str, float, int], tuple[tuple[bool], str, float, int]) failed",
-      "line": 149,
-      "name": "assert-type",
-      "stop_column": 63,
-      "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 23,
-      "concise_description": "Argument `tuple[str, *bool, float, int]` is not assignable to parameter `a` with type `tuple[str, **@_, float, int]` in function `func9`",
-      "description": "Argument `tuple[str, *bool, float, int]` is not assignable to parameter `a` with type `tuple[str, **@_, float, int]` in function `func9`",
-      "line": 149,
-      "name": "type-mismatch",
-      "stop_column": 24,
-      "stop_line": 149
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[**tuple[int, ...], ?_TypeVar], tuple[*tuple[int, ...], int]) failed",
-      "description": "assert_type(tuple[**tuple[int, ...], ?_TypeVar], tuple[*tuple[int, ...], int]) failed",
+      "concise_description": "assert_type(tuple[Any], tuple[*tuple[int, ...], int]) failed",
+      "description": "assert_type(tuple[Any], tuple[*tuple[int, ...], int]) failed",
       "line": 157,
       "name": "assert-type",
       "stop_column": 49,
@@ -8001,23 +8041,13 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[**tuple[int, ...], str], tuple[*tuple[int, ...], str]) failed",
-      "description": "assert_type(tuple[**tuple[int, ...], str], tuple[*tuple[int, ...], str]) failed",
-      "line": 158,
-      "name": "assert-type",
-      "stop_column": 49,
-      "stop_line": 158
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(tuple[**tuple[int, ...], str], tuple[*tuple[int, ...], str]) failed",
-      "description": "assert_type(tuple[**tuple[int, ...], str], tuple[*tuple[int, ...], str]) failed",
-      "line": 159,
-      "name": "assert-type",
-      "stop_column": 49,
-      "stop_line": 159
+      "column": 8,
+      "concise_description": "Unpacked argument cannot be used for type parameter T.",
+      "description": "Unpacked argument cannot be used for type parameter T.",
+      "line": 163,
+      "name": "bad-unpacking",
+      "stop_column": 18,
+      "stop_line": 163
     }
   ],
   "generics_typevartuple_unpack.py": [

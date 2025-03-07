@@ -1,28 +1,24 @@
 @generated
 {
   "aliases_explicit.py": [
-    "Line 69: Expected 1 errors",
-    "Line 70: Expected 1 errors",
-    "Line 71: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 85: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed']",
+    "Line 41: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias9`, got 2.', 'ParamSpec cannot be used for type parameter']",
+    "Line 57: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
     "Line 60: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
-    "Line 78: Expected 1 errors",
-    "Line 79: Expected 1 errors",
-    "Line 80: Expected 1 errors",
     "Line 81: Expected 1 errors",
     "Line 106: Expected 1 errors",
     "Line 111: Expected 1 errors",
     "Line 112: Expected 1 errors",
     "Line 113: Expected 1 errors",
     "Line 117: Expected 1 errors",
-    "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> (str, str), (int, str, str) -> None) failed']",
+    "Line 54: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias9`, got 2.', 'ParamSpec cannot be used for type parameter']",
+    "Line 68: Unexpected errors ['assert_type((int, ParamSpec(ParamSpec[P])) -> Any, (int, str, str) -> None) failed']",
     "Line 72: Unexpected errors ['assert_type((ParamSpec(ParamSpec[P])) -> None, (...) -> None) failed']"
   ],
   "aliases_newtype.py": [
@@ -426,7 +422,6 @@
     "Line 96: Unexpected errors ['assert_type(Bar[int, list[TypeVar[Z1]]], Bar[int, list[int]]) failed']"
   ],
   "generics_defaults_specialization.py": [
-    "Line 30: Expected 1 errors",
     "Line 25: Unexpected errors ['Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`']",
     "Line 26: Unexpected errors ['assert_type(Any, SomethingWithNoDefaults[int, str]) failed']",
     "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']"
@@ -553,28 +548,17 @@
     "Line 31: Unexpected errors ['assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed', 'No matching overload found']"
   ],
   "generics_typevartuple_specialization.py": [
-    "Line 109: Expected 1 errors",
-    "Line 110: Expected 1 errors",
-    "Line 127: Expected 1 errors",
-    "Line 163: Expected 1 errors",
-    "Line 52: Unexpected errors ['assert_type(tuple[str, Array[tuple[()]]], tuple[str, Array[tuple[Any, ...]]]) failed']",
+    "Line 51: Unexpected errors ['assert_type(tuple[int, *tuple[Any, ...]], tuple[int]) failed']",
     "Line 59: Unexpected errors ['Class `Array2` uses type variables not specified in `Generic` or `Protocol` base']",
     "Line 67: Unexpected errors ['Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`']",
     "Line 68: Unexpected errors ['assert_type(Any, Array2[Any, tuple[Any]]) failed']",
     "Line 72: Unexpected errors ['Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`']",
     "Line 84: Unexpected errors ['Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`']",
     "Line 92: Unexpected errors ['Expected a type form, got instance of `Forall[T, Ts, LegacyImplicitTypeAlias[VariadicTuple, type[tuple[T, *Ts]]]]`']",
-    "Line 93: Unexpected errors ['assert_type(tuple[str, *int], tuple[str, int]) failed']",
-    "Line 94: Unexpected errors ['assert_type(tuple[float, *?_TypeVarTuple], tuple[float]) failed']",
+    "Line 94: Unexpected errors ['assert_type(tuple[float, *tuple[Any, ...]], tuple[float]) failed']",
     "Line 95: Unexpected errors ['assert_type(Any, tuple[Any, *tuple[Any, ...]]) failed']",
-    "Line 135: Unexpected errors ['assert_type(tuple[Any, bool, ?_TypeVar], tuple[tuple[()], str, bool]) failed', 'Argument `tuple[*str, bool, ?_TypeVar]` is not assignable to parameter `a` with type `tuple[**@_, bool, ?_TypeVar]` in function `func7`']",
-    "Line 136: Unexpected errors ['assert_type(tuple[Any, bool, float], tuple[tuple[str], bool, float]) failed', 'Argument `tuple[*str, bool, float]` is not assignable to parameter `a` with type `tuple[**@_, bool, float]` in function `func7`']",
-    "Line 137: Unexpected errors ['assert_type(tuple[Any, bool, float], tuple[tuple[str, bool], float, int]) failed', 'Argument `tuple[*str, bool, float]` is not assignable to parameter `a` with type `tuple[**@_, bool, float]` in function `func7`']",
-    "Line 148: Unexpected errors ['assert_type(tuple[Any, str, float, ?_TypeVar], tuple[tuple[()], str, bool, float]) failed', 'Argument `tuple[str, *bool, float, ?_TypeVar]` is not assignable to parameter `a` with type `tuple[str, **@_, float, ?_TypeVar]` in function `func9`']",
-    "Line 149: Unexpected errors ['assert_type(tuple[Any, str, float, int], tuple[tuple[bool], str, float, int]) failed', 'Argument `tuple[str, *bool, float, int]` is not assignable to parameter `a` with type `tuple[str, **@_, float, int]` in function `func9`']",
-    "Line 157: Unexpected errors ['assert_type(tuple[**tuple[int, ...], ?_TypeVar], tuple[*tuple[int, ...], int]) failed']",
-    "Line 158: Unexpected errors ['assert_type(tuple[**tuple[int, ...], str], tuple[*tuple[int, ...], str]) failed']",
-    "Line 159: Unexpected errors ['assert_type(tuple[**tuple[int, ...], str], tuple[*tuple[int, ...], str]) failed']"
+    "Line 153: Unexpected errors ['Unpacked argument cannot be used for type parameter T1.']",
+    "Line 157: Unexpected errors ['assert_type(tuple[Any], tuple[*tuple[int, ...], int]) failed']"
   ],
   "generics_typevartuple_unpack.py": [],
   "generics_upper_bound.py": [
