@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::sync::Arc;
-
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
@@ -29,13 +27,13 @@ use crate::util::prelude::VecExt;
 use crate::visitors::Visitors;
 
 impl State {
-    fn get_type(&self, handle: &Handle, key: &Key) -> Option<Arc<Type>> {
+    fn get_type(&self, handle: &Handle, key: &Key) -> Option<Type> {
         let idx = self.get_bindings(handle)?.key_to_idx(key);
-        self.get_answers(handle)?.get_idx(idx)
+        Some(self.get_answers(handle)?.get_idx(idx)?.arc_clone())
     }
 
-    fn get_type_from_trace(&self, handle: &Handle, range: TextRange) -> Option<Arc<Type>> {
-        self.get_answers(handle)?.get_type_trace(range)
+    fn get_type_from_trace(&self, handle: &Handle, range: TextRange) -> Option<Type> {
+        Some(self.get_answers(handle)?.get_type_trace(range)?.arc_clone())
     }
 
     fn identifier_at(&self, handle: &Handle, position: TextSize) -> Option<Identifier> {
@@ -76,7 +74,7 @@ impl State {
         res
     }
 
-    pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Arc<Type>> {
+    pub fn hover(&self, handle: &Handle, position: TextSize) -> Option<Type> {
         if let Some(key) = self.definition_at(handle, position) {
             return self.get_type(handle, &key);
         }
