@@ -11,6 +11,7 @@
 #![allow(clippy::match_like_matches_macro)]
 #![allow(clippy::module_inception)]
 #![allow(clippy::needless_lifetimes)]
+#![allow(clippy::new_without_default)]
 #![allow(clippy::single_match)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
