@@ -790,7 +790,7 @@
     "Line 152: Expected 1 errors",
     "Line 155: Expected 1 errors",
     "Line 131: Unexpected errors ['Expected first item to be a string literal', 'Expected first item to be a string literal']",
-    "Line 133: Unexpected errors ['Unexpected keyword argument `x` in function `N.__init__`', 'Unexpected keyword argument `x` in function `N.__new__`', 'Unexpected keyword argument `y` in function `N.__init__`', 'Unexpected keyword argument `y` in function `N.__new__`']",
+    "Line 133: Unexpected errors ['Unexpected keyword argument `x` in function `N.__new__`', 'Unexpected keyword argument `y` in function `N.__new__`']",
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
   ],
   "qualifiers_final_decorator.py": [

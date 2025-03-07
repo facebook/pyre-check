@@ -438,16 +438,6 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__init__`",
-      "description": "Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__init__`",
-      "line": 11,
-      "name": "type-mismatch",
-      "stop_column": 14,
-      "stop_line": 11
-    },
-    {
-      "code": -2,
-      "column": 8,
       "concise_description": "Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__new__`",
       "description": "Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__new__`",
       "line": 11,
@@ -9221,16 +9211,6 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "Missing argument `y` in function `Point.__init__`",
-      "description": "Missing argument `y` in function `Point.__init__`",
-      "line": 44,
-      "name": "missing-argument",
-      "stop_column": 11,
-      "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 6,
       "concise_description": "Missing argument `y` in function `Point.__new__`",
       "description": "Missing argument `y` in function `Point.__new__`",
       "line": 44,
@@ -9241,32 +9221,12 @@
     {
       "code": -2,
       "column": 6,
-      "concise_description": "Missing argument `y` in function `Point.__init__`",
-      "description": "Missing argument `y` in function `Point.__init__`",
-      "line": 45,
-      "name": "missing-argument",
-      "stop_column": 11,
-      "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 6,
       "concise_description": "Missing argument `y` in function `Point.__new__`",
       "description": "Missing argument `y` in function `Point.__new__`",
       "line": 45,
       "name": "missing-argument",
       "stop_column": 11,
       "stop_line": 45
-    },
-    {
-      "code": -2,
-      "column": 15,
-      "concise_description": "Argument `Literal['']` is not assignable to parameter `y` with type `int` in function `Point.__init__`",
-      "description": "Argument `Literal['']` is not assignable to parameter `y` with type `int` in function `Point.__init__`",
-      "line": 46,
-      "name": "type-mismatch",
-      "stop_column": 17,
-      "stop_line": 46
     },
     {
       "code": -2,
@@ -9281,32 +9241,12 @@
     {
       "code": -2,
       "column": 24,
-      "concise_description": "Argument `Literal[3]` is not assignable to parameter `units` with type `str` in function `Point.__init__`",
-      "description": "Argument `Literal[3]` is not assignable to parameter `units` with type `str` in function `Point.__init__`",
-      "line": 47,
-      "name": "type-mismatch",
-      "stop_column": 25,
-      "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 24,
       "concise_description": "Argument `Literal[3]` is not assignable to parameter `units` with type `str` in function `Point.__new__`",
       "description": "Argument `Literal[3]` is not assignable to parameter `units` with type `str` in function `Point.__new__`",
       "line": 47,
       "name": "type-mismatch",
       "stop_column": 25,
       "stop_line": 47
-    },
-    {
-      "code": -2,
-      "column": 22,
-      "concise_description": "Expected 3 positional arguments, got 4 in function `Point.__init__`",
-      "description": "Expected 3 positional arguments, got 4 in function `Point.__init__`",
-      "line": 48,
-      "name": "bad-argument-type",
-      "stop_column": 24,
-      "stop_line": 48
     },
     {
       "code": -2,
@@ -9321,32 +9261,12 @@
     {
       "code": -2,
       "column": 23,
-      "concise_description": "Unexpected keyword argument `other` in function `Point.__init__`",
-      "description": "Unexpected keyword argument `other` in function `Point.__init__`",
-      "line": 49,
-      "name": "unexpected-keyword",
-      "stop_column": 31,
-      "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 23,
       "concise_description": "Unexpected keyword argument `other` in function `Point.__new__`",
       "description": "Unexpected keyword argument `other` in function `Point.__new__`",
       "line": 49,
       "name": "unexpected-keyword",
       "stop_column": 31,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 19,
-      "concise_description": "Argument `float` is not assignable to parameter `value` with type `str` in function `Property.__init__`",
-      "description": "Argument `float` is not assignable to parameter `value` with type `str` in function `Property.__init__`",
-      "line": 98,
-      "name": "type-mismatch",
-      "stop_column": 22,
-      "stop_line": 98
     },
     {
       "code": -2,
@@ -9373,16 +9293,6 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Missing argument `y` in function `Point1.__init__`",
-      "description": "Missing argument `y` in function `Point1.__init__`",
-      "line": 16,
-      "name": "missing-argument",
-      "stop_column": 14,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 8,
       "concise_description": "Missing argument `y` in function `Point1.__new__`",
       "description": "Missing argument `y` in function `Point1.__new__`",
       "line": 16,
@@ -9393,28 +9303,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Missing argument `x` in function `Point2.__init__`",
-      "description": "Missing argument `x` in function `Point2.__init__`",
-      "line": 21,
-      "name": "missing-argument",
-      "stop_column": 14,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 8,
       "concise_description": "Missing argument `x` in function `Point2.__new__`",
       "description": "Missing argument `x` in function `Point2.__new__`",
-      "line": 21,
-      "name": "missing-argument",
-      "stop_column": 14,
-      "stop_line": 21
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Missing argument `y` in function `Point2.__init__`",
-      "description": "Missing argument `y` in function `Point2.__init__`",
       "line": 21,
       "name": "missing-argument",
       "stop_column": 14,
@@ -9433,16 +9323,6 @@
     {
       "code": -2,
       "column": 21,
-      "concise_description": "Expected 2 positional arguments, got 3 in function `Point3.__init__`",
-      "description": "Expected 2 positional arguments, got 3 in function `Point3.__init__`",
-      "line": 26,
-      "name": "bad-argument-type",
-      "stop_column": 22,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 21,
       "concise_description": "Expected 3 positional arguments, got 4 in function `Point3.__new__`",
       "description": "Expected 3 positional arguments, got 4 in function `Point3.__new__`",
       "line": 26,
@@ -9453,31 +9333,11 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Missing argument `y` in function `Point4.__init__`",
-      "description": "Missing argument `y` in function `Point4.__init__`",
-      "line": 31,
-      "name": "missing-argument",
-      "stop_column": 14,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 8,
       "concise_description": "Missing argument `y` in function `Point4.__new__`",
       "description": "Missing argument `y` in function `Point4.__new__`",
       "line": 31,
       "name": "missing-argument",
       "stop_column": 14,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 18,
-      "concise_description": "Unexpected keyword argument `z` in function `Point4.__init__`",
-      "description": "Unexpected keyword argument `z` in function `Point4.__init__`",
-      "line": 31,
-      "name": "unexpected-keyword",
-      "stop_column": 21,
       "stop_line": 31
     },
     {
@@ -9493,32 +9353,12 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point5.__init__`",
-      "description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point5.__init__`",
-      "line": 36,
-      "name": "type-mismatch",
-      "stop_column": 21,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 18,
       "concise_description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point5.__new__`",
       "description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point5.__new__`",
       "line": 36,
       "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "Expected 2 positional arguments, got 3 in function `Point5.__init__`",
-      "description": "Expected 2 positional arguments, got 3 in function `Point5.__init__`",
-      "line": 37,
-      "name": "bad-argument-type",
-      "stop_column": 22,
-      "stop_line": 37
     },
     {
       "code": -2,
@@ -9533,32 +9373,12 @@
     {
       "code": -2,
       "column": 18,
-      "concise_description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point6.__init__`",
-      "description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point6.__init__`",
-      "line": 42,
-      "name": "type-mismatch",
-      "stop_column": 21,
-      "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 18,
       "concise_description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point6.__new__`",
       "description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point6.__new__`",
       "line": 42,
       "name": "type-mismatch",
       "stop_column": 21,
       "stop_line": 42
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Point6.__init__`",
-      "description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Point6.__init__`",
-      "line": 43,
-      "name": "type-mismatch",
-      "stop_column": 20,
-      "stop_line": 43
     },
     {
       "code": -2,
@@ -9599,16 +9419,6 @@
       "name": "bad-class-definition",
       "stop_column": 38,
       "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Missing argument `a` in function `NT5.__init__`",
-      "description": "Missing argument `a` in function `NT5.__init__`",
-      "line": 66,
-      "name": "missing-argument",
-      "stop_column": 4,
-      "stop_line": 66
     },
     {
       "code": -2,
@@ -10757,31 +10567,11 @@
     {
       "code": -2,
       "column": 3,
-      "concise_description": "Unexpected keyword argument `x` in function `N.__init__`",
-      "description": "Unexpected keyword argument `x` in function `N.__init__`",
-      "line": 133,
-      "name": "unexpected-keyword",
-      "stop_column": 6,
-      "stop_line": 133
-    },
-    {
-      "code": -2,
-      "column": 3,
       "concise_description": "Unexpected keyword argument `x` in function `N.__new__`",
       "description": "Unexpected keyword argument `x` in function `N.__new__`",
       "line": 133,
       "name": "unexpected-keyword",
       "stop_column": 6,
-      "stop_line": 133
-    },
-    {
-      "code": -2,
-      "column": 8,
-      "concise_description": "Unexpected keyword argument `y` in function `N.__init__`",
-      "description": "Unexpected keyword argument `y` in function `N.__init__`",
-      "line": 133,
-      "name": "unexpected-keyword",
-      "stop_column": 11,
       "stop_line": 133
     },
     {
@@ -10797,16 +10587,6 @@
     {
       "code": -2,
       "column": 3,
-      "concise_description": "Unexpected keyword argument `a` in function `N.__init__`",
-      "description": "Unexpected keyword argument `a` in function `N.__init__`",
-      "line": 134,
-      "name": "unexpected-keyword",
-      "stop_column": 6,
-      "stop_line": 134
-    },
-    {
-      "code": -2,
-      "column": 3,
       "concise_description": "Unexpected keyword argument `a` in function `N.__new__`",
       "description": "Unexpected keyword argument `a` in function `N.__new__`",
       "line": 134,
@@ -10817,31 +10597,11 @@
     {
       "code": -2,
       "column": 3,
-      "concise_description": "Unexpected keyword argument `x` in function `N.__init__`",
-      "description": "Unexpected keyword argument `x` in function `N.__init__`",
-      "line": 135,
-      "name": "unexpected-keyword",
-      "stop_column": 7,
-      "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 3,
       "concise_description": "Unexpected keyword argument `x` in function `N.__new__`",
       "description": "Unexpected keyword argument `x` in function `N.__new__`",
       "line": 135,
       "name": "unexpected-keyword",
       "stop_column": 7,
-      "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Unexpected keyword argument `y` in function `N.__init__`",
-      "description": "Unexpected keyword argument `y` in function `N.__init__`",
-      "line": 135,
-      "name": "unexpected-keyword",
-      "stop_column": 13,
       "stop_line": 135
     },
     {

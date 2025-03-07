@@ -281,34 +281,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // Got something other than an instance of the class under construction.
             return ret;
         }
-        let overrides_new = if let Some(new_method) = self.get_dunder_new(&cls) {
-            let cls_ty = Type::type_form(instance_ty.clone());
-            let mut full_args = vec![CallArg::Type(&cls_ty, range)];
-            full_args.extend_from_slice(args);
-            let ret = self.call_infer(
-                self.as_call_target_or_error(
-                    new_method,
-                    CallStyle::Method(&dunder::NEW),
+        let (overrides_new, dunder_new_has_errors) =
+            if let Some(new_method) = self.get_dunder_new(&cls) {
+                let cls_ty = Type::type_form(instance_ty.clone());
+                let mut full_args = vec![CallArg::Type(&cls_ty, range)];
+                full_args.extend_from_slice(args);
+                let dunder_new_errors =
+                    ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
+                let ret = self.call_infer(
+                    self.as_call_target_or_error(
+                        new_method,
+                        CallStyle::Method(&dunder::NEW),
+                        range,
+                        errors,
+                    ),
+                    &full_args,
+                    keywords,
                     range,
-                    errors,
-                ),
-                &full_args,
-                keywords,
-                range,
-                errors,
-            );
-            if !self
-                .solver()
-                .is_subset_eq(&ret, &instance_ty, self.type_order())
-            {
-                // Got something other than an instance of the class under construction.
-                return ret;
-            }
-            true
-        } else {
-            false
-        };
+                    &dunder_new_errors,
+                );
+                let has_errors = !dunder_new_errors.is_empty();
+                errors.extend(dunder_new_errors);
+                if !self
+                    .solver()
+                    .is_subset_eq(&ret, &instance_ty, self.type_order())
+                {
+                    // Got something other than an instance of the class under construction.
+                    return ret;
+                }
+                (true, has_errors)
+            } else {
+                (false, false)
+            };
         if let Some(init_method) = self.get_dunder_init(&cls, overrides_new) {
+            let dunder_init_errors =
+                ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
             self.call_infer(
                 self.as_call_target_or_error(
                     init_method,
@@ -319,8 +326,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 args,
                 keywords,
                 range,
-                errors,
+                &dunder_init_errors,
             );
+            // Report `__init__` errors only when there are no `__new__` errors, to avoid redundant errors.
+            if !dunder_new_has_errors {
+                errors.extend(dunder_init_errors);
+            }
         }
         cls.self_type()
     }
