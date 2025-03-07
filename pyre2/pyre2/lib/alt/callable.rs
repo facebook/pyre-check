@@ -16,6 +16,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::solve::Iterable;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::display::function_suffix;
@@ -603,6 +604,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         arg_errors: &ErrorCollector,
         call_errors: &ErrorCollector,
+        _context: Option<&ErrorContext>,
     ) -> Type {
         match callable.params {
             Params::List(params) => {

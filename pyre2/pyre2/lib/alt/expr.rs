@@ -139,7 +139,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Type {
         self.distribute_over_union(obj, |obj| {
-            self.type_of_attr_get(obj.clone(), attr_name, range, errors, "Expr::attr_infer")
+            self.type_of_attr_get(
+                obj.clone(),
+                attr_name,
+                range,
+                errors,
+                None,
+                "Expr::attr_infer",
+            )
         })
     }
 
@@ -147,9 +154,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
             // TODO(yangdanny): handle reflected dunder methods
             let method_type = self.attr_infer(lhs, &Name::new(op.dunder()), range, errors);
-            let callable =
-                self.as_call_target_or_error(method_type, CallStyle::BinaryOp(op), range, errors);
-            self.call_infer(callable, &[CallArg::Type(&rhs, range)], &[], range, errors)
+            let callable = self.as_call_target_or_error(
+                method_type,
+                CallStyle::BinaryOp(op),
+                range,
+                errors,
+                None,
+            );
+            self.call_infer(
+                callable,
+                &[CallArg::Type(&rhs, range)],
+                &[],
+                range,
+                errors,
+                None,
+            )
         };
         let lhs = self.expr_infer(&x.left, errors);
         let rhs = self.expr_infer(&x.right, errors);
@@ -617,9 +636,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             CallStyle::FreeForm,
             range,
             errors,
+            None,
         );
         let arg = CallArg::Type(&decoratee, range);
-        self.call_infer(call_target, &[arg], &[], range, errors)
+        self.call_infer(call_target, &[arg], &[], range, errors, None)
     }
 
     fn expr_infer_with_hint(
@@ -637,7 +657,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let unop = |t: &Type, f: &dyn Fn(&Lit) -> Type, method: &Name| match t {
                     Type::Literal(lit) => f(lit),
                     Type::ClassType(_) => {
-                        self.call_method_or_error(t, method, x.range, &[], &[], errors)
+                        self.call_method_or_error(t, method, x.range, &[], &[], errors, None)
                     }
                     _ => self.error(
                         errors,
@@ -994,7 +1014,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let right = self.expr_infer(comparator, errors);
                     let right_range = comparator.range();
                     let compare_by_method = |ty, method, arg| {
-                        self.call_method(ty, &method, x.range, &[arg], &[], errors)
+                        self.call_method(ty, &method, x.range, &[arg], &[], errors, None)
                     };
                     let comparison_error = || {
                         self.error(
@@ -1116,8 +1136,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             CallStyle::FreeForm,
                             func_range,
                             errors,
+                            None,
                         );
-                        self.call_infer(callable, &args, &x.arguments.keywords, func_range, errors)
+                        self.call_infer(
+                            callable,
+                            &args,
+                            &x.arguments.keywords,
+                            func_range,
+                            errors,
+                            None,
+                        )
                     }
                 })
             }
@@ -1245,6 +1273,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[CallArg::Expr(&x.slice)],
                             &[],
                             errors,
+                            None,
                         ),
                         Type::Any(style) => style.propagate(),
                         Type::ClassType(cls)
@@ -1259,6 +1288,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[CallArg::Expr(&x.slice)],
                             &[],
                             errors,
+                            None,
                         ),
                         Type::TypedDict(typed_dict) => {
                             let key_ty = self.expr_infer(&x.slice, errors);
@@ -1434,6 +1464,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &[CallArg::Expr(slice)],
                         &[],
                         errors,
+                        None,
                     ),
                 }
             }

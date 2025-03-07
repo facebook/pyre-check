@@ -19,7 +19,7 @@ use crate::types::types::Type;
 /// The root cause is `C.__lt__` being called with the wrong type, but the user sees a `<`
 /// comparison. ErrorContext stores this context that the user sees, to make it easier to connect
 /// it back to the root cause.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ErrorContext {
     BadContextManager(Type),
 }

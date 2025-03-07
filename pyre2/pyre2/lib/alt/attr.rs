@@ -18,6 +18,7 @@ use crate::alt::callable::CallArg;
 use crate::alt::types::class_metadata::EnumMetadata;
 use crate::binding::binding::KeyExport;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
@@ -282,6 +283,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
         todo_ctx: &str,
     ) -> Type {
         let lookup_result = self.lookup_attr(base, attr_name);
@@ -290,10 +292,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             attr_name,
             range,
             errors,
+            context,
             todo_ctx,
         ) {
             Ok(ty) => ty,
-            Err(msg) => self.error(errors, range, ErrorKind::MissingAttribute, None, msg),
+            Err(msg) => self.error(errors, range, ErrorKind::MissingAttribute, context, msg),
         }
     }
 
@@ -306,24 +309,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
         todo_ctx: &str,
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
-            LookupResult::Found(attr) => match self.resolve_get_access(attr, range, errors) {
-                Ok(ty) => Some(ty),
-                Err(e) => Some(self.error(
-                    errors,
-                    range,
-                    ErrorKind::MissingAttribute,
-                    None,
-                    e.to_error_msg(attr_name),
-                )),
-            },
+            LookupResult::Found(attr) => {
+                match self.resolve_get_access(attr, range, errors, context) {
+                    Ok(ty) => Some(ty),
+                    Err(e) => Some(self.error(
+                        errors,
+                        range,
+                        ErrorKind::MissingAttribute,
+                        context,
+                        e.to_error_msg(attr_name),
+                    )),
+                }
+            }
             LookupResult::InternalError(e) => Some(self.error(
                 errors,
                 range,
                 ErrorKind::InternalError,
-                None,
+                context,
                 e.to_error_msg(attr_name, todo_ctx),
             )),
             _ => None,
@@ -356,6 +362,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: Either<&Expr, &Type>,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
         todo_ctx: &str,
     ) {
         match self.lookup_attr(base, attr_name) {
@@ -365,7 +372,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::NoAccess,
-                        None,
+                        context,
                         e.to_error_msg(attr_name),
                     );
                 }
@@ -375,9 +382,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             got,
                             Some((
                                 &want,
-                                &TypeCheckContext::of_kind(TypeCheckKind::Attribute(
-                                    attr_name.clone(),
-                                )),
+                                &TypeCheckContext {
+                                    kind: TypeCheckKind::Attribute(attr_name.clone()),
+                                    context: context.cloned(),
+                                },
                             )),
                             errors,
                         );
@@ -388,7 +396,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             got,
                             range,
                             errors,
-                            &TypeCheckContext::of_kind(TypeCheckKind::Attribute(attr_name.clone())),
+                            &TypeCheckContext {
+                                kind: TypeCheckKind::Attribute(attr_name.clone()),
+                                context: context.cloned(),
+                            },
                         );
                     }
                 },
@@ -397,7 +408,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::ReadOnly,
-                        None,
+                        context,
                         format!("Could not assign to read-only field `{attr_name}`"),
                     );
                 }
@@ -407,7 +418,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         errors,
                         range,
                         ErrorKind::ReadOnly,
-                        None,
+                        context,
                         e.to_error_msg(attr_name),
                     );
                 }
@@ -416,7 +427,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Either::Left(got) => CallArg::Expr(got),
                         Either::Right(got) => CallArg::Type(got, range),
                     };
-                    self.call_property_setter(setter, got, range, errors);
+                    self.call_property_setter(setter, got, range, errors, context);
                 }
                 AttributeInner::Descriptor(d) => {
                     match (d.base, d.setter) {
@@ -425,7 +436,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 Either::Left(got) => CallArg::Expr(got),
                                 Either::Right(got) => CallArg::Type(got, range),
                             };
-                            self.call_descriptor_setter(setter, class_type, got, range, errors);
+                            self.call_descriptor_setter(
+                                setter, class_type, got, range, errors, context,
+                            );
                         }
                         (DescriptorBase::Instance(class_type), None) => {
                             let e = NoAccessReason::SettingReadOnlyDescriptor(
@@ -435,7 +448,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::ReadOnly,
-                                None,
+                                context,
                                 e.to_error_msg(attr_name),
                             );
                         }
@@ -445,7 +458,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 errors,
                                 range,
                                 ErrorKind::NoAccess,
-                                None,
+                                context,
                                 e.to_error_msg(attr_name),
                             );
                         }
@@ -457,7 +470,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::InternalError,
-                    None,
+                    context,
                     e.to_error_msg(attr_name, todo_ctx),
                 );
             }
@@ -466,7 +479,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     range,
                     ErrorKind::MissingAttribute,
-                    None,
+                    context,
                     e.to_error_msg(attr_name),
                 );
             }
@@ -480,9 +493,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Expr,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
         todo_ctx: &str,
     ) {
-        self.check_attr_set(base, attr_name, Either::Left(got), range, errors, todo_ctx)
+        self.check_attr_set(
+            base,
+            attr_name,
+            Either::Left(got),
+            range,
+            errors,
+            context,
+            todo_ctx,
+        )
     }
 
     pub fn check_attr_set_with_type(
@@ -492,9 +514,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Type,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
         todo_ctx: &str,
     ) {
-        self.check_attr_set(base, attr_name, Either::Right(got), range, errors, todo_ctx)
+        self.check_attr_set(
+            base,
+            attr_name,
+            Either::Right(got),
+            range,
+            errors,
+            context,
+            todo_ctx,
+        )
     }
 
     pub fn is_attr_subset(
@@ -592,12 +623,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr: Attribute,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
     ) -> Result<Type, NoAccessReason> {
         match attr.inner {
             AttributeInner::NoAccess(reason) => Err(reason),
             AttributeInner::ReadWrite(ty) | AttributeInner::ReadOnly(ty) => Ok(ty),
             AttributeInner::Property(getter, ..) => {
-                Ok(self.call_property_getter(getter, range, errors))
+                Ok(self.call_property_getter(getter, range, errors, context))
             }
             AttributeInner::Descriptor(d, ..) => {
                 match d {
@@ -609,7 +641,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         base,
                         getter: Some(getter),
                         ..
-                    } => Ok(self.call_descriptor_getter(getter, base, range, errors)),
+                    } => Ok(self.call_descriptor_getter(getter, base, range, errors, context)),
                     // Reading descriptor with no getter resolves to the descriptor itself
                     Descriptor {
                         descriptor_ty,
@@ -649,13 +681,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
         todo_ctx: &str,
     ) -> Result<Type, String> {
         match lookup {
-            LookupResult::Found(attr) => match self.resolve_get_access(attr, range, errors) {
-                Ok(ty) => Ok(ty.clone()),
-                Err(err) => Err(err.to_error_msg(attr_name)),
-            },
+            LookupResult::Found(attr) => {
+                match self.resolve_get_access(attr, range, errors, context) {
+                    Ok(ty) => Ok(ty.clone()),
+                    Err(err) => Err(err.to_error_msg(attr_name)),
+                }
+            }
             LookupResult::NotFound(err) => Err(err.to_error_msg(attr_name)),
             LookupResult::InternalError(err) => Err(err.to_error_msg(attr_name, todo_ctx)),
         }

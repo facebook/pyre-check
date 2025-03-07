@@ -291,7 +291,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .or_else(|| {
                         let int_ty = self.stdlib.int().to_type();
                         let arg = CallArg::Type(&int_ty, range);
-                        self.call_method(iterable, &dunder::GETITEM, range, &[arg], &[], errors)
+                        self.call_method(
+                            iterable,
+                            &dunder::GETITEM,
+                            range,
+                            &[arg],
+                            &[],
+                            errors,
+                            None,
+                        )
                     })
                     .unwrap_or_else(|| {
                         self.error(
@@ -539,6 +547,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &[],
                 &[],
                 errors,
+                None,
             ),
             ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
@@ -547,6 +556,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &[],
                 &[],
                 errors,
+                None,
             )) {
                 Some(ty) => ty,
                 None => self.error(
@@ -584,6 +594,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &exit_arg_types,
                 &[],
                 errors,
+                None,
             ),
             ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
@@ -592,6 +603,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &exit_arg_types,
                 &[],
                 errors,
+                None,
             )) {
                 Some(ty) => ty,
                 None => self.error(
@@ -807,6 +819,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &got,
                     attr.range,
                     errors,
+                    None,
                     "Answers::solve_binding_inner::CheckAssignTypeToAttribute",
                 );
             }
@@ -818,6 +831,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     value,
                     attr.range,
                     errors,
+                    None,
                     "Answers::solve_binding_inner::CheckAssignExprToAttribute",
                 );
             }
@@ -1224,6 +1238,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &[CallArg::Expr(&x.value)],
                     &[],
                     errors,
+                    None,
                 )
             }
             Binding::IterableValue(ann, e) => {
@@ -1321,6 +1336,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ],
                         &[],
                         errors,
+                        None,
                     ),
                 }
             }
@@ -1591,6 +1607,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     &[arg],
                     &[],
                     errors,
+                    None,
                 )
             }
             Binding::PatternMatchClassPositional(_, idx, key, range) => {
