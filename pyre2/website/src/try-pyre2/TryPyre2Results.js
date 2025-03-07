@@ -25,8 +25,24 @@ export type PyreflyErrorMessage = {
 };
 
 component ErrorMessage(error: PyreflyErrorMessage) {
-  const message =
-    error.startLineNumber + ':' + error.startColumn + ': ' + error.message;
+  // This logic is meant to be an exact match of how we output errors in the cli defined here:
+  // - https://fburl.com/code/e9lqk0h2
+  // - https://fburl.com/code/hwhe60zt
+  // TODO (T217247871): expose full error message from Pyre2 binary and use it directly here instead of duplicating the logic
+  const {startLineNumber, startColumn, endLineNumber, endColumn} = error;
+
+  let rangeStr;
+  if (startLineNumber === endLineNumber) {
+    if (startColumn === endColumn) {
+      rangeStr = `${startLineNumber}:${startColumn}`;
+    } else {
+      rangeStr = `${startLineNumber}:${startColumn}-${endColumn}`;
+    }
+  } else {
+    rangeStr = `${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn}`;
+  }
+
+  const message = `${rangeStr}: ${error.message}`;
   return <span className={styles.msgType}>{message}</span>;
 }
 
