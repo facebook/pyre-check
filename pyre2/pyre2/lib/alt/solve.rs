@@ -1616,12 +1616,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
                 let binding_ty = self.get_idx(*key).arc_clone();
-                let match_args = self.attr_infer(&binding_ty, &dunder::MATCH_ARGS, *range, errors);
+                let match_args =
+                    self.attr_infer(&binding_ty, &dunder::MATCH_ARGS, *range, errors, None);
                 match match_args {
                     Type::Tuple(Tuple::Concrete(ts)) => {
                         if *idx < ts.len() {
                             if let Some(Type::Literal(Lit::String(box attr_name))) = ts.get(*idx) {
-                                self.attr_infer(&binding_ty, &Name::new(attr_name), *range, errors)
+                                self.attr_infer(
+                                    &binding_ty,
+                                    &Name::new(attr_name),
+                                    *range,
+                                    errors,
+                                    None,
+                                )
                             } else {
                                 self.error(
                                     errors,
@@ -1661,7 +1668,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
                 let binding_ty = self.get_idx(*key).arc_clone();
-                self.attr_infer(&binding_ty, &attr.id, attr.range, errors)
+                self.attr_infer(&binding_ty, &attr.id, attr.range, errors, None)
             }
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
             Binding::LambdaParameter(var) => var.to_type(),

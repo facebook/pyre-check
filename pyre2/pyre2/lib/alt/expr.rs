@@ -138,16 +138,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
     ) -> Type {
         self.distribute_over_union(obj, |obj| {
-            self.type_of_attr_get(obj, attr_name, range, errors, None, "Expr::attr_infer")
+            self.type_of_attr_get(obj, attr_name, range, errors, context, "Expr::attr_infer")
         })
     }
 
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
             // TODO(yangdanny): handle reflected dunder methods
-            let method_type = self.attr_infer(lhs, &Name::new(op.dunder()), range, errors);
+            let method_type = self.attr_infer(lhs, &Name::new(op.dunder()), range, errors, None);
             let callable = self.as_call_target_or_error(
                 method_type,
                 CallStyle::BinaryOp(op),
@@ -1198,7 +1199,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     (Type::Literal(Lit::Enum(box (_, _, raw_type))), "_value_" | "value") => {
                         raw_type.clone()
                     }
-                    _ => self.attr_infer(&obj, &x.attr.id, x.range, errors),
+                    _ => self.attr_infer(&obj, &x.attr.id, x.range, errors, None),
                 }
             }
             Expr::Subscript(x) => {

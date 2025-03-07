@@ -489,10 +489,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             //   the raw class field is a union of a descriptor and a non-descriptor? Do we want to allow this?
             Type::ClassType(c) => {
                 if c.class_object().contains(&dunder::GET) {
-                    descriptor_getter = Some(self.attr_infer(ty, &dunder::GET, range, errors));
+                    descriptor_getter =
+                        Some(self.attr_infer(ty, &dunder::GET, range, errors, None));
                 }
                 if c.class_object().contains(&dunder::SET) {
-                    descriptor_setter = Some(self.attr_infer(ty, &dunder::SET, range, errors));
+                    descriptor_setter =
+                        Some(self.attr_infer(ty, &dunder::SET, range, errors, None));
                 }
             }
             _ => {}
