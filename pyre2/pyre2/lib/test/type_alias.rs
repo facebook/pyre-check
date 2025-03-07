@@ -87,6 +87,38 @@ def f(x: X[int]):
 );
 
 testcase!(
+    test_type_var_tuple_alias_generic,
+    r#"
+from typing import assert_type
+type X[*T] = tuple[*T]
+def f(x: X[int, str]):
+    assert_type(x, tuple[int, str])
+    "#,
+);
+
+testcase!(
+    test_generic_type_var_tuple_alias_implicit,
+    r#"
+from typing import TypeVarTuple, assert_type
+Ts = TypeVarTuple('Ts')
+X = tuple[*Ts]
+def f(x: X[int, str]):
+    assert_type(x, tuple[int, str])
+    "#,
+);
+
+testcase!(
+    test_generic_type_var_tuple_alias_explicit,
+    r#"
+from typing import TypeVarTuple, TypeAlias, assert_type
+Ts = TypeVarTuple('Ts')
+X: TypeAlias = tuple[*Ts]
+def f(x: X[int, str]):
+    assert_type(x, tuple[int, str])
+    "#,
+);
+
+testcase!(
     test_generic_alias_callable,
     r#"
 from typing import Callable, TypeVar, assert_type

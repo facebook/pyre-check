@@ -84,6 +84,7 @@ use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
+use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::CalleeKind;
 use crate::types::types::TParamInfo;
@@ -343,26 +344,55 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn tvars_to_tparams_for_type_alias(
         &self,
         ty: &mut Type,
-        seen: &mut SmallMap<TypeVar, Quantified>,
+        seen_type_vars: &mut SmallMap<TypeVar, Quantified>,
+        seen_type_var_tuples: &mut SmallMap<TypeVarTuple, Quantified>,
         tparams: &mut Vec<TParamInfo>,
     ) {
         match ty {
             Type::Union(ts) => {
                 for t in ts.iter_mut() {
-                    self.tvars_to_tparams_for_type_alias(t, seen, tparams);
+                    self.tvars_to_tparams_for_type_alias(
+                        t,
+                        seen_type_vars,
+                        seen_type_var_tuples,
+                        tparams,
+                    );
                 }
             }
             Type::ClassType(cls) => {
                 for t in cls.targs_mut().as_mut() {
-                    self.tvars_to_tparams_for_type_alias(t, seen, tparams);
+                    self.tvars_to_tparams_for_type_alias(
+                        t,
+                        seen_type_vars,
+                        seen_type_var_tuples,
+                        tparams,
+                    );
                 }
             }
             Type::Callable(callable, _) => {
-                let visit = |t: &mut Type| self.tvars_to_tparams_for_type_alias(t, seen, tparams);
+                let visit = |t: &mut Type| {
+                    self.tvars_to_tparams_for_type_alias(
+                        t,
+                        seen_type_vars,
+                        seen_type_var_tuples,
+                        tparams,
+                    )
+                };
                 callable.visit_mut(visit);
             }
+            Type::Tuple(tuple) => {
+                let visit = |t: &mut Type| {
+                    self.tvars_to_tparams_for_type_alias(
+                        t,
+                        seen_type_vars,
+                        seen_type_var_tuples,
+                        tparams,
+                    )
+                };
+                tuple.visit_mut(visit);
+            }
             Type::TypeVar(ty_var) => {
-                let q = match seen.entry(ty_var.dupe()) {
+                let q = match seen_type_vars.entry(ty_var.dupe()) {
                     Entry::Occupied(e) => *e.get(),
                     Entry::Vacant(e) => {
                         let q = Quantified::type_var(self.uniques);
@@ -379,6 +409,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 *ty = Type::Quantified(q);
             }
+            Type::TypeVarTuple(ty_var_tuple) => {
+                let q = match seen_type_var_tuples.entry(ty_var_tuple.dupe()) {
+                    Entry::Occupied(e) => *e.get(),
+                    Entry::Vacant(e) => {
+                        let q = Quantified::type_var_tuple(self.uniques);
+                        e.insert(q);
+                        tparams.push(TParamInfo {
+                            name: ty_var_tuple.qname().id().clone(),
+                            quantified: q,
+                            restriction: Restriction::Unrestricted,
+                            default: None,
+                            variance: None,
+                        });
+                        q
+                    }
+                };
+                *ty = Type::Quantified(q);
+            }
+            Type::Unpack(box t) => self.tvars_to_tparams_for_type_alias(
+                t,
+                seen_type_vars,
+                seen_type_var_tuples,
+                tparams,
+            ),
             _ => {}
         }
     }
@@ -409,12 +463,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::ClassDef(cls) => Type::type_form(self.promote(cls, range)),
             t => t.clone(),
         };
-        let mut seen = SmallMap::new();
+        let mut seen_type_vars = SmallMap::new();
+        let mut seen_type_var_tuples = SmallMap::new();
         let mut tparams = Vec::new();
         match ty {
-            Type::Type(ref mut t) => {
-                self.tvars_to_tparams_for_type_alias(t, &mut seen, &mut tparams)
-            }
+            Type::Type(ref mut t) => self.tvars_to_tparams_for_type_alias(
+                t,
+                &mut seen_type_vars,
+                &mut seen_type_var_tuples,
+                &mut tparams,
+            ),
             _ => {}
         }
         let ta = Type::TypeAlias(TypeAlias::new(name.clone(), ty, style));
