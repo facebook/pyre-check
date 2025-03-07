@@ -143,8 +143,6 @@ let worker_job_main ic oc =
       exit 1
   | SharedMemory.Out_of_shared_memory ->
       Exit_status.(exit Out_of_shared_memory)
-  | SharedMemory.Hash_table_full ->
-      Exit_status.(exit Hash_table_full)
   | SharedMemory.Heap_full ->
       Exit_status.(exit Heap_full)
   | SharedMemory.Sql_assertion_failure err_num ->
@@ -155,6 +153,7 @@ let worker_job_main ic oc =
         | _ -> Exit_status.Sql_assertion_failure
       in
       Exit_status.exit exit_code
+  | SharedMemory.Hash_table_full as exn
   | exn ->
       let backtrace = Printexc.get_raw_backtrace () in
       send_response (Response.Failure { exn = Base.Exn.to_string exn; backtrace })

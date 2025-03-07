@@ -410,8 +410,12 @@ CAMLprim value hh_log_level(void) {
   CAMLreturn(Val_long(*log_level));
 }
 
-CAMLprim value hh_hash_used_slots(void) {
-  CAMLparam0();
+typedef struct {
+  uint64_t nonempty_slots;
+  uint64_t filled_slots;
+} slots_stats_t;
+
+static slots_stats_t get_slots_stats(void) {
   uint64_t filled_slots = 0;
   uint64_t nonempty_slots = 0;
   uintptr_t i = 0;
@@ -425,9 +429,18 @@ CAMLprim value hh_hash_used_slots(void) {
     filled_slots++;
   }
   assert(nonempty_slots == *hcounter);
+  slots_stats_t stats;
+  stats.filled_slots = filled_slots;
+  stats.nonempty_slots = nonempty_slots;
+  return stats;
+}
+
+CAMLprim value hh_hash_used_slots(void) {
+  CAMLparam0();
+  slots_stats_t stats = get_slots_stats();
   value connector = caml_alloc_tuple(2);
-  Field(connector, 0) = Val_long(filled_slots);
-  Field(connector, 1) = Val_long(nonempty_slots);
+  Field(connector, 0) = Val_long(stats.filled_slots);
+  Field(connector, 1) = Val_long(stats.nonempty_slots);
 
   CAMLreturn(connector);
 }
@@ -1253,6 +1266,13 @@ static void raise_hash_table_full(void) {
   static const value* exn = NULL;
   if (!exn)
     exn = caml_named_value("hash_table_full");
+  slots_stats_t stats = get_slots_stats();
+  fprintf(
+      stderr,
+      "nonempty_slots: %lu. filled_slots: %lu. hashtbl_size: %lu.\n",
+      stats.nonempty_slots,
+      stats.filled_slots,
+      hashtbl_size);
   caml_raise_constant(*exn);
 }
 
