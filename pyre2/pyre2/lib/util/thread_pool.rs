@@ -17,7 +17,7 @@ use crate::util::lock::Mutex;
 static THREADS: LazyLock<Mutex<Option<usize>>> = LazyLock::new(|| Mutex::new(None));
 
 /// Set up the global thread pool.
-pub fn init_rayon(threads: Option<usize>) {
+pub fn init_thread_pool(threads: Option<usize>) {
     *THREADS.lock() = threads;
 }
 

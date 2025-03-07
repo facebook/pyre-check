@@ -15,7 +15,7 @@ use clap::Parser;
 use clap::Subcommand;
 use pyre2::clap_env;
 use pyre2::get_args_expanded;
-use pyre2::init_rayon;
+use pyre2::init_thread_pool;
 use pyre2::init_tracing;
 use pyre2::run::BuckCheckArgs;
 use pyre2::run::CheckArgs;
@@ -159,7 +159,7 @@ fn run() -> anyhow::Result<ExitCode> {
         }
     } else {
         init_tracing(args.verbose, false);
-        init_rayon(if args.threads == 0 {
+        init_thread_pool(if args.threads == 0 {
             None
         } else {
             Some(args.threads)

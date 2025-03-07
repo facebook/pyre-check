@@ -57,6 +57,6 @@ pub use crate::util::args::get_args_expanded;
 pub use crate::util::globs::Globs;
 pub use crate::util::listing::FileList;
 pub use crate::util::notify_watcher::NotifyWatcher;
-pub use crate::util::rayon::init_rayon;
+pub use crate::util::thread_pool::init_thread_pool;
 pub use crate::util::trace::init_tracing;
 pub use crate::util::watcher::Watcher;

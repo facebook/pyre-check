@@ -36,7 +36,7 @@ use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
 use crate::types::class::Class;
 use crate::types::types::Type;
-use crate::util::rayon::init_rayon;
+use crate::util::thread_pool::init_thread_pool;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -319,7 +319,7 @@ impl Loader for TestEnv {
 pub fn init_test() {
     init_tracing(true, true);
     // Enough threads to see parallelism bugs, but not too many to debug through.
-    init_rayon(Some(3));
+    init_thread_pool(Some(3));
 }
 
 /// Should only be used from the `testcase!` macro.
