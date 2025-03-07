@@ -5,8 +5,7 @@
     "Line 85: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 44: Unexpected errors ['Expected a type form, got instance of `Forall[P, LegacyExplicitTypeAlias[GoodTypeAlias12, type[(ParamSpec(P)) -> None]]]`']",
-    "Line 60: Unexpected errors ['assert_type(Any, (...) -> None) failed']",
+    "Line 44: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias12`, got 0.']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
@@ -16,8 +15,7 @@
     "Line 112: Expected 1 errors",
     "Line 113: Expected 1 errors",
     "Line 117: Expected 1 errors",
-    "Line 58: Unexpected errors ['Expected a type form, got instance of `Forall[P, LegacyImplicitTypeAlias[GoodTypeAlias13, type[(ParamSpec(P)) -> None]]]`']",
-    "Line 72: Unexpected errors ['assert_type(Any, (...) -> None) failed']"
+    "Line 58: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias13`, got 0.']"
   ],
   "aliases_newtype.py": [
     "Line 47: Expected 1 errors"
@@ -416,8 +414,6 @@
     "Line 96: Unexpected errors ['assert_type(Bar[int, list[TypeVar[Z1]]], Bar[int, list[int]]) failed']"
   ],
   "generics_defaults_specialization.py": [
-    "Line 25: Unexpected errors ['Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`']",
-    "Line 26: Unexpected errors ['assert_type(Any, SomethingWithNoDefaults[int, str]) failed']",
     "Line 46: Unexpected errors ['assert_type(Bar[Any], Bar[str]) failed']"
   ],
   "generics_paramspec_basic.py": [
@@ -544,13 +540,9 @@
   "generics_typevartuple_specialization.py": [
     "Line 51: Unexpected errors ['assert_type(tuple[int, *tuple[Any, ...]], tuple[int]) failed']",
     "Line 59: Unexpected errors ['Class `Array2` uses type variables not specified in `Generic` or `Protocol` base']",
-    "Line 67: Unexpected errors ['Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`']",
-    "Line 68: Unexpected errors ['assert_type(Any, Array2[Any, tuple[Any]]) failed']",
-    "Line 72: Unexpected errors ['Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`']",
-    "Line 84: Unexpected errors ['Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`']",
-    "Line 92: Unexpected errors ['Expected a type form, got instance of `Forall[T, Ts, LegacyImplicitTypeAlias[VariadicTuple, type[tuple[T, *Ts]]]]`']",
+    "Line 67: Unexpected errors ['Expected 1 type argument for `Array1D`, got 0.']",
+    "Line 92: Unexpected errors ['Expected 2 type arguments for `VariadicTuple`, got 0.']",
     "Line 94: Unexpected errors ['assert_type(tuple[float, *tuple[Any, ...]], tuple[float]) failed']",
-    "Line 95: Unexpected errors ['assert_type(Any, tuple[Any, *tuple[Any, ...]]) failed']",
     "Line 153: Unexpected errors ['Unpacked argument cannot be used for type parameter T1.']",
     "Line 157: Unexpected errors ['assert_type(tuple[Any], tuple[*tuple[int, ...], int]) failed']"
   ],

@@ -89,32 +89,38 @@ def f(x: X[int]):
 testcase!(
     test_type_var_tuple_alias_generic,
     r#"
-from typing import assert_type
+from typing import Any, assert_type
 type X[*T] = tuple[*T]
 def f(x: X[int, str]):
     assert_type(x, tuple[int, str])
+def f2(x: X):
+    assert_type(x, tuple[Any, ...])
     "#,
 );
 
 testcase!(
     test_generic_type_var_tuple_alias_implicit,
     r#"
-from typing import TypeVarTuple, assert_type
+from typing import Any, TypeVarTuple, assert_type
 Ts = TypeVarTuple('Ts')
 X = tuple[*Ts]
 def f(x: X[int, str]):
     assert_type(x, tuple[int, str])
+def f2(x: X):
+    assert_type(x, tuple[Any, ...])
     "#,
 );
 
 testcase!(
     test_generic_type_var_tuple_alias_explicit,
     r#"
-from typing import TypeVarTuple, TypeAlias, assert_type
+from typing import Any, TypeVarTuple, TypeAlias, assert_type
 Ts = TypeVarTuple('Ts')
 X: TypeAlias = tuple[*Ts]
 def f(x: X[int, str]):
     assert_type(x, tuple[int, str])
+def f2(x: X):
+    assert_type(x, tuple[Any, ...])
     "#,
 );
 

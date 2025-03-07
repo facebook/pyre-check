@@ -4,22 +4,12 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "Expected a type form, got instance of `Forall[P, LegacyExplicitTypeAlias[GoodTypeAlias12, type[(ParamSpec(P)) -> None]]]`",
-      "description": "Expected a type form, got instance of `Forall[P, LegacyExplicitTypeAlias[GoodTypeAlias12, type[(ParamSpec(P)) -> None]]]`",
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias12`, got 0.",
+      "description": "Expected 1 type argument for `GoodTypeAlias12`, got 0.",
       "line": 44,
-      "name": "not-a-type",
+      "name": "bad-specialization",
       "stop_column": 25,
       "stop_line": 44
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, (...) -> None) failed",
-      "description": "assert_type(Any, (...) -> None) failed",
-      "line": 60,
-      "name": "assert-type",
-      "stop_column": 42,
-      "stop_line": 60
     },
     {
       "code": -2,
@@ -226,22 +216,12 @@
     {
       "code": -2,
       "column": 10,
-      "concise_description": "Expected a type form, got instance of `Forall[P, LegacyImplicitTypeAlias[GoodTypeAlias13, type[(ParamSpec(P)) -> None]]]`",
-      "description": "Expected a type form, got instance of `Forall[P, LegacyImplicitTypeAlias[GoodTypeAlias13, type[(ParamSpec(P)) -> None]]]`",
+      "concise_description": "Expected 1 type argument for `GoodTypeAlias13`, got 0.",
+      "description": "Expected 1 type argument for `GoodTypeAlias13`, got 0.",
       "line": 58,
-      "name": "not-a-type",
+      "name": "bad-specialization",
       "stop_column": 25,
       "stop_line": 58
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, (...) -> None) failed",
-      "description": "assert_type(Any, (...) -> None) failed",
-      "line": 72,
-      "name": "assert-type",
-      "stop_column": 42,
-      "stop_line": 72
     },
     {
       "code": -2,
@@ -6139,26 +6119,6 @@
   "generics_defaults_specialization.py": [
     {
       "code": -2,
-      "column": 15,
-      "concise_description": "Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`",
-      "description": "Expected a type form, got instance of `Forall[DefaultStrT, LegacyExplicitTypeAlias[MyAlias, type[SomethingWithNoDefaults[int, DefaultStrT]]]]`",
-      "line": 25,
-      "name": "not-a-type",
-      "stop_column": 22,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, SomethingWithNoDefaults[int, str]) failed",
-      "description": "assert_type(Any, SomethingWithNoDefaults[int, str]) failed",
-      "line": 26,
-      "name": "assert-type",
-      "stop_column": 55,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Expected 1 type argument for `MyAlias`, got 2.",
       "description": "Expected 1 type argument for `MyAlias`, got 2.",
@@ -7822,50 +7782,20 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`",
-      "description": "Expected a type form, got instance of `Forall[DType, LegacyImplicitTypeAlias[Array1D, type[Array2[DType, tuple[Any]]]]]`",
+      "concise_description": "Expected 1 type argument for `Array1D`, got 0.",
+      "description": "Expected 1 type argument for `Array1D`, got 0.",
       "line": 67,
-      "name": "not-a-type",
+      "name": "bad-specialization",
       "stop_column": 23,
       "stop_line": 67
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, Array2[Any, tuple[Any]]) failed",
-      "description": "assert_type(Any, Array2[Any, tuple[Any]]) failed",
-      "line": 68,
-      "name": "assert-type",
-      "stop_column": 37,
-      "stop_line": 68
-    },
-    {
-      "code": -2,
-      "column": 39,
-      "concise_description": "Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`",
-      "description": "Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`",
-      "line": 72,
-      "name": "not-a-type",
-      "stop_column": 49,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`",
-      "description": "Expected a type form, got instance of `Forall[Shape, LegacyImplicitTypeAlias[FloatArray, type[Array2[float, tuple[*Shape]]]]]`",
-      "line": 84,
-      "name": "not-a-type",
-      "stop_column": 26,
-      "stop_line": 84
-    },
-    {
-      "code": -2,
       "column": 67,
-      "concise_description": "Expected a type form, got instance of `Forall[T, Ts, LegacyImplicitTypeAlias[VariadicTuple, type[tuple[T, *Ts]]]]`",
-      "description": "Expected a type form, got instance of `Forall[T, Ts, LegacyImplicitTypeAlias[VariadicTuple, type[tuple[T, *Ts]]]]`",
+      "concise_description": "Expected 2 type arguments for `VariadicTuple`, got 0.",
+      "description": "Expected 2 type arguments for `VariadicTuple`, got 0.",
       "line": 92,
-      "name": "not-a-type",
+      "name": "bad-specialization",
       "stop_column": 80,
       "stop_line": 92
     },
@@ -7878,16 +7808,6 @@
       "name": "assert-type",
       "stop_column": 33,
       "stop_line": 94
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, tuple[Any, *tuple[Any, ...]]) failed",
-      "description": "assert_type(Any, tuple[Any, *tuple[Any, ...]]) failed",
-      "line": 95,
-      "name": "assert-type",
-      "stop_column": 49,
-      "stop_line": 95
     },
     {
       "code": -2,

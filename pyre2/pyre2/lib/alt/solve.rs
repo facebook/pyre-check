@@ -2090,6 +2090,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// For example, in `def f(x: int): ...`, we evaluate `int` as a value, gettings its type as
     /// `type[int]`, then call `untype(type[int])` to get the `int` annotation.
     fn untype(&self, ty: Type, range: TextRange, errors: &ErrorCollector) -> Type {
+        let mut ty = ty;
+        if let Type::Forall(box (name, tparams, t)) = ty {
+            // A generic type alias with no type arguments is OK if all the type params have defaults
+            let targs = self.check_and_create_targs(&name, &tparams, Vec::new(), range, errors);
+            let param_map = tparams
+                .quantified()
+                .zip(targs.as_slice().iter().cloned())
+                .collect::<SmallMap<_, _>>();
+            ty = t.subst(&param_map)
+        };
         if let Some(t) = self.untype_opt(ty.clone(), range) {
             t
         } else {
