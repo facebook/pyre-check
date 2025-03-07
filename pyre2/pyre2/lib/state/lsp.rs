@@ -29,7 +29,7 @@ use crate::util::prelude::VecExt;
 use crate::visitors::Visitors;
 
 impl State {
-    pub fn get_type(&self, handle: &Handle, key: &Key) -> Option<Arc<Type>> {
+    fn get_type(&self, handle: &Handle, key: &Key) -> Option<Arc<Type>> {
         let idx = self.get_bindings(handle)?.key_to_idx(key);
         self.get_answers(handle)?.get_idx(idx)
     }
