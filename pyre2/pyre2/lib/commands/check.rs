@@ -214,7 +214,6 @@ impl Args {
     fn run_inner(
         self,
         files_to_check: impl FileList,
-        // TODO: use this to calculate the config for each checked file
         config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
@@ -236,8 +235,11 @@ impl Args {
         let mut partition_by_search_roots: SmallMap<Vec<PathBuf>, Vec<(PathBuf, ConfigFile)>> =
             SmallMap::new();
         for x in files_and_configs {
-            // TODO: Read from config file if there's no CLI override
-            let search_roots = include.clone();
+            let search_roots = if include.is_empty() {
+                x.1.search_roots().clone()
+            } else {
+                include.clone()
+            };
             partition_by_search_roots
                 .entry(search_roots)
                 .or_default()
@@ -252,14 +254,14 @@ impl Args {
             .into_iter()
             .flat_map(|(search_roots, files_and_configs)| {
                 let files_with_module_name_and_metadata =
-                    files_and_configs.into_map(|(path, _config)| {
+                    files_and_configs.into_map(|(path, config)| {
                         let module_name = module_from_path(&path, &search_roots);
-                        // TODO: Look at config file if no CLI override is provided
-                        let runtime_metadata = match cli_python_version_override {
-                            None => RuntimeMetadata::default(),
-                            Some(version) => RuntimeMetadata::new(version, "linux".to_owned()),
+                        let version = match cli_python_version_override {
+                            Some(version) => version,
+                            None => *config.python_version(),
                         };
-                        (path, module_name, runtime_metadata)
+                        let platform = config.python_platform().to_owned();
+                        (path, module_name, RuntimeMetadata::new(version, platform))
                     });
                 let loader = create_loader(
                     search_roots,
