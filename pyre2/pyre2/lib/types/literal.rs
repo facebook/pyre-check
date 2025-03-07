@@ -24,7 +24,6 @@ use ruff_python_ast::Int;
 use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
-use ruff_text_size::TextRange;
 
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
@@ -145,39 +144,25 @@ impl Lit {
         }
     }
 
-    pub fn negate(&self, stdlib: &Stdlib, range: TextRange, errors: &ErrorCollector) -> Type {
+    /// Returns the negated type, or None if literal can't be negated.
+    pub fn negate(&self, stdlib: &Stdlib) -> Option<Type> {
         match self {
             Lit::Int(x) => match x.checked_neg() {
-                Some(x) => Lit::Int(x).to_type(),
-                None => stdlib.int().to_type(), // Loss of precision
+                Some(x) => Some(Lit::Int(x).to_type()),
+                None => Some(stdlib.int().to_type()), // Loss of precision
             },
-            _ => {
-                errors.add(
-                    range,
-                    format!("Cannot negate type {self}"),
-                    ErrorKind::UnsupportedOperand,
-                    None,
-                );
-                Type::any_error()
-            }
+            _ => None,
         }
     }
 
-    pub fn invert(&self, range: TextRange, errors: &ErrorCollector) -> Type {
+    /// Returns the inverted type, or None if literal can't be inverted.
+    pub fn invert(&self) -> Option<Type> {
         match self {
             Lit::Int(x) => {
                 let x = !x;
-                Lit::Int(x).to_type()
+                Some(Lit::Int(x).to_type())
             }
-            _ => {
-                errors.add(
-                    range,
-                    format!("Cannot invert type {self}"),
-                    ErrorKind::UnsupportedOperand,
-                    None,
-                );
-                Type::any_error()
-            }
+            _ => None,
         }
     }
 

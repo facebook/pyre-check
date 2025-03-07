@@ -241,7 +241,12 @@ assert_type(~c, Literal[100])
 testcase!(
     test_unary_error,
     r#"
-+None  # E: Unary + is not supported on None
++None  # E: Unary `+` is not supported on `None`
+-"oops"  # E: Unary `-` is not supported on `Literal['oops']`
+class A:
+    def __invert__(self, extra_arg):
+        pass
+~A()  # E: Unary `~` is not supported on `A`\n  Missing argument `extra_arg` in function `A.__invert__`
     "#,
 );
 

@@ -15,8 +15,11 @@ use crate::types::types::Type;
 impl ErrorContext {
     pub fn format(&self) -> String {
         match self {
-            ErrorContext::BadContextManager(cm) => {
+            Self::BadContextManager(cm) => {
                 format!("Cannot use `{cm}` as a context manager")
+            }
+            Self::UnaryOp(op, target) => {
+                format!("Unary `{}` is not supported on `{}`", op.as_str(), target,)
             }
         }
     }

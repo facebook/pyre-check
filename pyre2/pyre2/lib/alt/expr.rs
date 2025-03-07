@@ -34,6 +34,7 @@ use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
+use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
@@ -654,26 +655,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::BinOp(x) => self.binop_infer(x, errors),
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand, errors);
-                let unop = |t: &Type, f: &dyn Fn(&Lit) -> Type, method: &Name| match t {
-                    Type::Literal(lit) => f(lit),
-                    Type::ClassType(_) => {
-                        self.call_method_or_error(t, method, x.range, &[], &[], errors, None)
+                let unop = |t: &Type, f: &dyn Fn(&Lit) -> Option<Type>, method: &Name| {
+                    let context = ErrorContext::UnaryOp(x.op, t.clone());
+                    match t {
+                        Type::Literal(lit) if let Some(ret) = f(lit) => ret,
+                        Type::ClassType(_) => self.call_method_or_error(
+                            t,
+                            method,
+                            x.range,
+                            &[],
+                            &[],
+                            errors,
+                            Some(&context),
+                        ),
+                        _ => self.error(
+                            errors,
+                            x.range,
+                            ErrorKind::UnsupportedOperand,
+                            None,
+                            context.format(),
+                        ),
                     }
-                    _ => self.error(
-                        errors,
-                        x.range,
-                        ErrorKind::UnsupportedOperand,
-                        None,
-                        format!("Unary {} is not supported on {}", x.op.as_str(), t),
-                    ),
                 };
                 self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
-                        let f = |lit: &Lit| lit.negate(self.stdlib, x.range, errors);
+                        let f = |lit: &Lit| lit.negate(self.stdlib);
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
-                        let f = |lit: &Lit| lit.clone().to_type();
+                        let f = |lit: &Lit| Some(lit.clone().to_type());
                         unop(t, &f, &dunder::POS)
                     }
                     UnaryOp::Not => match t.as_bool() {
@@ -681,7 +691,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Some(b) => Type::Literal(Lit::Bool(!b)),
                     },
                     UnaryOp::Invert => {
-                        let f = |lit: &Lit| lit.invert(x.range, errors);
+                        let f = |lit: &Lit| lit.invert();
                         unop(t, &f, &dunder::INVERT)
                     }
                 })
