@@ -18,6 +18,7 @@ In this guide, we'll explore the different features of Python's type system, inc
 Python's built-in types can be used to write many simple type hints.
 <pre>
   <TryPyre2BrowserOnly
+  sampleFilename="basic_types.py"
   editorHeight={"auto"}
   codeSample={`# Example: Basic Types
 
@@ -52,6 +53,7 @@ Defining the parameter and return types for a function doesn't just help prevent
 <pre>
   <TryPyre2BrowserOnly
   editorHeight={"auto"}
+  sampleFilename="functions.py"
   codeSample={`# Example: Functions
 
 from typing import reveal_type
@@ -77,6 +79,7 @@ Generics allow you to define reusable functions and classes that work with multi
 <pre>
   <TryPyre2BrowserOnly
     editorHeight={"auto"}
+    sampleFilename="generics.py"
     codeSample={`# Example: Generic Classes
 
 from typing import reveal_type
@@ -101,6 +104,7 @@ Protocols enable structural typing, which allows you to define interfaces withou
 <pre>
   <TryPyre2BrowserOnly
     editorHeight={"auto"}
+    sampleFilename="protocols.py"
     codeSample={`# Example: Structural Typing with Protocols
 
 from typing import Iterable, Protocol
@@ -132,6 +136,7 @@ Dataclasses allow you to create type-safe data structures while minimizing boile
 <pre>
   <TryPyre2BrowserOnly
     editorHeight={"auto"}
+    sampleFilename="data_classes.py"
     codeSample={`# Example: Dataclasses
 
 from dataclasses import dataclass
@@ -156,6 +161,7 @@ Typed dictionaries enable you to define dictionaries with specific key-value typ
 <pre>
   <TryPyre2BrowserOnly
     editorHeight={"auto"}
+    sampleFilename="typed_dict.py"
     codeSample={`# Example: TypedDict
 
 from typing import TypedDict
@@ -178,6 +184,7 @@ Overloads allow you to define multiple function signatures for a single function
 <pre>
   <TryPyre2BrowserOnly
     editorHeight={"auto"}
+    sampleFilename="overloads.py"
     codeSample={`# Example: Overloads
 
 from typing import overload, reveal_type

@@ -13,36 +13,34 @@ import flowLanguageConfiguration from './flow-configuration.json';
 
 type Position = {lineNumber: number, column: number};
 
-let autoCompleteFunctionForMonaco = (line: number, column: number): any => {
+const defaultAutoCompleteFunctionForMonaco = (line: number, column: number): any => {
   throw 'not implemented';
 };
+const autoCompleteFunctionsForMonaco = new Map<any, typeof defaultAutoCompleteFunctionForMonaco>();
 
-function setAutoCompleteFunction(f: (_l: number, _c: number) => any): void {
-  autoCompleteFunctionForMonaco = f;
+function setAutoCompleteFunction(model: any, f: (_l: number, _c: number) => any): void {
+  autoCompleteFunctionsForMonaco.set(model, f);
 }
 
-let getDefFunctionForMonaco = (_l: number, _c: number): any => null;
+const defaultGetDefFunctionForMonaco = (_l: number, _c: number): any => null;
+const getDefFunctionsForMonaco = new Map<any, typeof defaultGetDefFunctionForMonaco>();
 
-function setGetDefFunction(f: (_l: number, _c: number) => any): void {
-  getDefFunctionForMonaco = (l, c) => f(l, c);
+function setGetDefFunction(model: any, f: (_l: number, _c: number) => any): void {
+  getDefFunctionsForMonaco.set(model, f);
 }
 
-let hoverFunctionForMonaco = (_l: number, _c: number): any => null;
+let defaultHoverFunctionForMonaco = (_l: number, _c: number): any => null;
+const hoverFunctionsForMonaco = new Map<any, typeof defaultHoverFunctionForMonaco>();
 
-function setHoverFunctionForMonaco(f: (_l: number, _c: number) => any): void {
-  hoverFunctionForMonaco = f;
+function setHoverFunctionForMonaco(model: any, f: (_l: number, _c: number) => any): void {
+  hoverFunctionsForMonaco.set(model, f);
 }
 
-let inlayHintsProvider: interface {  dispose():void } = { dispose(){} };
+const defaultInlayHintFunctionForMonaco = (): any => [];
+const inlayHintFunctionsForMonaco = new Map<any, typeof defaultInlayHintFunctionForMonaco>();
 
-function setInlayHintFunctionForMonaco(f: () => any): void {
-  inlayHintsProvider.dispose();
-  inlayHintsProvider = monaco.languages.registerInlayHintsProvider('python', {
-    provideInlayHints(model) {
-      const hints = f();
-      return {hints};
-    },
-  });
+function setInlayHintFunctionForMonaco(model: any, f: () => any): void {
+  inlayHintFunctionsForMonaco.set(model, f);
 }
 
 monaco.languages.register({
@@ -125,7 +123,8 @@ monaco.languages.registerCompletionItemProvider('python', {
 
   provideCompletionItems(model, position) {
     try {
-      const result = autoCompleteFunctionForMonaco(
+      const f = autoCompleteFunctionsForMonaco.get(model) ?? defaultAutoCompleteFunctionForMonaco;
+      const result = f(
         position.lineNumber,
         position.column,
       );
@@ -140,7 +139,8 @@ monaco.languages.registerCompletionItemProvider('python', {
 monaco.languages.registerDefinitionProvider('python', {
   provideDefinition(model, position) {
     try {
-      const range = getDefFunctionForMonaco(
+      const f = getDefFunctionsForMonaco.get(model) ?? defaultGetDefFunctionForMonaco;
+      const range = f(
         position.lineNumber,
         position.column,
       );
@@ -153,12 +153,19 @@ monaco.languages.registerDefinitionProvider('python', {
 });
 monaco.languages.registerHoverProvider('python', {
   provideHover(model, position) {
-    const result = hoverFunctionForMonaco(position.lineNumber, position.column);
+    const f = hoverFunctionsForMonaco.get(model) ?? defaultHoverFunctionForMonaco;
+    const result = f(position.lineNumber, position.column);
     return result;
   },
 });
+monaco.languages.registerInlayHintsProvider('python', {
+  provideInlayHints(model) {
+    const f = inlayHintFunctionsForMonaco.get(model) ?? defaultInlayHintFunctionForMonaco;
+    const hints = f();
+    return {hints};
+  },
+});
 loader.config({monaco});
-
 export {
   monaco,
   setAutoCompleteFunction,

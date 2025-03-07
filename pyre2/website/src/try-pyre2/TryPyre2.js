@@ -48,6 +48,7 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
 
 export default component TryPyre2(
   editorHeight: number | 'auto' = 'auto',
+  sampleFilename: string,
   codeSample: string = DEFAULT_PYTHON_PROGRAM,
   showErrorPanel: boolean = true,
 ) {
@@ -78,19 +79,24 @@ export default component TryPyre2(
       });
   }, []);
 
+  const model = monaco.editor.getModels().filter(model => model?.uri?.path === `/${sampleFilename}`)[0];
+
   useEffect(() => {
+    if (model != null) {
+      // Force update to trigger initial inlay hint
+      model.setValue(model.getValue());
+    }
     forceRecheck();
-  }, [pyreService]);
+  }, [pyreService, model]);
 
   function forceRecheck() {
-    const model = monaco.editor.getModels()[0];
     if (model == null || pyreService == null) return;
     const value = model.getValue();
 
-    setAutoCompleteFunction((l, c) => pyreService.autoComplete(l, c));
-    setGetDefFunction((l, c) => pyreService.gotoDefinition(l, c));
-    setHoverFunctionForMonaco((l, c) => pyreService.queryType(l, c));
-    setInlayHintFunctionForMonaco(() => pyreService.inlayHint());
+    setAutoCompleteFunction(model, (l, c) => pyreService.autoComplete(l, c));
+    setGetDefFunction(model, (l, c) => pyreService.gotoDefinition(l, c));
+    setHoverFunctionForMonaco(model, (l, c) => pyreService.queryType(l, c));
+    setInlayHintFunctionForMonaco(model, () => pyreService.inlayHint());
 
     // typecheck on edit
     try {
@@ -120,6 +126,7 @@ export default component TryPyre2(
       <div className={styles.code}>
         <div className={styles.editorContainer}>
           <Editor
+            defaultPath={sampleFilename}
             defaultValue={codeSample}
             defaultLanguage="python"
             theme="vs-light"
