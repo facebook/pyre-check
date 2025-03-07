@@ -28,7 +28,7 @@ export default component TryPyre2Page() {
       <BrowserOnly>
         {() => (
           <React.Suspense fallback={<div>Loading...</div>}>
-            <TryPyre2 sampleFilename="playground.py" />
+            <TryPyre2 sampleFilename="playground.py" editorHeight={600} />
           </React.Suspense>
         )}
       </BrowserOnly>
