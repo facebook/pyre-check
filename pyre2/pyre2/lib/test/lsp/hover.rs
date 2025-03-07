@@ -190,3 +190,25 @@ Hover Result: `int`
         report.trim(),
     );
 }
+
+#[test]
+fn var_expansion_test() {
+    let code = r#"
+x = 5
+while True:
+  x = x + 1
+y = x
+#   ^
+"#;
+    let report = get_batched_lsp_operations_report(&[("main", code)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+5 | y = x
+        ^
+Hover Result: `Literal[5] | @_`
+"#
+        .trim(),
+        report.trim(),
+    );
+}
