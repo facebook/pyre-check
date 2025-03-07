@@ -310,6 +310,12 @@ impl Solver {
         v
     }
 
+    pub fn for_display(&self, t: Type) -> Type {
+        let mut t = self.expand(t);
+        self.simplify_mut(&mut t);
+        t.deterministic_printing()
+    }
+
     /// Generate an error message that `got <: want` failed.
     pub fn error(
         &self,
@@ -320,16 +326,13 @@ impl Solver {
         loc: TextRange,
         tcc: &TypeCheckContext,
     ) {
-        let prepare = |t: &Type| {
-            let mut t = self.expand(t.clone());
-            self.simplify_mut(&mut t);
-            t.deterministic_printing()
-        };
-
         errors.add(
             loc,
-            tcc.kind
-                .format_error(&prepare(got), &prepare(want), errors.module_info().name()),
+            tcc.kind.format_error(
+                &self.for_display(got.clone()),
+                &self.for_display(want.clone()),
+                errors.module_info().name(),
+            ),
             error_kind,
             tcc.context.as_ref(),
         );
