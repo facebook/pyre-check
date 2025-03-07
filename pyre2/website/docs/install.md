@@ -3,4 +3,4 @@ title: Installation
 slug: /install
 ---
 
-Instructions for installation
+Pyrefly isn't ready just yet, but you can see our roadmap here: {TODO LINK}

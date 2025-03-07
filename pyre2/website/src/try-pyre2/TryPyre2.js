@@ -96,7 +96,8 @@ export default component TryPyre2(
     // typecheck on edit
     try {
       pyreService.updateSource(model.getValue());
-      const errors = pyreService.getErrors();
+      const errors =
+        pyreService.getErrors() as $ReadOnlyArray<PyreflyErrorMessage>;
       monaco.editor.setModelMarkers(model, 'default', pyreService.getErrors());
       setInternalError('');
       setErrors(errors);

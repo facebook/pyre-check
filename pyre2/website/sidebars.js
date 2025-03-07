@@ -15,5 +15,16 @@
  * For categories, the first item must be the index page.
  */
 module.exports = {
-  docsSidebar: [],
+  docsSidebar: [
+    {
+      type: 'category',
+      label: 'Introduction',
+      items: ['getting-started', 'install'],
+    },
+    {
+      type: 'category',
+      label: 'Internal Docs',
+      items: ['fb/error-kinds'],
+    },
+  ],
 };

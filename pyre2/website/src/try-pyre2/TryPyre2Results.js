@@ -32,7 +32,7 @@ component ErrorMessage(error: PyreflyErrorMessage) {
 
 export default component TryPyre2Results(
   loading: boolean,
-  errors: any,
+  errors: $ReadOnlyArray<PyreflyErrorMessage>,
   internalError: string,
 ) {
   const [activeToolbarTab, setActiveToolbarTab] = useState('errors');

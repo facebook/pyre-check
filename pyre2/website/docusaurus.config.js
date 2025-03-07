@@ -11,6 +11,44 @@ const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 const webpack = require('webpack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
+function getNavBarItems() {
+  return [
+    process.env.INTERNAL_STATIC_DOCS
+      ? {
+          to: 'en/docs/',
+          activeBasePath: 'en/docs/',
+          label: 'Docs',
+          position: 'left',
+        }
+      : null,
+    {
+      to: 'en/docs/',
+      activeBasePath: 'en/docs/',
+      label: 'Docs',
+      position: 'left',
+    },
+    {
+      to: 'en/docs/learn-python-typing/',
+      activeBasePath: 'en/docs/learn-python-typing',
+      label: 'Learn Python Typing',
+      position: 'left',
+    },
+    {
+      to: 'try/',
+      activeBasePath: 'try',
+      label: 'Try',
+      position: 'left',
+    },
+    // Please keep GitHub link to the right for consistency.
+    {
+      href: 'https://github.com/facebook/pyrefly',
+      'aria-label': 'GitHub',
+      position: 'right',
+      className: 'navbar__icon github__link',
+    },
+  ].filter(x => x != null);
+}
+
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
   title: 'Pyrefly',
@@ -81,40 +119,11 @@ module.exports = {
     },
     navbar: {
       title: 'Pyrefly',
-      items: [
-        {
-          to: 'en/docs/learn-python-typing/',
-          activeBasePath: 'en/docs/learn-python-typing',
-          label: 'Learn Python Typing',
-          position: 'left',
-        },
-        {
-          to: 'try/',
-          activeBasePath: 'try',
-          label: 'Try',
-          position: 'left',
-        },
-        // Please keep GitHub link to the right for consistency.
-        {
-          href: 'https://github.com/facebook/pyrefly',
-          'aria-label': 'GitHub',
-          position: 'right',
-          className: 'navbar__icon github__link',
-        },
-      ],
+      items: getNavBarItems(),
     },
     footer: {
       style: 'dark',
       links: [
-        {
-          title: 'Learn',
-          items: [
-            {
-              label: 'Getting Started',
-              to: 'en/docs/getting-started',
-            },
-          ],
-        },
         {
           title: 'Community',
           items: [
