@@ -161,6 +161,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn make_call_target_and_call(
+        &self,
+        callee_ty: Type,
+        method_name: &Name,
+        range: TextRange,
+        args: &[CallArg],
+        keywords: &[Keyword],
+        errors: &ErrorCollector,
+    ) -> Type {
+        let call_target =
+            self.as_call_target_or_error(callee_ty, CallStyle::Method(method_name), range, errors);
+        self.call_infer(call_target, args, keywords, range, errors)
+    }
+
     /// Calls a method. If no attribute exists with the given method name, returns None without attempting the call.
     pub fn call_method(
         &self,
@@ -178,9 +192,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             errors,
             "Expr::call_method",
         )?;
-        let call_target =
-            self.as_call_target_or_error(callee_ty, CallStyle::Method(method_name), range, errors);
-        Some(self.call_infer(call_target, args, keywords, range, errors))
+        Some(self.make_call_target_and_call(callee_ty, method_name, range, args, keywords, errors))
     }
 
     /// Calls a method. If no attribute exists with the given method name, logs an error and calls the method with
@@ -194,22 +206,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         keywords: &[Keyword],
         errors: &ErrorCollector,
     ) -> Type {
-        if let Some(ret) = self.call_method(ty, method_name, range, args, keywords, errors) {
-            ret
-        } else {
-            self.call_infer(
-                self.error_call_target(
-                    errors,
-                    range,
-                    format!("`{ty}` has no attribute `{method_name}`"),
-                    ErrorKind::MissingAttribute,
-                ),
-                args,
-                keywords,
-                range,
-                errors,
-            )
-        }
+        let callee_ty =
+            self.type_of_attr_get(ty.clone(), method_name, range, errors, "Expr::call_method");
+        self.make_call_target_and_call(callee_ty, method_name, range, args, keywords, errors)
     }
 
     /// If the metaclass defines a custom `__call__`, call it. If the `__call__` comes from `type`, ignore

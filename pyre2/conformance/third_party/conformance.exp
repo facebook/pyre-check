@@ -4954,8 +4954,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`Spam` has no attribute `__iadd__`",
-      "description": "`Spam` has no attribute `__iadd__`",
+      "concise_description": "Object of class `Spam` has no attribute `__iadd__`",
+      "description": "Object of class `Spam` has no attribute `__iadd__`",
       "line": 42,
       "name": "missing-attribute",
       "stop_column": 10,
@@ -8732,7 +8732,7 @@
       "concise_description": "TODO: Expr::call_method attribute base undefined for type: Literal[3, 4, 5] (trying to access __iadd__)",
       "description": "TODO: Expr::call_method attribute base undefined for type: Literal[3, 4, 5] (trying to access __iadd__)",
       "line": 33,
-      "name": "internal-error",
+      "name": "missing-attribute",
       "stop_column": 11,
       "stop_line": 33
     }
@@ -9027,8 +9027,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "`Point` has no attribute `__setitem__`",
-      "description": "`Point` has no attribute `__setitem__`",
+      "concise_description": "Object of class `Point` has no attribute `__setitem__`",
+      "description": "Object of class `Point` has no attribute `__setitem__`",
       "line": 41,
       "name": "missing-attribute",
       "stop_column": 5,
@@ -10077,8 +10077,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "`int` has no attribute `__iadd__`",
-      "description": "`int` has no attribute `__iadd__`",
+      "concise_description": "Object of class `int` has no attribute `__iadd__`",
+      "description": "Object of class `int` has no attribute `__iadd__`",
       "line": 67,
       "name": "missing-attribute",
       "stop_column": 22,
@@ -10177,8 +10177,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "`Literal[3]` has no attribute `__iadd__`",
-      "description": "`Literal[3]` has no attribute `__iadd__`",
+      "concise_description": "Object of class `int` has no attribute `__iadd__`",
+      "description": "Object of class `int` has no attribute `__iadd__`",
       "line": 145,
       "name": "missing-attribute",
       "stop_column": 11,
