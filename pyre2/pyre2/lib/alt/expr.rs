@@ -668,6 +668,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             Some(&context),
                         ),
+                        Type::Literal(Lit::Enum(box (cls, ..))) => self.call_method_or_error(
+                            &cls.clone().to_type(),
+                            method,
+                            x.range,
+                            &[],
+                            &[],
+                            errors,
+                            Some(&context),
+                        ),
                         _ => self.error(
                             errors,
                             x.range,
@@ -683,7 +692,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
-                        let f = |lit: &Lit| Some(lit.clone().to_type());
+                        let f = |lit: &Lit| lit.positive();
                         unop(t, &f, &dunder::POS)
                     }
                     UnaryOp::Not => match t.as_bool() {

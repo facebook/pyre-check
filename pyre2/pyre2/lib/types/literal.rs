@@ -155,6 +155,16 @@ impl Lit {
         }
     }
 
+    /// Returns `+self` if the `+` operation is allowed, None otherwise.
+    pub fn positive(&self) -> Option<Type> {
+        match self {
+            Lit::Int(_) => Some(self.clone().to_type()),
+            Lit::Bool(true) => Some(Lit::Int(1).to_type()),
+            Lit::Bool(false) => Some(Lit::Int(0).to_type()),
+            _ => None,
+        }
+    }
+
     /// Returns the inverted type, or None if literal can't be inverted.
     pub fn invert(&self) -> Option<Type> {
         match self {
