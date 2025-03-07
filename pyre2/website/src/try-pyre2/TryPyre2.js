@@ -56,6 +56,7 @@ export default component TryPyre2(
 ) {
   const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
+  const [errors, setErrors] = useState<any>([]);
   const [internalError, setInternalError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
@@ -94,11 +95,14 @@ export default component TryPyre2(
     // typecheck on edit
     try {
       pyreService.updateSource(model.getValue());
+      const errors = pyreService.getErrors();
       monaco.editor.setModelMarkers(model, 'default', pyreService.getErrors());
       setInternalError('');
+      setErrors(errors);
     } catch (e) {
       console.error(e);
       setInternalError(JSON.stringify(e));
+      setErrors([]);
     }
   }
 
@@ -130,6 +134,11 @@ export default component TryPyre2(
           />
         </div>
       </div>
+      <TryPyre2Results
+        loading={loading}
+        errors={errors}
+        internalError={internalError}
+      />
     </div>
   );
 }
