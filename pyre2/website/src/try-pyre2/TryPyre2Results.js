@@ -32,7 +32,7 @@ component ErrorMessage(error: PyreflyErrorMessage) {
 
 export default component TryPyre2Results(
   loading: boolean,
-  errors: $ReadOnlyArray<PyreflyErrorMessage>,
+  errors: ?$ReadOnlyArray<PyreflyErrorMessage>,
   internalError: string,
 ) {
   const [activeToolbarTab, setActiveToolbarTab] = useState('errors');
@@ -73,7 +73,9 @@ export default component TryPyre2Results(
           <ul>
             {internalError ? (
               <li>TryPyrefly encountered an internal error: {internalError}</li>
-            ) : errors.length === 0 && errors === undefined ? (
+            ) : errors === undefined || errors === null ? (
+              <li>TryPyrefly failed to fetch errors</li>
+            ) : errors?.length === 0 ? (
               <li>No errors!</li>
             ) : (
               errors.map((error, i) => (

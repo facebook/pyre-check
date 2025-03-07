@@ -57,7 +57,9 @@ export default component TryPyre2(
 ) {
   const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
-  const [errors, setErrors] = useState<$ReadOnlyArray<PyreflyErrorMessage>>([]);
+  const [errors, setErrors] = useState<?$ReadOnlyArray<PyreflyErrorMessage>>(
+    [],
+  );
   const [internalError, setInternalError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
@@ -97,7 +99,7 @@ export default component TryPyre2(
     try {
       pyreService.updateSource(model.getValue());
       const errors =
-        pyreService.getErrors() as $ReadOnlyArray<PyreflyErrorMessage>;
+        pyreService.getErrors() as ?$ReadOnlyArray<PyreflyErrorMessage>;
       monaco.editor.setModelMarkers(model, 'default', pyreService.getErrors());
       setInternalError('');
       setErrors(errors);
