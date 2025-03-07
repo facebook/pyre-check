@@ -36,14 +36,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let expr_b = &args[1];
             let a = self.expr_infer(expr_a, errors);
             let b = self.expr_untype(expr_b, errors);
-            let a = self.canonicalize_all_class_types(
-                self.solver().deep_force(a).explicit_any().anon_callables(),
-                expr_a.range(),
-            );
-            let b = self.canonicalize_all_class_types(
-                self.solver().deep_force(b).explicit_any().anon_callables(),
-                expr_b.range(),
-            );
+            let a = self
+                .canonicalize_all_class_types(self.solver().deep_force(a), expr_a.range())
+                .explicit_any()
+                .anon_callables();
+            let b = self
+                .canonicalize_all_class_types(self.solver().deep_force(b), expr_b.range())
+                .explicit_any()
+                .anon_callables();
             if a != b {
                 self.error(
                     errors,
