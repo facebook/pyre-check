@@ -194,6 +194,7 @@ module.exports = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+        enableEditor: true,
         googleAnalytics: process.env.INTERNAL_STATIC_DOCS
           ? undefined
           : {trackingID: 'G-GSX14JC495', anonymizeIP: true},
