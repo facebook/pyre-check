@@ -38,7 +38,7 @@ GoodNewType1 = NewType("GoodNewType1", list)
 
 GoodNewType2 = NewType("GoodNewType2", GoodNewType1) 
 
-nt1: GoodNewType1[int] # E: Expected 0 type arguments for class `GoodNewType1`, got 1.
+nt1: GoodNewType1[int] # E: Expected 0 type arguments for `GoodNewType1`, got 1.
 
      "#,
 );

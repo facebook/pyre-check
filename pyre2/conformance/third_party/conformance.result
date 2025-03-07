@@ -362,7 +362,7 @@
     "Line 39: Expected 1 errors",
     "Line 19: Unexpected errors ['Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`', 'Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
-    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for class `Color`, got 1.', \"Expected a type form, got instance of `Literal['RED']`\"]",
+    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for `Color`, got 1.', \"Expected a type form, got instance of `Literal['RED']`\"]",
     "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
   ],
   "enums_definition.py": [],

@@ -91,12 +91,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn check_and_create_targs(
         &self,
-        cls: &Class,
+        name: &Name,
+        tparams: &TParams,
         targs: Vec<Type>,
         range: TextRange,
         errors: &ErrorCollector,
     ) -> TArgs {
-        let tparams = cls.tparams();
         let nparams = tparams.len();
         let nargs = targs.len();
         let mut checked_targs = Vec::new();
@@ -255,9 +255,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ErrorKind::BadSpecialization,
                         None,
                         format!(
-                            "Expected {} for class `{}`, got {}.",
+                            "Expected {} for `{}`, got {}.",
                             count(tparams.len(), "type argument"),
-                            cls.name(),
+                            name,
                             nargs
                         ),
                     );
@@ -281,9 +281,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ErrorKind::BadSpecialization,
                 None,
                 format!(
-                    "Expected {} for class `{}`, got {}.",
+                    "Expected {} for `{}`, got {}.",
                     count(tparams.len(), "type argument"),
-                    cls.name(),
+                    name,
                     nargs
                 ),
             );
@@ -345,7 +345,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
-        let targs = self.check_and_create_targs(cls, targs, range, errors);
+        let targs = self.check_and_create_targs(cls.name(), cls.tparams(), targs, range, errors);
         self.type_of_instance(cls, targs)
     }
 

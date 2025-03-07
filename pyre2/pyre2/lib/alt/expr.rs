@@ -1204,7 +1204,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     ErrorKind::BadSpecialization,
                                     None,
                                     format!(
-                                        "Expected 1 type argument for class `type`, got {}",
+                                        "Expected 1 type argument for `type`, got {}",
                                         xs.len()
                                     ),
                                 ),
@@ -1227,7 +1227,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     ErrorKind::BadSpecialization,
                                     None,
                                     format!(
-                                        "Expected 1 type argument for class `PyreReadOnly`, got {}",
+                                        "Expected 1 type argument for `PyreReadOnly`, got {}",
                                         xs.len()
                                     ),
                                 ),
