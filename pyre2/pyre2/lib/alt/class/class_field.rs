@@ -653,7 +653,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     continue;
                 }
 
-                if let Some(want) = self.type_order().try_lookup_attr(parent.self_type(), name) {
+                if let Some(want) = self.type_order().try_lookup_attr(&parent.self_type(), name) {
                     parent_attr_found = true;
                     let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
                         self.solver().is_subset_eq(got, want, self.type_order())

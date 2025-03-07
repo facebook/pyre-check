@@ -279,7 +279,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// error and return `Any`. Use this to infer the type of a direct attribute fetch.
     pub fn type_of_attr_get(
         &self,
-        base: Type,
+        base: &Type,
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
@@ -305,7 +305,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// to infer special methods where we can fall back if it is missing (for example binary operators).
     pub fn type_of_attr_get_if_found(
         &self,
-        base: Type,
+        base: &Type,
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
@@ -341,7 +341,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// supposed to all share this type.
     pub fn type_of_enum_value(&self, enum_: &EnumMetadata) -> Option<Type> {
         let base = Type::ClassType(enum_.cls.clone());
-        match self.lookup_attr(base, &Name::new_static("_value_")) {
+        match self.lookup_attr(&base, &Name::new_static("_value_")) {
             LookupResult::Found(attr) => match attr.inner {
                 AttributeInner::ReadWrite(ty) => Some(ty),
                 AttributeInner::ReadOnly(_)
@@ -357,7 +357,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// typing whenever the expression is available.
     fn check_attr_set(
         &self,
-        base: Type,
+        base: &Type,
         attr_name: &Name,
         got: Either<&Expr, &Type>,
         range: TextRange,
@@ -497,7 +497,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) {
         self.check_attr_set(
-            base,
+            &base,
             attr_name,
             Either::Left(got),
             range,
@@ -518,7 +518,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         todo_ctx: &str,
     ) {
         self.check_attr_set(
-            base,
+            &base,
             attr_name,
             Either::Right(got),
             range,
@@ -696,7 +696,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn lookup_attr(&self, base: Type, attr_name: &Name) -> LookupResult {
+    fn lookup_attr(&self, base: &Type, attr_name: &Name) -> LookupResult {
         match self.as_attribute_base(base.clone(), self.stdlib) {
             Some(AttributeBase::ClassInstance(class)) => {
                 match self.get_instance_attribute(&class, attr_name) {
@@ -770,11 +770,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Decoration(Decoration::PropertySetterDecorator(Box::new(getter))),
                 )
             }
-            None => LookupResult::InternalError(InternalError::AttributeBaseUndefined(base)),
+            None => {
+                LookupResult::InternalError(InternalError::AttributeBaseUndefined(base.clone()))
+            }
         }
     }
 
-    pub fn try_lookup_attr(&self, base: Type, attr_name: &Name) -> Option<Attribute> {
+    pub fn try_lookup_attr(&self, base: &Type, attr_name: &Name) -> Option<Attribute> {
         match self.lookup_attr(base, attr_name) {
             LookupResult::Found(attr) => Some(attr),
             _ => None,

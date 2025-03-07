@@ -197,7 +197,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         context: Option<&ErrorContext>,
     ) -> Option<Type> {
         let callee_ty = self.type_of_attr_get_if_found(
-            ty.clone(),
+            ty,
             method_name,
             range,
             errors,
@@ -227,14 +227,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         context: Option<&ErrorContext>,
     ) -> Type {
-        let callee_ty = self.type_of_attr_get(
-            ty.clone(),
-            method_name,
-            range,
-            errors,
-            context,
-            "Expr::call_method",
-        );
+        let callee_ty =
+            self.type_of_attr_get(ty, method_name, range, errors, context, "Expr::call_method");
         self.make_call_target_and_call(
             callee_ty,
             method_name,

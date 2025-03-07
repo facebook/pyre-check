@@ -140,14 +140,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Type {
         self.distribute_over_union(obj, |obj| {
-            self.type_of_attr_get(
-                obj.clone(),
-                attr_name,
-                range,
-                errors,
-                None,
-                "Expr::attr_infer",
-            )
+            self.type_of_attr_get(obj, attr_name, range, errors, None, "Expr::attr_infer")
         })
     }
 

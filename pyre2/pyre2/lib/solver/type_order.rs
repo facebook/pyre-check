@@ -66,7 +66,7 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         }
     }
 
-    pub fn try_lookup_attr(self, base: Type, attr_name: &Name) -> Option<Attribute> {
+    pub fn try_lookup_attr(self, base: &Type, attr_name: &Name) -> Option<Attribute> {
         self.0.try_lookup_attr(base, attr_name)
     }
 
