@@ -148,11 +148,11 @@ impl ErrorCollector {
         self.errors.lock().iter().cloned().collect()
     }
 
-    pub fn summarise<'a>(xs: impl Iterator<Item = &'a ErrorCollector>) -> Vec<(String, usize)> {
+    pub fn summarise<'a>(xs: impl Iterator<Item = &'a ErrorCollector>) -> Vec<(ErrorKind, usize)> {
         let mut map = SmallMap::new();
         for x in xs {
             for err in x.errors.lock().iter() {
-                let kind = err.error_kind().to_string();
+                let kind = err.error_kind();
                 *map.entry(kind).or_default() += 1;
             }
         }

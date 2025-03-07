@@ -545,7 +545,11 @@ impl State {
         items.reverse();
         items.truncate(limit);
         for (error, count) in items.iter().rev() {
-            eprintln!("{} instances of {error}", number_thousands(*count));
+            eprintln!(
+                "{} instances of {}",
+                number_thousands(*count),
+                error.to_name()
+            );
         }
     }
 
