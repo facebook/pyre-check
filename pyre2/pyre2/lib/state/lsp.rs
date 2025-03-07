@@ -6,6 +6,8 @@
  */
 
 use dupe::Dupe;
+use itertools::Itertools;
+use lsp_types::CompletionItem;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -186,11 +188,31 @@ impl State {
         .flatten()
     }
 
-    pub fn completion(&self, handle: &Handle, position: TextSize) -> Vec<(Name, Option<String>)> {
-        self.completion_opt(handle, position).unwrap_or_default()
+    pub fn completion(&self, handle: &Handle, position: TextSize) -> Vec<CompletionItem> {
+        self.completion_unsorted_opt(handle, position)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(n, t)| {
+                let sort_text = if n.as_str().starts_with("__") {
+                    "2"
+                } else if n.as_str().starts_with("_") {
+                    "1"
+                } else {
+                    "0"
+                }
+                .to_owned();
+                CompletionItem {
+                    label: n.as_str().to_owned(),
+                    detail: t,
+                    sort_text: Some(sort_text),
+                    ..Default::default()
+                }
+            })
+            .sorted_by(|item1, item2| item1.sort_text.cmp(&item2.sort_text))
+            .collect()
     }
 
-    fn completion_opt(
+    fn completion_unsorted_opt(
         &self,
         handle: &Handle,
         position: TextSize,

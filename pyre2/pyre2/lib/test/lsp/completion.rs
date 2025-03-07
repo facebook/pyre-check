@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use lsp_types::CompletionItem;
 use pretty_assertions::assert_eq;
 use ruff_text_size::TextSize;
 
@@ -14,9 +15,9 @@ use crate::test::util::get_batched_lsp_operations_report_allow_error;
 
 fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String {
     let mut report = "Completion Results:".to_owned();
-    for (name, detail) in state.completion(handle, position) {
+    for CompletionItem { label, detail, .. } in state.completion(handle, position) {
         report.push_str("\n- ");
-        report.push_str(name.as_str());
+        report.push_str(&label);
         if let Some(detail) = detail {
             report.push_str(": ");
             report.push_str(&detail);
@@ -53,6 +54,36 @@ Completion Results:
 Completion Results:
 - y: int
 - x: int
+"#
+        .trim(),
+        report.trim(),
+    );
+}
+
+#[test]
+fn dot_complete_rankded_test() {
+    let code = r#"
+class Foo:
+    _private: bool
+    __special__: str
+    y: int
+    x: int
+
+foo = Foo()
+foo.
+#   ^
+"#;
+    let report = get_batched_lsp_operations_report_allow_error(&[("main", code)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+9 | foo.
+        ^
+Completion Results:
+- y: int
+- x: int
+- _private: bool
+- __special__: str
 "#
         .trim(),
         report.trim(),

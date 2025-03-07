@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use dupe::Dupe;
+use lsp_types::CompletionItem;
 use ruff_source_file::SourceLocation;
 use serde::Serialize;
 use starlark_map::small_map::SmallMap;
@@ -97,6 +98,8 @@ pub struct TypeQueryResult {
 pub struct AutoCompletionItem {
     label: String,
     detail: Option<String>,
+    #[serde(rename(serialize = "sortText"))]
+    sort_text: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -270,10 +273,18 @@ impl LanguageServiceState {
                 self.state.completion(&handle, position)
             })
             .into_iter()
-            .map(|(name, detail)| AutoCompletionItem {
-                label: name.as_str().to_owned(),
-                detail,
-            })
+            .map(
+                |CompletionItem {
+                     label,
+                     detail,
+                     sort_text,
+                     ..
+                 }| AutoCompletionItem {
+                    label,
+                    detail,
+                    sort_text,
+                },
+            )
             .collect::<Vec<_>>()
     }
 
