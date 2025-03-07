@@ -186,11 +186,15 @@ impl State {
         .flatten()
     }
 
-    pub fn completion(&self, handle: &Handle, position: TextSize) -> Vec<Name> {
+    pub fn completion(&self, handle: &Handle, position: TextSize) -> Vec<(Name, Option<String>)> {
         self.completion_opt(handle, position).unwrap_or_default()
     }
 
-    fn completion_opt(&self, handle: &Handle, position: TextSize) -> Option<Vec<Name>> {
+    fn completion_opt(
+        &self,
+        handle: &Handle,
+        position: TextSize,
+    ) -> Option<Vec<(Name, Option<String>)>> {
         if self.identifier_at(handle, position).is_some() {
             let bindings = self.get_bindings(handle)?;
             let module_info = self.get_module_info(handle)?;
@@ -198,8 +202,10 @@ impl State {
                 .available_definitions(position)
                 .into_iter()
                 .filter_map(|idx| {
-                    if let Key::Definition(id) = bindings.idx_to_key(idx) {
-                        Some(Name::new(module_info.code_at(id.range())))
+                    let key = bindings.idx_to_key(idx);
+                    if let Key::Definition(id) = key {
+                        let detail = self.get_type(handle, key).map(|t| t.to_string());
+                        Some((Name::new(module_info.code_at(id.range())), detail))
                     } else {
                         None
                     }
@@ -214,7 +220,7 @@ impl State {
         self.ad_hoc_solve(handle, |solver| {
             solver
                 .completions(base_type.arc_clone())
-                .into_map(|x| x.name)
+                .into_map(|x| (x.name, None))
         })
     }
 

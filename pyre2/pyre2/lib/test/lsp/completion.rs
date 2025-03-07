@@ -14,9 +14,13 @@ use crate::test::util::get_batched_lsp_operations_report_allow_error;
 
 fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String {
     let mut report = "Completion Results:".to_owned();
-    for name in state.completion(handle, position) {
+    for (name, detail) in state.completion(handle, position) {
         report.push_str("\n- ");
         report.push_str(name.as_str());
+        if let Some(detail) = detail {
+            report.push_str(": ");
+            report.push_str(&detail);
+        }
     }
     report
 }
@@ -74,17 +78,17 @@ def foo():
 4 |   x
       ^
 Completion Results:
-- xxxx
-- bar
-- foo
+- xxxx: Literal[3]
+- bar: () -> None
+- foo: () -> None
 
 8 |     y
         ^
 Completion Results:
-- yyyy
-- xxxx
-- bar
-- foo
+- yyyy: Literal[4]
+- xxxx: Literal[3]
+- bar: () -> None
+- foo: () -> None
 "#
         .trim(),
         report.trim(),

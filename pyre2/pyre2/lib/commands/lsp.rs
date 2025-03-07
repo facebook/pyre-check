@@ -425,8 +425,10 @@ impl<'a> Server<'a> {
         }) {
             results
                 .into_iter()
-                .map(|name| {
-                    CompletionItem::new_simple(name.as_str().to_owned(), name.as_str().to_owned())
+                .map(|(name, detail)| CompletionItem {
+                    label: name.as_str().to_owned(),
+                    detail,
+                    ..Default::default()
                 })
                 .collect::<Vec<_>>()
         } else {

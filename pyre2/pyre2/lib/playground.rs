@@ -96,7 +96,7 @@ pub struct TypeQueryResult {
 #[derive(Serialize)]
 pub struct AutoCompletionItem {
     label: String,
-    detail: String,
+    detail: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -270,9 +270,9 @@ impl LanguageServiceState {
                 self.state.completion(&handle, position)
             })
             .into_iter()
-            .map(|item| AutoCompletionItem {
-                label: item.as_ref().to_owned(),
-                detail: item.as_ref().to_owned(),
+            .map(|(name, detail)| AutoCompletionItem {
+                label: name.as_str().to_owned(),
+                detail,
             })
             .collect::<Vec<_>>()
     }
