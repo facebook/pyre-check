@@ -12,6 +12,11 @@
  * and scoped locally.
  */
 
+:root {
+  --title-font-size: 7rem;
+  --subtitle-font-size: 3.5rem;
+}
+
 .imgFluid {
   max-width: 100%;
   height: auto;
@@ -54,59 +59,91 @@
 }
 
 @media screen and (min-width: 346px) {
-  .featureHero .featureHeading {
-    font-size: 2.7rem;
+  .title {
+    font-size: 3.5rem;
+  }
+  .subtitle {
+    font-size: 1.5rem;
   }
 }
 @media screen and (min-width: 404px) {
-  .featureHero .featureHeading {
-    font-size: 3.1rem;
+  .title {
+    font-size: 3.8rem;
+  }
+  .subtitle {
+    font-size: 1.8rem;
   }
 }
 @media screen and (min-width: 460px) {
-  .featureHero .featureHeading {
-    font-size: 3.4rem;
+  .title {
+    font-size: 4rem;
   }
+  .subtitle {
+    font-size: 1.9rem;
+  }
+
 }
 @media screen and (min-width: 518px) {
-  .featureHero .featureHeading {
-    font-size: 3.6rem;
+  .title {
+    font-size: 4.5rem;
+  }
+  .subtitle {
+    font-size: 2rem;
   }
 }
 @media screen and (min-width: 548px) {
-  .featureHero .featureHeading {
-    font-size: 3.8rem;
+  .title {
+    font-size: 5.5rem;
   }
+  .subtitle {
+    font-size: 2.5rem;
+  }
+
 }
 @media screen and (min-width: 576px) {
-  .featureHero .featureHeading {
-    font-size: 4rem;
-    width: 540px;
+  .title {
+    font-size: calc(6rem);
+  }
+  .subtitle {
+    font-size: calc(3rem);
+  }
+  .title, .subtitle {
     max-width: 100%;
   }
 }
 @media screen and (min-width: 768px) {
-  .featureHero .featureHeading {
-    font-size: 5rem;
-    width: 720px;
+  .title, .subtitle {
     max-width: 100%;
+  }
+  .title {
+    font-size: var(--title-font-size);
+  }
+  .subtitle {
+    font-size: var(--subtitle-font-size);
   }
 }
 @media screen and (min-width: 992px) {
-  .featureHero .featureHeading {
-    font-size: 4rem;
+  .title, .subtitle {
     width: 960px;
     max-width: 100%;
   }
-  .featureHero .featureHeading .hiddenLargerUp {
-    display: none !important;
+  .title {
+    font-size: var(--title-font-size);
+  }
+  .subtitle {
+    font-size: var(--subtitle-font-size);
   }
 }
 @media screen and (min-width: 1200px) {
-  .featureHero .featureHeading {
-    font-size: 4.5rem;
+  .title, .subtitle {
     width: 1140px;
     max-width: 100%;
+  }
+  .title {
+    font-size: var(--title-font-size);
+  }
+  .subtitle {
+    font-size: var(--subtitle-font-size);
   }
 }
 
@@ -430,14 +467,12 @@
   text-align: center;
   margin-bottom: 4rem;
   margin-top: 3rem;
-  font-size: 7rem;
 }
 
 .subtitle {
   font-weight: bold;
-  font-size: 3.5rem;
   text-align: center;
-  margin-bottom: rem;
+  margin-bottom: 1rem;
 }
 
 hr {
