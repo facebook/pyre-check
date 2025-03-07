@@ -9,7 +9,6 @@
 
 use std::sync::LazyLock;
 
-use rayon::ThreadPool;
 use tracing::debug;
 
 use crate::util::lock::Mutex;
@@ -21,18 +20,40 @@ pub fn init_thread_pool(threads: Option<usize>) {
     *THREADS.lock() = threads;
 }
 
-pub fn thread_pool() -> Option<ThreadPool> {
-    if cfg!(target_arch = "wasm32") {
-        // ThreadPool doesn't work on WASM
-        return None;
+/// A WASM compatible thread-pool.
+pub struct ThreadPool(
+    // Will be None on WASM
+    Option<rayon::ThreadPool>,
+);
+
+impl ThreadPool {
+    pub fn new() -> Self {
+        if cfg!(target_arch = "wasm32") {
+            // ThreadPool doesn't work on WASM
+            return Self(None);
+        }
+
+        let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
+        if let Some(threads) = *THREADS.lock() {
+            builder = builder.num_threads(threads);
+        }
+        let pool = builder.build().expect("To be able to build a thread pool");
+        // Only print the message once
+        debug!("Running with {} threads", pool.current_num_threads());
+        Self(Some(pool))
     }
 
-    let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
-    if let Some(threads) = *THREADS.lock() {
-        builder = builder.num_threads(threads);
+    pub fn spawn_many(&self, f: impl Fn() + Sync) {
+        match &self.0 {
+            None => f(),
+            Some(pool) => {
+                pool.scope(|s| {
+                    for _ in 0..pool.current_num_threads() {
+                        // Only run work on Rayon threads, as we increased their stack limit
+                        s.spawn(|_| f());
+                    }
+                })
+            }
+        }
     }
-    let pool = builder.build().expect("To be able to build a thread pool");
-    // Only print the message once
-    debug!("Running with {} threads", pool.current_num_threads());
-    Some(pool)
 }

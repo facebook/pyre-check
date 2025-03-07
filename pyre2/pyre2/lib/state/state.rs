@@ -16,7 +16,6 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use enum_iterator::Sequence;
-use rayon::ThreadPool;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -73,13 +72,13 @@ use crate::util::locked_map::LockedMap;
 use crate::util::no_hash::BuildNoHash;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
-use crate::util::thread_pool::thread_pool;
+use crate::util::thread_pool::ThreadPool;
 use crate::util::uniques::UniqueFactory;
 use crate::util::upgrade_lock::UpgradeLock;
 use crate::util::upgrade_lock::UpgradeLockExclusiveGuard;
 
 pub struct State {
-    threads: Option<ThreadPool>,
+    threads: ThreadPool,
     uniques: UniqueFactory,
     stdlib: SmallMap<(RuntimeMetadata, LoaderId), Arc<Stdlib>>,
     modules: LockedMap<Handle, ArcId<ModuleData>>,
@@ -135,7 +134,7 @@ impl ModuleData {
 impl State {
     pub fn new() -> Self {
         Self {
-            threads: thread_pool(),
+            threads: ThreadPool::new(),
             uniques: UniqueFactory::new(),
             now: Epoch::zero(),
             stdlib: Default::default(),
@@ -638,17 +637,7 @@ impl State {
             }
         }
 
-        match &self.threads {
-            Some(threads) => {
-                threads.scope(|s| {
-                    for _ in 0..threads.current_num_threads() {
-                        // Only run work on Rayon threads, as we increased their stack limit
-                        s.spawn(|_| self.work());
-                    }
-                })
-            }
-            None => self.work(),
-        }
+        self.threads.spawn_many(|| self.work());
     }
 
     fn ensure_loaders(&mut self, handles: &[Handle]) {
