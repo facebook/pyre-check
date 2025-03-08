@@ -29,6 +29,10 @@ from typing import *
 
 def test(x: int):
   return f"{x}"
+
+# reveal_type will produce a type error that tells you the type Pyre has
+# computed for the argument (in this case, int)
+reveal_type(test(42))
 `.trimStart();
 
 const pyre2WasmUninitializedPromise =
@@ -47,12 +51,11 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   .catch(e => console.log(e));
 
 export default component TryPyre2(
-  editorHeight: number | 'auto' = 'auto',
   sampleFilename: string,
+  editorHeight: number | 'auto' = 'auto',
   codeSample: string = DEFAULT_PYTHON_PROGRAM,
   showErrorPanel: boolean = true,
 ) {
-  const {withBaseUrl} = useBaseUrlUtils();
   const editorRef = useRef(null);
   const [errors, setErrors] = useState<?$ReadOnlyArray<PyreflyErrorMessage>>(
     [],
@@ -61,6 +64,7 @@ export default component TryPyre2(
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
   const [height, setHeight] = useState(editorHeight);
+  const [model, setModel] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -79,13 +83,28 @@ export default component TryPyre2(
       });
   }, []);
 
-  const model = monaco.editor.getModels().filter(model => model?.uri?.path === `/${sampleFilename}`)[0];
+  function fetchCurMonacoModelAndTriggerUpdate() {
+    const model = monaco.editor
+      .getModels()
+      .filter(model => model?.uri?.path === `/${sampleFilename}`)[0];
 
-  useEffect(() => {
     if (model != null) {
       // Force update to trigger initial inlay hint
       model.setValue(model.getValue());
     }
+
+    return model;
+  }
+
+  // Need to add createModel handler in case monaco model was not created at mount time
+  monaco.editor.onDidCreateModel(model => {
+    const curModel = fetchCurMonacoModelAndTriggerUpdate();
+    setModel(curModel);
+    forceRecheck();
+  });
+
+  // Recheck when pyre service or model changes
+  useEffect(() => {
     forceRecheck();
   }, [pyreService, model]);
 
@@ -114,7 +133,9 @@ export default component TryPyre2(
   }
 
   function onMount(editor: any) {
-    forceRecheck();
+    const model = fetchCurMonacoModelAndTriggerUpdate();
+    setModel(model);
+
     if (editorHeight === 'auto') {
       setHeight(Math.max(50, editor.getContentHeight()));
     }
