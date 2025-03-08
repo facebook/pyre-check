@@ -25,6 +25,7 @@ use tracing::info;
 use crate::clap_env;
 use crate::commands::util::module_from_path;
 use crate::config::ConfigFile;
+use crate::config::ConfigFileInner;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
@@ -62,12 +63,18 @@ pub struct Args {
     #[arg(long, short = 'o', env = clap_env("OUTPUT"))]
     output: Option<PathBuf>,
     #[clap(long, short = 'I', env = clap_env("INCLUDE"))]
-    include: Vec<PathBuf>,
+    include: Option<Vec<PathBuf>>,
     #[clap(long, value_enum, default_value_t, env = clap_env("OUTPUT_FORMAT"))]
     output_format: OutputFormat,
     /// Check all reachable modules, not just the ones that are passed in explicitly on CLI positional arguments.
     #[clap(long, short = 'a', env = clap_env("CHECK_ALL"))]
     check_all: bool,
+    #[clap(long, env = clap_env("PYTHON_VERSION"))]
+    python_version: Option<String>,
+    #[clap(long, env = clap_env("PLATFORM"))]
+    python_platform: Option<String>,
+    #[clap(long, env = clap_env("SITE_PACKAGE_PATH"))]
+    site_package_path: Option<Vec<PathBuf>>,
     /// Produce debugging information about the type checking process.
     #[clap(long, env = clap_env("DEBUG_INFO"))]
     debug_info: Option<PathBuf>,
@@ -83,8 +90,6 @@ pub struct Args {
         env = clap_env("SUMMARIZE_ERRORS")
     )]
     summarize_errors: Option<usize>,
-    #[clap(long, env = clap_env("PYTHON_VERSION"))]
-    python_version: Option<String>,
     /// Check against any `E:` lines in the file.
     #[clap(long, env = clap_env("EXPECTATIONS"))]
     expectations: bool,
@@ -211,6 +216,41 @@ impl Args {
         }
     }
 
+    fn get_overridden_config(&self, base_config: ConfigFile) -> ConfigFile {
+        let python_platform = self
+            .python_platform
+            .as_ref()
+            .unwrap_or(&base_config.python_platform)
+            .to_owned();
+        let default_python_version = base_config.python_version;
+        let python_version = if let Some(version) = &self.python_version {
+            match PythonVersion::from_str(&version[..]) {
+                Ok(parsed) => parsed,
+                Err(error) => {
+                    eprintln!(
+                        "Failed to parse `{version}` into Python version: {error} does not conform to Python version spec. Falling back to
+                        default: {default_python_version}."
+                    );
+                    default_python_version
+                }
+            }
+        } else {
+            default_python_version
+        };
+        let site_package_path = self
+            .site_package_path
+            .as_ref()
+            .or(base_config.site_package_path.as_ref())
+            .cloned();
+        ConfigFileInner {
+            python_platform,
+            python_version,
+            site_package_path,
+            ..(*base_config).clone()
+        }
+        .into()
+    }
+
     fn run_inner(
         self,
         files_to_check: impl FileList,
@@ -218,7 +258,7 @@ impl Args {
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         let args = self;
-        let include = args.include;
+        let include = args.include.clone();
 
         let expanded_file_list = files_to_check.files()?;
         if expanded_file_list.is_empty() {
@@ -226,7 +266,8 @@ impl Args {
         }
 
         let files_and_configs = expanded_file_list.into_map(|path| {
-            let config = config_finder(&path);
+            let base_config = config_finder(&path);
+            let config = args.get_overridden_config(base_config);
             (path, config)
         });
 
@@ -235,10 +276,9 @@ impl Args {
         let mut partition_by_search_roots: SmallMap<Vec<PathBuf>, Vec<(PathBuf, ConfigFile)>> =
             SmallMap::new();
         for x in files_and_configs {
-            let search_roots = if include.is_empty() {
-                x.1.search_roots().clone()
-            } else {
-                include.clone()
+            let search_roots = match include.as_ref() {
+                None => x.1.search_roots.clone(),
+                Some(include) => include.clone(),
             };
             partition_by_search_roots
                 .entry(search_roots)
@@ -258,9 +298,9 @@ impl Args {
                         let module_name = module_from_path(&path, &search_roots);
                         let version = match cli_python_version_override {
                             Some(version) => version,
-                            None => *config.python_version(),
+                            None => config.python_version,
                         };
-                        let platform = config.python_platform().to_owned();
+                        let platform = config.python_platform.to_owned();
                         (path, module_name, RuntimeMetadata::new(version, platform))
                     });
                 let loader = create_loader(
