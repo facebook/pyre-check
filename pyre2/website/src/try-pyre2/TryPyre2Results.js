@@ -88,9 +88,9 @@ export default component TryPyre2Results(
         <pre className={clsx(styles.resultBody, styles.errors)}>
           <ul>
             {internalError ? (
-              <li>TryPyrefly encountered an internal error: {internalError}</li>
+              <li>Pyrefly encountered an internal error: {internalError}.</li>
             ) : errors === undefined || errors === null ? (
-              <li>TryPyrefly failed to fetch errors</li>
+              <li>Pyrefly failed to fetch errors.</li>
             ) : errors?.length === 0 ? (
               <li>No errors!</li>
             ) : (
