@@ -93,21 +93,7 @@ module ReadOnly : sig
   end
 end
 
-module UpdateResult : sig
-  (* This type is sealed to reify that Environment updates must follow and be based off of
-     preenvironment updates *)
-  type t
-
-  val locally_triggered_dependencies : t -> DependencyKey.RegisteredSet.t
-
-  val invalidated_modules : t -> Reference.t list
-
-  val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
-
-  val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
-
-  val modules_with_invalidated_type_check : t -> Ast.Reference.Set.t
-end
+module UpdateResult : Environment.UpdateResult.S
 
 module Overlay : sig
   type t
