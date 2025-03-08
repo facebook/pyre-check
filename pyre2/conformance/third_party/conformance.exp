@@ -9027,8 +9027,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Object of class `Point` has no attribute `__setitem__`",
-      "description": "Object of class `Point` has no attribute `__setitem__`",
+      "concise_description": "Item assignment is not supported on `Point`\n  Object of class `Point` has no attribute `__setitem__`",
+      "description": "Item assignment is not supported on `Point`\n  Object of class `Point` has no attribute `__setitem__`",
       "line": 41,
       "name": "missing-attribute",
       "stop_column": 5,

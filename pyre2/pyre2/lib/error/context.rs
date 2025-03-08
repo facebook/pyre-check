@@ -31,6 +31,8 @@ pub enum ErrorContext {
     Iteration(Type),
     /// x[y]
     Index(Type),
+    /// x[y] = ...
+    SetItem(Type),
 }
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that

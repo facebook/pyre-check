@@ -1336,7 +1336,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ],
                         &[],
                         errors,
-                        None,
+                        Some(&ErrorContext::SetItem(base.clone())),
                     ),
                 }
             }
