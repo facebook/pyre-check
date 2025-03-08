@@ -45,32 +45,51 @@ let get_module_path ~type_environment ~build_system path =
       | None -> Result.Error FileNotFound)
 
 
-let get_lookup ~build_system ~type_environment path =
-  let module_path = get_module_path ~type_environment ~build_system path in
-  let generate_lookup_for_existent_path { ModulePath.qualifier; _ } =
-    let timer = Timer.start () in
-    let lookup = LocationBasedLookup.ExpressionTypes.create_of_module type_environment qualifier in
-    Log.log
-      ~section:`Performance
-      "locationBasedLookupProcessor: create_of_module: %d"
-      (Timer.stop_in_ms timer);
-    Result.Ok lookup
-  in
-  match module_path with
-  | Result.Ok path -> generate_lookup_for_existent_path path
-  | Result.Error error_reason -> Result.Error error_reason
+let get_type_lookup_for_qualifier ~type_environment qualifier =
+  let timer = Timer.start () in
+  let lookup = LocationBasedLookup.ExpressionTypes.create_of_module type_environment qualifier in
+  Log.log
+    ~section:`Performance
+    "locationBasedLookupProcessor: create_of_module: %d"
+    (Timer.stop_in_ms timer);
+  Result.Ok lookup
 
 
-let find_all_resolved_types_for_path ~type_environment ~build_system path =
+let find_all_resolved_types_for_qualifier ~type_environment qualifier =
   let open Result in
-  get_lookup ~type_environment ~build_system path
+  get_type_lookup_for_qualifier ~type_environment qualifier
   >>| LocationBasedLookup.ExpressionLevelCoverage.get_all_nodes_and_coverage_data
   >>| List.map ~f:(fun (location, { LocationBasedLookup.ExpressionTypes.type_; expression = _ }) ->
           location, type_)
   >>| List.sort ~compare:[%compare: Location.t * Type.t]
 
 
-let find_expression_level_coverage_for_path ~type_environment ~build_system path =
+let find_expression_level_coverage_for_qualifier ~type_environment qualifier =
   let open Result in
-  get_lookup ~type_environment ~build_system path
+  get_type_lookup_for_qualifier ~type_environment qualifier
   >>| LocationBasedLookup.ExpressionLevelCoverage.get_expression_level_coverage
+
+
+let apply_to_qualifier_for_path ~f ~type_environment ~build_system path =
+  let module_path_to_expression_level_coverage module_path =
+    let qualifier = ModulePath.qualifier module_path in
+    f ~type_environment qualifier
+  in
+  get_module_path ~type_environment ~build_system path
+  |> Result.bind ~f:module_path_to_expression_level_coverage
+
+
+let find_expression_level_coverage_for_path ~type_environment ~build_system path =
+  apply_to_qualifier_for_path
+    ~f:find_expression_level_coverage_for_qualifier
+    ~type_environment
+    ~build_system
+    path
+
+
+let find_all_resolved_types_for_path ~type_environment ~build_system path =
+  apply_to_qualifier_for_path
+    ~f:find_all_resolved_types_for_qualifier
+    ~type_environment
+    ~build_system
+    path
