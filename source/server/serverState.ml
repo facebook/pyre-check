@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ServerState defines the elements that make up a running Pyre Server, which is an environment but
+   also several other components such as a Builder and a Scheduler needed to run updates. *)
 
 open Core
 open Analysis
