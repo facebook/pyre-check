@@ -344,6 +344,11 @@ module Cache = struct
   let invalidate cache update_result =
     Analysis.ErrorsEnvironment.UpdateResult.modules_with_invalidated_type_check update_result
     |> Set.iter ~f:(fun module_name -> Hashtbl.remove cache module_name)
+
+
+  let find cache qualifier = Hashtbl.find cache qualifier
+
+  let save cache qualifier types = Hashtbl.set ~key:qualifier ~data:types cache
 end
 
 let rec parse_request_exn query =
@@ -1206,9 +1211,16 @@ let rec process_request_exn
         let find_resolved_types path =
           let module_path_to_resolved_types module_path =
             let qualifier = ModulePath.qualifier module_path in
-            LocationBasedLookupProcessor.find_all_resolved_types_for_qualifier
-              ~type_environment
-              qualifier
+            match Cache.find query_cache qualifier with
+            | Some types -> types
+            | None ->
+                let types =
+                  LocationBasedLookupProcessor.find_all_resolved_types_for_qualifier
+                    ~type_environment
+                    qualifier
+                in
+                Cache.save query_cache qualifier types;
+                types
           in
           match
             LocationBasedLookupProcessor.get_module_path ~type_environment ~build_system path
