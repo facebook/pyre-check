@@ -199,6 +199,8 @@ module Cache : sig
   type t
 
   val create : unit -> t
+
+  val invalidate : t -> Analysis.ErrorsEnvironment.UpdateResult.t -> unit
 end
 
 val parse_request : string -> (Request.t, string) Core.Result.t

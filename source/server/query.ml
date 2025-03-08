@@ -340,6 +340,8 @@ module Cache = struct
   type t = unit
 
   let create () = ()
+
+  let invalidate () _update_result = ()
 end
 
 let rec parse_request_exn query =
