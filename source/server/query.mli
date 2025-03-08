@@ -195,6 +195,12 @@ module Response : sig
   val create_type_at_location : Location.t * Type.t -> Base.type_at_location
 end
 
+module Cache : sig
+  type t
+
+  val create : unit -> t
+end
+
 val parse_request : string -> (Request.t, string) Core.Result.t
 
 val process_request

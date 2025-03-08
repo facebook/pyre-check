@@ -334,6 +334,14 @@ module Response = struct
   let create_type_at_location (location, annotation) = { Base.location; annotation }
 end
 
+(* An cache for expensive queries. We don't generally cache queries, but we have added caching on an
+   ad-hoc basis to support specific static analysis use cases *)
+module Cache = struct
+  type t = unit
+
+  let create () = ()
+end
+
 let rec parse_request_exn query =
   let open Expression in
   match PyreMenhirParser.Parser.parse [query] with
