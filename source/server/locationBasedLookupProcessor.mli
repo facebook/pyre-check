@@ -29,12 +29,6 @@ val find_expression_level_coverage_for_path
   string ->
   coverage_by_location
 
-val get_lookup
-  :  build_system:BuildSystem.t ->
-  type_environment:TypeEnvironment.ReadOnly.t ->
-  string ->
-  (LocationBasedLookup.ExpressionTypes.coverage_data_lookup, error_reason) result
-
 val get_module_path
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->
