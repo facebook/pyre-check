@@ -61,6 +61,8 @@ def foo(x: tuple[int, str], y: tuple[int, ...], z: tuple[int, *tuple[str, ...], 
     assert_type(x[idx], int | str)
     assert_type(y[idx], int)
     assert_type(z[idx], bool | int | str)
+    x["nonsense"]  # E: Cannot index into `tuple[int, str]`
+    y["nonsense"]  # E: Cannot index into `tuple[int, ...]`
 "#,
 );
 

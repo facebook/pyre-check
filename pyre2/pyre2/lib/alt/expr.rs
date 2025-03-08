@@ -1275,9 +1275,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Type::Type(box Type::SpecialForm(special)) => {
                             self.apply_special_form(special, xs, x.range, errors)
                         }
-                        Type::Tuple(Tuple::Concrete(elts)) if xs.len() == 1 => {
-                            self.infer_tuple_index(elts, &x.slice, x.range, errors)
-                        }
+                        Type::Tuple(Tuple::Concrete(ref elts)) if xs.len() == 1 => self
+                            .infer_tuple_index(
+                                elts.to_owned(),
+                                &x.slice,
+                                x.range,
+                                errors,
+                                Some(&ErrorContext::Index(fun.clone())),
+                            ),
                         Type::Tuple(_) if xs.len() == 1 => self.call_method_or_error(
                             &fun,
                             &dunder::GETITEM,
@@ -1285,13 +1290,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[CallArg::Expr(&x.slice)],
                             &[],
                             errors,
-                            None,
+                            Some(&ErrorContext::Index(fun.clone())),
                         ),
                         Type::Any(style) => style.propagate(),
-                        Type::ClassType(cls)
-                            if let Some(elts) = self.named_tuple_element_types(&cls) =>
+                        Type::ClassType(ref cls)
+                            if let Some(elts) = self.named_tuple_element_types(cls) =>
                         {
-                            self.infer_tuple_index(elts, &x.slice, x.range, errors)
+                            self.infer_tuple_index(
+                                elts,
+                                &x.slice,
+                                x.range,
+                                errors,
+                                Some(&ErrorContext::Index(fun.clone())),
+                            )
                         }
                         Type::ClassType(_) => self.call_method_or_error(
                             &fun,
@@ -1300,7 +1311,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[CallArg::Expr(&x.slice)],
                             &[],
                             errors,
-                            None,
+                            Some(&ErrorContext::Index(fun.clone())),
                         ),
                         Type::TypedDict(typed_dict) => {
                             let key_ty = self.expr_infer(&x.slice, errors);
@@ -1402,6 +1413,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         slice: &Expr,
         range: TextRange,
         errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
     ) -> Type {
         let xs = Ast::unpack_slice(slice);
         match &xs[0] {
@@ -1476,7 +1488,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &[CallArg::Expr(slice)],
                         &[],
                         errors,
-                        None,
+                        context,
                     ),
                 }
             }

@@ -5774,8 +5774,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
-      "description": "Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
+      "concise_description": "Cannot index into `MyMap1[str, int]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
+      "description": "Cannot index into `MyMap1[str, int]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
       "line": 157,
       "name": "type-mismatch",
       "stop_column": 9,
@@ -5784,8 +5784,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
-      "description": "Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
+      "concise_description": "Cannot index into `MyMap2[int, str]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
+      "description": "Cannot index into `MyMap2[int, str]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
       "line": 158,
       "name": "type-mismatch",
       "stop_column": 9,
@@ -9293,8 +9293,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "Cannot index into `Bytes`\n  No matching overload found",
+      "description": "Cannot index into `Bytes`\n  No matching overload found",
       "line": 37,
       "name": "no-matching-overload",
       "stop_column": 6,

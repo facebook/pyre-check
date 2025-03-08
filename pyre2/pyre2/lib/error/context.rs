@@ -29,6 +29,8 @@ pub enum ErrorContext {
     BinaryOp(String, Type, Type),
     /// for x in y: ...
     Iteration(Type),
+    /// x[y]
+    Index(Type),
 }
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that
