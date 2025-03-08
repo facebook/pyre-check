@@ -291,13 +291,15 @@ let test_overlay_propagation context =
     ()
   in
   update_code "on_filesystem.py" (on_filesystem_code ~x_type:"float" ~y_type:"str" ~z_type:"int");
-  OverlaidEnvironment.run_update_root
-    overlaid_environment
-    ~scheduler:(Test.mock_scheduler ())
-    [
-      (Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"
-      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
-    ];
+  let _ =
+    OverlaidEnvironment.run_update_root
+      overlaid_environment
+      ~scheduler:(Test.mock_scheduler ())
+      [
+        (Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+      ]
+  in
   assert_overlay_errors
     ~context
     ~overlaid_environment

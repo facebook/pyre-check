@@ -456,8 +456,8 @@ let handle_non_critical_file_update ~scheduler ~subscriptions ~environment artif
   | [] -> Lwt.return_unit
   | _ ->
       let run_file_update () =
-        OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events
-        |> Lwt.return
+        let _ = OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events in
+        () |> Lwt.return
       in
       with_broadcast_busy_checking ~subscriptions ~client_id:None run_file_update
 

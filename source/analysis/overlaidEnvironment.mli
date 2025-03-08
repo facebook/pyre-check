@@ -31,7 +31,11 @@ val store : t -> unit
 
 val load : EnvironmentControls.t -> t
 
-val run_update_root : t -> scheduler:Scheduler.t -> ArtifactPath.Event.t list -> unit
+val run_update_root
+  :  t ->
+  scheduler:Scheduler.t ->
+  ArtifactPath.Event.t list ->
+  ErrorsEnvironment.UpdateResult.t
 
 val run_update_overlay_with_code
   :  t ->

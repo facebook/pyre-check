@@ -194,7 +194,10 @@ let process_successful_rebuild
     |> List.append changed_paths_from_rebuild
     |> List.dedup_and_sort ~compare:ArtifactPath.Event.compare
   in
-  OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths;
+  (* TODO(stroxler): once we add a cache for `types` queries, invalidate it here. *)
+  let _update_result =
+    OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths
+  in
   let type_error_subscriptions, status_change_subscriptions =
     List.partition_tf subscriptions ~f:Subscription.wants_type_errors
   in

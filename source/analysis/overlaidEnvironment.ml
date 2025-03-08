@@ -113,7 +113,9 @@ let run_update_root ({ overlays; _ } as overlaid_environment) ~scheduler events 
   Hashtbl.iter overlays ~f:(fun overlay ->
       ErrorsEnvironment.Overlay.propagate_parent_update overlay update_result |> ignore);
   (* Log updates *)
-  log_update_stats UpdateType.Root ~timer ~update_result ~updated_paths_count
+  log_update_stats UpdateType.Root ~timer ~update_result ~updated_paths_count;
+  (* Return the update result, which the server may use to clear `pyre query` caches. *)
+  update_result
 
 
 let run_update_overlay_with_code overlaid_environment ~code_updates identifier =
