@@ -37,6 +37,7 @@ type t = private {
   scheduler: Scheduler.t;
   build_system: BuildSystem.t;
   overlaid_environment: Analysis.OverlaidEnvironment.t;
+  query_cache: Query.Cache.t;
   subscriptions: Subscriptions.t;
   build_failure: BuildFailure.t;
 }

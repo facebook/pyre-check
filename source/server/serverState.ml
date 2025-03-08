@@ -56,6 +56,7 @@ type t = {
   scheduler: Scheduler.t;
   build_system: BuildSystem.t;
   overlaid_environment: OverlaidEnvironment.t;
+  query_cache: Query.Cache.t;
   subscriptions: Subscriptions.t;
   build_failure: BuildFailure.t;
 }
@@ -65,6 +66,9 @@ let create ?subscriptions ?build_failure ~scheduler ~build_system ~overlaid_envi
     scheduler;
     build_system;
     overlaid_environment;
+    (* Note that the query cache is not part of saved state - we always start with an empty cache.
+     * This is intended, caching is a per-server perf optimization. *)
+    query_cache = Query.Cache.create ();
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
     build_failure = Option.value build_failure ~default:(BuildFailure.create ());
   }

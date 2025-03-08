@@ -226,8 +226,14 @@ let get_buck_error_message ~description ~additional_logs () =
 let process_incremental_update_request
     ~properties:{ ServerProperties.configuration; critical_files; _ }
     ~state:
-      ({ ServerState.overlaid_environment; subscriptions; scheduler; build_system; build_failure }
-      as state)
+      ({
+         ServerState.overlaid_environment;
+         subscriptions;
+         scheduler;
+         build_system;
+         build_failure;
+         _;
+       } as state)
     paths
   =
   let open Lwt.Infix in
