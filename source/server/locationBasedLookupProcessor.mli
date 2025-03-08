@@ -17,6 +17,11 @@ type coverage_by_location =
 
 type module_path = (Ast.ModulePath.t, error_reason) Result.t
 
+val find_all_resolved_types_for_qualifier
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  Reference.t ->
+  types_by_location
+
 val find_all_resolved_types_for_path
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->

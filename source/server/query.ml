@@ -1204,11 +1204,15 @@ let rec process_request_exn
         Single (Base.IsTypechecked (List.map paths ~f:get_is_typechecked))
     | TypesInFiles paths ->
         let find_resolved_types path =
-          match
-            LocationBasedLookupProcessor.find_all_resolved_types_for_path
+          let module_path_to_resolved_types module_path =
+            let qualifier = ModulePath.qualifier module_path in
+            LocationBasedLookupProcessor.find_all_resolved_types_for_qualifier
               ~type_environment
-              ~build_system
-              path
+              qualifier
+          in
+          match
+            LocationBasedLookupProcessor.get_module_path ~type_environment ~build_system path
+            |> Result.bind ~f:module_path_to_resolved_types
           with
           | Result.Ok types ->
               Either.First { Base.path; types = List.map ~f:create_type_at_location types }
