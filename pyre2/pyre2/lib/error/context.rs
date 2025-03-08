@@ -24,6 +24,7 @@ pub enum ErrorContext {
     BadContextManager(Type),
     UnaryOp(String, Type),
     BinaryOp(String, Type, Type),
+    Iteration(Type),
 }
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that

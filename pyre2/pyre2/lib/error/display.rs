@@ -32,6 +32,7 @@ impl ErrorContext {
                     ctx.display(right)
                 )
             }
+            Self::Iteration(ty) => format!("Type `{}` is not iterable", ty),
         }
     }
 }

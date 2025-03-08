@@ -829,7 +829,7 @@ class A:
     def __getitem__(self, s: str) -> str:
         return s
 def f(x: A):
-    for _ in x:  # E: Argument `int` is not assignable to parameter `s` with type `str`
+    for _ in x:  # E: Type `A` is not iterable\n  Argument `int` is not assignable to parameter `s` with type `str` in function `A.__getitem__`
         pass
     "#,
 );

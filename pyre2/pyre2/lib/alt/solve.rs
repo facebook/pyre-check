@@ -286,6 +286,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .flat_map(|t| self.iterate(t, range, errors))
                 .collect(),
             _ => {
+                let context = ErrorContext::Iteration(iterable.clone());
                 let ty = self
                     .unwrap_iterable(iterable)
                     .or_else(|| {
@@ -298,7 +299,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[arg],
                             &[],
                             errors,
-                            None,
+                            Some(&context),
                         )
                     })
                     .unwrap_or_else(|| {
@@ -307,10 +308,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             range,
                             ErrorKind::NotIterable,
                             None,
-                            format!(
-                                "Type `{}` is not iterable",
-                                iterable.clone().deterministic_printing()
-                            ),
+                            context.format(),
                         )
                     });
                 vec![Iterable::OfType(ty)]

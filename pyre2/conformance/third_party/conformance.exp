@@ -5179,8 +5179,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`",
-      "description": "Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`",
+      "concise_description": "Type `type[Color]` is not iterable\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`",
+      "description": "Type `type[Color]` is not iterable\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`",
       "line": 19,
       "name": "type-mismatch",
       "stop_column": 19,
@@ -5189,8 +5189,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`",
-      "description": "Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`",
+      "concise_description": "Type `type[Color]` is not iterable\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`",
+      "description": "Type `type[Color]` is not iterable\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`",
       "line": 19,
       "name": "type-mismatch",
       "stop_column": 19,
