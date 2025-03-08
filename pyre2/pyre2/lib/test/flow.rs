@@ -739,7 +739,7 @@ def fun(foo: Foo, bar: Bar, baz: Baz) -> None:
         case Foo(x = b, y = a):
             assert_type(a, str)
             assert_type(b, int)
-        case Foo(a, b, c):  # E: Index 2 out of range for `__match_args__`
+        case Foo(a, b, c):  # E: Cannot match positional sub-patterns in `Foo`\n  Index 2 out of range for `__match_args__`
             pass
     match bar:
         case Bar(1):  # E: Object of class `Bar` has no attribute `__match_args__`

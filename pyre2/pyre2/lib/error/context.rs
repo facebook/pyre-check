@@ -33,6 +33,8 @@ pub enum ErrorContext {
     Index(Type),
     /// x[y] = ...
     SetItem(Type),
+    /// match x: case Foo(y): ...
+    MatchPositional(Type),
 }
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that

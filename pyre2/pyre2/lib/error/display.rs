@@ -35,6 +35,9 @@ impl ErrorContext {
             Self::Iteration(ty) => format!("Type `{ty}` is not iterable"),
             Self::Index(ty) => format!("Cannot index into `{ty}`"),
             Self::SetItem(ty) => format!("Item assignment is not supported on `{ty}`"),
+            Self::MatchPositional(ty) => {
+                format!("Cannot match positional sub-patterns in `{ty}`")
+            }
         }
     }
 }
