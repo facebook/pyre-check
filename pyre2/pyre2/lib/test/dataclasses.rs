@@ -307,7 +307,7 @@ from dataclasses import dataclass
 class D1:
     x: int
 def f(d: D1, e: D1):
-    if d < e: ...  # E: `<` not supported between `D1` and `D1`
+    if d < e: ...  # E: `<` is not supported between `D1` and `D1`
     if d == e: ...  # OK: `==` and `!=` never error regardless
 
 @dataclass(order=True)
@@ -318,7 +318,7 @@ class D3:
     x: int
 def f(d: D2, e: D2, f: D3):
     if d < e: ...  # OK
-    if e < f: ...  # E: Argument `D3` is not assignable to parameter `other` with type `D2`
+    if e < f: ...  # E: `<` is not supported between `D2` and `D3`\n  Argument `D3` is not assignable to parameter `other` with type `D2`
     if e != f: ...  # OK: `==` and `!=` never error regardless
     "#,
 );

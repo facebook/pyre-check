@@ -147,7 +147,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
-            let context = ErrorContext::BinaryOp(op, lhs.clone(), rhs.clone());
+            let context = ErrorContext::BinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
             // TODO(yangdanny): handle reflected dunder methods
             let method_type =
                 self.attr_infer(lhs, &Name::new(op.dunder()), range, errors, Some(&context));
@@ -652,7 +652,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand, errors);
                 let unop = |t: &Type, f: &dyn Fn(&Lit) -> Option<Type>, method: &Name| {
-                    let context = ErrorContext::UnaryOp(x.op, t.clone());
+                    let context = ErrorContext::UnaryOp(x.op.as_str().to_owned(), t.clone());
                     match t {
                         Type::Literal(lit) if let Some(ret) = f(lit) => ret,
                         Type::ClassType(_) => self.call_method_or_error(
@@ -1028,8 +1028,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 for (op, comparator) in comparisons {
                     let right = self.expr_infer(comparator, errors);
                     let right_range = comparator.range();
+                    let context =
+                        ErrorContext::BinaryOp(op.as_str().to_owned(), left.clone(), right.clone());
                     let compare_by_method = |ty, method, arg| {
-                        self.call_method(ty, &method, x.range, &[arg], &[], errors, None)
+                        self.call_method(ty, &method, x.range, &[arg], &[], errors, Some(&context))
                     };
                     let comparison_error = || {
                         self.error(
@@ -1037,12 +1039,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             x.range,
                             ErrorKind::UnsupportedOperand,
                             None,
-                            format!(
-                                "`{}` not supported between `{}` and `{}`",
-                                op.as_str(),
-                                left,
-                                right
-                            ),
+                            context.format(),
                         );
                     };
                     match op {

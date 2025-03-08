@@ -265,7 +265,7 @@
     "Line 68: Unexpected errors ['Missing argument `not_a_field` in function `ModelBase.__init__`', 'Unexpected keyword argument `id` in function `ModelBase.__init__`', 'Unexpected keyword argument `name` in function `ModelBase.__init__`']",
     "Line 74: Unexpected errors ['Missing argument `not_a_field` in function `ModelBase.__init__`', 'Unexpected keyword argument `id` in function `ModelBase.__init__`', 'Unexpected keyword argument `name` in function `ModelBase.__init__`']",
     "Line 76: Unexpected errors ['Missing argument `not_a_field` in function `ModelBase.__init__`', 'Unexpected keyword argument `id` in function `ModelBase.__init__`']",
-    "Line 78: Unexpected errors ['`<` not supported between `Customer2` and `Customer2`']",
+    "Line 78: Unexpected errors ['`<` is not supported between `Customer2` and `Customer2`']",
     "Line 106: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`']",
     "Line 119: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']"
   ],
@@ -291,7 +291,7 @@
     "Line 50: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']",
     "Line 53: Unexpected errors ['Expected 0 positional arguments, got 2 in function `object.__init__`']",
     "Line 67: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']",
-    "Line 73: Unexpected errors ['`<` not supported between `Customer2` and `Customer2`']",
+    "Line 73: Unexpected errors ['`<` is not supported between `Customer2` and `Customer2`']",
     "Line 94: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']"
   ],
   "dataclasses_transform_meta.py": [
@@ -302,7 +302,7 @@
     "Line 69: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']",
     "Line 75: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']",
     "Line 77: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`']",
-    "Line 79: Unexpected errors ['`<` not supported between `Customer2` and `Customer2`']",
+    "Line 79: Unexpected errors ['`<` is not supported between `Customer2` and `Customer2`']",
     "Line 100: Unexpected errors ['Unexpected keyword argument `id` in function `object.__init__`', 'Unexpected keyword argument `name` in function `object.__init__`']"
   ],
   "dataclasses_usage.py": [

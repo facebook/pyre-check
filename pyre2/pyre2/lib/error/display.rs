@@ -19,7 +19,7 @@ impl ErrorContext {
                 format!("Cannot use `{cm}` as a context manager")
             }
             Self::UnaryOp(op, target) => {
-                format!("Unary `{}` is not supported on `{}`", op.as_str(), target,)
+                format!("Unary `{}` is not supported on `{}`", op, target,)
             }
             Self::BinaryOp(op, left, right) => {
                 let mut ctx = TypeDisplayContext::new();
@@ -27,7 +27,7 @@ impl ErrorContext {
                 ctx.add(right);
                 format!(
                     "`{}` is not supported between `{}` and `{}`",
-                    op.as_str(),
+                    op,
                     ctx.display(left),
                     ctx.display(right)
                 )
