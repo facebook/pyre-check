@@ -337,11 +337,13 @@ end
 (* An cache for expensive queries. We don't generally cache queries, but we have added caching on an
    ad-hoc basis to support specific static analysis use cases *)
 module Cache = struct
-  type t = unit
+  type t = LocationBasedLookupProcessor.types_by_location Reference.Table.t
 
-  let create () = ()
+  let create () = Reference.Table.create ()
 
-  let invalidate () _update_result = ()
+  let invalidate cache update_result =
+    Analysis.ErrorsEnvironment.UpdateResult.modules_with_invalidated_type_check update_result
+    |> Set.iter ~f:(fun module_name -> Hashtbl.remove cache module_name)
 end
 
 let rec parse_request_exn query =
