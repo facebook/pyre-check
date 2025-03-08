@@ -231,7 +231,7 @@ class D:
 
 def f(c: C, d: D):
     c.x = 0
-    d.x = 0  # E: Could not assign to read-only field `x`
+    d.x = 0  # E: Cannot assign to read-only field `x`
     "#,
 );
 

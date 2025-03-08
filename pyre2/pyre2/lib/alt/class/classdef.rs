@@ -212,7 +212,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ErrorKind::BadUnpacking,
                             None,
                             format!(
-                                "Unpacked argument cannot be used for type parameter {}.",
+                                "Unpacked argument cannot be used for type parameter {}",
                                 param.name
                             ),
                         ));
@@ -255,7 +255,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ErrorKind::BadSpecialization,
                         None,
                         format!(
-                            "Expected {} for `{}`, got {}.",
+                            "Expected {} for `{}`, got {}",
                             count(tparams.len(), "type argument"),
                             name,
                             nargs
@@ -281,7 +281,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ErrorKind::BadSpecialization,
                 None,
                 format!(
-                    "Expected {} for `{}`, got {}.",
+                    "Expected {} for `{}`, got {}",
                     count(tparams.len(), "type argument"),
                     name,
                     nargs

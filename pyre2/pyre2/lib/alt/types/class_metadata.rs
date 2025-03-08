@@ -454,7 +454,7 @@ impl Linearization {
                     errors.add(
                         cls.range(),
                         format!(
-                            "Class `{}` inheriting from `{}` creates a cycle.",
+                            "Class `{}` inheriting from `{}` creates a cycle",
                             ClassName(cls.qname()),
                             ClassName(base.qname()),
                         ),
@@ -532,7 +532,7 @@ impl Linearization {
                 errors.add(
                     cls.range(),
                     format!(
-                        "Class `{}` has a nonlinearizable inheritance chain detected at `{}`.",
+                        "Class `{}` has a nonlinearizable inheritance chain detected at `{}`",
                         ClassName(cls.qname()),
                         ClassName(first_candidate.qname()),
                     ),

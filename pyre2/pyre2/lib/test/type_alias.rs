@@ -212,7 +212,7 @@ testcase!(
     r#"
 from typing import Any, assert_type
 type X[T1, T2] = dict[T1, T2]
-def f(x: X[int]):  # E: Expected 2 type arguments for `X`, got 1.
+def f(x: X[int]):  # E: Expected 2 type arguments for `X`, got 1
     assert_type(x, dict[int, Any])
     "#,
 );

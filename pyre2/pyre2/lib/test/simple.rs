@@ -84,11 +84,11 @@ testcase!(
     r#"
 from typing import Any, assert_type
 class C[T1, *Ts, T2]: pass
-C_Alias = C[int]  # E: Expected 3 type arguments for `C`, got 1.
-assert_type(C[int], type[C[int, *tuple[Any, ...], Any]])  # E: Expected 3 type arguments for `C`, got 1.
+C_Alias = C[int]  # E: Expected 3 type arguments for `C`, got 1
+assert_type(C[int], type[C[int, *tuple[Any, ...], Any]])  # E: Expected 3 type arguments for `C`, got 1
 
-AnyClassMethod = classmethod[Any]  # E: Expected 3 type arguments for `classmethod`, got 1.
-assert_type(classmethod[Any], type[classmethod[Any, ..., Any]])  # E: Expected 3 type arguments for `classmethod`, got 1.
+AnyClassMethod = classmethod[Any]  # E: Expected 3 type arguments for `classmethod`, got 1
+assert_type(classmethod[Any], type[classmethod[Any, ..., Any]])  # E: Expected 3 type arguments for `classmethod`, got 1
 
 # No error if it's a TypeVarTuple w/ nothing after, because a TypeVarTuple can be empty
 class C2[T, *Ts]: pass

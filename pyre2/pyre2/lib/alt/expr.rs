@@ -570,7 +570,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             x.range,
                             ErrorKind::InvalidArgument,
                             None,
-                            format!("NewType `{}` not allowed in isinstance.", cls.name()),
+                            format!("NewType `{}` not allowed in isinstance", cls.name()),
                         );
                     }
                 }

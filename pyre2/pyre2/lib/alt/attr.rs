@@ -410,7 +410,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         range,
                         ErrorKind::ReadOnly,
                         context,
-                        format!("Could not assign to read-only field `{attr_name}`"),
+                        format!("Cannot assign to read-only field `{attr_name}`"),
                     );
                 }
                 AttributeInner::Property(_, None, cls) => {

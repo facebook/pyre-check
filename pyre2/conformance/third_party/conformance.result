@@ -5,7 +5,7 @@
     "Line 85: Expected 1 errors",
     "Line 86: Expected 1 errors",
     "Line 90: Expected 1 errors",
-    "Line 44: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias12`, got 0.']",
+    "Line 44: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias12`, got 0']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
   "aliases_implicit.py": [
@@ -15,7 +15,7 @@
     "Line 112: Expected 1 errors",
     "Line 113: Expected 1 errors",
     "Line 117: Expected 1 errors",
-    "Line 58: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias13`, got 0.']"
+    "Line 58: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias13`, got 0']"
   ],
   "aliases_newtype.py": [
     "Line 47: Expected 1 errors"
@@ -350,7 +350,7 @@
     "Line 39: Expected 1 errors",
     "Line 19: Unexpected errors ['Type `type[Color]` is not iterable\\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`', 'Type `type[Color]` is not iterable\\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
-    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for `Color`, got 1.', \"Expected a type form, got instance of `Literal['RED']`\"]",
+    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for `Color`, got 1', \"Expected a type form, got instance of `Literal['RED']`\"]",
     "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
   ],
   "enums_definition.py": [],
@@ -537,10 +537,10 @@
   "generics_typevartuple_specialization.py": [
     "Line 51: Unexpected errors ['assert_type(tuple[int, *tuple[Any, ...]], tuple[int]) failed']",
     "Line 59: Unexpected errors ['Class `Array2` uses type variables not specified in `Generic` or `Protocol` base']",
-    "Line 67: Unexpected errors ['Expected 1 type argument for `Array1D`, got 0.']",
-    "Line 92: Unexpected errors ['Expected 2 type arguments for `VariadicTuple`, got 0.']",
+    "Line 67: Unexpected errors ['Expected 1 type argument for `Array1D`, got 0']",
+    "Line 92: Unexpected errors ['Expected 2 type arguments for `VariadicTuple`, got 0']",
     "Line 94: Unexpected errors ['assert_type(tuple[float, *tuple[Any, ...]], tuple[float]) failed']",
-    "Line 153: Unexpected errors ['Unpacked argument cannot be used for type parameter T1.']",
+    "Line 153: Unexpected errors ['Unpacked argument cannot be used for type parameter T1']",
     "Line 157: Unexpected errors ['assert_type(tuple[Any], tuple[*tuple[int, ...], int]) failed']"
   ],
   "generics_typevartuple_unpack.py": [],
@@ -811,8 +811,8 @@
     "Line 33: Expected 1 errors",
     "Line 38: Expected 1 errors",
     "Line 49: Expected 1 errors",
-    "Line 34: Unexpected errors ['TypedDict item `method2` may not be initialized.']",
-    "Line 39: Unexpected errors ['TypedDict item `method3` may not be initialized.']"
+    "Line 34: Unexpected errors ['TypedDict item `method2` may not be initialized']",
+    "Line 39: Unexpected errors ['TypedDict item `method3` may not be initialized']"
   ],
   "typeddicts_final.py": [],
   "typeddicts_inheritance.py": [

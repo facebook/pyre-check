@@ -20,7 +20,7 @@ u2: UserId = UserId(42)
 
 assert_type(UserId(5) + 1, int)
 
-isinstance(u2, UserId) # E: NewType `UserId` not allowed in isinstance.
+isinstance(u2, UserId) # E: NewType `UserId` not allowed in isinstance
 
 class UserIdDerived(UserId): # E: Subclassing a NewType not allowed
     pass
@@ -38,7 +38,7 @@ GoodNewType1 = NewType("GoodNewType1", list)
 
 GoodNewType2 = NewType("GoodNewType2", GoodNewType1) 
 
-nt1: GoodNewType1[int] # E: Expected 0 type arguments for `GoodNewType1`, got 1.
+nt1: GoodNewType1[int] # E: Expected 0 type arguments for `GoodNewType1`, got 1
 
      "#,
 );

@@ -23,7 +23,7 @@ testcase!(
     test_typed_dict_invalid_inheritance,
     r#"
 from typing import TypedDict
-class Coord(TypedDict, object):  # E: Typed dictionary definitions may only extend other typed dictionaries.
+class Coord(TypedDict, object):  # E: Typed dictionary definitions may only extend other typed dictionaries
     x: int
     y: int
     "#,
@@ -85,7 +85,7 @@ testcase!(
     r#"
 from enum import EnumMeta
 from typing import TypedDict
-class Coord(TypedDict, metaclass=EnumMeta):  # E: Typed dictionary definitions may not specify a metaclass.
+class Coord(TypedDict, metaclass=EnumMeta):  # E: Typed dictionary definitions may not specify a metaclass
     x: int
     y: int
     "#,
@@ -125,7 +125,7 @@ testcase!(
 from typing import TypedDict
 class Coord(TypedDict):
     x: int
-    y: int = 2  # E: TypedDict item `y` may not be initialized.
+    y: int = 2  # E: TypedDict item `y` may not be initialized
     "#,
 );
 
@@ -351,7 +351,7 @@ testcase!(
 from typing import TypedDict, NotRequired
 class D(TypedDict):
      x: int
-     y: int = 5  # E: TypedDict item `y` may not be initialized.
+     y: int = 5  # E: TypedDict item `y` may not be initialized
      z: NotRequired[int]
 # Default values are completely ignored in constructor behavior, so requiredness in `__init__` should be
 # determined entirely by whether the field is required in the resulting dict.

@@ -43,7 +43,7 @@ from typing import Protocol
 class C1:
     x: int
     y: str
-class P1(Protocol, C1):  # E: If `Protocol` is included as a base class, all other bases must be protocols.
+class P1(Protocol, C1):  # E: If `Protocol` is included as a base class, all other bases must be protocols
     x: int
 class P2(Protocol):
     x: int

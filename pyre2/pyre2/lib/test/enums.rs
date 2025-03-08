@@ -132,7 +132,7 @@ from enum import Enum
 class MyEnum(Enum):
     _value_: int
     X = 1
-    Y = "FOO"  # E: The value for enum member `Y` must match the annotation of the _value_ attribute.
+    Y = "FOO"  # E: The value for enum member `Y` must match the annotation of the _value_ attribute
 "#,
 );
 

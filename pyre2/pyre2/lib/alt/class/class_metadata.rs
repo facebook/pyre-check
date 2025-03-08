@@ -189,7 +189,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     range,
                                     ErrorKind::InvalidInheritance,
                                     None,
-                                    "If `Protocol` is included as a base class, all other bases must be protocols.".to_owned(),
+                                    "If `Protocol` is included as a base class, all other bases must be protocols".to_owned(),
                                 );
                             }
                         }
@@ -271,7 +271,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         cls.range(),
                         ErrorKind::InvalidInheritance,
                         None,
-                        "Enums may not be generic.".to_owned(),
+                        "Enums may not be generic".to_owned(),
                     );
                 }
                 enum_metadata = Some(EnumMetadata {
@@ -292,7 +292,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     cls.range(),
                     ErrorKind::InvalidInheritance,
                     None,
-                    "Typed dictionary definitions may not specify a metaclass.".to_owned(),
+                    "Typed dictionary definitions may not specify a metaclass".to_owned(),
                 );
             }
         }
@@ -574,7 +574,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ErrorKind::InvalidInheritance,
                     None,
                     format!(
-                        "Metaclass of `{}` has type `{}` is not a simple class type.",
+                        "Metaclass of `{}` has type `{}` that is not a simple class type",
                         cls.name(),
                         ty,
                     ),

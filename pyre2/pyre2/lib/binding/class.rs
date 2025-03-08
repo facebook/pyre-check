@@ -186,7 +186,7 @@ impl<'a> BindingsBuilder<'a> {
                                 },
                             );
                         } else if annotation.is_some() {
-                            self.error(range, format!("Attribute `{name}` is declared in the class body, so the assignment here should not have an annotation."), ErrorKind::InvalidAnnotation);
+                            self.error(range, format!("Cannot annotate attribute `{name}`, which is already annotated in the class body"), ErrorKind::InvalidAnnotation);
                         }
                     }
                 }

@@ -34,7 +34,7 @@ fn get_mro_names(name: &str, handle: &Handle, state: &State) -> Vec<String> {
 }
 
 fn assert_no_errors(state: &State) {
-    assert_eq!(state.count_errors(), 0, "Expected no errors.");
+    assert_eq!(state.count_errors(), 0, "Expected no errors");
 }
 
 fn assert_has_error(state: &State, error_msg: &str, assertion_msg: &str) {
@@ -154,8 +154,8 @@ class D(C): pass  # we will still record the MRO up until a linearization failur
     // We give up on computing the ancestors of C and record an error.
     assert_has_error(
         &driver,
-        "Class `main.C` has a nonlinearizable inheritance chain detected at `main.A`.",
-        "No error for nonlinearizable inheritance chain.",
+        "Class `main.C` has a nonlinearizable inheritance chain detected at `main.A`",
+        "No error for nonlinearizable inheritance chain",
     );
     let mro_c = get_mro_names("C", &handle, &driver);
     assert_eq!(mro_c.len(), 0);
@@ -175,18 +175,18 @@ class C(B): pass
     state.print_errors();
     assert_has_error(
         &state,
-        "Class `main.A` inheriting from `main.C` creates a cycle.",
-        "No error for cyclical inheritance chain at `main.A`.",
+        "Class `main.A` inheriting from `main.C` creates a cycle",
+        "No error for cyclical inheritance chain at `main.A`",
     );
     assert_has_error(
         &state,
-        "Class `main.B` inheriting from `main.A` creates a cycle.",
-        "No error for cyclical inheritance chain at `main.B`.",
+        "Class `main.B` inheriting from `main.A` creates a cycle",
+        "No error for cyclical inheritance chain at `main.B`",
     );
     assert_has_error(
         &state,
-        "Class `main.C` inheriting from `main.B` creates a cycle.",
-        "No error for cyclical inheritance chain at `main.C`.",
+        "Class `main.C` inheriting from `main.B` creates a cycle",
+        "No error for cyclical inheritance chain at `main.C`",
     );
     // The current logic is essentially correct but has bad UX because we only actually
     // error where we detect the cycle, other classes silently produce an MRO right up

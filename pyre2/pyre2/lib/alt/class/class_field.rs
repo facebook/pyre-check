@@ -410,7 +410,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 range,
                 ErrorKind::BadClassDefinition,
                 None,
-                format!("TypedDict item `{}` may not be initialized.", name),
+                format!("TypedDict item `{}` may not be initialized", name),
             );
         }
 
@@ -459,7 +459,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     self.error(
                         errors, range, ErrorKind::BadAssignment, None,
-                        format!("The value for enum member `{}` must match the annotation of the _value_ attribute.", name), 
+                        format!("The value for enum member `{}` must match the annotation of the _value_ attribute", name), 
                     );
                 }
             }
