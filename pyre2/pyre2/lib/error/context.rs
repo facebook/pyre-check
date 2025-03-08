@@ -6,6 +6,7 @@
  */
 
 use ruff_python_ast::name::Name;
+use ruff_python_ast::Operator;
 use ruff_python_ast::UnaryOp;
 
 use crate::binding::binding::AnnotationTarget;
@@ -24,6 +25,7 @@ use crate::types::types::Type;
 pub enum ErrorContext {
     BadContextManager(Type),
     UnaryOp(UnaryOp, Type),
+    BinaryOp(Operator, Type, Type),
 }
 
 /// The context in which a got <: want type check occurs. This differs from ErrorContext in that

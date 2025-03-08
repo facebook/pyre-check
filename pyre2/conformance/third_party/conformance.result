@@ -34,10 +34,10 @@
     "Line 24: Unexpected errors [\"Expected a type form, got instance of `Literal['Json2']`\", \"Expected a type form, got instance of `Literal['Json2']`\"]",
     "Line 30: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveTuple']`\"]",
     "Line 42: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveMapping']`\"]",
-    "Line 58: Unexpected errors ['Object of class `str` has no attribute `__or__`']",
+    "Line 58: Unexpected errors [\"`|` is not supported between `Literal['GenericTypeAlias1[T1]']` and `type[TypeVar[T1]]`\\n  Object of class `str` has no attribute `__or__`\"]",
     "Line 59: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GenericTypeAlias1, type[list[Error]]]\"]",
     "Line 62: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GenericTypeAlias1, type[list[Error]]]\"]",
-    "Line 65: Unexpected errors ['Object of class `str` has no attribute `__or__`']",
+    "Line 65: Unexpected errors [\"`|` is not supported between `Literal['GenericTypeAlias2[T1, T2]']` and `type[TypeVar[T1]]`\\n  Object of class `str` has no attribute `__or__`\"]",
     "Line 67: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GenericTypeAlias2, type[list[Error]]]\"]",
     "Line 68: Unexpected errors [\"Can't apply arguments to non-class, got LegacyImplicitTypeAlias[GenericTypeAlias2, type[list[Error]]]\"]"
   ],
@@ -378,7 +378,7 @@
     "Line 55: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
-    "Line 34: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)']",
+    "Line 34: Unexpected errors ['`+` is not supported between `?_TypeVar` and `?_TypeVar`\\n  TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'Argument `str` is not assignable to parameter `y` with type `MyStr` in function `concat`']"
   ],
@@ -584,7 +584,7 @@
   "literals_interactions.py": [
     "Line 50: Unexpected errors ['assert_type(IO[str], IO[bytes]) failed']",
     "Line 51: Unexpected errors ['assert_type(IO[str], IO[Any]) failed']",
-    "Line 71: Unexpected errors ['Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], TypeVar[C]]` in function `Matrix.__matmul__`']",
+    "Line 71: Unexpected errors ['`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], TypeVar[C]]` in function `Matrix.__matmul__`']",
     "Line 72: Unexpected errors ['assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed']",
     "Line 106: Unexpected errors [\"Argument `str` is not assignable to parameter `status` with type `Literal['ABORTED', 'MALFORMED']` in function `expects_bad_status`\"]"
   ],

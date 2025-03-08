@@ -147,14 +147,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
+            let context = ErrorContext::BinaryOp(op, lhs.clone(), rhs.clone());
             // TODO(yangdanny): handle reflected dunder methods
-            let method_type = self.attr_infer(lhs, &Name::new(op.dunder()), range, errors, None);
+            let method_type =
+                self.attr_infer(lhs, &Name::new(op.dunder()), range, errors, Some(&context));
             let callable = self.as_call_target_or_error(
                 method_type,
                 CallStyle::BinaryOp(op),
                 range,
                 errors,
-                None,
+                Some(&context),
             );
             self.call_infer(
                 callable,
@@ -162,7 +164,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 &[],
                 range,
                 errors,
-                None,
+                Some(&context),
             )
         };
         let lhs = self.expr_infer(&x.left, errors);

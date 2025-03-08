@@ -21,6 +21,17 @@ impl ErrorContext {
             Self::UnaryOp(op, target) => {
                 format!("Unary `{}` is not supported on `{}`", op.as_str(), target,)
             }
+            Self::BinaryOp(op, left, right) => {
+                let mut ctx = TypeDisplayContext::new();
+                ctx.add(left);
+                ctx.add(right);
+                format!(
+                    "`{}` is not supported between `{}` and `{}`",
+                    op.as_str(),
+                    ctx.display(left),
+                    ctx.display(right)
+                )
+            }
         }
     }
 }

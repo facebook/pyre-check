@@ -271,6 +271,6 @@ testcase!(
     r#"
 class C: pass
 
-x = C() + 1  # E: Object of class `C` has no attribute `__add__`
+x = C() + 1  # E: `+` is not supported between `C` and `Literal[1]`\n  Object of class `C` has no attribute `__add__`
 "#,
 );
