@@ -525,6 +525,7 @@ let rec process_request_exn
     ~global_module_paths_api
     ~scheduler
     ~build_system
+    ~query_cache
     request
   =
   let process_request_exn () =
@@ -761,7 +762,8 @@ let rec process_request_exn
                   ~type_environment
                   ~global_module_paths_api
                   ~scheduler
-                  ~build_system)
+                  ~build_system
+                  ~query_cache)
              requests)
     | Callees caller ->
         let callees =
@@ -1301,9 +1303,22 @@ let rec process_request_exn
       |> fun message -> Response.Error message
 
 
-let process_request ~type_environment ~global_module_paths_api ~scheduler ~build_system request =
+let process_request
+    ~type_environment
+    ~global_module_paths_api
+    ~scheduler
+    ~build_system
+    ~query_cache
+    request
+  =
   match
-    process_request_exn ~type_environment ~global_module_paths_api ~scheduler ~build_system request
+    process_request_exn
+      ~type_environment
+      ~global_module_paths_api
+      ~scheduler
+      ~build_system
+      ~query_cache
+      request
   with
   | exception e ->
       Log.error "Fatal exception in no-daemon query: %s" (Exn.to_string e);
@@ -1311,7 +1326,14 @@ let process_request ~type_environment ~global_module_paths_api ~scheduler ~build
   | result -> result
 
 
-let parse_and_process_request ~overlaid_environment ~scheduler ~build_system request overlay_id =
+let parse_and_process_request
+    ~overlaid_environment
+    ~scheduler
+    ~build_system
+    ~query_cache
+    request
+    overlay_id
+  =
   let global_module_paths_api =
     OverlaidEnvironment.AssumeGlobalModuleListing.global_module_paths_api overlaid_environment
   in
@@ -1334,4 +1356,10 @@ let parse_and_process_request ~overlaid_environment ~scheduler ~build_system req
   match parse_request request with
   | Result.Error reason -> Response.Error reason
   | Result.Ok request ->
-      process_request ~type_environment ~global_module_paths_api ~scheduler ~build_system request
+      process_request
+        ~type_environment
+        ~global_module_paths_api
+        ~scheduler
+        ~build_system
+        ~query_cache
+        request

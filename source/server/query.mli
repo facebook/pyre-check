@@ -208,6 +208,7 @@ val process_request
   global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
   scheduler:Scheduler.t ->
   build_system:BuildSystem.t ->
+  query_cache:Cache.t ->
   Request.t ->
   Response.t
 
@@ -216,6 +217,7 @@ val parse_and_process_request
   :  overlaid_environment:Analysis.OverlaidEnvironment.t ->
   scheduler:Scheduler.t ->
   build_system:BuildSystem.t ->
+  query_cache:Cache.t ->
   string ->
   string option ->
   Response.t

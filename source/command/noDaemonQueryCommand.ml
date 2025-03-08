@@ -166,7 +166,13 @@ let perform_query
   let overlaid_environment = get_environment configuration no_validation_on_class_lookup_failure in
   let query_response =
     (* This query does not support overlay logic *)
-    Server.Query.parse_and_process_request ~overlaid_environment ~scheduler ~build_system query None
+    Server.Query.parse_and_process_request
+      ~overlaid_environment
+      ~scheduler
+      ~build_system
+      ~query_cache:(Server.Query.Cache.create ())
+      query
+      None
   in
   Server.Response.to_yojson (Server.Response.Query query_response)
 

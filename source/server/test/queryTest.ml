@@ -3161,6 +3161,7 @@ let test_process_request context =
         ~global_module_paths_api
         ~scheduler
         ~build_system
+        ~query_cache:(Query.Cache.create ())
         request
     in
     assert_equal

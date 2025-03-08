@@ -330,7 +330,8 @@ let process_overlay_update
 let process_request
     ~properties
     ~state:
-      ({ ServerState.overlaid_environment; scheduler; build_system; build_failure; _ } as state)
+      ({ ServerState.overlaid_environment; scheduler; build_system; build_failure; query_cache; _ }
+      as state)
     request
   =
   match request with
@@ -351,6 +352,7 @@ let process_request
              ~scheduler
              ~build_system
              ~overlaid_environment
+             ~query_cache
              query_text
              None)
       in
@@ -362,6 +364,7 @@ let process_request
              ~scheduler
              ~build_system
              ~overlaid_environment
+             ~query_cache
              query_text
              overlay_id)
       in
