@@ -64,6 +64,8 @@ module UpdateResult = struct
     val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
 
     val invalidated_modules : t -> Ast.Reference.t list
+
+    val modules_with_invalidated_type_check : t -> Ast.Reference.Set.t
   end
 end
 
@@ -371,6 +373,33 @@ module EnvironmentTable = struct
       let invalidated_modules previous =
         source_code_update_result previous
         |> SourceCodeIncrementalApi.UpdateResult.invalidated_modules
+
+
+      (* NOTE: this function returns a very conservative over-approximation to the actual
+       * invalidated modules: because Pyre keys all updates on qualified names,
+       * we cannot easily distinguish the module portion of a define name from
+       * any stack of nested classes or functions, nor can we distinguish the
+       * direct parent from nested packages that live far above the module that
+       * immediately contains the changed define.
+       * 
+       * As a result we just take all prefixes. Since we are only using this function
+       * for query cache invalidation, an over approximation works. *)
+      let modules_with_invalidated_type_check previous =
+        let rec add_all_parent_references sofar reference =
+          match Ast.Reference.prefix reference with
+          | Some parent_reference ->
+              add_all_parent_references (Set.add sofar parent_reference) parent_reference
+          | _ -> sofar
+        in
+        let add_type_check_qualifier dep sofar =
+          match SharedMemoryKeys.DependencyKey.get_key dep with
+          | SharedMemoryKeys.TypeCheckDefine define_name ->
+              add_all_parent_references sofar define_name
+          | _ -> sofar
+        in
+        all_triggered_dependencies previous
+        |> List.fold ~init:Ast.Reference.Set.empty ~f:(fun sofar deps ->
+               SharedMemoryKeys.DependencyKey.RegisteredSet.fold add_type_check_qualifier deps sofar)
 
 
       let upstream { upstream; _ } = upstream

@@ -30,6 +30,11 @@ module UpdateResult = struct
   let all_triggered_dependencies update_result = [triggered_dependencies update_result]
 
   let source_code_update_result = Fn.id
+
+  (* This is just needed because Environment.UpdateResult requires the same type for the previous
+     environment and current environment for simplicitly; this implementation is never actually
+     used. *)
+  let modules_with_invalidated_type_check _ = Ast.Reference.Set.empty
 end
 
 module Overlay = struct

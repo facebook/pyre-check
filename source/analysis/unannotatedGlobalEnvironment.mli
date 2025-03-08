@@ -105,6 +105,8 @@ module UpdateResult : sig
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
   val source_code_update_result : t -> SourceCodeIncrementalApi.UpdateResult.t
+
+  val modules_with_invalidated_type_check : t -> Ast.Reference.Set.t
 end
 
 module Overlay : sig

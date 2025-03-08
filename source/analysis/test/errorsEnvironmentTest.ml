@@ -149,14 +149,28 @@ let test_update_ancestor context =
       x: int = 5
   |};
   let local_root = ScratchProject.local_root_of project in
-  ScratchProject.update_environment
-    project
-    [
-      (Test.relative_artifact_path ~root:local_root ~relative:"a.py"
-      |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
-    ]
-  |> ignore;
+  let update_result =
+    ScratchProject.update_environment
+      project
+      [
+        (Test.relative_artifact_path ~root:local_root ~relative:"a.py"
+        |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
+      ]
+  in
   assert_errors ~context ~project [];
+  assert_equal
+    ~cmp:[%equal: Reference.Set.t]
+    ~printer:(fun s -> Set.to_list s |> [%show: Reference.t list])
+    (ErrorsEnvironment.UpdateResult.modules_with_invalidated_type_check update_result)
+    (Reference.Set.of_list
+       [
+         Reference.create "";
+         Reference.create "a";
+         Reference.create "a.A";
+         Reference.create "b";
+         Reference.create "b.B";
+         Reference.create "c";
+       ]);
   ()
 
 

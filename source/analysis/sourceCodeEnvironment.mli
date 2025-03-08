@@ -25,6 +25,8 @@ module UpdateResult : sig
   val invalidated_modules : t -> Ast.Reference.t list
 
   val module_updates : t -> SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
+
+  val modules_with_invalidated_type_check : t -> Ast.Reference.Set.t
 end
 
 module Overlay : sig
