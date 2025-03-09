@@ -210,3 +210,36 @@ x = f("foo") # type: ignore
 assert_type(x, str)
 "#,
 );
+
+testcase_with_bug!(
+    "Doesn't narrow",
+    test_typeguard,
+    r#"
+from typing import assert_type, overload, TypeGuard
+
+class Animal: ...
+class Mammal(Animal): ...
+class Cat(Mammal): ...
+class Bird(Animal): ...
+class Robin(Bird): ...
+
+@overload
+def f(x: Mammal) -> TypeGuard[Cat]: ...
+@overload
+def f(x: Bird) -> TypeGuard[Robin]: ...
+def f(x: Animal) -> bool: ...
+
+class A:
+    @overload
+    def f(self, x: Mammal) -> TypeGuard[Cat]: ...
+    @overload
+    def f(self, x: Bird) -> TypeGuard[Robin]: ...
+    def f(self, x: Animal) -> bool: ...
+
+def g(meow: Mammal, chirp: Bird):
+    if f(meow):
+        assert_type(meow, Cat)  # E: assert_type
+    if A().f(chirp):
+        assert_type(chirp, Robin)  # E: assert_type
+    "#,
+);
