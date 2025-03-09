@@ -293,6 +293,16 @@ impl Callable {
         }
     }
 
+    pub fn drop_first_param(&self) -> Option<Self> {
+        match self {
+            Self {
+                params: Params::List(params),
+                ret,
+            } if !params.is_empty() => Some(Self::list(params.tail(), ret.clone())),
+            _ => None,
+        }
+    }
+
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         self.params.visit(&mut f);
         f(&self.ret)

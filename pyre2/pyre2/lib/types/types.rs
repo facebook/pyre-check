@@ -20,7 +20,6 @@ use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
-use crate::types::callable::Params;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
@@ -483,20 +482,13 @@ impl Type {
         }
     }
 
-    // Convert a bound method into a callable by stripping the first argument.
-    // TODO: Does not handle generics.
+    /// Convert a bound method into a callable by stripping the first argument.
+    /// TODO: Does not handle generics.
     pub fn to_unbound_callable(&self) -> Option<Type> {
         match self {
-            Type::Callable(
-                box Callable {
-                    params: Params::List(params),
-                    ret,
-                },
-                _,
-            ) if !params.is_empty() => Some(Type::Callable(
-                Box::new(Callable::list(params.tail(), ret.clone())),
-                CallableKind::Anon,
-            )),
+            Type::Callable(callable, _) => callable
+                .drop_first_param()
+                .map(|callable| Type::Callable(Box::new(callable), CallableKind::Anon)),
             Type::Overload(overloads) => overloads
                 .try_mapped_ref(|x| x.to_unbound_callable().ok_or(()))
                 .ok()
