@@ -30,8 +30,8 @@ from typing import *
 def test(x: int):
   return f"{x}"
 
-# reveal_type will produce a type error that tells you the type Pyre has
-# computed for the argument (in this case, int)
+# reveal_type will produce a type error that tells you the type Pyrefly has
+# computed for the return (in this case, str)
 reveal_type(test(42))
 `.trimStart();
 
