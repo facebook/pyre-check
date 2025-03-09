@@ -9,11 +9,10 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
+import dataclasses
 import json
 import logging
 import os
-import dataclasses
 import platform
 import re
 import shutil
@@ -27,7 +26,6 @@ import wheel as _wheel  # noqa
 from twine.commands.check import check as twine_check
 
 from .setup import run as run_setup
-
 
 MODULE_NAME = "pyre_check"
 EXPECTED_LD_PATH = "/lib64/ld-linux-x86-64.so.2"

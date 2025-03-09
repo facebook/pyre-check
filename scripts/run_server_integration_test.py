@@ -36,7 +36,6 @@ from contextlib import contextmanager
 from logging import Logger
 from typing import Generator, Optional, Tuple
 
-
 LOG: Logger = logging.getLogger(__name__)
 
 
@@ -118,7 +117,6 @@ class Repository:
         repository_path: str,
         debug: bool,
     ) -> None:
-
         # Parse list of fake commits.
         assert_readable_directory(repository_path)
         self._base_repository_path = os.path.realpath(repository_path)

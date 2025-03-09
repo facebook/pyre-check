@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import logging
 import sys
 from dataclasses import dataclass
@@ -164,7 +163,7 @@ def _is_precise_tensor(parametric: ParametricType) -> bool:
 
 
 def _collect_shape_types(
-    mapping: Dict[str, List[Annotation]]
+    mapping: Dict[str, List[Annotation]],
 ) -> Dict[str, ShapeAnnotations]:
     final_dictionary = {}
     for filename, annotations in mapping.items():

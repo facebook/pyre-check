@@ -4,11 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-from random import Random
-from typing import List, Tuple, Callable
 import inspect
 import itertools
 import string
+from random import Random
+from typing import Callable, List, Tuple
 
 
 class CodeGenerator:

@@ -7,7 +7,6 @@
 # pyre-strict
 
 import unittest
-
 from typing import cast, Dict, List, Set
 
 from ..analyze_leaks import (
@@ -20,7 +19,6 @@ from ..analyze_leaks import (
     prepare_issues_for_query,
     validate_json_list,
 )
-
 from ..callgraph_utilities import (
     CallGraph,
     DependencyGraph,

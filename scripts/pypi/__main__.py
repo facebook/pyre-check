@@ -7,12 +7,10 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import argparse
 from pathlib import Path
 
 from pypi.build_pypi_package import build_pypi_package
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build a PyPi Package.")

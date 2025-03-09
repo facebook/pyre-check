@@ -10,7 +10,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import argparse
 import json
 import logging
@@ -18,7 +17,6 @@ import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Pattern, Set, Tuple, TypedDict
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -151,7 +149,9 @@ def get_models_from_json_file(path: str) -> Dict[str, TargetModel]:
                     callable_name = json_model["callable"]
                     model = json_to_parsed_model(json_model["model"])
                     json_models[callable_name]["parameters"].update(model["parameters"])
-                    json_models[callable_name]["return_model"].update(model["return_model"])
+                    json_models[callable_name]["return_model"].update(
+                        model["return_model"]
+                    )
 
     return json_models
 

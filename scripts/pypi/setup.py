@@ -9,7 +9,6 @@
 TODO(T132414938) Add a module-level docstring
 """
 
-
 import glob
 import json
 import os
@@ -18,7 +17,6 @@ from pathlib import Path
 from typing import List, Tuple
 
 from setuptools import find_packages, setup
-
 
 if sys.version_info < (3, 8):
     sys.exit("Error: {PACKAGE_NAME} only runs on Python 3.8 and above.")
@@ -81,7 +79,7 @@ def run(
     module_name: str,
     runtime_dependencies: List[str],
     long_description: str,
-    **kwargs: object
+    **kwargs: object,
 ) -> None:
     setup(
         name=package_name,
@@ -129,7 +127,7 @@ def run(
                 "pyre-upgrade = " + module_name + ".tools.upgrade.upgrade:main",
             ]
         ),
-        **kwargs
+        **kwargs,
     )
 
 

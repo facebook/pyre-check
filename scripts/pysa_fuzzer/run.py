@@ -4,8 +4,6 @@
 # LICENSE file in the root directory of this source tree.
 
 # pyre-strict
-from pathlib import Path
-from typing import Optional
 import argparse
 import json
 import logging
@@ -14,6 +12,8 @@ import random
 import shutil
 import subprocess
 import sys
+from pathlib import Path
+from typing import Optional
 
 # Import both code generators with the updated filenames
 from .forward_code_generator import CodeGenerator as ForwardCodeGenerator
@@ -68,9 +68,7 @@ def generate_python_files(
             generated_code = generator.generate()
         elif isinstance(generator, ForwardCodeGenerator):
             generator.reset()
-            generated_code = generator.generate_statements(
-                num_statements, rng
-            )
+            generated_code = generator.generate_statements(num_statements, rng)
         else:
             raise AssertionError("unknown generator")
 
@@ -229,8 +227,8 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if Path(os.getcwd()).name != 'pysa_fuzzer':
-        logging.error('This script must be ran from the pysa_fuzzer directory.')
+    if Path(os.getcwd()).name != "pysa_fuzzer":
+        logging.error("This script must be ran from the pysa_fuzzer directory.")
         sys.exit(1)
 
     output_dir = Path("generated_files")

@@ -15,11 +15,9 @@ from typing import cast, Dict, List, TextIO, Tuple
 import click
 from more_itertools import partition
 
-
 from ..client import daemon_socket, find_directories, identifiers
 from ..client.commands import daemon_query
 from ..client.language_server import connections
-
 from .callgraph_utilities import (
     CallGraph,
     DependencyGraph,
@@ -30,7 +28,6 @@ from .callgraph_utilities import (
     load_json_from_file,
     Trace,
 )
-
 
 DEFAULT_WORKING_DIRECTORY: str = os.getcwd()
 
@@ -177,10 +174,12 @@ def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResu
             response.payload, invalid_callees
         )
         for leak in collected_results.global_leaks:
-            leak["path"] = str(Path(cast(str, leak["path"])).relative_to(project_root.global_root))
+            leak["path"] = str(
+                Path(cast(str, leak["path"])).relative_to(project_root.global_root)
+            )
         collected_results = LeakAnalysisResult(
             global_leaks=collected_results.global_leaks,
-            query_errors= collected_results.query_errors,
+            query_errors=collected_results.query_errors,
             script_errors=collected_results.script_errors,
         )
         return collected_results
@@ -231,11 +230,15 @@ def validate_json_list(json_list: JSON, from_file: str, level: str) -> None:
                     got: {type(value)}: {value}"
             )
 
-def find_issues_in_callables(callables_file: TextIO, project_path: str) -> LeakAnalysisResult:
+
+def find_issues_in_callables(
+    callables_file: TextIO, project_path: str
+) -> LeakAnalysisResult:
     callables = load_json_from_file(callables_file, "CALLABLES_FILE")
     validate_json_list(callables, "CALLABLES_FILE", "top level")
     issues = find_issues(cast(List[str], callables), Path(project_path))
     return issues
+
 
 @click.group()
 def analyze() -> None:

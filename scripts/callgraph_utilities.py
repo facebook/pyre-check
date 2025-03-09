@@ -25,15 +25,16 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
-
 Trace: TypeAlias = List[str]
 JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
+
 
 def load_json_from_file(file_handle: TextIO, file_name: str) -> JSON:
     try:
         return json.load(file_handle)
     except json.JSONDecodeError as e:
         raise ValueError(f"Error loading {file_name} as JSON") from e
+
 
 class InputFormat(abc.ABC):
     call_graph: Dict[str, Set[str]]
@@ -52,8 +53,7 @@ class InputFormat(abc.ABC):
         return call_graph
 
     @abc.abstractmethod
-    def extract_callee(self, callee: JSON) -> str:
-        ...
+    def extract_callee(self, callee: JSON) -> str: ...
 
     def validate_callees(self, callees: List[JSON]) -> Set[str]:
         return {self.extract_callee(callee) for callee in callees}
@@ -77,8 +77,7 @@ class InputFormat(abc.ABC):
         return set(self.call_graph)
 
     @abc.abstractmethod
-    def extract_caller(self, qualifier: str) -> str:
-        ...
+    def extract_caller(self, qualifier: str) -> str: ...
 
 
 class PysaCallGraphInputFormat(InputFormat):
@@ -267,6 +266,7 @@ class DependencyGraph:
     def node_path_to_str(node_path: Trace) -> str:
         return " -> ".join(node_path)
 
+
 class CallGraph:
     call_graph: Dict[str, Set[str]]
     entrypoints: Entrypoints
@@ -294,7 +294,10 @@ class CallGraph:
 
         return transitive_callees
 
-def get_union_callgraph_format(call_graph_kind_and_path: Tuple[Tuple[str, TextIO], ...]) -> UnionCallGraphFormat:
+
+def get_union_callgraph_format(
+    call_graph_kind_and_path: Tuple[Tuple[str, TextIO], ...],
+) -> UnionCallGraphFormat:
     union_call_graph_format = UnionCallGraphFormat()
     for call_graph_kind, call_graph_file in call_graph_kind_and_path:
         call_graph_data = load_json_from_file(call_graph_file, "CALL_GRAPH_FILE")

@@ -80,7 +80,10 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             ]
         )
         production_assert(pyre_path.exists(), "Pyre (client) was not installed.")
-        production_assert(pyre_bin_path.exists(), "Pyre binary (pyre.bin executable) was not installed.")
+        production_assert(
+            pyre_bin_path.exists(),
+            "Pyre binary (pyre.bin executable) was not installed.",
+        )
         production_assert(pyre_upgrade_path.exists(), "Pyre upgrade was not installed.")
 
         # Create test project.
