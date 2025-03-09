@@ -22,11 +22,9 @@ use crate::error::collector::ErrorCollector;
 use crate::error::context::ErrorContext;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
-use crate::module::module_name::ModuleName;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
-use crate::types::callable::FuncId;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
@@ -456,11 +454,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ),
             CallTarget::Dataclass(callable) => self.callable_infer(
                 callable,
-                Some(FuncId {
-                    module: ModuleName::dataclasses(),
-                    cls: None,
-                    func: Name::new("dataclass"),
-                }),
+                CallableKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id(),
                 None,
                 args,
                 keywords,
