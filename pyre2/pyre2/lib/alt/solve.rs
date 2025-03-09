@@ -1473,11 +1473,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if ks.len() == 1 {
                     self.get_idx(*ks.first().unwrap()).arc_clone()
                 } else {
-                    self.unions(
-                        ks.iter()
-                            .map(|k| self.get_idx(*k).arc_clone())
-                            .collect::<Vec<_>>(),
-                    )
+                    let ts = ks
+                        .iter()
+                        .map(|k| self.get_idx(*k).arc_clone())
+                        .collect::<Vec<_>>();
+                    if matches!(ts.last(), Some(Type::Overload(_))) {
+                        // TODO: we should drop only the preceding `@overload`-decorated functions,
+                        // not everything else.
+                        ts.into_iter().last().unwrap()
+                    } else {
+                        self.unions(ts)
+                    }
                 }
             }
             Binding::Narrow(k, op) => self.narrow(&self.get_idx(*k), op, errors),

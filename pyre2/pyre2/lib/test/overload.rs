@@ -9,8 +9,7 @@ use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    "TODO: support overloads defined in py files",
+testcase!(
     test_py,
     r#"
 from typing import overload, assert_type
@@ -27,7 +26,27 @@ def f(x):
 assert_type(f(1), int)
 
 def anywhere():
-    assert_type(f(1), int)  # E: assert_type # E: Argument `Literal[1]` is not assignable to parameter `x` with type `str`
+    assert_type(f(1), int)
+    "#,
+);
+
+testcase_with_bug!(
+    "Signature of `f` in `if x` branch is accidentally discarded when we drop overload signatures while solving Binding::Phi",
+    test_branches,
+    r#"
+from typing import assert_type, overload
+x: bool
+if x:
+    def f(x: str) -> bytes: ...
+else:
+    @overload
+    def f(x: int) -> int: ...
+    @overload
+    def f(x: str) -> str: ...
+    def f(x: int | str) -> int | str:
+        return x
+def g(x: str):
+    assert_type(f(x), bytes | str)  # E: assert_type(str, bytes | str)
     "#,
 );
 
