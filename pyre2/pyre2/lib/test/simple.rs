@@ -646,7 +646,7 @@ class D:
 def f(x: list[int], y: dict[str, bool]) -> None:
     assert_type(x[0], int)
     assert_type(y["test"], bool)
-    x["foo"]  # E: No matching overload
+    x["foo"]  # E: Cannot index into `list[int]`  # E: `Literal['foo']` is not assignable to parameter with type `SupportsIndex`
     c = C()
     c[0]  # E: Cannot index into `C`\n  Object of class `C` has no attribute `__getitem__`
     d = D()

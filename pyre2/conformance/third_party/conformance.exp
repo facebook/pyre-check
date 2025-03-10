@@ -2579,11 +2579,21 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`",
+      "description": "No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`",
       "line": 74,
       "name": "no-matching-overload",
       "stop_column": 19,
+      "stop_line": 74
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "Argument `Literal['']` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
+      "description": "Argument `Literal['']` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
+      "line": 74,
+      "name": "type-mismatch",
+      "stop_column": 22,
       "stop_line": 74
     },
     {
@@ -2599,11 +2609,21 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`",
+      "description": "No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`",
       "line": 75,
       "name": "no-matching-overload",
       "stop_column": 19,
+      "stop_line": 75
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
+      "description": "Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
+      "line": 75,
+      "name": "type-mismatch",
+      "stop_column": 23,
       "stop_line": 75
     },
     {
@@ -4788,11 +4808,21 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7043, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7043`",
+      "description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7043, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7043`",
       "line": 88,
       "name": "no-matching-overload",
       "stop_column": 19,
+      "stop_line": 88
+    },
+    {
+      "code": -2,
+      "column": 36,
+      "concise_description": "Argument `type[str]` is not assignable to parameter `default_factory` with type `() -> @_` in function `dataclasses.field`",
+      "description": "Argument `type[str]` is not assignable to parameter `default_factory` with type `() -> @_` in function `dataclasses.field`",
+      "line": 88,
+      "name": "type-mismatch",
+      "stop_column": 39,
       "stop_line": 88
     },
     {
@@ -5488,10 +5518,20 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "No matching overload found for function `staticmethod.__get__`, reporting errors for closest overload: `(None, type) -> (x: int) -> int`",
+      "description": "No matching overload found for function `staticmethod.__get__`, reporting errors for closest overload: `(None, type) -> (x: int) -> int`",
       "line": 83,
       "name": "no-matching-overload",
+      "stop_column": 27,
+      "stop_line": 83
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Argument `type[Pet4]` is not assignable to parameter with type `type` in function `staticmethod.__get__`",
+      "description": "Argument `type[Pet4]` is not assignable to parameter with type `type` in function `staticmethod.__get__`",
+      "line": 83,
+      "name": "type-mismatch",
       "stop_column": 27,
       "stop_line": 83
     },
@@ -7710,10 +7750,20 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
+      "description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
       "line": 30,
       "name": "no-matching-overload",
+      "stop_column": 28,
+      "stop_line": 30
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
+      "description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
+      "line": 30,
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 30
     },
@@ -7730,10 +7780,20 @@
     {
       "code": -2,
       "column": 17,
-      "concise_description": "No matching overload found",
-      "description": "No matching overload found",
+      "concise_description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
+      "description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
       "line": 31,
       "name": "no-matching-overload",
+      "stop_column": 28,
+      "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
+      "description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
+      "line": 31,
+      "name": "type-mismatch",
       "stop_column": 28,
       "stop_line": 31
     }
@@ -9293,11 +9353,21 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Cannot index into `Bytes`\n  No matching overload found",
-      "description": "Cannot index into `Bytes`\n  No matching overload found",
+      "concise_description": "Cannot index into `Bytes`\n  No matching overload found for function `Bytes.__getitem__`, reporting errors for closest overload: `(__i: int) -> int`",
+      "description": "Cannot index into `Bytes`\n  No matching overload found for function `Bytes.__getitem__`, reporting errors for closest overload: `(__i: int) -> int`",
       "line": 37,
       "name": "no-matching-overload",
       "stop_column": 6,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
+      "column": 3,
+      "concise_description": "Argument `Literal['']` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`",
+      "description": "Argument `Literal['']` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`",
+      "line": 37,
+      "name": "type-mismatch",
+      "stop_column": 5,
       "stop_line": 37
     },
     {

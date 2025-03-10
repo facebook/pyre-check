@@ -325,7 +325,7 @@ class A: ...
 class B(A): ...
 
 xs: list[list[A]] = [[]]
-xs[0] = [B()] # E: No matching overload found
+xs[0] = [B()] # E: No matching overload found for function `list.__setitem__`  # E: `list[B]` is not assignable to parameter with type `list[A]`
 "#,
 );
 

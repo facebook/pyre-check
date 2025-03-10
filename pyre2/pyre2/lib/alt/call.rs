@@ -470,6 +470,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     "unexpected nested overload"
                 );
                 let errors = arg_errors;
+                let mut closest_overload = None;
+                let mut fewest_errors: Option<ErrorCollector> = None;
                 for call_target in overloads.into_iter() {
                     if let Some(call_target) = call_target {
                         let arg_errors =
@@ -477,27 +479,62 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         let call_errors =
                             ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
                         let res = self.call_infer_inner(
-                            call_target,
+                            call_target.clone(),
                             args,
                             keywords,
                             range,
                             &arg_errors,
                             &call_errors,
-                            context,
+                            // We intentionally drop the context here, as arg errors don't need it,
+                            // and if we log any call errors, we'll also log a separate
+                            // "No matching overloads" error with the necessary context.
+                            None,
                         );
                         if call_errors.is_empty() {
                             errors.extend(arg_errors);
                             return res;
                         }
+                        match &fewest_errors {
+                            Some(errs) if errs.len() <= call_errors.len() => {}
+                            _ => {
+                                closest_overload = Some(call_target.1);
+                                fewest_errors = Some(call_errors);
+                            }
+                        }
                     }
                 }
-                return self.error(
+                let (func_id, signature) = match closest_overload {
+                    Some(CallTarget::Callable(callable, kind)) => {
+                        (kind.as_func_id(), Some(callable))
+                    }
+                    Some(CallTarget::BoundMethod(_, callable, kind)) => {
+                        (kind.as_func_id(), callable.drop_first_param())
+                    }
+                    Some(CallTarget::Dataclass(callable)) => (
+                        CallableKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id(),
+                        Some(callable),
+                    ),
+                    _ => (None, None),
+                };
+                let func_desc = match func_id {
+                    Some(id) => format!(" for function `{}`", id.format(self.module_info().name())),
+                    None => "".to_owned(),
+                };
+                let signature_desc = match signature {
+                    Some(sig) => format!(", reporting errors for closest overload: `{sig}`"),
+                    None => "".to_owned(),
+                };
+                self.error(
                     errors,
                     range,
                     ErrorKind::NoMatchingOverload,
                     context,
-                    "No matching overload found".to_owned(),
+                    format!("No matching overload found{func_desc}{signature_desc}"),
                 );
+                if let Some(errs) = fewest_errors {
+                    errors.extend(errs);
+                }
+                return Type::any_error();
             }
             CallTarget::Any(style) => {
                 // Make sure we still catch errors in the arguments.

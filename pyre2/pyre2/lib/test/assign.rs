@@ -9,15 +9,14 @@ use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
 
-testcase_with_bug!(
-    "Error message is really bad",
+testcase!(
     test_subscript_unpack_assign,
     r#"
 from typing import assert_type
 
 x: list[int] = [0, 1, 2]
 x[0], x[1] = 3, 4
-x[0], x[1] = 3, "foo"  # E: Item assignment is not supported on `list[int]`\n  No matching overload found
+x[0], x[1] = 3, "foo"  # E: Item assignment is not supported on `list[int]`\n  No matching overload found for function `list.__setitem__`, reporting errors for closest overload: `(SupportsIndex, int) -> None`  # E: Argument `Literal['foo']` is not assignable to parameter with type `int` in function `list.__setitem__`
 "#,
 );
 
@@ -35,7 +34,7 @@ y[0] = 1
 assert_type(y, list[int])
 
 z = [1, 2, 3]
-z[0] = "oops"  # E: No matching overload found
+z[0] = "oops"  # E: No matching overload found  # E: `Literal['oops']` is not assignable to parameter with type `int`
 
 a: int = 1
 a[0] = 1  # E: `int` has no attribute `__setitem__`

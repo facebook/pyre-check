@@ -170,7 +170,7 @@ if sys.version_info >= (3, 12):
 assert_type(f(0), int)
 assert_type(f(""), str)
 assert_type(f(), None)
-f(0, 0) # E: No matching overload found
+f(0, 0) # E: No matching overload found  # E: Expected 1 positional argument, got 2
 "#,
 );
 
