@@ -7,17 +7,6 @@
  * @format
  */
 
-.editorContainer {
-    position: relative;
-}
-
-.toolbar {
-    display: flex;
-    background: #fff;
-    border-bottom: 1px solid #ddd;
-    font-size: 14px;
-}
-
 .tryEditorConfig {
     position: absolute;
     width: 100%;
@@ -75,20 +64,31 @@
 
 .tryEditor {
     display: flex;
+    flex-direction: column;
     flex: 1;
 }
 
-.code,
+.code {
+    overflow: auto;
+}
+
 .results {
-    flex: 1;
-    width: 50%;
+    height: 25vh; /* 25% of initial height */
+    overflow: auto;
+}
+
+.resultsToolbar {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
 }
 
 .code {
     background: #fff;
 }
 
-.results {
+.resultsContainer {
     position: relative;
     font-size: 12px;
     background: #f7f7f7;

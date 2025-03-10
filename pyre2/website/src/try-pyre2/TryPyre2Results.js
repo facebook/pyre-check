@@ -54,8 +54,8 @@ export default component TryPyre2Results(
   const [activeToolbarTab, setActiveToolbarTab] = useState('errors');
 
   return (
-    <div className={styles.results}>
-      <div className={styles.toolbar}>
+    <div>
+      <div className={styles.resultsToolbar}>
         <ul className={styles.tabs}>
           <li
             className={clsx(
@@ -75,39 +75,41 @@ export default component TryPyre2Results(
           </li>
         </ul>
       </div>
-      {loading && (
-        <div>
-          <div className={styles.loader}>
-            <div className={styles.bounce1}></div>
-            <div className={styles.bounce2}></div>
-            <div></div>
+      <div className={styles.results}>
+        {loading && (
+          <div>
+            <div className={styles.loader}>
+              <div className={styles.bounce1}></div>
+              <div className={styles.bounce2}></div>
+              <div></div>
+            </div>
           </div>
-        </div>
-      )}
-      {!loading && activeToolbarTab === 'errors' && (
-        <pre className={clsx(styles.resultBody, styles.errors)}>
-          <ul>
-            {internalError ? (
-              <li>Pyrefly encountered an internal error: {internalError}.</li>
-            ) : errors === undefined || errors === null ? (
-              <li>Pyrefly failed to fetch errors.</li>
-            ) : errors?.length === 0 ? (
-              <li>No errors!</li>
-            ) : (
-              errors.map((error, i) => (
-                <li key={i}>
-                  <ErrorMessage key={i} error={error} />
-                </li>
-              ))
-            )}
-          </ul>
-        </pre>
-      )}
-      {!loading && activeToolbarTab === 'json' && (
-        <pre className={styles.resultBody}>
-          {JSON.stringify(errors, null, 2)}
-        </pre>
-      )}
+        )}
+        {!loading && activeToolbarTab === 'errors' && (
+          <pre className={clsx(styles.resultBody, styles.errors)}>
+            <ul>
+              {internalError ? (
+                <li>Pyrefly encountered an internal error: {internalError}.</li>
+              ) : errors === undefined || errors === null ? (
+                <li>Pyrefly failed to fetch errors.</li>
+              ) : errors?.length === 0 ? (
+                <li>No errors!</li>
+              ) : (
+                errors.map((error, i) => (
+                  <li key={i}>
+                    <ErrorMessage key={i} error={error} />
+                  </li>
+                ))
+              )}
+            </ul>
+          </pre>
+        )}
+        {!loading && activeToolbarTab === 'json' && (
+          <pre className={styles.resultBody}>
+            {JSON.stringify(errors, null, 2)}
+          </pre>
+        )}
+      </div>
     </div>
   );
 }

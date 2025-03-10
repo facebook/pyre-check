@@ -145,33 +145,33 @@ export default component TryPyre2(
   return (
     <div className={styles.tryEditor}>
       <div className={styles.code}>
-        <div className={styles.editorContainer}>
-          <Editor
-            defaultPath={sampleFilename}
-            defaultValue={codeSample}
-            defaultLanguage="python"
-            theme="vs-light"
-            height={height}
-            onChange={forceRecheck}
-            onMount={onMount}
-            options={{
-              minimap: {enabled: false},
-              hover: {enabled: true, above: false},
-              scrollBeyondLastLine: false,
-              overviewRulerBorder: false,
-              scrollbar: {
-                alwaysConsumeMouseWheel: false,
-              },
-            }}
-          />
-        </div>
+        <Editor
+          defaultPath={sampleFilename}
+          defaultValue={codeSample}
+          defaultLanguage="python"
+          theme="vs-light"
+          height={height}
+          onChange={forceRecheck}
+          onMount={onMount}
+          options={{
+            minimap: {enabled: false},
+            hover: {enabled: true, above: false},
+            scrollBeyondLastLine: false,
+            overviewRulerBorder: false,
+            scrollbar: {
+              alwaysConsumeMouseWheel: false,
+            },
+          }}
+        />
       </div>
       {showErrorPanel && (
-        <TryPyre2Results
-          loading={loading}
-          errors={errors}
-          internalError={internalError}
-        />
+        <div className={styles.resultsContainer}>
+          <TryPyre2Results
+            loading={loading}
+            errors={errors}
+            internalError={internalError}
+          />
+        </div>
       )}
     </div>
   );
