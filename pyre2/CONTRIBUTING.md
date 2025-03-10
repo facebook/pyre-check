@@ -17,14 +17,13 @@ questions, please drop us a line at cla@fb.com.
 You are also expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md), so
 please read that if you are a new contributor.
 
-## Developing Errpy
+## Developing Pyrefly
 
 We do not yet have development docs ready in this repository, they should be
 coming soon.
 
-If you are interested in working on Errpy, please file an issue and we'll work
-on the docs for this, in the meantime we are focused on getting `ocamlrep` into
-the Rust repository in crates.io so that the build will be come standard.
+If you are interested in working on Pyrefly, please file an issue and we'll work
+on the docs for this.
 
 ## License
 
