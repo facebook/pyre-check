@@ -132,9 +132,9 @@ impl ModuleName {
             if let Some(component) = raw_component.as_os_str().to_str() {
                 components.push(component)
             } else {
-                anyhow::bail!(PathConversionError::ComponentNotUTF8 {
+                return Err(anyhow::anyhow!(PathConversionError::ComponentNotUTF8 {
                     component: raw_component.as_os_str().to_owned(),
-                })
+                }));
             }
         }
         let last_element = components.pop();
@@ -143,9 +143,9 @@ impl ModuleName {
             Some(file_name) => {
                 let splits: Vec<&str> = file_name.rsplitn(2, '.').collect();
                 if splits.len() != 2 || !(splits[0] == "py" || splits[0] == "pyi") {
-                    anyhow::bail!(PathConversionError::InvalidExtension {
+                    return Err(anyhow::anyhow!(PathConversionError::InvalidExtension {
                         file_name: file_name.to_owned(),
-                    });
+                    }));
                 }
                 if splits[1] != dunder::INIT {
                     components.push(splits[1])
