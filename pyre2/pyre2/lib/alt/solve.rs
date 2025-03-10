@@ -89,6 +89,7 @@ use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
+use crate::types::types::Overload;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -1425,7 +1426,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             acc.split_off_first().0
                         } else {
                             acc.reverse();
-                            Type::Overload(acc)
+                            Type::Overload(Overload(acc))
                         }
                     } else {
                         ty
@@ -1449,7 +1450,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                             defs.split_off_first().0
                         } else {
-                            Type::Overload(defs)
+                            Type::Overload(Overload(defs))
                         }
                     } else {
                         first.ty.clone()

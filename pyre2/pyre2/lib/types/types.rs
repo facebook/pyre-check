@@ -291,6 +291,9 @@ impl BoundMethod {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Overload(pub Vec1<Type>);
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Forall {
     pub name: Name,
     pub tparams: TParams,
@@ -307,7 +310,7 @@ pub enum Type {
     /// and the second is the function.
     BoundMethod(Box<BoundMethod>),
     /// An overloaded function.
-    Overload(Vec1<Type>),
+    Overload(Overload),
     Union(Vec<Type>),
     #[expect(dead_code)] // Not currently used, but may be in the future
     Intersect(Vec<Type>),
@@ -500,9 +503,10 @@ impl Type {
                 .drop_first_param()
                 .map(|callable| Type::Callable(Box::new(callable), CallableKind::Anon)),
             Type::Overload(overloads) => overloads
+                .0
                 .try_mapped_ref(|x| x.to_unbound_callable().ok_or(()))
                 .ok()
-                .map(Type::Overload),
+                .map(|overload| Type::Overload(Overload(overload))),
             _ => None,
         }
     }
@@ -517,7 +521,7 @@ impl Type {
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
             Type::Forall(forall) => forall.ty.callee_kind(),
             // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.
-            Type::Overload(vs) => vs.first().callee_kind(),
+            Type::Overload(vs) => vs.0.first().callee_kind(),
             _ => None,
         }
     }
@@ -641,7 +645,7 @@ impl Type {
                 f(func);
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
-            Type::Overload(xs) => xs.iter().for_each(f),
+            Type::Overload(xs) => xs.0.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
@@ -690,7 +694,7 @@ impl Type {
                 f(func);
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
-            Type::Overload(xs) => xs.iter_mut().for_each(f),
+            Type::Overload(xs) => xs.0.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),

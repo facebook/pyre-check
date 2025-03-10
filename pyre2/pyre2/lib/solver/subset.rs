@@ -566,10 +566,10 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (Type::Union(ls), u) => ls.iter().all(|l| self.is_subset_eq(l, u)),
             (l, Type::Intersect(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
-            (l, Type::Overload(us)) => us.iter().all(|u| self.is_subset_eq(l, u)),
+            (l, Type::Overload(us)) => us.0.iter().all(|u| self.is_subset_eq(l, u)),
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
-            (Type::Overload(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
+            (Type::Overload(ls), u) => ls.0.iter().any(|l| self.is_subset_eq(l, u)),
             (Type::BoundMethod(box method), Type::Callable(_, _))
                 if let Some(l_no_self) = method.to_callable() =>
             {

@@ -220,7 +220,7 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(
                     f,
                     "Overload[{}]",
-                    commas_iter(|| ts.iter().map(|t| self.display(t)))
+                    commas_iter(|| ts.0.iter().map(|t| self.display(t)))
                 )
             }
             Type::ParamSpecValue(x) => {
