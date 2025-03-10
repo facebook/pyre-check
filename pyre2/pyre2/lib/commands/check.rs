@@ -94,10 +94,16 @@ pub struct Args {
     expectations: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct LoaderInputs {
+    search_roots: Vec<PathBuf>,
+    site_package_path: Vec<PathBuf>,
+}
+
 #[derive(Debug, Clone)]
 struct CheckLoader {
     sources: SmallMap<ModuleName, PathBuf>,
-    search_roots: Vec<PathBuf>,
+    loader_inputs: LoaderInputs,
     error_style_for_sources: ErrorStyle,
     error_style_for_dependencies: ErrorStyle,
 }
@@ -111,12 +117,17 @@ impl Loader for CheckLoader {
                 ModulePath::filesystem(path.clone()),
                 self.error_style_for_sources,
             ))
-        } else if let Some(path) = find_module(module, &self.search_roots) {
+        } else if let Some(path) = find_module(module, &self.loader_inputs.search_roots) {
             Ok((path, self.error_style_for_dependencies))
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, self.error_style_for_dependencies))
+        } else if let Some(path) = find_module(module, &self.loader_inputs.site_package_path) {
+            Ok((path, self.error_style_for_dependencies))
         } else {
-            Err(FindError::search_path(&self.search_roots))
+            Err(FindError::search_path(
+                &self.loader_inputs.search_roots,
+                &self.loader_inputs.site_package_path,
+            ))
         }
     }
 }
@@ -151,7 +162,7 @@ impl OutputFormat {
 }
 
 fn create_loader(
-    search_roots: Vec<PathBuf>,
+    loader_inputs: LoaderInputs,
     files_with_module_name_and_metadata: &[(PathBuf, ModuleName, RuntimeMetadata)],
     check_all: bool,
 ) -> LoaderId {
@@ -164,7 +175,7 @@ fn create_loader(
     let error_style_for_sources = ErrorStyle::Delayed;
     LoaderId::new(CheckLoader {
         sources: to_check,
-        search_roots,
+        loader_inputs,
         error_style_for_sources,
         error_style_for_dependencies: if check_all {
             error_style_for_sources
@@ -218,6 +229,7 @@ impl Args {
     fn override_config(&self, config: &mut ConfigFile) {
         set_if_some(&mut config.python_platform, self.python_platform.as_ref());
         set_if_some(&mut config.python_version, self.python_version.as_ref());
+        set_if_some(&mut config.search_roots, self.include.as_ref());
         set_if_some(
             &mut config.site_package_path,
             self.site_package_path.as_ref(),
@@ -231,7 +243,6 @@ impl Args {
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         let args = self;
-        let include = args.include.clone();
 
         let expanded_file_list = files_to_check.files()?;
         if expanded_file_list.is_empty() {
@@ -243,28 +254,27 @@ impl Args {
             args.override_config(&mut config);
             (path, config)
         });
-
         // We want to partition the files to check by their associated search roots, so we can
         // create a separate loader for each partition.
-        let mut partition_by_search_roots: SmallMap<Vec<PathBuf>, Vec<(PathBuf, ConfigFile)>> =
+        let mut partition_by_loader_inputs: SmallMap<LoaderInputs, Vec<(PathBuf, ConfigFile)>> =
             SmallMap::new();
-        for x in files_and_configs {
-            let search_roots = match include.as_ref() {
-                None => x.1.search_roots.clone(),
-                Some(include) => include.clone(),
+        for (path, config) in files_and_configs {
+            let key = LoaderInputs {
+                search_roots: config.search_roots.clone(),
+                site_package_path: config.site_package_path.clone(),
             };
-            partition_by_search_roots
-                .entry(search_roots)
+            partition_by_loader_inputs
+                .entry(key)
                 .or_default()
-                .push(x);
+                .push((path, config));
         }
 
-        let handles: Vec<Handle> = partition_by_search_roots
+        let handles: Vec<Handle> = partition_by_loader_inputs
             .into_iter()
-            .flat_map(|(search_roots, files_and_configs)| {
+            .flat_map(|(loader_inputs, files_and_configs)| {
                 let files_with_module_name_and_metadata =
                     files_and_configs.into_map(|(path, config)| {
-                        let module_name = module_from_path(&path, &search_roots);
+                        let module_name = module_from_path(&path, &loader_inputs.search_roots);
                         let version = match args.python_version {
                             Some(version) => version,
                             None => config.python_version,
@@ -273,7 +283,7 @@ impl Args {
                         (path, module_name, RuntimeMetadata::new(version, platform))
                     });
                 let loader = create_loader(
-                    search_roots,
+                    loader_inputs,
                     &files_with_module_name_and_metadata,
                     args.check_all,
                 );

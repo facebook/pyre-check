@@ -183,7 +183,8 @@ impl Loader for LspLoader {
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok((path, ErrorStyle::Never))
         } else {
-            Err(FindError::search_path(&self.search_roots))
+            // TODO(connernilsen): add site package path here
+            Err(FindError::search_path(&self.search_roots, &[]))
         }
     }
 

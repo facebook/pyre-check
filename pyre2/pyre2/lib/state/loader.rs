@@ -28,10 +28,11 @@ impl FindError {
         Self(Arc::new(err))
     }
 
-    pub fn search_path(search_roots: &[PathBuf]) -> FindError {
+    pub fn search_path(search_roots: &[PathBuf], site_package_path: &[PathBuf]) -> FindError {
         Self::new(anyhow!(
-            "looked at search roots: {}",
-            commas_iter(|| search_roots.iter().map(|x| x.display()))
+            "looked at search roots ({}) and site package path ({})",
+            commas_iter(|| search_roots.iter().map(|x| x.display())),
+            commas_iter(|| site_package_path.iter().map(|x| x.display())),
         ))
     }
 
