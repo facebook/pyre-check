@@ -15,8 +15,8 @@ function getNavBarItems() {
   return [
     process.env.INTERNAL_STATIC_DOCS
       ? {
-          to: 'en/fb/docs/',
-          activeBasePath: 'en/fb/docs/',
+          to: 'en/docs/fb/',
+          activeBasePath: 'en/docs/fb',
           label: 'Docs',
           position: 'left',
         }
