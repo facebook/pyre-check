@@ -5,6 +5,7 @@
   lockTest
   buildSystemTest
   queryTest
+  cachedQueryTest
   checksumMapTest
   stateTest)
  (preprocess
