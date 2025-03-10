@@ -303,6 +303,16 @@ impl Callable {
         }
     }
 
+    pub fn as_typeguard(&self) -> Option<&Type> {
+        match self {
+            Self {
+                params: _,
+                ret: Type::TypeGuard(t),
+            } => Some(t),
+            _ => None,
+        }
+    }
+
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         self.params.visit(&mut f);
         f(&self.ret)

@@ -328,6 +328,13 @@ impl Forall {
         self.ty.clone().as_type()
     }
 
+    fn as_typeguard(&self) -> Option<&Type> {
+        match &self.ty {
+            ForallType::Callable(callable, _) => callable.as_typeguard(),
+            ForallType::TypeAlias(_) => None,
+        }
+    }
+
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match &self.ty {
             ForallType::Callable(c, _) => c.visit(f),
@@ -513,17 +520,8 @@ impl Type {
 
     pub fn as_typeguard(&self) -> Option<&Type> {
         match self {
-            Type::Callable(box callable, _)
-            | Type::Forall(box Forall {
-                ty: ForallType::Callable(callable, _),
-                ..
-            }) if let Callable {
-                params: _,
-                ret: Type::TypeGuard(t),
-            } = callable =>
-            {
-                Some(t)
-            }
+            Type::Callable(callable, _) => callable.as_typeguard(),
+            Type::Forall(forall) => forall.as_typeguard(),
             Type::BoundMethod(box BoundMethod { func: t, .. }) => t.as_typeguard(),
             _ => None,
         }
