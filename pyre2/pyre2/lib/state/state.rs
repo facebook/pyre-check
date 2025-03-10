@@ -20,6 +20,7 @@ use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use tracing::debug;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
@@ -328,6 +329,7 @@ impl State {
                         != writer.steps.solutions.as_ref().map(|x| &x.1)
                     {
                         if old_solutions.is_some() {
+                            debug!("Exports changed for `{}`", module_data.handle.module());
                             changed = true;
                         }
                         writer.epochs.changed = self.now;
@@ -708,6 +710,7 @@ impl State {
         let mut changed_twice = SmallSet::new();
         self.ensure_loaders(handles);
         loop {
+            debug!("Running an epoch");
             self.run_step(handles);
             let changed = mem::take(&mut *self.changed.lock());
             if changed.is_empty() {
@@ -715,6 +718,7 @@ impl State {
             }
             for c in &changed {
                 if !changed_twice.insert(c.dupe()) {
+                    debug!("Mutable dependency cycle, invalidating the cycle");
                     // We are in a cycle of mutual dependencies, so give up.
                     // Just invalidate everything in the cycle and recompute it all.
                     self.invalidate_rdeps(&changed);
