@@ -310,6 +310,17 @@ impl BoundMethodType {
             Self::Overload(overload) => Type::Overload(overload.clone()),
         }
     }
+
+    pub fn as_typeguard(&self) -> Option<Type> {
+        match self {
+            Self::Callable(callable, kind) => callable
+                .drop_first_param()
+                .and_then(|ty| ty.as_typeguard(kind.clone())),
+            Self::Forall(forall) => forall.as_typeguard(),
+            // TODO: handle overloaded type guards
+            Self::Overload(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -350,9 +361,21 @@ impl Forall {
         self.ty.clone().as_type()
     }
 
-    fn as_typeguard(&self) -> Option<&Type> {
+    fn as_typeguard(&self) -> Option<Type> {
         match &self.ty {
-            ForallType::Callable(callable, _) => callable.as_typeguard(),
+            ForallType::Callable(callable, kind) => {
+                if let Some(Type::Callable(box callable, kind)) =
+                    callable.as_typeguard(kind.clone())
+                {
+                    Some(Self::new_type(
+                        self.name.clone(),
+                        self.tparams.clone(),
+                        ForallType::Callable(callable, kind),
+                    ))
+                } else {
+                    None
+                }
+            }
             ForallType::TypeAlias(_) => None,
         }
     }
@@ -540,18 +563,11 @@ impl Type {
         }
     }
 
-    pub fn as_typeguard(&self) -> Option<&Type> {
+    pub fn as_typeguard(&self) -> Option<Type> {
         match self {
-            Type::Callable(callable, _) => callable.as_typeguard(),
-            Type::Forall(forall) => forall.as_typeguard(),
-            Type::BoundMethod(method) => {
-                match &method.func {
-                    BoundMethodType::Callable(callable, _) => callable.as_typeguard(),
-                    BoundMethodType::Forall(forall) => forall.as_typeguard(),
-                    // TODO: handle overloaded type guards
-                    BoundMethodType::Overload(_) => None,
-                }
-            }
+            Type::Callable(box callable, kind) => callable.as_typeguard(kind.clone()),
+            Type::Forall(box forall) => forall.as_typeguard(),
+            Type::BoundMethod(method) => method.func.as_typeguard(),
             _ => None,
         }
     }

@@ -303,12 +303,12 @@ impl Callable {
         }
     }
 
-    pub fn as_typeguard(&self) -> Option<&Type> {
+    pub fn as_typeguard(&self, kind: CallableKind) -> Option<Type> {
         match self {
             Self {
                 params: _,
-                ret: Type::TypeGuard(t),
-            } => Some(t),
+                ret: Type::TypeGuard(_),
+            } => Some(Type::Callable(Box::new(self.clone()), kind)),
             _ => None,
         }
     }

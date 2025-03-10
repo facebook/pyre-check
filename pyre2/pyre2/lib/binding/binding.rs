@@ -692,7 +692,7 @@ pub enum Binding {
     /// A phi node, representing the union of several alternative keys.
     Phi(SmallSet<Idx<Key>>),
     /// A narrowed type.
-    Narrow(Idx<Key>, Box<NarrowOp>),
+    Narrow(Idx<Key>, Box<NarrowOp>, TextRange),
     /// An import of a module.
     /// Also contains the path along the module to bind, and optionally a key
     /// with the previous import to this binding (in which case merge the modules).
@@ -845,7 +845,7 @@ impl DisplayWith<Bindings> for Binding {
                 }
                 write!(f, ")")
             }
-            Self::Narrow(k, op) => {
+            Self::Narrow(k, op, _) => {
                 write!(f, "narrow({}, {op:?})", ctx.display(*k))
             }
             Self::NameAssign(name, None, expr) => {

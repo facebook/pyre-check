@@ -526,7 +526,7 @@ assert_type(z, Literal[True])
 );
 
 testcase!(
-    test_typeguard,
+    test_typeguard_basic,
     r#"
 from typing import TypeGuard, assert_type
 class Cat:
@@ -540,6 +540,7 @@ def f(x: Cat | Dog):
         assert_type(x, Cat)
     else:
         assert_type(x, Cat | Dog)
+    is_black_cat(1)  # E: Argument `Literal[1]` is not assignable to parameter `x` with type `Cat | Dog` in function `is_black_cat`
     "#,
 );
 
@@ -584,9 +585,12 @@ testcase!(
     r#"
 from typing import TypeGuard, assert_type
 def f[T](x: object, y: T, z: T) -> TypeGuard[int]: ...
+def f2[T](x: object, y: T) -> TypeGuard[T]: ...
 def g(x: int | str):
     if f(x, 0, 0):
         assert_type(x, int)
+    if f2(x, ""):
+        assert_type(x, str)
     "#,
 );
 

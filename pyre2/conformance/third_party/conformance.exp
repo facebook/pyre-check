@@ -9139,26 +9139,6 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed",
-      "description": "assert_type(tuple[?_TypeVar, ?_TypeVar], tuple[str, str]) failed",
-      "line": 17,
-      "name": "assert-type",
-      "stop_column": 44,
-      "stop_line": 17
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(set[?_TypeVar], set[int]) failed",
-      "description": "assert_type(set[?_TypeVar], set[int]) failed",
-      "line": 32,
-      "name": "assert-type",
-      "stop_column": 35,
-      "stop_line": 32
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "assert_type(A, B) failed",
       "description": "assert_type(A, B) failed",
       "line": 89,

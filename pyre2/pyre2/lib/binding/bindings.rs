@@ -650,7 +650,7 @@ impl<'a> BindingsBuilder<'a> {
             if let Some(name_key) = self.lookup_name(name) {
                 let binding_key = self.table.insert(
                     Key::Narrow(name.clone(), *op_range, use_range),
-                    Binding::Narrow(name_key, Box::new(op.clone())),
+                    Binding::Narrow(name_key, Box::new(op.clone()), use_range),
                 );
                 self.scopes.update_flow_info(name, binding_key, None);
             }

@@ -3,7 +3,7 @@
   "pass": 31,
   "fail": 102,
   "pass_rate": 0.23,
-  "differences": 631,
+  "differences": 629,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -109,7 +109,7 @@
     "literals_parameterizations.py": 4,
     "namedtuples_define_class.py": 2,
     "namedtuples_usage.py": 1,
-    "narrowing_typeguard.py": 6,
+    "narrowing_typeguard.py": 4,
     "narrowing_typeis.py": 14,
     "protocols_class_objects.py": 6,
     "protocols_definition.py": 5,

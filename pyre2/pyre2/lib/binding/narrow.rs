@@ -27,7 +27,7 @@ use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
 assert_words!(NarrowVal, 8);
-assert_words!(NarrowOp, 9);
+assert_words!(NarrowOp, 10);
 
 /// Nearly all `NarrowVal` are of type `Expr`, so even though `Expr` is bigger,
 /// we don't bother boxing it.
@@ -60,8 +60,8 @@ pub enum NarrowOp {
     IsNotInstance(NarrowVal),
     IsSubclass(NarrowVal),
     IsNotSubclass(NarrowVal),
-    TypeGuard(Type),
-    NotTypeGuard(Type),
+    TypeGuard(Type, Arguments),
+    NotTypeGuard(Type, Arguments),
     /// (func, args) for a function call that may narrow the type of its first argument.
     Call(Box<NarrowVal>, Arguments),
     NotCall(Box<NarrowVal>, Arguments),
@@ -82,8 +82,8 @@ impl NarrowOp {
             Self::Falsy => Self::Truthy,
             Self::And(ops) => Self::Or(ops.map(|op| op.negate())),
             Self::Or(ops) => Self::And(ops.map(|op| op.negate())),
-            Self::TypeGuard(t) => Self::NotTypeGuard(t.clone()),
-            Self::NotTypeGuard(t) => Self::TypeGuard(t.clone()),
+            Self::TypeGuard(ty, args) => Self::NotTypeGuard(ty.clone(), args.clone()),
+            Self::NotTypeGuard(ty, args) => Self::TypeGuard(ty.clone(), args.clone()),
             Self::Call(f, args) => Self::NotCall(f.clone(), args.clone()),
             Self::NotCall(f, args) => Self::Call(f.clone(), args.clone()),
         }

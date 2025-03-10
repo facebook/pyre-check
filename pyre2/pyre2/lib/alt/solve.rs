@@ -1493,7 +1493,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
             }
-            Binding::Narrow(k, op) => self.narrow(&self.get_idx(*k), op, errors),
+            Binding::Narrow(k, op, range) => self.narrow(&self.get_idx(*k), op, *range, errors),
             Binding::AnnotatedType(ann, val) => match &self.get_idx(*ann).ty() {
                 Some(ty) => (*ty).clone(),
                 None => self.solve_binding_inner(val, errors),
