@@ -7,7 +7,6 @@
 
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::hash::Hasher;
 use std::mem;
 
@@ -28,6 +27,7 @@ use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::lock::Mutex;
+use crate::util::mutable::ImmutableKey;
 use crate::util::mutable::Mutable;
 
 /// An identifiable thing held behind an ArcId.
@@ -101,20 +101,6 @@ impl Identifiable {
     }
 }
 
-impl PartialEq for Identifiable {
-    fn eq(&self, other: &Self) -> bool {
-        self.immutable_eq(other)
-    }
-}
-
-impl Eq for Identifiable {}
-
-impl Hash for Identifiable {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.immutable_hash(state);
-    }
-}
-
 /// Caching wrapper to create identifiers that are indexed by `ArcId`.
 ///
 /// The idea is we have a list of previously used values, and we can reuse them.
@@ -130,7 +116,7 @@ pub struct IdCache(Mutex<IdCacheInner>);
 #[derive(Debug)]
 struct IdCacheInner {
     /// Things that were created last time and we can reuse.
-    reusable: HashMap<Identifiable, Vec<Identifiable>>,
+    reusable: HashMap<ImmutableKey<Identifiable>, Vec<Identifiable>>,
     /// Things we are creating.
     recorded: Vec<Identifiable>,
 }
@@ -142,9 +128,9 @@ pub struct IdCacheHistory(Vec<Identifiable>);
 impl IdCache {
     pub fn new(history: IdCacheHistory) -> Self {
         #[allow(clippy::mutable_key_type)] // Our Eq/Hash deliberately excludes the mutable bits.
-        let mut reusable: HashMap<Identifiable, Vec<Identifiable>> = HashMap::new();
+        let mut reusable: HashMap<ImmutableKey<Identifiable>, Vec<Identifiable>> = HashMap::new();
         for x in history.0 {
-            reusable.entry(x.dupe()).or_default().push(x);
+            reusable.entry(ImmutableKey(x.dupe())).or_default().push(x);
         }
         Self(Mutex::new(IdCacheInner {
             reusable,
@@ -158,7 +144,7 @@ impl IdCache {
 
     fn get(&self, mut x: Identifiable) -> Identifiable {
         let mut lock = self.0.lock();
-        match lock.reusable.entry(x.dupe()) {
+        match lock.reusable.entry(ImmutableKey(x.dupe())) {
             Entry::Occupied(mut e) => {
                 if let Some(existing) = e.get_mut().pop() {
                     if e.get().is_empty() {

@@ -7,7 +7,10 @@
 
 //! A trait for values that have a mutable and immutable part.
 
+use std::hash::Hash;
 use std::hash::Hasher;
+
+use dupe::Dupe;
 
 /// A trait for values that have a mutable and immutable part.
 pub trait Mutable {
@@ -22,4 +25,23 @@ pub trait Mutable {
     /// If `immutable_eq` returns `true` for both values,
     /// then after `mutate` the values should be fully equal.
     fn mutate(&self, x: &Self);
+}
+
+/// A wrapper around a `Mutable` value such that the `Hash`/`Eq`
+/// implementations are based on the immutable part of the value.
+#[derive(Clone, Dupe, Copy, Debug, Default)]
+pub struct ImmutableKey<T: Mutable>(pub T);
+
+impl<T: Mutable> PartialEq for ImmutableKey<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.immutable_eq(&other.0)
+    }
+}
+
+impl<T: Mutable> Eq for ImmutableKey<T> {}
+
+impl<T: Mutable> Hash for ImmutableKey<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.immutable_hash(state);
+    }
 }
