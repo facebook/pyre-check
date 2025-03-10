@@ -16,6 +16,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
+use crate::util::mutable::Mutable;
 
 /// Used to represent TypeVarTuple calls. Each TypeVarTuple is unique, so use the ArcId to separate them.
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -46,16 +47,18 @@ impl TypeVarTuple {
     pub fn to_type(&self) -> Type {
         Type::TypeVarTuple(self.dupe())
     }
+}
 
-    pub fn immutable_eq(&self, other: &TypeVarTuple) -> bool {
+impl Mutable for TypeVarTuple {
+    fn immutable_eq(&self, other: &TypeVarTuple) -> bool {
         self.0.qname.immutable_eq(&other.0.qname)
     }
 
-    pub fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+    fn immutable_hash<H: Hasher>(&self, state: &mut H) {
         self.0.qname.immutable_hash(state);
     }
 
-    pub fn mutate(&self, x: &TypeVarTuple) {
+    fn mutate(&self, x: &TypeVarTuple) {
         self.0.qname.mutate(&x.0.qname);
     }
 }

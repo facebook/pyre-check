@@ -28,6 +28,7 @@ use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::lock::Mutex;
+use crate::util::mutable::Mutable;
 
 /// An identifiable thing held behind an ArcId.
 /// For Eq/Hash, we only hash the immutable pieces.

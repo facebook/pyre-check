@@ -20,6 +20,7 @@ pub mod listing;
 pub mod lock;
 pub mod locked_map;
 pub mod memory;
+pub mod mutable;
 pub mod no_hash;
 pub mod notify_watcher;
 pub mod prelude;
