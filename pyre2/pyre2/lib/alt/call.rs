@@ -81,21 +81,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Vec::new(),
                 CallTarget::Overload(overloads.0.mapped(|ty| self.as_call_target(ty))),
             )),
-            Type::BoundMethod(box BoundMethod { obj, func }) => match self.as_call_target(func) {
-                Some((gs, CallTarget::Callable(c, kind))) => {
-                    Some((gs, CallTarget::BoundMethod(obj, c, kind)))
+            Type::BoundMethod(box BoundMethod { obj, func }) => {
+                match self.as_call_target(func.as_type()) {
+                    Some((gs, CallTarget::Callable(c, kind))) => {
+                        Some((gs, CallTarget::BoundMethod(obj, c, kind)))
+                    }
+                    Some((gs, CallTarget::Overload(overloads))) => {
+                        let overloads = overloads.mapped(|x| match x {
+                            Some((gs2, CallTarget::Callable(c, kind))) => {
+                                Some((gs2, CallTarget::BoundMethod(obj.clone(), c, kind)))
+                            }
+                            _ => None,
+                        });
+                        Some((gs, CallTarget::Overload(overloads)))
+                    }
+                    _ => None,
                 }
-                Some((gs, CallTarget::Overload(overloads))) => {
-                    let overloads = overloads.mapped(|x| match x {
-                        Some((gs2, CallTarget::Callable(c, kind))) => {
-                            Some((gs2, CallTarget::BoundMethod(obj.clone(), c, kind)))
-                        }
-                        _ => None,
-                    });
-                    Some((gs, CallTarget::Overload(overloads)))
-                }
-                _ => None,
-            },
+            }
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
             Type::Type(box Type::ClassType(cls)) => Some((Vec::new(), CallTarget::Class(cls))),
             Type::Forall(forall) => {

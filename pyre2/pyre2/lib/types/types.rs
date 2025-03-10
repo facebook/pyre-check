@@ -281,12 +281,35 @@ pub enum CalleeKind {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoundMethod {
     pub obj: Type,
-    pub func: Type,
+    pub func: BoundMethodType,
 }
 
 impl BoundMethod {
     pub fn to_callable(&self) -> Option<Type> {
-        self.func.to_unbound_callable()
+        self.as_bound_function().to_unbound_callable()
+    }
+
+    pub fn as_bound_function(&self) -> Type {
+        self.func.as_type()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BoundMethodType {
+    Callable(Callable, CallableKind),
+    Forall(Forall),
+    Overload(Overload),
+}
+
+impl BoundMethodType {
+    pub fn as_type(&self) -> Type {
+        match self {
+            Self::Callable(callable, kind) => {
+                Type::Callable(Box::new(callable.clone()), kind.clone())
+            }
+            Self::Forall(forall) => Type::Forall(Box::new(forall.clone())),
+            Self::Overload(overload) => Type::Overload(overload.clone()),
+        }
     }
 }
 
@@ -522,7 +545,14 @@ impl Type {
         match self {
             Type::Callable(callable, _) => callable.as_typeguard(),
             Type::Forall(forall) => forall.as_typeguard(),
-            Type::BoundMethod(box BoundMethod { func: t, .. }) => t.as_typeguard(),
+            Type::BoundMethod(method) => {
+                match &method.func {
+                    BoundMethodType::Callable(callable, _) => callable.as_typeguard(),
+                    BoundMethodType::Forall(forall) => forall.as_typeguard(),
+                    // TODO: handle overloaded type guards
+                    BoundMethodType::Overload(_) => None,
+                }
+            }
             _ => None,
         }
     }
@@ -674,7 +704,11 @@ impl Type {
             Type::Callable(c, _) => c.visit(f),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 f(obj);
-                f(func);
+                match func {
+                    BoundMethodType::Callable(c, _) => c.visit(f),
+                    BoundMethodType::Forall(forall) => forall.visit(f),
+                    BoundMethodType::Overload(overload) => overload.0.iter().for_each(f),
+                }
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
             Type::Overload(xs) => xs.0.iter().for_each(f),
@@ -723,7 +757,11 @@ impl Type {
             Type::Callable(c, _) => c.visit_mut(f),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 f(obj);
-                f(func);
+                match func {
+                    BoundMethodType::Callable(c, _) => c.visit_mut(f),
+                    BoundMethodType::Forall(forall) => forall.visit_mut(f),
+                    BoundMethodType::Overload(overload) => overload.0.iter_mut().for_each(f),
+                }
             }
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
             Type::Overload(xs) => xs.0.iter_mut().for_each(f),

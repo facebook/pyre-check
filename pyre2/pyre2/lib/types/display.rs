@@ -233,7 +233,7 @@ impl<'a> TypeDisplayContext<'a> {
                     f,
                     "BoundMethod[{}, {}]",
                     self.display(obj),
-                    self.display(func)
+                    self.display(&func.as_type())
                 )
             }
             Type::Never(NeverStyle::NoReturn) => write!(f, "NoReturn"),

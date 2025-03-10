@@ -42,6 +42,7 @@ use crate::types::class::ClassType;
 use crate::types::literal::Lit;
 use crate::types::typed_dict::TypedDictField;
 use crate::types::types::BoundMethod;
+use crate::types::types::BoundMethodType;
 use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
 use crate::types::types::ForallType;
@@ -317,15 +318,6 @@ impl ClassField {
     }
 }
 
-fn is_unbound_function(ty: &Type) -> bool {
-    match ty {
-        Type::Forall(forall) => matches!(forall.ty, ForallType::Callable(..)),
-        Type::Callable(_, _) => true,
-        Type::Overload(_) => true,
-        _ => false,
-    }
-}
-
 pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
     match attr {
         Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
@@ -340,14 +332,18 @@ pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
 }
 
 fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
-    if is_unbound_function(attr) {
-        Some(Type::BoundMethod(Box::new(BoundMethod {
-            obj,
-            func: attr.clone(),
-        })))
-    } else {
-        None
-    }
+    let func = match attr {
+        Type::Forall(forall) if matches!(forall.ty, ForallType::Callable(..)) => {
+            Some(BoundMethodType::Forall((**forall).clone()))
+        }
+        Type::Callable(callable, kind) => Some(BoundMethodType::Callable(
+            (**callable).clone(),
+            kind.clone(),
+        )),
+        Type::Overload(overload) => Some(BoundMethodType::Overload(overload.clone())),
+        _ => None,
+    };
+    func.map(|func| Type::BoundMethod(Box::new(BoundMethod { obj, func })))
 }
 
 fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
