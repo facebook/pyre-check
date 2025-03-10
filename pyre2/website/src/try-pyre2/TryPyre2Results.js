@@ -43,7 +43,12 @@ component ErrorMessage(error: PyreflyErrorMessage) {
   }
 
   const message = `${rangeStr}: ${error.message}`;
-  return <span className={styles.msgType}>{message}</span>;
+  return (
+    <span className={styles.msgType}>
+      <span className={styles.errorMessageError}>ERROR </span>
+      {message}
+    </span>
+  );
 }
 
 export default component TryPyre2Results(
