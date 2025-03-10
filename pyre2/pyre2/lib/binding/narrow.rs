@@ -22,8 +22,12 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::smallmap;
 
+use crate::assert_words;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
+
+assert_words!(NarrowVal, 2);
+assert_words!(NarrowOp, 8);
 
 #[derive(Clone, Debug)]
 pub enum NarrowVal {
