@@ -15,6 +15,8 @@ use serde::Deserialize;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::metadata::DEFAULT_PYTHON_PLATFORM;
+use crate::Globs;
+
 static PYPROJECT_FILE_NAME: &str = "pyproject.toml";
 
 pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
@@ -25,6 +27,10 @@ pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
 
 #[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
 pub struct ConfigFile {
+    /// Files that should be counted as sources (e.g. user-space code).
+    #[serde(default = "ConfigFile::default_project_include")]
+    pub project_include: Globs,
+
     /// corresponds to --include (soon to be renamed to --search-path) in Args
     // TODO(connernilsen): set this to config directory when config is found
     #[serde(default = "ConfigFile::default_search_roots")]
@@ -52,11 +58,16 @@ impl Default for ConfigFile {
             python_platform: Self::default_python_platform(),
             python_version: PythonVersion::default(),
             site_package_path: Vec::new(),
+            project_include: Self::default_project_include(),
         }
     }
 }
 
 impl ConfigFile {
+    pub fn default_project_include() -> Globs {
+        Globs::new(vec![".".to_owned()])
+    }
+
     pub fn default_python_platform() -> String {
         DEFAULT_PYTHON_PLATFORM.to_owned()
     }
@@ -120,6 +131,10 @@ mod tests {
         assert_eq!(
             config,
             ConfigFile {
+                project_include: Globs::new(vec![
+                    "./tests".to_owned(),
+                    "./implementation".to_owned()
+                ]),
                 python_platform: "darwin".to_owned(),
                 python_version: PythonVersion::new(1, 2, 3),
                 ..ConfigFile::default()
@@ -162,6 +177,10 @@ mod tests {
         assert_eq!(
             config,
             ConfigFile {
+                project_include: Globs::new(vec![
+                    "./tests".to_owned(),
+                    "./implementation".to_owned()
+                ]),
                 python_platform: "darwin".to_owned(),
                 python_version: PythonVersion::new(1, 2, 3),
                 ..ConfigFile::default()

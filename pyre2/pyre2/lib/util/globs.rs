@@ -10,13 +10,14 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use serde::Deserialize;
 use starlark_map::small_set::SmallSet;
 
 use crate::util::fs_anyhow;
 use crate::util::listing::FileList;
 use crate::util::prelude::SliceExt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
 pub struct Globs(Vec<String>);
 
 impl Globs {
