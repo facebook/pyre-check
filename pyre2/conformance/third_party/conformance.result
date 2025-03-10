@@ -148,11 +148,7 @@
     "Line 42: Expected 1 errors",
     "Line 107: Expected 1 errors",
     "Line 74: Unexpected errors ['assert_type(Class5[list[int]], Class5[set[str]]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', \"Argument `Literal['']` is not assignable to parameter `value` with type `int` in function `Class5.__init__`\"]",
-    "Line 75: Unexpected errors ['assert_type(Class5[list[int]], Class5[float]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', 'Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`']",
-    "Line 91: Unexpected errors ['assert_type(Class6[TypeVar[V1], TypeVar[V2]], Class6[int, str]) failed']",
-    "Line 92: Unexpected errors ['Argument `Class6[int, str]` is not assignable to parameter `self` with type `Class6[TypeVar[V1], TypeVar[V2]]` in function `Class6.__init__`']",
-    "Line 99: Unexpected errors ['assert_type(Class7[TypeVar[V2], TypeVar[V1]], Class7[str, int]) failed']",
-    "Line 100: Unexpected errors ['Argument `Class7[str, int]` is not assignable to parameter `self` with type `Class7[TypeVar[V2], TypeVar[V1]]` in function `Class7.__init__`']"
+    "Line 75: Unexpected errors ['assert_type(Class5[list[int]], Class5[float]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', 'Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`']"
   ],
   "constructors_call_metaclass.py": [
     "Line 20: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
@@ -530,10 +526,7 @@
   "generics_typevartuple_concat.py": [
     "Line 56: Unexpected errors ['Returned type `tuple[*tuple[Unknown, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`']"
   ],
-  "generics_typevartuple_overloads.py": [
-    "Line 30: Unexpected errors ['assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar]]) failed', 'No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`', 'Argument `Array[tuple[?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`']",
-    "Line 31: Unexpected errors ['assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed', 'No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`', 'Argument `Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`']"
-  ],
+  "generics_typevartuple_overloads.py": [],
   "generics_typevartuple_specialization.py": [
     "Line 51: Unexpected errors ['assert_type(tuple[int, *tuple[Any, ...]], tuple[int]) failed']",
     "Line 59: Unexpected errors ['Class `Array2` uses type variables not specified in `Generic` or `Protocol` base']",
@@ -584,8 +577,8 @@
   "literals_interactions.py": [
     "Line 50: Unexpected errors ['assert_type(IO[str], IO[bytes]) failed']",
     "Line 51: Unexpected errors ['assert_type(IO[str], IO[Any]) failed']",
-    "Line 71: Unexpected errors ['`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], TypeVar[C]]` in function `Matrix.__matmul__`']",
-    "Line 72: Unexpected errors ['assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed']",
+    "Line 71: Unexpected errors ['`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`']",
+    "Line 72: Unexpected errors ['assert_type(Matrix[Literal[2], int], Matrix[Literal[2], Literal[7]]) failed']",
     "Line 106: Unexpected errors [\"Argument `str` is not assignable to parameter `status` with type `Literal['ABORTED', 'MALFORMED']` in function `expects_bad_status`\"]"
   ],
   "literals_literalstring.py": [

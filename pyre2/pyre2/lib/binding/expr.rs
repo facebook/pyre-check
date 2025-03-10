@@ -367,25 +367,24 @@ impl<'a> BindingsBuilder<'a> {
                     self.ensure_expr(e);
                 }
             }
-            Expr::StringLiteral(literal) => {
-                match Ast::parse_type_literal(literal) {
-                    Ok(expr) => {
-                        *x = expr;
-                        // You are not allowed to nest type strings in type strings,
-                        self.ensure_expr(x);
-                    }
-                    Err(e) => {
-                        self.error(
-                            literal.range,
-                            format!(
-                                "Could not parse type string: {}, got {e}",
-                                literal.value.to_str()
-                            ),
-                            ErrorKind::ParseError,
-                        );
-                    }
+            Expr::StringLiteral(literal) => match Ast::parse_type_literal(literal) {
+                Ok(expr) => {
+                    *x = expr;
+                    // TODO: Remember if we have already done a parse_type_literal, so we could properly
+                    // reject anntoations of the form `"'T'"`.
+                    self.ensure_type(x, tparams_builder);
                 }
-            }
+                Err(e) => {
+                    self.error(
+                        literal.range,
+                        format!(
+                            "Could not parse type string: {}, got {e}",
+                            literal.value.to_str()
+                        ),
+                        ErrorKind::ParseError,
+                    );
+                }
+            },
             // Bind the lambda so we don't crash on undefined parameter names.
             Expr::Lambda(_) => self.ensure_expr(x),
             _ => Visitors::visit_expr_mut(x, |x| self.ensure_type(x, tparams_builder)),

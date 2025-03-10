@@ -998,6 +998,16 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "Could not parse type string: , got Expected an expression at byte range 998..998",
+      "description": "Could not parse type string: , got Expected an expression at byte range 998..998",
+      "line": 41,
+      "name": "parse-error",
+      "stop_column": 16,
+      "stop_line": 41
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Invalid annotation: this expression cannot be used in annotations",
       "description": "Invalid annotation: this expression cannot be used in annotations",
@@ -2615,46 +2625,6 @@
       "name": "type-mismatch",
       "stop_column": 23,
       "stop_line": 75
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class6[TypeVar[V1], TypeVar[V2]], Class6[int, str]) failed",
-      "description": "assert_type(Class6[TypeVar[V1], TypeVar[V2]], Class6[int, str]) failed",
-      "line": 91,
-      "name": "assert-type",
-      "stop_column": 45,
-      "stop_line": 91
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Argument `Class6[int, str]` is not assignable to parameter `self` with type `Class6[TypeVar[V1], TypeVar[V2]]` in function `Class6.__init__`",
-      "description": "Argument `Class6[int, str]` is not assignable to parameter `self` with type `Class6[TypeVar[V1], TypeVar[V2]]` in function `Class6.__init__`",
-      "line": 92,
-      "name": "type-mismatch",
-      "stop_column": 29,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class7[TypeVar[V2], TypeVar[V1]], Class7[str, int]) failed",
-      "description": "assert_type(Class7[TypeVar[V2], TypeVar[V1]], Class7[str, int]) failed",
-      "line": 99,
-      "name": "assert-type",
-      "stop_column": 45,
-      "stop_line": 99
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Argument `Class7[str, int]` is not assignable to parameter `self` with type `Class7[TypeVar[V2], TypeVar[V1]]` in function `Class7.__init__`",
-      "description": "Argument `Class7[str, int]` is not assignable to parameter `self` with type `Class7[TypeVar[V2], TypeVar[V1]]` in function `Class7.__init__`",
-      "line": 100,
-      "name": "type-mismatch",
-      "stop_column": 29,
-      "stop_line": 100
     },
     {
       "code": -2,
@@ -4798,8 +4768,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7043, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7043`",
-      "description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7043, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7043`",
+      "concise_description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7042, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7042`",
+      "description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7042, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7042`",
       "line": 88,
       "name": "no-matching-overload",
       "stop_column": 19,
@@ -7726,68 +7696,7 @@
       "stop_line": 56
     }
   ],
-  "generics_typevartuple_overloads.py": [
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar]]) failed",
-      "description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar]]) failed",
-      "line": 30,
-      "name": "assert-type",
-      "stop_column": 52,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
-      "description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
-      "line": 30,
-      "name": "no-matching-overload",
-      "stop_column": 28,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
-      "description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
-      "line": 30,
-      "name": "type-mismatch",
-      "stop_column": 28,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed",
-      "description": "assert_type(Any, Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]) failed",
-      "line": 31,
-      "name": "assert-type",
-      "stop_column": 59,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
-      "description": "No matching overload found for function `Array.transpose`, reporting errors for closest overload: `() -> Array[tuple[TypeVar[Axis2], TypeVar[Axis1]]]`",
-      "line": 31,
-      "name": "no-matching-overload",
-      "stop_column": 28,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
-      "description": "Argument `Array[tuple[?_TypeVar, ?_TypeVar, ?_TypeVar]]` is not assignable to parameter `self` with type `Array[tuple[TypeVar[Axis1], TypeVar[Axis2]]]` in function `Array.transpose`",
-      "line": 31,
-      "name": "type-mismatch",
-      "stop_column": 28,
-      "stop_line": 31
-    }
-  ],
+  "generics_typevartuple_overloads.py": [],
   "generics_typevartuple_specialization.py": [
     {
       "code": -2,
@@ -8393,8 +8302,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], TypeVar[C]]` in function `Matrix.__matmul__`",
-      "description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], TypeVar[C]]` in function `Matrix.__matmul__`",
+      "concise_description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`",
+      "description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`",
       "line": 71,
       "name": "type-mismatch",
       "stop_column": 14,
@@ -8403,8 +8312,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed",
-      "description": "assert_type(Matrix[Literal[2], TypeVar[C]], Matrix[Literal[2], Literal[7]]) failed",
+      "concise_description": "assert_type(Matrix[Literal[2], int], Matrix[Literal[2], Literal[7]]) failed",
+      "description": "assert_type(Matrix[Literal[2], int], Matrix[Literal[2], Literal[7]]) failed",
       "line": 72,
       "name": "assert-type",
       "stop_column": 51,

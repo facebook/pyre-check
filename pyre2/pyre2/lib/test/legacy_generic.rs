@@ -40,6 +40,21 @@ assert_type(foo(1), int)
 );
 
 testcase!(
+    test_tyvar_quoted,
+    r#"
+from typing import assert_type
+import typing
+
+T = typing.TypeVar("T")
+
+def foo(x: "T") -> "T":
+    return x
+
+assert_type(foo(1), int)
+"#,
+);
+
+testcase!(
     test_tyvar_mix,
     r#"
 from typing import TypeVar, assert_type
