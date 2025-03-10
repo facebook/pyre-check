@@ -478,10 +478,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
-      "index": 0,
+      "index": 1,
       "parameter": "formal(request)"
     },
-    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]|0|formal(request):901c0eb3ec312db7b6194ed74ceb5ebe"
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]|1|formal(request):57840920913c0d50f61b475f7b9363e0"
   }
 }
 {

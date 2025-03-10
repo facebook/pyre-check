@@ -6973,7 +6973,6 @@ let test_higher_order_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               ~index:1
                                (Target.Regular.Function { name = "test.bar"; kind = Normal });
                            ]
                          ())) );

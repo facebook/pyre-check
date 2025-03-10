@@ -764,10 +764,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
-      "index": 0,
+      "index": 1,
       "parameter": "formal(*rest0)"
     },
-    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]|0|formal(*rest0):b2220ba6daaf7525ebd5a1ce46389240"
+    "master_handle": "decorator.main:5002:0:Call|decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]|1|formal(*rest0):0abc9c5b600c4da04d2dfce64ae4234c"
   }
 }
 {

@@ -374,6 +374,15 @@ module MethodKind = struct
   end
 end
 
+let is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver target =
+  if is_static_method then
+    false
+  else if is_class_method then
+    true
+  else
+    (not explicit_receiver) && Target.is_method_or_override target
+
+
 (** A specific target of a given call, with extra information. *)
 module CallTarget = struct
   module T = struct
@@ -565,6 +574,68 @@ module CallTarget = struct
       call_target with
       target = CallableToDecoratorsMap.redirect_to_decorated ~callable:target decorators;
     }
+
+
+  (* Produce call targets with a textual order index.
+   *
+   * The index is the number of times a given function or method was previously called,
+   * respecting the execution flow.
+   *
+   * ```
+   * def f():
+   *   a = source_with_hop() # index=0
+   *   sink_with_hop(x=a) # index=0
+   *   sink_with_hop(y=a) # index=1
+   *   b = source_with_hop() # index=1
+   *   sink_with_hop(z=a) # index=2
+   * ```
+   *)
+  module Indexer = struct
+    type t = {
+      indices: int Target.HashMap.t;
+      mutable seen_targets: Target.Set.t;
+    }
+
+    let create () = { indices = Target.HashMap.create (); seen_targets = Target.Set.empty }
+
+    let generate_fresh_indices indexer =
+      Target.Set.iter (Hashtbl.incr indexer.indices) indexer.seen_targets;
+      indexer.seen_targets <- Target.Set.empty
+
+
+    let get_index ~indexer original_target =
+      let target_for_index = Target.for_issue_handle original_target in
+      let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
+      indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
+      index
+
+
+    let create_target
+        indexer
+        ~implicit_dunder_call
+        ~return_type
+        ?receiver_type
+        ?(is_class_method = false)
+        ?(is_static_method = false)
+        ?(explicit_receiver = false)
+        original_target
+      =
+      {
+        target = original_target;
+        implicit_receiver =
+          is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver original_target;
+        implicit_dunder_call;
+        index = get_index ~indexer original_target;
+        return_type;
+        receiver_class = receiver_type >>= receiver_class_from_type ~is_class_method;
+        is_class_method;
+        is_static_method;
+      }
+
+
+    let regenerate_index ~indexer ({ target; _ } as call_target) =
+      { call_target with index = get_index ~indexer target }
+  end
 end
 
 module ImplicitArgument = struct
@@ -709,6 +780,13 @@ module HigherOrderParameter = struct
       higher_order_parameter with
       call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
     }
+
+
+  let regenerate_call_indices ~indexer ({ call_targets; _ } as higher_order_parameter) =
+    {
+      higher_order_parameter with
+      call_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) call_targets;
+    }
 end
 
 (** Mapping from a parameter index to its HigherOrderParameter, if any. *)
@@ -766,6 +844,10 @@ module HigherOrderParameterMap = struct
 
   let redirect_to_decorated ~decorators =
     Map.map (HigherOrderParameter.redirect_to_decorated ~decorators)
+
+
+  let regenerate_call_indices ~indexer =
+    Map.map (HigherOrderParameter.regenerate_call_indices ~indexer)
 end
 
 (** An aggregate of all possible callees at a call site. *)
@@ -1112,6 +1194,27 @@ module CallCallees = struct
 
 
   let drop_decorated_targets call_callees = { call_callees with decorated_targets = [] }
+
+  let regenerate_call_indices
+      ~indexer
+      ({
+         call_targets;
+         new_targets;
+         init_targets;
+         higher_order_parameters;
+         decorated_targets =
+           _ (* No need to regenerate because they will not be used in taint analysis. *);
+         _;
+       } as call_callees)
+    =
+    {
+      call_callees with
+      call_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) call_targets;
+      new_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) new_targets;
+      init_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) init_targets;
+      higher_order_parameters =
+        HigherOrderParameterMap.regenerate_call_indices ~indexer higher_order_parameters;
+    }
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)
@@ -1251,6 +1354,23 @@ module AttributeAccessCallees = struct
 
   let drop_decorated_targets attribute_access_callees =
     { attribute_access_callees with decorated_targets = [] }
+
+
+  let regenerate_call_indices
+      ~indexer
+      ({
+         property_targets;
+         global_targets;
+         callable_targets =
+           _ (* No need to regenerate because they will not be used in taint analysis. *);
+         _;
+       } as attribute_callees)
+    =
+    {
+      attribute_callees with
+      property_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) property_targets;
+      global_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) global_targets;
+    }
 end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
@@ -1349,6 +1469,16 @@ module IdentifierCallees = struct
 
 
   let drop_decorated_targets identifier_callees = { identifier_callees with decorated_targets = [] }
+
+  let regenerate_call_indices
+      ~indexer
+      ({ global_targets; nonlocal_targets; callable_targets = _; _ } as identifier_callees)
+    =
+    {
+      identifier_callees with
+      global_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) global_targets;
+      nonlocal_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) nonlocal_targets;
+    }
 end
 
 (** An aggregate of callees for formatting strings. *)
@@ -1400,6 +1530,13 @@ module StringFormatCallees = struct
   let redirect_to_decorated ~decorators:_ = Fn.id
 
   let drop_decorated_targets = Fn.id
+
+  let regenerate_call_indices ~indexer { stringify_targets; f_string_targets } =
+    {
+      stringify_targets =
+        List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) stringify_targets;
+      f_string_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) f_string_targets;
+    }
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -1537,6 +1674,17 @@ module ExpressionCallees = struct
       attribute_access = attribute_access >>| AttributeAccessCallees.drop_decorated_targets;
       identifier = identifier >>| IdentifierCallees.drop_decorated_targets;
       string_format = string_format >>| StringFormatCallees.drop_decorated_targets;
+    }
+
+
+  let regenerate_call_indices ~indexer { call; attribute_access; identifier; string_format } =
+    CallTarget.Indexer.generate_fresh_indices indexer;
+    {
+      call = call >>| CallCallees.regenerate_call_indices ~indexer;
+      attribute_access =
+        attribute_access >>| AttributeAccessCallees.regenerate_call_indices ~indexer;
+      identifier = identifier >>| IdentifierCallees.regenerate_call_indices ~indexer;
+      string_format = string_format >>| StringFormatCallees.regenerate_call_indices ~indexer;
     }
 end
 
@@ -1827,14 +1975,20 @@ module DefineCallGraph = struct
     Location.SerializableMap.filter (fun _ -> exist_non_empty_attribute_access)
 
 
+  let update_expression_callees ~f = Location.SerializableMap.map (LocationCallees.Map.map f)
+
   let redirect_to_decorated ~decorators =
-    Location.SerializableMap.map
-      (LocationCallees.Map.map (ExpressionCallees.redirect_to_decorated ~decorators))
+    update_expression_callees ~f:(ExpressionCallees.redirect_to_decorated ~decorators)
 
 
   (* Ensure the taint analysis does not use these targets. *)
-  let drop_decorated_targets =
-    Location.SerializableMap.map (LocationCallees.Map.map ExpressionCallees.drop_decorated_targets)
+  let drop_decorated_targets = update_expression_callees ~f:ExpressionCallees.drop_decorated_targets
+
+  let regenerate_call_indices ~indexer =
+    (* The indices are relative to the locations. When location x is earlier than y, calls at
+       location x have smaller indices than calls on location y. Hence here we rely on the
+       assumption that the map is keyed on the locations. *)
+    update_expression_callees ~f:(ExpressionCallees.regenerate_call_indices ~indexer)
 
 
   (** Return all callees of the call graph, depending on the use case. *)
@@ -1883,68 +2037,6 @@ module DefineCallGraph = struct
       ~location
       ~expression_identifier:string_format_expression_identifier
     >>= fun { ExpressionCallees.string_format; _ } -> string_format
-end
-
-let is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver target =
-  if is_static_method then
-    false
-  else if is_class_method then
-    true
-  else
-    (not explicit_receiver) && Target.is_method_or_override target
-
-
-(* Produce call targets with a textual order index.
- *
- * The index is the number of times a given function or method was previously called,
- * respecting the execution flow.
- *
- * ```
- * def f():
- *   a = source_with_hop() # index=0
- *   sink_with_hop(x=a) # index=0
- *   sink_with_hop(y=a) # index=1
- *   b = source_with_hop() # index=1
- *   sink_with_hop(z=a) # index=2
- * ```
- *)
-module CallTargetIndexer = struct
-  type t = {
-    indices: int Target.HashMap.t;
-    mutable seen_targets: Target.Set.t;
-  }
-
-  let create () = { indices = Target.HashMap.create (); seen_targets = Target.Set.empty }
-
-  let generate_fresh_indices indexer =
-    Target.Set.iter (Hashtbl.incr indexer.indices) indexer.seen_targets;
-    indexer.seen_targets <- Target.Set.empty
-
-
-  let create_target
-      indexer
-      ~implicit_dunder_call
-      ~return_type
-      ?receiver_type
-      ?(is_class_method = false)
-      ?(is_static_method = false)
-      ?(explicit_receiver = false)
-      original_target
-    =
-    let target_for_index = Target.for_issue_handle original_target in
-    let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
-    indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
-    {
-      CallTarget.target = original_target;
-      implicit_receiver =
-        is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver target_for_index;
-      implicit_dunder_call;
-      index;
-      return_type;
-      receiver_class = receiver_type >>= CallTarget.receiver_class_from_type ~is_class_method;
-      is_class_method;
-      is_static_method;
-    }
 end
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
@@ -2141,7 +2233,7 @@ let rec resolve_callees_from_type
                 let is_class_method, is_static_method =
                   MethodKind.SharedMemory.get_method_kind method_kinds target
                 in
-                CallTargetIndexer.create_target
+                CallTarget.Indexer.create_target
                   call_indexer
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
@@ -2164,7 +2256,7 @@ let rec resolve_callees_from_type
           CallCallees.create
             ~call_targets:
               [
-                CallTargetIndexer.create_target
+                CallTarget.Indexer.create_target
                   call_indexer
                   ~explicit_receiver:true
                   ~implicit_dunder_call:dunder_call
@@ -2274,7 +2366,7 @@ let rec resolve_callees_from_type
                 CallCallees.create
                   ~call_targets:
                     [
-                      CallTargetIndexer.create_target
+                      CallTarget.Indexer.create_target
                         call_indexer
                         ~implicit_dunder_call:true
                         ~return_type:(Some return_type)
@@ -2326,7 +2418,7 @@ and resolve_callees_from_type_external
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer:(CallTargetIndexer.create ()) (* Don't care about indexing the callees. *)
+    ~call_indexer:(CallTarget.Indexer.create ()) (* Don't care about indexing the callees. *)
     ~dunder_call
     ~return_type
     ~callee_kind
@@ -2714,7 +2806,7 @@ let resolve_recognized_callees
       CallCallees.create
         ~call_targets:
           [
-            CallTargetIndexer.create_target
+            CallTarget.Indexer.create_target
               call_indexer
               ~implicit_dunder_call:false
               ~return_type:(Some return_type)
@@ -2763,7 +2855,7 @@ let resolve_callee_ignoring_decorators
               }) ->
             Result.Ok
               [
-                CallTargetIndexer.create_target
+                CallTarget.Indexer.create_target
                   call_indexer
                   ~implicit_dunder_call:false
                   ~return_type:(Some (return_type ()))
@@ -2791,7 +2883,7 @@ let resolve_callee_ignoring_decorators
                 let is_class_method = contain_class_method signatures in
                 Result.Ok
                   [
-                    CallTargetIndexer.create_target
+                    CallTarget.Indexer.create_target
                       call_indexer
                       ~implicit_dunder_call:false
                       ~return_type:(Some (return_type ()))
@@ -2876,7 +2968,7 @@ let resolve_callee_ignoring_decorators
                   |> compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type
                   |> List.map
                        ~f:
-                         (CallTargetIndexer.create_target
+                         (CallTarget.Indexer.create_target
                             call_indexer
                             ~implicit_dunder_call:false
                             ~return_type:(Some (return_type ()))
@@ -2997,7 +3089,7 @@ let resolve_attribute_access_properties
     in
     List.map
       ~f:
-        (CallTargetIndexer.create_target
+        (CallTarget.Indexer.create_target
            call_indexer
            ~implicit_dunder_call:false
            ~return_type:(Some return_type))
@@ -3212,7 +3304,7 @@ let resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context ex
         { reference; export_name = Some (PyrePysaLogic.ModuleExport.Name.Define _) }) ->
       let target = Target.create_function reference in
       let call_indexer =
-        CallTargetIndexer.create ()
+        CallTarget.Indexer.create ()
         (* Need not index them, because these callees are only used by higher order call graph
            building. *)
       in
@@ -3223,7 +3315,7 @@ let resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context ex
         |> ReturnType.from_annotation ~pyre_api
       in
       [
-        CallTargetIndexer.create_target
+        CallTarget.Indexer.create_target
           call_indexer
           ~implicit_dunder_call:false
           ~return_type:(Some return_type)
@@ -3245,7 +3337,7 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
               { reference; export_name = Some PyrePysaLogic.ModuleExport.Name.GlobalVariable }
           | IdentifierCallees.Reference.Global { reference; export_name = None } ->
               ( [
-                  CallTargetIndexer.create_target
+                  CallTarget.Indexer.create_target
                     call_indexer
                     ~implicit_dunder_call:false
                     ~return_type:None
@@ -3256,7 +3348,7 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
           | Nonlocal nonlocal ->
               ( [],
                 [
-                  CallTargetIndexer.create_target
+                  CallTarget.Indexer.create_target
                     call_indexer
                     ~implicit_dunder_call:false
                     ~return_type:None
@@ -3441,7 +3533,7 @@ let resolve_attribute_access
     |> List.filter ~f:(Hash_set.mem attribute_targets)
     |> List.map
          ~f:
-           (CallTargetIndexer.create_target
+           (CallTarget.Indexer.create_target
               call_indexer
               ~implicit_dunder_call:false
               ~return_type:None)
@@ -3516,7 +3608,7 @@ module NodeVisitorContext = struct
     define_name: Reference.t option;
     debug: bool;
     override_graph: OverrideGraph.SharedMemory.ReadOnly.t option;
-    call_indexer: CallTargetIndexer.t;
+    call_indexer: CallTarget.Indexer.t;
     missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
     attribute_targets: Target.HashSet.t;
     method_kinds: MethodKind.SharedMemory.ReadOnly.t;
@@ -3551,7 +3643,7 @@ module CalleeVisitor = struct
          } as state)
         ({ Node.value; location } as expression)
       =
-      CallTargetIndexer.generate_fresh_indices call_indexer;
+      CallTarget.Indexer.generate_fresh_indices call_indexer;
       let register_targets ~expression_identifier ?(location = location) callees =
         log
           ~debug
@@ -3624,7 +3716,7 @@ module CalleeVisitor = struct
             | _ -> ())
         | Expression.FormatString substrings ->
             let artificial_target =
-              CallTargetIndexer.create_target
+              CallTarget.Indexer.create_target
                 call_indexer
                 ~implicit_dunder_call:false
                 ~return_type:None
@@ -3657,7 +3749,7 @@ module CalleeVisitor = struct
                             location = expression_location;
                           }
                         in
-                        CallTargetIndexer.generate_fresh_indices call_indexer;
+                        CallTarget.Indexer.generate_fresh_indices call_indexer;
                         resolve_regular_callees
                           ~debug
                           ~method_kinds
@@ -4701,9 +4793,13 @@ let higher_order_call_graph_of_define
     >>| Fixpoint.get_result
     |> Option.value ~default:CallTarget.Set.bottom
   in
+  let call_indexer = CallTarget.Indexer.create () in
   {
     HigherOrderCallGraph.returned_callables;
-    call_graph = DefineCallGraph.filter_empty_attribute_access !Context.output_define_call_graph;
+    call_graph =
+      !Context.output_define_call_graph
+      |> DefineCallGraph.filter_empty_attribute_access
+      |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer;
   }
 
 
@@ -4739,7 +4835,7 @@ let call_graph_of_define
           None);
       debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define;
       override_graph;
-      call_indexer = CallTargetIndexer.create ();
+      call_indexer = CallTarget.Indexer.create ();
       attribute_targets;
       method_kinds;
     }
@@ -5097,7 +5193,7 @@ module DecoratorResolution = struct
           missing_flow_type_analysis = None;
           debug;
           override_graph;
-          call_indexer = CallTargetIndexer.create ();
+          call_indexer = CallTarget.Indexer.create ();
           attribute_targets = Target.HashSet.create ();
           method_kinds;
         }
