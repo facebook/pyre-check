@@ -311,25 +311,21 @@ impl BoundMethodType {
         }
     }
 
-    pub fn as_typeguard(&self) -> Option<Type> {
+    pub fn is_typeguard(&self) -> bool {
         match self {
-            Self::Callable(callable, kind) => callable
-                .drop_first_param()
-                .and_then(|ty| ty.as_typeguard(kind.clone())),
-            Self::Forall(forall) => forall.as_typeguard(),
+            Self::Callable(callable, _) => callable.is_typeguard(),
+            Self::Forall(forall) => forall.is_typeguard(),
             // TODO: handle overloaded type guards
-            Self::Overload(_) => None,
+            Self::Overload(_) => false,
         }
     }
 
-    pub fn as_typeis(&self) -> Option<Type> {
+    pub fn is_typeis(&self) -> bool {
         match self {
-            Self::Callable(callable, kind) => callable
-                .drop_first_param()
-                .and_then(|ty| ty.as_typeis(kind.clone())),
-            Self::Forall(forall) => forall.as_typeis(),
+            Self::Callable(callable, _) => callable.is_typeis(),
+            Self::Forall(forall) => forall.is_typeis(),
             // TODO: handle overloaded type guards
-            Self::Overload(_) => None,
+            Self::Overload(_) => false,
         }
     }
 }
@@ -372,39 +368,17 @@ impl Forall {
         self.ty.clone().as_type()
     }
 
-    fn as_typeguard(&self) -> Option<Type> {
+    fn is_typeguard(&self) -> bool {
         match &self.ty {
-            ForallType::Callable(callable, kind) => {
-                if let Some(Type::Callable(box callable, kind)) =
-                    callable.as_typeguard(kind.clone())
-                {
-                    Some(Self::new_type(
-                        self.name.clone(),
-                        self.tparams.clone(),
-                        ForallType::Callable(callable, kind),
-                    ))
-                } else {
-                    None
-                }
-            }
-            ForallType::TypeAlias(_) => None,
+            ForallType::Callable(callable, _) => callable.is_typeguard(),
+            ForallType::TypeAlias(_) => false,
         }
     }
 
-    fn as_typeis(&self) -> Option<Type> {
+    fn is_typeis(&self) -> bool {
         match &self.ty {
-            ForallType::Callable(callable, kind) => {
-                if let Some(Type::Callable(box callable, kind)) = callable.as_typeis(kind.clone()) {
-                    Some(Self::new_type(
-                        self.name.clone(),
-                        self.tparams.clone(),
-                        ForallType::Callable(callable, kind),
-                    ))
-                } else {
-                    None
-                }
-            }
-            ForallType::TypeAlias(_) => None,
+            ForallType::Callable(callable, _) => callable.is_typeis(),
+            ForallType::TypeAlias(_) => false,
         }
     }
 
@@ -591,21 +565,21 @@ impl Type {
         }
     }
 
-    pub fn as_typeguard(&self) -> Option<Type> {
+    pub fn is_typeguard(&self) -> bool {
         match self {
-            Type::Callable(box callable, kind) => callable.as_typeguard(kind.clone()),
-            Type::Forall(box forall) => forall.as_typeguard(),
-            Type::BoundMethod(method) => method.func.as_typeguard(),
-            _ => None,
+            Type::Callable(box callable, _) => callable.is_typeguard(),
+            Type::Forall(box forall) => forall.is_typeguard(),
+            Type::BoundMethod(method) => method.func.is_typeguard(),
+            _ => false,
         }
     }
 
-    pub fn as_typeis(&self) -> Option<Type> {
+    pub fn is_typeis(&self) -> bool {
         match self {
-            Type::Callable(box callable, kind) => callable.as_typeis(kind.clone()),
-            Type::Forall(box forall) => forall.as_typeis(),
-            Type::BoundMethod(method) => method.func.as_typeis(),
-            _ => None,
+            Type::Callable(box callable, _) => callable.is_typeis(),
+            Type::Forall(box forall) => forall.is_typeis(),
+            Type::BoundMethod(method) => method.func.is_typeis(),
+            _ => false,
         }
     }
 

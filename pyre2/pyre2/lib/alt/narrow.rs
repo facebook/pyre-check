@@ -94,15 +94,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 return op;
             }
         }
-        let typeis = func_ty
-            .as_typeis()
-            .map(|t| NarrowOp::TypeIs(t.clone(), args.clone()));
-        if typeis.is_some() {
-            return typeis;
+        if func_ty.is_typeis() {
+            Some(NarrowOp::TypeIs(func_ty.clone(), args.clone()))
+        } else if func_ty.is_typeguard() {
+            Some(NarrowOp::TypeGuard(func_ty.clone(), args.clone()))
+        } else {
+            None
         }
-        func_ty
-            .as_typeguard()
-            .map(|t| NarrowOp::TypeGuard(t.clone(), args.clone()))
     }
 
     fn narrow_val_infer(&self, val: &NarrowVal, errors: &ErrorCollector) -> Type {

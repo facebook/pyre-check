@@ -303,24 +303,24 @@ impl Callable {
         }
     }
 
-    pub fn as_typeguard(&self, kind: CallableKind) -> Option<Type> {
-        match self {
+    pub fn is_typeguard(&self) -> bool {
+        matches!(
+            self,
             Self {
                 params: _,
-                ret: Type::TypeGuard(_),
-            } => Some(Type::Callable(Box::new(self.clone()), kind)),
-            _ => None,
-        }
+                ret: Type::TypeGuard(_)
+            }
+        )
     }
 
-    pub fn as_typeis(&self, kind: CallableKind) -> Option<Type> {
-        match self {
+    pub fn is_typeis(&self) -> bool {
+        matches!(
+            self,
             Self {
                 params: _,
                 ret: Type::TypeIs(_),
-            } => Some(Type::Callable(Box::new(self.clone()), kind)),
-            _ => None,
-        }
+            }
+        )
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
