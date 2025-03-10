@@ -11,8 +11,8 @@ import * as React from 'react';
 const TryPyre2 = React.lazy(() => import('./TryPyre2'));
 
 export default component TryPyre2BrowserOnly(
-    editorHeight: number | "auto",
     sampleFilename: string,
+    isCodeSnippet: boolean,
     codeSample: string,
     showErrorPanel: boolean,
 ) {
@@ -22,7 +22,7 @@ export default component TryPyre2BrowserOnly(
     return <BrowserOnly>
     {() => (
     <React.Suspense fallback={<div>Loading...</div>}>
-        <TryPyre2 sampleFilename={sampleFilename} editorHeight={editorHeight} codeSample={codeSample} showErrorPanel={showErrorPanel}/>
+        <TryPyre2 sampleFilename={sampleFilename} isCodeSnippet={isCodeSnippet} codeSample={codeSample} showErrorPanel={showErrorPanel}/>
     </React.Suspense>
     )}
     </BrowserOnly>

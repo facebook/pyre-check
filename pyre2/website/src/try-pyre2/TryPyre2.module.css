@@ -69,7 +69,9 @@
 }
 
 .code {
+    flex: 1;
     overflow: auto;
+    border-bottom: 10;
 }
 
 .results {

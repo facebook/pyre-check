@@ -35,6 +35,8 @@ def test(x: int):
 reveal_type(test(42))
 `.trimStart();
 
+const DEFAULT_SANDBOX_HEIGHT = 600;
+
 const pyre2WasmUninitializedPromise =
   // $FlowIgnore[cannot-resolve-name]
   typeof window !== 'undefined'
@@ -52,7 +54,7 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
 
 export default component TryPyre2(
   sampleFilename: string,
-  editorHeight: number | 'auto' = 'auto',
+  isCodeSnippet: boolean = false,
   codeSample: string = DEFAULT_PYTHON_PROGRAM,
   showErrorPanel: boolean = true,
 ) {
@@ -63,7 +65,7 @@ export default component TryPyre2(
   const [internalError, setInternalError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
-  const [height, setHeight] = useState(editorHeight);
+  const [height, setHeight] = useState(DEFAULT_SANDBOX_HEIGHT);
   const [model, setModel] = useState(null);
 
   useEffect(() => {
@@ -136,7 +138,7 @@ export default component TryPyre2(
     const model = fetchCurMonacoModelAndTriggerUpdate();
     setModel(model);
 
-    if (editorHeight === 'auto') {
+    if (isCodeSnippet) {
       setHeight(Math.max(50, editor.getContentHeight()));
     }
     editorRef.current = editor;
