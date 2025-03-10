@@ -49,6 +49,7 @@ static_assertions = "1.1.0"
 static_interner = "0.1.1"
 tar = "0.4.44"
 thiserror = "2"
+toml = "0.8.19"
 tracing = { version = "0.1.41", features = ["attributes", "valuable"] }
 tracing-subscriber = { version = "0.3.18", features = ["chrono", "env-filter", "json", "local-time", "parking_lot", "registry"] }
 vec1 = { version = "1", features = ["serde"] }
@@ -57,7 +58,6 @@ vec1 = { version = "1", features = ["serde"] }
 crossbeam-channel = "0.5.0"
 pretty_assertions = { version = "1.2", features = ["alloc"], default-features = false }
 tempfile = "3.15"
-toml = "0.8.19"
 
 [build-dependencies]
 tar = "0.4.44"

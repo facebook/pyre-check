@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::ffi::OsStr;
+use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 
 use serde::Deserialize;
@@ -12,6 +15,7 @@ use serde::Deserialize;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::metadata::DEFAULT_PYTHON_PLATFORM;
+static PYPROJECT_FILE_NAME: &str = "pyproject.toml";
 
 pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
     if let Some(value) = value {
@@ -63,5 +67,146 @@ impl ConfigFile {
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
         RuntimeMetadata::new(self.python_version, self.python_platform.clone())
+    }
+
+    pub fn from_file(p: &Path) -> anyhow::Result<ConfigFile> {
+        // TODO(connernilsen): fix return type and handle config searching
+        let config_str = fs::read_to_string(p)?;
+        if p.file_name() == Some(OsStr::new(&PYPROJECT_FILE_NAME)) {
+            Self::parse_pyproject_toml(&config_str)
+        } else {
+            Self::parse_config(&config_str)
+        }
+    }
+
+    fn parse_config(config_str: &str) -> anyhow::Result<ConfigFile> {
+        toml::from_str::<ConfigFile>(config_str).map_err(|err| anyhow::Error::msg(err.to_string()))
+    }
+
+    fn parse_pyproject_toml(config_str: &str) -> anyhow::Result<ConfigFile> {
+        #[derive(Debug, Deserialize)]
+        struct PyProject {
+            #[serde(default)]
+            pub tool: Option<Tool>,
+        }
+
+        #[derive(Debug, Deserialize)]
+        struct Tool {
+            #[serde(default)]
+            pub pyre: Option<ConfigFile>,
+        }
+
+        let maybe_config = toml::from_str::<PyProject>(config_str)
+            .map_err(|err| anyhow::Error::msg(err.to_string()))?
+            .tool
+            .and_then(|c| c.pyre);
+        // TODO(connernilsen): we don't want to return a default config here, we should keep searching
+        Ok(maybe_config.unwrap_or_else(ConfigFile::default))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_pyre_config() {
+        let config_str = "
+            project_include = [\"./tests\", \"./implementation\"]
+            python_platform = \"darwin\"
+            python_version = \"1.2.3\"
+        ";
+        let config = ConfigFile::parse_config(config_str).unwrap();
+        assert_eq!(
+            config,
+            ConfigFile {
+                python_platform: "darwin".to_owned(),
+                python_version: PythonVersion::new(1, 2, 3),
+                ..ConfigFile::default()
+            },
+        );
+    }
+
+    #[test]
+    fn deserialize_pyre_config_defaults() {
+        let config_str = "";
+        let config = ConfigFile::parse_config(config_str).unwrap();
+        assert_eq!(config, ConfigFile::default());
+    }
+
+    #[test]
+    fn deserialize_pyre_config_with_unknown() {
+        let config_str = "
+            unknown = \"value\"
+            python_platform = \"windows\"
+        ";
+        let config = ConfigFile::parse_config(config_str).unwrap();
+        assert_eq!(
+            config,
+            ConfigFile {
+                python_platform: "windows".to_owned(),
+                ..ConfigFile::default()
+            }
+        )
+    }
+
+    #[test]
+    fn deserialize_pyproject_toml() {
+        let config_str = "
+            [tool.pyre]
+            project_include = [\"./tests\", \"./implementation\"]
+            python_platform = \"darwin\"
+            python_version = \"1.2.3\"
+        ";
+        let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
+        assert_eq!(
+            config,
+            ConfigFile {
+                python_platform: "darwin".to_owned(),
+                python_version: PythonVersion::new(1, 2, 3),
+                ..ConfigFile::default()
+            }
+        );
+    }
+
+    #[test]
+    fn deserialize_pyproject_toml_defaults() {
+        let config_str = "";
+        let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
+        assert_eq!(config, ConfigFile::default());
+    }
+
+    #[test]
+    fn deserialize_pyproject_toml_with_unknown() {
+        let config_str = "
+            top_level = 1
+            [table1]
+            table1_value = 2
+            [tool.pysa]
+            pysa_value = 2
+            [tool.pyre]
+            python_version = \"1.2.3\"
+        ";
+        let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
+        assert_eq!(
+            config,
+            ConfigFile {
+                python_version: PythonVersion::new(1, 2, 3),
+                ..ConfigFile::default()
+            }
+        );
+    }
+
+    #[test]
+    fn deserialize_pyproject_toml_without_pyre() {
+        let config_str = "
+            top_level = 1
+            [table1]
+            table1_value = 2
+            [tool.pysa]
+            pysa_value = 2
+        ";
+        let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
+        assert_eq!(config, ConfigFile::default(),);
     }
 }
