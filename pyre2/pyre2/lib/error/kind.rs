@@ -13,7 +13,19 @@ use dupe::Dupe;
 use enum_iterator::Sequence;
 use parse_display::Display;
 
+/// ErrorKind categorizes an error by the part of the spec the error is related to.
+/// They are used in suppressions to identify which error should be suppressed.
+//
 // Keep ErrorKind sorted lexographically, except for Unsupported and Unknown.
+// There are broad categories of error kinds, based on the word used in the name.
+// "Bad": Specific, straightforward type errors. Could be a disagreement with a source
+//    of truth, e.g. a function definition is how we determine a call has errors.
+// "Missing": Same as "Bad" but we know specifically that something is missing.
+// "Invalid": Something is being used incorrectly, such as a typing construct or language feature.
+// "SomethingError": Generally targeted on very specific error conditions. The "Error"
+//    part may be dropped, e.g. in NotAType.
+// These categories are flexible; use them for guidance when naming new ErrorKinds, but
+// go with what feels right.
 #[derive(
     Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Copy, Dupe, Display, Sequence
 )]
@@ -52,11 +64,6 @@ pub enum ErrorKind {
     /// An error casued by unpacking.
     /// e.g. attempting to unpack an iterable into the wrong number of variables.
     BadUnpacking,
-    /// An error caused by a bad match statement.
-    /// e.g. Writing a Foo(x, y, z) pattern when Foo only matches on (x, y).
-    MatchError,
-    /// Attempting to access an attribute that does not exist.
-    MissingAttribute,
     /// An error related to the import machinery.
     /// e.g. failed to import a module.
     ImportError,
@@ -89,9 +96,14 @@ pub enum ErrorKind {
     /// Attempting to use `yield` in a way that is not allowed.
     /// e.g. `yield from` with something that's not an iterable.
     InvalidYield,
+    /// An error caused by a bad match statement.
+    /// e.g. Writing a Foo(x, y, z) pattern when Foo only matches on (x, y).
+    MatchError,
     /// An error caused by calling a function without all the required arguments.
     /// Should be used when we can name the specific arguments that are missing.
     MissingArgument,
+    /// Attempting to access an attribute that does not exist.
+    MissingAttribute,
     /// Accessing an attribute that does not exist on a module.
     MissingModuleAttribute,
     /// The attribute exists but does not support this access pattern.
