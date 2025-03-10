@@ -552,10 +552,10 @@ class Cat:
     color: str
 class Dog:
     pass
-def is_black_cat(x: Cat | Dog) -> TypeIs[Cat]:
-    return isinstance(x, Cat) and x.color == "black"
+def is_cat(x: Cat | Dog) -> TypeIs[Cat]:
+    return isinstance(x, Cat)
 def f(x: Cat | Dog):
-    if is_black_cat(x):
+    if is_cat(x):
         assert_type(x, Cat)
     else:
         assert_type(x, Dog)
