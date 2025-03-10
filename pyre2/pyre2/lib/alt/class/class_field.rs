@@ -318,7 +318,7 @@ impl ClassField {
 
 fn is_unbound_function(ty: &Type) -> bool {
     match ty {
-        Type::Forall(box (_, _, t)) => is_unbound_function(t),
+        Type::Forall(forall) => is_unbound_function(&forall.ty),
         Type::Callable(_, _) => true,
         Type::Overload(_) => true,
         _ => false,

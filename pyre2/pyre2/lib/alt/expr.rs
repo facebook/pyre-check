@@ -57,6 +57,7 @@ use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
+use crate::types::types::Forall;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
@@ -1214,11 +1215,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         fun = Type::type_form(Type::SpecialForm(SpecialForm::Tuple));
                     }
                     match fun {
-                        Type::Forall(box (name, params, ty)) => {
+                        Type::Forall(box Forall { name, tparams, ty }) => {
                             let tys = xs.map(|x| self.expr_untype(x, errors));
                             let targs =
-                                self.check_and_create_targs(&name, &params, tys, x.range, errors);
-                            let param_map = params
+                                self.check_and_create_targs(&name, &tparams, tys, x.range, errors);
+                            let param_map = tparams
                                 .quantified()
                                 .zip(targs.as_slice().iter().cloned())
                                 .collect::<SmallMap<_, _>>();

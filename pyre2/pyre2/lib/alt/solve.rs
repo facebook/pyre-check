@@ -88,6 +88,7 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::CalleeKind;
+use crate::types::types::Forall;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -2127,7 +2128,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// `type[int]`, then call `untype(type[int])` to get the `int` annotation.
     fn untype(&self, ty: Type, range: TextRange, errors: &ErrorCollector) -> Type {
         let mut ty = ty;
-        if let Type::Forall(box (name, tparams, t)) = ty {
+        if let Type::Forall(box Forall {
+            name,
+            tparams,
+            ty: t,
+        }) = ty
+        {
             // A generic type alias with no type arguments is OK if all the type params have defaults
             let targs = self.check_and_create_targs(&name, &tparams, Vec::new(), range, errors);
             let param_map = tparams

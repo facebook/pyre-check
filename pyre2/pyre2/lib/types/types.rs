@@ -291,6 +291,13 @@ impl BoundMethod {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Forall {
+    pub name: Name,
+    pub tparams: TParams,
+    pub ty: Type,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Literal(Lit),
     LiteralString,
@@ -324,7 +331,7 @@ pub enum Type {
     TypedDict(Box<TypedDict>),
     Tuple(Tuple),
     Module(Module),
-    Forall(Box<(Name, TParams, Type)>),
+    Forall(Box<Forall>),
     Var(Var),
     Quantified(Quantified),
     TypeGuard(Box<Type>),
@@ -427,7 +434,11 @@ impl Type {
         if tparams.is_empty() {
             self
         } else {
-            Type::Forall(Box::new((name, tparams, self)))
+            Type::Forall(Box::new(Forall {
+                name,
+                tparams,
+                ty: self,
+            }))
         }
     }
 
@@ -475,9 +486,8 @@ impl Type {
                 },
                 _,
             ) => Some(t),
-            Type::Forall(box (_, _, t)) | Type::BoundMethod(box BoundMethod { func: t, .. }) => {
-                t.as_typeguard()
-            }
+            Type::Forall(box Forall { ty: t, .. })
+            | Type::BoundMethod(box BoundMethod { func: t, .. }) => t.as_typeguard(),
             _ => None,
         }
     }
@@ -505,7 +515,7 @@ impl Type {
         match self {
             Type::Callable(_, kind) => Some(CalleeKind::Callable(kind.clone())),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
-            Type::Forall(box (_, _, t)) => t.callee_kind(),
+            Type::Forall(forall) => forall.ty.callee_kind(),
             // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.
             Type::Overload(vs) => vs.first().callee_kind(),
             _ => None,
@@ -635,7 +645,7 @@ impl Type {
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
-            Type::Forall(box (_, _, x)) => f(x),
+            Type::Forall(forall) => f(&forall.ty),
             Type::Concatenate(args, pspec) => {
                 for a in args {
                     f(a)
@@ -684,7 +694,7 @@ impl Type {
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),
-            Type::Forall(box (_, _, x)) => f(x),
+            Type::Forall(forall) => f(&mut forall.ty),
             Type::Concatenate(args, pspec) => {
                 for a in args {
                     f(a)

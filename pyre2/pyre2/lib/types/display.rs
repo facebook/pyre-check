@@ -106,7 +106,7 @@ impl<'a> TypeDisplayContext<'a> {
             }
             let tparams = match t {
                 Type::ClassDef(cls) => Some(cls.tparams()),
-                Type::Forall(box (_, tparams, _)) => Some(tparams),
+                Type::Forall(forall) => Some(&forall.tparams),
                 _ => None,
             };
             if let Some(tparams) = tparams {
@@ -269,11 +269,11 @@ impl<'a> TypeDisplayContext<'a> {
                 )
             }
             Type::Tuple(t) => t.fmt_with_type(f, |t| self.display(t)),
-            Type::Forall(box (_, uniques, ty)) => {
+            Type::Forall(forall) => {
                 write!(
                     f,
                     "Forall[{}]",
-                    commas_iter(|| append(uniques.iter(), [self.display(ty)]))
+                    commas_iter(|| append(forall.tparams.iter(), [self.display(&forall.ty)]))
                 )
             }
             Type::Type(ty) => write!(f, "type[{}]", self.display(ty)),
