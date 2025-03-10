@@ -65,8 +65,8 @@ enum Command {
         /// When not set, Pyre will perform an upward-filesystem-walk approach to find the nearest
         /// pyre.toml or 'pyproject.toml with `tool.pyre` section'. If no config is found, Pyre exits with error.
         /// If both a pyre.toml and valid pyproject.toml are found, pyre.toml takes precedence.
-        #[clap(long = "config-file", env = clap_env("CONFIG_FILE"))]
-        config_file: Option<std::path::PathBuf>,
+        #[clap(long, short, env = clap_env("CONFIG"))]
+        config: Option<std::path::PathBuf>,
 
         #[clap(flatten)]
         args: CheckArgs,
@@ -106,11 +106,11 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
 
 fn run_check_on_project(
     watcher: Option<Box<dyn Watcher>>,
-    config_file: Option<PathBuf>,
+    config: Option<PathBuf>,
     args: pyre2::run::CheckArgs,
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
-    let config = config_file
+    let config = config
         .map(|c| get_open_source_config(c.as_path()))
         .transpose()?
         .unwrap_or_default();
@@ -142,7 +142,7 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
         Command::Check {
             files,
             watch,
-            config_file,
+            config,
             args,
         } => {
             let watcher: Option<Box<dyn Watcher>> = if watch {
@@ -150,11 +150,11 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
             } else {
                 None
             };
-            if !files.is_empty() && config_file.is_some() {
-                panic!("Can either supply `FILES...` OR `--config-file`, not both.")
+            if !files.is_empty() && config.is_some() {
+                anyhow::bail!("Can either supply `FILES...` OR `--config/-c`, not both.")
             }
             if files.is_empty() {
-                run_check_on_project(watcher, config_file, args, allow_forget)
+                run_check_on_project(watcher, config, args, allow_forget)
             } else {
                 run_check_on_files(Globs::new(files), watcher, args, allow_forget)
             }
