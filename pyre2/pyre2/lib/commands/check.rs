@@ -11,7 +11,6 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -24,8 +23,8 @@ use tracing::info;
 
 use crate::clap_env;
 use crate::commands::util::module_from_path;
+use crate::config::set_if_some;
 use crate::config::ConfigFile;
-use crate::config::ConfigFileInner;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::error::style::ErrorStyle;
@@ -70,7 +69,7 @@ pub struct Args {
     #[clap(long, short = 'a', env = clap_env("CHECK_ALL"))]
     check_all: bool,
     #[clap(long, env = clap_env("PYTHON_VERSION"))]
-    python_version: Option<String>,
+    python_version: Option<PythonVersion>,
     #[clap(long, env = clap_env("PLATFORM"))]
     python_platform: Option<String>,
     #[clap(long, env = clap_env("SITE_PACKAGE_PATH"))]
@@ -216,39 +215,13 @@ impl Args {
         }
     }
 
-    fn get_overridden_config(&self, base_config: ConfigFile) -> ConfigFile {
-        let python_platform = self
-            .python_platform
-            .as_ref()
-            .unwrap_or(&base_config.python_platform)
-            .to_owned();
-        let default_python_version = base_config.python_version;
-        let python_version = if let Some(version) = &self.python_version {
-            match PythonVersion::from_str(&version[..]) {
-                Ok(parsed) => parsed,
-                Err(error) => {
-                    eprintln!(
-                        "Failed to parse `{version}` into Python version: {error} does not conform to Python version spec. Falling back to
-                        default: {default_python_version}."
-                    );
-                    default_python_version
-                }
-            }
-        } else {
-            default_python_version
-        };
-        let site_package_path = self
-            .site_package_path
-            .as_ref()
-            .or(base_config.site_package_path.as_ref())
-            .cloned();
-        ConfigFileInner {
-            python_platform,
-            python_version,
-            site_package_path,
-            ..(*base_config).clone()
-        }
-        .into()
+    fn override_config(&self, config: &mut ConfigFile) {
+        set_if_some(&mut config.python_platform, self.python_platform.as_ref());
+        set_if_some(&mut config.python_version, self.python_version.as_ref());
+        set_if_some(
+            &mut config.site_package_path,
+            self.site_package_path.as_ref(),
+        );
     }
 
     fn run_inner(
@@ -266,8 +239,8 @@ impl Args {
         }
 
         let files_and_configs = expanded_file_list.into_map(|path| {
-            let base_config = config_finder(&path);
-            let config = args.get_overridden_config(base_config);
+            let mut config = config_finder(&path);
+            args.override_config(&mut config);
             (path, config)
         });
 
@@ -286,17 +259,13 @@ impl Args {
                 .push(x);
         }
 
-        let cli_python_version_override = match &args.python_version {
-            None => None,
-            Some(version) => Some(PythonVersion::from_str(version)?),
-        };
         let handles: Vec<Handle> = partition_by_search_roots
             .into_iter()
             .flat_map(|(search_roots, files_and_configs)| {
                 let files_with_module_name_and_metadata =
                     files_and_configs.into_map(|(path, config)| {
                         let module_name = module_from_path(&path, &search_roots);
-                        let version = match cli_python_version_override {
+                        let version = match args.python_version {
                             Some(version) => version,
                             None => config.python_version,
                         };

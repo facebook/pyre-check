@@ -5,22 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::ops::Deref;
 use std::path::PathBuf;
-use std::sync::Arc;
 
-use dupe::Dupe;
 use serde::Deserialize;
 
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::metadata::DEFAULT_PYTHON_PLATFORM;
 
-#[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash)]
-pub struct ConfigFile(Arc<ConfigFileInner>);
+pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
+    if let Some(value) = value {
+        *config_field = value.clone();
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
-pub struct ConfigFileInner {
+pub struct ConfigFile {
     /// corresponds to --include (soon to be renamed to --search-path) in Args
     // TODO(connernilsen): set this to config directory when config is found
     #[serde(default = "ConfigFile::default_search_roots")]
@@ -38,42 +38,23 @@ pub struct ConfigFileInner {
 
     // TODO(connernilsen): use python_executable if not set
     #[serde(default)]
-    pub site_package_path: Option<Vec<PathBuf>>,
+    pub site_package_path: Vec<PathBuf>,
 }
 
 impl Default for ConfigFile {
     fn default() -> ConfigFile {
-        ConfigFileInner {
+        ConfigFile {
             search_roots: Self::default_search_roots(),
             python_platform: Self::default_python_platform(),
             python_version: PythonVersion::default(),
-            site_package_path: None,
+            site_package_path: Vec::new(),
         }
-        .into()
-    }
-}
-
-impl Deref for ConfigFile {
-    type Target = ConfigFileInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl From<ConfigFileInner> for ConfigFile {
-    fn from(inner: ConfigFileInner) -> Self {
-        ConfigFile(Arc::new(inner))
     }
 }
 
 impl ConfigFile {
     pub fn default_python_platform() -> String {
         DEFAULT_PYTHON_PLATFORM.to_owned()
-    }
-
-    pub fn default_python_version() -> String {
-        PythonVersion::default().to_string()
     }
 
     pub fn default_search_roots() -> Vec<PathBuf> {
