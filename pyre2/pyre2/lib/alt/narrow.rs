@@ -94,6 +94,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 return op;
             }
         }
+        let typeis = func_ty
+            .as_typeis()
+            .map(|t| NarrowOp::TypeIs(t.clone(), args.clone()));
+        if typeis.is_some() {
+            return typeis;
+        }
         func_ty
             .as_typeguard()
             .map(|t| NarrowOp::TypeGuard(t.clone(), args.clone()))
@@ -142,6 +148,42 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         unwrapped
     }
 
+    fn narrow_isinstance(
+        &self,
+        left: &Type,
+        right: Type,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        if let Some(distributed_op) =
+            self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, range)
+        {
+            self.narrow(left, &distributed_op, range, errors)
+        } else if let Some(right) = self.unwrap_class_object_or_error(&right, range, errors) {
+            self.intersect(left, &right)
+        } else {
+            left.clone()
+        }
+    }
+
+    fn narrow_is_not_instance(
+        &self,
+        left: &Type,
+        right: Type,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        if let Some(distributed_op) =
+            self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, range)
+        {
+            self.narrow(left, &distributed_op.negate(), range, errors)
+        } else if let Some(right) = self.unwrap_class_object_or_error(&right, range, errors) {
+            self.subtract(left, &right)
+        } else {
+            left.clone()
+        }
+    }
+
     pub fn narrow(
         &self,
         ty: &Type,
@@ -180,31 +222,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             NarrowOp::IsInstance(v) => {
                 let right = self.narrow_val_infer(v, errors);
-                if let Some(distributed_op) =
-                    self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
-                {
-                    self.narrow(ty, &distributed_op, range, errors)
-                } else if let Some(right) =
-                    self.unwrap_class_object_or_error(&right, v.range(), errors)
-                {
-                    self.intersect(ty, &right)
-                } else {
-                    ty.clone()
-                }
+                self.narrow_isinstance(ty, right, v.range(), errors)
             }
             NarrowOp::IsNotInstance(v) => {
                 let right = self.narrow_val_infer(v, errors);
-                if let Some(distributed_op) =
-                    self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, v.range())
-                {
-                    self.narrow(ty, &distributed_op.negate(), range, errors)
-                } else if let Some(right) =
-                    self.unwrap_class_object_or_error(&right, v.range(), errors)
-                {
-                    self.subtract(ty, &right)
-                } else {
-                    ty.clone()
-                }
+                self.narrow_is_not_instance(ty, right, v.range(), errors)
             }
             NarrowOp::IsSubclass(v) => {
                 let right = self.narrow_val_infer(v, errors);
@@ -250,6 +272,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ty.clone()
             },
             NarrowOp::NotTypeGuard(_, _) => ty.clone(),
+            NarrowOp::TypeIs(t, arguments) => {
+                if let Some(call_target) = self.as_call_target(t.clone()) {
+                    let args = arguments.args.map(|arg| match arg {
+                        Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                        _ => CallArg::Expr(arg),
+                    });
+                    let ret = self.call_infer(call_target, &args, &arguments.keywords, range, errors, None);
+                    if let Type::TypeIs(box t) = ret {
+                        return self.narrow_isinstance(ty, t, range, errors);
+                    }
+                }
+                ty.clone()
+            },
+            NarrowOp::NotTypeIs(t, arguments) => {
+                if let Some(call_target) = self.as_call_target(t.clone()) {
+                    let args = arguments.args.map(|arg| match arg {
+                        Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                        _ => CallArg::Expr(arg),
+                    });
+                    let ret = self.call_infer(call_target, &args, &arguments.keywords, range, errors, None);
+                    if let Type::TypeIs(box t) = ret {
+                        return self.narrow_is_not_instance(ty, t, range, errors);
+                    }
+                }
+                ty.clone()
+            },
             NarrowOp::Truthy | NarrowOp::Falsy => self.distribute_over_union(ty, |t| {
                 let boolval = matches!(op, NarrowOp::Truthy);
                 if t.as_bool() == Some(!boolval) {

@@ -321,6 +321,17 @@ impl BoundMethodType {
             Self::Overload(_) => None,
         }
     }
+
+    pub fn as_typeis(&self) -> Option<Type> {
+        match self {
+            Self::Callable(callable, kind) => callable
+                .drop_first_param()
+                .and_then(|ty| ty.as_typeis(kind.clone())),
+            Self::Forall(forall) => forall.as_typeis(),
+            // TODO: handle overloaded type guards
+            Self::Overload(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -367,6 +378,23 @@ impl Forall {
                 if let Some(Type::Callable(box callable, kind)) =
                     callable.as_typeguard(kind.clone())
                 {
+                    Some(Self::new_type(
+                        self.name.clone(),
+                        self.tparams.clone(),
+                        ForallType::Callable(callable, kind),
+                    ))
+                } else {
+                    None
+                }
+            }
+            ForallType::TypeAlias(_) => None,
+        }
+    }
+
+    fn as_typeis(&self) -> Option<Type> {
+        match &self.ty {
+            ForallType::Callable(callable, kind) => {
+                if let Some(Type::Callable(box callable, kind)) = callable.as_typeis(kind.clone()) {
                     Some(Self::new_type(
                         self.name.clone(),
                         self.tparams.clone(),
@@ -568,6 +596,15 @@ impl Type {
             Type::Callable(box callable, kind) => callable.as_typeguard(kind.clone()),
             Type::Forall(box forall) => forall.as_typeguard(),
             Type::BoundMethod(method) => method.func.as_typeguard(),
+            _ => None,
+        }
+    }
+
+    pub fn as_typeis(&self) -> Option<Type> {
+        match self {
+            Type::Callable(box callable, kind) => callable.as_typeis(kind.clone()),
+            Type::Forall(box forall) => forall.as_typeis(),
+            Type::BoundMethod(method) => method.func.as_typeis(),
             _ => None,
         }
     }

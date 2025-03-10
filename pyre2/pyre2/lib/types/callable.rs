@@ -313,6 +313,16 @@ impl Callable {
         }
     }
 
+    pub fn as_typeis(&self, kind: CallableKind) -> Option<Type> {
+        match self {
+            Self {
+                params: _,
+                ret: Type::TypeIs(_),
+            } => Some(Type::Callable(Box::new(self.clone()), kind)),
+            _ => None,
+        }
+    }
+
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         self.params.visit(&mut f);
         f(&self.ret)

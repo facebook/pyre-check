@@ -62,6 +62,8 @@ pub enum NarrowOp {
     IsNotSubclass(NarrowVal),
     TypeGuard(Type, Arguments),
     NotTypeGuard(Type, Arguments),
+    TypeIs(Type, Arguments),
+    NotTypeIs(Type, Arguments),
     /// (func, args) for a function call that may narrow the type of its first argument.
     Call(Box<NarrowVal>, Arguments),
     NotCall(Box<NarrowVal>, Arguments),
@@ -84,6 +86,8 @@ impl NarrowOp {
             Self::Or(ops) => Self::And(ops.map(|op| op.negate())),
             Self::TypeGuard(ty, args) => Self::NotTypeGuard(ty.clone(), args.clone()),
             Self::NotTypeGuard(ty, args) => Self::TypeGuard(ty.clone(), args.clone()),
+            Self::TypeIs(ty, args) => Self::NotTypeIs(ty.clone(), args.clone()),
+            Self::NotTypeIs(ty, args) => Self::TypeIs(ty.clone(), args.clone()),
             Self::Call(f, args) => Self::NotCall(f.clone(), args.clone()),
             Self::NotCall(f, args) => Self::Call(f.clone(), args.clone()),
         }

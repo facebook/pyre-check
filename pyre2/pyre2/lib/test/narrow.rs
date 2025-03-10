@@ -545,6 +545,24 @@ def f(x: Cat | Dog):
 );
 
 testcase!(
+    test_typeis,
+    r#"
+from typing import TypeIs, assert_type
+class Cat:
+    color: str
+class Dog:
+    pass
+def is_black_cat(x: Cat | Dog) -> TypeIs[Cat]:
+    return isinstance(x, Cat) and x.color == "black"
+def f(x: Cat | Dog):
+    if is_black_cat(x):
+        assert_type(x, Cat)
+    else:
+        assert_type(x, Dog)
+    "#,
+);
+
+testcase!(
     test_issubclass,
     r#"
 from typing import assert_type
