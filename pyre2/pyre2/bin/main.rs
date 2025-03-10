@@ -11,6 +11,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use anyhow::anyhow;
 use clap::Parser;
 use clap::Subcommand;
 use pyre2::clap_env;
@@ -86,9 +87,12 @@ fn exit_on_panic() {
     }));
 }
 
-fn get_open_source_config(_: &Path) -> ConfigFile {
+fn get_open_source_config(file: &Path) -> anyhow::Result<ConfigFile> {
     // TODO: Implement upward-searching for open source config.
-    ConfigFile::default()
+    ConfigFile::from_file(file).map_err(|err| {
+        let file_str = file.display();
+        anyhow!("Failed to parse configuration at {file_str}: {err}")
+    })
 }
 
 fn to_exit_code(status: CommandExitStatus) -> ExitCode {
@@ -101,12 +105,21 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
 }
 
 fn run_check_on_project(
-    _watcher: Option<Box<dyn Watcher>>,
-    _config_file: Option<PathBuf>,
-    _args: pyre2::run::CheckArgs,
-    _allow_forget: bool,
+    watcher: Option<Box<dyn Watcher>>,
+    config_file: Option<PathBuf>,
+    args: pyre2::run::CheckArgs,
+    allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
-    panic!("Project-checking mode has not been implemented yet")
+    let config = config_file
+        .map(|c| get_open_source_config(c.as_path()))
+        .transpose()?
+        .unwrap_or_default();
+    args.run(
+        watcher,
+        config.project_include.clone(),
+        &|_| config.clone(),
+        allow_forget,
+    )
 }
 
 fn run_check_on_files(
@@ -118,7 +131,8 @@ fn run_check_on_files(
     args.run(
         watcher,
         files_to_check,
-        &get_open_source_config,
+        // TODO(connernilsen): replace this when we have search paths working
+        &|_| ConfigFile::default(),
         allow_forget,
     )
 }
