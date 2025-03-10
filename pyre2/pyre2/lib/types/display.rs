@@ -272,8 +272,9 @@ impl<'a> TypeDisplayContext<'a> {
             Type::Forall(forall) => {
                 write!(
                     f,
-                    "Forall[{}]",
-                    commas_iter(|| append(forall.tparams.iter(), [self.display(&forall.ty)]))
+                    "Forall[{}, {}]",
+                    commas_iter(|| forall.tparams.iter()),
+                    self.display(&forall.as_inner_type()),
                 )
             }
             Type::Type(ty) => write!(f, "type[{}]", self.display(ty)),

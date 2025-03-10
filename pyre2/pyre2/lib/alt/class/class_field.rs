@@ -44,6 +44,7 @@ use crate::types::typed_dict::TypedDictField;
 use crate::types::types::BoundMethod;
 use crate::types::types::CalleeKind;
 use crate::types::types::Decoration;
+use crate::types::types::ForallType;
 use crate::types::types::Type;
 
 /// Correctly analyzing which attributes are visible on class objects, as well
@@ -318,7 +319,7 @@ impl ClassField {
 
 fn is_unbound_function(ty: &Type) -> bool {
     match ty {
-        Type::Forall(forall) => is_unbound_function(&forall.ty),
+        Type::Forall(forall) => matches!(forall.ty, ForallType::Callable(..)),
         Type::Callable(_, _) => true,
         Type::Overload(_) => true,
         _ => false,

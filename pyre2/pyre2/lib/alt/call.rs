@@ -99,9 +99,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
             Type::Type(box Type::ClassType(cls)) => Some((Vec::new(), CallTarget::Class(cls))),
             Type::Forall(forall) => {
-                let (mut qs, t) =
-                    self.solver()
-                        .fresh_quantified(&forall.tparams, forall.ty, self.uniques);
+                let (mut qs, t) = self.solver().fresh_quantified(
+                    &forall.tparams,
+                    forall.as_inner_type(),
+                    self.uniques,
+                );
                 self.as_call_target(t).map(|(qs2, x)| {
                     qs.extend(qs2);
                     (qs, x)

@@ -294,10 +294,53 @@ impl BoundMethod {
 pub struct Overload(pub Vec1<Type>);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ForallType {
+    Callable(Callable, CallableKind),
+    TypeAlias(TypeAlias),
+}
+
+impl ForallType {
+    fn as_type(self) -> Type {
+        match self {
+            Self::Callable(callable, kind) => Type::Callable(Box::new(callable), kind),
+            Self::TypeAlias(ta) => Type::TypeAlias(ta),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Forall {
     pub name: Name,
     pub tparams: TParams,
-    pub ty: Type,
+    pub ty: ForallType,
+}
+
+impl Forall {
+    pub fn new_type(name: Name, tparams: TParams, ty: ForallType) -> Type {
+        if tparams.is_empty() {
+            ty.as_type()
+        } else {
+            Type::Forall(Box::new(Forall { name, tparams, ty }))
+        }
+    }
+
+    pub fn as_inner_type(&self) -> Type {
+        self.ty.clone().as_type()
+    }
+
+    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        match &self.ty {
+            ForallType::Callable(c, _) => c.visit(f),
+            ForallType::TypeAlias(ta) => f(&ta.ty),
+        }
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        match &mut self.ty {
+            ForallType::Callable(c, _) => c.visit_mut(f),
+            ForallType::TypeAlias(ta) => f(&mut ta.ty),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -433,18 +476,6 @@ impl Type {
         )
     }
 
-    pub fn forall(self, name: Name, tparams: TParams) -> Self {
-        if tparams.is_empty() {
-            self
-        } else {
-            Type::Forall(Box::new(Forall {
-                name,
-                tparams,
-                ty: self,
-            }))
-        }
-    }
-
     pub fn type_form(inner: Type) -> Self {
         Type::Type(Box::new(inner))
     }
@@ -482,15 +513,18 @@ impl Type {
 
     pub fn as_typeguard(&self) -> Option<&Type> {
         match self {
-            Type::Callable(
-                box Callable {
-                    params: _,
-                    ret: Type::TypeGuard(t),
-                },
-                _,
-            ) => Some(t),
-            Type::Forall(box Forall { ty: t, .. })
-            | Type::BoundMethod(box BoundMethod { func: t, .. }) => t.as_typeguard(),
+            Type::Callable(box callable, _)
+            | Type::Forall(box Forall {
+                ty: ForallType::Callable(callable, _),
+                ..
+            }) if let Callable {
+                params: _,
+                ret: Type::TypeGuard(t),
+            } = callable =>
+            {
+                Some(t)
+            }
+            Type::BoundMethod(box BoundMethod { func: t, .. }) => t.as_typeguard(),
             _ => None,
         }
     }
@@ -519,7 +553,7 @@ impl Type {
         match self {
             Type::Callable(_, kind) => Some(CalleeKind::Callable(kind.clone())),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
-            Type::Forall(forall) => forall.ty.callee_kind(),
+            Type::Forall(forall) => forall.as_inner_type().callee_kind(),
             // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.
             Type::Overload(vs) => vs.0.first().callee_kind(),
             _ => None,
@@ -649,7 +683,7 @@ impl Type {
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
-            Type::Forall(forall) => f(&forall.ty),
+            Type::Forall(forall) => forall.visit(f),
             Type::Concatenate(args, pspec) => {
                 for a in args {
                     f(a)
@@ -698,7 +732,7 @@ impl Type {
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),
-            Type::Forall(forall) => f(&mut forall.ty),
+            Type::Forall(forall) => forall.visit_mut(f),
             Type::Concatenate(args, pspec) => {
                 for a in args {
                     f(a)
