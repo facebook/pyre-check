@@ -27,6 +27,7 @@ enum-iterator = "1.4.1"
 equivalent = "1.0"
 glob = "0.3"
 human_bytes = "0.4.3"
+indicatif = { version = "0.17.6", features = ["futures", "improved_unicode", "rayon", "tokio"] }
 itertools = "0.14.0"
 lock_free_hashtable = "0.1.1"
 lsp-server = "0.7.2"

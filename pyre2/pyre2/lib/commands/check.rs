@@ -41,6 +41,7 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
+use crate::state::subscriber::ProgressBarSubscriber;
 use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
@@ -300,6 +301,7 @@ impl Args {
             })
             .collect();
 
+        let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
         let state = State::new();
@@ -310,9 +312,9 @@ impl Args {
             && args.debug_info.is_none()
             && args.report_trace.is_none()
         {
-            state.run_one_shot(&handles, None)
+            state.run_one_shot(&handles, Some(progress))
         } else {
-            state.run(&handles, None)
+            state.run(&handles, Some(progress))
         };
         let computing = start.elapsed();
         if let Some(path) = args.output {

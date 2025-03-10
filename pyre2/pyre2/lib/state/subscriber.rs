@@ -9,6 +9,8 @@ use std::mem;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
@@ -88,5 +90,36 @@ impl TestSubscriber {
             }
         }
         res
+    }
+}
+
+pub struct ProgressBarSubscriber(ProgressBar);
+
+impl Subscriber for ProgressBarSubscriber {
+    fn start_work(&self, _: Handle) {
+        self.0.inc_length(1);
+    }
+
+    fn finish_work(&self, _: Handle, _: Arc<Load>) {
+        self.0.inc(1);
+    }
+}
+
+impl Drop for ProgressBarSubscriber {
+    fn drop(&mut self) {
+        self.0.finish_and_clear();
+    }
+}
+
+impl ProgressBarSubscriber {
+    pub fn new() -> Self {
+        let progress_bar = ProgressBar::new(0);
+        progress_bar.set_style(
+            ProgressStyle::with_template(
+                "[{elapsed_precise}] {wide_bar:.yellow/red} {pos:>7}/{len:7} {msg}",
+            )
+            .unwrap(),
+        );
+        Self(progress_bar)
     }
 }
