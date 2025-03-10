@@ -250,6 +250,9 @@ impl Mutable for Class {
             return false;
         }
 
+        if self.0.fields.len() != other.0.fields.len() {
+            return false;
+        }
         for (x, y) in self.0.fields.iter().zip(other.0.fields.iter()) {
             if !(x.0 == y.0 && x.1.immutable_eq(y.1)) {
                 return false;
