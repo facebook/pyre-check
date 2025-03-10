@@ -52,6 +52,10 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   })
   .catch(e => console.log(e));
 
+function isMobile(): boolean {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
 export default component TryPyre2(
   sampleFilename: string,
   isCodeSnippet: boolean = false,
@@ -156,6 +160,7 @@ export default component TryPyre2(
           onChange={forceRecheck}
           onMount={onMount}
           options={{
+            readOnly: isCodeSnippet && isMobile(),
             minimap: {enabled: false},
             hover: {enabled: true, above: false},
             scrollBeyondLastLine: false,
