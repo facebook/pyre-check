@@ -211,8 +211,7 @@ assert_type(x, str)
 "#,
 );
 
-testcase_with_bug!(
-    "Doesn't narrow",
+testcase!(
     test_typeguard,
     r#"
 from typing import assert_type, overload, TypeGuard
@@ -238,8 +237,8 @@ class A:
 
 def g(meow: Mammal, chirp: Bird):
     if f(meow):
-        assert_type(meow, Cat)  # E: assert_type
+        assert_type(meow, Cat)
     if A().f(chirp):
-        assert_type(chirp, Robin)  # E: assert_type
+        assert_type(chirp, Robin)
     "#,
 );

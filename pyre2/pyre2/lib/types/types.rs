@@ -311,27 +311,35 @@ impl BoundMethodType {
         }
     }
 
-    pub fn is_typeguard(&self) -> bool {
+    fn is_typeguard(&self) -> bool {
         match self {
             Self::Callable(callable, _) => callable.is_typeguard(),
             Self::Forall(forall) => forall.is_typeguard(),
-            // TODO: handle overloaded type guards
-            Self::Overload(_) => false,
+            Self::Overload(overload) => overload.is_typeguard(),
         }
     }
 
-    pub fn is_typeis(&self) -> bool {
+    fn is_typeis(&self) -> bool {
         match self {
             Self::Callable(callable, _) => callable.is_typeis(),
             Self::Forall(forall) => forall.is_typeis(),
-            // TODO: handle overloaded type guards
-            Self::Overload(_) => false,
+            Self::Overload(overload) => overload.is_typeis(),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Overload(pub Vec1<Type>);
+
+impl Overload {
+    fn is_typeguard(&self) -> bool {
+        self.0.iter().any(|t| t.is_typeguard())
+    }
+
+    fn is_typeis(&self) -> bool {
+        self.0.iter().any(|t| t.is_typeis())
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ForallType {
@@ -570,6 +578,7 @@ impl Type {
             Type::Callable(box callable, _) => callable.is_typeguard(),
             Type::Forall(box forall) => forall.is_typeguard(),
             Type::BoundMethod(method) => method.func.is_typeguard(),
+            Type::Overload(overload) => overload.is_typeguard(),
             _ => false,
         }
     }
@@ -579,6 +588,7 @@ impl Type {
             Type::Callable(box callable, _) => callable.is_typeis(),
             Type::Forall(box forall) => forall.is_typeis(),
             Type::BoundMethod(method) => method.func.is_typeis(),
+            Type::Overload(overload) => overload.is_typeis(),
             _ => false,
         }
     }
