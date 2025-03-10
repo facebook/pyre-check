@@ -16,6 +16,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
+use crate::assert_words;
 use crate::types::callable::Callable;
 use crate::types::callable::CallableKind;
 use crate::types::callable::Param;
@@ -224,9 +225,7 @@ impl TypeAlias {
     }
 }
 
-// We have a lot of types, want to make sure they stay a reasonable size
-#[cfg(target_pointer_width = "64")]
-static_assertions::assert_eq_size!(Type, [usize; 4]);
+assert_words!(Type, 4);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Decoration {

@@ -9,6 +9,7 @@
 
 pub mod arc_id;
 pub mod args;
+pub mod assert_size;
 pub mod display;
 pub mod enum_heap;
 pub mod exclusive_lock;

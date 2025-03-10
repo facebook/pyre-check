@@ -25,6 +25,7 @@ use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 
+use crate::assert_words;
 use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
@@ -32,8 +33,7 @@ use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 
-#[cfg(target_pointer_width = "64")]
-static_assertions::assert_eq_size!(Lit, [usize; 3]);
+assert_words!(Lit, 3);
 
 /// A literal value.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

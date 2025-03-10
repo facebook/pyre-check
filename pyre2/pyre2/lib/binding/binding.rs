@@ -37,6 +37,8 @@ use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::alt::types::legacy_lookup::LegacyTypeParameterLookup;
 use crate::alt::types::yields::YieldFromResult;
 use crate::alt::types::yields::YieldResult;
+use crate::assert_bytes;
+use crate::assert_words;
 use crate::binding::bindings::Bindings;
 use crate::binding::narrow::NarrowOp;
 use crate::dunder;
@@ -55,35 +57,28 @@ use crate::types::types::Var;
 use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
 
-#[cfg(target_pointer_width = "64")]
-mod check_size {
-    use static_assertions::assert_eq_size;
+assert_words!(Key, 5);
+assert_words!(KeyExpect, 1);
+assert_words!(KeyExport, 3);
+assert_words!(KeyClass, 1);
+assert_words!(KeyClassField, 4);
+assert_bytes!(KeyClassSynthesizedFields, 4);
+assert_bytes!(KeyAnnotation, 12);
+assert_bytes!(KeyClassMetadata, 4);
+assert_words!(KeyLegacyTypeParam, 1);
+assert_words!(KeyYield, 1);
+assert_words!(KeyYieldFrom, 1);
 
-    use super::*;
-
-    assert_eq_size!(Key, [usize; 5]);
-    assert_eq_size!(KeyExpect, [usize; 1]);
-    assert_eq_size!(KeyExport, [usize; 3]);
-    assert_eq_size!(KeyClass, [usize; 1]);
-    assert_eq_size!(KeyClassField, [usize; 4]);
-    assert_eq_size!(KeyClassSynthesizedFields, [u32; 1]);
-    assert_eq_size!(KeyAnnotation, [u8; 12]); // Equivalent to 1.5 usize
-    assert_eq_size!(KeyClassMetadata, [u32; 1]);
-    assert_eq_size!(KeyLegacyTypeParam, [usize; 1]);
-    assert_eq_size!(KeyYield, [usize; 1]);
-    assert_eq_size!(KeyYieldFrom, [usize; 1]);
-
-    assert_eq_size!(Binding, [usize; 9]);
-    assert_eq_size!(BindingExpect, [usize; 8]);
-    assert_eq_size!(BindingAnnotation, [usize; 13]);
-    assert_eq_size!(BindingClass, [usize; 22]);
-    assert_eq_size!(BindingClassMetadata, [usize; 8]);
-    assert_eq_size!(BindingClassField, [usize; 22]);
-    assert_eq_size!(BindingClassSynthesizedFields, [u8; 4]); // Equivalent to 0.5 usize
-    assert_eq_size!(BindingLegacyTypeParam, [u32; 1]);
-    assert_eq_size!(BindingYield, [usize; 3]);
-    assert_eq_size!(BindingYieldFrom, [usize; 3]);
-}
+assert_words!(Binding, 9);
+assert_words!(BindingExpect, 8);
+assert_words!(BindingAnnotation, 13);
+assert_words!(BindingClass, 22);
+assert_words!(BindingClassMetadata, 8);
+assert_words!(BindingClassField, 22);
+assert_bytes!(BindingClassSynthesizedFields, 4);
+assert_bytes!(BindingLegacyTypeParam, 4);
+assert_words!(BindingYield, 3);
+assert_words!(BindingYieldFrom, 3);
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     const EXPORTED: bool = false;
