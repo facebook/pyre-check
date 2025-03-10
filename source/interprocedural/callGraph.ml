@@ -4249,20 +4249,22 @@ module HigherOrderCallGraph = struct
              } as original_call_callees)
           =
           track_apply_call_step ResolveCall (fun () ->
-              Context.input_define_call_graph
-              |> DefineCallGraph.resolve_call ~location ~call
-              |> Option.value_exn
-                   ~message:
-                     (Format.asprintf
-                        "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
-                        Ast.Expression.Call.pp
-                        call
-                        Reference.pp
-                        Context.qualifier
-                        Location.pp
-                        location
-                        DefineCallGraph.pp
-                        Context.input_define_call_graph))
+              match
+                DefineCallGraph.resolve_call ~location ~call Context.input_define_call_graph
+              with
+              | Some callees -> callees
+              | None ->
+                  failwith
+                    (Format.asprintf
+                       "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
+                       Ast.Expression.Call.pp
+                       call
+                       Reference.pp
+                       Context.qualifier
+                       Location.pp
+                       location
+                       DefineCallGraph.pp
+                       Context.input_define_call_graph))
         in
         let decorated_targets, non_decorated_targets =
           track_apply_call_step PartitionDecoratedTargets (fun () ->
