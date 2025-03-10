@@ -40,7 +40,26 @@ enum Identifiable {
     TypeVarTuple(TypeVarTuple),
 }
 
-impl Identifiable {
+impl Mutable for Identifiable {
+    fn immutable_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Class(a), Self::Class(b)) => a.immutable_eq(b),
+            (Self::ParamSpec(a), Self::ParamSpec(b)) => a.immutable_eq(b),
+            (Self::TypeVar(a), Self::TypeVar(b)) => a.immutable_eq(b),
+            (Self::TypeVarTuple(a), Self::TypeVarTuple(b)) => a.immutable_eq(b),
+            _ => false,
+        }
+    }
+
+    fn immutable_hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Class(a) => a.immutable_hash(state),
+            Self::ParamSpec(a) => a.immutable_hash(state),
+            Self::TypeVar(a) => a.immutable_hash(state),
+            Self::TypeVarTuple(a) => a.immutable_hash(state),
+        }
+    }
+
     fn mutate(&self, x: &Self) {
         match (self, x) {
             (Self::Class(a), Self::Class(b)) => a.mutate(b),
@@ -50,7 +69,9 @@ impl Identifiable {
             _ => panic!("Expected same variant"),
         }
     }
+}
 
+impl Identifiable {
     fn unwrap_class(self) -> Class {
         match self {
             Self::Class(x) => x,
@@ -82,13 +103,7 @@ impl Identifiable {
 
 impl PartialEq for Identifiable {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Class(a), Self::Class(b)) => a.immutable_eq(b),
-            (Self::ParamSpec(a), Self::ParamSpec(b)) => a.immutable_eq(b),
-            (Self::TypeVar(a), Self::TypeVar(b)) => a.immutable_eq(b),
-            (Self::TypeVarTuple(a), Self::TypeVarTuple(b)) => a.immutable_eq(b),
-            _ => false,
-        }
+        self.immutable_eq(other)
     }
 }
 
@@ -96,12 +111,7 @@ impl Eq for Identifiable {}
 
 impl Hash for Identifiable {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        match self {
-            Self::Class(a) => a.immutable_hash(state),
-            Self::ParamSpec(a) => a.immutable_hash(state),
-            Self::TypeVar(a) => a.immutable_hash(state),
-            Self::TypeVarTuple(a) => a.immutable_hash(state),
-        }
+        self.immutable_hash(state);
     }
 }
 
