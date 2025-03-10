@@ -4,9 +4,10 @@
 
 NOT INTENDED FOR EXTERNAL USE YET. INCOMPLETE AND IN DEVELOPMENT.
 
-We are building a new version of Pyre (the Python type checker), named Pyre2, to
-increase our internal velocity and enable new features such as producing typed
-ASTs. We aim to fully replace the existing Pyre by the end of 2025.
+We are building a new version of Pyre (Meta's Python type checker), named
+Pyrefly, to increase our internal velocity and enable new features such as
+producing typed ASTs. We aim to fully replace the existing Pyre by the end
+of 2025.
 
 ## Developer cheat sheet
 
@@ -28,7 +29,7 @@ From this directory, you can run:
   - For example, run on a single file: `buck2 run pyre2 -- check test.py`
 - Run a single test: `buck2 test pyre2 -- NAME_OF_THE_TEST`
 - Run the end-to-end tests: `buck2 test test:`
-- Run `arc pyre` (a.k.a. per-target type checking) with Pyre2:
+- Run `arc pyre` (a.k.a. per-target type checking) with Pyrefly:
   `arc pyre check <targets_to_check> -c python.type_checker=fbcode//tools/pyre/pyre2:pyre2_for_buck`
 - Debug a file: `buck2 run pyre2 -- check <filename> --debug-info=debug.js`,
   then open `debug.html` in your browser
