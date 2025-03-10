@@ -1,6 +1,6 @@
 {
-    "name": "pyre2",
-    "description": "A Python language server, powered by Pyre2",
+    "name": "pyrefly",
+    "description": "A Python language server, powered by pyrefly",
     "extensionKind": [
         "workspace"
     ],
@@ -11,7 +11,7 @@
         "type": "git",
         "url": "https://github.com/facebook/pyre"
     },
-    "publisher": "facebook",
+    "publisher": "meta",
     "categories": [],
     "keywords": [
         "multi-root ready"
