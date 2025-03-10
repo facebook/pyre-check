@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::fmt;
 use std::fmt::Display;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -22,6 +23,8 @@ use ruff_python_ast::ExprNumberLiteral;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
 use ruff_python_ast::UnaryOp;
+use serde::de;
+use serde::de::Visitor;
 use serde::Deserialize;
 
 use crate::ast::Ast;
@@ -30,18 +33,7 @@ use crate::util::with_hash::WithHash;
 
 pub static DEFAULT_PYTHON_PLATFORM: &str = "linux";
 
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    Dupe,
-    Hash,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Deserialize
-)]
+#[derive(Debug, Clone, Copy, Dupe, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PythonVersion {
     major: u32,
     minor: u32,
@@ -104,6 +96,29 @@ impl TryFrom<String> for PythonVersion {
 
     fn try_from(value: String) -> anyhow::Result<Self> {
         PythonVersion::from_str(&value[..])
+    }
+}
+
+impl<'de> Deserialize<'de> for PythonVersion {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct PythonVersionVisitor;
+
+        impl<'de> Visitor<'de> for PythonVersionVisitor {
+            type Value = PythonVersion;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("Python version")
+            }
+
+            fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
+                PythonVersion::from_str(value).map_err(|e| de::Error::custom(e.to_string()))
+            }
+        }
+
+        deserializer.deserialize_string(PythonVersionVisitor)
     }
 }
 
@@ -312,6 +327,34 @@ mod tests {
         );
         assert!(PythonVersion::from_str("").is_err());
         assert!(PythonVersion::from_str("abc").is_err());
+    }
+
+    #[test]
+    fn test_version_string_deserializing() {
+        #[derive(Debug, Deserialize, PartialEq, Eq)]
+        struct Output {
+            version: PythonVersion,
+        }
+        assert_eq!(
+            toml::from_str::<Output>("version = '3'").expect("Failed to parse"),
+            Output {
+                version: PythonVersion::new(3, 0, 0)
+            }
+        );
+        assert_eq!(
+            toml::from_str::<Output>("version = '3.10'").expect("Failed to parse"),
+            Output {
+                version: PythonVersion::new(3, 10, 0)
+            }
+        );
+        assert_eq!(
+            toml::from_str::<Output>("version = '3.10.2'").expect("Failed to parse"),
+            Output {
+                version: PythonVersion::new(3, 10, 2)
+            }
+        );
+        assert!(toml::from_str::<Output>("version = 'abcd'").is_err());
+        assert!(toml::from_str::<Output>("version = '5000000000'").is_err());
     }
 
     #[test]
