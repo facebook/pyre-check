@@ -7,8 +7,8 @@
 
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::hash::Hasher;
-use std::mem;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
@@ -27,6 +27,7 @@ use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::lock::Mutex;
+use crate::util::mutable::FullKey;
 use crate::util::mutable::ImmutableKey;
 use crate::util::mutable::Mutable;
 
@@ -57,6 +58,25 @@ impl Mutable for Identifiable {
             Self::ParamSpec(a) => a.immutable_hash(state),
             Self::TypeVar(a) => a.immutable_hash(state),
             Self::TypeVarTuple(a) => a.immutable_hash(state),
+        }
+    }
+
+    fn mutable_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Class(a), Self::Class(b)) => a.mutable_eq(b),
+            (Self::ParamSpec(a), Self::ParamSpec(b)) => a.mutable_eq(b),
+            (Self::TypeVar(a), Self::TypeVar(b)) => a.mutable_eq(b),
+            (Self::TypeVarTuple(a), Self::TypeVarTuple(b)) => a.mutable_eq(b),
+            _ => false,
+        }
+    }
+
+    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Class(a) => a.mutable_hash(state),
+            Self::ParamSpec(a) => a.mutable_hash(state),
+            Self::TypeVar(a) => a.mutable_hash(state),
+            Self::TypeVarTuple(a) => a.mutable_hash(state),
         }
     }
 
@@ -117,8 +137,11 @@ pub struct IdCache(Mutex<IdCacheInner>);
 struct IdCacheInner {
     /// Things that were created last time and we can reuse.
     reusable: HashMap<ImmutableKey<Identifiable>, Vec<Identifiable>>,
-    /// Things we are creating.
-    recorded: Vec<Identifiable>,
+    /// Things we have created afresh this time, or taken from the resuable list.
+    /// Note that due to races on Calculation, we might end up trying to create
+    /// the same `Identifiable` twice, and in order to avoid invalidating the
+    /// interface, we need to reuse perfectly identical things we have created.
+    created: HashSet<FullKey<Identifiable>>,
 }
 
 /// A history of the identifiers that were created, that can be reused.
@@ -126,24 +149,29 @@ struct IdCacheInner {
 pub struct IdCacheHistory(Vec<Identifiable>);
 
 impl IdCache {
+    #[allow(clippy::mutable_key_type)] // Our Eq/Hash deliberately excludes the mutable bits.
     pub fn new(history: IdCacheHistory) -> Self {
-        #[allow(clippy::mutable_key_type)] // Our Eq/Hash deliberately excludes the mutable bits.
         let mut reusable: HashMap<ImmutableKey<Identifiable>, Vec<Identifiable>> = HashMap::new();
         for x in history.0 {
             reusable.entry(ImmutableKey(x.dupe())).or_default().push(x);
         }
-        Self(Mutex::new(IdCacheInner {
-            reusable,
-            recorded: Vec::new(),
-        }))
+        let created = HashSet::with_capacity(reusable.len());
+        Self(Mutex::new(IdCacheInner { reusable, created }))
     }
 
     pub fn history(&self) -> IdCacheHistory {
-        IdCacheHistory(mem::take(&mut self.0.lock().recorded))
+        let lock = self.0.lock();
+        IdCacheHistory(lock.created.iter().map(|x| x.0.dupe()).collect())
     }
 
     fn get(&self, mut x: Identifiable) -> Identifiable {
         let mut lock = self.0.lock();
+
+        // First check if we have already created this thing this time around.
+        if let Some(res) = lock.created.get(&FullKey(x.dupe())) {
+            return res.0.dupe();
+        }
+
         match lock.reusable.entry(ImmutableKey(x.dupe())) {
             Entry::Occupied(mut e) => {
                 if let Some(existing) = e.get_mut().pop() {
@@ -156,7 +184,7 @@ impl IdCache {
             }
             Entry::Vacant(_) => {}
         };
-        lock.recorded.push(x.dupe());
+        lock.created.insert(FullKey(x.dupe()));
         x
     }
 

@@ -78,6 +78,14 @@ impl Mutable for ClassFieldProperties {
         self.is_annotated == other.is_annotated
     }
 
+    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.range.get().hash(state);
+    }
+
+    fn mutable_eq(&self, other: &Self) -> bool {
+        self.range.get() == other.range.get()
+    }
+
     fn mutate(&self, x: &ClassFieldProperties) {
         self.range.set(x.range.get());
     }
@@ -268,6 +276,23 @@ impl Mutable for Class {
         for x in self.0.fields.iter() {
             x.0.hash(state);
             x.1.immutable_hash(state);
+        }
+    }
+
+    fn mutable_eq(&self, other: &Class) -> bool {
+        self.0.qname.mutable_eq(&other.0.qname);
+        for (x, y) in self.0.fields.iter().zip(other.0.fields.iter()) {
+            if !x.1.immutable_eq(y.1) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.0.qname.mutable_hash(state);
+        for x in self.0.fields.iter() {
+            x.1.mutable_hash(state);
         }
     }
 

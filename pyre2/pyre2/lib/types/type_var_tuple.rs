@@ -58,6 +58,14 @@ impl Mutable for TypeVarTuple {
         self.0.qname.immutable_hash(state);
     }
 
+    fn mutable_eq(&self, other: &Self) -> bool {
+        self.0.qname.mutable_eq(&other.0.qname)
+    }
+
+    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.0.qname.mutable_hash(state);
+    }
+
     fn mutate(&self, x: &TypeVarTuple) {
         self.0.qname.mutate(&x.0.qname);
     }

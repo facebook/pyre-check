@@ -134,6 +134,15 @@ impl Mutable for QName {
         self.module_name.hash(state);
     }
 
+    fn mutable_eq(&self, other: &Self) -> bool {
+        // We don't check the `module_info` here, because it's always derived from the `module_name`.
+        self.range.get() == other.range.get()
+    }
+
+    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
+        self.range.get().hash(state);
+    }
+
     fn mutate(&self, x: &QName) {
         *self.module_info.write() = x.module_info().dupe();
         self.range.set(x.range.get());
