@@ -692,7 +692,7 @@ pub enum Binding {
     /// A phi node, representing the union of several alternative keys.
     Phi(SmallSet<Idx<Key>>),
     /// A narrowed type.
-    Narrow(Idx<Key>, NarrowOp),
+    Narrow(Idx<Key>, Box<NarrowOp>),
     /// An import of a module.
     /// Also contains the path along the module to bind, and optionally a key
     /// with the previous import to this binding (in which case merge the modules).

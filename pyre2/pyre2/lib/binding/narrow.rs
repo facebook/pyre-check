@@ -26,13 +26,15 @@ use crate::assert_words;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
-assert_words!(NarrowVal, 2);
-assert_words!(NarrowOp, 8);
+assert_words!(NarrowVal, 8);
+assert_words!(NarrowOp, 9);
 
+/// Nearly all `NarrowVal` are of type `Expr`, so even though `Expr` is bigger,
+/// we don't bother boxing it.
 #[derive(Clone, Debug)]
 pub enum NarrowVal {
-    Expr(Box<Expr>),
-    Type(Box<Type>, TextRange),
+    Expr(Expr),
+    Type(Type, TextRange),
 }
 
 impl NarrowVal {
@@ -61,8 +63,8 @@ pub enum NarrowOp {
     TypeGuard(Type),
     NotTypeGuard(Type),
     /// (func, args) for a function call that may narrow the type of its first argument.
-    Call(NarrowVal, Arguments),
-    NotCall(NarrowVal, Arguments),
+    Call(Box<NarrowVal>, Arguments),
+    NotCall(Box<NarrowVal>, Arguments),
 }
 
 impl NarrowOp {
@@ -167,14 +169,10 @@ impl NarrowOps {
                     .filter_map(|(cmp_op, right)| {
                         let range = right.range();
                         let op = match cmp_op {
-                            CmpOp::Is => NarrowOp::Is(NarrowVal::Expr(Box::new(right.clone()))),
-                            CmpOp::IsNot => {
-                                NarrowOp::IsNot(NarrowVal::Expr(Box::new(right.clone())))
-                            }
-                            CmpOp::Eq => NarrowOp::Eq(NarrowVal::Expr(Box::new(right.clone()))),
-                            CmpOp::NotEq => {
-                                NarrowOp::NotEq(NarrowVal::Expr(Box::new(right.clone())))
-                            }
+                            CmpOp::Is => NarrowOp::Is(NarrowVal::Expr(right.clone())),
+                            CmpOp::IsNot => NarrowOp::IsNot(NarrowVal::Expr(right.clone())),
+                            CmpOp::Eq => NarrowOp::Eq(NarrowVal::Expr(right.clone())),
+                            CmpOp::NotEq => NarrowOp::NotEq(NarrowVal::Expr(right.clone())),
                             _ => {
                                 return None;
                             }
@@ -237,7 +235,7 @@ impl NarrowOps {
                 for name in expr_to_names(&posargs[0]) {
                     narrow_ops.and(
                         name.id.clone(),
-                        NarrowOp::Call(NarrowVal::Expr(func.clone()), args.clone()),
+                        NarrowOp::Call(Box::new(NarrowVal::Expr((**func).clone())), args.clone()),
                         *range,
                     );
                 }

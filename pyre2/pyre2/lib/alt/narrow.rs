@@ -80,12 +80,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if args.args.len() > 1 {
             let second_arg = &args.args[1];
             let op = match func_ty.callee_kind() {
-                Some(CalleeKind::Callable(CallableKind::IsInstance)) => Some(NarrowOp::IsInstance(
-                    NarrowVal::Expr(Box::new(second_arg.clone())),
-                )),
-                Some(CalleeKind::Callable(CallableKind::IsSubclass)) => Some(NarrowOp::IsSubclass(
-                    NarrowVal::Expr(Box::new(second_arg.clone())),
-                )),
+                Some(CalleeKind::Callable(CallableKind::IsInstance)) => {
+                    Some(NarrowOp::IsInstance(NarrowVal::Expr(second_arg.clone())))
+                }
+                Some(CalleeKind::Callable(CallableKind::IsSubclass)) => {
+                    Some(NarrowOp::IsSubclass(NarrowVal::Expr(second_arg.clone())))
+                }
                 _ => None,
             };
             if op.is_some() {
@@ -100,7 +100,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn narrow_val_infer(&self, val: &NarrowVal, errors: &ErrorCollector) -> Type {
         match val {
             NarrowVal::Expr(e) => self.expr_infer(e, errors),
-            NarrowVal::Type(t, _) => (**t).clone(),
+            NarrowVal::Type(t, _) => t.clone(),
         }
     }
 
@@ -113,7 +113,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Type::Tuple(Tuple::Concrete(ts)) = ty {
             Some(NarrowOp::Or(
                 ts.iter()
-                    .map(|t| build_op(NarrowVal::Type(Box::new(t.clone()), range)))
+                    .map(|t| build_op(NarrowVal::Type(t.clone(), range)))
                     .collect(),
             ))
         } else {

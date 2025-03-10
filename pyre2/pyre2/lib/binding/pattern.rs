@@ -42,7 +42,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&mut p.value);
                 if let Some(subject_name) = subject_name {
                     NarrowOps(
-                        smallmap! { subject_name.clone() => (NarrowOp::Eq(NarrowVal::Expr(p.value.clone())), p.range()) },
+                        smallmap! { subject_name.clone() => (NarrowOp::Eq(NarrowVal::Expr((*p.value).clone())), p.range()) },
                     )
                 } else {
                     NarrowOps::new()
@@ -52,7 +52,7 @@ impl<'a> BindingsBuilder<'a> {
                 let value = Ast::pattern_match_singleton_to_expr(&p);
                 if let Some(subject_name) = subject_name {
                     NarrowOps(
-                        smallmap! { subject_name.clone() => (NarrowOp::Is(NarrowVal::Expr(Box::new(value))), p.range()) },
+                        smallmap! { subject_name.clone() => (NarrowOp::Is(NarrowVal::Expr(value)), p.range()) },
                     )
                 } else {
                     NarrowOps::new()
@@ -144,7 +144,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.ensure_expr(&mut x.cls);
                 let mut narrow_ops = if let Some(subject_name) = subject_name {
                     NarrowOps(
-                        smallmap! { subject_name.clone() => (NarrowOp::IsInstance(NarrowVal::Expr(x.cls.clone())), x.cls.range()) },
+                        smallmap! { subject_name.clone() => (NarrowOp::IsInstance(NarrowVal::Expr((*x.cls).clone())), x.cls.range()) },
                     )
                 } else {
                     NarrowOps::new()
