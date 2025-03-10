@@ -4248,23 +4248,25 @@ module HigherOrderCallGraph = struct
                _;
              } as original_call_callees)
           =
-          Context.input_define_call_graph
-          |> DefineCallGraph.resolve_call ~location ~call
-          |> Option.value_exn
-               ~message:
-                 (Format.asprintf
-                    "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
-                    Ast.Expression.Call.pp
-                    call
-                    Reference.pp
-                    Context.qualifier
-                    Location.pp
-                    location
-                    DefineCallGraph.pp
-                    Context.input_define_call_graph)
+          track_apply_call_step ResolveCall (fun () ->
+              Context.input_define_call_graph
+              |> DefineCallGraph.resolve_call ~location ~call
+              |> Option.value_exn
+                   ~message:
+                     (Format.asprintf
+                        "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
+                        Ast.Expression.Call.pp
+                        call
+                        Reference.pp
+                        Context.qualifier
+                        Location.pp
+                        location
+                        DefineCallGraph.pp
+                        Context.input_define_call_graph))
         in
         let decorated_targets, non_decorated_targets =
-          partition_decorated_targets original_call_targets
+          track_apply_call_step PartitionDecoratedTargets (fun () ->
+              partition_decorated_targets original_call_targets)
         in
         (* The analysis of the callee AST handles the redirection to artifically created decorator
            defines. *)
@@ -4272,11 +4274,12 @@ module HigherOrderCallGraph = struct
           analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
         in
         let call_targets_from_callee =
-          non_decorated_targets
-          |> CallTarget.Set.of_list
-          |> CallTarget.Set.join (returned_callables decorated_targets)
-          |> CallTarget.Set.join callee_return_values
-          |> CallTarget.Set.elements
+          track_apply_call_step ComputeCalleeTargets (fun () ->
+              non_decorated_targets
+              |> CallTarget.Set.of_list
+              |> CallTarget.Set.join (returned_callables decorated_targets)
+              |> CallTarget.Set.join callee_return_values
+              |> CallTarget.Set.elements)
         in
         let state, argument_callees =
           track_apply_call_step AnalyzeArguments (fun () ->
@@ -4341,14 +4344,15 @@ module HigherOrderCallGraph = struct
         in
         (* Do not keep keep higher order parameters if each call target is parameterized. *)
         let higher_order_parameters =
-          if
-            call_targets_from_callee
-            |> non_parameterized_targets ~parameterized_call_targets
-            |> List.is_empty
-          then
-            HigherOrderParameterMap.empty
-          else
-            higher_order_parameters
+          track_apply_call_step HandleHigherOrderParameters (fun () ->
+              if
+                call_targets_from_callee
+                |> non_parameterized_targets ~parameterized_call_targets
+                |> List.is_empty
+              then
+                HigherOrderParameterMap.empty
+              else
+                higher_order_parameters)
         in
         (* Unset `unresolved` when the original call graph building cannot resolve callees under
            cases like `f()` or `f`. *)
@@ -4360,19 +4364,20 @@ module HigherOrderCallGraph = struct
               Unresolved.False
           | _ -> unresolved
         in
-        Context.output_define_call_graph :=
-          DefineCallGraph.set_call_callees
-            ~location
-            ~call
-            ~call_callees:
-              {
-                original_call_callees with
-                call_targets = parameterized_call_targets;
-                decorated_targets;
-                higher_order_parameters;
-                unresolved;
-              }
-            !Context.output_define_call_graph;
+        track_apply_call_step StoreCallCallees (fun () ->
+            Context.output_define_call_graph :=
+              DefineCallGraph.set_call_callees
+                ~location
+                ~call
+                ~call_callees:
+                  {
+                    original_call_callees with
+                    call_targets = parameterized_call_targets;
+                    decorated_targets;
+                    higher_order_parameters;
+                    unresolved;
+                  }
+                !Context.output_define_call_graph);
         track_apply_call_step FetchReturnedCallables (fun () ->
             returned_callables parameterized_call_targets, state)
 

@@ -13,12 +13,22 @@ module Analysis = struct
       | AnalyzeArguments
       | FetchReturnedCallables
       | CreateParameterizedTargets
+      | ComputeCalleeTargets
+      | HandleHigherOrderParameters
+      | StoreCallCallees
+      | PartitionDecoratedTargets
+      | ResolveCall
     [@@deriving sexp, compare]
 
     let pp_short formatter = function
       | AnalyzeArguments -> Format.fprintf formatter "analyze-arguments"
       | FetchReturnedCallables -> Format.fprintf formatter "fetch-returned-callables"
       | CreateParameterizedTargets -> Format.fprintf formatter "create-parameterized-targets"
+      | ComputeCalleeTargets -> Format.fprintf formatter "compute-callee-targets"
+      | HandleHigherOrderParameters -> Format.fprintf formatter "handle-higher-order-parameters"
+      | StoreCallCallees -> Format.fprintf formatter "store-call-callees"
+      | PartitionDecoratedTargets -> Format.fprintf formatter "partition-decorated-targets"
+      | ResolveCall -> Format.fprintf formatter "resolve-call"
   end
 end
 
