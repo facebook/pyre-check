@@ -51,6 +51,7 @@
   margin-left: auto;
   margin-right: auto;
   line-height: 1.1;
+  flex: 1;
 }
 
 .feature.featureHero .featureButton {
