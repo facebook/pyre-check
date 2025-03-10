@@ -106,6 +106,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
+    pointer-events: none; /* TODO (T217536145): Remove once we add back JSON and AST tabs */
 }
 
 .tab {

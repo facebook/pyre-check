@@ -61,19 +61,11 @@ export default component TryPyre2Results(
             className={clsx(
               styles.tab,
               activeToolbarTab === 'errors' && styles.selectedTab,
-            )}
-            onClick={() => setActiveToolbarTab('errors')}>
+            )}>
             Errors
           </li>
-          <li
-            className={clsx(
-              styles.tab,
-              activeToolbarTab === 'json' && styles.selectedTab,
-            )}
-            onClick={() => setActiveToolbarTab('json')}>
-            JSON
-          </li>
         </ul>
+        {/* TODO (T217536145): Add JSON tab to sandbox */}
       </div>
       <div className={styles.results}>
         {loading && (
@@ -104,11 +96,7 @@ export default component TryPyre2Results(
             </ul>
           </pre>
         )}
-        {!loading && activeToolbarTab === 'json' && (
-          <pre className={styles.resultBody}>
-            {JSON.stringify(errors, null, 2)}
-          </pre>
-        )}
+        {/* TODO (T217536145): Add JSON tab to sandbox */}
       </div>
     </div>
   );
