@@ -31,6 +31,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::class::class_field::ClassField;
 use crate::alt::class::class_metadata::BaseClass;
+use crate::alt::solve::TypeFormContext;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::alt::types::decorated_function::DecoratedFunction;
@@ -965,7 +966,12 @@ impl Display for AnnotationTarget {
 pub enum BindingAnnotation {
     /// The type is annotated to be this key, will have the outer type removed.
     /// Optionally occuring within a class, in which case Self refers to this class.
-    AnnotateExpr(AnnotationTarget, Expr, Option<Idx<KeyClass>>),
+    AnnotateExpr(
+        AnnotationTarget,
+        Expr,
+        Option<Idx<KeyClass>>,
+        TypeFormContext,
+    ),
     /// A literal type we know statically.
     Type(AnnotationTarget, Type),
 }
@@ -973,7 +979,7 @@ pub enum BindingAnnotation {
 impl DisplayWith<Bindings> for BindingAnnotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         match self {
-            Self::AnnotateExpr(_, x, self_type) => write!(
+            Self::AnnotateExpr(_, x, self_type, _) => write!(
                 f,
                 "_: {}{}",
                 ctx.module_info().display(x),

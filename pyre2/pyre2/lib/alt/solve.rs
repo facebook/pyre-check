@@ -88,7 +88,7 @@ use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
 use crate::util::prelude::SliceExt;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[allow(dead_code)]
 pub enum TypeFormContext {
     /// Expression in a base class list
@@ -100,9 +100,10 @@ pub enum TypeFormContext {
     /// Arguments to Generic[] or Protocol[]
     GenericBase,
     /// Parameter annotation for a function
-    Parameter,
-    ParameterArgs,
-    ParameterKwargs,
+    ParameterAnnotation,
+    ParameterArgsAnnotation,
+    ParameterKwargsAnnotation,
+    ReturnAnnotation,
     /// Type argument for a generic
     TypeArgument,
     /// Scoped type params for functions and classes
@@ -190,8 +191,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Arc<AnnotationWithTarget> {
         match binding {
-            BindingAnnotation::AnnotateExpr(target, x, self_type) => {
-                let mut ann = self.expr_annotation(x, errors);
+            BindingAnnotation::AnnotateExpr(target, x, self_type, ctx) => {
+                let mut ann = self.expr_annotation(x, *ctx, errors);
                 if let Some(self_type) = self_type
                     && let Some(ty) = &mut ann.ty
                 {
@@ -258,7 +259,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         false
     }
 
-    fn expr_annotation(&self, x: &Expr, errors: &ErrorCollector) -> Annotation {
+    fn expr_annotation(
+        &self,
+        x: &Expr,
+        ctx: TypeFormContext,
+        errors: &ErrorCollector,
+    ) -> Annotation {
         if !Self::is_valid_annotation(x, errors) {
             return Annotation::new_type(Type::any_error());
         }
@@ -271,12 +277,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if Ast::unpack_slice(&x.slice).len() == 1
                     && let Some(qualifier) = self.expr_qualifier(&x.value, errors) =>
             {
-                let mut ann = self.expr_annotation(&x.slice, errors);
+                let mut ann = self.expr_annotation(&x.slice, ctx, errors);
                 ann.qualifiers.insert(0, qualifier);
                 ann
             }
-            // TODO(yangdanny): this could also be ParamAnnotation
-            _ => Annotation::new_type(self.expr_untype(x, TypeFormContext::VarAnnotation, errors)),
+            _ => Annotation::new_type(self.expr_untype(x, ctx, errors)),
         }
     }
 

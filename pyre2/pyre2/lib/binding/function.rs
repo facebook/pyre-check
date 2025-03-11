@@ -8,6 +8,7 @@
 use std::mem;
 
 use itertools::Either;
+use ruff_python_ast::AnyParameterRef;
 use ruff_python_ast::ExceptHandler;
 use ruff_python_ast::Expr;
 use ruff_python_ast::Parameters;
@@ -16,6 +17,7 @@ use ruff_python_ast::StmtExpr;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 
+use crate::alt::solve::TypeFormContext;
 use crate::ast::Ast;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
@@ -54,11 +56,32 @@ impl<'a> BindingsBuilder<'a> {
         self_type: Option<Idx<KeyClass>>,
     ) {
         let mut self_name = None;
-        for x in x.iter() {
+        for x in x.iter_non_variadic_params() {
             if self_type.is_some() && self_name.is_none() {
-                self_name = Some(x.name().clone());
+                self_name = Some(x.parameter.name.clone());
             }
-            self.bind_function_param(x, function_idx, self_type);
+            self.bind_function_param(
+                AnyParameterRef::NonVariadic(x),
+                function_idx,
+                self_type,
+                TypeFormContext::ParameterAnnotation,
+            );
+        }
+        if let Some(box args) = &x.vararg {
+            self.bind_function_param(
+                AnyParameterRef::Variadic(args),
+                function_idx,
+                self_type,
+                TypeFormContext::ParameterArgsAnnotation,
+            );
+        }
+        if let Some(box kwargs) = &x.kwarg {
+            self.bind_function_param(
+                AnyParameterRef::Variadic(kwargs),
+                function_idx,
+                self_type,
+                TypeFormContext::ParameterKwargsAnnotation,
+            );
         }
         if let Scope {
             kind: ScopeKind::Method(method),
@@ -132,6 +155,7 @@ impl<'a> BindingsBuilder<'a> {
                         AnnotationTarget::Return(func_name.id.clone()),
                         *x,
                         self_type,
+                        TypeFormContext::ReturnAnnotation,
                     ),
                 ),
             )

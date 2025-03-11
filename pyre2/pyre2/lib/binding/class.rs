@@ -22,6 +22,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
 use crate::alt::class::class_metadata::BaseClass;
+use crate::alt::solve::TypeFormContext;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -361,6 +362,7 @@ impl<'a> BindingsBuilder<'a> {
                         AnnotationTarget::ClassMember(member_name.clone()),
                         annotation,
                         None,
+                        TypeFormContext::ClassVarAnnotation,
                     )
                 };
                 Some(self.table.insert(ann_key, ann_val))

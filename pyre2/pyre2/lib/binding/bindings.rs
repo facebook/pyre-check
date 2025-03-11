@@ -33,6 +33,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
+use crate::alt::solve::TypeFormContext;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -675,6 +676,7 @@ impl<'a> BindingsBuilder<'a> {
         x: AnyParameterRef,
         function_idx: Idx<KeyFunction>,
         self_type: Option<Idx<KeyClass>>,
+        ctx: TypeFormContext,
     ) {
         let name = x.name();
         let annot = x.annotation().map(|x| {
@@ -684,6 +686,7 @@ impl<'a> BindingsBuilder<'a> {
                     AnnotationTarget::Param(name.id.clone()),
                     x.clone(),
                     self_type,
+                    ctx,
                 ),
             )
         });

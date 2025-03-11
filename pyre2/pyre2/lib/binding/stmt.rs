@@ -18,6 +18,7 @@ use ruff_python_ast::StmtImportFrom;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
+use crate::alt::solve::TypeFormContext;
 use crate::ast::Ast;
 use crate::binding::binding::AnnotationStyle;
 use crate::binding::binding::AnnotationTarget;
@@ -334,6 +335,8 @@ impl<'a> BindingsBuilder<'a> {
                 Expr::Name(name) => {
                     let name = Ast::expr_name_identifier(name);
                     let ann_key = KeyAnnotation::Annotation(ShortIdentifier::new(&name));
+                    let in_class_body =
+                        matches!(self.scopes.current().kind, ScopeKind::ClassBody(_));
                     self.ensure_type(&mut x.annotation, &mut None);
                     let ann_val = if let Some(special) = SpecialForm::new(&name.id, &x.annotation) {
                         BindingAnnotation::Type(
@@ -345,19 +348,22 @@ impl<'a> BindingsBuilder<'a> {
                             AnnotationTarget::Assign(name.id.clone()),
                             *x.annotation.clone(),
                             None,
+                            if in_class_body {
+                                TypeFormContext::ClassVarAnnotation
+                            } else {
+                                TypeFormContext::VarAnnotation
+                            },
                         )
                     };
                     let ann_key = self.table.insert(ann_key, ann_val);
-
-                    let flow_style =
-                        if matches!(self.scopes.current().kind, ScopeKind::ClassBody(_)) {
-                            let initial_value = x.value.as_deref().cloned();
-                            FlowStyle::AnnotatedClassField { initial_value }
-                        } else {
-                            FlowStyle::Annotated {
-                                is_initialized: x.value.is_some(),
-                            }
-                        };
+                    let flow_style = if in_class_body {
+                        let initial_value = x.value.as_deref().cloned();
+                        FlowStyle::AnnotatedClassField { initial_value }
+                    } else {
+                        FlowStyle::Annotated {
+                            is_initialized: x.value.is_some(),
+                        }
+                    };
                     let binding_value = if let Some(value) = x.value {
                         // Treat a name as initialized, but skip actually checking the value, if we are assigning `...` in a stub.
                         if self.module_info.path().is_interface()
@@ -407,6 +413,7 @@ impl<'a> BindingsBuilder<'a> {
                             AnnotationTarget::Assign(attr.attr.id.clone()),
                             *x.annotation,
                             None,
+                            TypeFormContext::ClassVarAnnotation,
                         ),
                     );
                     let value_binding = match &x.value {
