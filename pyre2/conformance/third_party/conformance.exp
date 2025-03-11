@@ -6796,6 +6796,26 @@
       "name": "invalid-type-var",
       "stop_column": 20,
       "stop_line": 65
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "TypeAlias is only allowed on variable annotations.",
+      "description": "TypeAlias is only allowed on variable annotations.",
+      "line": 87,
+      "name": "invalid-annotation",
+      "stop_column": 21,
+      "stop_line": 87
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "`type[list[?_TypeVar]]` is not assignable to `TypeAlias`",
+      "description": "`type[list[?_TypeVar]]` is not assignable to `TypeAlias`",
+      "line": 87,
+      "name": "type-mismatch",
+      "stop_column": 31,
+      "stop_line": 87
     }
   ],
   "generics_self_advanced.py": [

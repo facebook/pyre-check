@@ -277,6 +277,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     // duplicate error in the fallback logic
                     qualifier
                 }
+                Some(Qualifier::TypeAlias)
+                    if type_form_context != TypeFormContext::VarAnnotation =>
+                {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        "TypeAlias is only allowed on variable annotations.".to_owned(),
+                    );
+                    None
+                }
                 _ => qualifier,
             }
         } else {
