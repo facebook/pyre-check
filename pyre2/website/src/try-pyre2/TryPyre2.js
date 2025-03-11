@@ -35,8 +35,6 @@ def test(x: int):
 reveal_type(test(42))
 `.trimStart();
 
-const DEFAULT_SANDBOX_HEIGHT = 600;
-
 const pyre2WasmUninitializedPromise =
   // $FlowIgnore[cannot-resolve-name]
   typeof window !== 'undefined'
@@ -69,7 +67,9 @@ export default component TryPyre2(
   const [internalError, setInternalError] = useState('');
   const [loading, setLoading] = useState(true);
   const [pyreService, setPyreService] = useState<any>(null);
-  const [height, setHeight] = useState(DEFAULT_SANDBOX_HEIGHT);
+  const [editorHeightforCodeSnippet, setEditorHeightforCodeSnippet] = useState<
+    number | null,
+  >(null);
   const [model, setModel] = useState(null);
 
   useEffect(() => {
@@ -138,38 +138,65 @@ export default component TryPyre2(
     }
   }
 
-  function onMount(editor: any) {
+  function onEditorMount(editor: any) {
     const model = fetchCurMonacoModelAndTriggerUpdate();
     setModel(model);
 
     if (isCodeSnippet) {
-      setHeight(Math.max(50, editor.getContentHeight()));
+      setEditorHeightforCodeSnippet(Math.max(50, editor.getContentHeight()));
     }
     editorRef.current = editor;
   }
 
+  let editor = null;
+  if (isCodeSnippet) {
+    editor = (
+      <Editor
+        defaultPath={sampleFilename}
+        defaultValue={codeSample}
+        defaultLanguage="python"
+        theme="vs-light"
+        onChange={forceRecheck}
+        onMount={onEditorMount}
+        height={editorHeightforCodeSnippet}
+        options={{
+          readOnly: isMobile(),
+          minimap: {enabled: false},
+          hover: {enabled: true, above: false},
+          scrollBeyondLastLine: false,
+          overviewRulerBorder: false,
+        }}
+      />
+    );
+  } else {
+    // TODO (T217559369): Instead of manually calculating the sandbox height, we should
+    // use flexbox behavior to make the sandbox height to be 75% of the screen
+    // This doesn't seem to work with the monaco editor currently.
+    const screenHeight = window.innerHeight;
+    const sandboxHeight = (screenHeight * 75) / 100;
+
+    editor = (
+      <Editor
+        defaultPath={sampleFilename}
+        defaultValue={codeSample}
+        defaultLanguage="python"
+        theme="vs-light"
+        onChange={forceRecheck}
+        onMount={onEditorMount}
+        height={sandboxHeight}
+        options={{
+          minimap: {enabled: false},
+          hover: {enabled: true, above: false},
+          scrollBeyondLastLine: false,
+          overviewRulerBorder: false,
+        }}
+      />
+    );
+  }
   return (
     <div className={styles.tryEditor}>
-      <div className={styles.code}>
-        <Editor
-          defaultPath={sampleFilename}
-          defaultValue={codeSample}
-          defaultLanguage="python"
-          theme="vs-light"
-          height={height}
-          onChange={forceRecheck}
-          onMount={onMount}
-          options={{
-            readOnly: isCodeSnippet && isMobile(),
-            minimap: {enabled: false},
-            hover: {enabled: true, above: false},
-            scrollBeyondLastLine: false,
-            overviewRulerBorder: false,
-            scrollbar: {
-              alwaysConsumeMouseWheel: false,
-            },
-          }}
-        />
+      <div className={styles.codeEditorContainer}>
+        <div className={styles.codeEditor}>{editor}</div>
       </div>
       {showErrorPanel && (
         <div className={styles.resultsContainer}>

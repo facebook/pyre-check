@@ -68,10 +68,16 @@
     flex: 1;
 }
 
-.code {
-    flex: 1;
+.codeEditorContainer {
+    flex: 3;
     overflow: auto;
     border-bottom: 10;
+    background: #fff;
+}
+
+.codeEditor {
+    position: 'absolute';
+    height: 100%;
 }
 
 .results {
@@ -86,11 +92,8 @@
     font-size: 14px;
 }
 
-.code {
-    background: #fff;
-}
-
 .resultsContainer {
+    flex: 1;
     position: relative;
     font-size: 12px;
     background: #f7f7f7;
@@ -99,8 +102,6 @@
 
 .resultBody {
     display: flex;
-    flex: 1;
-    overflow: auto;
 }
 
 .tabs {
