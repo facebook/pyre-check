@@ -20,6 +20,7 @@ use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::solve::TypeFormContext;
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::alt::types::class_metadata::DataclassMetadata;
 use crate::alt::types::class_metadata::EnumMetadata;
@@ -151,7 +152,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .iter()
             .filter_map(|x| {
                 let base_type_and_range = match x {
-                    BaseClass::Expr(x) => Some((self.expr_untype(x, errors), x.range())),
+                    BaseClass::Expr(x) => Some((self.expr_untype(x, TypeFormContext::BaseClassList, errors), x.range())),
                     BaseClass::TypedDict => {
                         is_typed_dict = true;
                         None
@@ -364,7 +365,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && special_base_class.can_apply()
         {
             // This branch handles `Generic[...]` and `Protocol[...]`
-            let args = Ast::unpack_slice(&subscript.slice).map(|x| self.expr_untype(x, errors));
+            let args = Ast::unpack_slice(&subscript.slice)
+                .map(|x| self.expr_untype(x, TypeFormContext::GenericBase, errors));
             special_base_class.apply(args);
             special_base_class
         } else {
@@ -544,7 +546,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         raw_metaclass: &Expr,
         errors: &ErrorCollector,
     ) -> Option<ClassType> {
-        match self.expr_untype(raw_metaclass, errors) {
+        match self.expr_untype(raw_metaclass, TypeFormContext::BaseClassList, errors) {
             Type::ClassType(meta) => {
                 if self.solver().is_subset_eq(
                     &Type::ClassType(meta.clone()),

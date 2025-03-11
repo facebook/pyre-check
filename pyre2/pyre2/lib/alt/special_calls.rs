@@ -18,6 +18,7 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::solve::TypeFormContext;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::unexpected_keyword;
@@ -35,7 +36,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let expr_a = &args[0];
             let expr_b = &args[1];
             let a = self.expr_infer(expr_a, errors);
-            let b = self.expr_untype(expr_b, errors);
+            let b = self.expr_untype(expr_b, TypeFormContext::FunctionArgument, errors);
             let a = self
                 .canonicalize_all_class_types(self.solver().deep_force(a), expr_a.range())
                 .explicit_any()

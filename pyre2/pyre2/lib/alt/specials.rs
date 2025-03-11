@@ -12,6 +12,7 @@ use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
+use crate::alt::solve::TypeFormContext;
 use crate::binding::binding::Key;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
@@ -77,7 +78,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     return None;
                 }
             }
-            let ty = self.expr_untype(value, errors);
+            let ty = self.expr_untype(value, TypeFormContext::TypeArgument, errors);
             match ty {
                 Type::Unpack(box Type::Tuple(Tuple::Concrete(elts))) => {
                     has_unpack = true;
@@ -161,7 +162,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         match special_form {
             SpecialForm::Optional if arguments.len() == 1 => Type::type_form(Type::Union(vec![
-                self.expr_untype(&arguments[0], errors),
+                self.expr_untype(&arguments[0], TypeFormContext::TypeArgument, errors),
                 Type::None,
             ])),
             SpecialForm::Optional => self.error(
@@ -174,9 +175,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::Union => Type::type_form(Type::Union(
-                arguments.map(|arg| self.expr_untype(arg, errors)),
-            )),
+            SpecialForm::Union => {
+                Type::type_form(Type::Union(arguments.map(|arg| {
+                    self.expr_untype(arg, TypeFormContext::TypeArgument, errors)
+                })))
+            }
             SpecialForm::Tuple => match self.check_args_and_construct_tuple(arguments, errors) {
                 Some((tuple, _)) => Type::type_form(Type::Tuple(tuple)),
                 None => Type::type_form(Type::Tuple(Tuple::unbounded(Type::any_error()))),
@@ -217,14 +220,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let args = arguments[0..arguments.len() - 1]
                         .iter()
-                        .map(|x| self.expr_untype(x, errors))
+                        .map(|x| self.expr_untype(x, TypeFormContext::TypeArgument, errors))
                         .collect();
-                    let pspec = self.expr_untype(arguments.last().unwrap(), errors);
+                    let pspec = self.expr_untype(
+                        arguments.last().unwrap(),
+                        TypeFormContext::TypeArgument,
+                        errors,
+                    );
                     Type::type_form(Type::Concatenate(args, Box::new(pspec)))
                 }
             }
             SpecialForm::Callable if arguments.len() == 2 => {
-                let ret = self.expr_untype(&arguments[1], errors);
+                let ret = self.expr_untype(&arguments[1], TypeFormContext::TypeArgument, errors);
                 match &arguments[0] {
                     Expr::List(ExprList { elts, .. }) => {
                         match self.check_args_and_construct_tuple(elts, errors) {
@@ -253,11 +260,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Expr::EllipsisLiteral(_) => Type::type_form(Type::callable_ellipsis(ret)),
                     name @ Expr::Name(_) => {
-                        let ty = self.expr_untype(name, errors);
+                        let ty = self.expr_untype(name, TypeFormContext::TypeArgument, errors);
                         Type::type_form(Type::callable_param_spec(ty, ret))
                     }
                     x @ Expr::Subscript(_) => {
-                        let ty = self.expr_untype(x, errors);
+                        let ty = self.expr_untype(x, TypeFormContext::TypeArgument, errors);
                         match ty {
                             Type::Concatenate(args, pspec) => {
                                 Type::type_form(Type::callable_concatenate(args, *pspec, ret))
@@ -288,7 +295,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Type::type_form(Type::callable_ellipsis(Type::any_error()))
             }
             SpecialForm::TypeGuard if arguments.len() == 1 => Type::type_form(Type::TypeGuard(
-                Box::new(self.expr_untype(&arguments[0], errors)),
+                Box::new(self.expr_untype(&arguments[0], TypeFormContext::TypeArgument, errors)),
             )),
             SpecialForm::TypeGuard => self.error(
                 errors,
@@ -301,7 +308,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ),
             ),
             SpecialForm::TypeIs if arguments.len() == 1 => Type::type_form(Type::TypeIs(Box::new(
-                self.expr_untype(&arguments[0], errors),
+                self.expr_untype(&arguments[0], TypeFormContext::TypeArgument, errors),
             ))),
             SpecialForm::TypeIs => self.error(
                 errors,
@@ -314,7 +321,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ),
             ),
             SpecialForm::Unpack if arguments.len() == 1 => Type::type_form(Type::Unpack(Box::new(
-                self.expr_untype(&arguments[0], errors),
+                self.expr_untype(&arguments[0], TypeFormContext::TypeArgument, errors),
             ))),
             SpecialForm::Unpack => self.error(
                 errors,
@@ -326,9 +333,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     arguments.len()
                 ),
             ),
-            SpecialForm::Type if arguments.len() == 1 => {
-                Type::type_form(Type::type_form(self.expr_untype(&arguments[0], errors)))
-            }
+            SpecialForm::Type if arguments.len() == 1 => Type::type_form(Type::type_form(
+                self.expr_untype(&arguments[0], TypeFormContext::TypeArgument, errors),
+            )),
             SpecialForm::Type => self.error(
                 errors,
                 range,

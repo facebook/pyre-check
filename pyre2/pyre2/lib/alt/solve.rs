@@ -88,6 +88,29 @@ use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
 use crate::util::prelude::SliceExt;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub enum TypeFormContext {
+    /// Expression in a base class list
+    BaseClassList,
+    /// Variable annotation in a class
+    ClassVarAnnotation,
+    /// Argument to a function such as cast, assert_type, or TypeVar
+    FunctionArgument,
+    /// Arguments to Generic[] or Protocol[]
+    GenericBase,
+    /// Parameter annotation for a function
+    Parameter,
+    ParameterArgs,
+    ParameterKwargs,
+    /// Type argument for a generic
+    TypeArgument,
+    /// Scoped type params for functions and classes
+    TypeVarConstraint,
+    /// Variable annotation outside of a class definition
+    VarAnnotation,
+}
+
 pub enum Iterable {
     OfType(Type),
     FixedLen(Vec<Type>),
@@ -252,7 +275,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ann.qualifiers.insert(0, qualifier);
                 ann
             }
-            _ => Annotation::new_type(self.expr_untype(x, errors)),
+            // TODO(yangdanny): this could also be ParamAnnotation
+            _ => Annotation::new_type(self.expr_untype(x, TypeFormContext::VarAnnotation, errors)),
         }
     }
 
@@ -659,15 +683,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let name = raw_param.name();
                     let restriction = match raw_param {
                         TypeParam::TypeVar(tv) => match &tv.bound {
-                            Some(box Expr::Tuple(tup)) => Restriction::Constraints(
-                                tup.elts.map(|e| self.expr_untype(e, errors)),
-                            ),
-                            Some(e) => Restriction::Bound(self.expr_untype(e, errors)),
+                            Some(box Expr::Tuple(tup)) => {
+                                Restriction::Constraints(tup.elts.map(|e| {
+                                    self.expr_untype(e, TypeFormContext::TypeVarConstraint, errors)
+                                }))
+                            }
+                            Some(e) => Restriction::Bound(self.expr_untype(
+                                e,
+                                TypeFormContext::TypeVarConstraint,
+                                errors,
+                            )),
                             None => Restriction::Unrestricted,
                         },
                         _ => Restriction::Unrestricted,
                     };
-                    let default = raw_param.default().map(|e| self.expr_untype(e, errors));
+                    let default = raw_param
+                        .default()
+                        .map(|e| self.expr_untype(e, TypeFormContext::TypeVarConstraint, errors));
                     params.push(TParamInfo {
                         name: name.id.clone(),
                         quantified: get_quantified(
@@ -1887,14 +1919,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn expr_untype(&self, x: &Expr, errors: &ErrorCollector) -> Type {
+    pub fn expr_untype(&self, x: &Expr, ctx: TypeFormContext, errors: &ErrorCollector) -> Type {
         match x {
             // TODO: this is only valid in a type argument list for generics or Callable, not as a standalone annotation
             Expr::List(x) => {
                 let elts: Vec<Param> = x
                     .elts
                     .iter()
-                    .map(|x| Param::PosOnly(self.expr_untype(x, errors), Required::Required))
+                    .map(|x| Param::PosOnly(self.expr_untype(x, ctx, errors), Required::Required))
                     .collect();
                 Type::ParamSpecValue(ParamList::new(elts))
             }

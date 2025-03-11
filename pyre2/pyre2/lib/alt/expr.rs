@@ -28,6 +28,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::call::CallStyle;
 use crate::alt::callable::CallArg;
+use crate::alt::solve::TypeFormContext;
 use crate::ast::Ast;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyYield;
@@ -289,7 +290,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
 
         let constraints = iargs
-            .map(|arg| self.expr_untype(arg, errors))
+            .map(|arg| self.expr_untype(arg, TypeFormContext::TypeVarConstraint, errors))
             .collect::<Vec<_>>();
         if !constraints.is_empty() {
             restriction = Some(Restriction::Constraints(constraints));
@@ -299,7 +300,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             match &kw.arg {
                 Some(id) => match id.id.as_str() {
                     "bound" => {
-                        let bound = self.expr_untype(&kw.value, errors);
+                        let bound =
+                            self.expr_untype(&kw.value, TypeFormContext::TypeVarConstraint, errors);
                         if restriction.is_some() {
                             self.error(
                                 errors,
@@ -312,7 +314,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             restriction = Some(Restriction::Bound(bound));
                         }
                     }
-                    "default" => default = Some(self.expr_untype(&kw.value, errors)),
+                    "default" => {
+                        default = Some(self.expr_untype(
+                            &kw.value,
+                            TypeFormContext::TypeVarConstraint,
+                            errors,
+                        ))
+                    }
                     "covariant" => try_set_variance(kw, Some(Variance::Covariant)),
                     "contravariant" => try_set_variance(kw, Some(Variance::Contravariant)),
                     "infer_variance" => try_set_variance(kw, None),
@@ -1215,7 +1223,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     match fun {
                         Type::Forall(forall) => {
-                            let tys = xs.map(|x| self.expr_untype(x, errors));
+                            let tys = xs.map(|x| {
+                                self.expr_untype(x, TypeFormContext::TypeArgument, errors)
+                            });
                             let targs = self.check_and_create_targs(
                                 &forall.name,
                                 &forall.tparams,
@@ -1236,7 +1246,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             let targ = match xs.len() {
                                 // This causes us to treat `type[list]` as equivalent to `type[list[Any]]`,
                                 // which may or may not be what we want.
-                                1 => self.expr_untype(&xs[0], errors),
+                                1 => {
+                                    self.expr_untype(&xs[0], TypeFormContext::TypeArgument, errors)
+                                }
                                 _ => self.error(
                                     errors,
                                     x.range,
@@ -1274,7 +1286,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                         Type::ClassDef(cls) => Type::type_form(self.specialize(
                             &cls,
-                            xs.map(|x| self.expr_untype(x, errors)),
+                            xs.map(|x| self.expr_untype(x, TypeFormContext::TypeArgument, errors)),
                             x.range,
                             errors,
                         )),
@@ -1368,7 +1380,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 })
             }
             Expr::Starred(ExprStarred { value: box x, .. }) => {
-                let ty = self.expr_untype(x, errors);
+                let ty = self.expr_untype(x, TypeFormContext::TypeArgument, errors);
                 Type::Unpack(Box::new(ty))
             }
             Expr::Name(x) => match x.id.as_str() {
