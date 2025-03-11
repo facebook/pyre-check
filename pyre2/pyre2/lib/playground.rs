@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use anyhow::anyhow;
 use dupe::Dupe;
 use lsp_types::CompletionItem;
 use lsp_types::CompletionItemKind;
@@ -143,7 +144,9 @@ impl Loader for DemoEnv {
                 style,
             ))
         } else {
-            panic!("Module not given")
+            Err(FindError::new(anyhow!(
+                "module is not available in sandbox"
+            )))
         }
     }
 
@@ -304,5 +307,46 @@ impl LanguageServiceState {
                 })
             })
             .unwrap_or_default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_regular_import() {
+        let mut state = LanguageServiceState::default();
+        let expected_errors: Vec<String> = Vec::new();
+
+        state.update_source("from typing import *".to_owned());
+
+        assert_eq!(
+            state
+                .get_errors()
+                .into_iter()
+                .map(|x| x.message)
+                .collect::<Vec<_>>(),
+            expected_errors,
+        );
+    }
+
+    #[test]
+    fn test_invalid_import() {
+        let mut state = LanguageServiceState::default();
+        state.update_source("from t".to_owned());
+        let expected_errors: Vec<&str> = vec![
+            "Could not find import of `t`, module is not available in sandbox",
+            "Parse error: Expected 'import', found newline at byte range 6..6",
+        ];
+
+        assert_eq!(
+            state
+                .get_errors()
+                .into_iter()
+                .map(|x| x.message)
+                .collect::<Vec<_>>(),
+            expected_errors,
+        );
     }
 }
