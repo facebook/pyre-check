@@ -543,3 +543,15 @@ fn test_import_fail_to_load() {
     let msg = errs[0].to_string();
     assert!(msg.contains("foo.py:1:1: Failed to load"));
 }
+
+testcase_with_bug!(
+    "TODO Zeina: This file should not have errors and x should have type str",
+    test_import_os,
+    r#"
+import os
+from typing import reveal_type
+
+x = os.path.join("source") # E: Expected a callable, got Never
+reveal_type(x) # E: revealed type: Error
+"#,
+);
