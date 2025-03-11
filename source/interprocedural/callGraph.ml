@@ -4624,14 +4624,14 @@ module HigherOrderCallGraph = struct
                 (* Since `Define` statements inside another `Define` are stripped out (to avoid
                    bloat), use this API to query the definition. *)
                 match
-                  PyrePysaEnvironment.ReadOnly.get_function_definition
-                    Context.pyre_api
-                    delocalized_name
+                  regular_target
+                  |> Target.from_regular
+                  |> Target.DefinesSharedMemory.ReadOnly.get Context.callables_to_definitions_map
                 with
                 | Some
                     {
-                      Analysis.FunctionDefinition.body =
-                        Some { Node.value = { Define.captures = _ :: _ as captures; _ }; _ };
+                      Target.DefinesSharedMemory.Define.define =
+                        { Node.value = { Define.captures = _ :: _ as captures; _ }; _ };
                       _;
                     } ->
                     let parameters_roots, parameters_targets =
