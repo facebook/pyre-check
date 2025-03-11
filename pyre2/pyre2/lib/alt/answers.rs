@@ -47,6 +47,7 @@ use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::DisplayWith;
+use crate::util::display::DisplayWithCtx;
 use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;

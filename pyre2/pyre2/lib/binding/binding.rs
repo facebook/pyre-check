@@ -56,6 +56,7 @@ use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
+use crate::util::display::DisplayWithCtx;
 
 assert_words!(Key, 5);
 assert_words!(KeyExpect, 1);

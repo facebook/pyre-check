@@ -80,7 +80,7 @@ use crate::table_try_for_each;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::Var;
-use crate::util::display::DisplayWith;
+use crate::util::display::DisplayWithCtx;
 use crate::util::uniques::UniqueFactory;
 
 #[derive(Clone, Dupe, Debug)]

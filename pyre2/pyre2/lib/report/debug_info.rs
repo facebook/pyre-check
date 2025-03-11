@@ -22,7 +22,7 @@ use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::table_for_each;
-use crate::util::display::DisplayWith;
+use crate::util::display::DisplayWithCtx;
 use crate::util::prelude::SliceExt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

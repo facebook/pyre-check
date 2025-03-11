@@ -75,7 +75,9 @@ where
 /// Like `Display`, but allows passing some additional context.
 pub trait DisplayWith<Ctx: ?Sized> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result;
+}
 
+pub trait DisplayWithCtx<Ctx: ?Sized>: DisplayWith<Ctx> {
     fn display_with<'a>(&'a self, ctx: &'a Ctx) -> impl Display + 'a {
         struct X<'a, T: ?Sized, Ctx: ?Sized>(&'a T, &'a Ctx);
         impl<'a, Ctx: ?Sized, T: DisplayWith<Ctx> + ?Sized> Display for X<'a, T, Ctx> {
@@ -86,6 +88,8 @@ pub trait DisplayWith<Ctx: ?Sized> {
         X(self, ctx)
     }
 }
+
+impl<T: ?Sized, Ctx: ?Sized> DisplayWithCtx<Ctx> for T where T: DisplayWith<Ctx> {}
 
 // General wrappers
 

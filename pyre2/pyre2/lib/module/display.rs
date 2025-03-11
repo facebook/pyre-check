@@ -19,6 +19,7 @@ use ruff_text_size::TextSize;
 
 use crate::module::module_info::ModuleInfo;
 use crate::util::display::DisplayWith;
+use crate::util::display::DisplayWithCtx;
 
 // Special module-specific types
 
