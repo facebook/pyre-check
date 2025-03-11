@@ -108,6 +108,8 @@ pub enum TypeFormContext {
     TypeArgument,
     /// Type argument for the return position of a Callable type
     TypeArgumentCallableReturn,
+    /// Type argument for the parameters list of a Callable type or a tuple
+    TupleOrCallableParam,
     /// Scoped type params for functions and classes
     TypeVarConstraint,
     /// Variable annotation outside of a class definition
@@ -2087,6 +2089,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             TypeFormContext::ParameterArgsAnnotation
                 | TypeFormContext::ParameterKwargsAnnotation
                 | TypeFormContext::TypeArgument
+                | TypeFormContext::TupleOrCallableParam
                 | TypeFormContext::GenericBase
         ) && matches!(result, Type::Unpack(_))
         {

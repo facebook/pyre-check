@@ -78,7 +78,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     return None;
                 }
             }
-            let ty = self.expr_untype(value, TypeFormContext::TypeArgument, errors);
+            let ty = self.expr_untype(value, TypeFormContext::TupleOrCallableParam, errors);
             match ty {
                 Type::Unpack(box Type::Tuple(Tuple::Concrete(elts))) => {
                     has_unpack = true;
@@ -220,13 +220,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let args = arguments[0..arguments.len() - 1]
                         .iter()
-                        .map(|x| self.expr_untype(x, TypeFormContext::TypeArgument, errors))
+                        .map(|x| self.expr_untype(x, TypeFormContext::TupleOrCallableParam, errors))
                         .collect();
                     let pspec = self.expr_untype(
                         arguments.last().unwrap(),
                         TypeFormContext::TypeArgument,
                         errors,
                     );
+                    if !pspec.is_kind_param_spec() {
+                        self.error(
+                            errors,
+                            range,
+                            ErrorKind::BadSpecialization,
+                            None,
+                            format!(
+                                "Expected a `ParamSpec` for the second argument of `Concatenate`, got {}",
+                                pspec
+                            ),
+                        );
+                    }
                     Type::type_form(Type::Concatenate(args, Box::new(pspec)))
                 }
             }
