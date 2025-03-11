@@ -57,7 +57,7 @@ enum IllegalIdentifierHandling {
 }
 
 impl<'a> BindingsBuilder<'a> {
-    pub fn class_index(&mut self) -> ClassIndex {
+    fn class_index(&mut self) -> ClassIndex {
         let res = ClassIndex(self.class_count);
         self.class_count += 1;
         res
