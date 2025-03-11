@@ -724,8 +724,8 @@ impl State {
         // everything in the cycle and force it to compute.
         let mut changed_twice = SmallSet::new();
         self.ensure_loaders(handles);
-        loop {
-            debug!("Running an epoch");
+        for i in 1.. {
+            debug!("Running epoch {i}");
             self.run_step(handles);
             let changed = mem::take(&mut *self.changed.lock());
             if changed.is_empty() {
