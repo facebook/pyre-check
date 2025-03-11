@@ -619,9 +619,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         name: &Name,
         style: TypeAliasStyle,
         ty: Type,
-        range: TextRange,
+        expr: &Expr,
         errors: &ErrorCollector,
     ) -> Type {
+        let range = expr.range();
+        if !Self::is_valid_annotation(expr, errors) {
+            return Type::any_error();
+        }
         if matches!(
             style,
             TypeAliasStyle::Scoped | TypeAliasStyle::LegacyExplicit
@@ -1636,36 +1640,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     annot.as_ref().and_then(|(x, tcc)| x.ty().map(|t| (t, tcc))),
                     errors,
                 );
-                let expr_range = expr.range();
                 match (annot, &ty) {
                     (Some((annot, _)), _)
                         if annot.annotation.qualifiers.contains(&Qualifier::TypeAlias) =>
                     {
-                        self.as_type_alias(
-                            name,
-                            TypeAliasStyle::LegacyExplicit,
-                            ty,
-                            expr_range,
-                            errors,
-                        )
+                        self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, expr, errors)
                     }
                     // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
                     // when there is no annotation, so that `mylist = list` is treated
                     // like a value assignment rather than a type alias?
-                    (None, Type::Type(_)) => self.as_type_alias(
-                        name,
-                        TypeAliasStyle::LegacyImplicit,
-                        ty,
-                        expr_range,
-                        errors,
-                    ),
+                    (None, Type::Type(_)) => {
+                        self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, expr, errors)
+                    }
                     _ => ty,
                 }
             }
             Binding::ScopedTypeAlias(name, params, expr) => {
                 let ty = self.expr_infer(expr, errors);
-                let expr_range = expr.range();
-                let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, expr_range, errors);
+                let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, expr, errors);
                 match ta {
                     Type::Forall(..) => self.error(
                         errors,
@@ -1675,7 +1667,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         format!("Type parameters used in `{name}` but not declared"),
                     ),
                     Type::TypeAlias(ta) => {
-                        let params_range = params.as_ref().map_or(expr_range, |x| x.range);
+                        let params_range = params.as_ref().map_or(expr.range(), |x| x.range);
                         Forall::new_type(
                             name.clone(),
                             self.type_params(

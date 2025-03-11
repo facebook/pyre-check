@@ -1,10 +1,7 @@
 @generated
 {
   "aliases_explicit.py": [
-    "Line 84: Expected 1 errors",
     "Line 85: Expected 1 errors",
-    "Line 86: Expected 1 errors",
-    "Line 90: Expected 1 errors",
     "Line 44: Unexpected errors ['Expected 1 type argument for `GoodTypeAlias12`, got 0']",
     "Line 98: Unexpected errors ['assert_type(list[Any], list[str]) failed']"
   ],
@@ -43,10 +40,7 @@
   ],
   "aliases_type_statement.py": [
     "Line 26: Expected 1 errors",
-    "Line 42: Expected 1 errors",
     "Line 43: Expected 1 errors",
-    "Line 44: Expected 1 errors",
-    "Line 48: Expected 1 errors",
     "Line 52: Expected 1 errors",
     "Line 58: Expected 1 errors",
     "Line 79: Expected 1 errors",
