@@ -34,7 +34,7 @@ use crate::util::exclusive_lock::ExclusiveLockGuard;
 pub struct UpgradeLock<E, T> {
     /// The underling lock used for read/write operations
     value: RwLock<T>,
-    /// The thing providing exclusivity. None means noone has exclusivity.
+    /// The thing providing exclusivity. None means no one has exclusivity.
     /// Some means someone is exclusive and will signal after they finish.
     exclusive: ExclusiveLock<E>,
 }
