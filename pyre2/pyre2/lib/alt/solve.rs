@@ -1924,18 +1924,61 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn expr_untype(&self, x: &Expr, ctx: TypeFormContext, errors: &ErrorCollector) -> Type {
-        match x {
-            // TODO: this is only valid in a type argument list for generics or Callable, not as a standalone annotation
-            Expr::List(x) => {
+    pub fn expr_untype(
+        &self,
+        x: &Expr,
+        type_form_context: TypeFormContext,
+        errors: &ErrorCollector,
+    ) -> Type {
+        let result = match x {
+            Expr::List(x) if type_form_context == TypeFormContext::TypeArgument => {
                 let elts: Vec<Param> = x
                     .elts
                     .iter()
-                    .map(|x| Param::PosOnly(self.expr_untype(x, ctx, errors), Required::Required))
+                    .map(|x| {
+                        Param::PosOnly(
+                            self.expr_untype(x, type_form_context, errors),
+                            Required::Required,
+                        )
+                    })
                     .collect();
                 Type::ParamSpecValue(ParamList::new(elts))
             }
             _ => self.untype(self.expr_infer(x, errors), x.range(), errors),
+        };
+        if type_form_context != TypeFormContext::ParameterKwargsAnnotation
+            && matches!(result, Type::Unpack(box Type::TypedDict(_)))
+        {
+            return self.error(
+                errors,
+                x.range(),
+                ErrorKind::InvalidAnnotation,
+                None,
+                "Unpack with a TypedDict is only allowed in a **kwargs annotation.".to_owned(),
+            );
         }
+        if type_form_context != TypeFormContext::ParameterKwargsAnnotation
+            && matches!(result, Type::Kwargs(_))
+        {
+            return self.error(
+                errors,
+                x.range(),
+                ErrorKind::InvalidAnnotation,
+                None,
+                "ParamSpec **kwargs is only allowed in a **kwargs annotation.".to_owned(),
+            );
+        }
+        if type_form_context != TypeFormContext::ParameterArgsAnnotation
+            && matches!(result, Type::Args(_))
+        {
+            return self.error(
+                errors,
+                x.range(),
+                ErrorKind::InvalidAnnotation,
+                None,
+                "ParamSpec *args is only allowed in an *args annotation.".to_owned(),
+            );
+        }
+        result
     }
 }

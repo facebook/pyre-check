@@ -6153,6 +6153,36 @@
   "generics_paramspec_components.py": [
     {
       "code": -2,
+      "column": 25,
+      "concise_description": "ParamSpec **kwargs is only allowed in a **kwargs annotation.",
+      "description": "ParamSpec **kwargs is only allowed in a **kwargs annotation.",
+      "line": 17,
+      "name": "invalid-annotation",
+      "stop_column": 33,
+      "stop_line": 17
+    },
+    {
+      "code": -2,
+      "column": 45,
+      "concise_description": "ParamSpec *args is only allowed in an *args annotation.",
+      "description": "ParamSpec *args is only allowed in an *args annotation.",
+      "line": 17,
+      "name": "invalid-annotation",
+      "stop_column": 51,
+      "stop_line": 17
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "ParamSpec *args is only allowed in an *args annotation.",
+      "description": "ParamSpec *args is only allowed in an *args annotation.",
+      "line": 20,
+      "name": "invalid-annotation",
+      "stop_column": 29,
+      "stop_line": 20
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "ParamSpec *args and **kwargs must be used together",
       "description": "ParamSpec *args and **kwargs must be used together",
@@ -6163,6 +6193,16 @@
     },
     {
       "code": -2,
+      "column": 46,
+      "concise_description": "ParamSpec *args is only allowed in an *args annotation.",
+      "description": "ParamSpec *args is only allowed in an *args annotation.",
+      "line": 23,
+      "name": "invalid-annotation",
+      "stop_column": 52,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "ParamSpec *args and **kwargs must be used together",
       "description": "ParamSpec *args and **kwargs must be used together",
@@ -6170,6 +6210,26 @@
       "name": "invalid-param-spec",
       "stop_column": 13,
       "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "ParamSpec *args is only allowed in an *args annotation.",
+      "description": "ParamSpec *args is only allowed in an *args annotation.",
+      "line": 35,
+      "name": "invalid-annotation",
+      "stop_column": 24,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "ParamSpec **kwargs is only allowed in a **kwargs annotation.",
+      "description": "ParamSpec **kwargs is only allowed in a **kwargs annotation.",
+      "line": 36,
+      "name": "invalid-annotation",
+      "stop_column": 28,
+      "stop_line": 36
     },
     {
       "code": -2,
@@ -7030,6 +7090,16 @@
       "name": "missing-attribute",
       "stop_column": 21,
       "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
+      "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
+      "line": 50,
+      "name": "not-a-type",
+      "stop_column": 27,
+      "stop_line": 50
     },
     {
       "code": -2,

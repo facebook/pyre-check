@@ -417,11 +417,7 @@
     "Line 39: Expected 1 errors"
   ],
   "generics_paramspec_components.py": [
-    "Line 17: Expected 1 errors",
-    "Line 20: Expected 1 errors",
     "Line 30: Expected 1 errors",
-    "Line 35: Expected 1 errors",
-    "Line 36: Expected 1 errors",
     "Line 96: Unexpected errors ['Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`']",
     "Line 97: Unexpected errors ['Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`']"
   ],
@@ -485,7 +481,6 @@
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
     "Line 46: Expected 1 errors",
-    "Line 50: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 66: Expected 1 errors",
     "Line 14: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']",

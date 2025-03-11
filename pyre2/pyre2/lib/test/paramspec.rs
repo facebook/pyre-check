@@ -225,10 +225,10 @@ def puts_p_into_scope(f: Callable[P, int]) -> None:
   def inner(*args: P.args, **kwargs: P.kwargs) -> None:      # Accepted
     pass
 
-  def mixed_up(*args: P.kwargs, **kwargs: P.args) -> None:   # Rejected
+  def mixed_up(*args: P.kwargs, **kwargs: P.args) -> None:   # E: ParamSpec **kwargs is only allowed in a **kwargs annotation. # E: ParamSpec *args is only allowed in an *args annotation.
     pass
 
-  def misplaced(x: P.args) -> None:                          # Rejected
+  def misplaced(x: P.args) -> None:                          # E: ParamSpec *args is only allowed in an *args annotation.
     pass
 
 def out_of_scope(*args: P.args, **kwargs: P.kwargs) -> None: # Rejected
@@ -236,8 +236,7 @@ def out_of_scope(*args: P.args, **kwargs: P.kwargs) -> None: # Rejected
 "#,
 );
 
-testcase_with_bug!(
-    "P.args and P.kwargs can't be used as annotations",
+testcase!(
     test_paramspec_together,
     r#"
 from typing import Callable, ParamSpec
@@ -246,9 +245,9 @@ P = ParamSpec("P")
 
 def puts_p_into_scope(f: Callable[P, int]) -> None:
 
-  stored_args: P.args                           # Rejected
+  stored_args: P.args                           # E: ParamSpec *args is only allowed in an *args annotation.
 
-  stored_kwargs: P.kwargs                       # Rejected
+  stored_kwargs: P.kwargs                       # E: ParamSpec **kwargs is only allowed in a **kwargs annotation.
 
   def just_args(*args: P.args) -> None:         # E: ParamSpec *args and **kwargs must be used together
     pass
