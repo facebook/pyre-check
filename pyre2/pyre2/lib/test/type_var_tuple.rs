@@ -19,6 +19,16 @@ def foo(*args: *Ts): ...
 );
 
 testcase!(
+    test_type_var_tuple_multiple,
+    r#"
+from typing import TypeVarTuple, Generic
+Ts = TypeVarTuple('Ts')
+class ArrayTwoParams(Generic[*Ts, *Ts]): ...  # E: There cannot be more than one TypeVarTuple type parameter
+class ArrayTwoParams2[*Ts1, *Ts2](): ...  # E: There cannot be more than one TypeVarTuple type parameter
+"#,
+);
+
+testcase!(
     test_illegal_unpack,
     r#"
 from typing import Unpack

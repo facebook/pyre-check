@@ -7930,6 +7930,16 @@
       "name": "type-mismatch",
       "stop_column": 18,
       "stop_line": 100
+    },
+    {
+      "code": -2,
+      "column": 28,
+      "concise_description": "There cannot be more than one TypeVarTuple type parameter",
+      "description": "There cannot be more than one TypeVarTuple type parameter",
+      "line": 106,
+      "name": "invalid-inheritance",
+      "stop_column": 32,
+      "stop_line": 106
     }
   ],
   "generics_typevartuple_callable.py": [

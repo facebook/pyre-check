@@ -3,7 +3,7 @@
   "pass": 33,
   "fail": 100,
   "pass_rate": 0.25,
-  "differences": 583,
+  "differences": 582,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -98,7 +98,7 @@
     "generics_syntax_declarations.py": 7,
     "generics_syntax_infer_variance.py": 7,
     "generics_syntax_scoping.py": 9,
-    "generics_typevartuple_basic.py": 2,
+    "generics_typevartuple_basic.py": 1,
     "generics_typevartuple_concat.py": 1,
     "generics_typevartuple_specialization.py": 7,
     "generics_upper_bound.py": 3,

@@ -789,8 +789,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         _ => unreachable!(),
                     }
                 }
+                let mut type_var_tuple_count = 0;
                 let mut params = Vec::new();
                 for raw_param in x.type_params.iter() {
+                    if matches!(raw_param, TypeParam::TypeVarTuple(_)) {
+                        if type_var_tuple_count == 1 {
+                            self.error(
+                                errors,
+                                raw_param.range(),
+                                ErrorKind::InvalidTypeVarTuple,
+                                None,
+                                "There cannot be more than one TypeVarTuple type parameter"
+                                    .to_owned(),
+                            );
+                        }
+                        type_var_tuple_count += 1;
+                    }
                     let name = raw_param.name();
                     let restriction = match raw_param {
                         TypeParam::TypeVar(tv) => match &tv.bound {

@@ -500,7 +500,6 @@
   "generics_type_erasure.py": [],
   "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
-    "Line 106: Expected 1 errors",
     "Line 85: Unexpected errors ['Argument `tuple[float]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`']"
   ],
   "generics_typevartuple_callable.py": [],

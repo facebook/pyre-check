@@ -368,8 +368,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             && special_base_class.can_apply()
         {
             // This branch handles `Generic[...]` and `Protocol[...]`
-            let args = Ast::unpack_slice(&subscript.slice)
-                .map(|x| self.expr_untype(x, TypeFormContext::GenericBase, errors));
+            let mut type_var_tuple_count = 0;
+            let args = Ast::unpack_slice(&subscript.slice).map(|x| {
+                let ty = self.expr_untype(x, TypeFormContext::GenericBase, errors);
+                if let Type::Unpack(box unpacked) = &ty
+                    && unpacked.is_kind_type_var_tuple()
+                {
+                    if type_var_tuple_count == 1 {
+                        self.error(
+                            errors,
+                            x.range(),
+                            ErrorKind::InvalidInheritance,
+                            None,
+                            "There cannot be more than one TypeVarTuple type parameter".to_owned(),
+                        );
+                    }
+                    type_var_tuple_count += 1;
+                }
+                ty
+            });
             special_base_class.apply(args);
             special_base_class
         } else {
