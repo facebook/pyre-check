@@ -257,7 +257,7 @@ testcase!(
     test_await_non_awaitable,
     r#"
 async def test() -> None:
-    await 42  # E: Expression is not awaitable
+    await 42  # E: Type `Literal[42]` is not awaitable
 "#,
 );
 
@@ -269,7 +269,7 @@ class Foo:
         ...
 
 async def test() -> None:
-    await Foo()  # E: Expression is not awaitable
+    await Foo()  # E: Type `Foo` is not awaitable
 "#,
 );
 

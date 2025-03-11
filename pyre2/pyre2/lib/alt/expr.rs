@@ -1024,7 +1024,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         x.range,
                         ErrorKind::AsyncError,
                         None,
-                        "Expression is not awaitable".to_owned(),
+                        ErrorContext::Await(awaiting_ty).format(),
                     ),
                 }
             }

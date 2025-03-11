@@ -29,6 +29,8 @@ pub enum ErrorContext {
     BinaryOp(String, Type, Type),
     /// for x in y: ...
     Iteration(Type),
+    /// await x
+    Await(Type),
     /// x[y]
     Index(Type),
     /// x[y] = ...
