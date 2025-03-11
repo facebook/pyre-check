@@ -68,6 +68,7 @@ assert_bytes!(KeyClassMetadata, 4);
 assert_words!(KeyLegacyTypeParam, 1);
 assert_words!(KeyYield, 1);
 assert_words!(KeyYieldFrom, 1);
+assert_words!(KeyFunction, 1);
 
 assert_words!(Binding, 9);
 assert_words!(BindingExpect, 8);
@@ -79,6 +80,7 @@ assert_bytes!(BindingClassSynthesizedFields, 4);
 assert_bytes!(BindingLegacyTypeParam, 4);
 assert_words!(BindingYield, 3);
 assert_words!(BindingYieldFrom, 3);
+assert_words!(BindingFunction, 21);
 
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     const EXPORTED: bool = false;
