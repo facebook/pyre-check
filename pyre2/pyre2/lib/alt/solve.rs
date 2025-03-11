@@ -299,11 +299,39 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Subscript(x)
-                if Ast::unpack_slice(&x.slice).len() == 1
+                if !Ast::unpack_slice(&x.slice).is_empty()
                     && let Some(qualifier) =
                         self.expr_qualifier(&x.value, type_form_context, errors) =>
             {
-                let mut ann = self.expr_annotation(&x.slice, type_form_context, errors);
+                let unpacked_slice = Ast::unpack_slice(&x.slice);
+                let mut ann = if qualifier == Qualifier::Annotated {
+                    // TODO: we may want to preserve the extra annotation info for `Annotated` in the future
+                    if unpacked_slice.len() < 2 {
+                        self.error(
+                            errors,
+                            x.range(),
+                            ErrorKind::InvalidAnnotation,
+                            None,
+                            "`Annotated` needs at least one piece of metadata in addition to the type".to_owned(),
+                        );
+                    }
+                    self.expr_annotation(&unpacked_slice[0], type_form_context, errors)
+                } else {
+                    if unpacked_slice.len() != 1 {
+                        self.error(
+                            errors,
+                            x.range(),
+                            ErrorKind::InvalidAnnotation,
+                            None,
+                            format!(
+                                "Expected 1 type argument for {}, got {}",
+                                qualifier,
+                                unpacked_slice.len()
+                            ),
+                        );
+                    }
+                    self.expr_annotation(&unpacked_slice[0], type_form_context, errors)
+                };
                 ann.qualifiers.insert(0, qualifier);
                 ann
             }

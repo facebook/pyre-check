@@ -134,8 +134,7 @@
     "Line 46: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 54: Expected 1 errors",
-    "Line 105: Expected 1 errors",
-    "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']"
+    "Line 105: Expected 1 errors"
   ],
   "classes_override.py": [
     "Lines 56, 65: Expected error (tag 'method4')"
@@ -677,22 +676,14 @@
     "Line 104: Expected 1 errors"
   ],
   "qualifiers_annotated.py": [
-    "Line 47: Expected 1 errors",
     "Line 48: Expected 1 errors",
-    "Line 49: Expected 1 errors",
-    "Line 53: Expected 1 errors",
-    "Line 64: Expected 1 errors",
     "Line 76: Expected 1 errors",
     "Line 77: Expected 1 errors",
     "Line 84: Expected 1 errors",
     "Line 85: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 93: Expected 1 errors",
-    "Line 81: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 98: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[int]`']",
-    "Line 100: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Final[int]`']",
-    "Line 110: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
-    "Line 112: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `NotRequired[int]`']"
+    "Line 81: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "qualifiers_final_annotation.py": [
     "Line 16: Expected 1 errors",
@@ -797,10 +788,7 @@
     "Line 60: Unexpected errors ['assert_type(object | None, str | None) failed']",
     "Line 64: Unexpected errors ['TODO: StmtDelete - Bindings::stmt']"
   ],
-  "typeddicts_readonly.py": [
-    "Line 61: Expected 1 errors",
-    "Line 56: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `NotRequired[ReadOnly[int]]`']"
-  ],
+  "typeddicts_readonly.py": [],
   "typeddicts_readonly_consistency.py": [
     "Line 38: Expected 1 errors",
     "Line 81: Expected 1 errors",
@@ -823,8 +811,6 @@
     "Line 12: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 63: Expected 1 errors",
-    "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",
-    "Line 70: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[Annotated[int, \"\"]]`']",
     "Line 74: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveMovie']`\"]"
   ],
   "typeddicts_type_consistency.py": [

@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 32,
-  "fail": 101,
-  "pass_rate": 0.24,
-  "differences": 606,
+  "pass": 33,
+  "fail": 100,
+  "pass_rate": 0.25,
+  "differences": 593,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -36,6 +36,7 @@
     "tuples_unpacked.py",
     "typeddicts_alt_syntax.py",
     "typeddicts_final.py",
+    "typeddicts_readonly.py",
     "typeddicts_readonly_kwargs.py"
   ],
   "failing": {
@@ -53,7 +54,7 @@
     "callables_annotation.py": 7,
     "callables_kwargs.py": 2,
     "callables_subtyping.py": 2,
-    "classes_classvar.py": 6,
+    "classes_classvar.py": 5,
     "classes_override.py": 1,
     "constructors_call_init.py": 4,
     "constructors_call_metaclass.py": 5,
@@ -122,7 +123,7 @@
     "protocols_self.py": 4,
     "protocols_subtyping.py": 1,
     "protocols_variance.py": 7,
-    "qualifiers_annotated.py": 16,
+    "qualifiers_annotated.py": 8,
     "qualifiers_final_annotation.py": 19,
     "qualifiers_final_decorator.py": 11,
     "specialtypes_any.py": 2,
@@ -133,11 +134,10 @@
     "typeddicts_class_syntax.py": 5,
     "typeddicts_inheritance.py": 1,
     "typeddicts_operations.py": 2,
-    "typeddicts_readonly.py": 2,
     "typeddicts_readonly_consistency.py": 3,
     "typeddicts_readonly_inheritance.py": 7,
     "typeddicts_readonly_update.py": 1,
-    "typeddicts_required.py": 6,
+    "typeddicts_required.py": 4,
     "typeddicts_type_consistency.py": 7,
     "typeddicts_usage.py": 2
   },
