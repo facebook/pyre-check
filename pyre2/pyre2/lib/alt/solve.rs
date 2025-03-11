@@ -241,6 +241,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                     None
                 }
+                Some(Qualifier::Final)
+                    if !matches!(
+                        type_form_context,
+                        TypeFormContext::ClassVarAnnotation | TypeFormContext::VarAnnotation,
+                    ) =>
+                {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        format!(
+                            "{} is only allowed on a class or local variable annotation.",
+                            special
+                        ),
+                    );
+                    None
+                }
                 _ => qualifier,
             }
         } else {

@@ -10115,6 +10115,26 @@
     },
     {
       "code": -2,
+      "column": 14,
+      "concise_description": "Final is only allowed on a class or local variable annotation.",
+      "description": "Final is only allowed on a class or local variable annotation.",
+      "line": 121,
+      "name": "invalid-annotation",
+      "stop_column": 19,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `Final[list[int]]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `Final[list[int]]`",
+      "line": 121,
+      "name": "unsupported",
+      "stop_column": 30,
+      "stop_line": 121
+    },
+    {
+      "code": -2,
       "column": 23,
       "concise_description": "Expected first item to be a string literal",
       "description": "Expected first item to be a string literal",
