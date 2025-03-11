@@ -7,6 +7,7 @@
 
 use std::fmt;
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -145,6 +146,29 @@ impl DisplayWith<ModuleInfo> for Solutions {
     }
 }
 
+pub struct SolutionsDifference<'a> {
+    key: &'a dyn DisplayWith<ModuleInfo>,
+    lhs: Option<&'a dyn Display>,
+    rhs: Option<&'a dyn Display>,
+}
+
+impl DisplayWith<ModuleInfo> for SolutionsDifference<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+        let missing = |f: &mut fmt::Formatter, x| match x {
+            None => write!(f, "missing"),
+            Some(x) => write!(f, "`{x}`"),
+        };
+
+        write!(f, "`")?;
+        self.key.fmt(f, ctx)?;
+        write!(f, "` was ")?;
+        missing(f, self.lhs)?;
+        write!(f, " now ")?;
+        missing(f, self.rhs)?;
+        Ok(())
+    }
+}
+
 impl Solutions {
     pub fn table(&self) -> &SolutionsTable {
         &self.0
@@ -155,6 +179,62 @@ impl Solutions {
         SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         self.0.get().get(key)
+    }
+
+    /// Find the first key that differs between two solutions, with the two values.
+    ///
+    /// Don't love that we always allocate String's for the result, but it's rare that
+    /// there is a difference, and if there is, we'll do quite a lot of computation anyway.
+    pub fn first_difference<'a>(&'a self, other: &'a Self) -> Option<SolutionsDifference<'a>> {
+        fn f<'a, K: Keyed>(
+            x: &'a SolutionsEntry<K>,
+            y: &'a Solutions,
+        ) -> Option<SolutionsDifference<'a>>
+        where
+            SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
+        {
+            let y = y.0.get::<K>();
+            if y.len() > x.len() {
+                for (k, v) in y.iter() {
+                    if !x.contains_key(k) {
+                        return Some(SolutionsDifference {
+                            key: k,
+                            lhs: None,
+                            rhs: Some(v),
+                        });
+                    }
+                }
+                unreachable!();
+            }
+            for (k, v) in x.iter() {
+                match y.get(k) {
+                    Some(v2) if v != v2 => {
+                        return Some(SolutionsDifference {
+                            key: k,
+                            lhs: Some(v),
+                            rhs: Some(v2),
+                        });
+                    }
+                    None => {
+                        return Some(SolutionsDifference {
+                            key: k,
+                            lhs: Some(v),
+                            rhs: None,
+                        });
+                    }
+                    _ => {}
+                }
+            }
+            None
+        }
+
+        let mut difference = None;
+        table_for_each!(self.0, |x| {
+            if difference.is_none() {
+                difference = f(x, other);
+            }
+        });
+        difference
     }
 }
 

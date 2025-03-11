@@ -331,13 +331,22 @@ impl State {
                 };
                 set(&mut writer.steps);
                 if todo == Step::Solutions {
-                    if old_solutions.as_ref().map(|x| &x.1)
-                        != writer.steps.solutions.as_ref().map(|x| &x.1)
+                    if let Some(old) = old_solutions.as_ref().map(|x| &x.1)
+                        && let Some(new) = writer.steps.solutions.as_ref().map(|x| &x.1)
+                        && let Some(difference) = old.first_difference(new)
                     {
-                        if old_solutions.is_some() {
-                            debug!("Exports changed for `{}`", module_data.handle.module());
-                            changed = true;
-                        }
+                        debug!(
+                            "Exports changed for `{}`: {}",
+                            module_data.handle.module(),
+                            writer
+                                .steps
+                                .load
+                                .as_ref()
+                                .unwrap()
+                                .module_info
+                                .display(&difference)
+                        );
+                        changed = true;
                         writer.epochs.changed = self.now;
                     }
                     if !self.retain_memory {
