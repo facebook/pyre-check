@@ -140,6 +140,9 @@ impl TestEnv {
         let handles = self
             .0
             .into_iter()
+            // Reverse so we start at the last file, which is likely to be what the user
+            // would have openned, so make it most faithful.
+            .rev()
             .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
             .collect::<Vec<_>>();
         let mut state = State::new();
