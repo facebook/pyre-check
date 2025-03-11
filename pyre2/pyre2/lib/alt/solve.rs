@@ -43,12 +43,12 @@ use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
+use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::EmptyAnswer;
-use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
@@ -1774,7 +1774,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn solve_function(
         &self,
-        x: &FunctionBinding,
+        x: &BindingFunction,
         errors: &ErrorCollector,
     ) -> Arc<DecoratedFunction> {
         let check_default = |name: &Identifier, default: &Option<Box<Expr>>, ty: &Type| {

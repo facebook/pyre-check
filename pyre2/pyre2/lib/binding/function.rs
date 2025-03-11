@@ -20,9 +20,9 @@ use crate::ast::Ast;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
-use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::FunctionKind;
 use crate::binding::binding::ImplicitReturn;
 use crate::binding::binding::Key;
@@ -247,7 +247,7 @@ impl<'a> BindingsBuilder<'a> {
 
         let function_idx = self.table.insert(
             KeyFunction(ShortIdentifier::new(&func_name)),
-            FunctionBinding {
+            BindingFunction {
                 def: x,
                 kind,
                 self_type,

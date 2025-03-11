@@ -29,11 +29,11 @@ use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
+use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::EmptyAnswer;
-use crate::binding::binding::FunctionBinding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
@@ -252,7 +252,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
 impl<Ans: LookupAnswer> Solve<Ans> for KeyFunction {
     fn solve(
         answers: &AnswersSolver<Ans>,
-        binding: &FunctionBinding,
+        binding: &BindingFunction,
         errors: &ErrorCollector,
     ) -> Arc<DecoratedFunction> {
         answers.solve_function(binding, errors)

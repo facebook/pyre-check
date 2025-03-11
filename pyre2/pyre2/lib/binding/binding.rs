@@ -114,7 +114,7 @@ impl Keyed for KeyExport {
     type Answer = Type;
 }
 impl Keyed for KeyFunction {
-    type Value = FunctionBinding;
+    type Value = BindingFunction;
     type Answer = DecoratedFunction;
 }
 impl Keyed for KeyAnnotation {
@@ -560,7 +560,7 @@ pub enum FunctionKind {
 }
 
 #[derive(Clone, Debug)]
-pub struct FunctionBinding {
+pub struct BindingFunction {
     /// A function definition, but with the return/body stripped out.
     pub def: StmtFunctionDef,
     pub kind: FunctionKind,
@@ -570,7 +570,7 @@ pub struct FunctionBinding {
     pub successor: Option<Idx<KeyFunction>>,
 }
 
-impl DisplayWith<Bindings> for FunctionBinding {
+impl DisplayWith<Bindings> for BindingFunction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, _ctx: &Bindings) -> fmt::Result {
         write!(f, "def {}", self.def.name.id)
     }
