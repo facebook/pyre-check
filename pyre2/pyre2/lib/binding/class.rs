@@ -71,8 +71,7 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.push(Scope::annotation(x.range));
 
         let class_index = self.class_index();
-        let class_name = ShortIdentifier::new(&x.name);
-        let class_key = KeyClass(class_name.clone());
+        let class_key = KeyClass(ShortIdentifier::new(&x.name));
         let definition_key = self.table.classes.0.insert(class_key);
 
         x.type_params.iter_mut().for_each(|x| {
@@ -288,8 +287,7 @@ impl<'a> BindingsBuilder<'a> {
         special_base: Option<Box<BaseClass>>,
     ) {
         let class_index = self.class_index();
-        let short_class_name = ShortIdentifier::new(&class_name);
-        let class_key = KeyClass(short_class_name.clone());
+        let class_key = KeyClass(ShortIdentifier::new(&class_name));
         let definition_key = self.table.classes.0.insert(class_key.clone());
         self.table.insert(
             KeyClassMetadata(class_index),
