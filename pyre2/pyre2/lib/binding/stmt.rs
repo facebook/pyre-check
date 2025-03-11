@@ -42,7 +42,6 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::alias::resolve_typeshed_alias;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::AnyStyle;
-use crate::util::display::DisplayWith;
 
 impl<'a> BindingsBuilder<'a> {
     fn bind_unimportable_names(&mut self, x: &StmtImportFrom) {
@@ -419,7 +418,7 @@ impl<'a> BindingsBuilder<'a> {
                              x.range,
                              format!(
                                  "Type cannot be declared in assignment to non-self attribute `{}.{}`",
-                                 attr.value.display_with(&self.module_info),
+                                 self.module_info.display(&attr.value),
                                  attr.attr.id,
                              ),
                              ErrorKind::BadAssignment,
