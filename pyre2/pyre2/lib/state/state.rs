@@ -77,6 +77,7 @@ use crate::util::thread_pool::ThreadPool;
 use crate::util::uniques::UniqueFactory;
 use crate::util::upgrade_lock::UpgradeLock;
 use crate::util::upgrade_lock::UpgradeLockExclusiveGuard;
+use crate::util::upgrade_lock::UpgradeLockWriteGuard;
 
 pub struct State {
     threads: ThreadPool,
@@ -184,7 +185,7 @@ impl State {
             w.dirty.clean();
         };
         // Rebuild stuff. Pass clear_ast to indicate we need to rebuild the AST, otherwise can reuse it (if present).
-        let rebuild = |w: &mut ModuleState, clear_ast: bool| {
+        let rebuild = |mut w: UpgradeLockWriteGuard<Step, ModuleState>, clear_ast: bool| {
             w.steps.last_step = if clear_ast || w.steps.ast.is_none() {
                 Some(Step::Load)
             } else {
@@ -201,11 +202,16 @@ impl State {
                 subscriber.start_work(module_data.handle.dupe());
             }
             let deps = mem::take(&mut *module_data.deps.write());
-            for d in deps.values() {
-                let removed = d.rdeps.lock().remove(&module_data.handle);
-                assert!(removed.is_some());
+            finish(&mut w);
+            if !deps.is_empty() {
+                // Downgrade to exclusive, so other people can read from us, or we lock up.
+                // But don't give up the lock entirely, so we don't recompute anything
+                let _exclusive = w.exclusive();
+                for d in deps.values() {
+                    let removed = d.rdeps.lock().remove(&module_data.handle);
+                    assert!(removed.is_some());
+                }
             }
-            finish(w);
         };
 
         // Validate the load flag.
@@ -223,15 +229,15 @@ impl State {
                     code,
                     self_error,
                 )));
-                rebuild(&mut write, true);
+                rebuild(write, true);
                 return;
             }
             // The contents are the same, so we can just reuse the old load
         }
 
         if exclusive.dirty.deps {
-            let mut write = exclusive.write();
-            rebuild(&mut write, false);
+            let write = exclusive.write();
+            rebuild(write, false);
             return;
         }
 
@@ -249,8 +255,8 @@ impl State {
                 }
             }
             if is_dirty {
-                let mut write = exclusive.write();
-                rebuild(&mut write, false);
+                let write = exclusive.write();
+                rebuild(write, false);
                 return;
             }
         }
