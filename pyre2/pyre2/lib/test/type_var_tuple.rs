@@ -18,6 +18,16 @@ def foo(*args: *Ts): ...
 "#,
 );
 
+testcase!(
+    test_illegal_unpack,
+    r#"
+from typing import Unpack
+x: Unpack[int] = 1  # E: Unpack is not allowed in this context.
+class X(Unpack[int]): ...  # E: Unpack is not allowed in this context.
+y: tuple[Unpack[tuple[int, str]]] = (1, "2")  # OK
+"#,
+);
+
 testcase_with_bug!(
     "We should disallow star-unpacking in invalid contexts",
     test_invalid_star,

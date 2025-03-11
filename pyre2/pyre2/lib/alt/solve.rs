@@ -259,6 +259,24 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                     None
                 }
+                Some(Qualifier::Unpack)
+                    if !matches!(
+                        type_form_context,
+                        TypeFormContext::ParameterArgsAnnotation
+                            | TypeFormContext::ParameterKwargsAnnotation,
+                    ) =>
+                {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        "Unpack is not allowed in this context.".to_owned(),
+                    );
+                    // We return the qualifier so that it's consumed and we don't emit a
+                    // duplicate error in the fallback logic
+                    qualifier
+                }
                 _ => qualifier,
             }
         } else {
@@ -2048,6 +2066,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ErrorKind::InvalidAnnotation,
                 None,
                 "ParamSpec *args is only allowed in an *args annotation.".to_owned(),
+            );
+        }
+        if !matches!(
+            type_form_context,
+            TypeFormContext::ParameterArgsAnnotation
+                | TypeFormContext::ParameterKwargsAnnotation
+                | TypeFormContext::TypeArgument
+                | TypeFormContext::GenericBase
+        ) && matches!(result, Type::Unpack(_))
+        {
+            return self.error(
+                errors,
+                x.range(),
+                ErrorKind::InvalidAnnotation,
+                None,
+                "Unpack is not allowed in this context.".to_owned(),
             );
         }
         result
