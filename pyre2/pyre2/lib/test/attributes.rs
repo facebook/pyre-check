@@ -67,6 +67,18 @@ class A:
 );
 
 testcase_with_bug!(
+    "TODO(stroxler): We should handle `self.attr = ...` in common test set up methods",
+    test_self_attribute_in_test_setup,
+    r#"
+class MyTestCase:
+    def setUp(self):
+        self.x = 5  # E: Object of class `MyTestCase` has no attribute `x`
+    def run(self):
+        assert self.x == 5  # E: Object of class `MyTestCase` has no attribute `x`
+    "#,
+);
+
+testcase_with_bug!(
     "Example of how making methods read-write but not invariant is unsound",
     test_method_assign,
     r#"
