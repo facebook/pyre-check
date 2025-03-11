@@ -1063,7 +1063,7 @@ pub struct BindingClassMetadata {
 
 impl DisplayWith<Bindings> for BindingClassMetadata {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
-        write!(f, "mro {}", ctx.display(self.def))
+        write!(f, "metadata {}", ctx.display(self.def))
     }
 }
 
