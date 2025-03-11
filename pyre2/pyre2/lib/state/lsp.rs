@@ -6,9 +6,7 @@
  */
 
 use dupe::Dupe;
-use itertools::Itertools;
 use lsp_types::CompletionItem;
-use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::Identifier;
@@ -189,34 +187,29 @@ impl State {
     }
 
     pub fn completion(&self, handle: &Handle, position: TextSize) -> Vec<CompletionItem> {
-        self.completion_unsorted_opt(handle, position)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|(n, t)| {
-                let sort_text = if n.as_str().starts_with("__") {
-                    "2"
-                } else if n.as_str().starts_with("_") {
-                    "1"
-                } else {
-                    "0"
-                }
-                .to_owned();
-                CompletionItem {
-                    label: n.as_str().to_owned(),
-                    detail: t,
-                    sort_text: Some(sort_text),
-                    ..Default::default()
-                }
-            })
-            .sorted_by(|item1, item2| item1.sort_text.cmp(&item2.sort_text))
-            .collect()
+        let mut results = self
+            .completion_unsorted_opt(handle, position)
+            .unwrap_or_default();
+        for item in &mut results {
+            let sort_text = if item.label.starts_with("__") {
+                "2"
+            } else if item.label.as_str().starts_with("_") {
+                "1"
+            } else {
+                "0"
+            }
+            .to_owned();
+            item.sort_text = Some(sort_text);
+        }
+        results.sort_by(|item1, item2| item1.sort_text.cmp(&item2.sort_text));
+        results
     }
 
     fn completion_unsorted_opt(
         &self,
         handle: &Handle,
         position: TextSize,
-    ) -> Option<Vec<(Name, Option<String>)>> {
+    ) -> Option<Vec<CompletionItem>> {
         if self.identifier_at(handle, position).is_some() {
             let bindings = self.get_bindings(handle)?;
             let module_info = self.get_module_info(handle)?;
@@ -227,7 +220,11 @@ impl State {
                     let key = bindings.idx_to_key(idx);
                     if let Key::Definition(id) = key {
                         let detail = self.get_type(handle, key).map(|t| t.to_string());
-                        Some((Name::new(module_info.code_at(id.range())), detail))
+                        Some(CompletionItem {
+                            label: module_info.code_at(id.range()).to_owned(),
+                            detail,
+                            ..Default::default()
+                        })
                     } else {
                         None
                     }
@@ -242,7 +239,11 @@ impl State {
         self.ad_hoc_solve(handle, |solver| {
             solver
                 .completions(base_type.arc_clone(), true)
-                .into_map(|x| (x.name, x.ty.map(|t| t.to_string())))
+                .into_map(|x| CompletionItem {
+                    label: x.name.as_str().to_owned(),
+                    detail: x.ty.map(|t| t.to_string()),
+                    ..Default::default()
+                })
         })
     }
 
