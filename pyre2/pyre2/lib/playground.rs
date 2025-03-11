@@ -12,6 +12,7 @@ use std::sync::Mutex;
 
 use dupe::Dupe;
 use lsp_types::CompletionItem;
+use lsp_types::CompletionItemKind;
 use ruff_source_file::SourceLocation;
 use serde::Serialize;
 use starlark_map::small_map::SmallMap;
@@ -98,6 +99,7 @@ pub struct TypeQueryResult {
 pub struct AutoCompletionItem {
     label: String,
     detail: Option<String>,
+    kind: Option<CompletionItemKind>,
     #[serde(rename(serialize = "sortText"))]
     sort_text: Option<String>,
 }
@@ -278,10 +280,12 @@ impl LanguageServiceState {
                      label,
                      detail,
                      sort_text,
+                     kind,
                      ..
                  }| AutoCompletionItem {
                     label,
                     detail,
+                    kind,
                     sort_text,
                 },
             )

@@ -7,6 +7,7 @@
 
 use dupe::Dupe;
 use lsp_types::CompletionItem;
+use lsp_types::CompletionItemKind;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::Identifier;
@@ -223,6 +224,7 @@ impl State {
                         Some(CompletionItem {
                             label: module_info.code_at(id.range()).to_owned(),
                             detail,
+                            kind: Some(CompletionItemKind::VARIABLE),
                             ..Default::default()
                         })
                     } else {
@@ -242,6 +244,7 @@ impl State {
                 .into_map(|x| CompletionItem {
                     label: x.name.as_str().to_owned(),
                     detail: x.ty.map(|t| t.to_string()),
+                    kind: Some(CompletionItemKind::FIELD),
                     ..Default::default()
                 })
         })

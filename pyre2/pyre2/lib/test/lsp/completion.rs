@@ -15,8 +15,16 @@ use crate::test::util::get_batched_lsp_operations_report_allow_error;
 
 fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String {
     let mut report = "Completion Results:".to_owned();
-    for CompletionItem { label, detail, .. } in state.completion(handle, position) {
-        report.push_str("\n- ");
+    for CompletionItem {
+        label,
+        detail,
+        kind,
+        ..
+    } in state.completion(handle, position)
+    {
+        report.push_str("\n- (");
+        report.push_str(&format!("{:?}", kind.unwrap()));
+        report.push_str(") ");
         report.push_str(&label);
         if let Some(detail) = detail {
             report.push_str(": ");
@@ -47,13 +55,13 @@ bar.
 5 | foo.
         ^
 Completion Results:
-- x: int
+- (Field) x: int
 
 10 | bar.
          ^
 Completion Results:
-- y: int
-- x: int
+- (Field) y: int
+- (Field) x: int
 "#
         .trim(),
         report.trim(),
@@ -80,10 +88,10 @@ foo.
 9 | foo.
         ^
 Completion Results:
-- y: int
-- x: int
-- _private: bool
-- __special__: str
+- (Field) y: int
+- (Field) x: int
+- (Field) _private: bool
+- (Field) __special__: str
 "#
         .trim(),
         report.trim(),
@@ -109,17 +117,17 @@ def foo():
 4 |   x
       ^
 Completion Results:
-- xxxx: Literal[3]
-- bar: () -> None
-- foo: () -> None
+- (Variable) xxxx: Literal[3]
+- (Variable) bar: () -> None
+- (Variable) foo: () -> None
 
 8 |     y
         ^
 Completion Results:
-- yyyy: Literal[4]
-- xxxx: Literal[3]
-- bar: () -> None
-- foo: () -> None
+- (Variable) yyyy: Literal[4]
+- (Variable) xxxx: Literal[3]
+- (Variable) bar: () -> None
+- (Variable) foo: () -> None
 "#
         .trim(),
         report.trim(),
