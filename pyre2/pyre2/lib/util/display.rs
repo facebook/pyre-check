@@ -73,12 +73,12 @@ where
 }
 
 /// Like `Display`, but allows passing some additional context.
-pub trait DisplayWith<Ctx> {
+pub trait DisplayWith<Ctx: ?Sized> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result;
 
     fn display_with<'a>(&'a self, ctx: &'a Ctx) -> impl Display + 'a {
-        struct X<'a, T: ?Sized, Ctx>(&'a T, &'a Ctx);
-        impl<'a, Ctx, T: DisplayWith<Ctx> + ?Sized> Display for X<'a, T, Ctx> {
+        struct X<'a, T: ?Sized, Ctx: ?Sized>(&'a T, &'a Ctx);
+        impl<'a, Ctx: ?Sized, T: DisplayWith<Ctx> + ?Sized> Display for X<'a, T, Ctx> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 self.0.fmt(f, self.1)
             }
@@ -89,31 +89,31 @@ pub trait DisplayWith<Ctx> {
 
 // General wrappers
 
-impl<Ctx, T: DisplayWith<Ctx>> DisplayWith<Ctx> for &T {
+impl<Ctx: ?Sized, T: DisplayWith<Ctx>> DisplayWith<Ctx> for &T {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result {
         DisplayWith::<Ctx>::fmt(*self, f, ctx)
     }
 }
 
-impl<Ctx, T: DisplayWith<Ctx>> DisplayWith<Ctx> for &mut T {
+impl<Ctx: ?Sized, T: DisplayWith<Ctx>> DisplayWith<Ctx> for &mut T {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result {
         DisplayWith::<Ctx>::fmt(*self, f, ctx)
     }
 }
 
-impl<Ctx, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Box<T> {
+impl<Ctx: ?Sized, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Box<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result {
         DisplayWith::<Ctx>::fmt(&**self, f, ctx)
     }
 }
 
-impl<Ctx, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Arc<T> {
+impl<Ctx: ?Sized, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Arc<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result {
         DisplayWith::<Ctx>::fmt(&**self, f, ctx)
     }
 }
 
-impl<Ctx, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Rc<T> {
+impl<Ctx: ?Sized, T: DisplayWith<Ctx>> DisplayWith<Ctx> for Rc<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Ctx) -> fmt::Result {
         DisplayWith::<Ctx>::fmt(&**self, f, ctx)
     }
