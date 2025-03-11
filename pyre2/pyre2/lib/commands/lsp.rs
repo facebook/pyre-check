@@ -173,11 +173,6 @@ struct LspLoader {
 
 impl Loader for LspLoader {
     fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        for path in self.open_files.lock().keys() {
-            if module_from_path(path, &self.search_roots) == module {
-                return Ok((ModulePath::memory(path.clone()), ErrorStyle::Delayed));
-            }
-        }
         if let Some(path) = find_module(module, &self.search_roots) {
             Ok((path, ErrorStyle::Delayed))
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
