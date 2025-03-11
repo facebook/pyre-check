@@ -150,11 +150,19 @@ impl ClassField {
 
     pub fn visit_type_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         match &mut self.0 {
-            ClassFieldInner::Simple { ty, annotation, .. } => {
+            ClassFieldInner::Simple {
+                ty,
+                annotation,
+                descriptor_getter,
+                descriptor_setter,
+                ..
+            } => {
                 f(ty);
                 for a in annotation.iter_mut() {
                     a.visit_type_mut(&mut f);
                 }
+                descriptor_getter.iter_mut().for_each(&mut f);
+                descriptor_setter.iter_mut().for_each(f);
             }
         }
     }
