@@ -517,6 +517,28 @@ module CallTarget = struct
          ~is_static_method
 
 
+  let create_with_default_index
+      ~implicit_dunder_call
+      ~return_type
+      ?receiver_type
+      ?(is_class_method = false)
+      ?(is_static_method = false)
+      ?(explicit_receiver = false)
+      target
+    =
+    {
+      target;
+      implicit_receiver =
+        is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver target;
+      implicit_dunder_call;
+      index = 0;
+      return_type;
+      receiver_class = receiver_type >>= receiver_class_from_type ~is_class_method;
+      is_class_method;
+      is_static_method;
+    }
+
+
   let equal_ignoring_types
       {
         target = target_left;
@@ -608,29 +630,6 @@ module CallTarget = struct
       let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
       indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
       index
-
-
-    let create_target
-        indexer
-        ~implicit_dunder_call
-        ~return_type
-        ?receiver_type
-        ?(is_class_method = false)
-        ?(is_static_method = false)
-        ?(explicit_receiver = false)
-        original_target
-      =
-      {
-        target = original_target;
-        implicit_receiver =
-          is_implicit_receiver ~is_static_method ~is_class_method ~explicit_receiver original_target;
-        implicit_dunder_call;
-        index = get_index ~indexer original_target;
-        return_type;
-        receiver_class = receiver_type >>= receiver_class_from_type ~is_class_method;
-        is_class_method;
-        is_static_method;
-      }
 
 
     let regenerate_index ~indexer ({ target; _ } as call_target) =
@@ -2192,7 +2191,6 @@ let rec resolve_callees_from_type
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer
     ?(dunder_call = false)
     ?receiver_type
     ~return_type
@@ -2233,8 +2231,7 @@ let rec resolve_callees_from_type
                 let is_class_method, is_static_method =
                   MethodKind.SharedMemory.get_method_kind method_kinds target
                 in
-                CallTarget.Indexer.create_target
-                  call_indexer
+                CallTarget.create_with_default_index
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
                   ~receiver_type
@@ -2256,8 +2253,7 @@ let rec resolve_callees_from_type
           CallCallees.create
             ~call_targets:
               [
-                CallTarget.Indexer.create_target
-                  call_indexer
+                CallTarget.create_with_default_index
                   ~explicit_receiver:true
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
@@ -2279,7 +2275,6 @@ let rec resolve_callees_from_type
         ~method_kinds
         ~pyre_in_context
         ~override_graph
-        ~call_indexer
         ~receiver_type
         ~return_type
         ~callee_kind
@@ -2291,7 +2286,6 @@ let rec resolve_callees_from_type
           ~method_kinds
           ~pyre_in_context
           ~override_graph
-          ~call_indexer
           ~callee_kind
           ?receiver_type
           ~return_type
@@ -2303,20 +2297,13 @@ let rec resolve_callees_from_type
             ~method_kinds
             ~pyre_in_context
             ~override_graph
-            ~call_indexer
             ?receiver_type
             ~return_type
             ~callee_kind
             new_target
           |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; arguments = [Single class_type] } ->
-      resolve_constructor_callee
-        ~debug
-        ~method_kinds
-        ~pyre_in_context
-        ~override_graph
-        ~call_indexer
-        class_type
+      resolve_constructor_callee ~debug ~method_kinds ~pyre_in_context ~override_graph class_type
       |> CallCallees.default_to_unresolved
            ~debug
            ~message:
@@ -2366,8 +2353,7 @@ let rec resolve_callees_from_type
                 CallCallees.create
                   ~call_targets:
                     [
-                      CallTarget.Indexer.create_target
-                        call_indexer
+                      CallTarget.create_with_default_index
                         ~implicit_dunder_call:true
                         ~return_type:(Some return_type)
                         ~is_class_method
@@ -2387,7 +2373,6 @@ let rec resolve_callees_from_type
               ~method_kinds
               ~pyre_in_context
               ~override_graph
-              ~call_indexer
               ~return_type
               ~dunder_call:true
               ~callee_kind
@@ -2418,21 +2403,13 @@ and resolve_callees_from_type_external
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer:(CallTarget.Indexer.create ()) (* Don't care about indexing the callees. *)
     ~dunder_call
     ~return_type
     ~callee_kind
     callee_type
 
 
-and resolve_constructor_callee
-    ~debug
-    ~method_kinds
-    ~pyre_in_context
-    ~override_graph
-    ~call_indexer
-    class_type
-  =
+and resolve_constructor_callee ~debug ~method_kinds ~pyre_in_context ~override_graph class_type =
   let meta_type = Type.class_type class_type in
   match
     ( CallResolution.resolve_attribute_access_ignoring_untracked
@@ -2456,7 +2433,6 @@ and resolve_constructor_callee
           ~method_kinds
           ~pyre_in_context
           ~override_graph
-          ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy class_type)
           ~callee_kind:(Method { is_direct_call = true })
@@ -2470,7 +2446,6 @@ and resolve_constructor_callee
           ~method_kinds
           ~pyre_in_context
           ~override_graph
-          ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy Type.none)
           ~callee_kind:(Method { is_direct_call = true })
@@ -2507,7 +2482,6 @@ let resolve_callee_from_defining_expression
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer
     ~callee:{ Node.value = callee; _ }
     ~return_type
     ~implementing_class
@@ -2525,7 +2499,6 @@ let resolve_callee_from_defining_expression
         ~method_kinds
         ~pyre_in_context
         ~override_graph
-        ~call_indexer
         ~return_type
         ~callee_kind:Function
         (Type.Callable undecorated_signature)
@@ -2576,7 +2549,6 @@ let resolve_callee_from_defining_expression
                ~method_kinds
                ~pyre_in_context
                ~override_graph
-               ~call_indexer
                ~return_type
                ~receiver_type:implementing_class
                ~callee_kind:(Method { is_direct_call = false })
@@ -2755,7 +2727,6 @@ let resolve_recognized_callees
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer
     ~callee
     ~return_type
     ~callee_type
@@ -2774,7 +2745,6 @@ let resolve_recognized_callees
         ~method_kinds
         ~pyre_in_context
         ~override_graph
-        ~call_indexer
         ~callee
         ~return_type
         ~implementing_class
@@ -2789,7 +2759,6 @@ let resolve_recognized_callees
         ~method_kinds
         ~pyre_in_context
         ~override_graph
-        ~call_indexer
         ~callee
         ~return_type
         ~implementing_class
@@ -2806,8 +2775,7 @@ let resolve_recognized_callees
       CallCallees.create
         ~call_targets:
           [
-            CallTarget.Indexer.create_target
-              call_indexer
+            CallTarget.create_with_default_index
               ~implicit_dunder_call:false
               ~return_type:(Some return_type)
               (Target.Regular.Function { name; kind = Normal } |> Target.from_regular);
@@ -2817,14 +2785,7 @@ let resolve_recognized_callees
   >>| fun call_callees -> { call_callees with recognized_call = CallCallees.RecognizedCall.True }
 
 
-let resolve_callee_ignoring_decorators
-    ~debug
-    ~pyre_in_context
-    ~call_indexer
-    ~override_graph
-    ~return_type
-    callee
-  =
+let resolve_callee_ignoring_decorators ~debug ~pyre_in_context ~override_graph ~return_type callee =
   let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   let return_type () = ReturnType.from_annotation ~pyre_api (Lazy.force return_type) in
   let contain_class_method signatures =
@@ -2855,8 +2816,7 @@ let resolve_callee_ignoring_decorators
               }) ->
             Result.Ok
               [
-                CallTarget.Indexer.create_target
-                  call_indexer
+                CallTarget.create_with_default_index
                   ~implicit_dunder_call:false
                   ~return_type:(Some (return_type ()))
                   (Target.Regular.Function { name = Reference.show name; kind = Normal }
@@ -2883,8 +2843,7 @@ let resolve_callee_ignoring_decorators
                 let is_class_method = contain_class_method signatures in
                 Result.Ok
                   [
-                    CallTarget.Indexer.create_target
-                      call_indexer
+                    CallTarget.create_with_default_index
                       ~implicit_dunder_call:false
                       ~return_type:(Some (return_type ()))
                       ~is_class_method
@@ -2968,8 +2927,7 @@ let resolve_callee_ignoring_decorators
                   |> compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type
                   |> List.map
                        ~f:
-                         (CallTarget.Indexer.create_target
-                            call_indexer
+                         (CallTarget.create_with_default_index
                             ~implicit_dunder_call:false
                             ~return_type:(Some (return_type ()))
                             ~is_class_method
@@ -3061,7 +3019,6 @@ type attribute_access_properties = {
 let resolve_attribute_access_properties
     ~pyre_in_context
     ~override_graph
-    ~call_indexer
     ~base_type_info
     ~attribute
     ~setter
@@ -3089,8 +3046,7 @@ let resolve_attribute_access_properties
     in
     List.map
       ~f:
-        (CallTarget.Indexer.create_target
-           call_indexer
+        (CallTarget.create_with_default_index
            ~implicit_dunder_call:false
            ~return_type:(Some return_type))
       property_targets
@@ -3121,7 +3077,6 @@ let resolve_regular_callees
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer
     ~return_type
     ~callee
   =
@@ -3139,7 +3094,6 @@ let resolve_regular_callees
       ~method_kinds
       ~pyre_in_context
       ~override_graph
-      ~call_indexer
       ~callee
       ~return_type
       ~callee_type
@@ -3158,7 +3112,6 @@ let resolve_regular_callees
         ~method_kinds
         ~pyre_in_context
         ~override_graph
-        ~call_indexer
         ~return_type
         ~callee_kind
         callee_type
@@ -3169,13 +3122,7 @@ let resolve_regular_callees
       in
       callees_from_type
     else
-      resolve_callee_ignoring_decorators
-        ~debug
-        ~pyre_in_context
-        ~call_indexer
-        ~override_graph
-        ~return_type
-        callee
+      resolve_callee_ignoring_decorators ~debug ~pyre_in_context ~override_graph ~return_type callee
       |> function
       | Result.Ok call_targets -> CallCallees.create ~call_targets ()
       | Result.Error reason ->
@@ -3303,11 +3250,6 @@ let resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context ex
       (IdentifierCallees.Reference.Global
         { reference; export_name = Some (PyrePysaLogic.ModuleExport.Name.Define _) }) ->
       let target = Target.create_function reference in
-      let call_indexer =
-        CallTarget.Indexer.create ()
-        (* Need not index them, because these callees are only used by higher order call graph
-           building. *)
-      in
       let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
       let return_type =
         return_type_for_call ~pyre_in_context ~callee:expression
@@ -3315,8 +3257,7 @@ let resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context ex
         |> ReturnType.from_annotation ~pyre_api
       in
       [
-        CallTarget.Indexer.create_target
-          call_indexer
+        CallTarget.create_with_default_index
           ~implicit_dunder_call:false
           ~return_type:(Some return_type)
           target;
@@ -3324,7 +3265,7 @@ let resolve_callable_targets_from_global_identifiers ~define ~pyre_in_context ex
   | _ -> []
 
 
-let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
+let resolve_identifier ~define ~pyre_in_context ~identifier =
   let expression =
     Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
   in
@@ -3337,8 +3278,7 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
               { reference; export_name = Some PyrePysaLogic.ModuleExport.Name.GlobalVariable }
           | IdentifierCallees.Reference.Global { reference; export_name = None } ->
               ( [
-                  CallTarget.Indexer.create_target
-                    call_indexer
+                  CallTarget.create_with_default_index
                     ~implicit_dunder_call:false
                     ~return_type:None
                     (Target.create_object reference);
@@ -3348,8 +3288,7 @@ let resolve_identifier ~define ~pyre_in_context ~call_indexer ~identifier =
           | Nonlocal nonlocal ->
               ( [],
                 [
-                  CallTarget.Indexer.create_target
-                    call_indexer
+                  CallTarget.create_with_default_index
                     ~implicit_dunder_call:false
                     ~return_type:None
                     (Target.create_object nonlocal);
@@ -3377,7 +3316,6 @@ let resolve_callees
     ~method_kinds
     ~pyre_in_context
     ~override_graph
-    ~call_indexer
     ~call:({ Call.callee; arguments } as call)
   =
   log
@@ -3400,7 +3338,6 @@ let resolve_callees
       ~method_kinds
       ~pyre_in_context
       ~override_graph
-      ~call_indexer
       ~return_type
       ~callee
   in
@@ -3463,7 +3400,6 @@ let resolve_callees
           ~pyre_in_context
           ~override_graph
           ~method_kinds
-          ~call_indexer
           ~return_type:(return_type_for_call ~pyre_in_context ~callee:argument)
           ~callee:argument
         |> filter_implicit_dunder_calls
@@ -3490,7 +3426,6 @@ let resolve_attribute_access
     ~pyre_in_context
     ~debug
     ~override_graph
-    ~call_indexer
     ~define_name
     ~attribute_targets
     ~base
@@ -3514,7 +3449,6 @@ let resolve_attribute_access
     resolve_attribute_access_properties
       ~pyre_in_context
       ~override_graph
-      ~call_indexer
       ~base_type_info
       ~attribute
       ~setter
@@ -3532,11 +3466,7 @@ let resolve_attribute_access
     (* Use a hashset here for faster lookups. *)
     |> List.filter ~f:(Hash_set.mem attribute_targets)
     |> List.map
-         ~f:
-           (CallTarget.Indexer.create_target
-              call_indexer
-              ~implicit_dunder_call:false
-              ~return_type:None)
+         ~f:(CallTarget.create_with_default_index ~implicit_dunder_call:false ~return_type:None)
   in
 
   let callable_targets =
@@ -3608,7 +3538,6 @@ module NodeVisitorContext = struct
     define_name: Reference.t option;
     debug: bool;
     override_graph: OverrideGraph.SharedMemory.ReadOnly.t option;
-    call_indexer: CallTarget.Indexer.t;
     missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
     attribute_targets: Target.HashSet.t;
     method_kinds: MethodKind.SharedMemory.ReadOnly.t;
@@ -3632,7 +3561,6 @@ module CalleeVisitor = struct
              {
                NodeVisitorContext.debug;
                override_graph;
-               call_indexer;
                missing_flow_type_analysis;
                define_name;
                attribute_targets;
@@ -3643,7 +3571,6 @@ module CalleeVisitor = struct
          } as state)
         ({ Node.value; location } as expression)
       =
-      CallTarget.Indexer.generate_fresh_indices call_indexer;
       let register_targets ~expression_identifier ?(location = location) callees =
         log
           ~debug
@@ -3661,13 +3588,7 @@ module CalleeVisitor = struct
       let () =
         match value with
         | Expression.Call call ->
-            resolve_callees
-              ~debug
-              ~method_kinds
-              ~pyre_in_context
-              ~override_graph
-              ~call_indexer
-              ~call
+            resolve_callees ~debug ~method_kinds ~pyre_in_context ~override_graph ~call
             |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
@@ -3682,7 +3603,6 @@ module CalleeVisitor = struct
               ~pyre_in_context
               ~debug
               ~override_graph
-              ~call_indexer
               ~define_name
               ~attribute_targets
               ~base
@@ -3692,7 +3612,7 @@ module CalleeVisitor = struct
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~define:define_name ~pyre_in_context ~call_indexer ~identifier
+            resolve_identifier ~define:define_name ~pyre_in_context ~identifier
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
@@ -3701,13 +3621,7 @@ module CalleeVisitor = struct
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
                 let call = redirect_special_calls ~pyre_in_context call in
-                resolve_callees
-                  ~debug
-                  ~method_kinds
-                  ~pyre_in_context
-                  ~override_graph
-                  ~call_indexer
-                  ~call
+                resolve_callees ~debug ~method_kinds ~pyre_in_context ~override_graph ~call
                 |> MissingFlowTypeAnalysis.add_unknown_callee
                      ~missing_flow_type_analysis
                      ~expression
@@ -3716,8 +3630,7 @@ module CalleeVisitor = struct
             | _ -> ())
         | Expression.FormatString substrings ->
             let artificial_target =
-              CallTarget.Indexer.create_target
-                call_indexer
+              CallTarget.create_with_default_index
                 ~implicit_dunder_call:false
                 ~return_type:None
                 Target.ArtificialTargets.format_string
@@ -3749,13 +3662,11 @@ module CalleeVisitor = struct
                             location = expression_location;
                           }
                         in
-                        CallTarget.Indexer.generate_fresh_indices call_indexer;
                         resolve_regular_callees
                           ~debug
                           ~method_kinds
                           ~pyre_in_context
                           ~override_graph
-                          ~call_indexer
                           ~return_type:(lazy Type.string)
                           ~callee
                       in
@@ -3802,7 +3713,6 @@ module CalleeVisitor = struct
               ~pyre_in_context
               ~debug
               ~override_graph
-              ~call_indexer
               ~define_name
               ~attribute_targets
               ~base
@@ -3844,7 +3754,6 @@ module CalleeVisitor = struct
               ~pyre_in_context
               ~debug
               ~override_graph
-              ~call_indexer
               ~define_name
               ~attribute_targets
               ~base:self
@@ -4803,8 +4712,6 @@ let higher_order_call_graph_of_define
   }
 
 
-(* TODO(T206240754): Re-index `CallTarget`s after building the higher order call graphs. *)
-
 let call_graph_of_define
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~pyre_api
@@ -4835,7 +4742,6 @@ let call_graph_of_define
           None);
       debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define;
       override_graph;
-      call_indexer = CallTarget.Indexer.create ();
       attribute_targets;
       method_kinds;
     }
@@ -4865,10 +4771,12 @@ let call_graph_of_define
   in
 
   DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
+  let call_indexer = CallTarget.Indexer.create () in
   let call_graph =
     !callees_at_location
     |> DefineCallGraph.filter_empty_attribute_access
     |> DefineCallGraph.redirect_to_decorated ~decorators
+    |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
   in
   Statistics.performance
     ~randomly_log_every:1000
@@ -5193,7 +5101,6 @@ module DecoratorResolution = struct
           missing_flow_type_analysis = None;
           debug;
           override_graph;
-          call_indexer = CallTarget.Indexer.create ();
           attribute_targets = Target.HashSet.create ();
           method_kinds;
         }

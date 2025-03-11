@@ -4132,7 +4132,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               ~index:3
+                               ~index:0
                                (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
@@ -4143,7 +4143,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               ~index:0
+                               ~index:1
                                (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
@@ -4165,7 +4165,7 @@ let test_call_graph_of_define =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               ~index:1
+                               ~index:3
                                (Target.Regular.Function { name = "test.foo"; kind = Normal });
                            ]
                          ())) );
@@ -4240,9 +4240,7 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~implicit_receiver:true
-                                 (* Assigned index is 2 instead of 1, because we use the control
-                                    flow graph traversal order. *)
-                               ~index:2
+                               ~index:1
                                ~receiver_class:"test.C"
                                (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
@@ -4256,7 +4254,7 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~implicit_receiver:true
-                               ~index:1
+                               ~index:2
                                ~receiver_class:"test.B"
                                (Target.Regular.Method
                                   { class_name = "test.A"; method_name = "foo"; kind = Normal });
@@ -4268,10 +4266,8 @@ let test_call_graph_of_define =
                       (CallCallees.create
                          ~call_targets:
                            [
-                             (* Assigned index is 2 instead of 1, because we visit the if statement
-                                twice. *)
                              CallTarget.create_regular
-                               ~index:2
+                               ~index:1
                                ~return_type:(Some ReturnType.bool)
                                (Target.Regular.Function { name = "isinstance"; kind = Normal });
                            ]
@@ -4549,7 +4545,6 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~implicit_receiver:true
-                               ~index:1
                                (Target.Regular.Method
                                   {
                                     Target.class_name = "test.Base";
@@ -4775,7 +4770,6 @@ let test_call_graph_of_define =
                              CallTarget.create_regular
                              (* TODO(T118125320): Return type is None, which is incorrect *)
                                ~implicit_receiver:true
-                               ~index:1
                                (Target.Regular.Method
                                   {
                                     Target.class_name = "test.A";
@@ -6292,7 +6286,6 @@ let test_call_graph_of_define_foo_and_bar =
                          ~call_targets:
                            [
                              CallTarget.create_regular
-                               ~index:1
                                (Target.Regular.Function { name = "test.identity"; kind = Normal });
                            ]
                          ~higher_order_parameters:
@@ -6327,6 +6320,7 @@ let test_call_graph_of_define_foo_and_bar =
                          ~call_targets:
                            [
                              CallTarget.create_regular
+                               ~index:1
                                (Target.Regular.Function { name = "test.identity"; kind = Normal });
                            ]
                          ~higher_order_parameters:
