@@ -7864,6 +7864,16 @@
     {
       "code": -2,
       "column": 27,
+      "concise_description": "Unexpected positional argument to TypeVarTuple",
+      "description": "Unexpected positional argument to TypeVarTuple",
+      "line": 66,
+      "name": "invalid-type-var-tuple",
+      "stop_column": 30,
+      "stop_line": 66
+    },
+    {
+      "code": -2,
+      "column": 27,
       "concise_description": "Unexpected keyword argument `bound` to TypeVarTuple",
       "description": "Unexpected keyword argument `bound` to TypeVarTuple",
       "line": 67,

@@ -476,9 +476,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         x: &ExprCall,
         errors: &ErrorCollector,
     ) -> TypeVarTuple {
-        // TODO: check and complain on extra args, keywords
         let mut arg_name = false;
-
         let check_name_arg = |arg: &Expr| {
             if let Expr::StringLiteral(lit) = arg {
                 if lit.value.to_str() != name.id.as_str() {
@@ -503,12 +501,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
             }
         };
-
         if let Some(arg) = x.arguments.args.first() {
             check_name_arg(arg);
             arg_name = true;
         }
-
+        if let Some(arg) = x.arguments.args.get(1) {
+            self.error(
+                errors,
+                arg.range(),
+                ErrorKind::InvalidTypeVarTuple,
+                None,
+                "Unexpected positional argument to TypeVarTuple".to_owned(),
+            );
+        }
         for kw in &x.arguments.keywords {
             match &kw.arg {
                 Some(id) => match id.id.as_str() {
@@ -547,7 +552,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-
         if !arg_name {
             self.error(
                 errors,
@@ -557,7 +561,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-
         self.id_cache()
             .type_var_tuple(name, self.module_info().dupe())
     }
