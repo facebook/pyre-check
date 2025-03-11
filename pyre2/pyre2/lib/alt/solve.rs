@@ -2131,6 +2131,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     "ParamSpec is not allowed in this context.".to_owned(),
                 );
             }
+            // We check tuple/callable/generic type arguments separately, so exclude those
+            // to avoid emitting duplicate errors.
+            if quantified.is_type_var_tuple()
+                && !matches!(
+                    type_form_context,
+                    TypeFormContext::TupleOrCallableParam | TypeFormContext::TypeArgument
+                )
+            {
+                return self.error(
+                    errors,
+                    x.range(),
+                    ErrorKind::InvalidAnnotation,
+                    None,
+                    "TypeVarTuple must be unpacked.".to_owned(),
+                );
+            }
         }
         result
     }

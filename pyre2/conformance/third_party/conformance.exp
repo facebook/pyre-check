@@ -7813,6 +7813,16 @@
     },
     {
       "code": -2,
+      "column": 22,
+      "concise_description": "TypeVarTuple must be unpacked.",
+      "description": "TypeVarTuple must be unpacked.",
+      "line": 52,
+      "name": "invalid-annotation",
+      "stop_column": 27,
+      "stop_line": 52
+    },
+    {
+      "code": -2,
       "column": 37,
       "concise_description": "TypeVarTuple must be unpacked",
       "description": "TypeVarTuple must be unpacked",
@@ -7830,6 +7840,16 @@
       "name": "invalid-type-var-tuple",
       "stop_column": 39,
       "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 24,
+      "concise_description": "TypeVarTuple must be unpacked.",
+      "description": "TypeVarTuple must be unpacked.",
+      "line": 59,
+      "name": "invalid-annotation",
+      "stop_column": 29,
+      "stop_line": 59
     },
     {
       "code": -2,

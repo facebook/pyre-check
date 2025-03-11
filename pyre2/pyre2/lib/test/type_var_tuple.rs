@@ -41,7 +41,7 @@ Ts = TypeVarTuple('Ts')
 testcase!(
     test_require_unpack,
     r#"
-from typing import TypeVarTuple, Unpack
+from typing import TypeVarTuple, Unpack, Generic
 class A[*Ts]: ...
 class B[*Ts]:
     def test1(self) -> A[Ts]: ...  # E: TypeVarTuple must be unpacked
@@ -50,6 +50,9 @@ class B[*Ts]:
     def test4(self) -> tuple[Ts]: ...  # E: TypeVarTuple must be unpacked
     def test5(self) -> tuple[*Ts]: ...
     def test6(self) -> tuple[Unpack[Ts]]: ...
+Ts = TypeVarTuple('Ts')
+class C(Ts): ...  # E: TypeVarTuple must be unpacked
+class D(Generic[Ts]): ...  # E: TypeVarTuple must be unpacked
 "#,
 );
 
