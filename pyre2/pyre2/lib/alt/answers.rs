@@ -368,7 +368,7 @@ impl Answers {
         Solutions(res)
     }
 
-    pub fn solve_key<Ans: LookupAnswer, K: Solve<Ans>>(
+    pub fn solve_exported_key<Ans: LookupAnswer, K: Solve<Ans> + Keyed<EXPORTED = true>>(
         &self,
         exports: &dyn LookupExport,
         answers: &Ans,

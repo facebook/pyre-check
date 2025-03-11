@@ -513,7 +513,7 @@ impl State {
         };
         let stdlib = self.get_stdlib(&module_data.handle);
         let lookup = self.lookup(module_data);
-        answers.1.solve_key(
+        answers.1.solve_exported_key(
             &lookup,
             &lookup,
             &answers.0,
