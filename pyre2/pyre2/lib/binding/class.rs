@@ -167,7 +167,7 @@ impl<'a> BindingsBuilder<'a> {
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
-                if is_attribute_defining_method(&method_name) {
+                if is_attribute_defining_method(&method_name, &x.name.id) {
                     for (name, InstanceAttribute(value, annotation, range)) in instance_attributes {
                         if !fields.contains_key(&name) {
                             fields.insert(
@@ -776,6 +776,19 @@ pub fn is_valid_identifier(name: &str) -> bool {
     !is_keyword(name) && IDENTIFIER_REGEX.is_match(name)
 }
 
-fn is_attribute_defining_method(method_name: &Name) -> bool {
-    method_name == &dunder::INIT
+fn is_attribute_defining_method(method_name: &Name, class_name: &Name) -> bool {
+    if method_name == &dunder::INIT {
+        true
+    } else {
+        (class_name.contains("Test") || class_name.contains("test"))
+            && is_test_setup_method(method_name)
+    }
+}
+
+fn is_test_setup_method(method_name: &Name) -> bool {
+    match method_name.as_str() {
+        "asyncSetUp" | "async_setUp" | "setUp" | "_setup" | "_async_setup"
+        | "async_with_context" | "with_context" | "setUpClass" => true,
+        _ => false,
+    }
 }

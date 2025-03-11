@@ -66,15 +66,14 @@ class A:
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler): We should handle `self.attr = ...` in common test set up methods",
+testcase!(
     test_self_attribute_in_test_setup,
     r#"
 class MyTestCase:
     def setUp(self):
-        self.x = 5  # E: Object of class `MyTestCase` has no attribute `x`
+        self.x = 5
     def run(self):
-        assert self.x == 5  # E: Object of class `MyTestCase` has no attribute `x`
+        assert self.x == 5
     "#,
 );
 
