@@ -1596,6 +1596,16 @@
     },
     {
       "code": -2,
+      "column": 18,
+      "concise_description": "Expected a type form, got instance of `list[type[int]]`",
+      "description": "Expected a type form, got instance of `list[type[int]]`",
+      "line": 57,
+      "name": "not-a-type",
+      "stop_column": 23,
+      "stop_line": 57
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "Callable requires exactly two arguments but 3 was found",
       "description": "Callable requires exactly two arguments but 3 was found",
@@ -6212,12 +6222,72 @@
     {
       "code": -2,
       "column": 14,
+      "concise_description": "ParamSpec is not allowed in this context.",
+      "description": "ParamSpec is not allowed in this context.",
+      "line": 23,
+      "name": "invalid-annotation",
+      "stop_column": 15,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
+      "column": 20,
+      "concise_description": "ParamSpec is not allowed in this context.",
+      "description": "ParamSpec is not allowed in this context.",
+      "line": 23,
+      "name": "invalid-annotation",
+      "stop_column": 21,
+      "stop_line": 23
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Concatenate[int, ?_ParamSpec] is not allowed in this context.",
+      "description": "Concatenate[int, ?_ParamSpec] is not allowed in this context.",
+      "line": 27,
+      "name": "invalid-annotation",
+      "stop_column": 33,
+      "stop_line": 27
+    },
+    {
+      "code": -2,
+      "column": 14,
       "concise_description": "ParamSpec cannot be used for type parameter",
       "description": "ParamSpec cannot be used for type parameter",
       "line": 31,
       "name": "invalid-param-spec",
       "stop_column": 21,
       "stop_line": 31
+    },
+    {
+      "code": -2,
+      "column": 35,
+      "concise_description": "ParamSpec is not allowed in this context.",
+      "description": "ParamSpec is not allowed in this context.",
+      "line": 35,
+      "name": "invalid-annotation",
+      "stop_column": 36,
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "ParamSpec is not allowed in this context.",
+      "description": "ParamSpec is not allowed in this context.",
+      "line": 39,
+      "name": "invalid-annotation",
+      "stop_column": 19,
+      "stop_line": 39
+    },
+    {
+      "code": -2,
+      "column": 31,
+      "concise_description": "ParamSpec is not allowed in this context.",
+      "description": "ParamSpec is not allowed in this context.",
+      "line": 39,
+      "name": "invalid-annotation",
+      "stop_column": 32,
+      "stop_line": 39
     }
   ],
   "generics_paramspec_components.py": [

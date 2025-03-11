@@ -106,6 +106,8 @@ pub enum TypeFormContext {
     ReturnAnnotation,
     /// Type argument for a generic
     TypeArgument,
+    /// Type argument for the return position of a Callable type
+    TypeArgumentCallableReturn,
     /// Scoped type params for functions and classes
     TypeVarConstraint,
     /// Variable annotation outside of a class definition
@@ -2095,6 +2097,37 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None,
                 "Unpack is not allowed in this context.".to_owned(),
             );
+        }
+        if !matches!(
+            type_form_context,
+            TypeFormContext::TypeArgument | TypeFormContext::GenericBase
+        ) && matches!(
+            result,
+            Type::Concatenate(_, _) | Type::ParamSpecValue(_) | Type::ParamSpec(_)
+        ) {
+            return self.error(
+                errors,
+                x.range(),
+                ErrorKind::InvalidAnnotation,
+                None,
+                format!("{} is not allowed in this context.", result),
+            );
+        }
+        if let Type::Quantified(quantified) = result {
+            if quantified.is_param_spec()
+                && !matches!(
+                    type_form_context,
+                    TypeFormContext::TypeArgument | TypeFormContext::GenericBase
+                )
+            {
+                return self.error(
+                    errors,
+                    x.range(),
+                    ErrorKind::InvalidAnnotation,
+                    None,
+                    "ParamSpec is not allowed in this context.".to_owned(),
+                );
+            }
         }
         result
     }

@@ -231,7 +231,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             SpecialForm::Callable if arguments.len() == 2 => {
-                let ret = self.expr_untype(&arguments[1], TypeFormContext::TypeArgument, errors);
+                let ret = self.expr_untype(
+                    &arguments[1],
+                    TypeFormContext::TypeArgumentCallableReturn,
+                    errors,
+                );
                 match &arguments[0] {
                     Expr::List(ExprList { elts, .. }) => {
                         match self.check_args_and_construct_tuple(elts, errors) {

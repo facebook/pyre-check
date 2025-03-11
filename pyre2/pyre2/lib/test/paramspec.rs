@@ -77,18 +77,17 @@ assert_type(f("A", True), str)
 "#,
 );
 
-testcase_with_bug!(
-    "ParamSpec types can only be used in argument positions or when a ParamSpec is expected by a generic",
+testcase!(
     test_paramspec_in_right_place,
     r#"
 from typing import Callable, Concatenate, ParamSpec
 
 P = ParamSpec("P")
 
-def foo(x: P) -> P: ...                           # Rejected
-def foo(x: Concatenate[int, P]) -> int: ...       # Rejected
+def foo(x: P) -> P: ...                           # E: ParamSpec is not allowed in this context. # E: ParamSpec is not allowed in this context.
+def foo(x: Concatenate[int, P]) -> int: ...       # E: Concatenate[int, ?_ParamSpec] is not allowed in this context.
 def foo(x: list[P]) -> None: ...                  # E: ParamSpec cannot be used for type parameter
-def foo(x: Callable[[int, str], P]) -> None: ...  # Rejected
+def foo(x: Callable[[int, str], P]) -> None: ...  # E: ParamSpec is not allowed in this context.
 "#,
 );
 
