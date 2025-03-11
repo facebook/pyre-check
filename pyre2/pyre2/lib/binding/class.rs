@@ -167,7 +167,7 @@ impl<'a> BindingsBuilder<'a> {
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
-                if method_name == dunder::INIT {
+                if is_attribute_defining_method(&method_name) {
                     for (name, InstanceAttribute(value, annotation, range)) in instance_attributes {
                         if !fields.contains_key(&name) {
                             fields.insert(
@@ -774,4 +774,8 @@ pub fn is_valid_identifier(name: &str) -> bool {
     static IDENTIFIER_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new("^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap());
     !is_keyword(name) && IDENTIFIER_REGEX.is_match(name)
+}
+
+fn is_attribute_defining_method(method_name: &Name) -> bool {
+    method_name == &dunder::INIT
 }
