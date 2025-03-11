@@ -213,13 +213,36 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn expr_qualifier(&self, x: &Expr, errors: &ErrorCollector) -> Option<Qualifier> {
+    fn expr_qualifier(
+        &self,
+        x: &Expr,
+        type_form_context: TypeFormContext,
+        errors: &ErrorCollector,
+    ) -> Option<Qualifier> {
         let ty = match x {
             Expr::Name(_) | Expr::Attribute(_) => Some(self.expr_infer(x, errors)),
             _ => None,
         };
         if let Some(Type::Type(box Type::SpecialForm(special))) = ty {
-            special.to_qualifier()
+            let qualifier = special.to_qualifier();
+            match qualifier {
+                Some(
+                    Qualifier::ClassVar
+                    | Qualifier::ReadOnly
+                    | Qualifier::NotRequired
+                    | Qualifier::Required,
+                ) if type_form_context != TypeFormContext::ClassVarAnnotation => {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        format!("{} is only allowed inside a class body.", special),
+                    );
+                    None
+                }
+                _ => qualifier,
+            }
         } else {
             None
         }
@@ -262,26 +285,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn expr_annotation(
         &self,
         x: &Expr,
-        ctx: TypeFormContext,
+        type_form_context: TypeFormContext,
         errors: &ErrorCollector,
     ) -> Annotation {
         if !Self::is_valid_annotation(x, errors) {
             return Annotation::new_type(Type::any_error());
         }
         match x {
-            _ if let Some(qualifier) = self.expr_qualifier(x, errors) => Annotation {
-                qualifiers: vec![qualifier],
-                ty: None,
-            },
+            _ if let Some(qualifier) = self.expr_qualifier(x, type_form_context, errors) => {
+                Annotation {
+                    qualifiers: vec![qualifier],
+                    ty: None,
+                }
+            }
             Expr::Subscript(x)
                 if Ast::unpack_slice(&x.slice).len() == 1
-                    && let Some(qualifier) = self.expr_qualifier(&x.value, errors) =>
+                    && let Some(qualifier) =
+                        self.expr_qualifier(&x.value, type_form_context, errors) =>
             {
-                let mut ann = self.expr_annotation(&x.slice, ctx, errors);
+                let mut ann = self.expr_annotation(&x.slice, type_form_context, errors);
                 ann.qualifiers.insert(0, qualifier);
                 ann
             }
-            _ => Annotation::new_type(self.expr_untype(x, ctx, errors)),
+            _ => Annotation::new_type(self.expr_untype(x, type_form_context, errors)),
         }
     }
 

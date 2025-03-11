@@ -134,10 +134,6 @@
     "Line 46: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 54: Expected 1 errors",
-    "Line 63: Expected 1 errors",
-    "Line 64: Expected 1 errors",
-    "Line 67: Expected 1 errors",
-    "Line 71: Expected 1 errors",
     "Line 105: Expected 1 errors",
     "Line 61: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `ClassVar[list[int]]`']"
   ],
@@ -825,7 +821,6 @@
   ],
   "typeddicts_required.py": [
     "Line 12: Expected 1 errors",
-    "Line 19: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 63: Expected 1 errors",
     "Line 68: Unexpected errors ['TODO: Answers::apply_special_form cannot handle `Required[int]`']",

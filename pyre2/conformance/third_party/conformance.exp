@@ -2474,6 +2474,46 @@
     },
     {
       "code": -2,
+      "column": 26,
+      "concise_description": "ClassVar is only allowed inside a class body.",
+      "description": "ClassVar is only allowed inside a class body.",
+      "line": 63,
+      "name": "invalid-annotation",
+      "stop_column": 34,
+      "stop_line": 63
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
+      "line": 63,
+      "name": "unsupported",
+      "stop_column": 39,
+      "stop_line": 63
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "ClassVar is only allowed inside a class body.",
+      "description": "ClassVar is only allowed inside a class body.",
+      "line": 64,
+      "name": "invalid-annotation",
+      "stop_column": 20,
+      "stop_line": 64
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[str]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[str]`",
+      "line": 64,
+      "name": "unsupported",
+      "stop_column": 25,
+      "stop_line": 64
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "Object of class `ClassA` has no attribute `xx`",
       "description": "Object of class `ClassA` has no attribute `xx`",
@@ -2481,6 +2521,46 @@
       "name": "missing-attribute",
       "stop_column": 16,
       "stop_line": 65
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "ClassVar is only allowed inside a class body.",
+      "description": "ClassVar is only allowed inside a class body.",
+      "line": 67,
+      "name": "invalid-annotation",
+      "stop_column": 34,
+      "stop_line": 67
+    },
+    {
+      "code": -2,
+      "column": 26,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
+      "line": 67,
+      "name": "unsupported",
+      "stop_column": 39,
+      "stop_line": 67
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "ClassVar is only allowed inside a class body.",
+      "description": "ClassVar is only allowed inside a class body.",
+      "line": 71,
+      "name": "invalid-annotation",
+      "stop_column": 16,
+      "stop_line": 71
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `ClassVar[int]`",
+      "line": 71,
+      "name": "unsupported",
+      "stop_column": 21,
+      "stop_line": 71
     },
     {
       "code": -2,
@@ -11722,6 +11802,26 @@
     }
   ],
   "typeddicts_required.py": [
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "NotRequired is only allowed inside a class body.",
+      "description": "NotRequired is only allowed inside a class body.",
+      "line": 19,
+      "name": "invalid-annotation",
+      "stop_column": 19,
+      "stop_line": 19
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "TODO: Answers::apply_special_form cannot handle `NotRequired[int]`",
+      "description": "TODO: Answers::apply_special_form cannot handle `NotRequired[int]`",
+      "line": 19,
+      "name": "unsupported",
+      "stop_column": 24,
+      "stop_line": 19
+    },
     {
       "code": -2,
       "column": 18,

@@ -3,7 +3,7 @@
   "pass": 32,
   "fail": 101,
   "pass_rate": 0.24,
-  "differences": 611,
+  "differences": 606,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -53,7 +53,7 @@
     "callables_annotation.py": 7,
     "callables_kwargs.py": 2,
     "callables_subtyping.py": 2,
-    "classes_classvar.py": 10,
+    "classes_classvar.py": 6,
     "classes_override.py": 1,
     "constructors_call_init.py": 4,
     "constructors_call_metaclass.py": 5,
@@ -137,7 +137,7 @@
     "typeddicts_readonly_consistency.py": 3,
     "typeddicts_readonly_inheritance.py": 7,
     "typeddicts_readonly_update.py": 1,
-    "typeddicts_required.py": 7,
+    "typeddicts_required.py": 6,
     "typeddicts_type_consistency.py": 7,
     "typeddicts_usage.py": 2
   },
