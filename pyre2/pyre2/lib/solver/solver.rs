@@ -34,11 +34,8 @@ use crate::util::lock::RwLock;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Variable {
-    /// We don't expect to get here, but better than crashing
-    #[default]
-    Unknown,
     /// A variable in a container with an unspecified element type, e.g. `[]: list[V]`
     Contained,
     /// A variable due to generic instantitation, `def f[T](x: T): T` with `f(1)`
@@ -52,10 +49,15 @@ enum Variable {
     Answer(Type),
 }
 
+impl Default for Variable {
+    fn default() -> Self {
+        unreachable!("We should always register variables first")
+    }
+}
+
 impl Display for Variable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Variable::Unknown => write!(f, "Unknown"),
             Variable::Contained => write!(f, "Contained"),
             Variable::Quantified(k, Some(t)) => write!(f, "Quantified({k}, default={t})"),
             Variable::Quantified(k, None) => write!(f, "Quantified({k})"),
