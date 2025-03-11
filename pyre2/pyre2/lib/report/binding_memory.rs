@@ -39,12 +39,19 @@ struct ReportKey {
 impl ReportKey {
     fn new<T: Debug>(module: ModuleName, v: &T) -> Self {
         let mut ctor = format!("{v:?}");
-        if let Some(i) = ctor.find('(') {
+        if let Some(mut i) = ctor.find(['{', '(']) {
+            if ctor.as_bytes().get(i - 1) == Some(&b' ') {
+                i -= 1;
+            }
             ctor.truncate(i);
+        }
+        let mut type_name = any::type_name_of_val(v);
+        if let Some((_, x)) = type_name.rsplit_once(':') {
+            type_name = x;
         }
         Self {
             module,
-            type_name: any::type_name_of_val(v),
+            type_name,
             ctor,
             size: mem::size_of_val(v),
         }
