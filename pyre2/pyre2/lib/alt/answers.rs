@@ -392,7 +392,10 @@ impl Answers {
             recurser: &Recurser::new(),
             current: self,
         };
-        solver.get(key)
+        let v = solver.get(key);
+        let mut vv = (*v).clone();
+        K::visit_type_mut(&mut vv, &mut |x| self.solver.deep_force_mut(x));
+        Arc::new(vv)
     }
 
     pub fn get_idx<K: Keyed + SolveRecursive>(&self, k: Idx<K>) -> Option<Arc<K::Answer>>
