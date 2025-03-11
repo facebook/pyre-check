@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_binop,
@@ -272,5 +273,15 @@ testcase!(
 class C: pass
 
 x = C() + 1  # E: `+` is not supported between `C` and `Literal[1]`\n  Object of class `C` has no attribute `__add__`
+"#,
+);
+
+testcase_with_bug!(
+    "TODO zeina: we should be able to add int and float and the final type should be float",
+    test_float_int,
+    r#"
+from typing import reveal_type
+x = 3 + 3.0 # E: `+` is not supported between `Literal[3]` and `float`
+reveal_type(x) # E: revealed type: int
 "#,
 );
