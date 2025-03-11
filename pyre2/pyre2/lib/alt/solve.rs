@@ -1991,7 +1991,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Unpack(box Type::Var(v)) if let Some(_guard) = self.recurser.recurse(v) => {
                 self.untype_opt(Type::Unpack(Box::new(self.solver().force_var(v))), range)
             }
-            Type::Unpack(box t) => Some(t),
             _ => None,
         }
     }
