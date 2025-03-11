@@ -221,7 +221,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ))
                     }
                     // todo zeina: Ideally, we can directly add this class to the list of base classes. Revist this when fixing the "Any" representation.  
-                    Some((Type::Any(_), _)) =>  {has_base_any = true; None}
+                    Some((Type::Any(_), _)) => {
+                        has_base_any = true;
+                        None
+                    }
                     _ => None,
                 }
             })
