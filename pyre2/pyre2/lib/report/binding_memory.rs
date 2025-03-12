@@ -108,3 +108,69 @@ pub fn binding_memory(state: &State) -> String {
     }
     res
 }
+
+#[cfg(test)]
+mod tests {
+    use ruff_python_ast::Identifier;
+    use ruff_text_size::TextRange;
+
+    use super::*;
+    use crate::binding::binding::BindingClass;
+    use crate::binding::binding::BindingClassMetadata;
+    use crate::binding::binding::Key;
+    use crate::graph::index::Idx;
+    use crate::module::short_identifier::ShortIdentifier;
+    use crate::types::class::ClassIndex;
+
+    #[test]
+    fn test_binding_memory() {
+        let module = ModuleName::from_str("my_module");
+
+        let v = Key::Usage(ShortIdentifier::new(&Identifier::new(
+            "my_usage",
+            TextRange::default(),
+        )));
+        assert_eq!(
+            ReportKey::new(module, &v),
+            ReportKey {
+                module,
+                type_name: "Key",
+                ctor: "Usage".to_owned(),
+                size: mem::size_of_val(&v),
+            }
+        );
+
+        let v = BindingClass::FunctionalClassDef(
+            ClassIndex(0),
+            Identifier::new("my_class", TextRange::default()),
+            SmallMap::new(),
+        );
+        assert_eq!(
+            ReportKey::new(module, &v),
+            ReportKey {
+                module,
+                type_name: "BindingClass",
+                ctor: "FunctionalClassDef".to_owned(),
+                size: mem::size_of_val(&v),
+            }
+        );
+
+        let v = BindingClassMetadata {
+            def: Idx::new(42),
+            bases: Default::default(),
+            keywords: Default::default(),
+            decorators: Default::default(),
+            is_new_type: false,
+            special_base: None,
+        };
+        assert_eq!(
+            ReportKey::new(module, &v),
+            ReportKey {
+                module,
+                type_name: "BindingClassMetadata",
+                ctor: "BindingClassMetadata".to_owned(),
+                size: mem::size_of_val(&v),
+            }
+        );
+    }
+}
