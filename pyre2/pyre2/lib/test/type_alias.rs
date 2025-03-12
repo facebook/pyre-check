@@ -49,7 +49,7 @@ type X[T] = list
 testcase!(
     test_bad_type_alias,
     r#"
-type X = 1  # E: this expression cannot be used in annotations
+type X = 1  # E: number literal cannot be used in annotations
     "#,
 );
 
@@ -232,7 +232,7 @@ testcase!(
     test_bad_annotated_alias,
     r#"
 from typing import TypeAlias
-X: TypeAlias = 1  # E: this expression cannot be used in annotations
+X: TypeAlias = 1  # E: number literal cannot be used in annotations
     "#,
 );
 

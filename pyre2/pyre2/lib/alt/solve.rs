@@ -322,10 +322,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             | Expr::Starred(..) => return true,
             Expr::Call(..) => "function call",
             Expr::Lambda(..) => "lambda definition",
+            Expr::List(..) => "list literal",
+            Expr::NumberLiteral(..) => "number literal",
+            Expr::Tuple(..) => "tuple literal",
+            Expr::Dict(..) => "dict literal",
+            Expr::ListComp(..) => "list comprehension",
+            Expr::If(..) => "if expression",
+            Expr::BooleanLiteral(..) => "bool literal",
+            Expr::BoolOp(..) => "boolean operation",
+            Expr::FString(..) => "f-string",
+            Expr::UnaryOp(..) => "unary operation",
             // There are many Expr variants. Not all of them are likely to be used
             // in annotations, even accidentally. We can add branches for specific
             // expression constructs if desired.
-            _ => "this expression",
+            _ => "expression",
         };
         errors.add(
             x.range(),
