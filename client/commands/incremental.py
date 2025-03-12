@@ -194,16 +194,6 @@ def run_incremental(
     return ExitStatus(exit_code=exit_code, connected_to=ServerStatus.NEWLY_STARTED)
 
 
-def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.ExitCode:
-    if error_kind == server_event.ErrorKind.WATCHMAN:
-        return commands.ExitCode.WATCHMAN_ERROR
-    elif error_kind == server_event.ErrorKind.BUCK_INTERNAL:
-        return commands.ExitCode.BUCK_INTERNAL_ERROR
-    elif error_kind == server_event.ErrorKind.BUCK_USER:
-        return commands.ExitCode.BUCK_USER_ERROR
-    return commands.ExitCode.FAILURE
-
-
 def run(
     configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
@@ -212,5 +202,5 @@ def run(
         return run_incremental(configuration, incremental_arguments)
     except server_event.ServerStartException as error:
         raise commands.ClientException(
-            f"{error}", exit_code=_exit_code_from_error_kind(error.kind)
+            f"{error}", exit_code=error.kind.to_exit_code()
         ) from error

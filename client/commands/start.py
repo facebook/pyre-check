@@ -547,37 +547,42 @@ def run(
         )
 
     LOG.info(f"Starting server at `{configuration.get_project_identifier()}`...")
-    with backend_arguments.temporary_argument_file(
-        server_arguments
-    ) as argument_file_path:
-        server_environment = {
-            **os.environ,
-            # This is to make sure that backend server shares the socket root
-            # directory with the client.
-            # TODO(T77556312): It might be cleaner to turn this into a
-            # configuration option instead.
-            "TMPDIR": tempfile.gettempdir(),
-        }
-        start_command = server_start_command.get_start_command(
-            argument_file_path, start_arguments.flavor
-        )
-        if start_arguments.terminal:
-            return _run_in_foreground(
-                start_command,
-                server_environment,
+    try:
+        with backend_arguments.temporary_argument_file(
+            server_arguments
+        ) as argument_file_path:
+            server_environment = {
+                **os.environ,
+                # This is to make sure that backend server shares the socket root
+                # directory with the client.
+                # TODO(T77556312): It might be cleaner to turn this into a
+                # configuration option instead.
+                "TMPDIR": tempfile.gettempdir(),
+            }
+            start_command = server_start_command.get_start_command(
+                argument_file_path, start_arguments.flavor
             )
-        else:
-            socket_path = daemon_socket.get_socket_path(
-                configuration.get_project_identifier(),
-                flavor=start_arguments.flavor,
-            )
-            return _run_in_background(
-                start_command,
-                server_environment,
-                log_directory,
-                socket_path,
-                flavor=start_arguments.flavor,
-                event_waiter=server_event.Waiter(
-                    wait_on_initialization=start_arguments.wait_on_initialization
-                ),
-            )
+            if start_arguments.terminal:
+                return _run_in_foreground(
+                    start_command,
+                    server_environment,
+                )
+            else:
+                socket_path = daemon_socket.get_socket_path(
+                    configuration.get_project_identifier(),
+                    flavor=start_arguments.flavor,
+                )
+                return _run_in_background(
+                    start_command,
+                    server_environment,
+                    log_directory,
+                    socket_path,
+                    flavor=start_arguments.flavor,
+                    event_waiter=server_event.Waiter(
+                        wait_on_initialization=start_arguments.wait_on_initialization
+                    ),
+                )
+    except server_event.ServerStartException as error:
+        raise commands.ClientException(
+            f"{error}", exit_code=error.kind.to_exit_code()
+        ) from error

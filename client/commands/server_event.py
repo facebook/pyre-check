@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import IO, List, Optional, Union
 
 from ..language_server import connections
+from .commands import ExitCode
 
 
 @dataclasses.dataclass
@@ -47,6 +48,15 @@ class ErrorKind(enum.Enum):
             if input_string == str(item):
                 return item
         return ErrorKind.UNKNOWN
+
+    def to_exit_code(kind) -> ExitCode:
+        if kind == ErrorKind.WATCHMAN:
+            return ExitCode.WATCHMAN_ERROR
+        elif kind == ErrorKind.BUCK_INTERNAL:
+            return ExitCode.BUCK_INTERNAL_ERROR
+        elif kind == ErrorKind.BUCK_USER:
+            return ExitCode.BUCK_USER_ERROR
+        return ExitCode.FAILURE
 
 
 @dataclasses.dataclass
