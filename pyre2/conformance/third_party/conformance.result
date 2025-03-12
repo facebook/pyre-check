@@ -161,39 +161,29 @@
   ],
   "constructors_callable.py": [
     "Line 35: Unexpected errors ['Argument `type[Class1]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 36: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 37: Unexpected errors ['assert_type(Any, Class1) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 48: Unexpected errors ['Argument `type[Class2]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 49: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 50: Unexpected errors ['assert_type(Any, Class2) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 62: Unexpected errors ['Argument `type[Class3]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 63: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 64: Unexpected errors ['assert_type(Any, Class3) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 76: Unexpected errors ['Argument `type[Class4]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 77: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 93: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class5`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
     "Line 96: Unexpected errors ['Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 97: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 100: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 105: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 124: Unexpected errors ['Argument `type[Class6]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 125: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 126: Unexpected errors ['assert_type(Any, Class6Proxy) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 134: Unexpected errors ['Expected 0 positional arguments, got 1 in function `object.__new__`']",
     "Line 141: Unexpected errors ['Argument `type[Class6Any]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 142: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 143: Unexpected errors ['Unexpected ParamSpec type: `Unknown`']",
     "Line 160: Unexpected errors ['Argument `type[Class7]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 161: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 164: Unexpected errors ['assert_type(Any, Class7[int]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 165: Unexpected errors ['assert_type(Any, Class7[str]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 178: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
     "Line 181: Unexpected errors ['Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 182: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 183: Unexpected errors ['assert_type(Any, Class8[str]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 192: Unexpected errors ['Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
-    "Line 193: Unexpected errors ['revealed type: (ParamSpec(Unknown)) -> Unknown']",
     "Line 194: Unexpected errors ['assert_type(Any, Class9) failed', 'Unexpected ParamSpec type: `Unknown`']"
   ],
   "constructors_consistency.py": [
@@ -311,12 +301,7 @@
     "Line 98: Expected 1 errors"
   ],
   "directives_no_type_check.py": [],
-  "directives_reveal_type.py": [
-    "Line 14: Unexpected errors ['revealed type: int | str']",
-    "Line 15: Unexpected errors ['revealed type: list[int]']",
-    "Line 16: Unexpected errors ['revealed type: Any']",
-    "Line 17: Unexpected errors ['revealed type: ForwardReference']"
-  ],
+  "directives_reveal_type.py": [],
   "directives_type_checking.py": [
     "Line 11: Unexpected errors [\"`Literal['']` is not assignable to `int`\"]",
     "Line 16: Unexpected errors ['Inconsistent type annotations for b: list[str], list[int]']",
@@ -345,7 +330,7 @@
     "Line 35: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `genus` of class `Pet2` is not visible on the class']",
     "Line 36: Unexpected errors ['assert_type(Any, str) failed', 'Instance-only attribute `species` of class `Pet2` is not visible on the class']",
     "Line 100: Unexpected errors ['assert_type(Literal[TrafficLight.AMBER], Literal[TrafficLight.YELLOW]) failed']",
-    "Line 128: Unexpected errors ['Could not find name `reveal_type`', 'revealed type: int']"
+    "Line 128: Unexpected errors ['Could not find name `reveal_type`']"
   ],
   "exceptions_context_managers.py": [
     "Line 50: Unexpected errors ['assert_type(str, int | str) failed']",
