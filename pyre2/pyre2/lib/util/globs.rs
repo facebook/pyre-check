@@ -7,6 +7,7 @@
 
 use std::ffi::OsStr;
 use std::ffi::OsString;
+use std::path;
 use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
@@ -24,7 +25,35 @@ pub struct Globs(Vec<String>);
 
 impl Globs {
     pub fn new(patterns: Vec<String>) -> Self {
+        //! Create a new `Globs` from the given patterns. If you want them to be relative
+        //! to a root, please use `Globs::new_with_root()` instead.
         Self(patterns)
+    }
+
+    pub fn new_with_root(root: &Path, patterns: Vec<String>) -> Self {
+        //! Create a new `Globs`, rewriting all patterns to be relative to `root`.
+        if root == Path::new("") || root == Path::new(".") {
+            return Self(patterns);
+        }
+        Self(
+            patterns
+                .into_iter()
+                .map(|pattern| Self::pattern_relative_to_root(root, pattern))
+                .collect(),
+        )
+    }
+
+    fn pattern_relative_to_root(root: &Path, pattern: String) -> String {
+        let pattern_root = Self::get_root_for_pattern(&pattern);
+        if pattern_root.is_absolute() {
+            return pattern;
+        }
+
+        let mut root_str = root.display().to_string();
+        if !root_str.ends_with(path::MAIN_SEPARATOR_STR) {
+            root_str += path::MAIN_SEPARATOR_STR;
+        }
+        format!("{root_str}{pattern}")
     }
 
     fn contains_asterisk(part: &OsStr) -> bool {
@@ -188,5 +217,121 @@ mod tests {
         assert!(!Globs::contains_asterisk(&OsString::from("abcd")));
         assert!(Globs::contains_asterisk(&OsString::from("**")));
         assert!(Globs::contains_asterisk(&OsString::from("asdf*fdsa")));
+    }
+
+    #[test]
+    fn test_globs_relative_to_root() {
+        let inputs: Vec<String> = [
+            "project/**/files",
+            "**/files",
+            "pattern",
+            "pattern.txt",
+            "a/b",
+            "a/b/c.txt",
+            "a/b*/c",
+            "a/b/*.txt",
+            "/**",
+            "/absolute/path/**/files",
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+        let f = |root: PathBuf, expected: [&str; 10]| {
+            let expected: Vec<String> = expected.into_iter().map(String::from).collect();
+            let globs = Globs::new_with_root(root.as_path(), inputs.clone());
+            assert_eq!(globs.0, expected);
+        };
+
+        f(
+            PathBuf::from(""),
+            [
+                "project/**/files",
+                "**/files",
+                "pattern",
+                "pattern.txt",
+                "a/b",
+                "a/b/c.txt",
+                "a/b*/c",
+                "a/b/*.txt",
+                "/**",
+                "/absolute/path/**/files",
+            ],
+        );
+        f(
+            PathBuf::from("."),
+            [
+                "project/**/files",
+                "**/files",
+                "pattern",
+                "pattern.txt",
+                "a/b",
+                "a/b/c.txt",
+                "a/b*/c",
+                "a/b/*.txt",
+                "/**",
+                "/absolute/path/**/files",
+            ],
+        );
+        f(
+            PathBuf::from(".."),
+            [
+                "../project/**/files",
+                "../**/files",
+                "../pattern",
+                "../pattern.txt",
+                "../a/b",
+                "../a/b/c.txt",
+                "../a/b*/c",
+                "../a/b/*.txt",
+                "/**",
+                "/absolute/path/**/files",
+            ],
+        );
+        f(
+            PathBuf::from("no/trailing/slash"),
+            [
+                "no/trailing/slash/project/**/files",
+                "no/trailing/slash/**/files",
+                "no/trailing/slash/pattern",
+                "no/trailing/slash/pattern.txt",
+                "no/trailing/slash/a/b",
+                "no/trailing/slash/a/b/c.txt",
+                "no/trailing/slash/a/b*/c",
+                "no/trailing/slash/a/b/*.txt",
+                "/**",
+                "/absolute/path/**/files",
+            ],
+        );
+        f(
+            PathBuf::from("relative/path/to/"),
+            [
+                "relative/path/to/project/**/files",
+                "relative/path/to/**/files",
+                "relative/path/to/pattern",
+                "relative/path/to/pattern.txt",
+                "relative/path/to/a/b",
+                "relative/path/to/a/b/c.txt",
+                "relative/path/to/a/b*/c",
+                "relative/path/to/a/b/*.txt",
+                "/**",
+                "/absolute/path/**/files",
+            ],
+        );
+        f(
+            PathBuf::from("/absolute/path/to"),
+            [
+                "/absolute/path/to/project/**/files",
+                "/absolute/path/to/**/files",
+                "/absolute/path/to/pattern",
+                "/absolute/path/to/pattern.txt",
+                "/absolute/path/to/a/b",
+                "/absolute/path/to/a/b/c.txt",
+                "/absolute/path/to/a/b*/c",
+                "/absolute/path/to/a/b/*.txt",
+                "/**",
+                "/absolute/path/**/files",
+            ],
+        );
     }
 }
