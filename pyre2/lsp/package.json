@@ -19,7 +19,7 @@
     "engines": {
         "vscode": "^1.94.0"
     },
-    "main": "./out/extension",
+    "main": "./dist/extension",
     "activationEvents": [
         "onLanguage:python"
     ],
@@ -73,14 +73,20 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -b",
-        "watch": "tsc -b -w"
+        "compile": "npm run check-types && node esbuild.js",
+        "check-types": "tsc --noEmit",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "vscode:prepublish": "npm run package",
+        "package": "npm run check-types && node esbuild.js --production"
     },
     "devDependencies": {
         "@types/node": "^16.11.7",
         "@types/vscode": "^1.78.1",
         "@vscode/vsce": "^2.9.2",
+        "esbuild": "^0.25.1",
+        "npm-run-all": "^4.1.5",
         "typescript": "^4.4.3"
     },
     "dependencies": {
