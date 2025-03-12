@@ -26,7 +26,14 @@ pub struct Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}: {}", self.path, self.range, self.msg())
+        write!(
+            f,
+            "{}:{}: {} [{}]",
+            self.path,
+            self.range,
+            self.msg(),
+            self.error_kind.to_name()
+        )
     }
 }
 

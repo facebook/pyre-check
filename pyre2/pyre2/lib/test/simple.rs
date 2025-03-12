@@ -877,11 +877,11 @@ testcase!(
     r#"
 val = 42
 def foo(arg): ...
-a: foo(arg=val)  # E: Invalid annotation
-b: lambda: None  # E: Invalid annotation
-c: [foo(arg=val)] # E: Invalid annotation
-d: (1, 2) # E: Invalid annotation
-e: a + b  # E: Invalid annotation
+a: foo(arg=val)  # E: function call cannot be used in annotations
+b: lambda: None  # E: lambda definition cannot be used in annotations
+c: [foo(arg=val)] # E: this expression cannot be used in annotations
+d: (1, 2) # E: this expression cannot be used in annotations
+e: a + b  # E: this expression cannot be used in annotations
 "#,
 );
 

@@ -34,7 +34,7 @@ ERROR */same_name.py*:1:10-* (glob)
 $ echo "x: str = 12" > $TMPDIR/hidden1.py && \
 > echo "import hidden1; y: int = hidden1.x" > $TMPDIR/hidden2.py && \
 > $PYRE2 check $TMPDIR/hidden2.py --include=$TMPDIR
-ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` (glob)
+ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` [type-mismatch] (glob)
  INFO 1 errors, * (glob)
 [1]
 ```
