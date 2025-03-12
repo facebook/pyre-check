@@ -4927,16 +4927,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed",
-      "description": "assert_type(BoundMethod[DC6, (str) -> int], (str) -> int) failed",
-      "line": 106,
-      "name": "assert-type",
-      "stop_column": 41,
-      "stop_line": 106
-    },
-    {
-      "code": -2,
       "column": 8,
       "concise_description": "Expected 1 positional argument, got 2 in function `DC7.__init__`",
       "description": "Expected 1 positional argument, got 2 in function `DC7.__init__`",
@@ -6687,221 +6677,41 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "line": 53,
-      "name": "type-mismatch",
-      "stop_column": 8,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
       "column": 9,
-      "concise_description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "line": 53,
+      "concise_description": "Argument `Literal['']` is not assignable to parameter with type `int`",
+      "description": "Argument `Literal['']` is not assignable to parameter with type `int`",
+      "line": 54,
       "name": "type-mismatch",
-      "stop_column": 10,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "line": 53,
-      "name": "type-mismatch",
-      "stop_column": 14,
-      "stop_line": 53
+      "stop_column": 11,
+      "stop_line": 54
     },
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected 2 positional arguments, got 3",
-      "description": "Expected 2 positional arguments, got 3",
-      "line": 53,
-      "name": "bad-argument-type",
-      "stop_column": 20,
-      "stop_line": 53
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "line": 54,
-      "name": "type-mismatch",
-      "stop_column": 8,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "line": 54,
-      "name": "type-mismatch",
-      "stop_column": 15,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Expected 2 positional arguments, got 3",
-      "description": "Expected 2 positional arguments, got 3",
-      "line": 54,
-      "name": "bad-argument-type",
-      "stop_column": 21,
-      "stop_line": 54
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "line": 55,
-      "name": "type-mismatch",
-      "stop_column": 8,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "line": 55,
-      "name": "type-mismatch",
-      "stop_column": 10,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 12,
       "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "line": 55,
       "name": "type-mismatch",
-      "stop_column": 14,
-      "stop_line": 55
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected 2 positional arguments, got 3",
-      "description": "Expected 2 positional arguments, got 3",
-      "line": 55,
-      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 55
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "line": 59,
-      "name": "type-mismatch",
-      "stop_column": 8,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
       "column": 9,
-      "concise_description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "line": 59,
+      "concise_description": "Argument `Literal['']` is not assignable to parameter with type `int`",
+      "description": "Argument `Literal['']` is not assignable to parameter with type `int`",
+      "line": 60,
       "name": "type-mismatch",
-      "stop_column": 10,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "line": 59,
-      "name": "type-mismatch",
-      "stop_column": 14,
-      "stop_line": 59
+      "stop_column": 11,
+      "stop_line": 60
     },
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected 2 positional arguments, got 3",
-      "description": "Expected 2 positional arguments, got 3",
-      "line": 59,
-      "name": "bad-argument-type",
-      "stop_column": 20,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "line": 60,
-      "name": "type-mismatch",
-      "stop_column": 8,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
-      "line": 60,
-      "name": "type-mismatch",
-      "stop_column": 15,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Expected 2 positional arguments, got 3",
-      "description": "Expected 2 positional arguments, got 3",
-      "line": 60,
-      "name": "bad-argument-type",
-      "stop_column": 21,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "description": "Argument `ClassC[(int, str, bool)]` is not assignable to parameter with type `int`",
-      "line": 61,
-      "name": "type-mismatch",
-      "stop_column": 8,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "description": "Argument `Literal[0]` is not assignable to parameter with type `str`",
-      "line": 61,
-      "name": "type-mismatch",
-      "stop_column": 10,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 12,
       "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "line": 61,
       "name": "type-mismatch",
-      "stop_column": 14,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected 2 positional arguments, got 3",
-      "description": "Expected 2 positional arguments, got 3",
-      "line": 61,
-      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 61
     }

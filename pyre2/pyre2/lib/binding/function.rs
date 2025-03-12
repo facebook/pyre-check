@@ -24,7 +24,7 @@ use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
-use crate::binding::binding::FunctionKind;
+use crate::binding::binding::FunctionSource;
 use crate::binding::binding::ImplicitReturn;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
@@ -104,10 +104,10 @@ impl<'a> BindingsBuilder<'a> {
 
         let body = mem::take(&mut x.body);
         let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
-        let kind = if is_ellipse(&body) {
-            FunctionKind::Stub
+        let source = if is_ellipse(&body) {
+            FunctionSource::Stub
         } else {
-            FunctionKind::Impl
+            FunctionSource::Impl
         };
         let mut return_annotation = mem::take(&mut x.returns);
         self.functions.push(FuncInfo::default());
@@ -215,7 +215,7 @@ impl<'a> BindingsBuilder<'a> {
             Key::ReturnImplicit(ShortIdentifier::new(&func_name)),
             Binding::ReturnImplicit(ImplicitReturn {
                 last_exprs: last_expr_keys,
-                function_kind: kind,
+                function_source: source,
             }),
         );
 
@@ -271,7 +271,7 @@ impl<'a> BindingsBuilder<'a> {
             KeyFunction(ShortIdentifier::new(&func_name)),
             BindingFunction {
                 def: x,
-                kind,
+                source,
                 self_type,
                 decorators: decorators.into_boxed_slice(),
                 legacy_tparams: legacy_tparams.into_boxed_slice(),

@@ -19,7 +19,7 @@ use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::types::decorated_function::DecoratedFunction;
 use crate::binding::binding::Binding;
-use crate::binding::binding::FunctionKind;
+use crate::binding::binding::FunctionSource;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyClassMetadata;
@@ -35,7 +35,7 @@ use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
-use crate::types::callable::CallableKind;
+use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -125,7 +125,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn function_definition(
         &self,
         def: &StmtFunctionDef,
-        kind: FunctionKind,
+        source: FunctionSource,
         self_type: Option<&Idx<KeyClass>>,
         decorators: &[Idx<Key>],
         legacy_tparams: &[Idx<KeyLegacyTypeParam>],
@@ -135,7 +135,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let mut required = Required::Required;
             if let Some(default) = default {
                 required = Required::Optional;
-                if kind != FunctionKind::Stub
+                if source != FunctionSource::Stub
                     || !matches!(default.as_ref(), Expr::EllipsisLiteral(_))
                 {
                     self.expr(
@@ -324,7 +324,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             Callable::list(ParamList::new(params), ret)
         };
-        let kind = CallableKind::from_name(
+        let kind = FunctionKind::from_name(
             self.module_info().name(),
             defining_cls.as_ref().map(|cls| cls.name()),
             &def.name.id,
@@ -332,7 +332,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut ty = Forall::new_type(
             def.name.id.clone(),
             self.type_params(def.range, tparams, errors),
-            ForallType::Callable(callable, kind),
+            ForallType::Function(callable, kind),
         );
         let mut is_overload = false;
         for x in decorators.iter().rev() {

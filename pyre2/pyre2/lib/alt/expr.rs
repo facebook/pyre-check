@@ -41,7 +41,7 @@ use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
-use crate::types::callable::CallableKind;
+use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
@@ -570,7 +570,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn check_isinstance(&self, ty_fun: &Type, x: &ExprCall, errors: &ErrorCollector) {
-        if let Some(CalleeKind::Callable(CallableKind::IsInstance)) = ty_fun.callee_kind() {
+        if let Some(CalleeKind::Function(FunctionKind::IsInstance)) = ty_fun.callee_kind() {
             if x.arguments.args.len() == 2 {
                 let is_instance_class_type = self.expr_infer(&x.arguments.args[1], errors);
                 if let Type::ClassDef(cls) = is_instance_class_type {
@@ -616,10 +616,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(CalleeKind::Class(ClassKind::EnumMember)) => {
                 return Type::Decoration(Decoration::EnumMember(Box::new(decoratee)));
             }
-            Some(CalleeKind::Callable(CallableKind::Overload)) => {
+            Some(CalleeKind::Function(FunctionKind::Overload)) => {
                 *overload = true;
             }
-            Some(CalleeKind::Callable(CallableKind::Override)) => {
+            Some(CalleeKind::Function(FunctionKind::Override)) => {
                 // if an override decorator exists, then update the callable kind
                 return Type::Decoration(Decoration::Override(Box::new(decoratee)));
             }
@@ -738,7 +738,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     return_hint.as_ref().map(|t| (t, &tcc)),
                     errors,
                 );
-                Type::Callable(Box::new(Callable { params, ret }), CallableKind::Anon)
+                Type::Callable(Box::new(Callable { params, ret }))
             }
             Expr::If(x) => {
                 // TODO: Support type refinement
@@ -1104,19 +1104,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 let func_range = x.func.range();
                 self.distribute_over_union(&ty_fun, |ty| match ty.callee_kind() {
-                    Some(CalleeKind::Callable(CallableKind::AssertType)) => self.call_assert_type(
+                    Some(CalleeKind::Function(FunctionKind::AssertType)) => self.call_assert_type(
                         &x.arguments.args,
                         &x.arguments.keywords,
                         x.range,
                         errors,
                     ),
-                    Some(CalleeKind::Callable(CallableKind::RevealType)) => self.call_reveal_type(
+                    Some(CalleeKind::Function(FunctionKind::RevealType)) => self.call_reveal_type(
                         &x.arguments.args,
                         &x.arguments.keywords,
                         x.range,
                         errors,
                     ),
-                    Some(CalleeKind::Callable(CallableKind::Cast)) => {
+                    Some(CalleeKind::Function(FunctionKind::Cast)) => {
                         // For typing.cast, we have to hard-code a check for whether the first argument
                         // is a type, so it's simplest to special-case the entire call.
                         self.call_typing_cast(

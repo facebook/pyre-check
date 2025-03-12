@@ -162,7 +162,7 @@ impl FuncId {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum CallableKind {
+pub enum FunctionKind {
     IsInstance,
     IsSubclass,
     Dataclass(Box<BoolKeywords>),
@@ -171,7 +171,6 @@ pub enum CallableKind {
     Overload,
     Override,
     Def(Box<FuncId>),
-    Anon,
     Cast,
     AssertType,
     RevealType,
@@ -406,7 +405,7 @@ impl Param {
     }
 }
 
-impl CallableKind {
+impl FunctionKind {
     pub fn from_name(module: ModuleName, cls: Option<&Name>, func: &Name) -> Self {
         match (module.as_str(), cls, func.as_str()) {
             ("builtins", None, "isinstance") => Self::IsInstance,
@@ -480,7 +479,6 @@ impl CallableKind {
                 func: Name::new_static("reveal_type"),
             }),
             Self::Def(func_id) => Some((**func_id).clone()),
-            Self::Anon => None,
         }
     }
 }

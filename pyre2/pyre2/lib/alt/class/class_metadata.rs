@@ -33,7 +33,7 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
-use crate::types::callable::CallableKind;
+use crate::types::callable::FunctionKind;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
@@ -302,7 +302,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         for decorator in decorators {
             let ty_decorator = self.get_idx(*decorator);
-            if let Some(CalleeKind::Callable(CallableKind::Dataclass(kws))) =
+            if let Some(CalleeKind::Function(FunctionKind::Dataclass(kws))) =
                 ty_decorator.callee_kind()
             {
                 let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);

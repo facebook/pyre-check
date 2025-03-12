@@ -47,7 +47,7 @@ use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::EmptyAnswer;
-use crate::binding::binding::FunctionKind;
+use crate::binding::binding::FunctionSource;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::NoneIfRecursive;
@@ -509,7 +509,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
             }
-            Type::Callable(callable, _) => {
+            Type::Callable(callable) | Type::Function(callable, _) => {
                 let visit = |t: &mut Type| {
                     self.tvars_to_tparams_for_type_alias(
                         t,
@@ -1302,7 +1302,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // instead of `None`. Instead, we should just ignore the implicit return for stub
                 // functions when solving Binding::ReturnType. Unfortunately, this leads to
                 // another issue (see comment on Binding::ReturnType).
-                if x.function_kind == FunctionKind::Stub
+                if x.function_source == FunctionSource::Stub
                     || x.last_exprs
                         .as_ref()
                         .is_some_and(|xs| xs.iter().all(|k| self.get_idx(*k).is_never()))
@@ -1884,7 +1884,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Arc<DecoratedFunction> {
         self.function_definition(
             &x.def,
-            x.kind,
+            x.source,
             x.self_type.as_ref(),
             &x.decorators,
             &x.legacy_tparams,

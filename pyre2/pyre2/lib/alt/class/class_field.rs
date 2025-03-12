@@ -33,8 +33,8 @@ use crate::error::style::ErrorStyle;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
-use crate::types::callable::CallableKind;
 use crate::types::callable::DataclassKeywords;
+use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::class::Class;
@@ -342,10 +342,10 @@ pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
 
 fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
     let func = match attr {
-        Type::Forall(forall) if matches!(forall.ty, ForallType::Callable(..)) => {
+        Type::Forall(forall) if matches!(forall.ty, ForallType::Function(..)) => {
             Some(BoundMethodType::Forall((**forall).clone()))
         }
-        Type::Callable(callable, kind) => Some(BoundMethodType::Callable(
+        Type::Function(callable, kind) => Some(BoundMethodType::Function(
             (**callable).clone(),
             kind.clone(),
         )),
@@ -548,7 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let func_ty = self.expr_infer(func, &ignore_errors);
                     if matches!(
                         func_ty.callee_kind(),
-                        Some(CalleeKind::Callable(CallableKind::DataclassField))
+                        Some(CalleeKind::Function(FunctionKind::DataclassField))
                     ) {
                         for kw in keywords {
                             if let Some(id) = &kw.arg

@@ -20,9 +20,9 @@ use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
-use crate::types::callable::CallableKind;
 use crate::types::callable::DataclassKeywords;
 use crate::types::callable::FuncId;
+use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -136,9 +136,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ));
             }
         }
-        let ty = Type::Callable(
+        let ty = Type::Function(
             Box::new(Callable::list(ParamList::new(params), Type::None)),
-            CallableKind::Def(Box::new(FuncId {
+            FunctionKind::Def(Box::new(FuncId {
                 module: self.module_info().name(),
                 cls: Some(cls.name().clone()),
                 func: dunder::INIT,
@@ -186,9 +186,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|name| {
                 (
                     name.clone(),
-                    ClassSynthesizedField::new(Type::Callable(
+                    ClassSynthesizedField::new(Type::Function(
                         Box::new(callable.clone()),
-                        CallableKind::Def(Box::new(FuncId {
+                        FunctionKind::Def(Box::new(FuncId {
                             module: self.module_info().name(),
                             cls: Some(cls.name().clone()),
                             func: name.clone(),
@@ -202,9 +202,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_dataclass_hash(&self, cls: &Class) -> ClassSynthesizedField {
         let params = vec![cls.self_param()];
         let ret = self.stdlib.int().to_type();
-        ClassSynthesizedField::new(Type::Callable(
+        ClassSynthesizedField::new(Type::Function(
             Box::new(Callable::list(ParamList::new(params), ret)),
-            CallableKind::Def(Box::new(FuncId {
+            FunctionKind::Def(Box::new(FuncId {
                 module: self.module_info().name(),
                 cls: Some(cls.name().clone()),
                 func: dunder::HASH,
