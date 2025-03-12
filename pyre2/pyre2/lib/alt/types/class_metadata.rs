@@ -178,6 +178,12 @@ impl ClassSynthesizedField {
             inner: Arc::new(ClassField::new_synthesized(ty)),
         }
     }
+
+    fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        let mut v = (*self.inner).clone();
+        v.visit_type_mut(f);
+        self.inner = Arc::new(v);
+    }
 }
 
 /// A class's synthesized fields, such as a dataclass's `__init__` method.
@@ -195,9 +201,7 @@ impl ClassSynthesizedFields {
 
     pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         for field in self.0.values_mut() {
-            let mut v = (*field.inner).clone();
-            v.visit_type_mut(f);
-            field.inner = Arc::new(v);
+            field.visit_type_mut(f);
         }
     }
 }

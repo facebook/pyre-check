@@ -223,6 +223,14 @@ impl TypeAlias {
     pub fn as_type(&self) -> Type {
         *self.ty.clone()
     }
+
+    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        f(&self.ty);
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        f(&mut self.ty);
+    }
 }
 
 assert_words!(Type, 4);
@@ -291,6 +299,18 @@ impl BoundMethod {
     pub fn as_bound_function(&self) -> Type {
         self.func.as_type()
     }
+
+    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        let Self { obj, func } = self;
+        f(obj);
+        func.visit(f);
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        let Self { obj, func } = self;
+        f(obj);
+        func.visit_mut(f);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -326,6 +346,22 @@ impl BoundMethodType {
             Self::Overload(overload) => overload.is_typeis(),
         }
     }
+
+    fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+        match self {
+            Self::Callable(x, _) => x.visit(f),
+            Self::Forall(x) => x.visit(f),
+            Self::Overload(x) => x.visit(f),
+        }
+    }
+
+    fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+        match self {
+            Self::Callable(x, _) => x.visit_mut(f),
+            Self::Forall(x) => x.visit_mut(f),
+            Self::Overload(x) => x.visit_mut(f),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -338,6 +374,14 @@ impl Overload {
 
     fn is_typeis(&self) -> bool {
         self.0.iter().any(|t| t.is_typeis())
+    }
+
+    fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        self.0.iter().for_each(&mut f);
+    }
+
+    fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        self.0.iter_mut().for_each(&mut f);
     }
 }
 
@@ -390,17 +434,17 @@ impl Forall {
         }
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
         match &self.ty {
             ForallType::Callable(c, _) => c.visit(f),
-            ForallType::TypeAlias(ta) => f(&ta.ty),
+            ForallType::TypeAlias(ta) => ta.visit(f),
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
         match &mut self.ty {
             ForallType::Callable(c, _) => c.visit_mut(f),
-            ForallType::TypeAlias(ta) => f(&mut ta.ty),
+            ForallType::TypeAlias(ta) => ta.visit_mut(f),
         }
     }
 }
@@ -738,14 +782,7 @@ impl Type {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
             Type::Callable(c, _) => c.visit(f),
-            Type::BoundMethod(box BoundMethod { obj, func }) => {
-                f(obj);
-                match func {
-                    BoundMethodType::Callable(c, _) => c.visit(f),
-                    BoundMethodType::Forall(forall) => forall.visit(f),
-                    BoundMethodType::Overload(overload) => overload.0.iter().for_each(f),
-                }
-            }
+            Type::BoundMethod(box b) => b.visit(f),
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
             Type::Overload(xs) => xs.0.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
@@ -791,14 +828,7 @@ impl Type {
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
             Type::Callable(c, _) => c.visit_mut(f),
-            Type::BoundMethod(box BoundMethod { obj, func }) => {
-                f(obj);
-                match func {
-                    BoundMethodType::Callable(c, _) => c.visit_mut(f),
-                    BoundMethodType::Forall(forall) => forall.visit_mut(f),
-                    BoundMethodType::Overload(overload) => overload.0.iter_mut().for_each(f),
-                }
-            }
+            Type::BoundMethod(box b) => b.visit_mut(f),
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
             Type::Overload(xs) => xs.0.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
