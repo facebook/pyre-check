@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use async_trait::async_trait;
 use notify::Event;
 
+#[async_trait]
 pub trait Watcher {
-    fn wait(&mut self) -> anyhow::Result<Vec<Event>>;
+    async fn wait(&mut self) -> anyhow::Result<Vec<Event>>;
 }

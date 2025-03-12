@@ -13,6 +13,7 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 use std::time::Instant;
 
+use async_trait::async_trait;
 use notify::recommended_watcher;
 use notify::Event;
 use notify::RecommendedWatcher;
@@ -43,8 +44,9 @@ impl NotifyWatcher {
     }
 }
 
+#[async_trait]
 impl Watcher for NotifyWatcher {
-    fn wait(&mut self) -> anyhow::Result<Vec<Event>> {
+    async fn wait(&mut self) -> anyhow::Result<Vec<Event>> {
         let mut res = Vec::new();
         res.push(self.receiver.recv()??);
         // Wait up to 0.1s to buffer up events

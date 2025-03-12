@@ -210,7 +210,7 @@ impl Args {
                 eprintln!("{e:#}");
             }
             loop {
-                let events = watcher.wait()?;
+                let events = watcher.wait().await?;
                 if events.iter().any(|x| !x.kind.is_access()) {
                     break;
                 }
