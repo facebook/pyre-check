@@ -195,8 +195,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Arc<AnnotationWithTarget> {
         match binding {
-            BindingAnnotation::AnnotateExpr(target, x, self_type, ctx) => {
-                let mut ann = self.expr_annotation(x, *ctx, errors);
+            BindingAnnotation::AnnotateExpr(target, x, self_type) => {
+                let type_form_context = target.type_form_context();
+                let mut ann = self.expr_annotation(x, type_form_context, errors);
                 if let Some(self_type) = self_type
                     && let Some(ty) = &mut ann.ty
                 {

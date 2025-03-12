@@ -942,6 +942,8 @@ impl Display for AnnotationWithTarget {
 pub enum AnnotationTarget {
     /// A function parameter with a type annotation
     Param(Name),
+    ArgsParam(Name),
+    KwargsParam(Name),
     /// A return type annotation on a function. The name is that of the function
     Return(Name),
     /// An annotated assignment. For attribute assignments, the name is the attribute name ("attr" in "x.attr")
@@ -954,9 +956,24 @@ impl Display for AnnotationTarget {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Param(name) => write!(f, "param {name}"),
+            Self::ArgsParam(name) => write!(f, "args {name}"),
+            Self::KwargsParam(name) => write!(f, "kwargs {name}"),
             Self::Return(name) => write!(f, "{name} return"),
             Self::Assign(name) => write!(f, "var {name}"),
             Self::ClassMember(name) => write!(f, "attr {name}"),
+        }
+    }
+}
+
+impl AnnotationTarget {
+    pub fn type_form_context(&self) -> TypeFormContext {
+        match self {
+            Self::Param(_) => TypeFormContext::ParameterAnnotation,
+            Self::ArgsParam(_) => TypeFormContext::ParameterArgsAnnotation,
+            Self::KwargsParam(_) => TypeFormContext::ParameterKwargsAnnotation,
+            Self::Return(_) => TypeFormContext::ReturnAnnotation,
+            Self::Assign(_) => TypeFormContext::VarAnnotation,
+            Self::ClassMember(_) => TypeFormContext::ClassVarAnnotation,
         }
     }
 }
@@ -966,12 +983,7 @@ impl Display for AnnotationTarget {
 pub enum BindingAnnotation {
     /// The type is annotated to be this key, will have the outer type removed.
     /// Optionally occuring within a class, in which case Self refers to this class.
-    AnnotateExpr(
-        AnnotationTarget,
-        Expr,
-        Option<Idx<KeyClass>>,
-        TypeFormContext,
-    ),
+    AnnotateExpr(AnnotationTarget, Expr, Option<Idx<KeyClass>>),
     /// A literal type we know statically.
     Type(AnnotationTarget, Type),
 }
@@ -979,7 +991,7 @@ pub enum BindingAnnotation {
 impl DisplayWith<Bindings> for BindingAnnotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         match self {
-            Self::AnnotateExpr(_, x, self_type, _) => write!(
+            Self::AnnotateExpr(_, x, self_type) => write!(
                 f,
                 "_: {}{}",
                 ctx.module_info().display(x),

@@ -17,7 +17,6 @@ use ruff_python_ast::StmtExpr;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 
-use crate::alt::solve::TypeFormContext;
 use crate::ast::Ast;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
@@ -61,26 +60,26 @@ impl<'a> BindingsBuilder<'a> {
                 self_name = Some(x.parameter.name.clone());
             }
             self.bind_function_param(
+                AnnotationTarget::Param(x.parameter.name.id.clone()),
                 AnyParameterRef::NonVariadic(x),
                 function_idx,
                 self_type,
-                TypeFormContext::ParameterAnnotation,
             );
         }
         if let Some(box args) = &x.vararg {
             self.bind_function_param(
+                AnnotationTarget::ArgsParam(args.name.id.clone()),
                 AnyParameterRef::Variadic(args),
                 function_idx,
                 self_type,
-                TypeFormContext::ParameterArgsAnnotation,
             );
         }
         if let Some(box kwargs) = &x.kwarg {
             self.bind_function_param(
+                AnnotationTarget::KwargsParam(kwargs.name.id.clone()),
                 AnyParameterRef::Variadic(kwargs),
                 function_idx,
                 self_type,
-                TypeFormContext::ParameterKwargsAnnotation,
             );
         }
         if let Scope {
@@ -155,7 +154,6 @@ impl<'a> BindingsBuilder<'a> {
                         AnnotationTarget::Return(func_name.id.clone()),
                         *x,
                         self_type,
-                        TypeFormContext::ReturnAnnotation,
                     ),
                 ),
             )

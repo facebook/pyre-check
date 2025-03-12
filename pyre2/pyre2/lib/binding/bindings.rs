@@ -33,7 +33,6 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
-use crate::alt::solve::TypeFormContext;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -673,21 +672,16 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn bind_function_param(
         &mut self,
+        target: AnnotationTarget,
         x: AnyParameterRef,
         function_idx: Idx<KeyFunction>,
         self_type: Option<Idx<KeyClass>>,
-        ctx: TypeFormContext,
     ) {
         let name = x.name();
         let annot = x.annotation().map(|x| {
             self.table.insert(
                 KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                BindingAnnotation::AnnotateExpr(
-                    AnnotationTarget::Param(name.id.clone()),
-                    x.clone(),
-                    self_type,
-                    ctx,
-                ),
+                BindingAnnotation::AnnotateExpr(target.clone(), x.clone(), self_type),
             )
         });
         let (annot, def) = match annot {
@@ -696,10 +690,7 @@ impl<'a> BindingsBuilder<'a> {
                 let var = self.solver.fresh_contained(self.uniques);
                 let annot = self.table.insert(
                     KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                    BindingAnnotation::Type(
-                        AnnotationTarget::Param(name.id.clone()),
-                        var.to_type(),
-                    ),
+                    BindingAnnotation::Type(target, var.to_type()),
                 );
                 (annot, Either::Right((var, function_idx)))
             }

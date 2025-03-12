@@ -18,7 +18,6 @@ use ruff_python_ast::StmtImportFrom;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
-use crate::alt::solve::TypeFormContext;
 use crate::ast::Ast;
 use crate::binding::binding::AnnotationStyle;
 use crate::binding::binding::AnnotationTarget;
@@ -345,14 +344,13 @@ impl<'a> BindingsBuilder<'a> {
                         )
                     } else {
                         BindingAnnotation::AnnotateExpr(
-                            AnnotationTarget::Assign(name.id.clone()),
+                            if in_class_body {
+                                AnnotationTarget::ClassMember(name.id.clone())
+                            } else {
+                                AnnotationTarget::Assign(name.id.clone())
+                            },
                             *x.annotation.clone(),
                             None,
-                            if in_class_body {
-                                TypeFormContext::ClassVarAnnotation
-                            } else {
-                                TypeFormContext::VarAnnotation
-                            },
                         )
                     };
                     let ann_key = self.table.insert(ann_key, ann_val);
@@ -410,10 +408,9 @@ impl<'a> BindingsBuilder<'a> {
                     let ann_key = self.table.insert(
                         KeyAnnotation::AttrAnnotation(x.annotation.range()),
                         BindingAnnotation::AnnotateExpr(
-                            AnnotationTarget::Assign(attr.attr.id.clone()),
+                            AnnotationTarget::ClassMember(attr.attr.id.clone()),
                             *x.annotation,
                             None,
-                            TypeFormContext::ClassVarAnnotation,
                         ),
                     );
                     let value_binding = match &x.value {
