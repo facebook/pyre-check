@@ -34,6 +34,7 @@ use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::DataclassKeywords;
+use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -329,7 +330,6 @@ impl ClassField {
 
 pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
         Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
             make_bound_method(Type::ClassDef(cls.dupe()), &attr).unwrap_or(attr),
         ),
@@ -341,11 +341,14 @@ pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
 }
 
 fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
+    let should_bind = |func: &Function| !func.metadata.flags.is_staticmethod;
     let func = match attr {
-        Type::Forall(forall) if matches!(forall.ty, ForallType::Function(..)) => {
+        Type::Forall(forall) if matches!(&forall.ty, ForallType::Function(func) if should_bind(func)) => {
             Some(BoundMethodType::Forall((**forall).clone()))
         }
-        Type::Function(box func) => Some(BoundMethodType::Function(func.clone())),
+        Type::Function(box func) if should_bind(func) => {
+            Some(BoundMethodType::Function(func.clone()))
+        }
         Type::Overload(overload) => Some(BoundMethodType::Overload(overload.clone())),
         _ => None,
     };
@@ -354,7 +357,6 @@ fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
 
 fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::StaticMethod(box attr)) => Attribute::read_write(attr),
         Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
             make_bound_method(Type::ClassDef(cls.class_object().dupe()), &attr).unwrap_or(attr),
         ),

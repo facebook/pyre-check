@@ -196,7 +196,7 @@ class ParentA:
 
 class ChildA(ParentA):
 
-    @wrapper # E: Argument `override[staticmethod[() -> bool]]` is not assignable to parameter with type `(...) -> Any`
+    @wrapper # E: Argument `override[() -> bool]` is not assignable to parameter with type `(...) -> Any`
     @override
     @staticmethod
     def static_method1() -> bool: 
@@ -205,13 +205,9 @@ class ChildA(ParentA):
  "#,
 );
 
-testcase_with_bug!(
-    "TODO: is attr subset should be edited to potentially strip/ignore override decorators from the type.
-    after this is accomplished, we can remove the duplicate code that strips the decorator when calculating 
-    fields",
+testcase!(
     test_override_duplicate_decorator,
     r#"
-
 from typing import  override
 
 class ParentA:
@@ -225,9 +221,8 @@ class ChildA(ParentA):
     @staticmethod
     @override
     @staticmethod
-    def static_method1() -> int: # E: Class member `static_method1` overrides parent class `ParentA` in an inconsistent manner
-        return 1
-    
+    def static_method1() -> int:
+        return 1    
  "#,
 );
 

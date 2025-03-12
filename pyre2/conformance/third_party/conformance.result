@@ -528,8 +528,6 @@
     "Line 43: Expected 1 errors"
   ],
   "literals_interactions.py": [
-    "Line 50: Unexpected errors ['assert_type(IO[str], IO[bytes]) failed']",
-    "Line 51: Unexpected errors ['assert_type(IO[str], IO[Any]) failed']",
     "Line 71: Unexpected errors ['`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`']",
     "Line 72: Unexpected errors ['assert_type(Matrix[Literal[2], int], Matrix[Literal[2], Literal[7]]) failed']",
     "Line 106: Unexpected errors [\"Argument `str` is not assignable to parameter `status` with type `Literal['ABORTED', 'MALFORMED']` in function `expects_bad_status`\"]"
@@ -537,9 +535,7 @@
   "literals_literalstring.py": [
     "Line 120: Expected 1 errors",
     "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
-    "Line 166: Unexpected errors ['assert_type(C, B) failed']",
-    "Line 167: Unexpected errors ['assert_type(C, A) failed']"
+    "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]"
   ],
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
@@ -675,7 +671,7 @@
     "Lines 94, 102: Expected error (tag 'Derived4')",
     "Line 26: Unexpected errors ['Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 30: Unexpected errors ['Argument `classmethod[(cls: type[Base2]) -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 35: Unexpected errors ['Argument `staticmethod[() -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
+    "Line 35: Unexpected errors ['Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 50: Unexpected errors ['Argument `(self: Base2, x: int | str) -> int | str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 81: Unexpected errors ['Class member `method` overrides parent class `Base3` in an inconsistent manner']",
     "Line 95: Unexpected errors ['Class member `method` overrides parent class `Base4` in an inconsistent manner']",

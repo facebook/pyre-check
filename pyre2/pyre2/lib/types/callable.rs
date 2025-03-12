@@ -182,6 +182,7 @@ impl FuncMetadata {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct FuncFlags {
     pub is_overload: bool,
+    pub is_staticmethod: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

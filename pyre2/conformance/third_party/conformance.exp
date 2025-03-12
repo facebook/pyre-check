@@ -4908,8 +4908,8 @@
     {
       "code": -2,
       "column": 14,
-      "concise_description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7043, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7043`",
-      "description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: _MISSING_TYPE, default_factory: () -> @7043, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: _MISSING_TYPE | bool) -> @7043`",
+      "concise_description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: Literal[_MISSING_TYPE.MISSING], default_factory: () -> @6174, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: Literal[_MISSING_TYPE.MISSING] | bool) -> @6174`",
+      "description": "No matching overload found for function `dataclasses.field`, reporting errors for closest overload: `(*, default: Literal[_MISSING_TYPE.MISSING], default_factory: () -> @6174, init: bool, repr: bool, hash: bool | None, compare: bool, metadata: Mapping[Any, Any] | None, kw_only: Literal[_MISSING_TYPE.MISSING] | bool) -> @6174`",
       "line": 88,
       "name": "no-matching-overload",
       "stop_column": 19,
@@ -8421,26 +8421,6 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(IO[str], IO[bytes]) failed",
-      "description": "assert_type(IO[str], IO[bytes]) failed",
-      "line": 50,
-      "name": "assert-type",
-      "stop_column": 43,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(IO[str], IO[Any]) failed",
-      "description": "assert_type(IO[str], IO[Any]) failed",
-      "line": 51,
-      "name": "assert-type",
-      "stop_column": 44,
-      "stop_line": 51
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`",
       "description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`",
@@ -8560,26 +8540,6 @@
       "name": "type-mismatch",
       "stop_column": 53,
       "stop_line": 134
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(C, B) failed",
-      "description": "assert_type(C, B) failed",
-      "line": 166,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 166
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(C, A) failed",
-      "description": "assert_type(C, A) failed",
-      "line": 167,
-      "name": "assert-type",
-      "stop_column": 30,
-      "stop_line": 167
     },
     {
       "code": -2,
@@ -10248,8 +10208,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Argument `staticmethod[() -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `staticmethod[() -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
+      "concise_description": "Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
+      "description": "Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
       "line": 35,
       "name": "type-mismatch",
       "stop_column": 11,

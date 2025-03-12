@@ -332,13 +332,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             defining_cls.as_ref().map(|cls| cls.name()),
             &def.name.id,
         );
-        let is_overload = decorators.iter().any(|k| {
-            let decorator_ty = self.get_idx(*k);
-            matches!(
-                decorator_ty.callee_kind(),
-                Some(CalleeKind::Function(FunctionKind::Overload))
-            )
-        });
+        let mut is_overload = false;
+        let mut is_staticmethod = false;
+        let decorators = decorators
+            .iter()
+            .filter(|k| {
+                let decorator_ty = self.get_idx(**k);
+                match decorator_ty.callee_kind() {
+                    Some(CalleeKind::Function(FunctionKind::Overload)) => {
+                        is_overload = true;
+                        false
+                    }
+                    Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
+                        is_staticmethod = true;
+                        false
+                    }
+                    _ => true,
+                }
+            })
+            .collect::<Vec<_>>();
         let mut ty = Forall::new_type(
             def.name.id.clone(),
             self.type_params(def.range, tparams, errors),
@@ -346,11 +358,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 signature: callable,
                 metadata: FuncMetadata {
                     kind,
-                    flags: FuncFlags { is_overload },
+                    flags: FuncFlags {
+                        is_overload,
+                        is_staticmethod,
+                    },
                 },
             }),
         );
-        for x in decorators.iter().rev() {
+        for x in decorators.into_iter().rev() {
             ty = self.apply_decorator(*x, ty, errors)
         }
         Arc::new(DecoratedFunction {

@@ -238,8 +238,6 @@ assert_words!(Type, 4);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Decoration {
-    // The result of applying the `@staticmethod` decorator.
-    StaticMethod(Box<Type>),
     // The result of applying the `@classmethod` decorator.
     ClassMethod(Box<Type>),
     // The result of applying the `@property` decorator.
@@ -254,7 +252,6 @@ pub enum Decoration {
 impl Decoration {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
-            Self::StaticMethod(ty) => f(ty),
             Self::ClassMethod(ty) => f(ty),
             Self::Property(box (getter, setter)) => {
                 f(getter);
@@ -267,7 +264,6 @@ impl Decoration {
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
-            Self::StaticMethod(ty) => f(ty),
             Self::ClassMethod(ty) => f(ty),
             Self::Property(box (getter, setter)) => {
                 f(getter);
