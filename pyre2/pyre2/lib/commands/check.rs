@@ -187,22 +187,16 @@ fn create_loader(
 }
 
 impl Args {
-    pub fn run(
+    pub fn run_once(
         self,
-        watcher: Option<Box<dyn Watcher>>,
         files_to_check: impl FileList + Clone,
         config_finder: &dyn Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
-        if let Some(watcher) = watcher {
-            self.run_watch(watcher, files_to_check, config_finder)?;
-            Ok(CommandExitStatus::Success)
-        } else {
-            self.run_inner(files_to_check, config_finder, allow_forget)
-        }
+        self.run_inner(files_to_check, config_finder, allow_forget)
     }
 
-    fn run_watch(
+    pub fn run_watch(
         self,
         mut watcher: Box<dyn Watcher>,
         files_to_check: impl FileList + Clone,

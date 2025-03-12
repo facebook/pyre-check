@@ -25,7 +25,6 @@ use pyre2::run::LspArgs;
 use pyre2::ConfigFile;
 use pyre2::Globs;
 use pyre2::NotifyWatcher;
-use pyre2::Watcher;
 
 #[derive(Debug, Parser)]
 #[command(name = "pyre2")]
@@ -104,8 +103,27 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
     }
 }
 
+fn run_check(
+    args: pyre2::run::CheckArgs,
+    watch: bool,
+    files_to_check: Globs,
+    config_finder: &dyn Fn(&Path) -> ConfigFile,
+    allow_forget: bool,
+) -> anyhow::Result<CommandExitStatus> {
+    if watch {
+        args.run_watch(
+            Box::new(NotifyWatcher::new()?),
+            files_to_check,
+            config_finder,
+        )?;
+        Ok(CommandExitStatus::Success)
+    } else {
+        args.run_once(files_to_check, config_finder, allow_forget)
+    }
+}
+
 fn run_check_on_project(
-    watcher: Option<Box<dyn Watcher>>,
+    watch: bool,
     config: Option<PathBuf>,
     args: pyre2::run::CheckArgs,
     allow_forget: bool,
@@ -114,8 +132,9 @@ fn run_check_on_project(
         .map(|c| get_open_source_config(c.as_path()))
         .transpose()?
         .unwrap_or_default();
-    args.run(
-        watcher,
+    run_check(
+        args,
+        watch,
         config.project_include.clone(),
         &|_| config.clone(),
         allow_forget,
@@ -124,12 +143,13 @@ fn run_check_on_project(
 
 fn run_check_on_files(
     files_to_check: Globs,
-    watcher: Option<Box<dyn Watcher>>,
+    watch: bool,
     args: pyre2::run::CheckArgs,
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
-    args.run(
-        watcher,
+    run_check(
+        args,
+        watch,
         files_to_check,
         // TODO(connernilsen): replace this when we have search paths working
         &|_| ConfigFile::default(),
@@ -145,18 +165,13 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
             config,
             args,
         } => {
-            let watcher: Option<Box<dyn Watcher>> = if watch {
-                Some(Box::new(NotifyWatcher::new()?))
-            } else {
-                None
-            };
             if !files.is_empty() && config.is_some() {
                 anyhow::bail!("Can either supply `FILES...` OR `--config/-c`, not both.")
             }
             if files.is_empty() {
-                run_check_on_project(watcher, config, args, allow_forget)
+                run_check_on_project(watch, config, args, allow_forget)
             } else {
-                run_check_on_files(Globs::new(files), watcher, args, allow_forget)
+                run_check_on_files(Globs::new(files), watch, args, allow_forget)
             }
         }
         Command::BuckCheck(args) => args.run(),
