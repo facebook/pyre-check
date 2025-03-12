@@ -768,7 +768,7 @@ fn is_keyword(name: &str) -> bool {
     )
 }
 
-pub fn is_valid_identifier(name: &str) -> bool {
+fn is_valid_identifier(name: &str) -> bool {
     static IDENTIFIER_REGEX: LazyLock<Regex> =
         LazyLock::new(|| Regex::new("^[a-zA-Z_][a-zA-Z0-9_]*$").unwrap());
     !is_keyword(name) && IDENTIFIER_REGEX.is_match(name)
