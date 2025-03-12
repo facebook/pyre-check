@@ -426,59 +426,59 @@ impl FunctionKind {
         }
     }
 
-    pub fn as_func_id(&self) -> Option<FuncId> {
+    pub fn as_func_id(&self) -> FuncId {
         match self {
-            Self::IsInstance => Some(FuncId {
+            Self::IsInstance => FuncId {
                 module: ModuleName::builtins(),
                 cls: None,
                 func: Name::new_static("isinstance"),
-            }),
-            Self::IsSubclass => Some(FuncId {
+            },
+            Self::IsSubclass => FuncId {
                 module: ModuleName::builtins(),
                 cls: None,
                 func: Name::new_static("issubclass"),
-            }),
-            Self::ClassMethod => Some(FuncId {
+            },
+            Self::ClassMethod => FuncId {
                 module: ModuleName::builtins(),
                 cls: None,
                 func: Name::new_static("classmethod"),
-            }),
-            Self::Dataclass(_) => Some(FuncId {
+            },
+            Self::Dataclass(_) => FuncId {
                 module: ModuleName::dataclasses(),
                 cls: None,
                 func: Name::new_static("dataclass"),
-            }),
-            Self::DataclassField => Some(FuncId {
+            },
+            Self::DataclassField => FuncId {
                 module: ModuleName::dataclasses(),
                 cls: None,
                 func: Name::new_static("field"),
-            }),
-            Self::Overload => Some(FuncId {
+            },
+            Self::Overload => FuncId {
                 module: ModuleName::typing(),
                 cls: None,
                 func: Name::new_static("overload"),
-            }),
-            Self::Override => Some(FuncId {
+            },
+            Self::Override => FuncId {
                 module: ModuleName::typing(),
                 cls: None,
                 func: Name::new_static("override"),
-            }),
-            Self::Cast => Some(FuncId {
+            },
+            Self::Cast => FuncId {
                 module: ModuleName::typing(),
                 cls: None,
                 func: Name::new_static("cast"),
-            }),
-            Self::AssertType => Some(FuncId {
+            },
+            Self::AssertType => FuncId {
                 module: ModuleName::typing(),
                 cls: None,
                 func: Name::new_static("assert_type"),
-            }),
-            Self::RevealType => Some(FuncId {
+            },
+            Self::RevealType => FuncId {
                 module: ModuleName::typing(),
                 cls: None,
                 func: Name::new_static("reveal_type"),
-            }),
-            Self::Def(func_id) => Some((**func_id).clone()),
+            },
+            Self::Def(func_id) => (**func_id).clone(),
         }
     }
 }

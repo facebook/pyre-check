@@ -440,7 +440,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(
                     c,
-                    kind.as_func_id(),
+                    Some(kind.as_func_id()),
                     Some(first_arg),
                     args,
                     keywords,
@@ -463,7 +463,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ),
             CallTarget::Function(callable, kind) => self.callable_infer(
                 callable,
-                kind.as_func_id(),
+                Some(kind.as_func_id()),
                 None,
                 args,
                 keywords,
@@ -474,7 +474,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ),
             CallTarget::Dataclass(callable) => self.callable_infer(
                 callable,
-                FunctionKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id(),
+                Some(FunctionKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id()),
                 None,
                 args,
                 keywords,
@@ -525,13 +525,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 let (func_id, signature) = match closest_overload {
                     Some(CallTarget::Function(callable, kind)) => {
-                        (kind.as_func_id(), Some(callable))
+                        (Some(kind.as_func_id()), Some(callable))
                     }
                     Some(CallTarget::BoundMethod(_, callable, kind)) => {
-                        (kind.as_func_id(), callable.drop_first_param())
+                        (Some(kind.as_func_id()), callable.drop_first_param())
                     }
                     Some(CallTarget::Dataclass(callable)) => (
-                        FunctionKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id(),
+                        Some(FunctionKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id()),
                         Some(callable),
                     ),
                     _ => (None, None),
