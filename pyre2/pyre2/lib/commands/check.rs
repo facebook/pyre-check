@@ -202,9 +202,6 @@ impl Args {
         files_to_check: impl FileList + Clone,
         config_finder: &dyn Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
-        for path in files_to_check.roots() {
-            watcher.watch_dir(&path)?;
-        }
         loop {
             let res = self
                 .clone()
