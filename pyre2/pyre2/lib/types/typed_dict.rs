@@ -37,7 +37,11 @@ impl TypedDictField {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct TypedDict(Class, TArgs, OrderedMap<Name, TypedDictField>);
+pub struct TypedDict {
+    class: Class,
+    args: TArgs,
+    fields: OrderedMap<Name, TypedDictField>,
+}
 
 impl PartialOrd for TypedDict {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -47,33 +51,38 @@ impl PartialOrd for TypedDict {
 
 impl Ord for TypedDict {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.0.cmp(&other.0)
+        // The class uniquely defines the `TypeDict`, everything else is just supporting.
+        self.class.cmp(&other.class)
     }
 }
 
 impl TypedDict {
-    pub fn new(cls: Class, targs: TArgs, fields: OrderedMap<Name, TypedDictField>) -> Self {
-        Self(cls, targs, fields)
+    pub fn new(class: Class, args: TArgs, fields: OrderedMap<Name, TypedDictField>) -> Self {
+        Self {
+            class,
+            args,
+            fields,
+        }
     }
 
     pub fn qname(&self) -> &QName {
-        self.0.qname()
+        self.class.qname()
     }
 
     pub fn name(&self) -> &Name {
-        self.0.name()
+        self.class.name()
     }
 
     pub fn fields(&self) -> &OrderedMap<Name, TypedDictField> {
-        &self.2
+        &self.fields
     }
 
     pub fn class_object(&self) -> &Class {
-        &self.0
+        &self.class
     }
 
     pub fn targs(&self) -> &TArgs {
-        &self.1
+        &self.args
     }
 
     pub fn as_class_type(&self) -> ClassType {
@@ -81,17 +90,27 @@ impl TypedDict {
         // represent TypedDicts as ClassType in normal typechecking logic. However, the two do
         // share a bit of behavior, so we occasionally convert a TypedDict to a ClassType in order
         // to reuse code.
-        ClassType::new(self.0.dupe(), self.1.clone())
+        ClassType::new(self.class.dupe(), self.args.clone())
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
-        self.1.visit(&mut f);
-        self.2.iter().for_each(|(_, x)| f(&x.ty));
+        let Self {
+            class: _,
+            args,
+            fields,
+        } = self;
+        args.visit(&mut f);
+        fields.values().for_each(|x| f(&x.ty));
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        self.1.visit_mut(&mut f);
-        self.2.iter_mut().for_each(|(_, x)| f(&mut x.ty));
+        let Self {
+            class: _,
+            args,
+            fields,
+        } = self;
+        args.visit_mut(&mut f);
+        fields.values_mut().for_each(|x| f(&mut x.ty));
     }
 
     pub fn kw_param_info(&self) -> Vec<(Name, Type, Required)> {
