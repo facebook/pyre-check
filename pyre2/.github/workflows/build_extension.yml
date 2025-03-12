@@ -1,0 +1,73 @@
+name: build_extension
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build_extension:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            github_env: $env:GITHUB_ENV
+          - os: windows-latest
+            platform: win32
+            arch: arm64
+            github_env: $env:GITHUB_ENV
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            github_env: $GITHUB_ENV
+          - os: ubuntu-latest
+            platform: linux
+            arch: arm64
+            github_env: $GITHUB_ENV
+          - os: ubuntu-latest
+            platform: linux
+            arch: armhf
+            github_env: $GITHUB_ENV
+          - os: ubuntu-latest
+            platform: alpine
+            arch: x64
+            github_env: $GITHUB_ENV
+          - os: ubuntu-latest
+            platform: alpine
+            arch: arm64
+            github_env: $GITHUB_ENV
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            github_env: $GITHUB_ENV
+          - os: macos-latest
+            platform: darwin
+            arch: arm64
+            github_env: $GITHUB_ENV
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Read rust-toolchain file
+        # matrix.github_env is necessary to differentiate between windows and linux environment variables
+        # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#environment-files
+        # https://stackoverflow.com/questions/66733076/github-actions-set-environment-variable-for-windows-build-with-powershell
+        run: echo "toolchain=$(cat pyre2/rust-toolchain)" && echo "toolchain=$(cat pyre2/rust-toolchain)" >> ${{ matrix.github_env }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.toolchain }}
+      - name: build pyrefly binary
+        run: cargo build --release --all-features --target-dir lsp/bin --manifest-path pyre2/Cargo.toml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: lsp/
+      - name: save platform name
+        run: echo "platform=${{ matrix.platform }}-${{ matrix.arch }}" >> ${{ matrix.github_env }}
+      - run: npx vsce package --target ${{ env.platform }}
+        working-directory: lsp/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pyrefly-${{ env.platform }}
+          path: "lsp/*.vsix"
