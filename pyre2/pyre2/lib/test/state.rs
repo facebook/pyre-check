@@ -198,6 +198,7 @@ impl Incremental {
             &want.map(|x| self.handle(x)),
             Some(Box::new(subscriber.dupe())),
         );
+        self.state.print_errors();
         self.state.check_against_expectations().unwrap();
 
         let mut recompute = recompute.map(|x| (*x).to_owned());
