@@ -184,6 +184,7 @@ pub struct FuncFlags {
     pub is_overload: bool,
     pub is_staticmethod: bool,
     pub is_classmethod: bool,
+    pub is_override: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

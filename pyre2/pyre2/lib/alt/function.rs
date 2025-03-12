@@ -167,6 +167,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut is_overload = false;
         let mut is_staticmethod = false;
         let mut is_classmethod = false;
+        let mut is_override = false;
         let decorators = decorators
             .iter()
             .filter(|k| {
@@ -182,6 +183,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
                         is_classmethod = true;
+                        false
+                    }
+                    Some(CalleeKind::Function(FunctionKind::Override)) => {
+                        is_override = true;
                         false
                     }
                     _ => true,
@@ -360,6 +365,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         is_overload,
                         is_staticmethod,
                         is_classmethod,
+                        is_override,
                     },
                 },
             }),

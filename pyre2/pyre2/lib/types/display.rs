@@ -150,9 +150,6 @@ impl<'a> TypeDisplayContext<'a> {
 
     fn fmt_decoration(&self, decoration: &Decoration, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match decoration {
-            Decoration::Override(box ty) => {
-                write!(f, "override[{}]", self.display(ty))
-            }
             Decoration::Property(box (getter, None)) => {
                 write!(f, "property[{}]", self.display(getter))
             }

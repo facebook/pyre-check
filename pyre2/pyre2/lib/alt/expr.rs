@@ -609,10 +609,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(CalleeKind::Class(ClassKind::EnumMember)) => {
                 return Type::Decoration(Decoration::EnumMember(Box::new(decoratee)));
             }
-            Some(CalleeKind::Function(FunctionKind::Override)) => {
-                // if an override decorator exists, then update the callable kind
-                return Type::Decoration(Decoration::Override(Box::new(decoratee)));
-            }
             _ => {}
         }
         match &*ty_decorator {

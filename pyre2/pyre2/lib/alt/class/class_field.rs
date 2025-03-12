@@ -427,15 +427,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
 
-        // Determine whether this is an explicit `@override` and remove the decoration from the type if so.
-        let (value_ty, is_override) = value_ty.clone().extract_override();
+        // Determine whether this is an explicit `@override`.
+        let is_override = value_ty.is_override();
 
         // Promote literals. The check on `annotation` is an optimization, it does not (currently) affect semantics.
         // TODO(stroxler): if we see a read-only `Qualifier` like `Final`, it is sound to preserve literals.
         let value_ty = if annotation.map_or(true, |a| a.ty.is_none()) && value_ty.is_literal() {
-            value_ty.promote_literals(self.stdlib)
+            value_ty.clone().promote_literals(self.stdlib)
         } else {
-            value_ty
+            value_ty.clone()
         };
 
         // Types provided in annotations shadow inferred types

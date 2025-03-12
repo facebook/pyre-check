@@ -244,7 +244,6 @@ pub enum Decoration {
     // that takes a value and makes it the property getter, returning the result)
     PropertySetterDecorator(Box<Type>),
     EnumMember(Box<Type>),
-    Override(Box<Type>),
 }
 
 impl Decoration {
@@ -256,7 +255,6 @@ impl Decoration {
             }
             Self::PropertySetterDecorator(ty) => f(ty),
             Self::EnumMember(ty) => f(ty),
-            Self::Override(ty) => f(ty),
         }
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
@@ -267,7 +265,6 @@ impl Decoration {
             }
             Self::PropertySetterDecorator(ty) => f(ty),
             Self::EnumMember(ty) => f(ty),
-            Self::Override(ty) => f(ty),
         }
     }
 }
@@ -718,21 +715,23 @@ impl Type {
         seen
     }
 
-    /// Strip the `@override` decoration from a type, and return whether we saw it.
-    ///
-    /// TODO(stroxler): Ideally decorator metadata like `@override`  and `@final` would live to the side of the type,
-    /// like `Qualifier` does. The current code works, but in principle would allow the override to appear somewhere
-    /// nonsensical like in a return type.
-    pub fn extract_override(self) -> (Type, bool) {
-        let mut is_override = false;
-        let stripped_ty = self.transform(|ty: &mut Type| match &ty {
-            Type::Decoration(Decoration::Override(box inner_ty)) => {
-                is_override = true;
-                *ty = inner_ty.clone()
+    pub fn is_override(&self) -> bool {
+        match self {
+            Type::Function(box func)
+            | Type::Forall(box Forall {
+                ty: ForallType::Function(func),
+                ..
+            })
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Function(func),
+                ..
+            }) => func.metadata.flags.is_override,
+            Type::Overload(overload) => overload.0.first().is_override(),
+            Type::Decoration(Decoration::Property(box (t1, t2))) => {
+                t1.is_override() || t2.as_ref().is_some_and(|t| t.is_override())
             }
-            _ => {}
-        });
-        (stripped_ty, is_override)
+            _ => false,
+        }
     }
 
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {

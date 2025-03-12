@@ -174,11 +174,9 @@ class ChildA(ParentA):
  "#,
 );
 
-testcase_with_bug!(
-    "TODO: Handle custom wrappers",
+testcase!(
     test_override_custom_wrapper,
     r#"
-
 from typing import Any, Callable, override
 
 def wrapper(func: Callable[..., Any], /) -> Any:
@@ -196,12 +194,11 @@ class ParentA:
 
 class ChildA(ParentA):
 
-    @wrapper # E: Argument `override[() -> bool]` is not assignable to parameter with type `(...) -> Any`
+    @wrapper
     @override
     @staticmethod
     def static_method1() -> bool: 
-        return 1 # E: Returned type `Literal[1]` is not assignable to declared return type `bool`
-    
+        return True
  "#,
 );
 
