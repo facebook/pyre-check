@@ -276,12 +276,7 @@ impl Args {
                 let files_with_module_name_and_metadata =
                     files_and_configs.into_map(|(path, config)| {
                         let module_name = module_from_path(&path, &loader_inputs.search_roots);
-                        let version = match args.python_version {
-                            Some(version) => version,
-                            None => config.python_version,
-                        };
-                        let platform = config.python_platform.to_owned();
-                        (path, module_name, RuntimeMetadata::new(version, platform))
+                        (path, module_name, config.get_runtime_metadata())
                     });
                 let loader = create_loader(
                     loader_inputs,
