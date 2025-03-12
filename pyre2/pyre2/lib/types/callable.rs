@@ -137,6 +137,30 @@ pub enum Required {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Function {
+    pub signature: Callable,
+    pub metadata: FunctionKind,
+}
+
+impl Function {
+    pub fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+        let Self {
+            signature,
+            metadata: _,
+        } = self;
+        signature.visit(f)
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+        let Self {
+            signature,
+            metadata: _,
+        } = self;
+        signature.visit_mut(f)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FuncId {
     pub module: ModuleName,
     pub cls: Option<Name>,

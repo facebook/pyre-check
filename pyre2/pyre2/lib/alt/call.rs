@@ -24,6 +24,7 @@ use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
+use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
@@ -45,7 +46,7 @@ pub enum CallTarget {
     /// A typing.Callable.
     Callable(Callable),
     /// A function.
-    Function(Callable, FunctionKind),
+    Function(Function),
     /// The dataclasses.dataclass function.
     Dataclass(Callable),
     /// Method of a class. The `Type` is the self/cls argument.
@@ -75,25 +76,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
     pub fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
-            Type::Function(c, FunctionKind::Dataclass(_)) => {
-                Some((Vec::new(), CallTarget::Dataclass(*c)))
-            }
+            Type::Function(box Function {
+                signature: c,
+                metadata: FunctionKind::Dataclass(_),
+            }) => Some((Vec::new(), CallTarget::Dataclass(c))),
             Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
-            Type::Function(c, kind) => Some((Vec::new(), CallTarget::Function(*c, kind))),
+            Type::Function(func) => Some((Vec::new(), CallTarget::Function(*func))),
             Type::Overload(overloads) => Some((
                 Vec::new(),
                 CallTarget::Overload(overloads.0.mapped(|ty| self.as_call_target(ty))),
             )),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 match self.as_call_target(func.as_type()) {
-                    Some((gs, CallTarget::Function(c, kind))) => {
-                        Some((gs, CallTarget::BoundMethod(obj, c, kind)))
-                    }
+                    Some((gs, CallTarget::Function(func))) => Some((
+                        gs,
+                        CallTarget::BoundMethod(obj, func.signature, func.metadata),
+                    )),
                     Some((gs, CallTarget::Overload(overloads))) => {
                         let overloads = overloads.mapped(|x| match x {
-                            Some((gs2, CallTarget::Function(c, kind))) => {
-                                Some((gs2, CallTarget::BoundMethod(obj.clone(), c, kind)))
-                            }
+                            Some((gs2, CallTarget::Function(func))) => Some((
+                                gs2,
+                                CallTarget::BoundMethod(obj.clone(), func.signature, func.metadata),
+                            )),
                             _ => None,
                         });
                         Some((gs, CallTarget::Overload(overloads)))
@@ -461,7 +465,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 context,
             ),
-            CallTarget::Function(callable, kind) => self.callable_infer(
+            CallTarget::Function(Function {
+                signature: callable,
+                metadata: kind,
+            }) => self.callable_infer(
                 callable,
                 Some(kind.as_func_id()),
                 None,
@@ -524,9 +531,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
                 let (func_id, signature) = match closest_overload {
-                    Some(CallTarget::Function(callable, kind)) => {
-                        (Some(kind.as_func_id()), Some(callable))
-                    }
+                    Some(CallTarget::Function(Function {
+                        signature: callable,
+                        metadata: kind,
+                    })) => (Some(kind.as_func_id()), Some(callable)),
                     Some(CallTarget::BoundMethod(_, callable, kind)) => {
                         (Some(kind.as_func_id()), callable.drop_first_param())
                     }
@@ -578,7 +586,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             for kw in keywords {
                 kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value, arg_errors));
             }
-            Type::Function(c, FunctionKind::Dataclass(Box::new(kws)))
+            Type::Function(Box::new(Function {
+                signature: *c,
+                metadata: FunctionKind::Dataclass(Box::new(kws)),
+            }))
         } else {
             res
         }

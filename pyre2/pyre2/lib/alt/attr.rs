@@ -897,7 +897,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Kwargs(_) => Some(AttributeBase::ClassInstance(stdlib.param_spec_kwargs())),
             Type::None => Some(AttributeBase::ClassInstance(stdlib.none_type())),
             Type::Never(_) => Some(AttributeBase::Never),
-            Type::Callable(_) | Type::Function(_, _) | Type::Overload(_) => {
+            Type::Callable(_) | Type::Function(_) | Type::Overload(_) => {
                 Some(AttributeBase::ClassInstance(stdlib.function_type()))
             }
             Type::BoundMethod(_) => Some(AttributeBase::ClassInstance(stdlib.method_type())),

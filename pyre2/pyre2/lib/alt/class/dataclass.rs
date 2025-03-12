@@ -22,6 +22,7 @@ use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::DataclassKeywords;
 use crate::types::callable::FuncId;
+use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
@@ -136,14 +137,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ));
             }
         }
-        let ty = Type::Function(
-            Box::new(Callable::list(ParamList::new(params), Type::None)),
-            FunctionKind::Def(Box::new(FuncId {
+        let ty = Type::Function(Box::new(Function {
+            signature: Callable::list(ParamList::new(params), Type::None),
+            metadata: FunctionKind::Def(Box::new(FuncId {
                 module: self.module_info().name(),
                 cls: Some(cls.name().clone()),
                 func: dunder::INIT,
             })),
-        );
+        }));
         ClassSynthesizedField::new(ty)
     }
 
@@ -186,14 +187,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .map(|name| {
                 (
                     name.clone(),
-                    ClassSynthesizedField::new(Type::Function(
-                        Box::new(callable.clone()),
-                        FunctionKind::Def(Box::new(FuncId {
+                    ClassSynthesizedField::new(Type::Function(Box::new(Function {
+                        signature: callable.clone(),
+                        metadata: FunctionKind::Def(Box::new(FuncId {
                             module: self.module_info().name(),
                             cls: Some(cls.name().clone()),
                             func: name.clone(),
                         })),
-                    )),
+                    }))),
                 )
             })
             .collect()
@@ -202,13 +203,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_dataclass_hash(&self, cls: &Class) -> ClassSynthesizedField {
         let params = vec![cls.self_param()];
         let ret = self.stdlib.int().to_type();
-        ClassSynthesizedField::new(Type::Function(
-            Box::new(Callable::list(ParamList::new(params), ret)),
-            FunctionKind::Def(Box::new(FuncId {
+        ClassSynthesizedField::new(Type::Function(Box::new(Function {
+            signature: Callable::list(ParamList::new(params), ret),
+            metadata: FunctionKind::Def(Box::new(FuncId {
                 module: self.module_info().name(),
                 cls: Some(cls.name().clone()),
                 func: dunder::HASH,
             })),
-        ))
+        })))
     }
 }

@@ -16,6 +16,7 @@ use starlark_map::Hashed;
 use crate::alt::answers::LookupAnswer;
 use crate::dunder;
 use crate::solver::solver::Subset;
+use crate::types::callable::Function;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
@@ -324,7 +325,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             if matches!(
                 got,
-                Type::Callable(_) | Type::Function(_, _) | Type::BoundMethod(_) | Type::Overload(_)
+                Type::Callable(_) | Type::Function(_) | Type::BoundMethod(_) | Type::Overload(_)
             ) && name == dunder::CALL
                 && let Some(want) = self.get_call_attr(&protocol)
             {
@@ -570,12 +571,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
             (Type::Overload(ls), u) => ls.0.iter().any(|l| self.is_subset_eq(l, u)),
-            (Type::BoundMethod(box method), Type::Callable(_) | Type::Function(_, _))
+            (Type::BoundMethod(box method), Type::Callable(_) | Type::Function(_))
                 if let Some(l_no_self) = method.to_callable() =>
             {
                 self.is_subset_eq_impl(&l_no_self, want)
             }
-            (Type::Callable(_) | Type::Function(_, _), Type::BoundMethod(box method))
+            (Type::Callable(_) | Type::Function(_), Type::BoundMethod(box method))
                 if let Some(u_no_self) = method.to_callable() =>
             {
                 self.is_subset_eq_impl(got, &u_no_self)
@@ -587,8 +588,16 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 self.is_subset_eq_impl(&l_no_self, &u_no_self)
             }
             (
-                Type::Callable(l) | Type::Function(l, _),
-                Type::Callable(u) | Type::Function(u, _),
+                Type::Callable(box l)
+                | Type::Function(box Function {
+                    signature: l,
+                    metadata: _,
+                }),
+                Type::Callable(box u)
+                | Type::Function(box Function {
+                    signature: u,
+                    metadata: _,
+                }),
             ) => {
                 self.is_subset_eq(&l.ret, &u.ret)
                     && match (&l.params, &u.params) {
@@ -674,7 +683,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (
                 Type::ClassType(got),
-                Type::BoundMethod(_) | Type::Callable(_) | Type::Function(_, _),
+                Type::BoundMethod(_) | Type::Callable(_) | Type::Function(_),
             ) if self.type_order.is_protocol(got.class_object())
                 && let Some(call_ty) = self.get_call_attr(got) =>
             {

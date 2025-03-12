@@ -22,6 +22,7 @@ use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
 use crate::solver::type_order::TypeOrder;
 use crate::types::callable::Callable;
+use crate::types::callable::Function;
 use crate::types::callable::Params;
 use crate::types::module::Module;
 use crate::types::quantified::QuantifiedKind;
@@ -205,7 +206,10 @@ impl Solver {
             }
             let (callable, kind) = match x {
                 Type::Callable(box c) => (Some(c), None),
-                Type::Function(box c, k) => (Some(c), Some(k)),
+                Type::Function(box Function {
+                    signature: c,
+                    metadata: k,
+                }) => (Some(c), Some(k)),
                 _ => (None, None),
             };
             if let Some(Callable {
@@ -215,7 +219,10 @@ impl Solver {
             {
                 let new_callable = |c| {
                     if let Some(k) = kind {
-                        Type::Function(Box::new(c), k.clone())
+                        Type::Function(Box::new(Function {
+                            signature: c,
+                            metadata: k.clone(),
+                        }))
                     } else {
                         Type::Callable(Box::new(c))
                     }

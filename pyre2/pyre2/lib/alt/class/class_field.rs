@@ -345,10 +345,7 @@ fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
         Type::Forall(forall) if matches!(forall.ty, ForallType::Function(..)) => {
             Some(BoundMethodType::Forall((**forall).clone()))
         }
-        Type::Function(callable, kind) => Some(BoundMethodType::Function(
-            (**callable).clone(),
-            kind.clone(),
-        )),
+        Type::Function(box func) => Some(BoundMethodType::Function(func.clone())),
         Type::Overload(overload) => Some(BoundMethodType::Overload(overload.clone())),
         _ => None,
     };

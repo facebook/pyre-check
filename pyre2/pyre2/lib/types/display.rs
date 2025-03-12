@@ -18,6 +18,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::smallmap;
 
 use crate::module::module_name::ModuleName;
+use crate::types::callable::Function;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
@@ -215,7 +216,11 @@ impl<'a> TypeDisplayContext<'a> {
             // Other things
             Type::Literal(lit) => write!(f, "Literal[{}]", lit),
             Type::LiteralString => write!(f, "LiteralString"),
-            Type::Callable(c) | Type::Function(c, _) => c.fmt_with_type(f, &|t| self.display(t)),
+            Type::Callable(box c)
+            | Type::Function(box Function {
+                signature: c,
+                metadata: _,
+            }) => c.fmt_with_type(f, &|t| self.display(t)),
             Type::Overload(ts) => {
                 write!(
                     f,

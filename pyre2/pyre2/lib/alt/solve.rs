@@ -65,6 +65,7 @@ use crate::error::kind::ErrorKind;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
+use crate::types::callable::Function;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -519,7 +520,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
             }
-            Type::Callable(callable) | Type::Function(callable, _) => {
+            Type::Callable(box callable)
+            | Type::Function(box Function {
+                signature: callable,
+                metadata: _,
+            }) => {
                 let visit = |t: &mut Type| {
                     self.tvars_to_tparams_for_type_alias(
                         t,
