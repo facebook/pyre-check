@@ -368,7 +368,10 @@ impl State {
                                 // Either doesn't need setting, or already set
                                 break;
                             }
-                            if let Some(exclusive) = reader.exclusive(Step::first()) {
+                            // This can potentially race with `clean`, so make sure we use the `last` as our exclusive key,
+                            // which importantly is a different key to the `first` that `clean` uses.
+                            // Slight risk of a busy-loop, but better than a deadlock.
+                            if let Some(exclusive) = reader.exclusive(Step::last()) {
                                 if exclusive.epochs.computed == self.now || exclusive.dirty.deps {
                                     break;
                                 }
