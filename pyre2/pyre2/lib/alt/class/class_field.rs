@@ -232,7 +232,7 @@ impl ClassField {
 
     fn as_special_method_type(self, cls: &ClassType) -> Option<Type> {
         self.as_raw_special_method_type(cls)
-            .and_then(|ty| make_bound_method(cls.self_type(), &ty))
+            .and_then(|ty| make_bound_method(cls, &ty))
     }
 
     pub fn as_named_tuple_type(&self) -> Type {
@@ -330,9 +330,9 @@ impl ClassField {
 
 pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
-            make_bound_method(Type::ClassDef(cls.dupe()), &attr).unwrap_or(attr),
-        ),
+        Type::Decoration(Decoration::ClassMethod(box attr)) => {
+            Attribute::read_write(make_bound_classmethod(cls, &attr).unwrap_or(attr))
+        }
         // Accessing a property descriptor on the class gives the property itself,
         // with no magic access rules at runtime.
         p @ Type::Decoration(Decoration::Property(_)) => Attribute::read_write(p),
@@ -340,8 +340,11 @@ pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
     }
 }
 
-fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
-    let should_bind = |func: &Function| !func.metadata.flags.is_staticmethod;
+fn make_bound_method_helper(
+    obj: Type,
+    attr: &Type,
+    should_bind: &dyn Fn(&Function) -> bool,
+) -> Option<Type> {
     let func = match attr {
         Type::Forall(forall) if matches!(&forall.ty, ForallType::Function(func) if should_bind(func)) => {
             Some(BoundMethodType::Forall((**forall).clone()))
@@ -355,19 +358,26 @@ fn make_bound_method(obj: Type, attr: &Type) -> Option<Type> {
     func.map(|func| Type::BoundMethod(Box::new(BoundMethod { obj, func })))
 }
 
+fn make_bound_classmethod(cls: &Class, attr: &Type) -> Option<Type> {
+    make_bound_method_helper(Type::ClassDef(cls.dupe()), attr, &|_| true)
+}
+
+fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
+    let should_bind = |func: &Function| !func.metadata.flags.is_staticmethod;
+    make_bound_method_helper(cls.self_type(), attr, &should_bind)
+}
+
 fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::ClassMethod(box attr)) => Attribute::read_write(
-            make_bound_method(Type::ClassDef(cls.class_object().dupe()), &attr).unwrap_or(attr),
-        ),
+        Type::Decoration(Decoration::ClassMethod(box attr)) => {
+            Attribute::read_write(make_bound_classmethod(cls.class_object(), &attr).unwrap_or(attr))
+        }
         Type::Decoration(Decoration::Property(box (getter, setter))) => Attribute::property(
-            make_bound_method(Type::ClassType(cls.clone()), &getter).unwrap_or(getter),
-            setter.map(|setter| {
-                make_bound_method(Type::ClassType(cls.clone()), &setter).unwrap_or(setter)
-            }),
+            make_bound_method(cls, &getter).unwrap_or(getter),
+            setter.map(|setter| make_bound_method(cls, &setter).unwrap_or(setter)),
             cls.class_object().dupe(),
         ),
-        attr => Attribute::read_write(make_bound_method(cls.self_type(), &attr).unwrap_or(attr)),
+        attr => Attribute::read_write(make_bound_method(cls, &attr).unwrap_or(attr)),
     }
 }
 
