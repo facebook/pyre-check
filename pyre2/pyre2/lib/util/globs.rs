@@ -101,6 +101,10 @@ impl Globs {
         path
     }
 
+    fn is_python_extension(ext: Option<&OsStr>) -> bool {
+        ext.is_some_and(|e| e == "py" || e == "pyi")
+    }
+
     fn resolve_dir(path: &Path, results: &mut Vec<PathBuf>) -> anyhow::Result<()> {
         for entry in fs_anyhow::read_dir(path)? {
             let entry = entry
@@ -108,9 +112,7 @@ impl Globs {
             let path = entry.path();
             if path.is_dir() {
                 Self::resolve_dir(&path, results)?;
-            } else if let Some(ext) = path.extension()
-                && (ext == "py" || ext == "pyi")
-            {
+            } else if Self::is_python_extension(path.extension()) {
                 results.push(path);
             }
         }
@@ -124,7 +126,7 @@ impl Globs {
             let path = path?;
             if path.is_dir() {
                 Self::resolve_dir(&path, &mut result)?;
-            } else {
+            } else if Self::is_python_extension(path.extension()) {
                 result.push(path);
             }
         }
