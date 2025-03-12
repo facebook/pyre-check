@@ -1572,7 +1572,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(cls) => {
                     let mut ty = Type::ClassDef(cls.clone());
                     for x in decorators.iter().rev() {
-                        ty = self.apply_decorator(*x, ty, &mut false, errors)
+                        ty = self.apply_decorator(*x, ty, errors)
                     }
                     ty
                 }

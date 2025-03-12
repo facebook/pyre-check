@@ -35,6 +35,7 @@ use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
+use crate::types::callable::FuncFlags;
 use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
@@ -331,17 +332,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             defining_cls.as_ref().map(|cls| cls.name()),
             &def.name.id,
         );
+        let is_overload = decorators.iter().any(|k| {
+            let decorator_ty = self.get_idx(*k);
+            matches!(
+                decorator_ty.callee_kind(),
+                Some(CalleeKind::Function(FunctionKind::Overload))
+            )
+        });
         let mut ty = Forall::new_type(
             def.name.id.clone(),
             self.type_params(def.range, tparams, errors),
             ForallType::Function(Function {
                 signature: callable,
-                metadata: FuncMetadata { kind },
+                metadata: FuncMetadata {
+                    kind,
+                    flags: FuncFlags { is_overload },
+                },
             }),
         );
-        let mut is_overload = false;
         for x in decorators.iter().rev() {
-            ty = self.apply_decorator(*x, ty, &mut is_overload, errors)
+            ty = self.apply_decorator(*x, ty, errors)
         }
         Arc::new(DecoratedFunction {
             id_range: def.name.range,

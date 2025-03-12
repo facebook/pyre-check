@@ -24,6 +24,7 @@ use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
+use crate::types::callable::FuncFlags;
 use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
@@ -82,6 +83,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 metadata:
                     FuncMetadata {
                         kind: FunctionKind::Dataclass(_),
+                        flags: _,
                     },
             }) => Some((Vec::new(), CallTarget::Dataclass(c))),
             Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
@@ -598,6 +600,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 signature: *c,
                 metadata: FuncMetadata {
                     kind: FunctionKind::Dataclass(Box::new(kws)),
+                    flags: FuncFlags::default(),
                 },
             }))
         } else {

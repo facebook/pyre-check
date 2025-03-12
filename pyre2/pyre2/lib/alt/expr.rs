@@ -594,7 +594,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         decorator: Idx<Key>,
         decoratee: Type,
-        overload: &mut bool,
         errors: &ErrorCollector,
     ) -> Type {
         if matches!(&decoratee, Type::ClassDef(cls) if cls.has_qname("typing", "TypeVar")) {
@@ -615,9 +614,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Some(CalleeKind::Class(ClassKind::EnumMember)) => {
                 return Type::Decoration(Decoration::EnumMember(Box::new(decoratee)));
-            }
-            Some(CalleeKind::Function(FunctionKind::Overload)) => {
-                *overload = true;
             }
             Some(CalleeKind::Function(FunctionKind::Override)) => {
                 // if an override decorator exists, then update the callable kind

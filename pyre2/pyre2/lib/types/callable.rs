@@ -163,6 +163,7 @@ impl Function {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FuncMetadata {
     pub kind: FunctionKind,
+    pub flags: FuncFlags,
 }
 
 impl FuncMetadata {
@@ -173,8 +174,14 @@ impl FuncMetadata {
                 cls: Some(cls),
                 func,
             })),
+            flags: FuncFlags::default(),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct FuncFlags {
+    pub is_overload: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
