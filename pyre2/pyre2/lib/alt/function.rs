@@ -35,6 +35,7 @@ use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::Callable;
+use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
@@ -335,7 +336,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.type_params(def.range, tparams, errors),
             ForallType::Function(Function {
                 signature: callable,
-                metadata: kind,
+                metadata: FuncMetadata { kind },
             }),
         );
         let mut is_overload = false;

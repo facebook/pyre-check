@@ -139,7 +139,7 @@ pub enum Required {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Function {
     pub signature: Callable,
-    pub metadata: FunctionKind,
+    pub metadata: FuncMetadata,
 }
 
 impl Function {
@@ -158,6 +158,11 @@ impl Function {
         } = self;
         signature.visit_mut(f)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FuncMetadata {
+    pub kind: FunctionKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -22,6 +22,7 @@ use crate::types::callable::BoolKeywords;
 use crate::types::callable::Callable;
 use crate::types::callable::DataclassKeywords;
 use crate::types::callable::FuncId;
+use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
@@ -139,11 +140,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty = Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), Type::None),
-            metadata: FunctionKind::Def(Box::new(FuncId {
-                module: self.module_info().name(),
-                cls: Some(cls.name().clone()),
-                func: dunder::INIT,
-            })),
+            metadata: FuncMetadata {
+                kind: FunctionKind::Def(Box::new(FuncId {
+                    module: self.module_info().name(),
+                    cls: Some(cls.name().clone()),
+                    func: dunder::INIT,
+                })),
+            },
         }));
         ClassSynthesizedField::new(ty)
     }
@@ -189,11 +192,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     name.clone(),
                     ClassSynthesizedField::new(Type::Function(Box::new(Function {
                         signature: callable.clone(),
-                        metadata: FunctionKind::Def(Box::new(FuncId {
-                            module: self.module_info().name(),
-                            cls: Some(cls.name().clone()),
-                            func: name.clone(),
-                        })),
+                        metadata: FuncMetadata {
+                            kind: FunctionKind::Def(Box::new(FuncId {
+                                module: self.module_info().name(),
+                                cls: Some(cls.name().clone()),
+                                func: name.clone(),
+                            })),
+                        },
                     }))),
                 )
             })
@@ -205,11 +210,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let ret = self.stdlib.int().to_type();
         ClassSynthesizedField::new(Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), ret),
-            metadata: FunctionKind::Def(Box::new(FuncId {
-                module: self.module_info().name(),
-                cls: Some(cls.name().clone()),
-                func: dunder::HASH,
-            })),
+            metadata: FuncMetadata {
+                kind: FunctionKind::Def(Box::new(FuncId {
+                    module: self.module_info().name(),
+                    cls: Some(cls.name().clone()),
+                    func: dunder::HASH,
+                })),
+            },
         })))
     }
 }
