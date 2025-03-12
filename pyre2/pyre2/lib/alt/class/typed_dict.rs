@@ -27,10 +27,8 @@ use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::Callable;
-use crate::types::callable::FuncId;
 use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
-use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -197,13 +195,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty = Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), Type::None),
-            metadata: FuncMetadata {
-                kind: FunctionKind::Def(Box::new(FuncId {
-                    module: self.module_info().name(),
-                    cls: Some(cls.name().clone()),
-                    func: dunder::INIT,
-                })),
-            },
+            metadata: FuncMetadata::def(
+                self.module_info().name(),
+                cls.name().clone(),
+                dunder::INIT,
+            ),
         }));
         ClassSynthesizedField::new(ty)
     }

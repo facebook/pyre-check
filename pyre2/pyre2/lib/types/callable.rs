@@ -165,6 +165,18 @@ pub struct FuncMetadata {
     pub kind: FunctionKind,
 }
 
+impl FuncMetadata {
+    pub fn def(module: ModuleName, cls: Name, func: Name) -> Self {
+        Self {
+            kind: FunctionKind::Def(Box::new(FuncId {
+                module,
+                cls: Some(cls),
+                func,
+            })),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FuncId {
     pub module: ModuleName,

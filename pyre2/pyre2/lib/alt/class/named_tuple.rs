@@ -14,10 +14,8 @@ use crate::alt::types::class_metadata::ClassSynthesizedField;
 use crate::alt::types::class_metadata::ClassSynthesizedFields;
 use crate::dunder;
 use crate::types::callable::Callable;
-use crate::types::callable::FuncId;
 use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
-use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
@@ -75,13 +73,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), cls.self_type()),
-            metadata: FuncMetadata {
-                kind: FunctionKind::Def(Box::new(FuncId {
-                    module: self.module_info().name(),
-                    cls: Some(cls.name().clone()),
-                    func: dunder::NEW,
-                })),
-            },
+            metadata: FuncMetadata::def(self.module_info().name(), cls.name().clone(), dunder::NEW),
         }));
         ClassSynthesizedField::new(ty)
     }
@@ -91,13 +83,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), cls.self_type()),
-            metadata: FuncMetadata {
-                kind: FunctionKind::Def(Box::new(FuncId {
-                    module: self.module_info().name(),
-                    cls: Some(cls.name().clone()),
-                    func: dunder::INIT,
-                })),
-            },
+            metadata: FuncMetadata::def(
+                self.module_info().name(),
+                cls.name().clone(),
+                dunder::INIT,
+            ),
         }));
         ClassSynthesizedField::new(ty)
     }
@@ -113,13 +103,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ParamList::new(params),
                 Type::ClassType(self.stdlib.iterable(self.unions(element_types))),
             ),
-            metadata: FuncMetadata {
-                kind: FunctionKind::Def(Box::new(FuncId {
-                    module: self.module_info().name(),
-                    cls: Some(cls.name().clone()),
-                    func: dunder::ITER,
-                })),
-            },
+            metadata: FuncMetadata::def(
+                self.module_info().name(),
+                cls.name().clone(),
+                dunder::ITER,
+            ),
         }));
         ClassSynthesizedField::new(ty)
     }
