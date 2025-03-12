@@ -25,6 +25,7 @@ use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
+use crate::test::util::init_test;
 use crate::test::util::TestEnv;
 use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
@@ -160,6 +161,7 @@ struct Incremental {
 
 impl Incremental {
     fn new() -> Self {
+        init_test();
         let data = IncrementalData::default();
         let loader = LoaderId::new(data.dupe());
         let state = State::new();
