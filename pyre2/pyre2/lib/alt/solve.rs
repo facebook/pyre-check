@@ -32,6 +32,7 @@ use crate::alt::types::yields::YieldFromResult;
 use crate::alt::types::yields::YieldResult;
 use crate::ast::Ast;
 use crate::binding::binding::AnnotationStyle;
+use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::AnnotationWithTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -1765,20 +1766,50 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
             Binding::LambdaParameter(var) => var.to_type(),
             Binding::FunctionParameter(param) => {
-                match param {
-                    Either::Left(key) => self.get_idx(*key).ty().cloned().unwrap_or_else(|| {
-                        // This annotation isn't valid. It's something like `: Final` that doesn't
-                        // have enough information to create a real type.
-                        Type::any_implicit()
-                    }),
-                    Either::Right((var, function_idx)) => {
+                let mut unpacked = false;
+                let (mut annotated_ty, target) = match param {
+                    Either::Left(key) => {
+                        let annotation = self.get_idx(*key);
+                        unpacked = annotation
+                            .annotation
+                            .qualifiers
+                            .contains(&Qualifier::Unpack);
+                        let ty = annotation.ty().cloned().unwrap_or_else(|| {
+                            // This annotation isn't valid. It's something like `: Final` that doesn't
+                            // have enough information to create a real type.
+                            Type::any_implicit()
+                        });
+                        (ty, annotation.target.clone())
+                    }
+                    Either::Right((var, function_idx, target)) => {
                         // Force the function binding to be evaluated, if it hasn't already.
                         // Solving the function will also force the Var type to some concrete type,
                         // and this must happen first so the Var can not interact with other types.
                         self.get_idx(*function_idx);
-                        var.to_type()
+                        (var.to_type(), target.clone())
                     }
+                };
+                match target {
+                    AnnotationTarget::ArgsParam(_) => match annotated_ty {
+                        Type::Unpack(box inner) => {
+                            annotated_ty = inner;
+                        }
+                        Type::Args(_) => {}
+                        _ => annotated_ty = Type::Tuple(Tuple::unbounded(annotated_ty.clone())),
+                    },
+                    AnnotationTarget::KwargsParam(_) => match annotated_ty {
+                        Type::Kwargs(_) => {}
+                        Type::TypedDict(_) if unpacked => {}
+                        _ => {
+                            annotated_ty = self
+                                .stdlib
+                                .dict(self.stdlib.str().to_type(), annotated_ty.clone())
+                                .to_type()
+                        }
+                    },
+                    _ => {}
                 }
+                annotated_ty
             }
             Binding::SuperInstance(style, range) => {
                 match style {

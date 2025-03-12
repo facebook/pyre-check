@@ -1647,26 +1647,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(int, tuple[int, ...]) failed",
-      "description": "assert_type(int, tuple[int, ...]) failed",
-      "line": 51,
-      "name": "assert-type",
-      "stop_column": 39,
-      "stop_line": 51
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(int, dict[str, int]) failed",
-      "description": "assert_type(int, dict[str, int]) failed",
-      "line": 52,
-      "name": "assert-type",
-      "stop_column": 40,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "Callable requires exactly two arguments but 1 was found",
       "description": "Callable requires exactly two arguments but 1 was found",
       "line": 55,

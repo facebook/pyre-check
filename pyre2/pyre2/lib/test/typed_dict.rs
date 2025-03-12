@@ -20,6 +20,20 @@ def foo(c: Coord) -> Mapping[str, object]:
 );
 
 testcase!(
+    test_typed_dict_kwargs_type,
+    r#"
+from typing import assert_type, TypedDict, Unpack
+class Coord(TypedDict):
+    x: int
+    y: int
+def test1(**kwargs: Coord):
+    assert_type(kwargs, dict[str, Coord])
+def test2(**kwargs: Unpack[Coord]):
+    assert_type(kwargs, Coord)
+    "#,
+);
+
+testcase!(
     test_typed_dict_invalid_inheritance,
     r#"
 from typing import TypedDict

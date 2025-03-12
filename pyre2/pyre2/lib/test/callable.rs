@@ -237,6 +237,16 @@ test(x=1, y="foo", z=2) # E: Keyword argument `y` with type `Literal['foo']` is 
 );
 
 testcase!(
+    test_args_kwargs_type,
+    r#"
+from typing import assert_type
+def test(*args: int, **kwargs: int) -> None:
+    assert_type(args, tuple[int, ...])
+    assert_type(kwargs, dict[str, int])
+"#,
+);
+
+testcase!(
     test_defaults,
     r#"
 def test(x: int, y: int = 0, z: str = ""): ...

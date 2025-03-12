@@ -251,7 +251,7 @@ impl Bindings {
         if let Binding::FunctionParameter(p) = b {
             match p {
                 Either::Left(idx) => Either::Left(*idx),
-                Either::Right((var, _)) => Either::Right(*var),
+                Either::Right((var, _, _)) => Either::Right(*var),
             }
         } else {
             panic!(
@@ -690,9 +690,9 @@ impl<'a> BindingsBuilder<'a> {
                 let var = self.solver.fresh_contained(self.uniques);
                 let annot = self.table.insert(
                     KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                    BindingAnnotation::Type(target, var.to_type()),
+                    BindingAnnotation::Type(target.clone(), var.to_type()),
                 );
-                (annot, Either::Right((var, function_idx)))
+                (annot, Either::Right((var, function_idx, target)))
             }
         };
         let key = self.table.insert(
