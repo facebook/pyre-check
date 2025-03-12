@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::anyhow;
+use anyhow::Context as _;
 use clap::Parser;
 use clap::Subcommand;
 use pyre2::clap_env;
@@ -111,11 +112,14 @@ fn run_check(
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
     if watch {
-        args.run_watch(
-            Box::new(NotifyWatcher::new()?),
-            files_to_check,
-            config_finder,
-        )?;
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .context("Cannot initialize Tokio runtime for watch mode.")?;
+        let watcher = NotifyWatcher::new()?;
+        runtime.block_on(async {
+            args.run_watch(Box::new(watcher), files_to_check, config_finder)
+                .await
+        })?;
         Ok(CommandExitStatus::Success)
     } else {
         args.run_once(files_to_check, config_finder, allow_forget)

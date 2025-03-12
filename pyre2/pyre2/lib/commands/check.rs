@@ -196,7 +196,7 @@ impl Args {
         self.run_inner(files_to_check, config_finder, allow_forget)
     }
 
-    pub fn run_watch(
+    pub async fn run_watch(
         self,
         mut watcher: Box<dyn Watcher>,
         files_to_check: impl FileList + Clone,
