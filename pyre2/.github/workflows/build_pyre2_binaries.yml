@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - .github/workflows/build_pyre2_binaries.yml
-      - pyre2/pyre2/pyproject.toml
+      - pyre2/pyproject.toml
   workflow_dispatch:
 
 env:
@@ -28,16 +28,16 @@ jobs:
         with:
           command: sdist
           args: --out dist
-          working-directory: pyre2/pyre2
+          working-directory: pyre2
       - name: Test sdist
         run: |
-          pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.tar.gz --force-reinstall
+          pip install pyre2/dist/"${PACKAGE_NAME}"-*.tar.gz --force-reinstall
           "${BINARY_NAME}" --help
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
-          path: pyre2/pyre2/dist
+          path: pyre2/dist
 
   macos:
     runs-on: macos-14
@@ -62,17 +62,17 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
-          working-directory: pyre2/pyre2
+          working-directory: pyre2
       - name: Test wheel
         if: ${{ startsWith(matrix.target, 'aarch64') }}
         run: |
-          pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
+          pip install pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
           "${BINARY_NAME}" --help
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-macos-${{ matrix.platform.target }}
-          path: pyre2/pyre2/dist
+          path: pyre2/dist
 
   windows:
     runs-on: windows-latest
@@ -99,18 +99,18 @@ jobs:
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
-          working-directory: pyre2/pyre2
+          working-directory: pyre2
       - name: Test wheel
         if: ${{ !startsWith(matrix.platform.target, 'aarch64') }}
         shell: bash
         run: |
-          python -m pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
+          python -m pip install pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
           "${BINARY_NAME}" --help
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.platform.target }}
-          path: pyre2/pyre2/dist
+          path: pyre2/dist
 
   linux:
     runs-on: ubuntu-latest
@@ -134,17 +134,17 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: auto
           args: --release --out dist
-          working-directory: pyre2/pyre2
+          working-directory: pyre2
       - name: Test wheel
         if: ${{ startsWith(matrix.target, 'x86_64') }}
         run: |
-          pip install pyre2/pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
+          pip install pyre2/dist/"${PACKAGE_NAME}"-*.whl --force-reinstall
           "${BINARY_NAME}" --help
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.target }}
-          path: pyre2/pyre2/dist
+          path: pyre2/dist
 
   merge:
     name: Merge artifacts

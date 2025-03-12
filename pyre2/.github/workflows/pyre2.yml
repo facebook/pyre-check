@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: pyre2/pyre2
+        working-directory: pyre2
 
     strategy:
       fail-fast: false
