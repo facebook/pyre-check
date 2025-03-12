@@ -324,13 +324,15 @@ impl Callable {
     }
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
-        self.params.visit(&mut f);
-        f(&self.ret)
+        let Self { params, ret } = self;
+        params.visit(&mut f);
+        f(ret)
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        self.params.visit_mut(&mut f);
-        f(&mut self.ret);
+        let Self { params, ret } = self;
+        params.visit_mut(&mut f);
+        f(ret)
     }
 }
 

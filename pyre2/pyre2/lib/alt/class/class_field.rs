@@ -155,7 +155,8 @@ impl ClassField {
                 annotation,
                 descriptor_getter,
                 descriptor_setter,
-                ..
+                initialization: _,
+                readonly: _,
             } => {
                 f(ty);
                 for a in annotation.iter_mut() {
