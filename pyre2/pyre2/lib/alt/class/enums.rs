@@ -15,7 +15,6 @@ use crate::alt::answers::LookupAnswer;
 use crate::alt::class::class_field::ClassFieldInitialization;
 use crate::types::class::Class;
 use crate::types::literal::Lit;
-use crate::types::types::Decoration;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -49,7 +48,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         match ty {
             // Methods decorated with @member are members
-            Type::Decoration(Decoration::EnumMember(_)) => true,
+            _ if ty.has_enum_member_decoration() => true,
             // Callables are not valid enum members
             Type::BoundMethod(_) | Type::Callable(_) | Type::Function(_) | Type::Decoration(_) => {
                 false

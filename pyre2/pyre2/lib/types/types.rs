@@ -18,6 +18,7 @@ use vec1::Vec1;
 
 use crate::assert_words;
 use crate::types::callable::Callable;
+use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
@@ -243,7 +244,6 @@ pub enum Decoration {
     // The result of accessing `.setter` on a property (which produces a decorator
     // that takes a value and makes it the property getter, returning the result)
     PropertySetterDecorator(Box<Type>),
-    EnumMember(Box<Type>),
 }
 
 impl Decoration {
@@ -254,7 +254,6 @@ impl Decoration {
                 setter.iter().for_each(&mut f)
             }
             Self::PropertySetterDecorator(ty) => f(ty),
-            Self::EnumMember(ty) => f(ty),
         }
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
@@ -264,7 +263,6 @@ impl Decoration {
                 setter.iter_mut().for_each(&mut f)
             }
             Self::PropertySetterDecorator(ty) => f(ty),
-            Self::EnumMember(ty) => f(ty),
         }
     }
 }
@@ -715,7 +713,7 @@ impl Type {
         seen
     }
 
-    pub fn is_override(&self) -> bool {
+    fn check_func_metadata(&self, check: &dyn Fn(&FuncMetadata) -> bool) -> bool {
         match self {
             Type::Function(box func)
             | Type::Forall(box Forall {
@@ -725,13 +723,21 @@ impl Type {
             | Type::BoundMethod(box BoundMethod {
                 func: BoundMethodType::Function(func),
                 ..
-            }) => func.metadata.flags.is_override,
-            Type::Overload(overload) => overload.0.first().is_override(),
+            }) => check(&func.metadata),
+            Type::Overload(overload) => overload.0.first().check_func_metadata(check),
             Type::Decoration(Decoration::Property(box (t1, t2))) => {
                 t1.is_override() || t2.as_ref().is_some_and(|t| t.is_override())
             }
             _ => false,
         }
+    }
+
+    pub fn is_override(&self) -> bool {
+        self.check_func_metadata(&|meta| meta.flags.is_override)
+    }
+
+    pub fn has_enum_member_decoration(&self) -> bool {
+        self.check_func_metadata(&|meta| meta.flags.has_enum_member_decoration)
     }
 
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {

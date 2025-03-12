@@ -184,6 +184,7 @@ pub struct FuncFlags {
     pub is_overload: bool,
     pub is_staticmethod: bool,
     pub is_classmethod: bool,
+    pub has_enum_member_decoration: bool,
     pub is_override: bool,
 }
 

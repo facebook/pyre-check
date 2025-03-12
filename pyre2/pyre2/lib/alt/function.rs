@@ -167,6 +167,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut is_overload = false;
         let mut is_staticmethod = false;
         let mut is_classmethod = false;
+        let mut has_enum_member_decoration = false;
         let mut is_override = false;
         let decorators = decorators
             .iter()
@@ -183,6 +184,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
                         is_classmethod = true;
+                        false
+                    }
+                    Some(CalleeKind::Class(ClassKind::EnumMember)) => {
+                        has_enum_member_decoration = true;
                         false
                     }
                     Some(CalleeKind::Function(FunctionKind::Override)) => {
@@ -365,6 +370,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         is_overload,
                         is_staticmethod,
                         is_classmethod,
+                        has_enum_member_decoration,
                         is_override,
                     },
                 },
