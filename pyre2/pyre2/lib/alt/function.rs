@@ -164,21 +164,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             defining_cls.as_ref().map(|cls| cls.self_type())
         };
 
+        let mut is_overload = false;
+        let mut is_staticmethod = false;
+        let mut is_classmethod = false;
+        let decorators = decorators
+            .iter()
+            .filter(|k| {
+                let decorator_ty = self.get_idx(**k);
+                match decorator_ty.callee_kind() {
+                    Some(CalleeKind::Function(FunctionKind::Overload)) => {
+                        is_overload = true;
+                        false
+                    }
+                    Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
+                        is_staticmethod = true;
+                        false
+                    }
+                    Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
+                        is_classmethod = true;
+                        false
+                    }
+                    _ => true,
+                }
+            })
+            .collect::<Vec<_>>();
+
         // Look for a @classmethod or @staticmethod decorator and change the "self" type
         // accordingly. This is not totally correct, since it doesn't account for chaining
         // decorators, or weird cases like both decorators existing at the same time.
-        for x in decorators {
-            match self.get_idx(*x).callee_kind() {
-                Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
-                    self_type = None;
-                    break;
-                }
-                Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
-                    self_type = self_type.map(|ty| Type::Type(Box::new(ty)));
-                    break;
-                }
-                _ => {}
-            }
+        if is_staticmethod {
+            self_type = None;
+        } else if is_classmethod {
+            self_type = self_type.map(|ty| Type::Type(Box::new(ty)));
         }
 
         let mut get_param_ty = |name: &Identifier| {
@@ -332,30 +349,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             defining_cls.as_ref().map(|cls| cls.name()),
             &def.name.id,
         );
-        let mut is_overload = false;
-        let mut is_staticmethod = false;
-        let mut is_classmethod = false;
-        let decorators = decorators
-            .iter()
-            .filter(|k| {
-                let decorator_ty = self.get_idx(**k);
-                match decorator_ty.callee_kind() {
-                    Some(CalleeKind::Function(FunctionKind::Overload)) => {
-                        is_overload = true;
-                        false
-                    }
-                    Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
-                        is_staticmethod = true;
-                        false
-                    }
-                    Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
-                        is_classmethod = true;
-                        false
-                    }
-                    _ => true,
-                }
-            })
-            .collect::<Vec<_>>();
         let mut ty = Forall::new_type(
             def.name.id.clone(),
             self.type_params(def.range, tparams, errors),
