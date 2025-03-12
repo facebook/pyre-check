@@ -158,7 +158,6 @@ pub enum Key {
     ReturnImplicit(ShortIdentifier),
     /// The actual type of the return for a function.
     ReturnType(ShortIdentifier),
-    /// The type of the return for a function after taking generators into account.
     /// I am a use in this module at this location.
     Usage(ShortIdentifier),
     /// I am an expression that does not have a simple name but needs its type inferred.
