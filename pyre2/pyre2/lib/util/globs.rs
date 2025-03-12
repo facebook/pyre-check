@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::path;
+use std::ffi::OsStr;
+use std::ffi::OsString;
+use std::path::Component;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -23,6 +25,51 @@ pub struct Globs(Vec<String>);
 impl Globs {
     pub fn new(patterns: Vec<String>) -> Self {
         Self(patterns)
+    }
+
+    fn contains_asterisk(part: &OsStr) -> bool {
+        let asterisk = OsString::from("*");
+        let asterisk = asterisk.as_encoded_bytes();
+        let bytes = part.as_encoded_bytes();
+
+        if bytes == asterisk {
+            return true;
+        } else if asterisk.len() > bytes.len() {
+            return false;
+        }
+
+        for i in 0..=bytes.len() - asterisk.len() {
+            if *asterisk == bytes[i..i + asterisk.len()] {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn get_root_for_pattern(pattern: &str) -> PathBuf {
+        let mut path = PathBuf::new();
+
+        // we need to add any path prefix and root items (there should be at most one of each,
+        // and prefix only exists on windows) to the root we're building
+        let parsed_path = PathBuf::from(pattern);
+        parsed_path
+            .components()
+            .take_while(|comp| {
+                match comp {
+                    // this should be alright to do, since a prefix will always come before a root,
+                    // which will always come before the rest of the path
+                    Component::Prefix(_)
+                    | Component::RootDir
+                    | Component::CurDir
+                    | Component::ParentDir => true,
+                    Component::Normal(part) => !Self::contains_asterisk(part),
+                }
+            })
+            .for_each(|comp| path.push(comp));
+        if path.extension().is_some() {
+            path.pop();
+        }
+        path
     }
 
     fn resolve_dir(path: &Path, results: &mut Vec<PathBuf>) -> anyhow::Result<()> {
@@ -59,19 +106,7 @@ impl Globs {
 impl FileList for Globs {
     /// Given a glob pattern, return the directories that can contain files that match the pattern.
     fn roots(&self) -> Vec<PathBuf> {
-        self.0.map(|pattern| {
-            let mut path = PathBuf::new();
-            for component in pattern.split(path::is_separator) {
-                if component.contains('*') {
-                    break;
-                }
-                path.push(component);
-            }
-            if path.extension().is_some() {
-                path.pop();
-            }
-            path
-        })
+        self.0.map(|s| Self::get_root_for_pattern(s))
     }
 
     fn files(&self) -> anyhow::Result<Vec<PathBuf>> {
@@ -95,10 +130,16 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg_attr(target_family = "windows", ignore)]
     fn test_roots() {
         fn f(pattern: &str, root: &str) {
             let globs = Globs::new(vec![pattern.to_owned()]);
-            assert_eq!(globs.roots(), vec![PathBuf::from(root)]);
+            assert_eq!(
+                globs.roots(),
+                vec![PathBuf::from(root)],
+                "Glob parsing failed for pattern {}",
+                pattern
+            );
         }
 
         f("project/**/files", "project");
@@ -109,5 +150,43 @@ mod tests {
         f("a/b/c.txt", "a/b");
         f("a/b*/c", "a");
         f("a/b/*.txt", "a/b");
+        f("/**", "/");
+        f("/absolute/path/**/files", "/absolute/path");
+    }
+
+    #[test]
+    #[cfg_attr(not(target_family = "windows"), ignore)]
+    fn test_windows_roots() {
+        fn f(pattern: &str, root: &str) {
+            let globs = Globs::new(vec![pattern.to_owned()]);
+            assert_eq!(globs.roots(), vec![PathBuf::from(root)]);
+        }
+
+        f(r"C:\\windows\project\**\files", r"C:\\windows\project");
+        f(
+            r"c:\windows\project\**\files",
+            r"c:\windows\project\**files",
+        );
+        f(r"\windows\project\**\files", r"\windows\project");
+        f(r"c:project\**\files", "c:project");
+        f(r"project\**\files", "project");
+        f(r"**\files", "");
+        f("pattern", "pattern");
+        f("pattern.txt", "");
+        f(r"a\b", r"a\b");
+        f(r"a\b\c.txt", r"a\b");
+        f(r"a\b*\c", "a");
+        f(r"a\b\*.txt", r"a\b");
+    }
+
+    #[test]
+    fn test_contains_asterisk() {
+        assert!(!Globs::contains_asterisk(&OsString::from("")));
+        assert!(Globs::contains_asterisk(&OsString::from("*")));
+        assert!(Globs::contains_asterisk(&OsString::from("*a")));
+        assert!(Globs::contains_asterisk(&OsString::from("a*")));
+        assert!(!Globs::contains_asterisk(&OsString::from("abcd")));
+        assert!(Globs::contains_asterisk(&OsString::from("**")));
+        assert!(Globs::contains_asterisk(&OsString::from("asdf*fdsa")));
     }
 }
