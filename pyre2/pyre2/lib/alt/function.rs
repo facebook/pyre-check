@@ -334,6 +334,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         );
         let mut is_overload = false;
         let mut is_staticmethod = false;
+        let mut is_classmethod = false;
         let decorators = decorators
             .iter()
             .filter(|k| {
@@ -345,6 +346,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Some(CalleeKind::Class(ClassKind::StaticMethod)) => {
                         is_staticmethod = true;
+                        false
+                    }
+                    Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
+                        is_classmethod = true;
                         false
                     }
                     _ => true,
@@ -361,6 +366,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     flags: FuncFlags {
                         is_overload,
                         is_staticmethod,
+                        is_classmethod,
                     },
                 },
             }),

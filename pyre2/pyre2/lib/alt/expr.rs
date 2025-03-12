@@ -603,9 +603,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ty_decorator = self.get_idx(decorator);
         match ty_decorator.callee_kind() {
-            Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
-                return Type::Decoration(Decoration::ClassMethod(Box::new(decoratee)));
-            }
             Some(CalleeKind::Class(ClassKind::Property)) => {
                 return Type::Decoration(Decoration::Property(Box::new((decoratee, None))));
             }

@@ -238,8 +238,6 @@ assert_words!(Type, 4);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Decoration {
-    // The result of applying the `@classmethod` decorator.
-    ClassMethod(Box<Type>),
     // The result of applying the `@property` decorator.
     Property(Box<(Type, Option<Type>)>),
     // The result of accessing `.setter` on a property (which produces a decorator
@@ -252,7 +250,6 @@ pub enum Decoration {
 impl Decoration {
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
-            Self::ClassMethod(ty) => f(ty),
             Self::Property(box (getter, setter)) => {
                 f(getter);
                 setter.iter().for_each(&mut f)
@@ -264,7 +261,6 @@ impl Decoration {
     }
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
-            Self::ClassMethod(ty) => f(ty),
             Self::Property(box (getter, setter)) => {
                 f(getter);
                 setter.iter_mut().for_each(&mut f)

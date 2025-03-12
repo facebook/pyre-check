@@ -670,7 +670,7 @@
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
     "Line 26: Unexpected errors ['Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 30: Unexpected errors ['Argument `classmethod[(cls: type[Base2]) -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
+    "Line 30: Unexpected errors ['Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 35: Unexpected errors ['Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 50: Unexpected errors ['Argument `(self: Base2, x: int | str) -> int | str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 81: Unexpected errors ['Class member `method` overrides parent class `Base3` in an inconsistent manner']",

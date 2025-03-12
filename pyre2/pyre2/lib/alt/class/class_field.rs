@@ -330,13 +330,10 @@ impl ClassField {
 
 pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::ClassMethod(box attr)) => {
-            Attribute::read_write(make_bound_classmethod(cls, &attr).unwrap_or(attr))
-        }
         // Accessing a property descriptor on the class gives the property itself,
         // with no magic access rules at runtime.
         p @ Type::Decoration(Decoration::Property(_)) => Attribute::read_write(p),
-        attr => Attribute::read_write(attr),
+        attr => Attribute::read_write(make_bound_classmethod(cls, &attr).unwrap_or(attr)),
     }
 }
 
@@ -359,25 +356,29 @@ fn make_bound_method_helper(
 }
 
 fn make_bound_classmethod(cls: &Class, attr: &Type) -> Option<Type> {
-    make_bound_method_helper(Type::ClassDef(cls.dupe()), attr, &|_| true)
+    let should_bind = |func: &Function| func.metadata.flags.is_classmethod;
+    make_bound_method_helper(Type::ClassDef(cls.dupe()), attr, &should_bind)
 }
 
 fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
-    let should_bind = |func: &Function| !func.metadata.flags.is_staticmethod;
+    let should_bind = |func: &Function| {
+        !func.metadata.flags.is_staticmethod && !func.metadata.flags.is_classmethod
+    };
     make_bound_method_helper(cls.self_type(), attr, &should_bind)
 }
 
 fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::ClassMethod(box attr)) => {
-            Attribute::read_write(make_bound_classmethod(cls.class_object(), &attr).unwrap_or(attr))
-        }
         Type::Decoration(Decoration::Property(box (getter, setter))) => Attribute::property(
             make_bound_method(cls, &getter).unwrap_or(getter),
             setter.map(|setter| make_bound_method(cls, &setter).unwrap_or(setter)),
             cls.class_object().dupe(),
         ),
-        attr => Attribute::read_write(make_bound_method(cls, &attr).unwrap_or(attr)),
+        attr => {
+            Attribute::read_write(make_bound_method(cls, &attr).unwrap_or_else(|| {
+                make_bound_classmethod(cls.class_object(), &attr).unwrap_or(attr)
+            }))
+        }
     }
 }
 

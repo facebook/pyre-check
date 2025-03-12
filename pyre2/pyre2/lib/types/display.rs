@@ -153,9 +153,6 @@ impl<'a> TypeDisplayContext<'a> {
             Decoration::Override(box ty) => {
                 write!(f, "override[{}]", self.display(ty))
             }
-            Decoration::ClassMethod(box ty) => {
-                write!(f, "classmethod[{}]", self.display(ty))
-            }
             Decoration::Property(box (getter, None)) => {
                 write!(f, "property[{}]", self.display(getter))
             }

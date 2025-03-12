@@ -10198,8 +10198,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Argument `classmethod[(cls: type[Base2]) -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `classmethod[(cls: type[Base2]) -> None]` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
+      "concise_description": "Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
+      "description": "Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
       "line": 30,
       "name": "type-mismatch",
       "stop_column": 11,
