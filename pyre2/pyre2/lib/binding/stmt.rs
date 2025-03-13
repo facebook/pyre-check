@@ -684,7 +684,17 @@ impl<'a> BindingsBuilder<'a> {
                                     }
                                 } else {
                                     let asname = x.asname.unwrap_or_else(|| x.name.clone());
-                                    let val = if module_exports.contains(&x.name.id, self.lookup) {
+                                    // A `from x import y` statement is ambiguous; if `x` is a package with
+                                    // an `__init__.py` file, then it might import the name `y` from the
+                                    // module `x` defined by the `__init__.py` file, or it might import a
+                                    // submodule `x.y` of the package `x`.
+                                    //
+                                    // If both are present, generally we prefer the name defined in `x`,
+                                    // but there is an exception: if we are already looking at the
+                                    // `__init__` module of `x`, we always prefer the submodule.
+                                    let val = if (self.module_info.name() != m)
+                                        && module_exports.contains(&x.name.id, self.lookup)
+                                    {
                                         Binding::Import(m, x.name.id.clone())
                                     } else {
                                         let x_as_module_name = m.append(&x.name.id);

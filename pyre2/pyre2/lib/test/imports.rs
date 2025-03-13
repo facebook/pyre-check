@@ -544,15 +544,14 @@ fn test_import_fail_to_load() {
     assert!(msg.contains("foo.py:1:1: Failed to load"));
 }
 
-testcase_with_bug!(
-    "TODO Zeina: This file should not have errors and x should have type str",
+testcase!(
     test_import_os,
     r#"
 import os
-from typing import reveal_type
+from typing import assert_type, LiteralString
 
-x = os.path.join("source") # E: Expected a callable, got Never
-reveal_type(x) # E: revealed type: Error
+x = os.path.join("source")
+assert_type(x, LiteralString)
 "#,
 );
 
@@ -572,15 +571,14 @@ baz = _baz
     env
 }
 
-testcase_with_bug!(
-    "TODO(stroxler): This is related to the above - we are resolving self-imports wrong in `__init__` modules",
+testcase!(
     test_import_from_self,
     env_from_self_import_mod_in_package(),
     r#"
 from typing import reveal_type
 import foo
-reveal_type(foo.bar)  # E: revealed type: Never
-reveal_type(foo.baz)  # E: revealed type: Never
+reveal_type(foo.bar)  # E: revealed type: Module[foo.bar]
+reveal_type(foo.baz)  # E: revealed type: Module[foo.baz]
 reveal_type(foo)  # E: revealed type: Module[foo]
 "#,
 );
