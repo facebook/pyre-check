@@ -12,7 +12,6 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::anyhow;
-use anyhow::Context as _;
 use clap::Parser;
 use clap::Subcommand;
 use pyre2::clap_env;
@@ -105,7 +104,7 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
     }
 }
 
-fn run_check(
+async fn run_check(
     args: pyre2::run::CheckArgs,
     watch: bool,
     files_to_check: Globs,
@@ -113,24 +112,19 @@ fn run_check(
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
     if watch {
-        let runtime = tokio::runtime::Builder::new_current_thread()
-            .build()
-            .context("Cannot initialize Tokio runtime for watch mode.")?;
         let mut watcher = NotifyWatcher::new()?;
         for path in files_to_check.roots() {
             watcher.watch_dir(&path)?;
         }
-        runtime.block_on(async {
-            args.run_watch(Box::new(watcher), files_to_check, config_finder)
-                .await
-        })?;
+        args.run_watch(Box::new(watcher), files_to_check, config_finder)
+            .await?;
         Ok(CommandExitStatus::Success)
     } else {
         args.run_once(files_to_check, config_finder, allow_forget)
     }
 }
 
-fn run_check_on_project(
+async fn run_check_on_project(
     watch: bool,
     config: Option<PathBuf>,
     args: pyre2::run::CheckArgs,
@@ -147,9 +141,10 @@ fn run_check_on_project(
         &|_| config.clone(),
         allow_forget,
     )
+    .await
 }
 
-fn run_check_on_files(
+async fn run_check_on_files(
     files_to_check: Globs,
     watch: bool,
     args: pyre2::run::CheckArgs,
@@ -163,9 +158,10 @@ fn run_check_on_files(
         &|_| ConfigFile::default(),
         allow_forget,
     )
+    .await
 }
 
-fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
+async fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandExitStatus> {
     match command {
         Command::Check {
             files,
@@ -177,9 +173,9 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
                 anyhow::bail!("Can either supply `FILES...` OR `--config/-c`, not both.")
             }
             if files.is_empty() {
-                run_check_on_project(watch, config, args, allow_forget)
+                run_check_on_project(watch, config, args, allow_forget).await
             } else {
-                run_check_on_files(Globs::new(files), watch, args, allow_forget)
+                run_check_on_files(Globs::new(files), watch, args, allow_forget).await
             }
         }
         Command::BuckCheck(args) => args.run(),
@@ -188,11 +184,11 @@ fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<CommandEx
 }
 
 /// Run based on the command line arguments.
-fn run() -> anyhow::Result<ExitCode> {
+async fn run() -> anyhow::Result<ExitCode> {
     let args = Args::parse_from(get_args_expanded(args_os())?);
     if args.profiling {
         loop {
-            let _ = run_command(args.command.clone(), false);
+            let _ = run_command(args.command.clone(), false).await;
         }
     } else {
         init_tracing(args.verbose, false);
@@ -201,13 +197,14 @@ fn run() -> anyhow::Result<ExitCode> {
         } else {
             Some(args.threads)
         });
-        run_command(args.command, true).map(to_exit_code)
+        run_command(args.command, true).await.map(to_exit_code)
     }
 }
 
-pub fn main() -> ExitCode {
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> ExitCode {
     exit_on_panic();
-    let res = run();
+    let res = run().await;
     match res {
         Ok(code) => code,
         Err(e) => {
