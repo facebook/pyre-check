@@ -66,7 +66,6 @@ use starlark_map::small_map::SmallMap;
 
 use crate::clap_env;
 use crate::commands::util::module_from_path;
-use crate::error::style::ErrorStyle;
 use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
@@ -173,11 +172,11 @@ struct LspLoader {
 }
 
 impl Loader for LspLoader {
-    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         if let Some(path) = find_module(module, &self.search_roots) {
-            Ok((path, ErrorStyle::Delayed))
+            Ok(path)
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
-            Ok((path, ErrorStyle::Never))
+            Ok(path)
         } else {
             // TODO(connernilsen): add site package path here
             Err(FindError::search_path(&self.search_roots, &[]))

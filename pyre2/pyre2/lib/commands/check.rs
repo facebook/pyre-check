@@ -27,9 +27,7 @@ use crate::config::set_if_some;
 use crate::config::ConfigFile;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
-use crate::error::style::ErrorStyle;
 use crate::metadata::PythonVersion;
-use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
@@ -105,27 +103,17 @@ struct LoaderInputs {
 
 #[derive(Debug, Clone)]
 struct CheckLoader {
-    sources: SmallMap<ModuleName, PathBuf>,
     loader_inputs: LoaderInputs,
-    error_style_for_sources: ErrorStyle,
-    error_style_for_dependencies: ErrorStyle,
 }
 
 impl Loader for CheckLoader {
-    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        if let Some(path) = self.sources.get(&module) {
-            // FIXME: Because we pre-created these handles, the only real reason to do this
-            // is for the error-style, which is a pretty weird reason to do it.
-            Ok((
-                ModulePath::filesystem(path.clone()),
-                self.error_style_for_sources,
-            ))
-        } else if let Some(path) = find_module(module, &self.loader_inputs.search_roots) {
-            Ok((path, self.error_style_for_dependencies))
+    fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
+        if let Some(path) = find_module(module, &self.loader_inputs.search_roots) {
+            Ok(path)
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
-            Ok((path, self.error_style_for_dependencies))
+            Ok(path)
         } else if let Some(path) = find_module(module, &self.loader_inputs.site_package_path) {
-            Ok((path, self.error_style_for_dependencies))
+            Ok(path)
         } else {
             Err(FindError::search_path(
                 &self.loader_inputs.search_roots,
@@ -164,28 +152,8 @@ impl OutputFormat {
     }
 }
 
-fn create_loader(
-    loader_inputs: LoaderInputs,
-    files_with_module_name_and_metadata: &[(PathBuf, ModuleName, RuntimeMetadata)],
-    check_all: bool,
-) -> LoaderId {
-    let mut to_check = SmallMap::with_capacity(files_with_module_name_and_metadata.len());
-    for (path, module_name, _) in files_with_module_name_and_metadata {
-        to_check
-            .entry(module_name.dupe())
-            .or_insert_with(|| path.clone());
-    }
-    let error_style_for_sources = ErrorStyle::Delayed;
-    LoaderId::new(CheckLoader {
-        sources: to_check,
-        loader_inputs,
-        error_style_for_sources,
-        error_style_for_dependencies: if check_all {
-            error_style_for_sources
-        } else {
-            ErrorStyle::Never
-        },
-    })
+fn create_loader(loader_inputs: LoaderInputs) -> LoaderId {
+    LoaderId::new(CheckLoader { loader_inputs })
 }
 
 impl Args {
@@ -288,11 +256,7 @@ impl Args {
                         let module_name = module_from_path(&path, &loader_inputs.search_roots);
                         (path, module_name, config.get_runtime_metadata())
                     });
-                let loader = create_loader(
-                    loader_inputs,
-                    &files_with_module_name_and_metadata,
-                    args.check_all,
-                );
+                let loader = create_loader(loader_inputs);
                 files_with_module_name_and_metadata.into_map(
                     |(path, module_name, runtime_metadata)| {
                         (

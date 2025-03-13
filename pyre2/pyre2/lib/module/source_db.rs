@@ -16,7 +16,6 @@ use starlark_map::small_map::SmallMap;
 use tracing::debug;
 use vec1::Vec1;
 
-use crate::error::style::ErrorStyle;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::loader::FindError;
@@ -160,14 +159,10 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         match self.lookup(module) {
-            LookupResult::OwningSource(path) => {
-                Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Delayed))
-            }
-            LookupResult::ExternalSource(path) => {
-                Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Never))
-            }
+            LookupResult::OwningSource(path) => Ok(ModulePath::filesystem(path.clone())),
+            LookupResult::ExternalSource(path) => Ok(ModulePath::filesystem(path.clone())),
             LookupResult::NoSource => Err(FindError::new(anyhow!("Not a dependency or typeshed"))),
         }
     }

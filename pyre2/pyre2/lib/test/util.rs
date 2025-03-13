@@ -23,7 +23,6 @@ use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::KeyExport;
-use crate::error::style::ErrorStyle;
 use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::module_name::ModuleName;
@@ -164,7 +163,7 @@ impl TestEnv {
             let name = ModuleName::from_str(module);
             Handle::new(
                 name,
-                loader.find_import(name).unwrap().0,
+                loader.find_import(name).unwrap(),
                 Self::config(),
                 loader.dupe(),
             )
@@ -304,11 +303,11 @@ pub fn get_batched_lsp_operations_report_allow_error(
 }
 
 impl Loader for TestEnv {
-    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         if let Some((path, _)) = self.0.get(&module) {
-            Ok((path.dupe(), ErrorStyle::Delayed))
+            Ok(path.dupe())
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
-            Ok((path, ErrorStyle::Never))
+            Ok(path)
         } else {
             Err(FindError::new(anyhow!("Module not given in test suite")))
         }

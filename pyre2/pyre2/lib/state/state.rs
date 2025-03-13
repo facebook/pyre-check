@@ -253,7 +253,7 @@ impl State {
             let mut is_dirty = false;
             for x in module_data.deps.read().values() {
                 match loader.find_import(x.handle.module()) {
-                    Ok((path, _)) if &path == x.handle.path() => {}
+                    Ok(path) if &path == x.handle.path() => {}
                     _ => {
                         is_dirty = true;
                         break;
@@ -595,9 +595,7 @@ impl State {
         loader: &LoaderId,
         module: ModuleName,
     ) -> Result<ModulePath, FindError> {
-        self.get_cached_loader(loader)
-            .find_import(module)
-            .map(|x| x.0)
+        self.get_cached_loader(loader).find_import(module)
     }
 
     fn get_cached_loader(&self, loader: &LoaderId) -> Arc<LoaderFindCache<LoaderId>> {

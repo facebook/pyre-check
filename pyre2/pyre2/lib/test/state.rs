@@ -14,7 +14,6 @@ use std::sync::Arc;
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 
-use crate::error::style::ErrorStyle;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
@@ -56,7 +55,7 @@ else:
 
     let f = |name: &str, config: &RuntimeMetadata| {
         let name = ModuleName::from_str(name);
-        let path = loader.find_import(name).unwrap().0;
+        let path = loader.find_import(name).unwrap();
         (
             Handle::new(name, path, config.dupe(), loader.dupe()),
             Require::Everything,
@@ -95,11 +94,9 @@ fn test_multiple_path() {
     struct Load(TestEnv);
 
     impl Loader for Load {
-        fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+        fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
             match FILES.iter().find(|x| x.0 == module.as_str()) {
-                Some((_, path, _)) => {
-                    Ok((ModulePath::memory(PathBuf::from(path)), ErrorStyle::Delayed))
-                }
+                Some((_, path, _)) => Ok(ModulePath::memory(PathBuf::from(path))),
                 None => self.0.find_import(module),
             }
         }
@@ -139,12 +136,9 @@ fn test_multiple_path() {
 struct IncrementalData(Arc<Mutex<SmallMap<ModuleName, Arc<String>>>>);
 
 impl Loader for IncrementalData {
-    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         match self.0.lock().get(&module) {
-            Some(_) => Ok((
-                ModulePath::memory(PathBuf::from(module.as_str())),
-                ErrorStyle::Delayed,
-            )),
+            Some(_) => Ok(ModulePath::memory(PathBuf::from(module.as_str()))),
             None => TestEnv::new().find_import(module),
         }
     }
