@@ -56,6 +56,9 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderFindCache;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
+use crate::state::require::RequireDefault;
+use crate::state::require::RequireOverride;
 use crate::state::steps::Context;
 use crate::state::steps::Load;
 use crate::state::steps::Step;
@@ -99,7 +102,7 @@ pub struct State {
     subscriber: Option<Box<dyn Subscriber>>,
 
     // Set to true to keep data around forever.
-    retain_memory: bool,
+    require: RequireDefault,
 }
 
 impl Drop for State {
@@ -124,6 +127,7 @@ struct ModuleData {
 }
 
 struct ModuleState {
+    require: RequireOverride,
     epochs: Epochs,
     dirty: Dirty,
     steps: Steps,
@@ -134,6 +138,7 @@ impl ModuleData {
         Self {
             handle,
             state: UpgradeLock::new(ModuleState {
+                require: Default::default(),
                 epochs: Epochs::new(now),
                 dirty: Dirty::default(),
                 steps: Steps::default(),
@@ -157,7 +162,8 @@ impl State {
             changed: Default::default(),
             dirty: Default::default(),
             subscriber: None,
-            retain_memory: true, // Will always be overwritten by entry points
+            // Will be overwritten with a new default before Exports
+            require: RequireDefault::new(Require::Exports),
         }
     }
 
@@ -297,7 +303,8 @@ impl State {
 
             computed = true;
             let compute = todo.compute().0(&exclusive.steps);
-            if todo == Step::Answers && !self.retain_memory {
+            let require = exclusive.require.get(self.require);
+            if todo == Step::Answers && !require.keep_ast() {
                 // We have captured the Ast, and must have already built Exports (we do it serially),
                 // so won't need the Ast again.
                 let to_drop;
@@ -310,7 +317,7 @@ impl State {
             let stdlib = self.get_stdlib(&module_data.handle);
             let loader = self.get_cached_loader(module_data.handle.loader());
             let set = compute(&Context {
-                retain_memory: self.retain_memory,
+                require,
                 module: module_data.handle.module(),
                 path: module_data.handle.path(),
                 config: module_data.handle.config(),
@@ -349,7 +356,7 @@ impl State {
                         changed = true;
                         writer.epochs.changed = self.now;
                     }
-                    if !self.retain_memory {
+                    if !require.keep_bindings() && !require.keep_answers() {
                         // From now on we can use the answers directly, so evict the bindings/answers.
                         to_drop = writer.steps.answers.take();
                     }
@@ -754,14 +761,14 @@ impl State {
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
     pub fn run_one_shot(&mut self, handles: &[Handle], subscriber: Option<Box<dyn Subscriber>>) {
-        self.retain_memory = false;
+        self.require.set(Require::Exports);
         self.subscriber = subscriber;
         self.run_internal(handles);
         self.subscriber = None;
     }
 
     pub fn run(&mut self, handles: &[Handle], subscriber: Option<Box<dyn Subscriber>>) {
-        self.retain_memory = true;
+        self.require.set(Require::Everything);
         self.subscriber = subscriber;
         self.run_internal(handles);
         self.subscriber = None;

@@ -10,6 +10,7 @@ pub mod epoch;
 pub mod handle;
 pub mod loader;
 pub mod lsp;
+pub mod require;
 pub mod state;
 pub mod steps;
 pub mod subscriber;

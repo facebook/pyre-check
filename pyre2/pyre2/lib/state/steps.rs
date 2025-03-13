@@ -33,12 +33,13 @@ use crate::module::module_path::ModulePath;
 use crate::module::module_path::ModulePathDetails;
 use crate::solver::solver::Solver;
 use crate::state::loader::Loader;
+use crate::state::require::Require;
 use crate::types::stdlib::Stdlib;
 use crate::util::fs_anyhow;
 use crate::util::uniques::UniqueFactory;
 
 pub struct Context<'a, Lookup> {
-    pub retain_memory: bool,
+    pub require: Require,
     pub module: ModuleName,
     pub path: &'a ModulePath,
     pub config: &'a RuntimeMetadata,
@@ -225,7 +226,7 @@ impl Step {
         previous_solutions: Option<Arc<(IdCacheHistory, Arc<Solutions>)>>,
     ) -> Arc<(Bindings, Arc<Answers>)> {
         let solver = Solver::new();
-        let enable_trace = ctx.retain_memory;
+        let enable_trace = ctx.require.keep_answers_trace();
         let bindings = Bindings::new(
             ast.range,
             Arc::unwrap_or_clone(ast).body,
@@ -259,7 +260,9 @@ impl Step {
             &load.errors,
             ctx.stdlib,
             ctx.uniques,
-            ctx.retain_memory,
+            ctx.require.compute_errors()
+                || ctx.require.keep_answers_trace()
+                || ctx.require.keep_answers(),
         );
         let history = answers.1.id_cache_history();
         Arc::new((history, Arc::new(solutions)))
