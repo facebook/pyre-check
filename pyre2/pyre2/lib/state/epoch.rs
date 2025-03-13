@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+use dupe::Dupe;
+
+#[derive(Debug, Clone, Dupe, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Epoch(u32);
 
 impl Epoch {
