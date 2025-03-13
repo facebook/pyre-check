@@ -218,7 +218,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if is_staticmethod {
             self_type = None;
         } else if is_classmethod {
-            self_type = self_type.map(|ty| Type::Type(Box::new(ty)));
+            self_type = self_type.map(Type::type_form);
         }
 
         let mut get_param_ty = |name: &Identifier| {

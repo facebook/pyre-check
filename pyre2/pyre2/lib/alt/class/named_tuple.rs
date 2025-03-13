@@ -67,7 +67,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_named_tuple_new(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
         let mut params = vec![Param::Pos(
             Name::new("cls"),
-            Type::Type(Box::new(cls.self_type())),
+            Type::type_form(cls.self_type()),
             Required::Required,
         )];
         params.extend(self.get_named_tuple_field_params(cls, elements));

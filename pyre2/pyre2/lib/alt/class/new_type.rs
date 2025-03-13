@@ -49,7 +49,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let params = vec![
             Param::Pos(
                 Name::new("cls"),
-                Type::Type(Box::new(cls.self_type())),
+                Type::type_form(cls.self_type()),
                 Required::Required,
             ),
             Param::Pos(
