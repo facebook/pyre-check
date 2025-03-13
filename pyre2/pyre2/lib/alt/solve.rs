@@ -677,7 +677,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let ta = TypeAlias::new(name.clone(), ty, style);
         Forall::new_type(
-            name.clone(),
             self.type_params(range, tparams, errors),
             ForallType::TypeAlias(ta),
         )
@@ -1686,7 +1685,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::TypeAlias(ta) => {
                         let params_range = params.as_ref().map_or(expr.range(), |x| x.range);
                         Forall::new_type(
-                            name.clone(),
                             self.type_params(
                                 params_range,
                                 self.scoped_type_params(params.as_ref(), errors),
@@ -2025,7 +2023,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Type::Forall(forall) = ty {
             // A generic type alias with no type arguments is OK if all the type params have defaults
             let targs = self.check_and_create_targs(
-                &forall.name,
+                &forall.name(),
                 &forall.tparams,
                 Vec::new(),
                 range,

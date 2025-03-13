@@ -1196,7 +1196,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.expr_untype(x, TypeFormContext::TypeArgument, errors)
                             });
                             let targs = self.check_and_create_targs(
-                                &forall.name,
+                                &forall.name(),
                                 &forall.tparams,
                                 tys,
                                 x.range,

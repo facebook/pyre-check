@@ -359,17 +359,23 @@ impl ForallType {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Forall {
-    pub name: Name,
     pub tparams: TParams,
     pub ty: ForallType,
 }
 
 impl Forall {
-    pub fn new_type(name: Name, tparams: TParams, ty: ForallType) -> Type {
+    pub fn new_type(tparams: TParams, ty: ForallType) -> Type {
         if tparams.is_empty() {
             ty.as_type()
         } else {
-            Type::Forall(Box::new(Forall { name, tparams, ty }))
+            Type::Forall(Box::new(Forall { tparams, ty }))
+        }
+    }
+
+    pub fn name(&self) -> Name {
+        match &self.ty {
+            ForallType::Function(func) => func.metadata.kind.as_func_id().func,
+            ForallType::TypeAlias(ta) => (*ta.name).clone(),
         }
     }
 

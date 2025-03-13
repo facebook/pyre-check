@@ -373,7 +373,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &def.name.id,
         );
         let mut ty = Forall::new_type(
-            def.name.id.clone(),
             self.type_params(def.range, tparams, errors),
             ForallType::Function(Function {
                 signature: callable,
