@@ -665,9 +665,6 @@ impl State {
         {
             let dirty = mem::take(&mut *self.dirty.lock());
             let mut lock = self.todo.lock();
-            for x in dirty {
-                lock.push_fifo(Step::first(), x);
-            }
             for (h, r) in handles {
                 let (m, created) = self.get_module_ex(h);
                 m.state
@@ -675,9 +672,12 @@ impl State {
                     .unwrap()
                     .require
                     .set(self.require, *r);
-                if created {
+                if created && !dirty.contains(&m) {
                     lock.push_fifo(Step::first(), m);
                 }
+            }
+            for x in dirty {
+                lock.push_fifo(Step::first(), x);
             }
         }
 
