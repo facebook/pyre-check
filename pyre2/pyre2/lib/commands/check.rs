@@ -110,7 +110,7 @@ struct CheckLoader {
 }
 
 impl Loader for CheckLoader {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         if let Some(path) = self.sources.get(&module) {
             // FIXME: Because we pre-created these handles, the only real reason to do this
             // is for the error-style, which is a pretty weird reason to do it.

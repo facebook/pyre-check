@@ -55,7 +55,7 @@ else:
 
     let f = |name: &str, config: &RuntimeMetadata| {
         let name = ModuleName::from_str(name);
-        let path = loader.find(name).unwrap().0;
+        let path = loader.find_import(name).unwrap().0;
         Handle::new(name, path, config.dupe(), loader.dupe())
     };
 
@@ -90,12 +90,12 @@ fn test_multiple_path() {
     struct Load(TestEnv);
 
     impl Loader for Load {
-        fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+        fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
             match FILES.iter().find(|x| x.0 == module.as_str()) {
                 Some((_, path, _)) => {
                     Ok((ModulePath::memory(PathBuf::from(path)), ErrorStyle::Delayed))
                 }
-                None => self.0.find(module),
+                None => self.0.find_import(module),
             }
         }
 
@@ -130,13 +130,13 @@ fn test_multiple_path() {
 struct IncrementalData(Arc<Mutex<SmallMap<ModuleName, Arc<String>>>>);
 
 impl Loader for IncrementalData {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         match self.0.lock().get(&module) {
             Some(_) => Ok((
                 ModulePath::memory(PathBuf::from(module.as_str())),
                 ErrorStyle::Delayed,
             )),
-            None => TestEnv::new().find(module),
+            None => TestEnv::new().find_import(module),
         }
     }
 

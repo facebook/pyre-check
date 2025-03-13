@@ -184,7 +184,7 @@ impl Step {
 
     #[inline(never)]
     fn step_load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let error_style = match ctx.loader.find(ctx.module) {
+        let error_style = match ctx.loader.find_import(ctx.module) {
             Ok((_, s)) => s,
             Err(_) => {
                 // We shouldn't reach here, as we must be able to load the module to get here.

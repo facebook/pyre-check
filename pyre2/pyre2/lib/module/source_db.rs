@@ -160,7 +160,7 @@ impl BuckSourceDatabase {
 }
 
 impl Loader for BuckSourceDatabase {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         match self.lookup(module) {
             LookupResult::OwningSource(path) => {
                 Ok((ModulePath::filesystem(path.clone()), ErrorStyle::Delayed))

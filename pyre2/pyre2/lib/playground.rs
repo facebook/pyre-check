@@ -131,7 +131,7 @@ impl DemoEnv {
 }
 
 impl Loader for DemoEnv {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         let style = ErrorStyle::Delayed;
         if let Some((path, _)) = self.0.get(&module) {
             Ok((path.dupe(), style))
@@ -171,8 +171,8 @@ impl Loader for DemoEnv {
 struct Load(Arc<Mutex<DemoEnv>>);
 
 impl Loader for Load {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
-        self.0.lock().unwrap().find(module)
+    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+        self.0.lock().unwrap().find_import(module)
     }
 
     fn load_from_memory(&self, path: &Path) -> Option<Arc<String>> {

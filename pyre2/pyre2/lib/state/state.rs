@@ -164,7 +164,7 @@ impl State {
     pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Result<Handle, FindError> {
         Ok(Handle::new(
             module,
-            self.get_cached_find(handle.loader(), module)?,
+            self.get_cached_find_dependency(handle.loader(), module)?,
             handle.config().dupe(),
             handle.loader().dupe(),
         ))
@@ -246,7 +246,7 @@ impl State {
             let loader = self.get_cached_loader(module_data.handle.loader());
             let mut is_dirty = false;
             for x in module_data.deps.read().values() {
-                match loader.find(x.handle.module()) {
+                match loader.find_import(x.handle.module()) {
                     Ok((path, _)) if &path == x.handle.path() => {}
                     _ => {
                         is_dirty = true;
@@ -583,12 +583,14 @@ impl State {
         }
     }
 
-    fn get_cached_find(
+    fn get_cached_find_dependency(
         &self,
         loader: &LoaderId,
         module: ModuleName,
     ) -> Result<ModulePath, FindError> {
-        self.get_cached_loader(loader).find(module).map(|x| x.0)
+        self.get_cached_loader(loader)
+            .find_import(module)
+            .map(|x| x.0)
     }
 
     fn get_cached_loader(&self, loader: &LoaderId) -> Arc<LoaderFindCache<LoaderId>> {
@@ -625,7 +627,7 @@ impl State {
                 (
                     (c.dupe(), l.dupe()),
                     Arc::new(Stdlib::new(|module, name| {
-                        let path = self.get_cached_find(l, module).ok()?;
+                        let path = self.get_cached_find_dependency(l, module).ok()?;
                         self.lookup_stdlib(&Handle::new(module, path, c.dupe(), l.dupe()), name)
                     })),
                 )

@@ -154,7 +154,7 @@ impl TestEnv {
             let name = ModuleName::from_str(module);
             Handle::new(
                 name,
-                loader.find(name).unwrap().0,
+                loader.find_import(name).unwrap().0,
                 Self::config(),
                 loader.dupe(),
             )
@@ -294,7 +294,7 @@ pub fn get_batched_lsp_operations_report_allow_error(
 }
 
 impl Loader for TestEnv {
-    fn find(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
+    fn find_import(&self, module: ModuleName) -> Result<(ModulePath, ErrorStyle), FindError> {
         if let Some((path, _)) = self.0.get(&module) {
             Ok((path.dupe(), ErrorStyle::Delayed))
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
