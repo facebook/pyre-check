@@ -21,10 +21,9 @@ and in `client`.
 ## Debugging
 
 - Follow steps in Pre-requisites section.
-- Open VS Code on this folder.
-- Press Ctrl+Shift+B to compile the client and server.
+- Open VS Code on the pyre2 folder.
 - Switch to the Debug viewlet.
-- Select `Launch Client` from the drop down.
+- Select `Run Installed Extension (pyre2)` from the drop down.
 - Run the launch config.
 - By default, stderr of the language server will appear in the output pane of
   VSCode under "Pyre2 language server".

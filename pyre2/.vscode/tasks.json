@@ -16,6 +16,20 @@
       }
     },
     {
+      "label": "build extension",
+      "dependsOn": [
+        "npm: compile",
+        "cargo: build pyrefly for extension"
+      ],
+      "presentation": {
+        "reveal": "never"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+     {
       "type": "npm",
       "script": "watch:esbuild",
       "group": "build",
@@ -40,6 +54,20 @@
       },
       "options": {
         "cwd": "${workspaceFolder}/lsp"
+      }
+    },
+    {
+      "type": "shell",
+      "command": "cargo build --release --all-features --target-dir lsp/bin --manifest-path pyre2/Cargo.toml",
+      "group": "build",
+      "isBackground": true,
+      "label": "cargo: build pyrefly for extension",
+      "options": {
+        "shell": {
+          // -l (login shell) necessary on some machines to find cargo
+          // https://code.visualstudio.com/docs/editor/tasks#_why-do-i-get-command-not-found-when-running-a-task
+          "args": ["-c", "-l"]
+        }
       }
     },
     {

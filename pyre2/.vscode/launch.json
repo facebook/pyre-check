@@ -15,7 +15,7 @@
         "outFiles": [
           "${workspaceFolder}/lsp/dist/**/*.js"
         ],
-        "preLaunchTask": "npm: compile",
+        "preLaunchTask": "build extension",
         "skipFiles": [
           "<node_internals>/**/*.js"
         ]
