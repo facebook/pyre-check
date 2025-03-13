@@ -19,7 +19,7 @@ use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_enum_member(&self, cls: &Class, name: &Name) -> Option<Lit> {
-        self.get_class_field(cls, name)
+        self.get_field_from_current_class_only(cls, name)
             .and_then(|field| Arc::unwrap_or_clone(field).as_enum_member(cls))
     }
 

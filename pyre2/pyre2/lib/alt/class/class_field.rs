@@ -755,7 +755,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_class_field_non_synthesized(
+    fn get_non_synthesized_field_from_current_class_only(
         &self,
         cls: &Class,
         name: &Name,
@@ -768,8 +768,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_class_field(&self, cls: &Class, name: &Name) -> Option<Arc<ClassField>> {
-        if let Some(field) = self.get_class_field_non_synthesized(cls, name) {
+    /// This function does not return fields defined in parent classes
+    pub fn get_field_from_current_class_only(
+        &self,
+        cls: &Class,
+        name: &Name,
+    ) -> Option<Arc<ClassField>> {
+        if let Some(field) = self.get_non_synthesized_field_from_current_class_only(cls, name) {
             Some(field)
         } else {
             let synthesized_fields =
@@ -784,7 +789,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
         name: &Name,
     ) -> Option<WithDefiningClass<Arc<ClassField>>> {
-        if let Some(field) = self.get_class_field(cls, name) {
+        if let Some(field) = self.get_field_from_current_class_only(cls, name) {
             Some(WithDefiningClass {
                 value: field,
                 defining_class: cls.dupe(),
@@ -793,7 +798,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
                 .find_map(|ancestor| {
-                    self.get_class_field(ancestor.class_object(), name)
+                    self.get_field_from_current_class_only(ancestor.class_object(), name)
                         .map(|field| WithDefiningClass {
                             value: Arc::new(field.instantiate_for(ancestor)),
                             defining_class: ancestor.class_object().dupe(),
