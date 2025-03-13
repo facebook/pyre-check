@@ -14,3 +14,10 @@ node_modules
 out/
 src/
 esbuild.js
+**/.fingerprint/
+**/build/
+**/deps/
+**/incremental/
+**/*.rlib
+**/*.d
+**/.cargo-lock
