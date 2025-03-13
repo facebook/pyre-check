@@ -559,7 +559,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None => "".to_owned(),
                 };
                 let signature_desc = match signature {
-                    Some(sig) => format!(", reporting errors for closest overload: `{sig}`"),
+                    Some(mut sig) => {
+                        sig.visit_mut(|x| *x = self.solver().for_display((*x).clone()));
+                        format!(", reporting errors for closest overload: `{sig}`")
+                    }
                     None => "".to_owned(),
                 };
                 self.error(
