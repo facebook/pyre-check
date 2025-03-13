@@ -112,6 +112,10 @@ impl ClassMetadata {
         self.typed_dict_metadata.is_some()
     }
 
+    pub fn is_named_tuple(&self) -> bool {
+        self.named_tuple_metadata.is_some()
+    }
+
     pub fn is_final(&self) -> bool {
         self.is_final
     }

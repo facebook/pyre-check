@@ -59,11 +59,15 @@ impl Annotation {
     }
 
     pub fn is_class_var(&self) -> bool {
-        self.qualifiers.iter().any(|q| q == &Qualifier::ClassVar)
+        self.has_qualifier(&Qualifier::ClassVar)
     }
 
     pub fn is_final(&self) -> bool {
-        self.qualifiers.iter().any(|q| q == &Qualifier::Final)
+        self.has_qualifier(&Qualifier::Final)
+    }
+
+    pub fn has_qualifier(&self, qualifier: &Qualifier) -> bool {
+        self.qualifiers.iter().any(|q| q == qualifier)
     }
 }
 

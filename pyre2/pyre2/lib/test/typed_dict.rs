@@ -34,10 +34,12 @@ def test2(**kwargs: Unpack[Coord]):
 );
 
 testcase!(
-    test_incomplete_qualifiers,
+    test_qualifiers,
     r#"
-from typing import TypedDict, Required, NotRequired, ReadOnly
-class Coord(TypedDict):
+from typing import TypedDict, Required, NotRequired, ReadOnly, ClassVar, Final
+class MyDict(TypedDict):
+    v: ClassVar[int]  # E: `ClassVar` may not be used for TypedDict or NamedTuple members
+    w: Final[int]  # E: `Final` may not be used for TypedDict or NamedTuple members
     x: NotRequired  # E: Expected a type argument for `NotRequired`
     y: Required  # E: Expected a type argument for `Required`
     z: ReadOnly  # E: Expected a type argument for `ReadOnly`

@@ -457,6 +457,39 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 format!("TypedDict item `{}` may not be initialized", name),
             );
         }
+        if metadata.is_typed_dict() || metadata.is_named_tuple() {
+            for q in &[Qualifier::Final, Qualifier::ClassVar] {
+                if annotation.is_some_and(|ann| ann.has_qualifier(q)) {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        format!(
+                            "`{}` may not be used for TypedDict or NamedTuple members",
+                            q
+                        ),
+                    );
+                }
+            }
+        }
+        if !metadata.is_typed_dict() {
+            for q in &[
+                Qualifier::Required,
+                Qualifier::NotRequired,
+                Qualifier::ReadOnly,
+            ] {
+                if annotation.is_some_and(|ann| ann.has_qualifier(q)) {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        format!("`{}` may only be used for TypedDict members", q),
+                    );
+                }
+            }
+        }
 
         // Determine whether this is an explicit `@override`.
         let is_override = value_ty.is_override();

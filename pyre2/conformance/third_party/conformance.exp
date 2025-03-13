@@ -11885,6 +11885,16 @@
   "typeddicts_required.py": [
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "`Required` may only be used for TypedDict members",
+      "description": "`Required` may only be used for TypedDict members",
+      "line": 12,
+      "name": "invalid-annotation",
+      "stop_column": 6,
+      "stop_line": 12
+    },
+    {
+      "code": -2,
       "column": 8,
       "concise_description": "NotRequired is only allowed inside a class body.",
       "description": "NotRequired is only allowed inside a class body.",

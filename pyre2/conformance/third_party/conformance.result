@@ -752,7 +752,6 @@
     "Line 34: Unexpected errors ['Object of class `Mapping` has no attribute `update`']"
   ],
   "typeddicts_required.py": [
-    "Line 12: Expected 1 errors",
     "Line 62: Expected 1 errors",
     "Line 63: Expected 1 errors",
     "Line 74: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveMovie']`\"]"
