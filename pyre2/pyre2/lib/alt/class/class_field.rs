@@ -305,6 +305,14 @@ impl ClassField {
         }
     }
 
+    pub fn is_final(&self) -> bool {
+        match &self.0 {
+            ClassFieldInner::Simple { annotation, .. } => {
+                annotation.as_ref().is_some_and(|ann| ann.is_final())
+            }
+        }
+    }
+
     pub fn has_explicit_annotation(&self) -> bool {
         match &self.0 {
             ClassFieldInner::Simple { annotation, .. } => annotation.is_some(),
@@ -688,11 +696,28 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if name.starts_with('_') && name.ends_with('_') {
                 continue;
             }
+            if name.starts_with("__") && !name.ends_with("__") {
+                continue;
+            }
             let Some(want_member) = self.get_class_member(parent.class_object(), name) else {
                 continue;
             };
             parent_attr_found = true;
             let want_class_field = Arc::unwrap_or_clone(want_member.value);
+            if want_class_field.is_final() {
+                self.error(
+                    errors,
+                    range,
+                    ErrorKind::BadOverride,
+                    None,
+                    format!(
+                        "`{}` is declared as Final in parent class `{}`",
+                        name,
+                        parent.name()
+                    ),
+                );
+                continue;
+            }
             if want_class_field.has_explicit_annotation() && class_field.has_explicit_annotation() {
                 let want_is_class_var = want_class_field.is_class_var();
                 let got_is_class_var = class_field.is_class_var();

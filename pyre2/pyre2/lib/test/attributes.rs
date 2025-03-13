@@ -210,8 +210,7 @@ assert_type(C.x1, int)
 "#,
 );
 
-testcase_with_bug!(
-    "TODO(zeina): We are not enforcing `Final` override bans when the type matches",
+testcase!(
     test_final_annotated_override,
     r#"
 from typing import Final
@@ -219,7 +218,7 @@ def f() -> int: ...
 class Base:
     p: Final = f()
 class Derived(Base):
-    p = f()  # Oops, this should be an error
+    p = f()  # E: `p` is declared as Final in parent class `Base`
 "#,
 );
 

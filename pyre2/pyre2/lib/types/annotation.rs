@@ -61,6 +61,10 @@ impl Annotation {
     pub fn is_class_var(&self) -> bool {
         self.qualifiers.iter().any(|q| q == &Qualifier::ClassVar)
     }
+
+    pub fn is_final(&self) -> bool {
+        self.qualifiers.iter().any(|q| q == &Qualifier::Final)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]

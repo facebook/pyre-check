@@ -73,6 +73,19 @@ class E(B):
 );
 
 testcase!(
+    test_override_final,
+    r#"
+from typing import Final
+class A:
+    x: Final = 1
+    y: Final[int] = 1
+class B(A):
+    x = 1  # E: `x` is declared as Final in parent class `A`
+    y = 1  # E: `y` is declared as Final in parent class `A`
+ "#,
+);
+
+testcase!(
     test_overload_override,
     r#"
 from typing import overload

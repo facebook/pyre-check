@@ -10106,6 +10106,16 @@
     },
     {
       "code": -2,
+      "column": 5,
+      "concise_description": "`BORDER_WIDTH` is declared as Final in parent class `ClassC`",
+      "description": "`BORDER_WIDTH` is declared as Final in parent class `ClassC`",
+      "line": 94,
+      "name": "bad-override",
+      "stop_column": 17,
+      "stop_line": 94
+    },
+    {
+      "code": -2,
       "column": 9,
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Final[int]`",
