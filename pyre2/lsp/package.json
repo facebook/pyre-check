@@ -47,8 +47,8 @@
             "properties": {
                 "pyre2.lspPath": {
                     "type": "string",
-                    "default": "pyre2",
-                    "description": "The path to the binary to invoke (possibly on the path) for the plugin to invoke that handles LSP over stdin/stdout"
+                    "default": "",
+                    "description": "The path to the binary used for the lsp"
                 },
                 "pyre2.lspArguments": {
                     "type": "array",

@@ -28,8 +28,16 @@ export function activate(context: ExtensionContext) {
     const path: string = requireSetting("pyre2.lspPath");
     const args: [string] = requireSetting("pyre2.lspArguments");
 
+    const bundledPyre2Path = vscode.Uri.joinPath(
+        context.extensionUri,
+        'bin',
+        'release',
+        // process.platform returns win32 on any windows CPU architecture
+        process.platform === 'win32' ? 'pyrefly.exe' : 'pyrefly'
+    );
+
     // Otherwise to spawn the server
-    let serverOptions: ServerOptions = { command: path, args: args };
+    let serverOptions: ServerOptions = { command: path === '' ? bundledPyre2Path.fsPath : path, args: args };
     let rawInitialisationOptions = vscode.workspace.getConfiguration("pyre2");
 
     // Options to control the language client
