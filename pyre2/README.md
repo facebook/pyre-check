@@ -64,7 +64,7 @@ Steps:
 1. Check in your changes.
 1. Once the version bump has been exported to GitHub, run the "Build binaries"
    workflow:
-   https://github.com/facebook/pyre-check/actions/workflows/build_pyre2_binaries.yml.
+   https://github.com/facebook/pyrefly/actions/workflows/build_binaries.yml.
 1. Once the workflow has completed, download and unzip the `dist` artifact.
 1. Run these commands in a virtual environment to upload to PyPI:
 
