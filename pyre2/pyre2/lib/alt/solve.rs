@@ -359,6 +359,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         match x {
             _ if let Some(qualifier) = self.expr_qualifier(x, type_form_context, errors) => {
+                match qualifier {
+                    Qualifier::Final | Qualifier::TypeAlias | Qualifier::ClassVar => {}
+                    _ => {
+                        self.error(
+                            errors,
+                            x.range(),
+                            ErrorKind::InvalidAnnotation,
+                            None,
+                            format!("Expected a type argument for `{}`", qualifier,),
+                        );
+                    }
+                }
                 Annotation {
                     qualifiers: vec![qualifier],
                     ty: None,

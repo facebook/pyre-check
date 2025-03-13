@@ -34,6 +34,17 @@ def test2(**kwargs: Unpack[Coord]):
 );
 
 testcase!(
+    test_incomplete_qualifiers,
+    r#"
+from typing import TypedDict, Required, NotRequired, ReadOnly
+class Coord(TypedDict):
+    x: NotRequired  # E: Expected a type argument for `NotRequired`
+    y: Required  # E: Expected a type argument for `Required`
+    z: ReadOnly  # E: Expected a type argument for `ReadOnly`
+    "#,
+);
+
+testcase!(
     test_typed_dict_invalid_inheritance,
     r#"
 from typing import TypedDict
