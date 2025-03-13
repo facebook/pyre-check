@@ -8,6 +8,7 @@
     "publish-gh-pages": "docusaurus-publish",
     "write-translations": "docusaurus-write-translations",
     "version": "docusaurus-version",
+    "clear": "docusaurus clear",
     "rename-version": "docusaurus-rename-version"
   },
   "license": "MIT",
@@ -21,7 +22,7 @@
     "docusaurus-lunr-search": "^3.4.0",
     "docusaurus-plugin-internaldocs-fb": "1.7.0",
     "react": "^17.0.2",
-    "react-codemirror2": "^7.2.1",
+    "react-codemirror2": "^8.0.1",
     "react-dom": "^16.10.2",
     "react-toastify": "^9.0.8",
     "react-trend": "^1.2.5",
