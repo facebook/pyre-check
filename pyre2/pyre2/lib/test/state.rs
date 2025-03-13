@@ -23,6 +23,7 @@ use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
 use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
 use crate::test::util::init_test;
@@ -56,7 +57,10 @@ else:
     let f = |name: &str, config: &RuntimeMetadata| {
         let name = ModuleName::from_str(name);
         let path = loader.find_import(name).unwrap().0;
-        Handle::new(name, path, config.dupe(), loader.dupe())
+        (
+            Handle::new(name, path, config.dupe(), loader.dupe()),
+            Require::Everything,
+        )
     };
 
     state.run(
@@ -65,6 +69,7 @@ else:
             f("windows", &windows),
             f("main", &linux),
         ],
+        Require::Exports,
         None,
     );
     state.check_against_expectations().unwrap();
@@ -112,13 +117,17 @@ fn test_multiple_path() {
     let mut state = State::new();
     state.run(
         &FILES.map(|(name, path, _)| {
-            Handle::new(
-                ModuleName::from_str(name),
-                ModulePath::memory(PathBuf::from(path)),
-                TestEnv::config(),
-                loader.dupe(),
+            (
+                Handle::new(
+                    ModuleName::from_str(name),
+                    ModulePath::memory(PathBuf::from(path)),
+                    TestEnv::config(),
+                    loader.dupe(),
+                ),
+                Require::Everything,
             )
         }),
+        Require::Exports,
         None,
     );
     state.print_errors();
@@ -195,7 +204,8 @@ impl Incremental {
     fn check(&mut self, want: &[&str], recompute: &[&str]) {
         let subscriber = TestSubscriber::new();
         self.state.run(
-            &want.map(|x| self.handle(x)),
+            &want.map(|x| (self.handle(x), Require::Everything)),
+            Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
         self.state.print_errors();

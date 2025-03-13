@@ -25,6 +25,7 @@ use crate::module::source_db::BuckSourceDatabase;
 use crate::run::CommandExitStatus;
 use crate::state::handle::Handle;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
 use crate::state::state::State;
 use crate::util::fs_anyhow;
 use crate::util::prelude::VecExt;
@@ -58,15 +59,18 @@ fn compute_errors(config: RuntimeMetadata, sourcedb: BuckSourceDatabase) -> Vec<
     let modules = sourcedb.modules_to_check();
     let loader = LoaderId::new(sourcedb);
     let modules_to_check = modules.into_map(|(name, path)| {
-        Handle::new(
-            name,
-            ModulePath::filesystem(path),
-            config.dupe(),
-            loader.dupe(),
+        (
+            Handle::new(
+                name,
+                ModulePath::filesystem(path),
+                config.dupe(),
+                loader.dupe(),
+            ),
+            Require::Errors,
         )
     });
     let mut state = State::new();
-    state.run_one_shot(&modules_to_check, None);
+    state.run(&modules_to_check, Require::Exports, None);
     state.collect_errors()
 }
 

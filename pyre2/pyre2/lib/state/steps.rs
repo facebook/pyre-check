@@ -185,13 +185,10 @@ impl Step {
 
     #[inline(never)]
     fn step_load<Lookup>(ctx: &Context<Lookup>) -> Arc<Load> {
-        let error_style = match ctx.loader.find_import(ctx.module) {
-            Ok((_, s)) => s,
-            Err(_) => {
-                // We shouldn't reach here, as we must be able to load the module to get here.
-                // But if we do, delayed is fairly safe.
-                ErrorStyle::Delayed
-            }
+        let error_style = if ctx.require.compute_errors() {
+            ErrorStyle::Delayed
+        } else {
+            ErrorStyle::Never
         };
         let (code, self_error) = Load::load_from_path(ctx.path, ctx.loader);
         Arc::new(Load::load_from_data(

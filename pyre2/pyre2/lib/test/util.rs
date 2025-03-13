@@ -32,6 +32,7 @@ use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
 use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
 use crate::types::class::Class;
@@ -143,11 +144,20 @@ impl TestEnv {
             // Reverse so we start at the last file, which is likely to be what the user
             // would have openned, so make it most faithful.
             .rev()
-            .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
+            .map(|(x, (path, _))| {
+                (
+                    Handle::new(x, path, config.dupe(), loader.dupe()),
+                    Require::Everything,
+                )
+            })
             .collect::<Vec<_>>();
         let mut state = State::new();
         let subscriber = TestSubscriber::new();
-        state.run(&handles, Some(Box::new(subscriber.dupe())));
+        state.run(
+            &handles,
+            Require::Exports,
+            Some(Box::new(subscriber.dupe())),
+        );
         subscriber.finish();
         state.print_errors();
         (state, move |module| {

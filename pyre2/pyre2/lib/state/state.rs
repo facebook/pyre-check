@@ -656,11 +656,11 @@ impl State {
         }
     }
 
-    fn run_step(&mut self, handles: &[Handle]) {
+    fn run_step(&mut self, handles: &[(Handle, Require)]) {
         self.now.next();
         let configs = handles
             .iter()
-            .map(|x| (x.config().dupe(), x.loader().dupe()))
+            .map(|(x, _)| (x.config().dupe(), x.loader().dupe()))
             .collect::<SmallSet<_>>();
         self.compute_stdlib(configs);
 
@@ -670,8 +670,14 @@ impl State {
             for x in dirty {
                 lock.push_fifo(Step::first(), x);
             }
-            for h in handles {
-                if let (m, true) = self.get_module_ex(h) {
+            for (h, r) in handles {
+                let (m, created) = self.get_module_ex(h);
+                m.state
+                    .write(Step::first())
+                    .unwrap()
+                    .require
+                    .set(self.require, *r);
+                if created {
                     lock.push_fifo(Step::first(), m);
                 }
             }
@@ -680,8 +686,8 @@ impl State {
         self.threads.spawn_many(|| self.work());
     }
 
-    fn ensure_loaders(&mut self, handles: &[Handle]) {
-        for h in handles {
+    fn ensure_loaders(&mut self, handles: &[(Handle, Require)]) {
+        for (h, _) in handles {
             self.loaders
                 .entry(h.loader().dupe())
                 .or_insert_with(|| Arc::new(LoaderFindCache::new(h.loader().dupe())));
@@ -728,7 +734,7 @@ impl State {
         }
     }
 
-    fn run_internal(&mut self, handles: &[Handle]) {
+    fn run_internal(&mut self, handles: &[(Handle, Require)]) {
         // We first compute all the modules that are either new or have changed.
         // Then we repeatedly compute all the modules who depend on modules that changed.
         // To ensure we guarantee termination, and don't endure more than a linear overhead,
@@ -760,15 +766,13 @@ impl State {
     /// The state afterwards will be useful for timing queries.
     /// Note we grab the `mut` only to stop other people accessing us simultaneously,
     /// we don't actually need it.
-    pub fn run_one_shot(&mut self, handles: &[Handle], subscriber: Option<Box<dyn Subscriber>>) {
-        self.require.set(Require::Exports);
-        self.subscriber = subscriber;
-        self.run_internal(handles);
-        self.subscriber = None;
-    }
-
-    pub fn run(&mut self, handles: &[Handle], subscriber: Option<Box<dyn Subscriber>>) {
-        self.require.set(Require::Everything);
+    pub fn run(
+        &mut self,
+        handles: &[(Handle, Require)],
+        default: Require,
+        subscriber: Option<Box<dyn Subscriber>>,
+    ) {
+        self.require.set(default);
         self.subscriber = subscriber;
         self.run_internal(handles);
         self.subscriber = None;

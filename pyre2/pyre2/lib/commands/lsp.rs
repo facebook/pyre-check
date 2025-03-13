@@ -81,6 +81,7 @@ use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
 use crate::state::state::State;
 use crate::util::lock::Mutex;
 use crate::util::prelude::VecExt;
@@ -309,11 +310,14 @@ impl<'a> Server<'a> {
             .lock()
             .keys()
             .map(|x| {
-                Handle::new(
-                    module_from_path(x, &self.include),
-                    ModulePath::memory(x.clone()),
-                    self.config.dupe(),
-                    self.loader.dupe(),
+                (
+                    Handle::new(
+                        module_from_path(x, &self.include),
+                        ModulePath::memory(x.clone()),
+                        self.config.dupe(),
+                        self.loader.dupe(),
+                    ),
+                    Require::Everything,
                 )
             })
             .collect::<Vec<_>>();
@@ -323,7 +327,7 @@ impl<'a> Server<'a> {
             &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
         );
 
-        self.state.lock().run(&handles, None);
+        self.state.lock().run(&handles, Require::Everything, None);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         let open_files = self.open_files.lock();
         for x in open_files.keys() {

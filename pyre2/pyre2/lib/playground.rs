@@ -27,6 +27,7 @@ use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
 use crate::state::state::State;
 use crate::util::prelude::VecExt;
 use crate::util::reduced_stdlib::lookup_stdlib;
@@ -203,7 +204,11 @@ impl Default for LanguageServiceState {
             DemoEnv::config(),
             loader.dupe(),
         );
-        state.run(&[handle.dupe()], None);
+        state.run(
+            &[(handle.dupe(), Require::Everything)],
+            Require::Exports,
+            None,
+        );
         Self {
             state,
             demo_env,
@@ -218,7 +223,11 @@ impl LanguageServiceState {
         self.demo_env.lock().unwrap().add("test", source);
         self.state
             .invalidate_memory(self.loader.dupe(), &[PathBuf::from("test.py")]);
-        self.state.run(&[self.handle.dupe()], None);
+        self.state.run(
+            &[(self.handle.dupe(), Require::Everything)],
+            Require::Exports,
+            None,
+        );
     }
 
     pub fn get_errors(&self) -> Vec<Diagnostic> {

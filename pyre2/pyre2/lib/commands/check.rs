@@ -40,6 +40,7 @@ use crate::state::handle::Handle;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
+use crate::state::require::Require;
 use crate::state::state::State;
 use crate::state::subscriber::ProgressBarSubscriber;
 use crate::util::display::number_thousands;
@@ -47,6 +48,7 @@ use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
 use crate::util::listing::FileList;
 use crate::util::memory::MemoryUsageTrace;
+use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
 use crate::util::watcher::Watcher;
 
@@ -261,7 +263,24 @@ impl Args {
                 .push((path, config));
         }
 
-        let handles: Vec<Handle> = partition_by_loader_inputs
+        let retain = args.report_binding_memory.is_some()
+            || args.debug_info.is_some()
+            || args.report_trace.is_some();
+
+        let specified_require = if retain {
+            Require::Everything
+        } else {
+            Require::Errors
+        };
+        let default_require = if retain {
+            Require::Everything
+        } else if args.check_all {
+            Require::Errors
+        } else {
+            Require::Exports
+        };
+
+        let handles: Vec<(Handle, Require)> = partition_by_loader_inputs
             .into_iter()
             .flat_map(|(loader_inputs, files_and_configs)| {
                 let files_with_module_name_and_metadata =
@@ -276,11 +295,14 @@ impl Args {
                 );
                 files_with_module_name_and_metadata.into_map(
                     |(path, module_name, runtime_metadata)| {
-                        Handle::new(
-                            module_name,
-                            ModulePath::filesystem(path),
-                            runtime_metadata,
-                            loader.dupe(),
+                        (
+                            Handle::new(
+                                module_name,
+                                ModulePath::filesystem(path),
+                                runtime_metadata,
+                                loader.dupe(),
+                            ),
+                            specified_require,
                         )
                     },
                 )
@@ -294,14 +316,7 @@ impl Args {
         let mut holder = Forgetter::new(state, allow_forget);
         let state = holder.as_mut();
 
-        if args.report_binding_memory.is_none()
-            && args.debug_info.is_none()
-            && args.report_trace.is_none()
-        {
-            state.run_one_shot(&handles, Some(progress))
-        } else {
-            state.run(&handles, Some(progress))
-        };
+        state.run(&handles, default_require, Some(progress));
         let computing = start.elapsed();
         if let Some(path) = args.output {
             let errors = state.collect_errors();
@@ -322,7 +337,8 @@ impl Args {
             memory_trace.peak()
         );
         if let Some(debug_info) = args.debug_info {
-            let mut output = serde_json::to_string_pretty(&state.debug_info(&handles))?;
+            let mut output =
+                serde_json::to_string_pretty(&state.debug_info(&handles.map(|x| x.0.dupe())))?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
             }

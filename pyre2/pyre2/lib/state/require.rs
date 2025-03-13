@@ -16,7 +16,6 @@ pub enum Require {
     /// It's only purpose is to provide information about dependencies, namely Exports.
     Exports,
     /// We want to know what errors this module produces.
-    #[allow(dead_code)]
     Errors,
     /// We want to retain all information about this module in memory,
     /// including the AST and bindings/answers.
@@ -85,7 +84,6 @@ impl RequireOverride {
         Self(Epoch::zero(), Require::Exports)
     }
 
-    #[allow(dead_code)]
     pub fn set(&mut self, default: RequireDefault, value: Require) {
         self.0 = default.0;
         self.1 = value;
