@@ -543,9 +543,7 @@
   ],
   "namedtuples_define_functional.py": [],
   "namedtuples_type_compat.py": [],
-  "namedtuples_usage.py": [
-    "Line 40: Expected 1 errors"
-  ],
+  "namedtuples_usage.py": [],
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
     "Line 107: Expected 1 errors",
@@ -573,8 +571,6 @@
   "protocols_definition.py": [
     "Line 116: Expected 1 errors",
     "Line 117: Expected 1 errors",
-    "Line 340: Expected 1 errors",
-    "Line 341: Expected 1 errors",
     "Line 281: Unexpected errors ['`Concrete5_Good2` is not assignable to `Template5`']"
   ],
   "protocols_explicit.py": [

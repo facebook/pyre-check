@@ -24,6 +24,7 @@ assert_type(p[0], int)
 assert_type(p[1], str)
 assert_type(p[:2], tuple[int, str])
 p["oops"]  # E: Cannot index into `Pair`  # E: `Literal['oops']` is not assignable to parameter with type `SupportsIndex`
+p.x = 1  # E: Cannot assign to read-only field `x`
     "#,
 );
 

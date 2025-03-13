@@ -675,6 +675,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn resolve_named_tuple_element(&self, attr: Attribute) -> Option<Type> {
+        // NamedTuples are immutable, so their attributes are always read-only
+        match attr.inner {
+            AttributeInner::ReadOnly(ty) => Some(ty),
+            AttributeInner::ReadWrite(_)
+            | AttributeInner::NoAccess(_)
+            | AttributeInner::Property(..)
+            | AttributeInner::Descriptor(..) => None,
+        }
+    }
+
     /// A convenience function for callers which want an error but do not need to distinguish
     /// between NotFound and Error results.
     fn get_type_or_conflated_error_msg(

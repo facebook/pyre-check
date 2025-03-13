@@ -9157,6 +9157,16 @@
     {
       "code": -2,
       "column": 1,
+      "concise_description": "Cannot assign to read-only field `x`",
+      "description": "Cannot assign to read-only field `x`",
+      "line": 40,
+      "name": "read-only",
+      "stop_column": 4,
+      "stop_line": 40
+    },
+    {
+      "code": -2,
+      "column": 1,
       "concise_description": "Item assignment is not supported on `Point`\n  Object of class `Point` has no attribute `__setitem__`",
       "description": "Item assignment is not supported on `Point`\n  Object of class `Point` has no attribute `__setitem__`",
       "line": 41,
@@ -9573,6 +9583,26 @@
       "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 339
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "`Concrete6_Bad2` is not assignable to `Template6`",
+      "description": "`Concrete6_Bad2` is not assignable to `Template6`",
+      "line": 340,
+      "name": "type-mismatch",
+      "stop_column": 38,
+      "stop_line": 340
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "`Concrete6_Bad3` is not assignable to `Template6`",
+      "description": "`Concrete6_Bad3` is not assignable to `Template6`",
+      "line": 341,
+      "name": "type-mismatch",
+      "stop_column": 38,
+      "stop_line": 341
     }
   ],
   "protocols_explicit.py": [

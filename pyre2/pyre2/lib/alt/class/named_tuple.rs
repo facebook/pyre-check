@@ -47,7 +47,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .iter()
                 .filter_map(|name| {
                     let attr = self.try_lookup_attr(&Type::ClassType(cls.clone()), name)?;
-                    self.resolve_as_instance_method(attr)
+                    self.resolve_named_tuple_element(attr)
                 })
                 .collect(),
         )

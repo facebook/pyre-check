@@ -384,7 +384,12 @@ fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
     make_bound_method_helper(cls.self_type(), attr, &should_bind)
 }
 
-fn bind_instance_attribute(cls: &ClassType, attr: Type, is_class_var: bool) -> Attribute {
+fn bind_instance_attribute(
+    cls: &ClassType,
+    attr: Type,
+    is_class_var: bool,
+    readonly: bool,
+) -> Attribute {
     // Decorated objects are methods, so they can't be ClassVars
     match attr {
         _ if attr.is_property_getter() => Attribute::property(
@@ -397,7 +402,9 @@ fn bind_instance_attribute(cls: &ClassType, attr: Type, is_class_var: bool) -> A
             Some(make_bound_method(cls, &attr).unwrap_or(attr)),
             cls.class_object().dupe(),
         ),
-        attr if is_class_var => Attribute::read_only(make_bound_method(cls, &attr).unwrap_or(attr)),
+        attr if is_class_var || readonly => {
+            Attribute::read_only(make_bound_method(cls, &attr).unwrap_or(attr))
+        }
         attr => {
             Attribute::read_write(make_bound_method(cls, &attr).unwrap_or_else(|| {
                 make_bound_classmethod(cls.class_object(), &attr).unwrap_or(attr)
@@ -509,10 +516,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ty
         };
 
-        // Dataclass read-onlyness (does not currently handle other kinds of readonlyness)
-        let readonly = metadata
+        // TODO: handle other kinds of readonlyness
+        let is_namedtuple_member = metadata
+            .named_tuple_metadata()
+            .is_some_and(|named_tuple| named_tuple.elements.contains(name));
+        let is_frozen_dataclass = metadata
             .dataclass_metadata()
             .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
+        let readonly = is_namedtuple_member || is_frozen_dataclass;
 
         // Identify whether this is a descriptor
         let (mut descriptor_getter, mut descriptor_setter) = (None, None);
@@ -630,7 +641,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let is_class_var = annotation.is_some_and(|ann| ann.is_class_var());
                 match field.initialization() {
                     ClassFieldInitialization::Class(_) => {
-                        bind_instance_attribute(cls, ty, is_class_var)
+                        bind_instance_attribute(cls, ty, is_class_var, readonly)
                     }
                     ClassFieldInitialization::Instance if readonly || is_class_var => {
                         Attribute::read_only(ty)
