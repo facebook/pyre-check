@@ -923,22 +923,6 @@ impl State {
             }
         }
     }
-
-    /* Notes on how to move to incremental
-
-    /// Run, collecting all errors and leaving enough around for further queries and incremental updates.
-    pub fn run_incremental(&mut self) -> Vec<Error> {
-        // FIXME: Should be incremental and not retain all state.
-        unimplemented!()
-    }
-
-    /// Note that a particular path has changed, and the results are potentially invalid.
-    pub fn update(&mut self, path: &Path) {
-        let _ = path;
-        // FIXME: For now, just invalidate everything.
-        self.clear();
-    }
-    */
 }
 
 pub struct StateHandle<'a> {
