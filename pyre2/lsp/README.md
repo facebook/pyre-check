@@ -15,12 +15,13 @@ Based on a combination of:
 
 ## Pre-requisites
 
-You need to have npm v7+ installed. Afterwards, run `npm install` in this folder
-and in `client`.
+- You need to have npm v7+ installed. Afterwards, run `npm install` in this
+  folder and in `client`.
 
-## Debugging
+## Debugging (Recommended Development Workflow)
 
 - Follow steps in Pre-requisites section.
+- Ensure `cargo` is installed
 - Open VS Code on the pyre2 folder.
 - Switch to the Debug viewlet.
 - Select `Run Installed Extension (pyre2)` from the drop down.
@@ -34,11 +35,25 @@ and in `client`.
 ## Installing
 
 - Follow steps in Pre-requisites section.
+- Build the Pyre2 binary with
+  `buck2 build pyre2 @fbcode//mode/opt --show-output` or `cargo build` and
+  either:
+
+1. Place binary at `lsp/bin/release/pyrefly(.exe)`
+2. Add the `pyre2.lspPath` configuration key to point at it after extension
+   startup.
+
 - Run `npm install vsce`
 - Run `npm exec vsce package`
 - In VS Code, go to Extensions, click on the "..." button in the Extensions bar,
   select "Install from VSIX" and then select the `pyre2-1.0.0.vsix` file that
   was produced.
+
+## Building for all Platforms
+
+- Run
+  [build_extension](https://github.com/facebook/pyrefly/actions/workflows/build_extension.yml)
+  github workflow on your branch.
 
 ## Updating
 
