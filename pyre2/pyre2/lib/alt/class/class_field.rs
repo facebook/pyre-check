@@ -34,7 +34,7 @@ use crate::types::annotation::Annotation;
 use crate::types::annotation::Qualifier;
 use crate::types::callable::BoolKeywords;
 use crate::types::callable::DataclassKeywords;
-use crate::types::callable::Function;
+use crate::types::callable::FuncMetadata;
 use crate::types::callable::FunctionKind;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
@@ -356,30 +356,31 @@ pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
 fn make_bound_method_helper(
     obj: Type,
     attr: &Type,
-    should_bind: &dyn Fn(&Function) -> bool,
+    should_bind: &dyn Fn(&FuncMetadata) -> bool,
 ) -> Option<Type> {
     let func = match attr {
-        Type::Forall(forall) if matches!(&forall.ty, ForallType::Function(func) if should_bind(func)) => {
+        Type::Forall(forall) if matches!(&forall.ty, ForallType::Function(func) if should_bind(&func.metadata)) => {
             Some(BoundMethodType::Forall((**forall).clone()))
         }
-        Type::Function(box func) if should_bind(func) => {
+        Type::Function(box func) if should_bind(&func.metadata) => {
             Some(BoundMethodType::Function(func.clone()))
         }
-        Type::Overload(overload) => Some(BoundMethodType::Overload(overload.clone())),
+        Type::Overload(overload) if should_bind(&overload.metadata) => {
+            Some(BoundMethodType::Overload(overload.clone()))
+        }
         _ => None,
     };
     func.map(|func| Type::BoundMethod(Box::new(BoundMethod { obj, func })))
 }
 
 fn make_bound_classmethod(cls: &Class, attr: &Type) -> Option<Type> {
-    let should_bind = |func: &Function| func.metadata.flags.is_classmethod;
+    let should_bind = |meta: &FuncMetadata| meta.flags.is_classmethod;
     make_bound_method_helper(Type::ClassDef(cls.dupe()), attr, &should_bind)
 }
 
 fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
-    let should_bind = |func: &Function| {
-        !func.metadata.flags.is_staticmethod && !func.metadata.flags.is_classmethod
-    };
+    let should_bind =
+        |meta: &FuncMetadata| !meta.flags.is_staticmethod && !meta.flags.is_classmethod;
     make_bound_method_helper(cls.self_type(), attr, &should_bind)
 }
 

@@ -240,3 +240,24 @@ def g(meow: Mammal, chirp: Bird):
         assert_type(chirp, Robin)
     "#,
 );
+
+testcase!(
+    test_classmethod,
+    r#"
+from typing import assert_type, overload
+class A:
+    @overload
+    @classmethod
+    def f(cls, x: int) -> int: ...
+
+    @overload
+    @classmethod
+    def f(cls, x: str) -> str: ...
+
+    @classmethod
+    def f(cls, x: int | str) -> int | str:
+        return x
+
+assert_type(A().f(1), int)
+    "#,
+);
