@@ -324,6 +324,7 @@ impl BoundMethodType {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Overload {
     pub signatures: Vec1<Type>,
+    pub metadata: Box<FuncMetadata>,
 }
 
 impl Overload {
@@ -620,7 +621,12 @@ impl Type {
                 .signatures
                 .try_mapped_ref(|x| x.to_unbound_callable().ok_or(()))
                 .ok()
-                .map(|signatures| Type::Overload(Overload { signatures })),
+                .map(|signatures| {
+                    Type::Overload(Overload {
+                        signatures,
+                        metadata: overload.metadata.clone(),
+                    })
+                }),
             _ => None,
         }
     }

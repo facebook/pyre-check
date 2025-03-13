@@ -9,8 +9,14 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 
+use crate::module::module_name::ModuleName;
+use crate::types::callable::FuncFlags;
+use crate::types::callable::FuncId;
+use crate::types::callable::FuncMetadata;
+use crate::types::callable::FunctionKind;
 use crate::types::types::Type;
 
 /// The type of a function definition after decorators are applied. Metadata arising from the
@@ -20,6 +26,7 @@ use crate::types::types::Type;
 pub struct DecoratedFunction {
     pub id_range: TextRange,
     pub ty: Type,
+    pub metadata: FuncMetadata,
     pub is_overload: bool,
 }
 
@@ -34,6 +41,14 @@ impl DecoratedFunction {
         DecoratedFunction {
             id_range: TextRange::default(),
             ty: Type::any_implicit(),
+            metadata: FuncMetadata {
+                kind: FunctionKind::Def(Box::new(FuncId {
+                    module: ModuleName::default(),
+                    cls: None,
+                    func: Name::default(),
+                })),
+                flags: FuncFlags::default(),
+            },
             is_overload: false,
         }
     }

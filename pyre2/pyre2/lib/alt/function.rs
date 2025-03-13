@@ -93,7 +93,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     acc.split_off_first().0
                 } else {
                     acc.reverse();
-                    Type::Overload(Overload { signatures: acc })
+                    Type::Overload(Overload {
+                        signatures: acc,
+                        metadata: Box::new(first.metadata.clone()),
+                    })
                 }
             } else {
                 ty
@@ -117,7 +120,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                     defs.split_off_first().0
                 } else {
-                    Type::Overload(Overload { signatures: defs })
+                    Type::Overload(Overload {
+                        signatures: defs,
+                        metadata: Box::new(first.metadata.clone()),
+                    })
                 }
             } else {
                 first.ty.clone()
@@ -372,22 +378,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             defining_cls.as_ref().map(|cls| cls.name()),
             &def.name.id,
         );
+        let metadata = FuncMetadata {
+            kind,
+            flags: FuncFlags {
+                is_overload,
+                is_staticmethod,
+                is_classmethod,
+                is_property_getter,
+                is_property_setter_with_getter,
+                has_enum_member_decoration,
+                is_override,
+            },
+        };
         let mut ty = Forall::new_type(
             self.type_params(def.range, tparams, errors),
             ForallType::Function(Function {
                 signature: callable,
-                metadata: FuncMetadata {
-                    kind,
-                    flags: FuncFlags {
-                        is_overload,
-                        is_staticmethod,
-                        is_classmethod,
-                        is_property_getter,
-                        is_property_setter_with_getter,
-                        has_enum_member_decoration,
-                        is_override,
-                    },
-                },
+                metadata: metadata.clone(),
             }),
         );
         for x in decorators.into_iter().rev() {
@@ -396,6 +403,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Arc::new(DecoratedFunction {
             id_range: def.name.range,
             ty,
+            metadata,
             is_overload,
         })
     }
