@@ -674,36 +674,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) {
-        // Perform override checks
-        let class_type = match class.self_type() {
-            Type::ClassType(class_type) => Some(class_type),
-            _ => None,
+        let Type::ClassType(class_type) = class.self_type() else {
+            return;
         };
-        if let Some(class_type) = class_type {
-            let got = self.as_instance_attribute(class_field.clone(), &class_type);
-            let got_is_class_var = class_field.is_class_var();
-            let metadata = self.get_metadata_for_class(class);
-            let parents = metadata.bases_with_metadata();
+        let got = self.as_instance_attribute(class_field.clone(), &class_type);
+        let got_is_class_var = class_field.is_class_var();
+        let metadata = self.get_metadata_for_class(class);
+        let parents = metadata.bases_with_metadata();
+        let mut parent_attr_found = false;
+        let mut parent_has_any = false;
+        for (parent, parent_metadata) in parents {
+            parent_has_any = parent_has_any || parent_metadata.has_base_any();
+            // todo zeina: skip private properties and dunder methods for now. This will need some special casing.
+            if name.starts_with('_') && name.ends_with('_') {
+                continue;
+            }
+            if let Some(want) = self.type_order().try_lookup_attr(&parent.self_type(), name) {
+                parent_attr_found = true;
+                let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
+                    self.solver().is_subset_eq(got, want, self.type_order())
+                });
 
-            let mut parent_attr_found = false;
-            let mut parent_has_any = false;
-
-            for (parent, parent_metadata) in parents {
-                parent_has_any = parent_has_any || parent_metadata.has_base_any();
-
-                // todo zeina: skip private properties and dunder methods for now. This will need some special casing.
-                if name.starts_with('_') && name.ends_with('_') {
-                    continue;
-                }
-
-                if let Some(want) = self.type_order().try_lookup_attr(&parent.self_type(), name) {
-                    parent_attr_found = true;
-                    let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
-                        self.solver().is_subset_eq(got, want, self.type_order())
-                    });
-
-                    if !attr_check {
-                        self.error(
+                if !attr_check {
+                    self.error(
                             errors,
                             range,
                             ErrorKind::BadOverride,
@@ -714,15 +707,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 parent.name()
                             ),
                         );
-                    }
                 }
-                if let Some(want_class_field) = self.get_class_member(parent.class_object(), name)
-                    && want_class_field.value.has_explicit_annotation()
-                    && class_field.has_explicit_annotation()
-                {
-                    let want_is_class_var = want_class_field.value.is_class_var();
-                    if want_is_class_var && !got_is_class_var {
-                        self.error(
+            }
+            if let Some(want_class_field) = self.get_class_member(parent.class_object(), name)
+                && want_class_field.value.has_explicit_annotation()
+                && class_field.has_explicit_annotation()
+            {
+                let want_is_class_var = want_class_field.value.is_class_var();
+                if want_is_class_var && !got_is_class_var {
+                    self.error(
                             errors,
                             range,
                             ErrorKind::BadOverride,
@@ -733,8 +726,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 parent.name()
                             ),
                         );
-                    } else if !want_is_class_var && got_is_class_var {
-                        self.error(
+                } else if !want_is_class_var && got_is_class_var {
+                    self.error(
                             errors,
                             range,
                             ErrorKind::BadOverride,
@@ -745,11 +738,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 parent.name()
                             ),
                         );
-                    }
                 }
             }
-            if is_override && !parent_attr_found && !parent_has_any {
-                self.error(
+        }
+        if is_override && !parent_attr_found && !parent_has_any {
+            self.error(
                     errors,
                     range,
                     ErrorKind::BadOverride,
@@ -759,8 +752,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         name,
                     ),
                 );
-            }
-        };
+        }
     }
 
     pub fn get_class_field_non_synthesized(
