@@ -326,7 +326,7 @@ impl<'a> Server<'a> {
             &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
         );
 
-        self.state.lock().run(&handles, Require::Everything, None);
+        self.state.lock().run(&handles, Require::Exports, None);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         let open_files = self.open_files.lock();
         for x in open_files.keys() {
