@@ -121,9 +121,6 @@
     "Line 214: Unexpected errors ['`(ParamSpec(?_ParamSpec)) -> None` is not assignable to `ProtocolWithP[?_ParamSpec]`']"
   ],
   "classes_classvar.py": [
-    "Line 45: Expected 1 errors",
-    "Line 46: Expected 1 errors",
-    "Line 47: Expected 1 errors",
     "Line 54: Expected 1 errors"
   ],
   "classes_override.py": [

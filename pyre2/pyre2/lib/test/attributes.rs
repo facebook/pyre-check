@@ -171,6 +171,16 @@ def f(a: A):
 );
 
 testcase!(
+    test_generic_classvar,
+    r#"
+from typing import ClassVar
+class A[T]:
+    x: ClassVar[T]  # E: `ClassVar` arguments may not contain any type variables
+    y: ClassVar[list[T]]  # E: `ClassVar` arguments may not contain any type variables
+    "#,
+);
+
+testcase!(
     test_self_attribute_annotated_twice,
     r#"
 from typing import assert_type, Literal, Final

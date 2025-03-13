@@ -565,6 +565,30 @@ impl Type {
         }
     }
 
+    pub fn is_type_variable(&self) -> bool {
+        match self {
+            Type::Var(_)
+            | Type::Quantified(_)
+            | Type::TypeVarTuple(_)
+            | Type::TypeVar(_)
+            | Type::ParamSpec(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn has_type_variable(&self) -> bool {
+        if self.is_type_variable() {
+            return true;
+        }
+        let mut has_type_var = false;
+        self.visit(|t| {
+            if t.is_type_variable() {
+                has_type_var = true;
+            }
+        });
+        has_type_var
+    }
+
     pub fn is_kind_param_spec(&self) -> bool {
         match self {
             Type::Ellipsis
