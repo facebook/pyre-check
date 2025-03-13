@@ -33,7 +33,7 @@ class A:
         return x + y
 
 class B(A):
-    def f(self, x:int, y:int) -> int: # E: Class member `f` overrides parent class `A` in an inconsistent manner
+    def f(self, x:int, y:int) -> int: # E: Class member `B.f` overrides parent class `A` in an inconsistent manner
         return x + y        
  "#,
 );
@@ -51,7 +51,7 @@ class B(A):
 
 class C(B):
     x: int
-    y: str # E: Class member `y` overrides parent class `B` in an inconsistent manner
+    y: str # E: Class member `C.y` overrides parent class `B` in an inconsistent manner
  "#,
 );
 
@@ -64,11 +64,11 @@ class A:
 class B:
     x: ClassVar[int] = 1
 class C(A):
-    x: ClassVar[int] = 1  # E: Class member `x` overrides parent class `A` in an inconsistent manner  # E: ClassVar `x` overrides instance variable of the same name in parent class `A`
+    x: ClassVar[int] = 1  # E: Class member `C.x` overrides parent class `A` in an inconsistent manner  # E: ClassVar `C.x` overrides instance variable of the same name in parent class `A`
 class D(B):
     x: ClassVar[int] = 1  # OK
 class E(B):
-    x: int = 1  # E: Instance variable `x` overrides ClassVar of the same name in parent class `B`
+    x: int = 1  # E: Instance variable `E.x` overrides ClassVar of the same name in parent class `B`
  "#,
 );
 
@@ -118,7 +118,7 @@ class A:
 
 class B(A):
     @override
-    def method2(self) -> int: # E: Class member `method2` is marked as an override, but no parent class has a matching attribute
+    def method2(self) -> int: # E: Class member `B.method2` is marked as an override, but no parent class has a matching attribute
         return 1
  "#,
 );
@@ -143,7 +143,7 @@ class A:
 
 class B(A):
     def __init__(self) -> None:
-        self.x = 0 # E: Class member `x` overrides parent class `A` in an inconsistent manner
+        self.x = 0 # E: Class member `B.x` overrides parent class `A` in an inconsistent manner
  "#,
 );
 
@@ -158,17 +158,17 @@ class ParentA:
 class ChildA(ParentA):
     @staticmethod
     @override
-    def static_method1() -> int: # E: Class member `static_method1` is marked as an override, but no parent class has a matching attribute
+    def static_method1() -> int: # E: Class member `ChildA.static_method1` is marked as an override, but no parent class has a matching attribute
         return 1
 
     @classmethod
     @override
-    def class_method1(cls) -> int: # E: Class member `class_method1` is marked as an override, but no parent class has a matching attribute
+    def class_method1(cls) -> int: # E: Class member `ChildA.class_method1` is marked as an override, but no parent class has a matching attribute
         return 1
 
     @property
     @override
-    def property1(self) -> int: # E: Class member `property1` is marked as an override, but no parent class has a matching attribute
+    def property1(self) -> int: # E: Class member `ChildA.property1` is marked as an override, but no parent class has a matching attribute
         return 1
     
  "#,
@@ -185,7 +185,7 @@ class ParentA:
 class ChildA(ParentA):
     @override
     @staticmethod
-    def static_method1() -> int: # E: Class member `static_method1` is marked as an override, but no parent class has a matching attribute
+    def static_method1() -> int: # E: Class member `ChildA.static_method1` is marked as an override, but no parent class has a matching attribute
         return 1
     
  "#,

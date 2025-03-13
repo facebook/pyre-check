@@ -702,7 +702,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ErrorKind::BadOverride,
                             None,
                             format!(
-                                "Class member `{}` overrides parent class `{}` in an inconsistent manner",
+                                "Class member `{}.{}` overrides parent class `{}` in an inconsistent manner",
+                                class.name(),
                                 name,
                                 parent.name()
                             ),
@@ -721,7 +722,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ErrorKind::BadOverride,
                             None,
                             format!(
-                                "Instance variable `{}` overrides ClassVar of the same name in parent class `{}`",
+                                "Instance variable `{}.{}` overrides ClassVar of the same name in parent class `{}`",
+                                class.name(),
                                 name,
                                 parent.name()
                             ),
@@ -733,7 +735,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ErrorKind::BadOverride,
                             None,
                             format!(
-                                "ClassVar `{}` overrides instance variable of the same name in parent class `{}`",
+                                "ClassVar `{}.{}` overrides instance variable of the same name in parent class `{}`",
+                                class.name(),
                                 name,
                                 parent.name()
                             ),
@@ -748,7 +751,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ErrorKind::BadOverride,
                     None,
                     format!(
-                        "Class member `{}` is marked as an override, but no parent class has a matching attribute",
+                        "Class member `{}.{}` is marked as an override, but no parent class has a matching attribute",
+                        class.name(),
                         name,
                     ),
                 );

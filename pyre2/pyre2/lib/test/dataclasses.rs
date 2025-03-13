@@ -103,7 +103,7 @@ class A:
     y: float
 @dataclasses.dataclass
 class B(A):
-    x: str # E:  Class member `x` overrides parent class `A` in an inconsistent manner
+    x: str # E:  Class member `B.x` overrides parent class `A` in an inconsistent manner
 # Overwriting x doesn't change the param order but does change its type
 B('0', 1.0)  # OK
 B(0, 1.0)  # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`

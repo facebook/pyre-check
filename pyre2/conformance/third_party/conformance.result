@@ -587,7 +587,7 @@
     "Line 110: Expected 1 errors",
     "Line 135: Expected 1 errors",
     "Line 165: Expected 1 errors",
-    "Line 157: Unexpected errors ['Class member `method1` overrides parent class `Proto7` in an inconsistent manner']"
+    "Line 157: Unexpected errors ['Class member `Mixin7.method1` overrides parent class `Proto7` in an inconsistent manner']"
   ],
   "protocols_generic.py": [
     "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)']",
@@ -669,8 +669,8 @@
     "Line 30: Unexpected errors ['Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 35: Unexpected errors ['Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
     "Line 50: Unexpected errors ['Argument `(self: Base2, x: int | str) -> int | str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 81: Unexpected errors ['Class member `method` overrides parent class `Base3` in an inconsistent manner']",
-    "Line 95: Unexpected errors ['Class member `method` overrides parent class `Base4` in an inconsistent manner']",
+    "Line 81: Unexpected errors ['Class member `Derived3.method` overrides parent class `Base3` in an inconsistent manner']",
+    "Line 95: Unexpected errors ['Class member `Derived4.method` overrides parent class `Base4` in an inconsistent manner']",
     "Line 111: Unexpected errors ['Argument `(self: Base5_2, v: int) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']"
   ],
   "specialtypes_any.py": [
@@ -753,8 +753,8 @@
     "Line 106: Expected 1 errors",
     "Line 119: Expected 1 errors",
     "Line 132: Expected 1 errors",
-    "Line 49: Unexpected errors ['Class member `albums` overrides parent class `AlbumCollection` in an inconsistent manner']",
-    "Line 76: Unexpected errors ['Class member `ident` overrides parent class `OptionalIdent` in an inconsistent manner']"
+    "Line 49: Unexpected errors ['Class member `RecordShop.albums` overrides parent class `AlbumCollection` in an inconsistent manner']",
+    "Line 76: Unexpected errors ['Class member `User.ident` overrides parent class `OptionalIdent` in an inconsistent manner']"
   ],
   "typeddicts_readonly_kwargs.py": [],
   "typeddicts_readonly_update.py": [
