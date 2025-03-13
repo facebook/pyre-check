@@ -724,6 +724,10 @@ impl Type {
         self.check_func_metadata(&|meta| meta.flags.is_property_setter_with_getter.clone())
     }
 
+    pub fn is_overload(&self) -> bool {
+        self.check_func_metadata(&|meta| meta.flags.is_overload)
+    }
+
     pub fn transform_func_metadata(&mut self, mut f: impl FnMut(&mut FuncMetadata)) {
         match self {
             Type::Function(box func)

@@ -1587,15 +1587,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let ts = ks
                         .iter()
-                        .map(|k| self.get_idx(*k).arc_clone())
+                        .filter_map(|k| {
+                            let t = self.get_idx(*k);
+                            // Filter out all `@overload`-decorated types except the one that
+                            // accumulates all signatures into a Type::Overload.
+                            if matches!(*t, Type::Overload(_)) || !t.is_overload() {
+                                Some(t.arc_clone())
+                            } else {
+                                None
+                            }
+                        })
                         .collect::<Vec<_>>();
-                    if matches!(ts.last(), Some(Type::Overload(_))) {
-                        // TODO: we should drop only the preceding `@overload`-decorated functions,
-                        // not everything else.
-                        ts.into_iter().last().unwrap()
-                    } else {
-                        self.unions(ts)
-                    }
+                    self.unions(ts)
                 }
             }
             Binding::Narrow(k, op, range) => self.narrow(&self.get_idx(*k), op, *range, errors),

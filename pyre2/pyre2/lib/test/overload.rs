@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_py,
@@ -30,8 +29,7 @@ def anywhere():
     "#,
 );
 
-testcase_with_bug!(
-    "Signature of `f` in `if x` branch is accidentally discarded when we drop overload signatures while solving Binding::Phi",
+testcase!(
     test_branches,
     r#"
 from typing import assert_type, overload
@@ -46,7 +44,7 @@ else:
     def f(x: int | str) -> int | str:
         return x
 def g(x: str):
-    assert_type(f(x), bytes | str)  # E: assert_type(str, bytes | str)
+    assert_type(f(x), bytes | str)
     "#,
 );
 
