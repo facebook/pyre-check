@@ -238,33 +238,11 @@ impl TypeAlias {
 assert_words!(Type, 4);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Decoration {
-    // The result of applying the `@property` decorator.
-    Property(Box<(Type, Option<Type>)>),
-    // The result of accessing `.setter` on a property (which produces a decorator
-    // that takes a value and makes it the property getter, returning the result)
-    PropertySetterDecorator(Box<Type>),
-}
+pub enum Decoration {}
 
 impl Decoration {
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
-        match self {
-            Self::Property(box (getter, setter)) => {
-                f(getter);
-                setter.iter().for_each(&mut f)
-            }
-            Self::PropertySetterDecorator(ty) => f(ty),
-        }
-    }
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        match self {
-            Self::Property(box (getter, setter)) => {
-                f(getter);
-                setter.iter_mut().for_each(&mut f)
-            }
-            Self::PropertySetterDecorator(ty) => f(ty),
-        }
-    }
+    pub fn visit<'a>(&'a self, _f: impl FnMut(&'a Type)) {}
+    pub fn visit_mut<'a>(&'a mut self, _f: impl FnMut(&'a mut Type)) {}
 }
 
 #[derive(Debug)]
@@ -498,6 +476,7 @@ pub enum Type {
     /// Used to represent decorator-related scenarios that cannot be easily
     /// represented in terms of normal types - for example, builtin descriptors
     /// like `@classmethod`, or the result of `@some_property.setter`.
+    #[expect(dead_code)]
     Decoration(Decoration),
     /// Represents the result of a super() call. The first ClassType is the class that attribute lookup
     /// on the super instance should be done on (*not* the class passed to the super() call), and the second
@@ -713,7 +692,7 @@ impl Type {
         seen
     }
 
-    fn check_func_metadata(&self, check: &dyn Fn(&FuncMetadata) -> bool) -> bool {
+    fn check_func_metadata<T: Default>(&self, check: &dyn Fn(&FuncMetadata) -> T) -> T {
         match self {
             Type::Function(box func)
             | Type::Forall(box Forall {
@@ -725,10 +704,7 @@ impl Type {
                 ..
             }) => check(&func.metadata),
             Type::Overload(overload) => overload.0.first().check_func_metadata(check),
-            Type::Decoration(Decoration::Property(box (t1, t2))) => {
-                t1.is_override() || t2.as_ref().is_some_and(|t| t.is_override())
-            }
-            _ => false,
+            _ => T::default(),
         }
     }
 
@@ -738,6 +714,30 @@ impl Type {
 
     pub fn has_enum_member_decoration(&self) -> bool {
         self.check_func_metadata(&|meta| meta.flags.has_enum_member_decoration)
+    }
+
+    pub fn is_property_getter(&self) -> bool {
+        self.check_func_metadata(&|meta| meta.flags.is_property_getter)
+    }
+
+    pub fn is_property_setter_with_getter(&self) -> Option<Type> {
+        self.check_func_metadata(&|meta| meta.flags.is_property_setter_with_getter.clone())
+    }
+
+    pub fn transform_func_metadata(&mut self, mut f: impl FnMut(&mut FuncMetadata)) {
+        match self {
+            Type::Function(box func)
+            | Type::Forall(box Forall {
+                ty: ForallType::Function(func),
+                ..
+            })
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Function(func),
+                ..
+            }) => f(&mut func.metadata),
+            Type::Overload(overload) => overload.0.first_mut().transform_func_metadata(f),
+            _ => {}
+        }
     }
 
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {

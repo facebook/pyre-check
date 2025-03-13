@@ -184,6 +184,11 @@ pub struct FuncFlags {
     pub is_overload: bool,
     pub is_staticmethod: bool,
     pub is_classmethod: bool,
+    /// A function decorated with `@property`
+    pub is_property_getter: bool,
+    /// A function decorated with `@foo.setter`, where `foo` is some `@property`-decorated function.
+    /// The stored type is `foo` (the getter).
+    pub is_property_setter_with_getter: Option<Type>,
     pub has_enum_member_decoration: bool,
     pub is_override: bool,
 }
@@ -222,10 +227,11 @@ pub enum FunctionKind {
     ClassMethod,
     Overload,
     Override,
-    Def(Box<FuncId>),
     Cast,
     AssertType,
     RevealType,
+    PropertySetter(Box<FuncId>),
+    Def(Box<FuncId>),
 }
 
 /// A map from keywords to boolean values. Useful for storing sets of keyword arguments for various
@@ -530,7 +536,7 @@ impl FunctionKind {
                 cls: None,
                 func: Name::new_static("reveal_type"),
             },
-            Self::Def(func_id) => (**func_id).clone(),
+            Self::PropertySetter(func_id) | Self::Def(func_id) => (**func_id).clone(),
         }
     }
 }

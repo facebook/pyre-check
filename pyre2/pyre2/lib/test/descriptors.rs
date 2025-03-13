@@ -98,7 +98,7 @@ class C:
 def f(c: C):
     assert_type(c.foo, int)
     c.foo = 42  # E: Attribute `foo` of class `C` is a read-only property and cannot be set
-    reveal_type(C.foo)  # E: revealed type: property[(self: C) -> int]
+    reveal_type(C.foo)  # E: revealed type: (self: C) -> int
     "#,
 );
 
@@ -116,7 +116,7 @@ class C:
 def f(c: C):
     assert_type(c.foo, int)
     c.foo = "42"
-    reveal_type(C.foo)  # E: revealed type: property_with_setter[(self: C) -> int, (self: C, value: str) -> None]
+    reveal_type(C.foo)  # E: revealed type: (self: C, value: str)
     "#,
 );
 
@@ -192,5 +192,23 @@ assert_type(C.cp, int)
 assert_type(C().cp, int)
 C.cp = 42  # E: Attribute `cp` of class `C` is a descriptor, which may not be overwritten
 C().cp = 42  # E:  Attribute `cp` of class `C` is a read-only descriptor with no `__set__` and cannot be set
+    "#,
+);
+
+testcase!(
+    test_generic_property,
+    r#"
+from typing import assert_type
+class A:
+    @property
+    def x[T](self: T) -> T:
+        return self
+    @x.setter
+    def x[T](self: T, value: T) -> None:
+        pass
+a = A()
+assert_type(a.x, A)
+a.x = a  # OK
+a.x = 0  # E: `Literal[0]` is not assignable to parameter `value` with type `A`
     "#,
 );

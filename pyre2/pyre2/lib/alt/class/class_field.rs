@@ -45,7 +45,6 @@ use crate::types::typed_dict::TypedDictField;
 use crate::types::types::BoundMethod;
 use crate::types::types::BoundMethodType;
 use crate::types::types::CalleeKind;
-use crate::types::types::Decoration;
 use crate::types::types::ForallType;
 use crate::types::types::Type;
 
@@ -329,12 +328,7 @@ impl ClassField {
 }
 
 pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
-    match attr {
-        // Accessing a property descriptor on the class gives the property itself,
-        // with no magic access rules at runtime.
-        p @ Type::Decoration(Decoration::Property(_)) => Attribute::read_write(p),
-        attr => Attribute::read_write(make_bound_classmethod(cls, &attr).unwrap_or(attr)),
-    }
+    Attribute::read_write(make_bound_classmethod(cls, &attr).unwrap_or(attr))
 }
 
 fn make_bound_method_helper(
@@ -369,9 +363,14 @@ fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
 
 fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
     match attr {
-        Type::Decoration(Decoration::Property(box (getter, setter))) => Attribute::property(
+        _ if attr.is_property_getter() => Attribute::property(
+            make_bound_method(cls, &attr).unwrap_or(attr),
+            None,
+            cls.class_object().dupe(),
+        ),
+        _ if let Some(getter) = attr.is_property_setter_with_getter() => Attribute::property(
             make_bound_method(cls, &getter).unwrap_or(getter),
-            setter.map(|setter| make_bound_method(cls, &setter).unwrap_or(setter)),
+            Some(make_bound_method(cls, &attr).unwrap_or(attr)),
             cls.class_object().dupe(),
         ),
         attr => {

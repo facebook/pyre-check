@@ -148,23 +148,8 @@ impl<'a> TypeDisplayContext<'a> {
         }
     }
 
-    fn fmt_decoration(&self, decoration: &Decoration, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match decoration {
-            Decoration::Property(box (getter, None)) => {
-                write!(f, "property[{}]", self.display(getter))
-            }
-            Decoration::Property(box (getter, Some(setter))) => {
-                write!(
-                    f,
-                    "property_with_setter[{}, {}]",
-                    self.display(getter),
-                    self.display(setter)
-                )
-            }
-            Decoration::PropertySetterDecorator(box getter) => {
-                write!(f, "property_setter_decorator[{}]", self.display(getter),)
-            }
-        }
+    fn fmt_decoration(&self, _decoration: &Decoration, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "()")
     }
 
     fn fmt<'b>(&self, t: &'b Type, f: &mut fmt::Formatter<'_>) -> fmt::Result {

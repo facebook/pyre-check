@@ -46,7 +46,6 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
-use crate::types::class::ClassKind;
 use crate::types::literal::Lit;
 use crate::types::param_spec::ParamSpec;
 use crate::types::special_form::SpecialForm;
@@ -57,7 +56,6 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::CalleeKind;
-use crate::types::types::Decoration;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
@@ -602,21 +600,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             return decoratee;
         }
         let ty_decorator = self.get_idx(decorator);
-        match ty_decorator.callee_kind() {
-            Some(CalleeKind::Class(ClassKind::Property)) => {
-                return Type::Decoration(Decoration::Property(Box::new((decoratee, None))));
-            }
-            _ => {}
-        }
-        match &*ty_decorator {
-            Type::Decoration(Decoration::PropertySetterDecorator(getter)) => {
-                return Type::Decoration(Decoration::Property(Box::new((
-                    (**getter).clone(),
-                    Some(decoratee),
-                ))));
-            }
-            _ => {}
-        }
         if matches!(&decoratee, Type::ClassDef(_)) {
             // TODO: don't blanket ignore class decorators.
             return decoratee;

@@ -5638,8 +5638,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(property[(self: Pet4) -> str], Any) failed",
-      "description": "assert_type(property[(self: Pet4) -> str], Any) failed",
+      "concise_description": "assert_type((self: Pet4) -> str, Any) failed",
+      "description": "assert_type((self: Pet4) -> str, Any) failed",
       "line": 84,
       "name": "assert-type",
       "stop_column": 49,

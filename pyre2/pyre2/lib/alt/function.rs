@@ -167,6 +167,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut is_overload = false;
         let mut is_staticmethod = false;
         let mut is_classmethod = false;
+        let mut is_property_getter = false;
+        let mut is_property_setter_with_getter = None;
         let mut has_enum_member_decoration = false;
         let mut is_override = false;
         let decorators = decorators
@@ -184,6 +186,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Some(CalleeKind::Class(ClassKind::ClassMethod)) => {
                         is_classmethod = true;
+                        false
+                    }
+                    Some(CalleeKind::Class(ClassKind::Property)) => {
+                        is_property_getter = true;
+                        false
+                    }
+                    Some(CalleeKind::Function(FunctionKind::PropertySetter(_))) => {
+                        // When the `setter` attribute is accessed on a property, we return the
+                        // getter with its kind set to FunctionKind::PropertySetter. See
+                        // AnswersSolver::lookup_attr_from_attribute_base for details.
+                        is_property_setter_with_getter = Some(decorator_ty.arc_clone());
                         false
                     }
                     Some(CalleeKind::Class(ClassKind::EnumMember)) => {
@@ -370,6 +383,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         is_overload,
                         is_staticmethod,
                         is_classmethod,
+                        is_property_getter,
+                        is_property_setter_with_getter,
                         has_enum_member_decoration,
                         is_override,
                     },
