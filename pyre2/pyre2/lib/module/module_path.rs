@@ -13,6 +13,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use serde::Serialize;
+use serde::Serializer;
 
 use crate::dunder;
 use crate::util::with_hash::WithHash;
@@ -72,6 +74,17 @@ impl Display for ModulePath {
                     relative_path.display()
                 )
             }
+        }
+    }
+}
+
+impl Serialize for ModulePath {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match &**self.0 {
+            ModulePathDetails::FileSystem(path)
+            | ModulePathDetails::Memory(path)
+            | ModulePathDetails::Namespace(path) => path.serialize(serializer),
+            ModulePathDetails::BundledTypeshed(_) => self.to_string().serialize(serializer),
         }
     }
 }
