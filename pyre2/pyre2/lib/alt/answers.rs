@@ -313,14 +313,14 @@ impl Answers {
         errors: &ErrorCollector,
         stdlib: &Stdlib,
         uniques: &UniqueFactory,
-        retain_memory: bool,
+        compute_everything: bool,
     ) -> Solutions {
         let mut res = SolutionsTable::default();
 
         fn pre_solve<Ans: LookupAnswer, K: Solve<Ans>>(
             items: &mut SolutionsEntry<K>,
             answers: &AnswersSolver<Ans>,
-            retain_memory: bool,
+            compute_everything: bool,
         ) where
             AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -328,7 +328,10 @@ impl Answers {
             if K::EXPORTED {
                 items.reserve(answers.bindings.keys::<K>().len());
             }
-            if !K::EXPORTED && !retain_memory && answers.base_errors.style() == ErrorStyle::Never {
+            if !K::EXPORTED
+                && !compute_everything
+                && answers.base_errors.style() == ErrorStyle::Never
+            {
                 // No point doing anything here.
                 return;
             }
@@ -353,7 +356,7 @@ impl Answers {
         table_mut_for_each!(&mut res, |items| pre_solve(
             items,
             &answers_solver,
-            retain_memory
+            compute_everything
         ));
 
         // Now force all types to be fully resolved.
