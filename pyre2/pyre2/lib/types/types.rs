@@ -237,14 +237,6 @@ impl TypeAlias {
 
 assert_words!(Type, 4);
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Decoration {}
-
-impl Decoration {
-    pub fn visit<'a>(&'a self, _f: impl FnMut(&'a Type)) {}
-    pub fn visit_mut<'a>(&'a mut self, _f: impl FnMut(&'a mut Type)) {}
-}
-
 #[derive(Debug)]
 pub enum CalleeKind {
     Callable,
@@ -473,11 +465,6 @@ pub enum Type {
     Any(AnyStyle),
     Never(NeverStyle),
     TypeAlias(TypeAlias),
-    /// Used to represent decorator-related scenarios that cannot be easily
-    /// represented in terms of normal types - for example, builtin descriptors
-    /// like `@classmethod`, or the result of `@some_property.setter`.
-    #[expect(dead_code)]
-    Decoration(Decoration),
     /// Represents the result of a super() call. The first ClassType is the class that attribute lookup
     /// on the super instance should be done on (*not* the class passed to the super() call), and the second
     /// ClassType is the second argument (implicit or explicit) to the super() call. For example, in:
@@ -809,7 +796,6 @@ impl Type {
                 f(pspec);
             }
             Type::ParamSpecValue(x) => x.visit(f),
-            Type::Decoration(d) => d.visit(f),
             Type::Type(x)
             | Type::TypeGuard(x)
             | Type::TypeIs(x)
@@ -859,7 +845,6 @@ impl Type {
                 f(pspec);
             }
             Type::ParamSpecValue(x) => x.visit_mut(f),
-            Type::Decoration(d) => d.visit_mut(f),
             Type::Type(x)
             | Type::TypeGuard(x)
             | Type::TypeIs(x)

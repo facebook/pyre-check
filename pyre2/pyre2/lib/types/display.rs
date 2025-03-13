@@ -24,7 +24,6 @@ use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
-use crate::types::types::Decoration;
 use crate::types::types::NeverStyle;
 use crate::types::types::Type;
 use crate::util::display::append;
@@ -146,10 +145,6 @@ impl<'a> TypeDisplayContext<'a> {
             Some(name) => write!(f, "{name}"),
             None => write!(f, "{quantified}"),
         }
-    }
-
-    fn fmt_decoration(&self, _decoration: &Decoration, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "()")
     }
 
     fn fmt<'b>(&self, t: &'b Type, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -294,7 +289,6 @@ impl<'a> TypeDisplayContext<'a> {
                     self.display(&ta.as_type())
                 )
             }
-            Type::Decoration(d) => self.fmt_decoration(d, f),
             Type::SuperInstance(cls, obj) => {
                 write!(f, "super[")?;
                 self.fmt_qname(cls.qname(), f)?;
