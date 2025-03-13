@@ -978,8 +978,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         format!(
                             "Inconsistent type annotations for {}: {}, {}",
                             name,
-                            t1.clone().deterministic_printing(),
-                            t2.clone().deterministic_printing(),
+                            self.for_display(t1.clone()),
+                            self.for_display(t2.clone()),
                         ),
                     );
                 }
@@ -1854,7 +1854,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     }
                                     t => {
                                         // TODO: handle the case when the second argument is a class
-                                        self.error(errors, *range, ErrorKind::InvalidArgument, None, format!("Expected second argument to `super` to be a class instance, got `{}`", t.clone().deterministic_printing()))
+                                        self.error(
+                                            errors,
+                                            *range,
+                                            ErrorKind::InvalidArgument,
+                                            None,
+                                            format!("Expected second argument to `super` to be a class instance, got `{}`", self.for_display(t.clone())),
+                                        )
                                     }
                                 }
                             }
@@ -1865,7 +1871,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 None,
                                 format!(
                                     "Expected first argument to `super` to be a class object, got `{}`",
-                                    t.clone().deterministic_printing()
+                                    self.for_display(t.clone())
                                 ),
                             ),
                         }
@@ -2046,7 +2052,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None,
                 format!(
                     "Expected a type form, got instance of `{}`",
-                    ty.deterministic_printing()
+                    self.for_display(ty),
                 ),
             )
         }

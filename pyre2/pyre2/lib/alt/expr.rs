@@ -1415,7 +1415,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     format!(
                                         "Invalid key for TypedDict `{}`, got `{}`",
                                         typed_dict.name(),
-                                        ty.clone().deterministic_printing()
+                                        self.for_display(ty.clone())
                                     ),
                                 ),
                             })
@@ -1427,7 +1427,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None,
                             format!(
                                 "Can't apply arguments to non-class, got {}",
-                                t.deterministic_printing()
+                                self.for_display(t)
                             ),
                         ),
                     }

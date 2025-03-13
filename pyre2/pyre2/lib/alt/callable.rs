@@ -510,7 +510,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         context,
                                         format!(
                                             "Expected argument after ** to have `str` keys, got: {}",
-                                            key.deterministic_printing()
+                                            self.for_display(key)
                                         ),
                                     );
                                 }
@@ -523,7 +523,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     context,
                                     format!(
                                         "Expected argument after ** to be a mapping, got: {}",
-                                        ty.deterministic_printing()
+                                        self.for_display(ty)
                                     ),
                                 );
                             }

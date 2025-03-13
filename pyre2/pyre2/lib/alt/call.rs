@@ -178,7 +178,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.error_call_target(
                     errors,
                     range,
-                    format!("{}, got {}", expect_message, ty.deterministic_printing()),
+                    format!("{}, got {}", expect_message, self.for_display(ty)),
                     ErrorKind::NotCallable,
                     context,
                 )

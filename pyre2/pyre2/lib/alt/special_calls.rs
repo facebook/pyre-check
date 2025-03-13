@@ -53,8 +53,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None,
                     format!(
                         "assert_type({}, {}) failed",
-                        a.deterministic_printing(),
-                        b.deterministic_printing()
+                        self.for_display(a),
+                        self.for_display(b)
                     ),
                 );
             }
@@ -96,7 +96,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 range,
                 ErrorKind::RevealType,
                 None,
-                format!("revealed type: {}", t.deterministic_printing()),
+                format!("revealed type: {}", self.for_display(t)),
             );
         } else {
             self.error(

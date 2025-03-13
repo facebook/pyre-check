@@ -458,6 +458,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self.current.solver
     }
 
+    pub fn for_display(&self, t: Type) -> Type {
+        self.solver().for_display(t)
+    }
+
     pub fn get_from_module<K: Solve<Ans> + Keyed<EXPORTED = true>>(
         &self,
         module: ModuleName,
