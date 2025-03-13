@@ -71,6 +71,7 @@ use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
+use crate::types::display::TypeDisplayContext;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
@@ -970,6 +971,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     && let Some(t2) = ann2.ty()
                     && *t1 != *t2
                 {
+                    let t1 = self.for_display(t1.clone());
+                    let t2 = self.for_display(t2.clone());
+                    let mut ctx = TypeDisplayContext::new();
+                    ctx.add(&t1);
+                    ctx.add(&t2);
                     self.error(
                         errors,
                         self.bindings().idx_to_key(*k1).range(),
@@ -978,8 +984,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         format!(
                             "Inconsistent type annotations for {}: {}, {}",
                             name,
-                            self.for_display(t1.clone()),
-                            self.for_display(t2.clone()),
+                            ctx.display(&t1),
+                            ctx.display(&t2),
                         ),
                     );
                 }
