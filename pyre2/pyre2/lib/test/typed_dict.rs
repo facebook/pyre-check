@@ -176,8 +176,8 @@ def foo(c: Coord, key: str, key2: Literal["x", "y"]):
 testcase!(
     test_typed_dict_functional,
     r#"
-from typing import TypedDict
-Coord = TypedDict("Coord", { "x": int, " illegal ": int })
+from typing import TypedDict, Required, NotRequired
+Coord = TypedDict("Coord", { "x": Required[int], " illegal ": int, "y": NotRequired[int] })
 c: Coord = {"x": 1, " illegal ": 2}
 def test(c: Coord):
     x: int = c[" illegal "]
