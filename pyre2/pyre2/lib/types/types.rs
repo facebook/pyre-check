@@ -641,8 +641,7 @@ impl Type {
             Type::Function(func) => Some(CalleeKind::Function(func.metadata.kind.clone())),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
             Type::Forall(forall) => forall.as_inner_type().callee_kind(),
-            // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.
-            Type::Overload(overload) => overload.signatures.first().callee_kind(),
+            Type::Overload(overload) => Some(CalleeKind::Function(overload.metadata.kind.clone())),
             _ => None,
         }
     }
@@ -704,7 +703,7 @@ impl Type {
                 func: BoundMethodType::Function(func),
                 ..
             }) => check(&func.metadata),
-            Type::Overload(overload) => overload.signatures.first().check_func_metadata(check),
+            Type::Overload(overload) => check(&overload.metadata),
             _ => T::default(),
         }
     }
@@ -736,7 +735,7 @@ impl Type {
                 func: BoundMethodType::Function(func),
                 ..
             }) => f(&mut func.metadata),
-            Type::Overload(overload) => overload.signatures.first_mut().transform_func_metadata(f),
+            Type::Overload(overload) => f(&mut overload.metadata),
             _ => {}
         }
     }
