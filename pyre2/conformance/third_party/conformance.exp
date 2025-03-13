@@ -2634,6 +2634,16 @@
     },
     {
       "code": -2,
+      "column": 1,
+      "concise_description": "Cannot assign to read-only field `stats`",
+      "description": "Cannot assign to read-only field `stats`",
+      "line": 105,
+      "name": "read-only",
+      "stop_column": 19,
+      "stop_line": 105
+    },
+    {
+      "code": -2,
       "column": 13,
       "concise_description": "`ProtoAImpl` is not assignable to `ProtoA`",
       "description": "`ProtoAImpl` is not assignable to `ProtoA`",
@@ -3895,7 +3905,38 @@
       "stop_line": 32
     }
   ],
-  "dataclasses_inheritance.py": [],
+  "dataclasses_inheritance.py": [
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Class member `x` overrides parent class `DC6` in an inconsistent manner",
+      "description": "Class member `x` overrides parent class `DC6` in an inconsistent manner",
+      "line": 60,
+      "name": "bad-override",
+      "stop_column": 6,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "ClassVar `x` overrides instance variable of the same name in parent class `DC6`",
+      "description": "ClassVar `x` overrides instance variable of the same name in parent class `DC6`",
+      "line": 60,
+      "name": "bad-override",
+      "stop_column": 6,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Instance variable `y` overrides ClassVar of the same name in parent class `DC6`",
+      "description": "Instance variable `y` overrides ClassVar of the same name in parent class `DC6`",
+      "line": 64,
+      "name": "bad-override",
+      "stop_column": 6,
+      "stop_line": 64
+    }
+  ],
   "dataclasses_kwonly.py": [
     {
       "code": -2,
@@ -9376,22 +9417,22 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "`Concrete2_Bad3` is not assignable to `Template2`",
-      "description": "`Concrete2_Bad3` is not assignable to `Template2`",
-      "line": 116,
-      "name": "type-mismatch",
-      "stop_column": 38,
-      "stop_line": 116
-    },
-    {
-      "code": -2,
-      "column": 22,
       "concise_description": "`Concrete3_Bad1` is not assignable to `Template3`",
       "description": "`Concrete3_Bad1` is not assignable to `Template3`",
       "line": 156,
       "name": "type-mismatch",
       "stop_column": 38,
       "stop_line": 156
+    },
+    {
+      "code": -2,
+      "column": 22,
+      "concise_description": "`Concrete3_Bad2` is not assignable to `Template3`",
+      "description": "`Concrete3_Bad2` is not assignable to `Template3`",
+      "line": 157,
+      "name": "type-mismatch",
+      "stop_column": 38,
+      "stop_line": 157
     },
     {
       "code": -2,

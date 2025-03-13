@@ -297,6 +297,20 @@ impl ClassField {
         }
     }
 
+    pub fn is_class_var(&self) -> bool {
+        match &self.0 {
+            ClassFieldInner::Simple { annotation, .. } => {
+                annotation.as_ref().is_some_and(|ann| ann.is_class_var())
+            }
+        }
+    }
+
+    pub fn has_explicit_annotation(&self) -> bool {
+        match &self.0 {
+            ClassFieldInner::Simple { annotation, .. } => annotation.is_some(),
+        }
+    }
+
     pub fn dataclass_flags_of(&self, kw_only: bool) -> Option<BoolKeywords> {
         match &self.0 {
             ClassFieldInner::Simple {
@@ -361,7 +375,8 @@ fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
     make_bound_method_helper(cls.self_type(), attr, &should_bind)
 }
 
-fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
+fn bind_instance_attribute(cls: &ClassType, attr: Type, is_class_var: bool) -> Attribute {
+    // Decorated objects are methods, so they can't be ClassVars
     match attr {
         _ if attr.is_property_getter() => Attribute::property(
             make_bound_method(cls, &attr).unwrap_or(attr),
@@ -373,6 +388,7 @@ fn bind_instance_attribute(cls: &ClassType, attr: Type) -> Attribute {
             Some(make_bound_method(cls, &attr).unwrap_or(attr)),
             cls.class_object().dupe(),
         ),
+        attr if is_class_var => Attribute::read_only(make_bound_method(cls, &attr).unwrap_or(attr)),
         attr => {
             Attribute::read_write(make_bound_method(cls, &attr).unwrap_or_else(|| {
                 make_bound_classmethod(cls.class_object(), &attr).unwrap_or(attr)
@@ -596,11 +612,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     descriptor_setter,
                 )
             }
-            ClassFieldInner::Simple { ty, readonly, .. } => match field.initialization() {
-                ClassFieldInitialization::Class(_) => bind_instance_attribute(cls, ty),
-                ClassFieldInitialization::Instance if readonly => Attribute::read_only(ty),
-                ClassFieldInitialization::Instance => Attribute::read_write(ty),
-            },
+            ClassFieldInner::Simple {
+                ty,
+                readonly,
+                annotation,
+                ..
+            } => {
+                let is_class_var = annotation.is_some_and(|ann| ann.is_class_var());
+                match field.initialization() {
+                    ClassFieldInitialization::Class(_) => {
+                        bind_instance_attribute(cls, ty, is_class_var)
+                    }
+                    ClassFieldInitialization::Instance if readonly || is_class_var => {
+                        Attribute::read_only(ty)
+                    }
+                    ClassFieldInitialization::Instance => Attribute::read_write(ty),
+                }
+            }
         }
     }
 
@@ -653,6 +681,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         };
         if let Some(class_type) = class_type {
             let got = self.as_instance_attribute(class_field.clone(), &class_type);
+            let got_is_class_var = class_field.is_class_var();
             let metadata = self.get_metadata_for_class(class);
             let parents = metadata.bases_with_metadata();
 
@@ -681,6 +710,37 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None,
                             format!(
                                 "Class member `{}` overrides parent class `{}` in an inconsistent manner",
+                                name,
+                                parent.name()
+                            ),
+                        );
+                    }
+                }
+                if let Some(want_class_field) = self.get_class_member(parent.class_object(), name)
+                    && want_class_field.value.has_explicit_annotation()
+                    && class_field.has_explicit_annotation()
+                {
+                    let want_is_class_var = want_class_field.value.is_class_var();
+                    if want_is_class_var && !got_is_class_var {
+                        self.error(
+                            errors,
+                            range,
+                            ErrorKind::BadOverride,
+                            None,
+                            format!(
+                                "Instance variable `{}` overrides ClassVar of the same name in parent class `{}`",
+                                name,
+                                parent.name()
+                            ),
+                        );
+                    } else if !want_is_class_var && got_is_class_var {
+                        self.error(
+                            errors,
+                            range,
+                            ErrorKind::BadOverride,
+                            None,
+                            format!(
+                                "ClassVar `{}` overrides instance variable of the same name in parent class `{}`",
                                 name,
                                 parent.name()
                             ),

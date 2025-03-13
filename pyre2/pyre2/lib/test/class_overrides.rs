@@ -56,6 +56,23 @@ class C(B):
 );
 
 testcase!(
+    test_override_class_var,
+    r#"
+from typing import ClassVar
+class A:
+    x: int = 1
+class B:
+    x: ClassVar[int] = 1
+class C(A):
+    x: ClassVar[int] = 1  # E: Class member `x` overrides parent class `A` in an inconsistent manner  # E: ClassVar `x` overrides instance variable of the same name in parent class `A`
+class D(B):
+    x: ClassVar[int] = 1  # OK
+class E(B):
+    x: int = 1  # E: Instance variable `x` overrides ClassVar of the same name in parent class `B`
+ "#,
+);
+
+testcase!(
     test_overload_override,
     r#"
 from typing import overload

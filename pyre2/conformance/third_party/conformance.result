@@ -124,8 +124,7 @@
     "Line 45: Expected 1 errors",
     "Line 46: Expected 1 errors",
     "Line 47: Expected 1 errors",
-    "Line 54: Expected 1 errors",
-    "Line 105: Expected 1 errors"
+    "Line 54: Expected 1 errors"
   ],
   "classes_override.py": [
     "Lines 56, 65: Expected error (tag 'method4')"
@@ -203,10 +202,7 @@
     "Lines 32, 33: Expected error (tag 'DC4')"
   ],
   "dataclasses_hash.py": [],
-  "dataclasses_inheritance.py": [
-    "Line 60: Expected 1 errors",
-    "Line 64: Expected 1 errors"
-  ],
+  "dataclasses_inheritance.py": [],
   "dataclasses_kwonly.py": [
     "Line 32: Unexpected errors ['Missing argument `a` in function `DC2.__init__`', 'Expected 0 positional arguments, got 1 in function `DC2.__init__`']",
     "Line 35: Unexpected errors ['Missing argument `a` in function `DC2.__init__`', 'Expected 0 positional arguments, got 1 in function `DC2.__init__`']",
@@ -578,8 +574,8 @@
     "Line 108: Expected 1 errors"
   ],
   "protocols_definition.py": [
+    "Line 116: Expected 1 errors",
     "Line 117: Expected 1 errors",
-    "Line 157: Expected 1 errors",
     "Line 340: Expected 1 errors",
     "Line 341: Expected 1 errors",
     "Line 281: Unexpected errors ['`Concrete5_Good2` is not assignable to `Template5`']"

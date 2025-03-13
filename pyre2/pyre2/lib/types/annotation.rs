@@ -57,6 +57,10 @@ impl Annotation {
             f(ty);
         }
     }
+
+    pub fn is_class_var(&self) -> bool {
+        self.qualifiers.iter().any(|q| q == &Qualifier::ClassVar)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Display)]
