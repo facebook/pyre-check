@@ -555,3 +555,32 @@ x = os.path.join("source") # E: Expected a callable, got Never
 reveal_type(x) # E: revealed type: Error
 "#,
 );
+
+fn env_from_self_import_mod_in_package() -> TestEnv {
+    let mut env = TestEnv::new();
+    env.add_with_path(
+        "foo",
+        r#"
+from . import bar
+from . import baz as _baz
+baz = _baz
+"#,
+        "foo/__init__.py",
+    );
+    env.add_with_path("foo.bar", "", "foo/bar.py");
+    env.add_with_path("foo.baz", "", "foo/baz.py");
+    env
+}
+
+testcase_with_bug!(
+    "TODO(stroxler): This is related to the above - we are resolving self-imports wrong in `__init__` modules",
+    test_import_from_self,
+    env_from_self_import_mod_in_package(),
+    r#"
+from typing import reveal_type
+import foo
+reveal_type(foo.bar)  # E: revealed type: Never
+reveal_type(foo.baz)  # E: revealed type: Never
+reveal_type(foo)  # E: revealed type: Module[foo]
+"#,
+);
