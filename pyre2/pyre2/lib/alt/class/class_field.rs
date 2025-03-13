@@ -677,8 +677,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let Type::ClassType(class_type) = class.self_type() else {
             return;
         };
-        let got = self.as_instance_attribute(class_field.clone(), &class_type);
-        let got_is_class_var = class_field.is_class_var();
+        let got_attr = self.as_instance_attribute(class_field.clone(), &class_type);
         let metadata = self.get_metadata_for_class(class);
         let parents = metadata.bases_with_metadata();
         let mut parent_attr_found = false;
@@ -689,32 +688,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if name.starts_with('_') && name.ends_with('_') {
                 continue;
             }
-            if let Some(want) = self.type_order().try_lookup_attr(&parent.self_type(), name) {
-                parent_attr_found = true;
-                let attr_check = self.is_attr_subset(&got, &want, &mut |got, want| {
-                    self.solver().is_subset_eq(got, want, self.type_order())
-                });
-
-                if !attr_check {
-                    self.error(
-                            errors,
-                            range,
-                            ErrorKind::BadOverride,
-                            None,
-                            format!(
-                                "Class member `{}.{}` overrides parent class `{}` in an inconsistent manner",
-                                class.name(),
-                                name,
-                                parent.name()
-                            ),
-                        );
-                }
-            }
-            if let Some(want_class_field) = self.get_class_member(parent.class_object(), name)
-                && want_class_field.value.has_explicit_annotation()
-                && class_field.has_explicit_annotation()
-            {
-                let want_is_class_var = want_class_field.value.is_class_var();
+            let Some(want_member) = self.get_class_member(parent.class_object(), name) else {
+                continue;
+            };
+            parent_attr_found = true;
+            let want_class_field = Arc::unwrap_or_clone(want_member.value);
+            if want_class_field.has_explicit_annotation() && class_field.has_explicit_annotation() {
+                let want_is_class_var = want_class_field.is_class_var();
+                let got_is_class_var = class_field.is_class_var();
                 if want_is_class_var && !got_is_class_var {
                     self.error(
                             errors,
@@ -728,6 +709,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 parent.name()
                             ),
                         );
+                    continue;
                 } else if !want_is_class_var && got_is_class_var {
                     self.error(
                             errors,
@@ -741,7 +723,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 parent.name()
                             ),
                         );
+                    continue;
                 }
+            }
+            let want_attr = self.as_instance_attribute(want_class_field.clone(), parent);
+            let attr_check = self.is_attr_subset(&got_attr, &want_attr, &mut |got, want| {
+                self.solver().is_subset_eq(got, want, self.type_order())
+            });
+            if !attr_check {
+                self.error(
+                    errors,
+                    range,
+                    ErrorKind::BadOverride,
+                    None,
+                    format!(
+                        "Class member `{}.{}` overrides parent class `{}` in an inconsistent manner",
+                        class.name(),
+                        name,
+                        parent.name()
+                    ),
+                );
             }
         }
         if is_override && !parent_attr_found && !parent_has_any {

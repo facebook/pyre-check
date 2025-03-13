@@ -3909,16 +3909,6 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "Class member `DC7.x` overrides parent class `DC6` in an inconsistent manner",
-      "description": "Class member `DC7.x` overrides parent class `DC6` in an inconsistent manner",
-      "line": 60,
-      "name": "bad-override",
-      "stop_column": 6,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 5,
       "concise_description": "ClassVar `DC7.x` overrides instance variable of the same name in parent class `DC6`",
       "description": "ClassVar `DC7.x` overrides instance variable of the same name in parent class `DC6`",
       "line": 60,

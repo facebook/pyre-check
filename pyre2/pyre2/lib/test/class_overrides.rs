@@ -64,7 +64,7 @@ class A:
 class B:
     x: ClassVar[int] = 1
 class C(A):
-    x: ClassVar[int] = 1  # E: Class member `C.x` overrides parent class `A` in an inconsistent manner  # E: ClassVar `C.x` overrides instance variable of the same name in parent class `A`
+    x: ClassVar[int] = 1  # E: ClassVar `C.x` overrides instance variable of the same name in parent class `A`
 class D(B):
     x: ClassVar[int] = 1  # OK
 class E(B):
