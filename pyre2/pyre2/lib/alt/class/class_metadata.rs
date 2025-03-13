@@ -170,6 +170,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if base_class_metadata.is_typed_dict() {
                             is_typed_dict = true;
                         }
+                        if base_class_metadata.is_final() {
+                            self.error(errors,
+                                range,
+                                ErrorKind::InvalidInheritance,
+                                None,
+                                format!("Cannot extend final class `{}`", base_cls.name()),
+                            );
+                        }
                         if base_cls.has_qname("typing", "NamedTuple")
                         {
                             if named_tuple_metadata.is_none() {
@@ -300,16 +308,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
             }
         }
+        let mut is_final = false;
         for decorator in decorators {
             let ty_decorator = self.get_idx(*decorator);
-            if let Some(CalleeKind::Function(FunctionKind::Dataclass(kws))) =
-                ty_decorator.callee_kind()
-            {
-                let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
-                dataclass_metadata = Some(DataclassMetadata {
-                    fields: dataclass_fields,
-                    kws: *kws,
-                });
+            match ty_decorator.callee_kind() {
+                Some(CalleeKind::Function(FunctionKind::Dataclass(kws))) => {
+                    let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
+                    dataclass_metadata = Some(DataclassMetadata {
+                        fields: dataclass_fields,
+                        kws: *kws,
+                    });
+                }
+                Some(CalleeKind::Function(FunctionKind::Final)) => {
+                    is_final = true;
+                }
+                _ => {}
             }
         }
         if is_typed_dict
@@ -334,6 +347,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             dataclass_metadata,
             has_base_any,
             is_new_type,
+            is_final,
             errors,
         )
     }

@@ -10238,6 +10238,16 @@
   "qualifiers_final_decorator.py": [
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Cannot extend final class `Base1`",
+      "description": "Cannot extend final class `Base1`",
+      "line": 21,
+      "name": "invalid-inheritance",
+      "stop_column": 21,
+      "stop_line": 21
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
       "description": "Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",

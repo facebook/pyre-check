@@ -80,6 +80,20 @@ assert_type(x, C)
 );
 
 testcase!(
+    test_extend_final,
+    r#"
+from typing import final
+@final
+class A: ...
+class B(A): ...  # E: Cannot extend final class `A`
+
+class C: ...
+@final
+class D(C): ...  # OK
+"#,
+);
+
+testcase!(
     test_type_argument_error_default,
     r#"
 from typing import Any, assert_type

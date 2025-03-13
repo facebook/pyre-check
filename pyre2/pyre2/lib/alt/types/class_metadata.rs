@@ -40,6 +40,7 @@ pub struct ClassMetadata {
     bases_with_metadata: Vec<(ClassType, Arc<ClassMetadata>)>,
     has_base_any: bool,
     is_new_type: bool,
+    is_final: bool,
 }
 
 impl Display for ClassMetadata {
@@ -61,6 +62,7 @@ impl ClassMetadata {
         dataclass_metadata: Option<DataclassMetadata>,
         has_base_any: bool,
         is_new_type: bool,
+        is_final: bool,
         errors: &ErrorCollector,
     ) -> ClassMetadata {
         let mro = Mro::new(cls, &bases_with_metadata, errors);
@@ -76,6 +78,7 @@ impl ClassMetadata {
             bases_with_metadata,
             has_base_any,
             is_new_type,
+            is_final,
         }
     }
 
@@ -92,6 +95,7 @@ impl ClassMetadata {
             bases_with_metadata: Vec::new(),
             has_base_any: false,
             is_new_type: false,
+            is_final: false,
         }
     }
 
@@ -106,6 +110,10 @@ impl ClassMetadata {
 
     pub fn is_typed_dict(&self) -> bool {
         self.typed_dict_metadata.is_some()
+    }
+
+    pub fn is_final(&self) -> bool {
+        self.is_final
     }
 
     pub fn has_base_any(&self) -> bool {

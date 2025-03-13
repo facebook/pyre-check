@@ -660,7 +660,6 @@
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
   ],
   "qualifiers_final_decorator.py": [
-    "Line 21: Expected 1 errors",
     "Lines 67, 75: Expected error (tag 'method4')",
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 94, 102: Expected error (tag 'Derived4')",

@@ -230,6 +230,7 @@ pub enum FunctionKind {
     Cast,
     AssertType,
     RevealType,
+    Final,
     PropertySetter(Box<FuncId>),
     Def(Box<FuncId>),
 }
@@ -476,6 +477,7 @@ impl FunctionKind {
             ("typing", None, "cast") => Self::Cast,
             ("typing", None, "assert_type") => Self::AssertType,
             ("typing", None, "reveal_type") => Self::RevealType,
+            ("typing", None, "final") => Self::Final,
             _ => Self::Def(Box::new(FuncId {
                 module,
                 cls: cls.cloned(),
@@ -510,6 +512,11 @@ impl FunctionKind {
                 module: ModuleName::dataclasses(),
                 cls: None,
                 func: Name::new_static("field"),
+            },
+            Self::Final => FuncId {
+                module: ModuleName::typing(),
+                cls: None,
+                func: Name::new_static("final"),
             },
             Self::Overload => FuncId {
                 module: ModuleName::typing(),
