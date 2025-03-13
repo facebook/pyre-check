@@ -322,23 +322,25 @@ impl BoundMethodType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Overload(pub Vec1<Type>);
+pub struct Overload {
+    pub signatures: Vec1<Type>,
+}
 
 impl Overload {
     fn is_typeguard(&self) -> bool {
-        self.0.iter().any(|t| t.is_typeguard())
+        self.signatures.iter().any(|t| t.is_typeguard())
     }
 
     fn is_typeis(&self) -> bool {
-        self.0.iter().any(|t| t.is_typeis())
+        self.signatures.iter().any(|t| t.is_typeis())
     }
 
     fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
-        self.0.iter().for_each(&mut f);
+        self.signatures.iter().for_each(&mut f);
     }
 
     fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        self.0.iter_mut().for_each(&mut f);
+        self.signatures.iter_mut().for_each(&mut f);
     }
 }
 
@@ -614,11 +616,11 @@ impl Type {
                     metadata: func.metadata.clone(),
                 }))
             }),
-            Type::Overload(overloads) => overloads
-                .0
+            Type::Overload(overload) => overload
+                .signatures
                 .try_mapped_ref(|x| x.to_unbound_callable().ok_or(()))
                 .ok()
-                .map(|overload| Type::Overload(Overload(overload))),
+                .map(|signatures| Type::Overload(Overload { signatures })),
             _ => None,
         }
     }
@@ -634,7 +636,7 @@ impl Type {
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
             Type::Forall(forall) => forall.as_inner_type().callee_kind(),
             // TODO(rechen): We should have one callee kind per overloaded function rather than one per overload signature.
-            Type::Overload(vs) => vs.0.first().callee_kind(),
+            Type::Overload(overload) => overload.signatures.first().callee_kind(),
             _ => None,
         }
     }
@@ -696,7 +698,7 @@ impl Type {
                 func: BoundMethodType::Function(func),
                 ..
             }) => check(&func.metadata),
-            Type::Overload(overload) => overload.0.first().check_func_metadata(check),
+            Type::Overload(overload) => overload.signatures.first().check_func_metadata(check),
             _ => T::default(),
         }
     }
@@ -728,7 +730,7 @@ impl Type {
                 func: BoundMethodType::Function(func),
                 ..
             }) => f(&mut func.metadata),
-            Type::Overload(overload) => overload.0.first_mut().transform_func_metadata(f),
+            Type::Overload(overload) => overload.signatures.first_mut().transform_func_metadata(f),
             _ => {}
         }
     }
@@ -790,7 +792,7 @@ impl Type {
             }) => c.visit(f),
             Type::BoundMethod(box b) => b.visit(f),
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
-            Type::Overload(xs) => xs.0.iter().for_each(f),
+            Type::Overload(overload) => overload.signatures.iter().for_each(f),
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
@@ -839,7 +841,7 @@ impl Type {
             }) => c.visit_mut(f),
             Type::BoundMethod(box b) => b.visit_mut(f),
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
-            Type::Overload(xs) => xs.0.iter_mut().for_each(f),
+            Type::Overload(overload) => overload.signatures.iter_mut().for_each(f),
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),

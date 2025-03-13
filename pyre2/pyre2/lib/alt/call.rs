@@ -88,9 +88,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }) => Some((Vec::new(), CallTarget::Dataclass(c))),
             Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
             Type::Function(func) => Some((Vec::new(), CallTarget::Function(*func))),
-            Type::Overload(overloads) => Some((
+            Type::Overload(overload) => Some((
                 Vec::new(),
-                CallTarget::Overload(overloads.0.mapped(|ty| self.as_call_target(ty))),
+                CallTarget::Overload(overload.signatures.mapped(|ty| self.as_call_target(ty))),
             )),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 match self.as_call_target(func.as_type()) {

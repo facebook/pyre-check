@@ -93,7 +93,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     acc.split_off_first().0
                 } else {
                     acc.reverse();
-                    Type::Overload(Overload(acc))
+                    Type::Overload(Overload { signatures: acc })
                 }
             } else {
                 ty
@@ -117,7 +117,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                     defs.split_off_first().0
                 } else {
-                    Type::Overload(Overload(defs))
+                    Type::Overload(Overload { signatures: defs })
                 }
             } else {
                 first.ty.clone()

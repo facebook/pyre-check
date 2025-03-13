@@ -189,11 +189,11 @@ impl<'a> TypeDisplayContext<'a> {
                 signature: c,
                 metadata: _,
             }) => c.fmt_with_type(f, &|t| self.display(t)),
-            Type::Overload(ts) => {
+            Type::Overload(overload) => {
                 write!(
                     f,
                     "Overload[{}]",
-                    commas_iter(|| ts.0.iter().map(|t| self.display(t)))
+                    commas_iter(|| overload.signatures.iter().map(|t| self.display(t)))
                 )
             }
             Type::ParamSpecValue(x) => {
