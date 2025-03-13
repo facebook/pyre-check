@@ -319,3 +319,28 @@ class C(Generic[T]): pass";
     i.set("lib", &format!("# before\n{code}"));
     i.check(&["main"], &["lib", BROKEN]);
 }
+
+#[test]
+fn test_change_require() {
+    let t = TestEnv::one("foo", "x: str = 1");
+    let mut state = State::new();
+    let handle = Handle::new(
+        ModuleName::from_str("foo"),
+        ModulePath::memory(PathBuf::from("foo")),
+        TestEnv::config(),
+        LoaderId::new(t),
+    );
+    state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);
+    assert_eq!(state.count_errors(), 0);
+    assert!(state.get_bindings(&handle).is_none());
+    state.run(&[(handle.dupe(), Require::Errors)], Require::Exports, None);
+    assert_eq!(state.count_errors(), 1);
+    assert!(state.get_bindings(&handle).is_none());
+    state.run(
+        &[(handle.dupe(), Require::Everything)],
+        Require::Exports,
+        None,
+    );
+    assert_eq!(state.count_errors(), 1);
+    assert!(state.get_bindings(&handle).is_some());
+}

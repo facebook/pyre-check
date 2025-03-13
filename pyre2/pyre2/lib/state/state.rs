@@ -162,7 +162,7 @@ impl State {
             changed: Default::default(),
             dirty: Default::default(),
             subscriber: None,
-            // Will be overwritten with a new default before Exports
+            // Will be overwritten with a new default before is it used.
             require: RequireDefault::new(Require::Exports),
         }
     }
@@ -193,7 +193,11 @@ impl State {
         // Rebuild stuff. Pass clear_ast to indicate we need to rebuild the AST, otherwise can reuse it (if present).
         let rebuild = |mut w: UpgradeLockWriteGuard<Step, ModuleState>, clear_ast: bool| {
             w.steps.last_step = if clear_ast || w.steps.ast.is_none() {
-                Some(Step::Load)
+                if w.steps.load.is_none() {
+                    None
+                } else {
+                    Some(Step::Load)
+                }
             } else {
                 Some(Step::Ast)
             };
@@ -219,6 +223,16 @@ impl State {
                 }
             }
         };
+
+        if exclusive.dirty.require {
+            // We have increased the `Require` level, so redo everything to make sure
+            // we capture everything.
+            // Could be optimised to do less work (e.g. if you had Retain::Error before don't need to reload)
+            let mut write = exclusive.write();
+            write.steps.load = None;
+            rebuild(write, true);
+            return;
+        }
 
         // Validate the load flag.
         if exclusive.dirty.load
@@ -654,7 +668,7 @@ impl State {
         }
     }
 
-    fn run_step(&mut self, handles: &[(Handle, Require)]) {
+    fn run_step(&mut self, handles: &[(Handle, Require)], old_require: Option<RequireDefault>) {
         self.now.next();
         let configs = handles
             .iter()
@@ -667,12 +681,16 @@ impl State {
             let mut lock = self.todo.lock();
             for (h, r) in handles {
                 let (m, created) = self.get_module_ex(h);
-                m.state
-                    .write(Step::first())
-                    .unwrap()
-                    .require
-                    .set(self.require, *r);
-                if created && !dirty.contains(&m) {
+                let mut state = m.state.write(Step::first()).unwrap();
+                let dirty_require = match old_require {
+                    None => false,
+                    _ if created => false,
+                    Some(old_require) => state.require.get(old_require) < *r,
+                };
+                state.dirty.require = dirty_require || state.dirty.require;
+                state.require.set(self.require, *r);
+                drop(state);
+                if (created || dirty_require) && !dirty.contains(&m) {
                     lock.push_fifo(Step::first(), m);
                 }
             }
@@ -732,17 +750,20 @@ impl State {
         }
     }
 
-    fn run_internal(&mut self, handles: &[(Handle, Require)]) {
+    fn run_internal(&mut self, handles: &[(Handle, Require)], old_require: RequireDefault) {
         // We first compute all the modules that are either new or have changed.
         // Then we repeatedly compute all the modules who depend on modules that changed.
         // To ensure we guarantee termination, and don't endure more than a linear overhead,
         // if we end up spotting the same module changing twice, we just invalidate
         // everything in the cycle and force it to compute.
         let mut changed_twice = SmallSet::new();
+
         self.ensure_loaders(handles);
         for i in 1.. {
             debug!("Running epoch {i}");
-            self.run_step(handles);
+            // The first version we use the old require. We use this to trigger require changes,
+            // but only once, as after we've done it once, the "old" value will no longer be accessible.
+            self.run_step(handles, if i == 1 { Some(old_require) } else { None });
             let changed = mem::take(&mut *self.changed.lock());
             if changed.is_empty() {
                 return;
@@ -753,7 +774,7 @@ impl State {
                     // We are in a cycle of mutual dependencies, so give up.
                     // Just invalidate everything in the cycle and recompute it all.
                     self.invalidate_rdeps(&changed);
-                    self.run_step(handles);
+                    self.run_step(handles, None);
                     return;
                 }
             }
@@ -770,9 +791,10 @@ impl State {
         default: Require,
         subscriber: Option<Box<dyn Subscriber>>,
     ) {
+        let old_require = self.require;
         self.require.set(default);
         self.subscriber = subscriber;
-        self.run_internal(handles);
+        self.run_internal(handles, old_require);
         self.subscriber = None;
     }
 

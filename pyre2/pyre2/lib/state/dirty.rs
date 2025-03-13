@@ -18,6 +18,8 @@ pub struct Dirty {
     pub find: bool,
     /// The result I got from my dependencies have potentially changed.
     pub deps: bool,
+    /// I have increased the amount of data I `Require`.
+    pub require: bool,
 }
 
 impl Dirty {
