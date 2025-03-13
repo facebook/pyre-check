@@ -973,9 +973,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     let t1 = self.for_display(t1.clone());
                     let t2 = self.for_display(t2.clone());
-                    let mut ctx = TypeDisplayContext::new();
-                    ctx.add(&t1);
-                    ctx.add(&t2);
+                    let ctx = TypeDisplayContext::new(&[&t1, &t2]);
                     self.error(
                         errors,
                         self.bindings().idx_to_key(*k1).range(),

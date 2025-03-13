@@ -81,8 +81,12 @@ pub struct TypeDisplayContext<'a> {
 }
 
 impl<'a> TypeDisplayContext<'a> {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(xs: &[&'a Type]) -> Self {
+        let mut res = Self::default();
+        for x in xs {
+            res.add(x);
+        }
+        res
     }
 
     pub fn add(&mut self, t: &'a Type) {
@@ -307,9 +311,7 @@ impl<'a> TypeDisplayContext<'a> {
 
 impl Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut ctx = TypeDisplayContext::new();
-        ctx.add(self);
-        ctx.fmt(self, f)
+        TypeDisplayContext::new(&[self]).fmt(self, f)
     }
 }
 
@@ -436,9 +438,7 @@ mod tests {
 
         let t1 = class_type(&foo1, TArgs::default());
         let t2 = class_type(&foo2, TArgs::default());
-        let mut ctx = TypeDisplayContext::new();
-        ctx.add(&t1);
-        ctx.add(&t2);
+        let ctx = TypeDisplayContext::new(&[&t1, &t2]);
         assert_eq!(
             format!("{} <: {}", ctx.display(&t1), ctx.display(&t2)),
             "mod.ule.foo@1:6 <: mod.ule.foo@1:9"
