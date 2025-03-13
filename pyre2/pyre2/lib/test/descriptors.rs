@@ -212,3 +212,15 @@ a.x = a  # OK
 a.x = 0  # E: `Literal[0]` is not assignable to parameter `value` with type `A`
     "#,
 );
+
+testcase!(
+    test_property_attr,
+    r#"
+from typing import reveal_type
+import types
+class A:
+    @property
+    def f(self): return 0
+reveal_type(A.f.fset)  # E: revealed type: (Any, Any) -> None | None
+    "#,
+);

@@ -768,18 +768,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeBase::Any(style) => LookupResult::found_type(style.propagate()),
             AttributeBase::Never => LookupResult::found_type(Type::never()),
             AttributeBase::Property(mut getter) => {
-                // Get the property's `setter` method, which, when called with a function, returns
-                // a copy of the property with the passed-in function as its setter. We hack this
-                // by updating the getter's metadata to mark it as a setter method.
-                // TODO(stroxler): it is probably possible to synthesize a forall type here
-                // that uses a type var to propagate the setter. Investigate this option later.
-                getter.transform_func_metadata(|meta: &mut FuncMetadata| {
-                    meta.kind = FunctionKind::PropertySetter(Box::new(meta.kind.as_func_id()));
-                });
-                LookupResult::found_type(
-                    // TODO(samzhou19815): Support go-to-definition for @property applied symbols
-                    getter,
-                )
+                if attr_name == "setter" {
+                    // Get the property's `setter` method, which, when called with a function, returns
+                    // a copy of the property with the passed-in function as its setter. We hack this
+                    // by updating the getter's metadata to mark it as a setter method.
+                    // TODO(stroxler): it is probably possible to synthesize a forall type here
+                    // that uses a type var to propagate the setter. Investigate this option later.
+                    getter.transform_func_metadata(|meta: &mut FuncMetadata| {
+                        meta.kind = FunctionKind::PropertySetter(Box::new(meta.kind.as_func_id()));
+                    });
+                    LookupResult::found_type(
+                        // TODO(samzhou19815): Support go-to-definition for @property applied symbols
+                        getter,
+                    )
+                } else {
+                    let class = self.stdlib.property();
+                    match self.get_instance_attribute(&class, attr_name) {
+                        Some(attr) => LookupResult::Found(attr),
+                        None => LookupResult::NotFound(NotFound::Attribute(class)),
+                    }
+                }
             }
         }
     }
