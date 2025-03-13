@@ -733,11 +733,10 @@ y: C | int  # TODO: The generic class `C` is missing type arguments.
     "#,
 );
 
-testcase_with_bug!(
-    "TODO: implement reflective operators",
+testcase!(
     test_complex,
     r#"
-z: complex =  3 + 4j # E: Argument `complex` is not assignable to parameter with type `int`
+z: complex =  3 + 4j
     "#,
 );
 
@@ -1311,4 +1310,16 @@ from typing import Dict, assert_type
 y: Dict[str, int] = {"test": "test"} # E: `dict[str, str]` is not assignable to `dict[str, int]`
 assert_type(y, dict[str, int])
 "#,
+);
+
+testcase!(
+    test_simple_attr,
+    r#"
+class A:
+    pass
+class B:
+    def __radd__(self, other):
+        return 42
+A() + B()
+    "#,
 );

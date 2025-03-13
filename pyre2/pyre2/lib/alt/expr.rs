@@ -38,6 +38,7 @@ use crate::error::collector::ErrorCollector;
 use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
+use crate::error::style::ErrorStyle;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::Callable;
@@ -144,27 +145,111 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
+    fn callabe_dunder_helper(
+        &self,
+        method_type: Type,
+        range: TextRange,
+        errors: &ErrorCollector,
+        context: &ErrorContext,
+        op: Operator,
+        call_arg_type: &Type,
+    ) -> Type {
+        let callable = self.as_call_target_or_error(
+            method_type,
+            CallStyle::BinaryOp(op),
+            range,
+            errors,
+            Some(context),
+        );
+        self.call_infer(
+            callable,
+            &[CallArg::Type(call_arg_type, range)],
+            &[],
+            range,
+            errors,
+            Some(context),
+        )
+    }
+
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
             let context = ErrorContext::BinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
-            // TODO(yangdanny): handle reflected dunder methods
-            let method_type =
-                self.attr_infer(lhs, &Name::new(op.dunder()), range, errors, Some(&context));
-            let callable = self.as_call_target_or_error(
-                method_type,
-                CallStyle::BinaryOp(op),
+
+            let method_type_dunder = self.type_of_attr_get_if_found(
+                lhs,
+                &Name::new(op.dunder()),
                 range,
                 errors,
                 Some(&context),
+                "Expr::binop_infer",
             );
-            self.call_infer(
-                callable,
-                &[CallArg::Type(&rhs, range)],
-                &[],
+
+            let method_type_reflected = self.type_of_attr_get_if_found(
+                &rhs,
+                &Name::new(op.reflected_dunder()),
                 range,
                 errors,
                 Some(&context),
-            )
+                "Expr::binop_infer",
+            );
+
+            // Reflected operator implementation: This deviates from the runtime semantics by calling the reflected dunder if the regular dunder call errors.
+            // At runtime, the reflected dunder is called only if the regular dunder method doesn't exist or if it returns NotImplemented.
+            // This deviation is necessary, given that the typeshed stubs don't record when NotImplemented is returned
+            match (method_type_dunder, method_type_reflected) {
+                (Some(method_type_dunder), Some(method_type_reflected)) => {
+                    let bin_op_new_errors_dunder =
+                        ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
+
+                    let ret = self.callabe_dunder_helper(
+                        method_type_dunder,
+                        range,
+                        &bin_op_new_errors_dunder,
+                        &context,
+                        op,
+                        &rhs,
+                    );
+                    if bin_op_new_errors_dunder.is_empty() {
+                        ret
+                    } else {
+                        self.callabe_dunder_helper(
+                            method_type_reflected,
+                            range,
+                            errors,
+                            &context,
+                            op,
+                            lhs,
+                        )
+                    }
+                }
+                (Some(method_type_dunder), None) => self.callabe_dunder_helper(
+                    method_type_dunder,
+                    range,
+                    errors,
+                    &context,
+                    op,
+                    &rhs,
+                ),
+                (None, Some(method_type_reflected)) => self.callabe_dunder_helper(
+                    method_type_reflected,
+                    range,
+                    errors,
+                    &context,
+                    op,
+                    lhs,
+                ),
+                (None, None) => self.error(
+                    errors,
+                    x.range(),
+                    ErrorKind::MissingAttribute,
+                    Some(&context),
+                    format!(
+                        "Missing attribute {} or {}",
+                        op.dunder(),
+                        op.reflected_dunder()
+                    ),
+                ),
+            }
         };
         let lhs = self.expr_infer(&x.left, errors);
         let rhs = self.expr_infer(&x.right, errors);

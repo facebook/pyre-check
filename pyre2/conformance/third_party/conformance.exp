@@ -610,10 +610,10 @@
     {
       "code": -2,
       "column": 26,
-      "concise_description": "`|` is not supported between `Literal['GenericTypeAlias1[T1]']` and `type[TypeVar[T1]]`\n  Object of class `str` has no attribute `__or__`",
-      "description": "`|` is not supported between `Literal['GenericTypeAlias1[T1]']` and `type[TypeVar[T1]]`\n  Object of class `str` has no attribute `__or__`",
+      "concise_description": "`|` is not supported between `Literal['GenericTypeAlias1[T1]']` and `type[TypeVar[T1]]`\n  TODO: Expr::binop_infer attribute base undefined for type: type[TypeVar[T1]] (trying to access __ror__)",
+      "description": "`|` is not supported between `Literal['GenericTypeAlias1[T1]']` and `type[TypeVar[T1]]`\n  TODO: Expr::binop_infer attribute base undefined for type: type[TypeVar[T1]] (trying to access __ror__)",
       "line": 58,
-      "name": "missing-attribute",
+      "name": "internal-error",
       "stop_column": 54,
       "stop_line": 58
     },
@@ -650,10 +650,10 @@
     {
       "code": -2,
       "column": 26,
-      "concise_description": "`|` is not supported between `Literal['GenericTypeAlias2[T1, T2]']` and `type[TypeVar[T1]]`\n  Object of class `str` has no attribute `__or__`",
-      "description": "`|` is not supported between `Literal['GenericTypeAlias2[T1, T2]']` and `type[TypeVar[T1]]`\n  Object of class `str` has no attribute `__or__`",
+      "concise_description": "`|` is not supported between `Literal['GenericTypeAlias2[T1, T2]']` and `type[TypeVar[T1]]`\n  TODO: Expr::binop_infer attribute base undefined for type: type[TypeVar[T1]] (trying to access __ror__)",
+      "description": "`|` is not supported between `Literal['GenericTypeAlias2[T1, T2]']` and `type[TypeVar[T1]]`\n  TODO: Expr::binop_infer attribute base undefined for type: type[TypeVar[T1]] (trying to access __ror__)",
       "line": 65,
-      "name": "missing-attribute",
+      "name": "internal-error",
       "stop_column": 58,
       "stop_line": 65
     },
@@ -5834,10 +5834,20 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "`+` is not supported between `?_TypeVar` and `?_TypeVar`\n  TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)",
-      "description": "`+` is not supported between `?_TypeVar` and `?_TypeVar`\n  TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)",
+      "concise_description": "`+` is not supported between `?_TypeVar` and `?_TypeVar`\n  TODO: Expr::binop_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)",
+      "description": "`+` is not supported between `?_TypeVar` and `?_TypeVar`\n  TODO: Expr::binop_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)",
       "line": 34,
-      "name": "missing-attribute",
+      "name": "internal-error",
+      "stop_column": 17,
+      "stop_line": 34
+    },
+    {
+      "code": -2,
+      "column": 12,
+      "concise_description": "`+` is not supported between `?_TypeVar` and `?_TypeVar`\n  TODO: Expr::binop_infer attribute base undefined for type: ?_TypeVar (trying to access __radd__)",
+      "description": "`+` is not supported between `?_TypeVar` and `?_TypeVar`\n  TODO: Expr::binop_infer attribute base undefined for type: ?_TypeVar (trying to access __radd__)",
+      "line": 34,
+      "name": "internal-error",
       "stop_column": 17,
       "stop_line": 34
     },
