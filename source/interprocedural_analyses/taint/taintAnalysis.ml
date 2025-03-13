@@ -919,6 +919,8 @@ let run_taint_analysis
                scheduler_policies
                Configuration.ScheduleIdentifier.HigherOrderCallGraph
                ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+          ~static_analysis_configuration
+          ~resolve_module_path:(Some resolve_module_path)
           ~pyre_api
           ~call_graph:original_call_graphs
           ~dependency_graph:original_dependency_graph

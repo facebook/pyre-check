@@ -107,6 +107,8 @@ let assert_higher_order_call_graph_fixpoint
     CallGraphFixpoint.compute
       ~scheduler
       ~scheduler_policy
+      ~static_analysis_configuration
+      ~resolve_module_path:None
       ~pyre_api
       ~call_graph
       ~dependency_graph

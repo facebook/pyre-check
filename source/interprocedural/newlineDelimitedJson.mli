@@ -10,6 +10,7 @@ module Kind : sig
     | Model
     | Issue
     | CallGraph
+    | HigherOrderCallGraph
     | Module
     | Function
 

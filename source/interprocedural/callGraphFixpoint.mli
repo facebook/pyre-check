@@ -16,6 +16,8 @@ type t = {
 val compute
   :  scheduler:Scheduler.t ->
   scheduler_policy:Scheduler.Policy.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
   pyre_api:CallGraph.PyrePysaEnvironment.ReadOnly.t ->
   call_graph:CallGraph.SharedMemory.call_graphs ->
   dependency_graph:DependencyGraph.whole_program_dependency_graph ->

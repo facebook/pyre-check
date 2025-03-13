@@ -28,6 +28,7 @@ module Kind = struct
     | Model
     | Issue
     | CallGraph
+    | HigherOrderCallGraph
     | Module
     | Function
 
@@ -35,6 +36,7 @@ module Kind = struct
     | Model -> "model"
     | Issue -> "issue"
     | CallGraph -> "call_graph"
+    | HigherOrderCallGraph -> "higher_order_call_graph"
     | Module -> "module"
     | Function -> "function"
 end

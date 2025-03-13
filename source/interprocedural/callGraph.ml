@@ -1763,61 +1763,19 @@ let expression_identifier = function
   | _ -> (* not a valid call site. *) None
 
 
-module MakeCallGraph (CallGraph : sig
-  type t [@@deriving eq]
+(** The call graph of a function or method definition. This is for testing purpose only. *)
+module DefineCallGraphForTest = struct
+  type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
 
-  val to_json : t -> Yojson.Safe.t
-
-  val pp : Format.formatter -> t -> unit
-end) =
-struct
-  include CallGraph
-
-  let to_json ~pyre_api ~resolve_module_path ~callable (call_graph : t) : Yojson.Safe.t =
-    let bindings = ["callable", `String (Target.external_name callable)] in
-    let bindings =
-      let resolve_module_path = Option.value ~default:(fun _ -> None) resolve_module_path in
-      Target.get_module_and_definition ~pyre_api callable
-      >>| fst
-      >>= resolve_module_path
-      >>| (function
-            | { RepositoryPath.filename = Some filename; _ } ->
-                ("filename", `String filename) :: bindings
-            | { path; _ } ->
-                ("filename", `String "*") :: ("path", `String (PyrePath.absolute path)) :: bindings)
-      |> Option.value ~default:bindings
+  let pp formatter call_graph =
+    let pp_pair formatter (key, value) =
+      Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
     in
-    let bindings = ("calls", CallGraph.to_json call_graph) :: bindings in
-    `Assoc (List.rev bindings)
+    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+    call_graph |> Location.Map.Tree.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
 
 
   let show = Format.asprintf "%a" pp
-end
-
-(** The call graph of a function or method definition. This is for testing purpose only. *)
-module DefineCallGraphForTest = struct
-  module T = struct
-    type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
-
-    let to_json call_graph =
-      let bindings =
-        Location.Map.Tree.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
-            (Location.show key, LocationCallees.to_json data) :: sofar)
-      in
-      `Assoc bindings
-
-
-    let pp formatter call_graph =
-      let pp_pair formatter (key, value) =
-        Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
-      in
-      let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-      call_graph
-      |> Location.Map.Tree.to_alist
-      |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
-  end
-
-  include MakeCallGraph (T)
 
   let empty = Location.Map.Tree.empty
 
@@ -1829,42 +1787,146 @@ module DefineCallGraphForTest = struct
     Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
 end
 
+module MakeSaveCallGraph (CallGraph : sig
+  type t
+
+  val name : string
+
+  val is_empty : t -> bool
+
+  val to_json_alist : t -> (string * Yojson.Safe.t) list
+end) =
+struct
+  let filename_and_path ~callables_to_definitions_map ~resolve_module_path callable
+      : (string * Yojson.Safe.t) list
+    =
+    let bindings = ["callable", `String (Target.external_name callable)] in
+    let resolve_module_path = Option.value ~default:(fun _ -> None) resolve_module_path in
+    callable
+    |> Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map
+    >>| (fun { Target.DefinesSharedMemory.Define.qualifier; _ } -> qualifier)
+    >>= resolve_module_path
+    >>| (function
+          | { RepositoryPath.filename = Some filename; _ } ->
+              ("filename", `String filename) :: bindings
+          | { path; _ } ->
+              ("filename", `String "*") :: ("path", `String (PyrePath.absolute path)) :: bindings)
+    |> Option.value ~default:bindings
+
+
+  let save_to_directory
+      ~scheduler
+      ~static_analysis_configuration:
+        {
+          Configuration.StaticAnalysis.dump_call_graph;
+          save_results_to;
+          output_format;
+          configuration = { local_root; _ };
+          _;
+        }
+      ~callables_to_definitions_map
+      ~resolve_module_path
+      ~get_call_graph
+      ~json_kind
+      ~filename_prefix
+      ~callables
+    =
+    let call_graph_to_json callable =
+      match get_call_graph callable with
+      | Some call_graph when not (CallGraph.is_empty call_graph) ->
+          [
+            {
+              NewlineDelimitedJson.Line.kind = json_kind;
+              data =
+                `Assoc
+                  (filename_and_path ~callables_to_definitions_map ~resolve_module_path callable
+                  @ CallGraph.to_json_alist call_graph);
+            };
+          ]
+      | _ -> []
+    in
+    let () =
+      match save_results_to with
+      | Some directory ->
+          Log.info "Writing the %s to `%s`" CallGraph.name (PyrePath.absolute directory);
+          let () =
+            match output_format with
+            | Configuration.TaintOutputFormat.Json ->
+                NewlineDelimitedJson.write_file
+                  ~path:
+                    (PyrePath.append directory ~element:(Format.asprintf "%s.json" filename_prefix))
+                  ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+                  ~to_json_lines:call_graph_to_json
+                  callables
+            | Configuration.TaintOutputFormat.ShardedJson ->
+                NewlineDelimitedJson.remove_sharded_files ~directory ~filename_prefix;
+                NewlineDelimitedJson.write_sharded_files
+                  ~scheduler
+                  ~directory
+                  ~filename_prefix
+                  ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+                  ~to_json_lines:call_graph_to_json
+                  callables
+          in
+          ()
+      | None -> ()
+    in
+    match dump_call_graph with
+    | Some path ->
+        Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
+        NewlineDelimitedJson.write_file
+          ~path
+          ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+          ~to_json_lines:call_graph_to_json
+          callables
+    | None -> ()
+end
+
 (** The call graph of a function or method definition. *)
 module DefineCallGraph = struct
-  module T = struct
-    type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
+  type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
 
-    let to_json call_graph =
-      let bindings =
-        Location.SerializableMap.fold
-          (fun key data sofar -> (Location.show key, LocationCallees.Map.to_json data) :: sofar)
-          call_graph
-          []
-      in
-      `Assoc bindings
+  let to_json call_graph =
+    let bindings =
+      Location.SerializableMap.fold
+        (fun key data sofar -> (Location.show key, LocationCallees.Map.to_json data) :: sofar)
+        call_graph
+        []
+    in
+    `Assoc bindings
 
 
-    let pp formatter call_graph =
-      let pp_pair formatter (key, value) =
-        Format.fprintf
-          formatter
-          "@,%a -> %a"
-          Location.pp
-          key
-          (LocationCallees.Map.pp ExpressionCallees.pp)
-          value
-      in
-      let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-      call_graph
-      |> Location.SerializableMap.to_alist
-      |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
-  end
+  let pp formatter call_graph =
+    let pp_pair formatter (key, value) =
+      Format.fprintf
+        formatter
+        "@,%a -> %a"
+        Location.pp
+        key
+        (LocationCallees.Map.pp ExpressionCallees.pp)
+        value
+    in
+    let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+    call_graph
+    |> Location.SerializableMap.to_alist
+    |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
 
-  include MakeCallGraph (T)
+
+  let show = Format.asprintf "%a" pp
 
   let empty = Location.SerializableMap.empty
 
   let is_empty = Location.SerializableMap.is_empty
+
+  include MakeSaveCallGraph (struct
+    type nonrec t = t
+
+    let name = "call graphs"
+
+    let is_empty = is_empty
+
+    let to_json_alist call_graph = ["calls", to_json call_graph]
+  end)
 
   let copy = Fn.id
 
@@ -4035,6 +4097,22 @@ module HigherOrderCallGraph = struct
     }
 
 
+  include MakeSaveCallGraph (struct
+    type nonrec t = t
+
+    let name = "higher order call graphs"
+
+    let is_empty { returned_callables; call_graph } =
+      CallTarget.Set.is_bottom returned_callables && DefineCallGraph.is_empty call_graph
+
+
+    let to_json_alist { returned_callables; call_graph } =
+      let returned_callables =
+        returned_callables |> CallTarget.Set.elements |> List.map ~f:CallTarget.to_json
+      in
+      ["returned_callables", `List returned_callables; "calls", DefineCallGraph.to_json call_graph]
+  end)
+
   module State = struct
     include
       Abstract.MapDomain.Make
@@ -4901,14 +4979,7 @@ module SharedMemory = struct
   let build_whole_program_call_graph
       ~scheduler
       ~static_analysis_configuration:
-        ({
-           Configuration.StaticAnalysis.save_results_to;
-           output_format;
-           dump_call_graph;
-           scheduler_policies;
-           configuration = { local_root; _ };
-           _;
-         } as static_analysis_configuration)
+        ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
       ~pyre_api
       ~resolve_module_path
       ~override_graph
@@ -4998,52 +5069,17 @@ module SharedMemory = struct
     in
     let define_call_graphs = T.from_add_only define_call_graphs in
     let define_call_graphs_read_only = T.read_only define_call_graphs in
-    let call_graph_to_json callable =
-      match ReadOnly.get define_call_graphs_read_only ~cache:false ~callable with
-      | Some call_graph when not (DefineCallGraph.is_empty call_graph) ->
-          [
-            {
-              NewlineDelimitedJson.Line.kind = CallGraph;
-              data = DefineCallGraph.to_json ~pyre_api ~resolve_module_path ~callable call_graph;
-            };
-          ]
-      | _ -> []
-    in
     let () =
-      match save_results_to with
-      | Some directory ->
-          Log.info "Writing the call graph to `%s`" (PyrePath.absolute directory);
-          let () =
-            match output_format with
-            | Configuration.TaintOutputFormat.Json ->
-                NewlineDelimitedJson.write_file
-                  ~path:(PyrePath.append directory ~element:"call-graph.json")
-                  ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
-                  ~to_json_lines:call_graph_to_json
-                  definitions
-            | Configuration.TaintOutputFormat.ShardedJson ->
-                NewlineDelimitedJson.remove_sharded_files ~directory ~filename_prefix:"call-graph";
-                NewlineDelimitedJson.write_sharded_files
-                  ~scheduler
-                  ~directory
-                  ~filename_prefix:"call-graph"
-                  ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
-                  ~to_json_lines:call_graph_to_json
-                  definitions
-          in
-          ()
-      | None -> ()
-    in
-    let () =
-      match dump_call_graph with
-      | Some path ->
-          Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
-          NewlineDelimitedJson.write_file
-            ~path
-            ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
-            ~to_json_lines:call_graph_to_json
-            definitions
-      | None -> ()
+      DefineCallGraph.save_to_directory
+        ~scheduler
+        ~static_analysis_configuration
+        ~callables_to_definitions_map
+        ~resolve_module_path
+        ~get_call_graph:(fun callable ->
+          ReadOnly.get define_call_graphs_read_only ~cache:false ~callable)
+        ~json_kind:NewlineDelimitedJson.Kind.CallGraph
+        ~filename_prefix:"call-graph"
+        ~callables:definitions
     in
     { whole_program_call_graph; define_call_graphs }
 end

@@ -502,6 +502,17 @@ module HigherOrderCallGraph : sig
 
   val merge : t -> t -> t
 
+  val save_to_directory
+    :  scheduler:Scheduler.t ->
+    static_analysis_configuration:Configuration.StaticAnalysis.t ->
+    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
+    get_call_graph:(Target.t -> t option) ->
+    json_kind:NewlineDelimitedJson.Kind.t ->
+    filename_prefix:string ->
+    callables:Target.t list ->
+    unit
+
   module State : sig
     type t
 

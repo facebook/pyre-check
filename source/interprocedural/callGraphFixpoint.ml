@@ -188,8 +188,10 @@ type t = {
   get_define_call_graph: Target.t -> CallGraph.DefineCallGraph.t option;
 }
 
+let get_model_from_readonly_state ~state callable = Fixpoint.State.ReadOnly.get_model state callable
+
 let get_model { fixpoint = { state; _ }; _ } =
-  Fixpoint.State.ReadOnly.get_model (Fixpoint.State.read_only state)
+  get_model_from_readonly_state ~state:(Fixpoint.State.read_only state)
 
 
 let cleanup ~keep_models { Fixpoint.state; _ } = Fixpoint.State.cleanup ~keep_models state
@@ -197,7 +199,7 @@ let cleanup ~keep_models { Fixpoint.state; _ } = Fixpoint.State.cleanup ~keep_mo
 let get_define_call_graph ~state callable =
   let open Option in
   callable
-  |> Fixpoint.State.ReadOnly.get_model state
+  |> get_model_from_readonly_state ~state
   >>| fun { CallGraph.HigherOrderCallGraph.call_graph; _ } -> call_graph
 
 
@@ -230,6 +232,8 @@ let analyzed_callables { Fixpoint.state; _ } = Fixpoint.State.targets state
 let compute
     ~scheduler
     ~scheduler_policy
+    ~static_analysis_configuration
+    ~resolve_module_path
     ~pyre_api
     ~call_graph
     ~dependency_graph:{ DependencyGraph.dependency_graph; override_targets; _ }
@@ -335,6 +339,18 @@ let compute
   let state = Fixpoint.State.update_models state ~scheduler ~update_model:drop_decorated_targets in
   Log.info "Dropping decorated targets in models took %.2fs" (Timer.stop_in_sec timer);
   let fixpoint = { fixpoint with state } in
+  let () =
+    CallGraph.HigherOrderCallGraph.save_to_directory
+      ~scheduler
+      ~static_analysis_configuration
+      ~callables_to_definitions_map:
+        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~resolve_module_path
+      ~get_call_graph:(get_model_from_readonly_state ~state:(Fixpoint.State.read_only state))
+      ~json_kind:NewlineDelimitedJson.Kind.HigherOrderCallGraph
+      ~filename_prefix:"higher-order-call-graph"
+      ~callables:callables_with_call_graphs
+  in
   {
     fixpoint;
     whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy state;

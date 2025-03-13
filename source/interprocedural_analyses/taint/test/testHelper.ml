@@ -754,6 +754,8 @@ let initialize
     CallGraphFixpoint.compute
       ~scheduler
       ~scheduler_policy
+      ~static_analysis_configuration
+      ~resolve_module_path:None
       ~pyre_api
       ~call_graph
       ~dependency_graph
