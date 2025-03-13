@@ -161,7 +161,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[cfg_attr(target_family = "windows", ignore)]
     fn test_roots() {
         fn f(pattern: &str, root: &str) {
             let globs = Globs::new(vec![pattern.to_owned()]);
@@ -183,31 +182,25 @@ mod tests {
         f("a/b/*.txt", "a/b");
         f("/**", "/");
         f("/absolute/path/**/files", "/absolute/path");
-    }
 
-    #[test]
-    #[cfg_attr(not(target_family = "windows"), ignore)]
-    fn test_windows_roots() {
-        fn f(pattern: &str, root: &str) {
-            let globs = Globs::new(vec![pattern.to_owned()]);
-            assert_eq!(globs.roots(), vec![PathBuf::from(root)]);
+        if cfg!(windows) {
+            // These all use the \ separator, which only works on Windows.
+            f(r"C:\\windows\project\**\files", r"C:\\windows\project");
+            f(
+                r"c:\windows\project\**\files",
+                r"c:\windows\project\**files",
+            );
+            f(r"\windows\project\**\files", r"\windows\project");
+            f(r"c:project\**\files", "c:project");
+            f(r"project\**\files", "project");
+            f(r"**\files", "");
+            f("pattern", "pattern");
+            f("pattern.txt", "");
+            f(r"a\b", r"a\b");
+            f(r"a\b\c.txt", r"a\b");
+            f(r"a\b*\c", "a");
+            f(r"a\b\*.txt", r"a\b");
         }
-
-        f(r"C:\\windows\project\**\files", r"C:\\windows\project");
-        f(
-            r"c:\windows\project\**\files",
-            r"c:\windows\project\**files",
-        );
-        f(r"\windows\project\**\files", r"\windows\project");
-        f(r"c:project\**\files", "c:project");
-        f(r"project\**\files", "project");
-        f(r"**\files", "");
-        f("pattern", "pattern");
-        f("pattern.txt", "");
-        f(r"a\b", r"a\b");
-        f(r"a\b\c.txt", r"a\b");
-        f(r"a\b*\c", "a");
-        f(r"a\b\*.txt", r"a\b");
     }
 
     #[test]
