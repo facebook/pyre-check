@@ -27,7 +27,6 @@ pub struct DecoratedFunction {
     pub id_range: TextRange,
     pub ty: Type,
     pub metadata: FuncMetadata,
-    pub is_overload: bool,
 }
 
 impl Display for DecoratedFunction {
@@ -49,7 +48,6 @@ impl DecoratedFunction {
                 })),
                 flags: FuncFlags::default(),
             },
-            is_overload: false,
         }
     }
 }

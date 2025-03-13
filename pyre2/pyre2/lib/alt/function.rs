@@ -61,7 +61,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let skip_implementation = self.module_info().path().style() == ModuleStyle::Interface
             || class_metadata.is_some_and(|idx| self.get_idx(*idx).is_protocol());
         let def = self.get_idx(idx);
-        if def.is_overload {
+        if def.metadata.flags.is_overload {
             // This function is decorated with @overload. We should warn if this function is actually called anywhere.
             let successor = self.bindings().get(idx).successor;
             let ty = def.ty.clone();
@@ -404,7 +404,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             id_range: def.name.range,
             ty,
             metadata,
-            is_overload,
         })
     }
 
@@ -417,7 +416,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         if let Binding::Function(idx, pred_, _) = b {
             let def = self.get_idx(*idx);
-            if def.is_overload {
+            if def.metadata.flags.is_overload {
                 *pred = *pred_;
                 Some(def)
             } else {
