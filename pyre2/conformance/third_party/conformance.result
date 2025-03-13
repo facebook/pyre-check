@@ -692,7 +692,6 @@
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
     "Line 39: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 51: Unexpected errors ['Expected a callable, got type[BasicUser | ProUser]']",
     "Line 84: Unexpected errors ['assert_type(type, type[Any]) failed']",
     "Line 99: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 100: Unexpected errors ['Object of class `type` has no attribute `unknown`']",

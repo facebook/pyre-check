@@ -19,6 +19,17 @@ assert_type(v, Foo)
 );
 
 testcase!(
+    test_constructor_union,
+    r#"
+from typing import assert_type
+class A: ...
+class B: ...
+def test(f: type[A | B]) -> A | B:
+    return f()
+"#,
+);
+
+testcase!(
     test_generic_class,
     r#"
 from typing import assert_type

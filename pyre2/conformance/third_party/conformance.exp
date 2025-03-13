@@ -10467,16 +10467,6 @@
     },
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Expected a callable, got type[BasicUser | ProUser]",
-      "description": "Expected a callable, got type[BasicUser | ProUser]",
-      "line": 51,
-      "name": "not-callable",
-      "stop_column": 22,
-      "stop_line": 51
-    },
-    {
-      "code": -2,
       "column": 7,
       "concise_description": "Argument `type[TeamUser]` is not assignable to parameter `user_class` with type `type[BasicUser | ProUser]` in function `func4`",
       "description": "Argument `type[TeamUser]` is not assignable to parameter `user_class` with type `type[BasicUser | ProUser]` in function `func4`",

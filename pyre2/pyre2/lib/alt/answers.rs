@@ -576,6 +576,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
         match ty {
             Type::Union(tys) => self.unions(tys.map(f)),
+            Type::Type(box Type::Union(tys)) => {
+                self.unions(tys.map(|ty| f(&Type::type_form(ty.clone()))))
+            }
             _ => f(ty),
         }
     }
