@@ -225,6 +225,9 @@ impl<'a> TypeDisplayContext<'a> {
                             }
                             lits.push(lit)
                         }
+                        Type::Callable(_) | Type::Function(_) => {
+                            display_types.push(format!("({})", self.display(t)))
+                        }
                         _ => display_types.push(format!("{}", self.display(t))),
                     }
                 }

@@ -221,6 +221,6 @@ import types
 class A:
     @property
     def f(self): return 0
-reveal_type(A.f.fset)  # E: revealed type: (Any, Any) -> None | None
+reveal_type(A.f.fset)  # E: revealed type: ((Any, Any) -> None) | None
     "#,
 );
