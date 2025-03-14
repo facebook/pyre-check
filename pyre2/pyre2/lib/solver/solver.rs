@@ -35,6 +35,13 @@ use crate::util::lock::RwLock;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
 
+/// Error message when a variable has leaked from one module to another.
+///
+/// We have a rule that `Var`'s should not leak from one module to another, but it has happened.
+/// The easiest debugging technique is to look at the `Solutions` and see if there is a `Var(Unique`
+/// in the output. The usual cause is that we failed to visit all the necessary `Type` fields.
+const VAR_LEAK: &str = "Internal error: a variable has leaked from one module to another.";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Variable {
     /// A variable in a container with an unspecified element type, e.g. `[]: list[V]`
@@ -143,7 +150,7 @@ impl Solver {
     /// `Var` (including itself), then we will return the answer.
     pub fn force_var(&self, v: Var) -> Type {
         let mut lock = self.variables.write();
-        let e = lock.get_mut(&v).unwrap();
+        let e = lock.get_mut(&v).expect(VAR_LEAK);
         match e {
             Variable::Answer(t) => t.clone(),
             _ => {
@@ -307,7 +314,7 @@ impl Solver {
     pub fn finish_quantified(&self, vs: &[Var]) {
         let mut lock = self.variables.write();
         for v in vs {
-            let e = lock.get_mut(v).unwrap();
+            let e = lock.get_mut(v).expect(VAR_LEAK);
             if matches!(*e, Variable::Quantified(_, _)) {
                 *e = Variable::Contained;
             }
@@ -520,8 +527,8 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::Var(v1), Type::Var(v2)) => {
                 let mut variables = self.solver.variables.write();
                 match (
-                    variables.get(v1).unwrap().clone(),
-                    variables.get(v2).unwrap().clone(),
+                    variables.get(v1).expect(VAR_LEAK).clone(),
+                    variables.get(v2).expect(VAR_LEAK).clone(),
                 ) {
                     (Variable::Answer(t1), Variable::Answer(t2)) => {
                         drop(variables);
@@ -556,7 +563,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (Type::Var(v1), t2) => {
                 let mut variables = self.solver.variables.write();
-                match variables.get(v1).unwrap().clone() {
+                match variables.get(v1).expect(VAR_LEAK).clone() {
                     Variable::Answer(t1) => {
                         drop(variables);
                         self.is_subset_eq(&t1, t2)
@@ -570,7 +577,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             (t1, Type::Var(v2)) => {
                 let mut variables = self.solver.variables.write();
-                match variables.get(v2).unwrap().clone() {
+                match variables.get(v2).expect(VAR_LEAK).clone() {
                     Variable::Answer(t2) => {
                         drop(variables);
                         self.is_subset_eq(t1, &t2)
