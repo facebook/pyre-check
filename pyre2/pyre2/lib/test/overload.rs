@@ -261,3 +261,65 @@ class A:
 assert_type(A().f(1), int)
     "#,
 );
+
+testcase!(
+    test_invalid_decoration,
+    r#"
+from typing import overload
+
+def decorate(f) -> float:
+    return 0
+
+@overload
+def f(x: str) -> str: ...
+
+@decorate
+@overload
+def f(x: int) -> int: ...  # E: `f` has type `float` after decorator application, which is not callable
+
+def f(x: str | int) -> str | int:
+    return x
+    "#,
+);
+
+testcase!(
+    test_decoration,
+    r#"
+from typing import Callable, assert_type, overload
+
+def decorate(f) -> Callable[[int], int]:
+    return lambda x: x
+
+@overload
+@decorate
+def f(x: bytes) -> bytes: ...
+
+@overload
+def f(x: str) -> str: ...
+
+def f(x: object) -> object:
+    return x
+
+assert_type(f(0), int)
+f(b"")  # E: No matching overload found for function `f`, reporting errors for closest overload: `(int) -> int`  # E: `Literal[b'']` is not assignable to parameter with type `int`
+    "#,
+);
+
+testcase!(
+    test_final_decoration,
+    r#"
+from typing import assert_type, final, overload
+
+@overload
+@final
+def f(x: int) -> int: ...
+
+@overload
+def f(x: str) -> str: ...
+
+def f(x: int | str) -> int | str:
+    return x
+
+assert_type(f(0), int)
+    "#,
+);

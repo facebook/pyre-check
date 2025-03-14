@@ -32,6 +32,7 @@ use crate::types::class::ClassType;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
+use crate::types::types::OverloadType;
 use crate::types::types::Type;
 use crate::types::types::Var;
 pub enum CallStyle<'a> {
@@ -80,7 +81,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Function(func) => Some((Vec::new(), CallTarget::Function(*func))),
             Type::Overload(overload) => Some((
                 Vec::new(),
-                CallTarget::Overload(overload.signatures.mapped(|ty| self.as_call_target(ty))),
+                CallTarget::Overload(overload.signatures.mapped(|ty| match ty {
+                    OverloadType::Callable(signature) => Some((
+                        Vec::new(),
+                        CallTarget::Function(Function {
+                            signature,
+                            metadata: (*overload.metadata).clone(),
+                        }),
+                    )),
+                    OverloadType::Forall(forall) => {
+                        let (qs, t) = self.solver().fresh_quantified(
+                            &forall.tparams,
+                            Type::Function(Box::new(forall.func)),
+                            self.uniques,
+                        );
+                        match t {
+                            Type::Function(box func) => Some((qs, CallTarget::Function(func))),
+                            _ => None,
+                        }
+                    }
+                })),
             )),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 match self.as_call_target(func.as_type()) {

@@ -196,9 +196,13 @@ impl<'a> TypeDisplayContext<'a> {
             Type::Overload(overload) => {
                 write!(
                     f,
-                    "Overload[{}]",
-                    commas_iter(|| overload.signatures.iter().map(|t| self.display(t)))
-                )
+                    "Overload[{}",
+                    self.display(&overload.signatures.first().as_type())
+                )?;
+                for sig in overload.signatures.iter().skip(1) {
+                    write!(f, ", {}", self.display(&sig.as_type()))?;
+                }
+                write!(f, "]")
             }
             Type::ParamSpecValue(x) => {
                 write!(f, "(")?;
