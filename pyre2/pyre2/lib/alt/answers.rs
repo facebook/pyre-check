@@ -43,6 +43,8 @@ use crate::table_for_each;
 use crate::table_mut_for_each;
 use crate::table_try_for_each;
 use crate::types::class::Class;
+use crate::types::equality::TypeEq;
+use crate::types::equality::TypeEqCtx;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
@@ -208,7 +210,7 @@ impl Solutions {
             }
             for (k, v) in x.iter() {
                 match y.get(k) {
-                    Some(v2) if v != v2 => {
+                    Some(v2) if !v.type_eq(v2, &mut TypeEqCtx::default()) => {
                         return Some(SolutionsDifference {
                             key: k,
                             lhs: Some(v),
