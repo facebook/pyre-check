@@ -5,3 +5,4 @@ build-backend = "maturin"
 [tool.maturin]
 bindings = "bin"
 strip = true
+include = ["rust-toolchain"]
