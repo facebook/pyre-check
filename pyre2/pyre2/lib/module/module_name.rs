@@ -28,6 +28,7 @@ use crate::dunder;
 
 static MODULE_NAME_INTERNER: Interner<String> = Interner::new();
 
+/// The name of a python module. Examples: `foo.bar.baz`, `.foo.bar`.
 #[derive(Clone, Dupe, Copy, Hash, PartialEq, Eq, PartialOrd, Ord, Display)]
 pub struct ModuleName(Intern<String>);
 
