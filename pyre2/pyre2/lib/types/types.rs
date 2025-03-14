@@ -822,7 +822,7 @@ impl Type {
         })
     }
 
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
             Type::Callable(box c) => c.visit(f),
             Type::Function(box x) => x.visit(f),
@@ -846,7 +846,7 @@ impl Type {
             | Type::Unpack(x)
             | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
             Type::SuperInstance(cls1, cls2) => {
-                cls1.visit(&mut f);
+                cls1.visit(f);
                 cls2.visit(f)
             }
             Type::Literal(_)
@@ -915,21 +915,21 @@ impl Type {
     }
 
     /// Visit every type, with the guarantee you will have seen included types before the parent.
-    pub fn universe<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+    pub fn universe<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         fn g<'a>(ty: &'a Type, f: &mut dyn FnMut(&'a Type)) {
             ty.visit(&mut |ty| g(ty, f));
             f(ty);
         }
-        g(self, &mut f);
+        g(self, f);
     }
 
     /// Visit every type, with the guarantee you will have seen included types before the parent.
-    pub fn transform_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
+    pub fn transform_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         fn g(ty: &mut Type, f: &mut dyn FnMut(&mut Type)) {
             ty.visit_mut(&mut |ty| g(ty, f));
             f(ty);
         }
-        g(self, &mut f);
+        g(self, f);
     }
 
     pub fn transform(mut self, f: &mut dyn FnMut(&mut Type)) -> Self {

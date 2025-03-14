@@ -454,12 +454,12 @@ impl ClassType {
         Type::ClassType(self)
     }
 
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
-        self.1.visit(&mut f)
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        self.1.visit(f)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
-        self.1.visit_mut(&mut f)
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+        self.1.visit_mut(f)
     }
 
     pub fn self_type(&self) -> Type {

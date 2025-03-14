@@ -160,7 +160,7 @@ impl ClassField {
             } => {
                 f(ty);
                 for a in annotation.iter_mut() {
-                    a.visit_type_mut(&mut f);
+                    a.visit_type_mut(f);
                 }
                 descriptor_getter.iter_mut().for_each(&mut f);
                 descriptor_setter.iter_mut().for_each(f);

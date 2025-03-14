@@ -78,12 +78,12 @@ impl ParamList {
         Ok(())
     }
 
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
-        self.0.iter().for_each(|x| x.visit(&mut f));
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        self.0.iter().for_each(|x| x.visit(f));
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
-        self.0.iter_mut().for_each(|x| x.visit_mut(&mut f));
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+        self.0.iter_mut().for_each(|x| x.visit_mut(f));
     }
 
     pub fn items(&self) -> &[Param] {
@@ -143,21 +143,21 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         let Self {
             signature,
             metadata,
         } = self;
-        signature.visit(&mut f);
+        signature.visit(f);
         metadata.visit(f);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         let Self {
             signature,
             metadata,
         } = self;
-        signature.visit_mut(&mut f);
+        signature.visit_mut(f);
         metadata.visit_mut(f);
     }
 }
@@ -406,15 +406,15 @@ impl Callable {
         )
     }
 
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         let Self { params, ret } = self;
-        params.visit(&mut f);
+        params.visit(f);
         f(ret)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         let Self { params, ret } = self;
-        params.visit_mut(&mut f);
+        params.visit_mut(f);
         f(ret)
     }
 }
