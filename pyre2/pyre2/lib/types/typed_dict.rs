@@ -17,7 +17,6 @@ use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
-use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 

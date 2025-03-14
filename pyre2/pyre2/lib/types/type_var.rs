@@ -15,7 +15,6 @@ use pyrefly_derive::TypeEq;
 use ruff_python_ast::Identifier;
 
 use crate::module::module_info::ModuleInfo;
-use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;

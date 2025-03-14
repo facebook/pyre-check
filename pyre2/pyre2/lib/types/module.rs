@@ -15,7 +15,6 @@ use ruff_python_ast::name::Name;
 use starlark_map::ordered_set::OrderedSet;
 
 use crate::module::module_name::ModuleName;
-use crate::types::equality::TypeEq;
 use crate::types::types::Type;
 
 /// In Python if you do `import foo.bar` and `import foo.baz` then what you are really

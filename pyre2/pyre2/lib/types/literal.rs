@@ -31,7 +31,6 @@ use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::types::class::ClassType;
-use crate::types::equality::TypeEq;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 

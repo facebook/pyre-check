@@ -10,7 +10,6 @@ use std::fmt::Display;
 
 use pyrefly_derive::TypeEq;
 
-use crate::types::equality::TypeEq;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 

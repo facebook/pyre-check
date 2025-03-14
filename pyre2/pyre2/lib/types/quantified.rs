@@ -13,7 +13,6 @@ use pyrefly_derive::TypeEq;
 
 use crate::types::callable::ParamList;
 use crate::types::class::ClassType;
-use crate::types::equality::TypeEq;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::util::uniques::Unique;

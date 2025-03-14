@@ -16,7 +16,6 @@ use ruff_python_ast::Keyword;
 use starlark_map::ordered_map::OrderedMap;
 
 use crate::module::module_name::ModuleName;
-use crate::types::equality::TypeEq;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;

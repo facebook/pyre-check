@@ -25,7 +25,6 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
-use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedKind;

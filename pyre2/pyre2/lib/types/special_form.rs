@@ -17,7 +17,6 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 
 use crate::types::annotation::Qualifier;
-use crate::types::equality::TypeEq;
 use crate::types::types::NeverStyle;
 use crate::types::types::Type;
 

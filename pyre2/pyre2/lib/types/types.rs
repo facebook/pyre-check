@@ -27,7 +27,6 @@ use crate::types::callable::ParamList;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
-use crate::types::equality::TypeEq;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
