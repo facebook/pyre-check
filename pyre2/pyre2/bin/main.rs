@@ -137,7 +137,7 @@ async fn run_check_on_project(
     run_check(
         args,
         watch,
-        config.project_include.clone(),
+        config.project_includes.clone(),
         &|_| config.clone(),
         allow_forget,
     )

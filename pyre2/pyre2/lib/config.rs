@@ -28,8 +28,8 @@ pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
 #[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
 pub struct ConfigFile {
     /// Files that should be counted as sources (e.g. user-space code).
-    #[serde(default = "ConfigFile::default_project_include")]
-    pub project_include: Globs,
+    #[serde(default = "ConfigFile::default_project_includes")]
+    pub project_includes: Globs,
 
     /// corresponds to --include (soon to be renamed to --search-path) in Args
     // TODO(connernilsen): set this to config directory when config is found
@@ -58,13 +58,13 @@ impl Default for ConfigFile {
             python_platform: Self::default_python_platform(),
             python_version: PythonVersion::default(),
             site_package_path: Vec::new(),
-            project_include: Self::default_project_include(),
+            project_includes: Self::default_project_includes(),
         }
     }
 }
 
 impl ConfigFile {
-    pub fn default_project_include() -> Globs {
+    pub fn default_project_includes() -> Globs {
         Globs::new(vec![".".to_owned()])
     }
 
@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn deserialize_pyre_config() {
         let config_str = "
-            project_include = [\"./tests\", \"./implementation\"]
+            project_includes = [\"./tests\", \"./implementation\"]
             python_platform = \"darwin\"
             python_version = \"1.2.3\"
         ";
@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(
             config,
             ConfigFile {
-                project_include: Globs::new(vec![
+                project_includes: Globs::new(vec![
                     "./tests".to_owned(),
                     "./implementation".to_owned()
                 ]),
@@ -169,7 +169,7 @@ mod tests {
     fn deserialize_pyproject_toml() {
         let config_str = "
             [tool.pyre]
-            project_include = [\"./tests\", \"./implementation\"]
+            project_includes = [\"./tests\", \"./implementation\"]
             python_platform = \"darwin\"
             python_version = \"1.2.3\"
         ";
@@ -177,7 +177,7 @@ mod tests {
         assert_eq!(
             config,
             ConfigFile {
-                project_include: Globs::new(vec![
+                project_includes: Globs::new(vec![
                     "./tests".to_owned(),
                     "./implementation".to_owned()
                 ]),
