@@ -60,6 +60,9 @@ mod tests {
         C { x: i32, y: i32 },
     }
 
+    #[derive(TypeEq, PartialEq, Eq, Debug)]
+    struct Generic<T>(T);
+
     #[test]
     fn test_type_eq() {
         assert!(
@@ -92,5 +95,7 @@ mod tests {
                 f: (Bar(1, 3), Baz::A)
             })
         );
+        assert!(Generic(1).type_eq(&Generic(1)));
+        assert!(!Generic(1).type_eq(&Generic(2)));
     }
 }

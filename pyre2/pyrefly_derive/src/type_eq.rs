@@ -14,6 +14,8 @@ use syn::spanned::Spanned;
 use syn::Data;
 use syn::DeriveInput;
 use syn::Fields;
+use syn::GenericParam;
+use syn::Generics;
 
 pub(crate) fn derive_type_eq(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -23,10 +25,31 @@ pub(crate) fn derive_type_eq(input: proc_macro::TokenStream) -> proc_macro::Toke
     }
 }
 
+fn generics(
+    generics: &Generics,
+) -> syn::Result<(proc_macro2::TokenStream, proc_macro2::TokenStream)> {
+    let mut ts = Vec::new();
+    for param in &generics.params {
+        match param {
+            GenericParam::Type(t) if t.bounds.is_empty() => {
+                ts.push(&t.ident);
+            }
+            _ => {
+                return Err(syn::Error::new_spanned(
+                    param,
+                    "Unsupported generic parameter",
+                ));
+            }
+        }
+    }
+    let before = quote_spanned! { generics.span() => < #(#ts: crate::types::equality::TypeEq),* > };
+    let after = quote_spanned! { generics.span() => < #(#ts),* > };
+    Ok((before, after))
+}
+
 fn derive_type_eq_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
-    let generics = &input.generics;
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let (generics_before, generics_after) = generics(&input.generics)?;
     let body = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
             Fields::Named(fields_named) => {
@@ -99,7 +122,7 @@ fn derive_type_eq_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStr
         }
     };
     Ok(quote! {
-        impl #impl_generics TypeEq for #name #ty_generics #where_clause {
+        impl #generics_before TypeEq for #name #generics_after {
             fn type_eq(&self, other: &Self) -> bool {
                 #body
             }
