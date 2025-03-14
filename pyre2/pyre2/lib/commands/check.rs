@@ -82,14 +82,15 @@ pub struct Args {
     report_binding_memory: Option<PathBuf>,
     #[clap(long, env = clap_env("REPORT_TRACE"))]
     report_trace: Option<PathBuf>,
+    /// Count the number of each error kind. Prints the top N errors, sorted by count, or all errors if N is not specified.
     #[clap(
         long,
         default_missing_value = "5",
         require_equals = true,
         num_args = 0..=1,
-        env = clap_env("SUMMARIZE_ERRORS")
+        env = clap_env("COUNT_ERRORS")
     )]
-    summarize_errors: Option<usize>,
+    count_errors: Option<usize>,
     /// Check against any `E:` lines in the file.
     #[clap(long, env = clap_env("EXPECTATIONS"))]
     expectations: bool,
@@ -290,13 +291,13 @@ impl Args {
         }
         let printing = start.elapsed();
         memory_trace.stop();
-        if let Some(limit) = args.summarize_errors {
-            state.print_error_summary(limit);
+        if let Some(limit) = args.count_errors {
+            state.print_error_counts(limit);
         }
-        let count_errors = state.count_errors();
+        let error_count = state.count_errors();
         info!(
             "{} errors, {} modules, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-            number_thousands(count_errors),
+            number_thousands(error_count),
             number_thousands(state.module_count()),
             memory_trace.peak()
         );
@@ -320,7 +321,7 @@ impl Args {
         if args.expectations {
             state.check_against_expectations()?;
             Ok(CommandExitStatus::Success)
-        } else if count_errors > 0 {
+        } else if error_count > 0 {
             Ok(CommandExitStatus::UserError)
         } else {
             Ok(CommandExitStatus::Success)

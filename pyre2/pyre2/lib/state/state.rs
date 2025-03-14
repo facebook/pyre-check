@@ -586,16 +586,14 @@ impl State {
         }
     }
 
-    pub fn print_error_summary(&self, limit: usize) {
+    pub fn print_error_counts(&self, limit: usize) {
         let loads = self
             .modules
             .values()
             .filter_map(|x| x.state.read().steps.load.dupe())
             .collect::<Vec<_>>();
-        let mut items = ErrorCollector::summarise(loads.iter().map(|x| &x.errors));
-        items.reverse();
-        items.truncate(limit);
-        for (error, count) in items.iter().rev() {
+        let items = ErrorCollector::count_error_kinds(loads.iter().map(|x| &x.errors));
+        for (error, count) in items.iter().rev().take(limit).rev() {
             eprintln!(
                 "{} instances of {}",
                 number_thousands(*count),
