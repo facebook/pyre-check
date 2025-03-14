@@ -51,7 +51,7 @@ pub enum CallTarget {
     /// A function.
     Function(Function),
     /// Method of a class. The `Type` is the self/cls argument.
-    BoundMethod(Type, Callable, FunctionKind),
+    BoundMethod(Type, Function),
     /// A class object.
     Class(ClassType),
     /// A TypedDict.
@@ -104,20 +104,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             )),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 match self.as_call_target(func.as_type()) {
-                    Some((gs, CallTarget::Function(func))) => Some((
-                        gs,
-                        CallTarget::BoundMethod(obj, func.signature, func.metadata.kind),
-                    )),
+                    Some((gs, CallTarget::Function(func))) => {
+                        Some((gs, CallTarget::BoundMethod(obj, func)))
+                    }
                     Some((gs, CallTarget::Overload(overloads))) => {
                         let overloads = overloads.mapped(|x| match x {
-                            Some((gs2, CallTarget::Function(func))) => Some((
-                                gs2,
-                                CallTarget::BoundMethod(
-                                    obj.clone(),
-                                    func.signature,
-                                    func.metadata.kind,
-                                ),
-                            )),
+                            Some((gs2, CallTarget::Function(func))) => {
+                                Some((gs2, CallTarget::BoundMethod(obj.clone(), func)))
+                            }
                             _ => None,
                         });
                         Some((gs, CallTarget::Overload(overloads)))
@@ -460,11 +454,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
                 self.construct_typed_dict(td, args, keywords, range, arg_errors, context)
             }
-            CallTarget::BoundMethod(obj, c, kind) => {
+            CallTarget::BoundMethod(obj, func) => {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(
-                    c,
-                    Some(kind.as_func_id()),
+                    func.signature,
+                    Some(func.metadata.kind.as_func_id()),
                     Some(first_arg),
                     args,
                     keywords,
@@ -544,9 +538,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         signature: callable,
                         metadata,
                     })) => (Some(metadata.kind.as_func_id()), Some(callable)),
-                    Some(CallTarget::BoundMethod(_, callable, kind)) => {
-                        (Some(kind.as_func_id()), callable.drop_first_param())
-                    }
+                    Some(CallTarget::BoundMethod(_, func)) => (
+                        Some(func.metadata.kind.as_func_id()),
+                        func.signature.drop_first_param(),
+                    ),
                     _ => (None, None),
                 };
                 let func_desc = match func_id {
