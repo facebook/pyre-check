@@ -41,7 +41,7 @@ pub struct ConfigFile {
     #[serde(default = "ConfigFile::default_python_platform")]
     pub python_platform: String,
 
-    /// The default Python version to use, likely `3.12.0`
+    /// The default Python version to use, likely `3.13.0`
     // TODO(connernilsen): use python_executable if not set
     #[serde(default)]
     pub python_version: PythonVersion,
