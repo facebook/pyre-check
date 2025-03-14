@@ -444,39 +444,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         context: Option<&ErrorContext>,
     ) -> Type {
-        self.call_infer_inner(call_target, args, keywords, range, errors, errors, context)
-    }
-
-    // TODO: This function depends on an invariant that overloads only contain functions and bound
-    // methods, never a constructor or another overload. See assertions marked with "Hack" below.
-    // This is all quite hacky ("very very very grim," says Neil).
-    fn call_infer_inner(
-        &self,
-        call_target: CallTarget,
-        args: &[CallArg],
-        keywords: &[Keyword],
-        range: TextRange,
-        arg_errors: &ErrorCollector,
-        call_errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
-    ) -> Type {
         let is_dataclass = matches!(&call_target.target, Target::FunctionOverload(_, meta) if matches!(meta.kind, FunctionKind::Dataclass(_)));
         let res = match call_target.target {
-            Target::Class(cls) => {
-                // Hack
-                assert!(
-                    std::ptr::eq(arg_errors, call_errors),
-                    "unexpected constructor inside overload"
-                );
-                self.construct_class(cls, args, keywords, range, arg_errors, context)
-            }
+            Target::Class(cls) => self.construct_class(cls, args, keywords, range, errors, context),
             Target::TypedDict(td) => {
-                // Hack
-                assert!(
-                    std::ptr::eq(arg_errors, call_errors),
-                    "unexpected TypedDict constructor inside overload"
-                );
-                self.construct_typed_dict(td, args, keywords, range, arg_errors, context)
+                self.construct_typed_dict(td, args, keywords, range, errors, context)
             }
             Target::BoundMethod(obj, func) => {
                 let first_arg = CallArg::Type(&obj, range);
@@ -487,21 +459,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     args,
                     keywords,
                     range,
-                    arg_errors,
-                    call_errors,
+                    errors,
+                    errors,
                     context,
                 )
             }
             Target::Callable(callable) => self.callable_infer(
-                callable,
-                None,
-                None,
-                args,
-                keywords,
-                range,
-                arg_errors,
-                call_errors,
-                context,
+                callable, None, None, args, keywords, range, errors, errors, context,
             ),
             Target::Function(Function {
                 signature: callable,
@@ -513,58 +477,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 args,
                 keywords,
                 range,
-                arg_errors,
-                call_errors,
+                errors,
+                errors,
                 context,
             ),
-            Target::FunctionOverload(overloads, meta) => {
-                // Hack
-                assert!(
-                    std::ptr::eq(arg_errors, call_errors),
-                    "unexpected nested overload"
-                );
-                self.call_overloads(
-                    overloads,
-                    meta,
-                    None,
-                    args,
-                    keywords,
-                    range,
-                    arg_errors,
-                    call_errors,
-                    context,
-                )
-            }
-            Target::BoundMethodOverload(obj, overloads, meta) => {
-                // Hack
-                assert!(
-                    std::ptr::eq(arg_errors, call_errors),
-                    "unexpected nested overload"
-                );
-                self.call_overloads(
-                    overloads,
-                    meta,
-                    Some(CallArg::Type(&obj, range)),
-                    args,
-                    keywords,
-                    range,
-                    arg_errors,
-                    call_errors,
-                    context,
-                )
-            }
+            Target::FunctionOverload(overloads, meta) => self.call_overloads(
+                overloads, meta, None, args, keywords, range, errors, context,
+            ),
+            Target::BoundMethodOverload(obj, overloads, meta) => self.call_overloads(
+                overloads,
+                meta,
+                Some(CallArg::Type(&obj, range)),
+                args,
+                keywords,
+                range,
+                errors,
+                context,
+            ),
             Target::Any(style) => {
                 // Make sure we still catch errors in the arguments.
                 for arg in args {
                     match arg {
                         CallArg::Expr(e) | CallArg::Star(e, _) => {
-                            self.expr_infer(e, arg_errors);
+                            self.expr_infer(e, errors);
                         }
                         CallArg::Type(..) => {}
                     }
                 }
                 for kw in keywords {
-                    self.expr_infer(&kw.value, arg_errors);
+                    self.expr_infer(&kw.value, errors);
                 }
                 style.propagate()
             }
@@ -573,7 +514,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if is_dataclass && let Type::Callable(c) = res {
             let mut kws = BoolKeywords::new();
             for kw in keywords {
-                kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value, arg_errors));
+                kws.set_keyword(kw.arg.as_ref(), self.expr_infer(&kw.value, errors));
             }
             Type::Function(Box::new(Function {
                 signature: *c,
@@ -595,11 +536,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
-        arg_errors: &ErrorCollector,
-        _call_errors: &ErrorCollector,
+        errors: &ErrorCollector,
         context: Option<&ErrorContext>,
     ) -> Type {
-        let errors = arg_errors;
         let mut closest_overload = None;
         let mut fewest_errors: Option<ErrorCollector> = None;
         for callable in overloads.into_iter() {
