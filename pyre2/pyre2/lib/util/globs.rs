@@ -329,4 +329,14 @@ mod tests {
             ],
         );
     }
+
+    #[test]
+    fn test_is_python_extension() {
+        assert!(!Globs::is_python_extension(None));
+        assert!(!Globs::is_python_extension(Some(OsStr::new(
+            "hello world!"
+        ))));
+        assert!(Globs::is_python_extension(Some(OsStr::new("py"))));
+        assert!(Globs::is_python_extension(Some(OsStr::new("pyi"))));
+    }
 }
