@@ -616,6 +616,15 @@ impl State {
         }
     }
 
+    pub fn print_error_summary(&self, path_index: usize) {
+        let loads = self
+            .modules
+            .values()
+            .filter_map(|x| x.state.read().steps.load.dupe())
+            .collect::<Vec<_>>();
+        ErrorCollector::print_error_summary(loads.iter().map(|x| &x.errors), path_index);
+    }
+
     fn get_cached_find_dependency(
         &self,
         loader: &LoaderId,

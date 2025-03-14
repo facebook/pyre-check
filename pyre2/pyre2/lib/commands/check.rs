@@ -91,6 +91,17 @@ pub struct Args {
         env = clap_env("COUNT_ERRORS")
     )]
     count_errors: Option<usize>,
+    /// Summarize errors by directory. The optional index argument specificies which file path segment will be used to group errors.
+    /// The default index is 0. For errors in `/foo/bar/...`, this will group errors by `/foo`. If index is 1, errors will be grouped by `/foo/bar`.
+    /// An index larger than the number of path segments will group by the final path element, i.e. the file name.
+    #[clap(
+        long,
+        default_missing_value = "0",
+        require_equals = true,
+        num_args = 0..=1,
+        env = clap_env("SUMMARIZE_ERRORS")
+    )]
+    summarize_errors: Option<usize>,
     /// Check against any `E:` lines in the file.
     #[clap(long, env = clap_env("EXPECTATIONS"))]
     expectations: bool,
@@ -293,6 +304,9 @@ impl Args {
         memory_trace.stop();
         if let Some(limit) = args.count_errors {
             state.print_error_counts(limit);
+        }
+        if let Some(path_index) = args.summarize_errors {
+            state.print_error_summary(path_index);
         }
         let error_count = state.count_errors();
         info!(

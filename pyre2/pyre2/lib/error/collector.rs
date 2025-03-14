@@ -21,6 +21,7 @@ use crate::error::error::Error;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
+use crate::module::module_path::ModulePath;
 use crate::util::lock::Mutex;
 
 #[derive(Debug, Default, Clone)]
@@ -161,6 +162,21 @@ impl ErrorCollector {
         let mut res = map.into_iter().collect::<Vec<_>>();
         res.sort_by_key(|x| x.1);
         res
+    }
+
+    pub fn get_errors_per_file<'a>(
+        xs: impl Iterator<Item = &'a ErrorCollector>,
+    ) -> SmallMap<ModulePath, SmallMap<ErrorKind, usize>> {
+        let mut map: SmallMap<ModulePath, SmallMap<ErrorKind, usize>> = SmallMap::new();
+        for x in xs {
+            for err in x.errors.lock().iter() {
+                *map.entry(err.path().dupe())
+                    .or_default()
+                    .entry(err.error_kind())
+                    .or_default() += 1;
+            }
+        }
+        map
     }
 
     pub fn todo(&self, msg: &str, v: impl Ranged + Debug) {
