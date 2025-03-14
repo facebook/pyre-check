@@ -16,13 +16,28 @@ use ruff_python_ast::ModModule;
 use ruff_python_ast::Pattern;
 use ruff_python_ast::Stmt;
 
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
+
+impl Visit<Expr> for ModModule {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
+        Visitors::visit_mod_expr(self, f);
+    }
+}
+
+impl VisitMut for Expr {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Expr)) {
+        Visitors::visit_expr_mut(self, f);
+    }
+}
+
 /// Just used for convenient namespacing - not a real type
 ///
 /// Functions based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
 pub struct Visitors;
 
 impl Visitors {
-    pub fn visit_mod_expr<'a>(x: &'a ModModule, mut f: impl FnMut(&'a Expr)) {
+    fn visit_mod_expr<'a>(x: &'a ModModule, mut f: impl FnMut(&'a Expr)) {
         x.body
             .iter()
             .for_each(|x| Visitors::visit_stmt_expr(x, &mut f));
@@ -185,7 +200,7 @@ impl Visitors {
         }
     }
 
-    pub fn visit_expr_mut<'a>(x: &'a mut Expr, mut f: impl FnMut(&'a mut Expr)) {
+    fn visit_expr_mut<'a>(x: &'a mut Expr, mut f: impl FnMut(&'a mut Expr)) {
         match x {
             Expr::BoolOp(x) => x.values.iter_mut().for_each(f),
             Expr::Named(x) => {

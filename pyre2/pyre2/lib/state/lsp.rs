@@ -25,6 +25,7 @@ use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::types::types::Type;
 use crate::util::prelude::VecExt;
+use crate::util::visit::Visit;
 use crate::visitors::Visitors;
 
 impl State {
@@ -51,7 +52,7 @@ impl State {
             }
         }
         let mut res = None;
-        Visitors::visit_mod_expr(&mod_module, |x| f(x, position, &mut res));
+        mod_module.visit(&mut |x| f(x, position, &mut res));
         res
     }
 
@@ -73,7 +74,7 @@ impl State {
             }
         }
         let mut res = None;
-        Visitors::visit_mod_expr(&mod_module, |x| f(x, position, &mut res));
+        mod_module.visit(&mut |x| f(x, position, &mut res));
         res
     }
 

@@ -38,7 +38,7 @@ use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::callable::unexpected_keyword;
 use crate::types::types::AnyStyle;
-use crate::visitors::Visitors;
+use crate::util::visit::VisitMut;
 
 impl<'a> BindingsBuilder<'a> {
     /// Given a name appearing in an expression, create a `Usage` key for that
@@ -323,7 +323,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             _ => false,
         };
-        Visitors::visit_expr_mut(x, |x| self.ensure_expr(x));
+        x.visit_mut(&mut |x| self.ensure_expr(x));
         if new_scope {
             self.scopes.pop();
         }
@@ -387,7 +387,7 @@ impl<'a> BindingsBuilder<'a> {
             },
             // Bind the lambda so we don't crash on undefined parameter names.
             Expr::Lambda(_) => self.ensure_expr(x),
-            _ => Visitors::visit_expr_mut(x, |x| self.ensure_type(x, tparams_builder)),
+            _ => x.visit_mut(&mut |x| self.ensure_type(x, tparams_builder)),
         }
     }
 
