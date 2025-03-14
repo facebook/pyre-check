@@ -307,8 +307,8 @@ impl ClassField {
 
     pub fn is_final(&self) -> bool {
         match &self.0 {
-            ClassFieldInner::Simple { annotation, .. } => {
-                annotation.as_ref().is_some_and(|ann| ann.is_final())
+            ClassFieldInner::Simple { annotation, ty, .. } => {
+                annotation.as_ref().is_some_and(|ann| ann.is_final()) || ty.has_final_decoration()
             }
         }
     }
@@ -756,7 +756,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ErrorKind::BadOverride,
                     None,
                     format!(
-                        "`{}` is declared as Final in parent class `{}`",
+                        "`{}` is declared as final in parent class `{}`",
                         name,
                         parent.name()
                     ),

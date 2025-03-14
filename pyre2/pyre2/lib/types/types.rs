@@ -752,6 +752,10 @@ impl Type {
         self.check_func_metadata(&|meta| meta.flags.is_overload)
     }
 
+    pub fn has_final_decoration(&self) -> bool {
+        self.check_func_metadata(&|meta| meta.flags.has_final_decoration)
+    }
+
     pub fn transform_func_metadata(&mut self, mut f: impl FnMut(&mut FuncMetadata)) {
         match self {
             Type::Function(box func)

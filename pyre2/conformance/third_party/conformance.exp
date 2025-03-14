@@ -10167,8 +10167,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "`BORDER_WIDTH` is declared as Final in parent class `ClassC`",
-      "description": "`BORDER_WIDTH` is declared as Final in parent class `ClassC`",
+      "concise_description": "`BORDER_WIDTH` is declared as final in parent class `ClassC`",
+      "description": "`BORDER_WIDTH` is declared as final in parent class `ClassC`",
       "line": 94,
       "name": "bad-override",
       "stop_column": 17,
@@ -10309,8 +10309,58 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "Class member `Derived5.method` overrides parent class `Base5_2` in an inconsistent manner",
-      "description": "Class member `Derived5.method` overrides parent class `Base5_2` in an inconsistent manner",
+      "concise_description": "`method1` is declared as final in parent class `Base2`",
+      "description": "`method1` is declared as final in parent class `Base2`",
+      "line": 56,
+      "name": "bad-override",
+      "stop_column": 16,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "`method2` is declared as final in parent class `Base2`",
+      "description": "`method2` is declared as final in parent class `Base2`",
+      "line": 60,
+      "name": "bad-override",
+      "stop_column": 16,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "`method3` is declared as final in parent class `Base2`",
+      "description": "`method3` is declared as final in parent class `Base2`",
+      "line": 64,
+      "name": "bad-override",
+      "stop_column": 16,
+      "stop_line": 64
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "`method` is declared as final in parent class `Base3`",
+      "description": "`method` is declared as final in parent class `Base3`",
+      "line": 81,
+      "name": "bad-override",
+      "stop_column": 15,
+      "stop_line": 81
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "`method` is declared as final in parent class `Base4`",
+      "description": "`method` is declared as final in parent class `Base4`",
+      "line": 95,
+      "name": "bad-override",
+      "stop_column": 15,
+      "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 9,
+      "concise_description": "`method` is declared as final in parent class `Base5_2`",
+      "description": "`method` is declared as final in parent class `Base5_2`",
       "line": 118,
       "name": "bad-override",
       "stop_column": 15,

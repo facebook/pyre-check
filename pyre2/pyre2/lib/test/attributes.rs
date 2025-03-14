@@ -228,7 +228,7 @@ def f() -> int: ...
 class Base:
     p: Final = f()
 class Derived(Base):
-    p = f()  # E: `p` is declared as Final in parent class `Base`
+    p = f()  # E: `p` is declared as final in parent class `Base`
 "#,
 );
 

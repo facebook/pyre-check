@@ -653,14 +653,13 @@
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
   ],
   "qualifiers_final_decorator.py": [
-    "Line 56: Expected 1 errors",
-    "Lines 59, 60: Expected error (tag 'method2')",
-    "Lines 63, 64: Expected error (tag 'method3')",
     "Lines 67, 75: Expected error (tag 'method4')",
     "Lines 80, 89: Expected error (tag 'Derived3')",
     "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
-    "Lines 125, 126: Expected error (tag 'func')"
+    "Lines 125, 126: Expected error (tag 'func')",
+    "Line 81: Unexpected errors ['`method` is declared as final in parent class `Base3`']",
+    "Line 95: Unexpected errors ['`method` is declared as final in parent class `Base4`']"
   ],
   "specialtypes_any.py": [
     "Line 87: Unexpected errors ['Object of class `ClassA` has no attribute `method2`']",

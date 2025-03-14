@@ -80,8 +80,8 @@ class A:
     x: Final = 1
     y: Final[int] = 1
 class B(A):
-    x = 1  # E: `x` is declared as Final in parent class `A`
-    y = 1  # E: `y` is declared as Final in parent class `A`
+    x = 1  # E: `x` is declared as final in parent class `A`
+    y = 1  # E: `y` is declared as final in parent class `A`
  "#,
 );
 
@@ -278,8 +278,7 @@ class ChildA(ParentA):
  "#,
 );
 
-testcase_with_bug!(
-    "TODO zeina: a should not be overridden since it's final.",
+testcase!(
     test_override_final_method,
     r#"
 from typing import final
@@ -289,6 +288,6 @@ class Parent:
     def a(self): ...
 
 class Child(Parent):
-    def a(self): ...
+    def a(self): ...  # E: `a` is declared as final in parent class `Parent`
  "#,
 );
