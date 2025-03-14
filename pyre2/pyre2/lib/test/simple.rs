@@ -79,6 +79,25 @@ assert_type(x, C)
 "#,
 );
 
+testcase_with_bug!(
+    "Need scoping changes to handle nonlocal",
+    test_nonlocal,
+    r#"
+def f1() -> None:
+  x: str = "John"
+  def f2() -> None:
+    del x  # Not OK
+  def f3() -> None:
+    nonlocal x  # E: TODO: StmtNonlocal
+    del x  # OK
+  def f4() -> None:
+    nonlocal x  # E: TODO: StmtNonlocal
+    x = 1  # Not OK
+  def f5() -> None:
+    x = 1  # OK, this is a new x
+"#,
+);
+
 testcase!(
     test_extend_final,
     r#"
