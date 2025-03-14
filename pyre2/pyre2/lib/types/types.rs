@@ -673,7 +673,7 @@ impl Type {
     }
 
     pub fn subst(self, mp: &SmallMap<Quantified, Type>) -> Self {
-        self.transform(|ty| {
+        self.transform(&mut |ty| {
             if let Type::Quantified(x) = &ty {
                 if let Some(w) = mp.get(x) {
                     *ty = w.clone();
@@ -683,7 +683,7 @@ impl Type {
     }
 
     pub fn subst_self_type_mut(&mut self, self_type: &Type) {
-        self.transform_mut(|x| {
+        self.transform_mut(&mut |x| {
             if x == &Type::SpecialForm(SpecialForm::SelfType) {
                 *x = self_type.clone()
             }
@@ -775,7 +775,7 @@ impl Type {
     }
 
     pub fn promote_literals(self, stdlib: &Stdlib) -> Type {
-        self.transform(|ty| match &ty {
+        self.transform(&mut |ty| match &ty {
             Type::Literal(lit) => *ty = lit.general_class_type(stdlib).to_type(),
             _ => {}
         })
@@ -794,7 +794,7 @@ impl Type {
     }
 
     pub fn explicit_any(self) -> Self {
-        self.transform(|ty| {
+        self.transform(&mut |ty| {
             if let Type::Any(style) = ty {
                 *style = AnyStyle::Explicit;
             }
@@ -802,7 +802,7 @@ impl Type {
     }
 
     pub fn anon_callables(self) -> Self {
-        self.transform(|ty| {
+        self.transform(&mut |ty| {
             if let Type::Function(func) = ty {
                 *ty = Type::Callable(Box::new(func.signature.clone()));
             }
@@ -811,7 +811,7 @@ impl Type {
 
     /// Used prior to display to ensure unique variables don't leak out non-deterministically.
     pub fn deterministic_printing(self) -> Self {
-        self.transform(|ty| {
+        self.transform(&mut |ty| {
             match ty {
                 Type::Var(v) => {
                     // FIXME: Should mostly be forcing these before printing
@@ -916,7 +916,7 @@ impl Type {
 
     /// Visit every type, with the guarantee you will have seen included types before the parent.
     pub fn universe<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
-        fn g<'a>(ty: &'a Type, f: &mut impl FnMut(&'a Type)) {
+        fn g<'a>(ty: &'a Type, f: &mut dyn FnMut(&'a Type)) {
             ty.visit(&mut |ty| g(ty, f));
             f(ty);
         }
@@ -924,16 +924,16 @@ impl Type {
     }
 
     /// Visit every type, with the guarantee you will have seen included types before the parent.
-    pub fn transform_mut(&mut self, mut f: impl FnMut(&mut Type)) {
-        fn g(ty: &mut Type, f: &mut impl FnMut(&mut Type)) {
+    pub fn transform_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
+        fn g(ty: &mut Type, f: &mut dyn FnMut(&mut Type)) {
             ty.visit_mut(&mut |ty| g(ty, f));
             f(ty);
         }
         g(self, &mut f);
     }
 
-    pub fn transform(mut self, mut f: impl FnMut(&mut Type)) -> Self {
-        self.transform_mut(&mut f);
+    pub fn transform(mut self, f: &mut dyn FnMut(&mut Type)) -> Self {
+        self.transform_mut(f);
         self
     }
 

@@ -38,7 +38,7 @@ impl YieldResult {
         }
     }
 
-    pub fn visit_mut(&mut self, mut f: impl FnMut(&mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         let Self { yield_ty, send_ty } = self;
         yield_ty.visit_mut(&mut f);
         send_ty.visit_mut(&mut f);
@@ -79,7 +79,7 @@ impl YieldFromResult {
         }
     }
 
-    pub fn visit_mut(&mut self, mut f: impl FnMut(&mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         let Self {
             yield_ty,
             send_ty,

@@ -277,7 +277,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ///
     /// This function canonicalizes to `Type::ClassType` or `Type::TypedDict`
     pub fn canonicalize_all_class_types(&self, ty: Type, range: TextRange) -> Type {
-        ty.transform(|ty| match ty {
+        ty.transform(&mut |ty| match ty {
             Type::SpecialForm(SpecialForm::Tuple) => {
                 *ty = Type::Tuple(Tuple::unbounded(Type::Any(AnyStyle::Implicit)));
             }

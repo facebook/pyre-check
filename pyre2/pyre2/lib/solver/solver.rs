@@ -194,7 +194,7 @@ impl Solver {
 
     /// Simplify a type as much as we can.
     fn simplify_mut(&self, t: &mut Type) {
-        t.transform_mut(|x| {
+        t.transform_mut(&mut |x| {
             if let Type::Union(xs) = x {
                 *x = unions(mem::take(xs));
             }

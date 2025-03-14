@@ -52,7 +52,7 @@ impl Annotation {
         self.ty.as_ref().unwrap_or(&Type::Any(AnyStyle::Implicit))
     }
 
-    pub fn visit_type_mut(&mut self, mut f: impl FnMut(&mut Type)) {
+    pub fn visit_type_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         if let Some(ty) = &mut self.ty {
             f(ty);
         }
