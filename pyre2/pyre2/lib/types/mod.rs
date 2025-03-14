@@ -10,6 +10,7 @@ pub mod annotation;
 pub mod callable;
 pub mod class;
 pub mod display;
+pub mod equality;
 pub mod literal;
 pub mod module;
 pub mod param_spec;
