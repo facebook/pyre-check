@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.callable_class",
-    "callable_line": 86,
+    "callable_line": 95,
     "code": 5002,
-    "line": 89,
+    "line": 98,
     "start": 15,
     "end": 16,
     "filename": "higher_order_functions.py",
@@ -29,10 +29,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 87, "start": 17, "end": 31 } ],
+            "tito_positions": [ { "line": 96, "start": 17, "end": 31 } ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 87,
+              "line": 96,
               "start": 17,
               "end": 31
             }
@@ -52,11 +52,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 89,
+              "line": 98,
               "start": 15,
               "end": 16
             },
-            "call_site": "89:4-89:17"
+            "call_site": "98:4-98:17"
           }
         ]
       }
@@ -80,10 +80,85 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.test_conditional_apply_forward",
-    "callable_line": 112,
+    "callable": "higher_order_functions.test_apply_without_return",
+    "callable_line": 82,
     "code": 5002,
-    "line": 118,
+    "line": 83,
+    "start": 37,
+    "end": 51,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 83,
+              "start": 37,
+              "end": 51
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "higher_order_functions.py",
+                "line": 83,
+                "start": 37,
+                "end": 51
+              },
+              "resolves_to": [
+                "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]"
+              ],
+              "port": "formal(x, position=1)",
+              "call_site": "83:4-83:52"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "higher_order_functions.test_apply_without_return:5002:0:Call|higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]|0|formal(x):214296acac21d5147cadc254c5cdba07"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "higher_order_functions.test_conditional_apply_forward",
+    "callable_line": 121,
+    "code": 5002,
+    "line": 127,
     "start": 15,
     "end": 62,
     "filename": "higher_order_functions.py",
@@ -106,7 +181,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 118,
+                "line": 127,
                 "start": 15,
                 "end": 62
               },
@@ -131,11 +206,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 118,
+              "line": 127,
               "start": 15,
               "end": 62
             },
-            "call_site": "118:4-118:63"
+            "call_site": "127:4-127:63"
           }
         ]
       }
@@ -156,9 +231,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_conditional_apply_forward",
-    "callable_line": 112,
+    "callable_line": 121,
     "code": 5002,
-    "line": 117,
+    "line": 126,
     "start": 15,
     "end": 61,
     "filename": "higher_order_functions.py",
@@ -181,7 +256,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 117,
+                "line": 126,
                 "start": 15,
                 "end": 61
               },
@@ -206,11 +281,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 117,
+              "line": 126,
               "start": 15,
               "end": 61
             },
-            "call_site": "117:4-117:62"
+            "call_site": "126:4-126:62"
           }
         ]
       }
@@ -231,9 +306,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_conditional_apply_forward",
-    "callable_line": 112,
+    "callable_line": 121,
     "code": 5002,
-    "line": 115,
+    "line": 124,
     "start": 15,
     "end": 62,
     "filename": "higher_order_functions.py",
@@ -256,7 +331,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 115,
+                "line": 124,
                 "start": 15,
                 "end": 62
               },
@@ -281,11 +356,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 115,
+              "line": 124,
               "start": 15,
               "end": 62
             },
-            "call_site": "115:4-115:63"
+            "call_site": "124:4-124:63"
           }
         ]
       }
@@ -306,9 +381,9 @@
   "kind": "issue",
   "data": {
     "callable": "higher_order_functions.test_conditional_apply_forward",
-    "callable_line": 112,
+    "callable_line": 121,
     "code": 5002,
-    "line": 113,
+    "line": 122,
     "start": 15,
     "end": 61,
     "filename": "higher_order_functions.py",
@@ -331,7 +406,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 113,
+                "line": 122,
                 "start": 15,
                 "end": 61
               },
@@ -356,11 +431,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 113,
+              "line": 122,
               "start": 15,
               "end": 61
             },
-            "call_site": "113:4-113:62"
+            "call_site": "122:4-122:62"
           }
         ]
       }
@@ -938,7 +1013,7 @@
   "data": {
     "callable": "higher_order_functions.Callable.__init__",
     "filename": "higher_order_functions.py",
-    "callable_line": 79,
+    "callable_line": 88,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -962,7 +1037,7 @@
   "data": {
     "callable": "higher_order_functions.CallableSource.__call__",
     "filename": "higher_order_functions.py",
-    "callable_line": 134,
+    "callable_line": 143,
     "sources": [
       {
         "port": "result",
@@ -979,7 +1054,7 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 135,
+              "line": 144,
               "start": 15,
               "end": 29
             },
@@ -1101,9 +1176,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "higher_order_functions.py",
+              "line": 79,
+              "start": 6,
+              "end": 7
+            },
+            "call_site": "79:4-79:8"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.conditional_apply",
     "filename": "higher_order_functions.py",
-    "callable_line": 101,
+    "callable_line": 110,
     "tito": [
       {
         "port": "formal(x, position=3)",
@@ -1116,8 +1220,8 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 103, "start": 17, "end": 18 },
-              { "line": 105, "start": 17, "end": 18 }
+              { "line": 112, "start": 17, "end": 18 },
+              { "line": 114, "start": 17, "end": 18 }
             ],
             "tito": {}
           }
@@ -1167,11 +1271,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 103,
+              "line": 112,
               "start": 17,
               "end": 18
             },
-            "call_site": "103:15-103:19"
+            "call_site": "112:15-112:19"
           }
         ]
       }
@@ -1194,7 +1298,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 103, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 112, "start": 17, "end": 18 } ],
             "tito": {}
           }
         ]
@@ -1222,7 +1326,7 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 103,
+              "line": 112,
               "start": 15,
               "end": 19
             }
@@ -1248,7 +1352,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 103, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 112, "start": 17, "end": 18 } ],
             "tito": {}
           }
         ]
@@ -1277,11 +1381,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 105,
+              "line": 114,
               "start": 17,
               "end": 18
             },
-            "call_site": "105:15-105:19"
+            "call_site": "114:15-114:19"
           }
         ]
       }
@@ -1304,7 +1408,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 105, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 114, "start": 17, "end": 18 } ],
             "tito": {}
           }
         ]
@@ -1332,7 +1436,7 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 105,
+              "line": 114,
               "start": 15,
               "end": 19
             }
@@ -1358,7 +1462,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 105, "start": 17, "end": 18 } ],
+            "tito_positions": [ { "line": 114, "start": 17, "end": 18 } ],
             "tito": {}
           }
         ]
@@ -1604,7 +1708,7 @@
   "data": {
     "callable": "higher_order_functions.sink_args",
     "filename": "higher_order_functions.py",
-    "callable_line": 92,
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(*args, position=0)[*]",
@@ -1619,11 +1723,11 @@
             ],
             "origin": {
               "filename": "higher_order_functions.py",
-              "line": 94,
+              "line": 103,
               "start": 19,
               "end": 22
             },
-            "call_site": "94:8-94:23"
+            "call_site": "103:8-103:23"
           }
         ]
       }
@@ -1732,7 +1836,7 @@
   "data": {
     "callable": "higher_order_functions.test_callable_class_to_obscure",
     "filename": "higher_order_functions.py",
-    "callable_line": 138,
+    "callable_line": 147,
     "sources": [
       {
         "port": "result",
@@ -1750,11 +1854,11 @@
               { "always-via": "tito" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 143, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 151, "start": 24, "end": 25 } ],
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 143,
+                "line": 151,
                 "start": 24,
                 "end": 25
               },
@@ -1776,7 +1880,7 @@
   "data": {
     "callable": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito",
     "filename": "higher_order_functions.py",
-    "callable_line": 147,
+    "callable_line": 155,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1795,7 +1899,7 @@
   "data": {
     "callable": "higher_order_functions.test_conditional_apply_backward",
     "filename": "higher_order_functions.py",
-    "callable_line": 121,
+    "callable_line": 130,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1815,7 +1919,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 122,
+                "line": 131,
                 "start": 46,
                 "end": 47
               },
@@ -1823,7 +1927,7 @@
                 "higher_order_functions.conditional_apply[formal(f, position=0)=_test_sink, formal(g, position=1)=higher_order_functions.safe]"
               ],
               "port": "formal(x, position=3)",
-              "call_site": "122:4-122:48"
+              "call_site": "131:4-131:48"
             }
           },
           {
@@ -1841,7 +1945,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 124,
+                "line": 133,
                 "start": 47,
                 "end": 48
               },
@@ -1849,7 +1953,7 @@
                 "higher_order_functions.conditional_apply[formal(f, position=0)=_test_sink, formal(g, position=1)=higher_order_functions.safe]"
               ],
               "port": "formal(x, position=3)",
-              "call_site": "124:4-124:49"
+              "call_site": "133:4-133:49"
             }
           },
           {
@@ -1867,7 +1971,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 126,
+                "line": 135,
                 "start": 46,
                 "end": 47
               },
@@ -1875,7 +1979,7 @@
                 "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_sink]"
               ],
               "port": "formal(x, position=3)",
-              "call_site": "126:4-126:48"
+              "call_site": "135:4-135:48"
             }
           },
           {
@@ -1893,7 +1997,7 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 127,
+                "line": 136,
                 "start": 47,
                 "end": 48
               },
@@ -1901,7 +2005,7 @@
                 "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_sink]"
               ],
               "port": "formal(x, position=3)",
-              "call_site": "127:4-127:49"
+              "call_site": "136:4-136:49"
             }
           }
         ]
@@ -1914,7 +2018,7 @@
   "data": {
     "callable": "higher_order_functions.test_location",
     "filename": "higher_order_functions.py",
-    "callable_line": 97,
+    "callable_line": 106,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -1933,13 +2037,13 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 98,
+                "line": 107,
                 "start": 20,
                 "end": 21
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
-              "call_site": "98:4-98:22"
+              "call_site": "107:4-107:22"
             }
           }
         ]
@@ -1958,13 +2062,13 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 98,
+                "line": 107,
                 "start": 17,
                 "end": 18
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
-              "call_site": "98:4-98:22"
+              "call_site": "107:4-107:22"
             }
           }
         ]
@@ -1986,13 +2090,13 @@
             "call": {
               "position": {
                 "filename": "higher_order_functions.py",
-                "line": 98,
+                "line": 107,
                 "start": 14,
                 "end": 15
               },
               "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
-              "call_site": "98:4-98:22"
+              "call_site": "107:4-107:22"
             }
           }
         ]

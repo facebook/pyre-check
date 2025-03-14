@@ -75,6 +75,15 @@ def test_apply_source():
     return apply(_test_source, 0)
 
 
+def apply_without_return(f, x) -> None:
+    f(x)
+
+
+def test_apply_without_return():
+    apply_without_return(_test_sink, _test_source())  # Issue
+    apply_without_return(str, _test_source())  # No issue
+
+
 class Callable:
     def __init__(self, value):
         self.value = value
@@ -136,11 +145,10 @@ class CallableSource:
 
 
 def test_callable_class_to_obscure():
-    def obscure_tito(x):
-        ...
+    def obscure_tito(x): ...
 
     c = CallableSource()
-    return obscure_tito(c) # Expecting taint since obscure_tito could call the callable
+    return obscure_tito(c)  # Expecting taint since obscure_tito could call the callable
 
 
 def test_callable_class_to_perfect_tito():
@@ -148,4 +156,4 @@ def test_callable_class_to_perfect_tito():
         return x
 
     c = CallableSource()
-    return perfect_tito(c) # Expecting no taint since we see the body of perfect_tito
+    return perfect_tito(c)  # Expecting no taint since we see the body of perfect_tito

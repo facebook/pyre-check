@@ -12,6 +12,9 @@ Call dependencies
   "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]": [
     "higher_order_functions.has_tito (fun)"
   ],
+  "higher_order_functions.apply_without_return (fun)[formal(f, position=0)=_test_sink (fun)]": [
+    "_test_sink (fun)"
+  ],
   "higher_order_functions.callable_class (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
     "higher_order_functions.Callable.__call__ (method)",
@@ -65,6 +68,11 @@ Call dependencies
   ],
   "higher_order_functions.test_apply_tito (fun)": [
     "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]"
+  ],
+  "higher_order_functions.test_apply_without_return (fun)": [
+    "_test_source (fun)",
+    "higher_order_functions.apply_without_return (fun)",
+    "higher_order_functions.apply_without_return (fun)[formal(f, position=0)=_test_sink (fun)]"
   ],
   "higher_order_functions.test_callable_class_to_obscure (fun)": [
     "higher_order_functions.test_callable_class_to_obscure.obscure_tito (fun)",
