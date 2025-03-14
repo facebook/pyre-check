@@ -150,3 +150,14 @@ C.f(0)
 assert_type(C.g(0), int)
     "#,
 );
+
+testcase!(
+    test_final,
+    r#"
+from typing import final, reveal_type
+@final
+def f(x: int) -> int:
+    return x
+reveal_type(f)  # E: revealed type: (x: int) -> int
+    "#,
+);

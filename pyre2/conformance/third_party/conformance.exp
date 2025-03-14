@@ -10308,116 +10308,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 26,
-      "name": "type-mismatch",
-      "stop_column": 11,
-      "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 30,
-      "name": "type-mismatch",
-      "stop_column": 11,
-      "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 35,
-      "name": "type-mismatch",
-      "stop_column": 11,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `(self: Base2, x: int | str) -> int | str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `(self: Base2, x: int | str) -> int | str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 50,
-      "name": "type-mismatch",
-      "stop_column": 11,
-      "stop_line": 50
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Class member `Derived2.method1` overrides parent class `Base2` in an inconsistent manner",
-      "description": "Class member `Derived2.method1` overrides parent class `Base2` in an inconsistent manner",
-      "line": 56,
-      "name": "bad-override",
-      "stop_column": 16,
-      "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Class member `Derived2.method2` overrides parent class `Base2` in an inconsistent manner",
-      "description": "Class member `Derived2.method2` overrides parent class `Base2` in an inconsistent manner",
-      "line": 60,
-      "name": "bad-override",
-      "stop_column": 16,
-      "stop_line": 60
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Class member `Derived2.method3` overrides parent class `Base2` in an inconsistent manner",
-      "description": "Class member `Derived2.method3` overrides parent class `Base2` in an inconsistent manner",
-      "line": 64,
-      "name": "bad-override",
-      "stop_column": 16,
-      "stop_line": 64
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Class member `Derived3.method` overrides parent class `Base3` in an inconsistent manner",
-      "description": "Class member `Derived3.method` overrides parent class `Base3` in an inconsistent manner",
-      "line": 81,
-      "name": "bad-override",
-      "stop_column": 15,
-      "stop_line": 81
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `(self: Derived3, x: str) -> str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `(self: Derived3, x: str) -> str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 85,
-      "name": "type-mismatch",
-      "stop_column": 11,
-      "stop_line": 85
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Class member `Derived4.method` overrides parent class `Base4` in an inconsistent manner",
-      "description": "Class member `Derived4.method` overrides parent class `Base4` in an inconsistent manner",
-      "line": 95,
-      "name": "bad-override",
-      "stop_column": 15,
-      "stop_line": 95
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Argument `(self: Base5_2, v: int) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `(self: Base5_2, v: int) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 111,
-      "name": "type-mismatch",
-      "stop_column": 11,
-      "stop_line": 111
-    },
-    {
-      "code": -2,
       "column": 9,
       "concise_description": "Class member `Derived5.method` overrides parent class `Base5_2` in an inconsistent manner",
       "description": "Class member `Derived5.method` overrides parent class `Base5_2` in an inconsistent manner",
@@ -10425,16 +10315,6 @@
       "name": "bad-override",
       "stop_column": 15,
       "stop_line": 118
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Argument `() -> int` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "description": "Argument `() -> int` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`",
-      "line": 125,
-      "name": "type-mismatch",
-      "stop_column": 7,
-      "stop_line": 125
     }
   ],
   "specialtypes_any.py": [

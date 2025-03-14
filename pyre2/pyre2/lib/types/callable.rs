@@ -191,6 +191,7 @@ pub struct FuncFlags {
     pub is_property_setter_with_getter: Option<Type>,
     pub has_enum_member_decoration: bool,
     pub is_override: bool,
+    pub has_final_decoration: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

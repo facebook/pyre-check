@@ -653,16 +653,14 @@
     "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
   ],
   "qualifiers_final_decorator.py": [
+    "Line 56: Expected 1 errors",
+    "Lines 59, 60: Expected error (tag 'method2')",
+    "Lines 63, 64: Expected error (tag 'method3')",
     "Lines 67, 75: Expected error (tag 'method4')",
     "Lines 80, 89: Expected error (tag 'Derived3')",
+    "Lines 84, 85, 86: Expected error (tag 'Derived3-2')",
     "Lines 94, 102: Expected error (tag 'Derived4')",
-    "Line 26: Unexpected errors ['Argument `(self: Base2) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 30: Unexpected errors ['Argument `(cls: type[Base2]) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 35: Unexpected errors ['Argument `() -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 50: Unexpected errors ['Argument `(self: Base2, x: int | str) -> int | str` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']",
-    "Line 81: Unexpected errors ['Class member `Derived3.method` overrides parent class `Base3` in an inconsistent manner']",
-    "Line 95: Unexpected errors ['Class member `Derived4.method` overrides parent class `Base4` in an inconsistent manner']",
-    "Line 111: Unexpected errors ['Argument `(self: Base5_2, v: int) -> None` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`']"
+    "Lines 125, 126: Expected error (tag 'func')"
   ],
   "specialtypes_any.py": [
     "Line 87: Unexpected errors ['Object of class `ClassA` has no attribute `method2`']",

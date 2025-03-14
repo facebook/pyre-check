@@ -177,6 +177,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut is_property_setter_with_getter = None;
         let mut has_enum_member_decoration = false;
         let mut is_override = false;
+        let mut has_final_decoration = false;
         let decorators = decorators
             .iter()
             .filter(|k| {
@@ -211,6 +212,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     Some(CalleeKind::Function(FunctionKind::Override)) => {
                         is_override = true;
+                        false
+                    }
+                    Some(CalleeKind::Function(FunctionKind::Final)) => {
+                        has_final_decoration = true;
                         false
                     }
                     _ => true,
@@ -388,6 +393,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 is_property_setter_with_getter,
                 has_enum_member_decoration,
                 is_override,
+                has_final_decoration,
             },
         };
         let mut ty = Forall::new_type(

@@ -73,7 +73,7 @@ class E(B):
 );
 
 testcase!(
-    test_override_final,
+    test_override_final_var,
     r#"
 from typing import Final
 class A:
@@ -279,16 +279,16 @@ class ChildA(ParentA):
 );
 
 testcase_with_bug!(
-    "TODO zeina: a should not be overridden since it's final. Investigate the error messages here.",
-    test_overrride_final,
+    "TODO zeina: a should not be overridden since it's final.",
+    test_override_final_method,
     r#"
 from typing import final
 
 class Parent:
-    @final # E:  Argument `(self: Parent) -> Never` is not assignable to parameter `f` with type `TypeVar[_T]` in function `typing.final`
+    @final
     def a(self): ...
 
 class Child(Parent):
-    def a(self): ... # E: Class member `Child.a` overrides parent class `Parent` in an inconsistent manner
+    def a(self): ...
  "#,
 );
