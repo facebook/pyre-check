@@ -45,7 +45,7 @@ use crate::types::typed_dict::TypedDictField;
 use crate::types::types::BoundMethod;
 use crate::types::types::BoundMethodType;
 use crate::types::types::CalleeKind;
-use crate::types::types::ForallType;
+use crate::types::types::Forall;
 use crate::types::types::Type;
 
 /// Correctly analyzing which attributes are visible on class objects, as well
@@ -359,8 +359,8 @@ fn make_bound_method_helper(
     should_bind: &dyn Fn(&FuncMetadata) -> bool,
 ) -> Option<Type> {
     let func = match attr {
-        Type::Forall(forall) if matches!(&forall.ty, ForallType::Function(func) if should_bind(&func.metadata)) => {
-            Some(BoundMethodType::Forall((**forall).clone()))
+        Type::Forall(box forall) if matches!(forall, Forall::Function(x) if should_bind(&x.func.metadata)) => {
+            Some(BoundMethodType::Forall((*forall).clone()))
         }
         Type::Function(box func) if should_bind(&func.metadata) => {
             Some(BoundMethodType::Function(func.clone()))

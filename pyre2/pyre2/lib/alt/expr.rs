@@ -1282,13 +1282,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             });
                             let targs = self.check_and_create_targs(
                                 &forall.name(),
-                                &forall.tparams,
+                                forall.tparams(),
                                 tys,
                                 x.range,
                                 errors,
                             );
                             let param_map = forall
-                                .tparams
+                                .tparams()
                                 .quantified()
                                 .zip(targs.as_slice().iter().cloned())
                                 .collect::<SmallMap<_, _>>();

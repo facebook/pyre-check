@@ -45,7 +45,6 @@ use crate::types::callable::Required;
 use crate::types::class::ClassKind;
 use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
-use crate::types::types::ForallType;
 use crate::types::types::Overload;
 use crate::types::types::Type;
 
@@ -396,12 +395,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 has_final_decoration,
             },
         };
-        let mut ty = Forall::new_type(
+        let mut ty = Forall::new_function(
             self.type_params(def.range, tparams, errors),
-            ForallType::Function(Function {
+            Function {
                 signature: callable,
                 metadata: metadata.clone(),
-            }),
+            },
         );
         for x in decorators.into_iter().rev() {
             ty = self.apply_decorator(*x, ty, errors)

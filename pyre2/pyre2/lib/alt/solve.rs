@@ -83,7 +83,6 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::Forall;
-use crate::types::types::ForallType;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -695,10 +694,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => {}
         }
         let ta = TypeAlias::new(name.clone(), ty, style);
-        Forall::new_type(
-            self.type_params(range, tparams, errors),
-            ForallType::TypeAlias(ta),
-        )
+        Forall::new_type_alias(self.type_params(range, tparams, errors), ta)
     }
 
     fn context_value_enter(
@@ -1782,13 +1778,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                     Type::TypeAlias(ta) => {
                         let params_range = params.as_ref().map_or(expr.range(), |x| x.range);
-                        Forall::new_type(
+                        Forall::new_type_alias(
                             self.type_params(
                                 params_range,
                                 self.scoped_type_params(params.as_ref(), errors),
                                 errors,
                             ),
-                            ForallType::TypeAlias(ta),
+                            ta,
                         )
                     }
                     _ => ta,
@@ -2128,13 +2124,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // A generic type alias with no type arguments is OK if all the type params have defaults
             let targs = self.check_and_create_targs(
                 &forall.name(),
-                &forall.tparams,
+                forall.tparams(),
                 Vec::new(),
                 range,
                 errors,
             );
             let param_map = forall
-                .tparams
+                .tparams()
                 .quantified()
                 .zip(targs.as_slice().iter().cloned())
                 .collect::<SmallMap<_, _>>();

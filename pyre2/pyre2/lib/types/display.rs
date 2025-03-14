@@ -110,7 +110,7 @@ impl<'a> TypeDisplayContext<'a> {
             }
             let tparams = match t {
                 Type::ClassDef(cls) => Some(cls.tparams()),
-                Type::Forall(forall) => Some(&forall.tparams),
+                Type::Forall(forall) => Some(forall.tparams()),
                 _ => None,
             };
             if let Some(tparams) = tparams {
@@ -253,7 +253,7 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(
                     f,
                     "Forall[{}, {}]",
-                    commas_iter(|| forall.tparams.iter()),
+                    commas_iter(|| forall.tparams().iter()),
                     self.display(&forall.as_inner_type()),
                 )
             }
