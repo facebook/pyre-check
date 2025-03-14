@@ -42,11 +42,30 @@ pub enum CallStyle<'a> {
     FreeForm,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CallTarget {
+    qs: Vec<Var>,
+    target: Target,
+}
+
+impl CallTarget {
+    fn new(target: Target) -> Self {
+        Self {
+            qs: Vec::new(),
+            target,
+        }
+    }
+
+    fn forall(qs: Vec<Var>, target: Target) -> Self {
+        Self { qs, target }
+    }
+}
+
 /// A thing that can be called (see as_call_target and call_infer).
 /// Note that a single "call" may invoke multiple functions under the hood,
 /// e.g., `__new__` followed by `__init__` for Class.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum CallTarget {
+enum Target {
     /// A typing.Callable.
     Callable(Callable),
     /// A function.
@@ -58,7 +77,7 @@ pub enum CallTarget {
     /// A TypedDict.
     TypedDict(TypedDict),
     /// An overload.
-    Overload(Vec1<(Vec<Var>, CallTarget)>),
+    Overload(Vec1<CallTarget>),
     Any(AnyStyle),
 }
 
@@ -70,77 +89,74 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         msg: String,
         error_kind: ErrorKind,
         context: Option<&ErrorContext>,
-    ) -> (Vec<Var>, CallTarget) {
+    ) -> CallTarget {
         errors.add(range, msg, error_kind, context);
-        (Vec::new(), CallTarget::Any(AnyStyle::Error))
+        CallTarget::new(Target::Any(AnyStyle::Error))
     }
 
-    fn fresh_quantified_function(
-        &self,
-        tparams: &TParams,
-        func: Function,
-    ) -> (Vec<Var>, CallTarget) {
+    fn fresh_quantified_function(&self, tparams: &TParams, func: Function) -> CallTarget {
         let (qs, t) =
             self.solver()
                 .fresh_quantified(tparams, Type::Function(Box::new(func)), self.uniques);
         match t {
-            Type::Function(box func) => (qs, CallTarget::Function(func)),
+            Type::Function(box func) => CallTarget::forall(qs, Target::Function(func)),
             // We passed a Function to fresh_quantified(), so we know we get a Function back out.
             _ => unreachable!(),
         }
     }
 
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
-    pub fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
+    pub fn as_call_target(&self, ty: Type) -> Option<CallTarget> {
         match ty {
-            Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
-            Type::Function(func) => Some((Vec::new(), CallTarget::Function(*func))),
-            Type::Overload(overload) => Some((
-                Vec::new(),
-                CallTarget::Overload(overload.signatures.mapped(|ty| match ty {
-                    OverloadType::Callable(signature) => (
-                        Vec::new(),
-                        CallTarget::Function(Function {
+            Type::Callable(c) => Some(CallTarget::new(Target::Callable(*c))),
+            Type::Function(func) => Some(CallTarget::new(Target::Function(*func))),
+            Type::Overload(overload) => Some(CallTarget::new(Target::Overload(
+                overload.signatures.mapped(|ty| match ty {
+                    OverloadType::Callable(signature) => {
+                        CallTarget::new(Target::Function(Function {
                             signature,
                             metadata: (*overload.metadata).clone(),
-                        }),
-                    ),
+                        }))
+                    }
                     OverloadType::Forall(forall) => {
                         self.fresh_quantified_function(&forall.tparams, forall.func)
                     }
-                })),
-            )),
+                }),
+            ))),
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 match self.as_call_target(func.as_type()) {
-                    Some((gs, CallTarget::Function(func))) => {
-                        Some((gs, CallTarget::BoundMethod(obj, func)))
-                    }
-                    Some((gs, CallTarget::Overload(overloads))) => {
+                    Some(CallTarget {
+                        qs,
+                        target: Target::Function(func),
+                    }) => Some(CallTarget::forall(qs, Target::BoundMethod(obj, func))),
+                    Some(CallTarget {
+                        qs,
+                        target: Target::Overload(overloads),
+                    }) => {
                         let overloads = overloads.mapped(|x| match x {
-                            (gs2, CallTarget::Function(func)) => {
-                                (gs2, CallTarget::BoundMethod(obj.clone(), func))
-                            }
+                            CallTarget {
+                                qs: qs2,
+                                target: Target::Function(func),
+                            } => CallTarget::forall(qs2, Target::BoundMethod(obj.clone(), func)),
                             // TODO: we know it should be impossible to have one BoundMethod inside another, change
                             // CallTarget so we can never reach this impossible state.
                             _ => unreachable!(),
                         });
-                        Some((gs, CallTarget::Overload(overloads)))
+                        Some(CallTarget::forall(qs, Target::Overload(overloads)))
                     }
                     _ => None,
                 }
             }
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
-            Type::Type(box Type::ClassType(cls)) => Some((Vec::new(), CallTarget::Class(cls))),
+            Type::Type(box Type::ClassType(cls)) => Some(CallTarget::new(Target::Class(cls))),
             Type::Forall(forall) => {
-                let (mut qs, t) = self.solver().fresh_quantified(
+                let (qs, t) = self.solver().fresh_quantified(
                     forall.tparams(),
                     forall.as_inner_type(),
                     self.uniques,
                 );
-                self.as_call_target(t).map(|(qs2, x)| {
-                    qs.extend(qs2);
-                    (qs, x)
-                })
+                self.as_call_target(t)
+                    .map(|x| CallTarget::forall(qs.into_iter().chain(x.qs).collect(), x.target))
             }
             Type::Var(v) if let Some(_guard) = self.recurser.recurse(v) => {
                 self.as_call_target(self.solver().force_var(v))
@@ -156,14 +172,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 }
             }
-            Type::Any(style) => Some((Vec::new(), CallTarget::Any(style))),
+            Type::Any(style) => Some(CallTarget::new(Target::Any(style))),
             Type::TypeAlias(ta) => self.as_call_target(ta.as_value(self.stdlib)),
             Type::ClassType(cls) => self
                 .get_instance_attribute(&cls, &dunder::CALL)
                 .and_then(|attr| self.resolve_as_instance_method(attr))
                 .and_then(|ty| self.as_call_target(ty)),
             Type::Type(box Type::TypedDict(typed_dict)) => {
-                Some((Vec::new(), CallTarget::TypedDict(*typed_dict)))
+                Some(CallTarget::new(Target::TypedDict(*typed_dict)))
             }
             _ => None,
         }
@@ -176,7 +192,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
         context: Option<&ErrorContext>,
-    ) -> (Vec<Var>, CallTarget) {
+    ) -> CallTarget {
         match self.as_call_target(ty.clone()) {
             Some(target) => target,
             None => {
@@ -423,7 +439,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn call_infer(
         &self,
-        call_target: (Vec<Var>, CallTarget),
+        call_target: CallTarget,
         args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
@@ -438,7 +454,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // This is all quite hacky ("very very very grim," says Neil).
     fn call_infer_inner(
         &self,
-        call_target: (Vec<Var>, CallTarget),
+        call_target: CallTarget,
         args: &[CallArg],
         keywords: &[Keyword],
         range: TextRange,
@@ -446,9 +462,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         call_errors: &ErrorCollector,
         context: Option<&ErrorContext>,
     ) -> Type {
-        let is_dataclass = matches!(&call_target.1, CallTarget::Function(func) if matches!(func.metadata.kind, FunctionKind::Dataclass(_)));
-        let res = match call_target.1 {
-            CallTarget::Class(cls) => {
+        let is_dataclass = matches!(&call_target.target, Target::Function(func) if matches!(func.metadata.kind, FunctionKind::Dataclass(_)));
+        let res = match call_target.target {
+            Target::Class(cls) => {
                 // Hack
                 assert!(
                     std::ptr::eq(arg_errors, call_errors),
@@ -456,7 +472,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
                 self.construct_class(cls, args, keywords, range, arg_errors, context)
             }
-            CallTarget::TypedDict(td) => {
+            Target::TypedDict(td) => {
                 // Hack
                 assert!(
                     std::ptr::eq(arg_errors, call_errors),
@@ -464,7 +480,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
                 self.construct_typed_dict(td, args, keywords, range, arg_errors, context)
             }
-            CallTarget::BoundMethod(obj, func) => {
+            Target::BoundMethod(obj, func) => {
                 let first_arg = CallArg::Type(&obj, range);
                 self.callable_infer(
                     func.signature,
@@ -478,7 +494,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     context,
                 )
             }
-            CallTarget::Callable(callable) => self.callable_infer(
+            Target::Callable(callable) => self.callable_infer(
                 callable,
                 None,
                 None,
@@ -489,7 +505,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 context,
             ),
-            CallTarget::Function(Function {
+            Target::Function(Function {
                 signature: callable,
                 metadata,
             }) => self.callable_infer(
@@ -503,7 +519,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 context,
             ),
-            CallTarget::Overload(overloads) => {
+            Target::Overload(overloads) => {
                 // Hack
                 assert!(
                     std::ptr::eq(arg_errors, call_errors),
@@ -536,18 +552,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     match &fewest_errors {
                         Some(errs) if errs.len() <= call_errors.len() => {}
                         _ => {
-                            closest_overload = Some(call_target.1);
+                            closest_overload = Some(call_target);
                             fewest_errors = Some(call_errors);
                         }
                     }
                 }
                 // We're guaranteed to have at least one overload.
                 let (func_id, signature) = match closest_overload.unwrap() {
-                    CallTarget::Function(Function {
-                        signature: callable,
-                        metadata,
-                    }) => (Some(metadata.kind.as_func_id()), Some(callable)),
-                    CallTarget::BoundMethod(_, func) => (
+                    CallTarget {
+                        qs: _,
+                        target:
+                            Target::Function(Function {
+                                signature: callable,
+                                metadata,
+                            }),
+                    } => (Some(metadata.kind.as_func_id()), Some(callable)),
+                    CallTarget {
+                        qs: _,
+                        target: Target::BoundMethod(_, func),
+                    } => (
                         Some(func.metadata.kind.as_func_id()),
                         func.signature.drop_first_param(),
                     ),
@@ -576,7 +599,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 return Type::any_error();
             }
-            CallTarget::Any(style) => {
+            Target::Any(style) => {
                 // Make sure we still catch errors in the arguments.
                 for arg in args {
                     match arg {
@@ -592,7 +615,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 style.propagate()
             }
         };
-        self.solver().finish_quantified(&call_target.0);
+        self.solver().finish_quantified(&call_target.qs);
         if is_dataclass && let Type::Callable(c) = res {
             let mut kws = BoolKeywords::new();
             for kw in keywords {
