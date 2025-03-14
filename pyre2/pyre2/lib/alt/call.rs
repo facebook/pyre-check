@@ -49,8 +49,6 @@ pub enum CallTarget {
     Callable(Callable),
     /// A function.
     Function(Function),
-    /// The dataclasses.dataclass function.
-    Dataclass(Callable),
     /// Method of a class. The `Type` is the self/cls argument.
     BoundMethod(Type, Callable, FunctionKind),
     /// A class object.
@@ -78,14 +76,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Return a pair of the quantified variables I had to instantiate, and the resulting call target.
     pub fn as_call_target(&self, ty: Type) -> Option<(Vec<Var>, CallTarget)> {
         match ty {
-            Type::Function(box Function {
-                signature: c,
-                metadata:
-                    FuncMetadata {
-                        kind: FunctionKind::Dataclass(_),
-                        flags: _,
-                    },
-            }) => Some((Vec::new(), CallTarget::Dataclass(c))),
             Type::Callable(c) => Some((Vec::new(), CallTarget::Callable(*c))),
             Type::Function(func) => Some((Vec::new(), CallTarget::Function(*func))),
             Type::Overload(overload) => Some((
@@ -432,7 +422,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         call_errors: &ErrorCollector,
         context: Option<&ErrorContext>,
     ) -> Type {
-        let is_dataclass = matches!(call_target.1, CallTarget::Dataclass(_));
+        let is_dataclass = matches!(&call_target.1, CallTarget::Function(func) if matches!(func.metadata.kind, FunctionKind::Dataclass(_)));
         let res = match call_target.1 {
             CallTarget::Class(cls) => {
                 // Hack
@@ -489,17 +479,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 context,
             ),
-            CallTarget::Dataclass(callable) => self.callable_infer(
-                callable,
-                Some(FunctionKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id()),
-                None,
-                args,
-                keywords,
-                range,
-                arg_errors,
-                call_errors,
-                context,
-            ),
             CallTarget::Overload(overloads) => {
                 // Hack
                 assert!(
@@ -548,10 +527,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Some(CallTarget::BoundMethod(_, callable, kind)) => {
                         (Some(kind.as_func_id()), callable.drop_first_param())
                     }
-                    Some(CallTarget::Dataclass(callable)) => (
-                        Some(FunctionKind::Dataclass(Box::new(BoolKeywords::new())).as_func_id()),
-                        Some(callable),
-                    ),
                     _ => (None, None),
                 };
                 let func_desc = match func_id {
