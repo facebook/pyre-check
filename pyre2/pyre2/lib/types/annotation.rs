@@ -12,12 +12,13 @@ use std::fmt;
 use std::fmt::Display;
 
 use parse_display::Display;
+use pyrefly_derive::TypeEq;
 
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::util::display::intersperse_iter;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq)]
 pub struct Annotation {
     pub qualifiers: Vec<Qualifier>,
     pub ty: Option<Type>,
@@ -71,7 +72,7 @@ impl Annotation {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, Display)]
 pub enum Qualifier {
     Required,
     NotRequired,

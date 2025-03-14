@@ -11,6 +11,7 @@ use std::fmt::Formatter;
 use std::iter;
 use std::sync::Arc;
 
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
@@ -27,7 +28,7 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct ClassMetadata {
     mro: Mro,
     metaclass: Metaclass,
@@ -173,7 +174,7 @@ impl ClassMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct ClassSynthesizedField {
     pub inner: Arc<ClassField>,
 }
@@ -199,7 +200,7 @@ impl ClassSynthesizedField {
 }
 
 /// A class's synthesized fields, such as a dataclass's `__init__` method.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq, Default)]
 pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
 
 impl ClassSynthesizedFields {
@@ -233,7 +234,7 @@ impl Display for ClassSynthesizedFields {
 
 /// A struct representing a class's metaclass. A value of `None` indicates
 /// no explicit metaclass, in which case the default metaclass is `type`.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq, Default)]
 struct Metaclass(Option<ClassType>);
 
 impl Display for Metaclass {
@@ -250,7 +251,7 @@ impl Display for Metaclass {
 ///
 /// The `metaclass` keyword is not included, since we store the metaclass
 /// separately as part of `ClassMetadata`.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq, Default)]
 struct Keywords(Vec<(Name, Type)>);
 
 impl Display for Keywords {
@@ -263,25 +264,25 @@ impl Display for Keywords {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct TypedDictMetadata {
     /// Field name to the value of the `total` keyword in the defining class.
     pub fields: SmallMap<Name, bool>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct EnumMetadata {
     pub cls: ClassType,
     /// Whether this enum inherits from enum.Flag.
     pub is_flag: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct NamedTupleMetadata {
     pub elements: Vec<Name>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct DataclassMetadata {
     /// The dataclass fields, e.g., `{'x'}` for `@dataclass class C: x: int`.
     pub fields: SmallSet<Name>,
@@ -301,7 +302,7 @@ impl DataclassMetadata {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct ProtocolMetadata {
     /// All members of the protocol, excluding ones defined on `object` and not overridden in a subclass.
     pub members: SmallSet<Name>,
@@ -324,7 +325,7 @@ pub struct ProtocolMetadata {
 /// linearizable using C3 linearization), it is possible it appears with
 /// different type arguments. The type arguments computed here will always be
 /// those coming from the instance that was selected during lineariation.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 enum Mro {
     Resolved(Vec<ClassType>),
     Cyclic,

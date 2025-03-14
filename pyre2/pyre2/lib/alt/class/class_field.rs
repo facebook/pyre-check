@@ -10,6 +10,7 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
@@ -52,7 +53,7 @@ use crate::types::types::Type;
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
 /// are assigned values in the class body.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub enum ClassFieldInitialization {
     /// If this is a dataclass field, BoolKeywords stores the field's dataclass
     /// flags (which are boolean options that control how fields behave).
@@ -78,10 +79,10 @@ impl ClassFieldInitialization {
 /// Raw information about an attribute declared somewhere in a class. We need to
 /// know whether it is initialized in the class body in order to determine
 /// both visibility rules and whether method binding should be performed.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct ClassField(ClassFieldInner);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 enum ClassFieldInner {
     // TODO(stroxler): We should refactor `ClassFieldInner` into enum cases; currently
     // the semantics are encoded ad-hoc into the fields of a large product which

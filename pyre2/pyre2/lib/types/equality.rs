@@ -8,8 +8,11 @@
 use std::sync::Arc;
 
 use ruff_python_ast::name::Name;
+use ruff_text_size::TextRange;
 use starlark_map::ordered_map::OrderedMap;
 use starlark_map::ordered_set::OrderedSet;
+use starlark_map::small_map::SmallMap;
+use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::module::module_name::ModuleName;
@@ -46,6 +49,7 @@ impl TypeEq for str {}
 
 impl TypeEq for Name {}
 impl TypeEq for ModuleName {}
+impl TypeEq for TextRange {}
 
 impl TypeEq for Unique {}
 
@@ -128,6 +132,26 @@ impl<K: TypeEq, V: TypeEq> TypeEq for OrderedMap<K, V> {
 }
 
 impl<T: TypeEq> TypeEq for OrderedSet<T> {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.len() == other.len()
+            && self
+                .iter()
+                .zip(other.iter())
+                .all(|(a, b)| a.type_eq(b, ctx))
+    }
+}
+
+impl<K: TypeEq, V: TypeEq> TypeEq for SmallMap<K, V> {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.len() == other.len()
+            && self
+                .iter()
+                .zip(other.iter())
+                .all(|(a, b)| a.type_eq(&b, ctx))
+    }
+}
+
+impl<T: TypeEq> TypeEq for SmallSet<T> {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
         self.len() == other.len()
             && self

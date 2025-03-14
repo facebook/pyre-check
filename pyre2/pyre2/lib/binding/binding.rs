@@ -12,6 +12,7 @@ use std::hash::Hash;
 
 use dupe::Dupe;
 use itertools::Either;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -51,6 +52,7 @@ use crate::types::annotation::Annotation;
 use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassIndex;
+use crate::types::equality::TypeEq;
 use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
@@ -87,7 +89,7 @@ assert_words!(BindingFunction, 21);
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     const EXPORTED: bool = false;
     type Value: Debug + DisplayWith<Bindings>;
-    type Answer: Clone + Debug + Display + Eq;
+    type Answer: Clone + Debug + Display + TypeEq;
 }
 
 impl Keyed for Key {
@@ -317,7 +319,7 @@ impl DisplayWith<Bindings> for BindingExpect {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct EmptyAnswer;
 
 impl Display for EmptyAnswer {
@@ -326,7 +328,7 @@ impl Display for EmptyAnswer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct NoneIfRecursive<T>(pub Option<T>);
 
 impl<T> Display for NoneIfRecursive<T>
@@ -924,7 +926,7 @@ impl DisplayWith<Bindings> for Binding {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct AnnotationWithTarget {
     pub target: AnnotationTarget,
     pub annotation: Annotation,
@@ -942,7 +944,7 @@ impl Display for AnnotationWithTarget {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub enum AnnotationTarget {
     /// A function parameter with a type annotation
     Param(Name),
