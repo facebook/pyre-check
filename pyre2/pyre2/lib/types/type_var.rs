@@ -11,16 +11,18 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 use dupe::Dupe;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::Identifier;
 
 use crate::module::module_info::ModuleInfo;
+use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
 use crate::util::mutable::Mutable;
 
 /// Used to represent TypeVar calls. Each TypeVar is unique, so use the ArcId to separate them.
-#[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Dupe, Debug, TypeEq, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct TypeVar(ArcId<TypeVarInner>);
 
 impl Display for TypeVar {
@@ -29,14 +31,14 @@ impl Display for TypeVar {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Restriction {
     Constraints(Vec<Type>),
     Bound(Type),
     Unrestricted,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Variance {
     Covariant,
     Contravariant,

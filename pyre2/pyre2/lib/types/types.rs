@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use parse_display::Display;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
@@ -26,6 +27,7 @@ use crate::types::callable::ParamList;
 use crate::types::class::Class;
 use crate::types::class::ClassKind;
 use crate::types::class::ClassType;
+use crate::types::equality::TypeEq;
 use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
@@ -43,7 +45,7 @@ use crate::util::uniques::Unique;
 use crate::util::uniques::UniqueFactory;
 
 /// An introduced synthetic variable to range over as yet unknown types.
-#[derive(Debug, Copy, Clone, Dupe, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Copy, Clone, Dupe, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Var(Unique);
 
 impl Display for Var {
@@ -77,7 +79,7 @@ pub struct TParamInfo {
     pub variance: Option<Variance>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParam {
     /// Display name
     pub name: Name,
@@ -95,7 +97,7 @@ impl Display for TParam {
 
 /// Wraps a vector of type parameters. The constructor ensures that
 /// type parameters without defaults never follow ones with defaults.
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParams(Vec<TParam>);
 
 impl Display for TParams {
@@ -152,13 +154,17 @@ impl TParams {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[derive(
+    Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
+)]
 pub enum NeverStyle {
     Never,
     NoReturn,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[derive(
+    Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
+)]
 pub enum AnyStyle {
     /// The user wrote `Any` literally.
     Explicit,
@@ -178,7 +184,7 @@ impl AnyStyle {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub enum TypeAliasStyle {
     /// A type alias declared with the `type` keyword
     #[display("ScopedTypeAlias")]
@@ -191,7 +197,7 @@ pub enum TypeAliasStyle {
     LegacyImplicit,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeAlias {
     pub name: Box<Name>,
     ty: Box<Type>,
@@ -244,7 +250,7 @@ pub enum CalleeKind {
     Class(ClassKind),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoundMethod {
     pub obj: Type,
     pub func: BoundMethodType,
@@ -272,7 +278,7 @@ impl BoundMethod {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BoundMethodType {
     Function(Function),
     Forall(Forall<Function>),
@@ -323,7 +329,7 @@ impl BoundMethodType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Overload {
     pub signatures: Vec1<OverloadType>,
     pub metadata: Box<FuncMetadata>,
@@ -353,7 +359,7 @@ impl Overload {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum OverloadType {
     Callable(Callable),
     Forall(Forall<Function>),
@@ -398,14 +404,14 @@ impl OverloadType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Forall<T> {
     pub tparams: TParams,
     pub body: T,
 }
 
 /// These are things that can have Forall around them, so often you see `Forall<Forallable>`
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Forallable {
     TypeAlias(TypeAlias),
     Function(Function),
@@ -466,7 +472,7 @@ impl Forallable {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, TypeEq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Literal(Lit),
     LiteralString,

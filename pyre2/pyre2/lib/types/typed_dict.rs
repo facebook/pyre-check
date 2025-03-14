@@ -8,6 +8,7 @@
 use std::cmp::Ordering;
 
 use dupe::Dupe;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use starlark_map::ordered_map::OrderedMap;
 
@@ -16,10 +17,11 @@ use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::class::TArgs;
+use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, TypeEq, PartialEq, Eq, Hash)]
 pub struct TypedDictField {
     pub ty: Type,
     pub required: bool,
@@ -36,7 +38,7 @@ impl TypedDictField {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, TypeEq, Eq, PartialEq, Hash)]
 pub struct TypedDict {
     class: Class,
     args: TArgs,

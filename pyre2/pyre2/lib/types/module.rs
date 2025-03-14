@@ -10,10 +10,12 @@ use std::fmt::Display;
 use std::sync::Arc;
 
 use dupe::Dupe;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use starlark_map::ordered_set::OrderedSet;
 
 use crate::module::module_name::ModuleName;
+use crate::types::equality::TypeEq;
 use crate::types::types::Type;
 
 /// In Python if you do `import foo.bar` and `import foo.baz` then what you are really
@@ -23,7 +25,7 @@ use crate::types::types::Type;
 /// Any module that does not start with a prefix of the `path` is no longer accessible,
 /// but we keep them around (under an `Arc`) since it's more efficient not to recreate
 /// the `SmallMap` on each access.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Module {
     path: Box<[Name]>,
     /// Use an OrderedMap so we have a table Hash/Ord instance.

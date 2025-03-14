@@ -10,16 +10,18 @@ use std::fmt::Display;
 use std::hash::Hasher;
 
 use dupe::Dupe;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::Identifier;
 
 use crate::module::module_info::ModuleInfo;
+use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
 use crate::util::mutable::Mutable;
 
 /// Used to represent TypeVarTuple calls. Each TypeVarTuple is unique, so use the ArcId to separate them.
-#[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Dupe, Debug, TypeEq, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct TypeVarTuple(ArcId<TypeVarTupleInner>);
 
 impl Display for TypeVarTuple {

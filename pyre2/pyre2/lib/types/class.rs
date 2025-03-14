@@ -14,6 +14,7 @@ use std::hash::Hasher;
 
 use dupe::Dupe;
 use parse_display::Display;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use ruff_text_size::TextRange;
@@ -24,6 +25,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
+use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedKind;
@@ -34,7 +36,9 @@ use crate::util::display::commas_iter;
 use crate::util::mutable::Mutable;
 
 /// The name of a nominal type, e.g. `str`
-#[derive(Debug, Clone, Display, Dupe, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Display, Dupe, TypeEq, Eq, PartialEq, Hash, PartialOrd, Ord
+)]
 pub struct Class(ArcId<ClassInner>);
 
 /// Simple properties of class fields that can be attached to the class definition. Note that this
@@ -304,7 +308,7 @@ impl Mutable for Class {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TArgs(Box<[Type]>);
 
 impl TArgs {
@@ -362,7 +366,7 @@ impl Substitution {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ClassType(Class, TArgs);
 
 impl Display for ClassType {

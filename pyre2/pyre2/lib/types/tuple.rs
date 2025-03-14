@@ -8,6 +8,9 @@
 use std::fmt;
 use std::fmt::Display;
 
+use pyrefly_derive::TypeEq;
+
+use crate::types::equality::TypeEq;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 
@@ -20,7 +23,7 @@ Eventually this will have to be generalized enough to handle at least four cases
 4. indefinite-length tuples tuple[int, ...] (whose length is supposed to be treated soundly, not gradually, IIRC)
 */
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Tuple {
     // tuple[t1, t2]
     Concrete(Vec<Type>),

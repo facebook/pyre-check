@@ -9,18 +9,20 @@ use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Display;
 
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
 use starlark_map::ordered_map::OrderedMap;
 
 use crate::module::module_name::ModuleName;
+use crate::types::equality::TypeEq;
 use crate::types::literal::Lit;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 use crate::util::prelude::SliceExt;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Callable {
     pub params: Params,
     pub ret: Type,
@@ -32,7 +34,7 @@ impl Display for Callable {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ParamList(Vec<Param>);
 
 impl ParamList {
@@ -111,7 +113,7 @@ impl ParamList {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Params {
     List(ParamList),
     Ellipsis,
@@ -121,7 +123,7 @@ pub enum Params {
     ParamSpec(Box<[Type]>, Type),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Param {
     PosOnly(Type, Required),
     Pos(Name, Type, Required),
@@ -130,13 +132,13 @@ pub enum Param {
     Kwargs(Type),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Required {
     Required,
     Optional,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Function {
     pub signature: Callable,
     pub metadata: FuncMetadata,
@@ -162,7 +164,7 @@ impl Function {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FuncMetadata {
     pub kind: FunctionKind,
     pub flags: FuncFlags,
@@ -189,7 +191,7 @@ impl FuncMetadata {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct FuncFlags {
     pub is_overload: bool,
     pub is_staticmethod: bool,
@@ -218,7 +220,7 @@ impl FuncFlags {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FuncId {
     pub module: ModuleName,
     pub cls: Option<Name>,
@@ -243,7 +245,7 @@ impl FuncId {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FunctionKind {
     IsInstance,
     IsSubclass,
@@ -262,7 +264,7 @@ pub enum FunctionKind {
 
 /// A map from keywords to boolean values. Useful for storing sets of keyword arguments for various
 /// dataclass functions.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoolKeywords(OrderedMap<Name, bool>);
 
 impl BoolKeywords {
