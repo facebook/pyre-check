@@ -26,7 +26,6 @@ use crate::state::state::State;
 use crate::types::types::Type;
 use crate::util::prelude::VecExt;
 use crate::util::visit::Visit;
-use crate::visitors::Visitors;
 
 impl State {
     fn get_type(&self, handle: &Handle, key: &Key) -> Option<Type> {
@@ -48,7 +47,7 @@ impl State {
             {
                 *res = Some(Ast::expr_name_identifier(x.clone()));
             } else {
-                Visitors::visit_expr(x, |x| f(x, find, res));
+                x.visit(&mut |x| f(x, find, res));
             }
         }
         let mut res = None;
@@ -70,7 +69,7 @@ impl State {
             {
                 *res = Some(x.clone());
             } else {
-                Visitors::visit_expr(x, |x| f(x, find, res));
+                x.visit(&mut |x| f(x, find, res));
             }
         }
         let mut res = None;

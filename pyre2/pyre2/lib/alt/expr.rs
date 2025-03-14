@@ -60,7 +60,7 @@ use crate::types::types::CalleeKind;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
-use crate::visitors::Visitors;
+use crate::util::visit::Visit;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     // Helper method for inferring the type of a boolean operation over a sequence of values.
@@ -1226,7 +1226,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
                 let mut all_literal_strings = true;
-                Visitors::visit_fstring_expr(x, |x| {
+                x.visit(&mut |x| {
                     let fstring_expr_ty = self.expr_infer(x, errors);
                     if !fstring_expr_ty.is_literal_string() {
                         all_literal_strings = false;

@@ -28,7 +28,7 @@ use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
-use crate::visitors::Visitors;
+use crate::util::visit::Visit;
 
 /// How a name is defined.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -371,7 +371,7 @@ impl<'a> DefinitionsBuilder<'a> {
             }
             _ => {}
         }
-        Visitors::visit_stmt(x, |xs| self.stmt(xs))
+        x.visit(&mut |xs| self.stmt(xs))
     }
 }
 

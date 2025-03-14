@@ -35,7 +35,7 @@ use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 
 use crate::module::module_name::ModuleName;
-use crate::visitors::Visitors;
+use crate::util::visit::Visit;
 
 /// Just used for convenient namespacing - not a real type
 pub struct Ast;
@@ -133,7 +133,7 @@ impl Ast {
                 }
                 _ => {}
             }
-            Visitors::visit_stmt(x, |xs| stmt(xs, module_name, is_init, imports));
+            x.visit(&mut |xs| stmt(xs, module_name, is_init, imports));
         }
         let mut imports = SmallMap::new();
         stmts(&module.body, module_name, is_init, &mut imports);
@@ -241,7 +241,7 @@ impl Ast {
             }
             _ => {}
         }
-        Visitors::visit_pattern(x, |x| Ast::pattern_lvalue(x, f));
+        x.visit(&mut |x| Ast::pattern_lvalue(x, f));
     }
 
     /// Pull all dictionary items up to the top level, so `{a: 1, **{b: 2}}`
