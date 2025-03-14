@@ -133,7 +133,7 @@ impl Ast {
                 }
                 _ => {}
             }
-            Visitors::visit_stmt(x, |xs| stmts(xs, module_name, is_init, imports));
+            Visitors::visit_stmt(x, |xs| stmt(xs, module_name, is_init, imports));
         }
         let mut imports = SmallMap::new();
         stmts(&module.body, module_name, is_init, &mut imports);

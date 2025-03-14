@@ -371,7 +371,7 @@ impl<'a> DefinitionsBuilder<'a> {
             }
             _ => {}
         }
-        Visitors::visit_stmt(x, |xs| self.stmts(xs))
+        Visitors::visit_stmt(x, |xs| self.stmt(xs))
     }
 }
 

@@ -28,37 +28,41 @@ impl Visitors {
             .for_each(|x| Visitors::visit_stmt_expr(x, &mut f));
     }
 
-    pub fn visit_stmt<'a>(x: &'a Stmt, mut f: impl FnMut(&'a [Stmt])) {
+    pub fn visit_stmt<'a>(x: &'a Stmt, mut f: impl FnMut(&'a Stmt)) {
+        fn fs<'a>(mut f: impl FnMut(&'a Stmt), xs: &'a [Stmt]) {
+            xs.iter().for_each(&mut f);
+        }
+
         match x {
-            Stmt::FunctionDef(x) => f(&x.body),
-            Stmt::ClassDef(x) => f(&x.body),
+            Stmt::FunctionDef(x) => fs(&mut f, &x.body),
+            Stmt::ClassDef(x) => fs(&mut f, &x.body),
             Stmt::For(x) => {
-                f(&x.body);
-                f(&x.orelse)
+                fs(&mut f, &x.body);
+                fs(&mut f, &x.orelse)
             }
             Stmt::While(x) => {
-                f(&x.body);
-                f(&x.orelse);
+                fs(&mut f, &x.body);
+                fs(&mut f, &x.orelse);
             }
             Stmt::If(x) => {
-                f(&x.body);
+                fs(&mut f, &x.body);
                 for x in x.elif_else_clauses.iter() {
-                    f(&x.body);
+                    fs(&mut f, &x.body);
                 }
             }
-            Stmt::With(x) => f(&x.body),
+            Stmt::With(x) => fs(&mut f, &x.body),
             Stmt::Match(x) => {
                 for x in x.cases.iter() {
-                    f(&x.body);
+                    fs(&mut f, &x.body);
                 }
             }
             Stmt::Try(x) => {
-                f(&x.body);
+                fs(&mut f, &x.body);
                 x.handlers.iter().for_each(|x| match x {
-                    ExceptHandler::ExceptHandler(x) => f(&x.body),
+                    ExceptHandler::ExceptHandler(x) => fs(&mut f, &x.body),
                 });
-                f(&x.orelse);
-                f(&x.finalbody);
+                fs(&mut f, &x.orelse);
+                fs(&mut f, &x.finalbody);
             }
             _ => {}
         }
