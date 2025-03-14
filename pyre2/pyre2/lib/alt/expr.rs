@@ -145,7 +145,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn callabe_dunder_helper(
+    fn callable_dunder_helper(
         &self,
         method_type: Type,
         range: TextRange,
@@ -201,7 +201,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let bin_op_new_errors_dunder =
                         ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
 
-                    let ret = self.callabe_dunder_helper(
+                    let ret = self.callable_dunder_helper(
                         method_type_dunder,
                         range,
                         &bin_op_new_errors_dunder,
@@ -212,7 +212,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     if bin_op_new_errors_dunder.is_empty() {
                         ret
                     } else {
-                        self.callabe_dunder_helper(
+                        self.callable_dunder_helper(
                             method_type_reflected,
                             range,
                             errors,
@@ -222,7 +222,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         )
                     }
                 }
-                (Some(method_type_dunder), None) => self.callabe_dunder_helper(
+                (Some(method_type_dunder), None) => self.callable_dunder_helper(
                     method_type_dunder,
                     range,
                     errors,
@@ -230,7 +230,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     op,
                     &rhs,
                 ),
-                (None, Some(method_type_reflected)) => self.callabe_dunder_helper(
+                (None, Some(method_type_reflected)) => self.callable_dunder_helper(
                     method_type_reflected,
                     range,
                     errors,
