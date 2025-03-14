@@ -563,6 +563,20 @@ impl State {
         self.modules.len()
     }
 
+    pub fn line_count(&self) -> usize {
+        self.modules
+            .values()
+            .map(|x| {
+                x.state
+                    .read()
+                    .steps
+                    .load
+                    .as_ref()
+                    .map_or(0, |x| x.module_info.line_count())
+            })
+            .sum()
+    }
+
     pub fn count_errors(&self) -> usize {
         self.modules
             .values()

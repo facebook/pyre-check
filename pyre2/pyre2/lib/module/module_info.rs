@@ -83,6 +83,10 @@ impl ModuleInfo {
         self.0.contents.len()
     }
 
+    pub fn line_count(&self) -> usize {
+        self.0.index.line_count()
+    }
+
     pub fn source_range(&self, range: TextRange) -> SourceRange {
         SourceRange {
             start: self.source_location(range.start()),

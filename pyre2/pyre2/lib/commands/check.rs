@@ -296,9 +296,10 @@ impl Args {
         }
         let error_count = state.count_errors();
         info!(
-            "{} errors, {} modules, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
+            "{} errors, {} modules, {} lines, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
             number_thousands(error_count),
             number_thousands(state.module_count()),
+            number_thousands(state.line_count()),
             memory_trace.peak()
         );
         if let Some(debug_info) = args.debug_info {
