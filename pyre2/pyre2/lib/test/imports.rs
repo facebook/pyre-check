@@ -615,7 +615,10 @@ from typing import reveal_type
 
 def test():
     i = Interpret()
-    reveal_type(i.x) # E: Unknown
+    # Deliberately don't specify the type of i.x, as sometimes
+    # it works out to None, sometimes Unknown.
+    # Plenty of errors here.
+    reveal_type(i.x) # E:
 
 "#,
 );
