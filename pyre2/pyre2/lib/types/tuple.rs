@@ -87,7 +87,7 @@ impl Tuple {
         write!(f, "tuple[{content}]")
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
             Self::Concrete(elts) => elts.iter().for_each(f),
             Self::Unbounded(ty) => f(ty),

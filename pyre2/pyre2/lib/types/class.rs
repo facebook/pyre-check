@@ -324,8 +324,8 @@ impl TArgs {
         self.0.is_empty()
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
-        self.0.iter().for_each(&mut f)
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        self.0.iter().for_each(f)
     }
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
@@ -454,7 +454,7 @@ impl ClassType {
         Type::ClassType(self)
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         self.1.visit(&mut f)
     }
 

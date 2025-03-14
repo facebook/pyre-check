@@ -226,7 +226,7 @@ impl TypeAlias {
         *self.ty.clone()
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         f(&self.ty);
     }
 
@@ -259,7 +259,7 @@ impl BoundMethod {
         self.func.as_type()
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         let Self { obj, func } = self;
         f(obj);
         func.visit(f);
@@ -304,7 +304,7 @@ impl BoundMethodType {
         }
     }
 
-    fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
             Self::Function(x) => x.visit(f),
             Self::Forall(x) => x.visit(f),
@@ -336,7 +336,7 @@ impl Overload {
         self.signatures.iter().any(|t| t.is_typeis())
     }
 
-    fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         self.signatures.iter().for_each(&mut f);
         self.metadata.visit(f);
     }
@@ -402,7 +402,7 @@ impl Forall {
         }
     }
 
-    pub fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match &self.ty {
             ForallType::Function(func) => func.visit(f),
             ForallType::TypeAlias(ta) => ta.visit(f),
@@ -583,7 +583,7 @@ impl Type {
             return true;
         }
         let mut has_type_var = false;
-        self.visit(|t| {
+        self.visit(&mut |t| {
             if t.is_type_variable() {
                 has_type_var = true;
             }
@@ -691,7 +691,7 @@ impl Type {
     }
 
     pub fn for_each_quantified(&self, f: &mut impl FnMut(Quantified)) {
-        self.universe(|x| {
+        self.universe(&mut |x| {
             if let Type::Quantified(x) = x {
                 f(*x);
             }
@@ -710,7 +710,7 @@ impl Type {
             if *seen || ty == x {
                 *seen = true;
             } else {
-                ty.visit(|ty| f(ty, x, seen));
+                ty.visit(&mut |ty| f(ty, x, seen));
             }
         }
         let mut seen = false;
@@ -822,7 +822,7 @@ impl Type {
         })
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         match self {
             Type::Callable(box c) => c.visit(f),
             Type::Function(box x) => x.visit(f),
@@ -915,9 +915,9 @@ impl Type {
     }
 
     /// Visit every type, with the guarantee you will have seen included types before the parent.
-    pub fn universe<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn universe<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         fn g<'a>(ty: &'a Type, f: &mut impl FnMut(&'a Type)) {
-            ty.visit(|ty| g(ty, f));
+            ty.visit(&mut |ty| g(ty, f));
             f(ty);
         }
         g(self, &mut f);

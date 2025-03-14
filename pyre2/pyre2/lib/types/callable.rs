@@ -78,7 +78,7 @@ impl ParamList {
         Ok(())
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         self.0.iter().for_each(|x| x.visit(&mut f));
     }
 
@@ -143,7 +143,7 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         let Self {
             signature,
             metadata,
@@ -180,7 +180,7 @@ impl FuncMetadata {
         }
     }
 
-    pub fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         self.flags.visit(f);
     }
 
@@ -205,7 +205,7 @@ pub struct FuncFlags {
 }
 
 impl FuncFlags {
-    fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         if let Some(x) = self.is_property_setter_with_getter.as_ref() {
             f(x);
         }
@@ -406,7 +406,7 @@ impl Callable {
         )
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         let Self { params, ret } = self;
         params.visit(&mut f);
         f(ret)
@@ -420,7 +420,7 @@ impl Callable {
 }
 
 impl Params {
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         match &self {
             Params::List(params) => params.visit(f),
             Params::Ellipsis => {}
@@ -458,7 +458,7 @@ impl Param {
         }
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match &self {
             Param::PosOnly(ty, _required) => f(ty),
             Param::Pos(_, ty, _required) => f(ty),

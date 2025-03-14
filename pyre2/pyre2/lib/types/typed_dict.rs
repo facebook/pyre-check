@@ -93,7 +93,7 @@ impl TypedDict {
         ClassType::new(self.class.dupe(), self.args.clone())
     }
 
-    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         let Self {
             class: _,
             args,

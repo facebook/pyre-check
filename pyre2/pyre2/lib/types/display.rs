@@ -90,7 +90,7 @@ impl<'a> TypeDisplayContext<'a> {
     }
 
     pub fn add(&mut self, t: &'a Type) {
-        t.universe(|t| {
+        t.universe(&mut |t| {
             let qname = match t {
                 Type::ClassDef(cls) => Some(cls.qname()),
                 Type::ClassType(c) => Some(c.qname()),
