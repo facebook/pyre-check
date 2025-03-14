@@ -275,7 +275,7 @@ impl BoundMethod {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BoundMethodType {
     Function(Function),
-    Forall(Forall),
+    Forall(ForallFunction),
     Overload(Overload),
 }
 
@@ -283,7 +283,7 @@ impl BoundMethodType {
     pub fn as_type(&self) -> Type {
         match self {
             Self::Function(func) => Type::Function(Box::new(func.clone())),
-            Self::Forall(forall) => Type::Forall(Box::new(forall.clone())),
+            Self::Forall(forall) => Type::Forall(Box::new(Forall::Function(forall.clone()))),
             Self::Overload(overload) => Type::Overload(overload.clone()),
         }
     }
@@ -291,7 +291,7 @@ impl BoundMethodType {
     fn is_typeguard(&self) -> bool {
         match self {
             Self::Function(func) => func.signature.is_typeguard(),
-            Self::Forall(forall) => forall.is_typeguard(),
+            Self::Forall(forall) => forall.func.signature.is_typeguard(),
             Self::Overload(overload) => overload.is_typeguard(),
         }
     }
@@ -299,7 +299,7 @@ impl BoundMethodType {
     fn is_typeis(&self) -> bool {
         match self {
             Self::Function(func) => func.signature.is_typeis(),
-            Self::Forall(forall) => forall.is_typeis(),
+            Self::Forall(forall) => forall.func.signature.is_typeis(),
             Self::Overload(overload) => overload.is_typeis(),
         }
     }
@@ -307,7 +307,7 @@ impl BoundMethodType {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
             Self::Function(x) => x.visit(f),
-            Self::Forall(x) => x.visit(f),
+            Self::Forall(x) => x.func.visit(f),
             Self::Overload(x) => x.visit(f),
         }
     }
@@ -315,7 +315,7 @@ impl BoundMethodType {
     fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Self::Function(x) => x.visit_mut(f),
-            Self::Forall(x) => x.visit_mut(f),
+            Self::Forall(x) => x.func.visit_mut(f),
             Self::Overload(x) => x.visit_mut(f),
         }
     }

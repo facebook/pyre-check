@@ -359,8 +359,8 @@ fn make_bound_method_helper(
     should_bind: &dyn Fn(&FuncMetadata) -> bool,
 ) -> Option<Type> {
     let func = match attr {
-        Type::Forall(box forall) if matches!(forall, Forall::Function(x) if should_bind(&x.func.metadata)) => {
-            Some(BoundMethodType::Forall((*forall).clone()))
+        Type::Forall(box Forall::Function(x)) if should_bind(&x.func.metadata) => {
+            Some(BoundMethodType::Forall((*x).clone()))
         }
         Type::Function(box func) if should_bind(&func.metadata) => {
             Some(BoundMethodType::Function(func.clone()))
