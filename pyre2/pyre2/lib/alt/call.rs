@@ -42,6 +42,7 @@ pub enum CallStyle<'a> {
     FreeForm,
 }
 
+/// A pair of a call target (see Target) and the Quantifieds it uses.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CallTarget {
     qs: Vec<Var>,
@@ -76,8 +77,10 @@ enum Target {
     Class(ClassType),
     /// A TypedDict.
     TypedDict(TypedDict),
-    /// An overload.
-    Overload(Vec1<CallTarget>),
+    /// An overloaded function.
+    FunctionOverload(Vec1<Callable>, FuncMetadata),
+    /// An overloaded method.
+    BoundMethodOverload(Type, Vec1<Callable>, FuncMetadata),
     Any(AnyStyle),
 }
 
@@ -94,12 +97,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         CallTarget::new(Target::Any(AnyStyle::Error))
     }
 
-    fn fresh_quantified_function(&self, tparams: &TParams, func: Function) -> CallTarget {
+    fn fresh_quantified_function(&self, tparams: &TParams, func: Function) -> (Vec<Var>, Function) {
         let (qs, t) =
             self.solver()
                 .fresh_quantified(tparams, Type::Function(Box::new(func)), self.uniques);
         match t {
-            Type::Function(box func) => CallTarget::forall(qs, Target::Function(func)),
+            Type::Function(box func) => (qs, func),
             // We passed a Function to fresh_quantified(), so we know we get a Function back out.
             _ => unreachable!(),
         }
@@ -110,19 +113,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match ty {
             Type::Callable(c) => Some(CallTarget::new(Target::Callable(*c))),
             Type::Function(func) => Some(CallTarget::new(Target::Function(*func))),
-            Type::Overload(overload) => Some(CallTarget::new(Target::Overload(
-                overload.signatures.mapped(|ty| match ty {
-                    OverloadType::Callable(signature) => {
-                        CallTarget::new(Target::Function(Function {
-                            signature,
-                            metadata: (*overload.metadata).clone(),
-                        }))
-                    }
+            Type::Overload(overload) => {
+                let mut qs = Vec::new();
+                let sigs = overload.signatures.mapped(|ty| match ty {
+                    OverloadType::Callable(signature) => signature,
                     OverloadType::Forall(forall) => {
-                        self.fresh_quantified_function(&forall.tparams, forall.func)
+                        let (qs2, func) =
+                            self.fresh_quantified_function(&forall.tparams, forall.func);
+                        qs.extend(qs2);
+                        func.signature
                     }
-                }),
-            ))),
+                });
+                Some(CallTarget::forall(
+                    qs,
+                    Target::FunctionOverload(sigs, *overload.metadata),
+                ))
+            }
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 match self.as_call_target(func.as_type()) {
                     Some(CallTarget {
@@ -131,19 +137,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }) => Some(CallTarget::forall(qs, Target::BoundMethod(obj, func))),
                     Some(CallTarget {
                         qs,
-                        target: Target::Overload(overloads),
-                    }) => {
-                        let overloads = overloads.mapped(|x| match x {
-                            CallTarget {
-                                qs: qs2,
-                                target: Target::Function(func),
-                            } => CallTarget::forall(qs2, Target::BoundMethod(obj.clone(), func)),
-                            // TODO: we know it should be impossible to have one BoundMethod inside another, change
-                            // CallTarget so we can never reach this impossible state.
-                            _ => unreachable!(),
-                        });
-                        Some(CallTarget::forall(qs, Target::Overload(overloads)))
-                    }
+                        target: Target::FunctionOverload(overloads, meta),
+                    }) => Some(CallTarget::forall(
+                        qs,
+                        Target::BoundMethodOverload(obj, overloads, meta),
+                    )),
                     _ => None,
                 }
             }
@@ -462,7 +460,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         call_errors: &ErrorCollector,
         context: Option<&ErrorContext>,
     ) -> Type {
-        let is_dataclass = matches!(&call_target.target, Target::Function(func) if matches!(func.metadata.kind, FunctionKind::Dataclass(_)));
+        let is_dataclass = matches!(&call_target.target, Target::FunctionOverload(_, meta) if matches!(meta.kind, FunctionKind::Dataclass(_)));
         let res = match call_target.target {
             Target::Class(cls) => {
                 // Hack
@@ -519,85 +517,41 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 call_errors,
                 context,
             ),
-            Target::Overload(overloads) => {
+            Target::FunctionOverload(overloads, meta) => {
                 // Hack
                 assert!(
                     std::ptr::eq(arg_errors, call_errors),
                     "unexpected nested overload"
                 );
-                let errors = arg_errors;
-                let mut closest_overload = None;
-                let mut fewest_errors: Option<ErrorCollector> = None;
-                for call_target in overloads.into_iter() {
-                    let arg_errors =
-                        ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
-                    let call_errors =
-                        ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
-                    let res = self.call_infer_inner(
-                        call_target.clone(),
-                        args,
-                        keywords,
-                        range,
-                        &arg_errors,
-                        &call_errors,
-                        // We intentionally drop the context here, as arg errors don't need it,
-                        // and if we log any call errors, we'll also log a separate
-                        // "No matching overloads" error with the necessary context.
-                        None,
-                    );
-                    if call_errors.is_empty() {
-                        errors.extend(arg_errors);
-                        return res;
-                    }
-                    match &fewest_errors {
-                        Some(errs) if errs.len() <= call_errors.len() => {}
-                        _ => {
-                            closest_overload = Some(call_target);
-                            fewest_errors = Some(call_errors);
-                        }
-                    }
-                }
-                // We're guaranteed to have at least one overload.
-                let (func_id, signature) = match closest_overload.unwrap() {
-                    CallTarget {
-                        qs: _,
-                        target:
-                            Target::Function(Function {
-                                signature: callable,
-                                metadata,
-                            }),
-                    } => (Some(metadata.kind.as_func_id()), Some(callable)),
-                    CallTarget {
-                        qs: _,
-                        target: Target::BoundMethod(_, func),
-                    } => (
-                        Some(func.metadata.kind.as_func_id()),
-                        func.signature.drop_first_param(),
-                    ),
-                    _ => (None, None),
-                };
-                let func_desc = match func_id {
-                    Some(id) => format!(" for function `{}`", id.format(self.module_info().name())),
-                    None => "".to_owned(),
-                };
-                let signature_desc = match signature {
-                    Some(mut sig) => {
-                        sig.visit_mut(&mut |x| *x = self.solver().for_display((*x).clone()));
-                        format!(", reporting errors for closest overload: `{sig}`")
-                    }
-                    None => "".to_owned(),
-                };
-                self.error(
-                    errors,
+                self.call_overloads(
+                    overloads,
+                    meta,
+                    None,
+                    args,
+                    keywords,
                     range,
-                    ErrorKind::NoMatchingOverload,
+                    arg_errors,
+                    call_errors,
                     context,
-                    format!("No matching overload found{func_desc}{signature_desc}"),
+                )
+            }
+            Target::BoundMethodOverload(obj, overloads, meta) => {
+                // Hack
+                assert!(
+                    std::ptr::eq(arg_errors, call_errors),
+                    "unexpected nested overload"
                 );
-                if let Some(errs) = fewest_errors {
-                    errors.extend(errs);
-                }
-                return Type::any_error();
+                self.call_overloads(
+                    overloads,
+                    meta,
+                    Some(CallArg::Type(&obj, range)),
+                    args,
+                    keywords,
+                    range,
+                    arg_errors,
+                    call_errors,
+                    context,
+                )
             }
             Target::Any(style) => {
                 // Make sure we still catch errors in the arguments.
@@ -631,6 +585,74 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         } else {
             res
         }
+    }
+
+    fn call_overloads(
+        &self,
+        overloads: Vec1<Callable>,
+        metadata: FuncMetadata,
+        self_arg: Option<CallArg>,
+        args: &[CallArg],
+        keywords: &[Keyword],
+        range: TextRange,
+        arg_errors: &ErrorCollector,
+        _call_errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
+    ) -> Type {
+        let errors = arg_errors;
+        let mut closest_overload = None;
+        let mut fewest_errors: Option<ErrorCollector> = None;
+        for callable in overloads.into_iter() {
+            let arg_errors = ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
+            let call_errors = ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
+            let res = self.callable_infer(
+                callable.clone(),
+                Some(metadata.kind.as_func_id()),
+                self_arg.clone(),
+                args,
+                keywords,
+                range,
+                &arg_errors,
+                &call_errors,
+                // We intentionally drop the context here, as arg errors don't need it,
+                // and if we log any call errors, we'll also log a separate
+                // "No matching overloads" error with the necessary context.
+                None,
+            );
+            if call_errors.is_empty() {
+                errors.extend(arg_errors);
+                return res;
+            }
+            match &fewest_errors {
+                Some(errs) if errs.len() <= call_errors.len() => {}
+                _ => {
+                    closest_overload = Some(callable);
+                    fewest_errors = Some(call_errors);
+                }
+            }
+        }
+        // We're guaranteed to have at least one overload.
+        let closest_overload = closest_overload.unwrap();
+        let fewest_errors = fewest_errors.unwrap();
+        let mut signature = match self_arg {
+            Some(_) => closest_overload
+                .drop_first_param()
+                .unwrap_or(closest_overload),
+            None => closest_overload,
+        };
+        signature.visit_mut(&mut |x| *x = self.solver().for_display((*x).clone()));
+        self.error(
+            errors,
+            range,
+            ErrorKind::NoMatchingOverload,
+            context,
+            format!(
+                "No matching overload found for function `{}`, reporting errors for closest overload: `{}`",
+                metadata.kind.as_func_id().format(self.module_info().name()), signature,
+            ),
+        );
+        errors.extend(fewest_errors);
+        Type::any_error()
     }
 
     /// Helper function hide details of call synthesis from the attribute resolution code.
