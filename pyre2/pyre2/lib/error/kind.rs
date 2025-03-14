@@ -64,6 +64,8 @@ pub enum ErrorKind {
     /// An error casued by unpacking.
     /// e.g. attempting to unpack an iterable into the wrong number of variables.
     BadUnpacking,
+    /// Attempting to `del` something that cannot be deleted
+    DeleteError,
     /// An error related to the import machinery.
     /// e.g. failed to import a module.
     ImportError,

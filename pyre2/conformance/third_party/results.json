@@ -3,7 +3,7 @@
   "pass": 37,
   "fail": 96,
   "pass_rate": 0.28,
-  "differences": 537,
+  "differences": 536,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -133,7 +133,7 @@
     "tuples_type_compat.py": 13,
     "typeddicts_class_syntax.py": 5,
     "typeddicts_inheritance.py": 1,
-    "typeddicts_operations.py": 2,
+    "typeddicts_operations.py": 1,
     "typeddicts_readonly_consistency.py": 3,
     "typeddicts_readonly_inheritance.py": 7,
     "typeddicts_readonly_update.py": 1,

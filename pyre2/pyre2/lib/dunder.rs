@@ -14,6 +14,7 @@ pub const AEXIT: Name = Name::new_static("__aexit__");
 pub const ALL: Name = Name::new_static("__all__");
 pub const CALL: Name = Name::new_static("__call__");
 pub const CONTAINS: Name = Name::new_static("__contains__");
+pub const DELITEM: Name = Name::new_static("__delitem__");
 pub const ENTER: Name = Name::new_static("__enter__");
 pub const EQ: Name = Name::new_static("__eq__");
 pub const EXIT: Name = Name::new_static("__exit__");

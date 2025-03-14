@@ -258,12 +258,17 @@ pub enum BindingExpect {
     /// Verify that an attribute assignment or annotation is legal, given a type for the
     /// assignment (use this when no expr is available).
     CheckAssignTypeToAttribute(Box<(ExprAttribute, Binding)>),
+    /// `del` statement
+    Delete(Box<Expr>),
 }
 
 impl DisplayWith<Bindings> for BindingExpect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
         match self {
+            Self::Delete(box x) => {
+                write!(f, "del {}", m.display(x))
+            }
             Self::UnpackedLength(x, range, expect) => {
                 let expectation = match expect {
                     SizeExpectation::Eq(n) => n.to_string(),

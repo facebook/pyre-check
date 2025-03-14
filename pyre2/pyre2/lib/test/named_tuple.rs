@@ -29,6 +29,19 @@ p.x = 1  # E: Cannot assign to read-only field `x`
 );
 
 testcase!(
+    test_named_tuple_delete,
+    r#"
+from typing import NamedTuple, assert_type
+class Pair(NamedTuple):
+    x: int
+    y: str
+p: Pair = Pair(1, "")
+del p.x  # E: Cannot delete read-only field `x`
+del p[0]  # E: Item deletion is not supported on `Pair`
+    "#,
+);
+
+testcase!(
     test_named_tuple_functional,
     r#"
 from typing import NamedTuple, Any, assert_type

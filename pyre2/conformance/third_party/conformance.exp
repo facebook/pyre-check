@@ -9176,21 +9176,21 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtDelete - Bindings::stmt",
-      "description": "TODO: StmtDelete - Bindings::stmt",
+      "column": 5,
+      "concise_description": "Cannot delete read-only field `x`",
+      "description": "Cannot delete read-only field `x`",
       "line": 42,
-      "name": "unsupported",
+      "name": "read-only",
       "stop_column": 8,
       "stop_line": 42
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtDelete - Bindings::stmt",
-      "description": "TODO: StmtDelete - Bindings::stmt",
+      "column": 5,
+      "concise_description": "Item deletion is not supported on `Point`\n  Object of class `Point` has no attribute `__delitem__`",
+      "description": "Item deletion is not supported on `Point`\n  Object of class `Point` has no attribute `__delitem__`",
       "line": 43,
-      "name": "unsupported",
+      "name": "missing-attribute",
       "stop_column": 9,
       "stop_line": 43
     },
@@ -11533,12 +11533,12 @@
     },
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtDelete - Bindings::stmt",
-      "description": "TODO: StmtDelete - Bindings::stmt",
+      "column": 11,
+      "concise_description": "Key `name` in TypedDict `Movie` may not be deleted",
+      "description": "Key `name` in TypedDict `Movie` may not be deleted",
       "line": 49,
-      "name": "unsupported",
-      "stop_column": 18,
+      "name": "delete-error",
+      "stop_column": 17,
       "stop_line": 49
     },
     {
@@ -11560,16 +11560,6 @@
       "name": "missing-attribute",
       "stop_column": 21,
       "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "TODO: StmtDelete - Bindings::stmt",
-      "description": "TODO: StmtDelete - Bindings::stmt",
-      "line": 64,
-      "name": "unsupported",
-      "stop_column": 27,
-      "stop_line": 64
     }
   ],
   "typeddicts_readonly.py": [

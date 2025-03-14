@@ -530,6 +530,62 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
+    pub fn check_attr_delete(
+        &self,
+        base: &Type,
+        attr_name: &Name,
+        range: TextRange,
+        errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
+        todo_ctx: &str,
+    ) {
+        match self.lookup_attr(base, attr_name) {
+            LookupResult::Found(attr) => match attr.inner {
+                // TODO: deleting attributes is allowed at runtime, but is not type-safe
+                // except for descriptors that implement `__delete__`
+                AttributeInner::ReadWrite(_)
+                | AttributeInner::Property(_, _, _)
+                | AttributeInner::Descriptor(_) => {}
+                AttributeInner::NoAccess(e) => {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::NoAccess,
+                        context,
+                        e.to_error_msg(attr_name),
+                    );
+                }
+                AttributeInner::ReadOnly(_) => {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::ReadOnly,
+                        context,
+                        format!("Cannot delete read-only field `{attr_name}`"),
+                    );
+                }
+            },
+            LookupResult::InternalError(e) => {
+                self.error(
+                    errors,
+                    range,
+                    ErrorKind::InternalError,
+                    context,
+                    e.to_error_msg(attr_name, todo_ctx),
+                );
+            }
+            LookupResult::NotFound(e) => {
+                self.error(
+                    errors,
+                    range,
+                    ErrorKind::MissingAttribute,
+                    context,
+                    e.to_error_msg(attr_name),
+                );
+            }
+        }
+    }
+
     pub fn is_attr_subset(
         &self,
         got: &Attribute,

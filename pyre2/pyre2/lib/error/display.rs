@@ -34,6 +34,7 @@ impl ErrorContext {
             Self::Await(ty) => format!("Type `{ty}` is not awaitable"),
             Self::Index(ty) => format!("Cannot index into `{ty}`"),
             Self::SetItem(ty) => format!("Item assignment is not supported on `{ty}`"),
+            Self::DelItem(ty) => format!("Item deletion is not supported on `{ty}`"),
             Self::MatchPositional(ty) => {
                 format!("Cannot match positional sub-patterns in `{ty}`")
             }

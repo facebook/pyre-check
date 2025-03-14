@@ -726,8 +726,7 @@
     "Line 65: Expected 1 errors"
   ],
   "typeddicts_operations.py": [
-    "Line 60: Unexpected errors ['assert_type(object | None, str | None) failed']",
-    "Line 64: Unexpected errors ['TODO: StmtDelete - Bindings::stmt']"
+    "Line 60: Unexpected errors ['assert_type(object | None, str | None) failed']"
   ],
   "typeddicts_readonly.py": [],
   "typeddicts_readonly_consistency.py": [

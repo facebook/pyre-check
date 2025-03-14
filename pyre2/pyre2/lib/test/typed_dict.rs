@@ -174,6 +174,21 @@ def foo(c: Coord, key: str, key2: Literal["x", "y"]):
 );
 
 testcase!(
+    test_typed_dict_delete,
+    r#"
+from typing import TypedDict, ReadOnly, Required
+class Coord(TypedDict, total=False):
+    x: int
+    y: ReadOnly[str]
+    z: Required[bool]
+def foo(c: Coord):
+    del c["x"]  # OK
+    del c["y"]  # E: Key `y` in TypedDict `Coord` may not be deleted
+    del c["z"]  # E: Key `z` in TypedDict `Coord` may not be deleted
+    "#,
+);
+
+testcase!(
     test_typed_dict_functional,
     r#"
 from typing import TypedDict, Required, NotRequired

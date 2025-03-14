@@ -218,7 +218,15 @@ impl<'a> BindingsBuilder<'a> {
                 self.functions.last_mut().returns.push(x);
                 self.scopes.current_mut().flow.no_next = true;
             }
-            Stmt::Delete(x) => self.todo("Bindings::stmt", &x),
+            Stmt::Delete(mut x) => {
+                for target in &mut x.targets {
+                    self.table.insert(
+                        KeyExpect(target.range()),
+                        BindingExpect::Delete(Box::new(target.clone())),
+                    );
+                    self.ensure_expr(target);
+                }
+            }
             Stmt::Assign(ref x)
                 if let [Expr::Name(name)] = x.targets.as_slice()
                     && let Some((module, forward)) =

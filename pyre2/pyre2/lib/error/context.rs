@@ -35,6 +35,8 @@ pub enum ErrorContext {
     Index(Type),
     /// x[y] = ...
     SetItem(Type),
+    /// del x[y]
+    DelItem(Type),
     /// match x: case Foo(y): ...
     MatchPositional(Type),
 }

@@ -928,6 +928,79 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Arc<EmptyAnswer> {
         match binding {
+            BindingExpect::Delete(box x) => match x {
+                Expr::Name(_) => {
+                    self.expr_infer(x, errors);
+                }
+                Expr::Attribute(attr) => {
+                    let base = self.expr_infer(&attr.value, errors);
+                    self.check_attr_delete(
+                        &base,
+                        &attr.attr.id,
+                        attr.range,
+                        errors,
+                        None,
+                        "Answers::solve_expectation::Delete",
+                    );
+                }
+                Expr::Subscript(x) => {
+                    let base = self.expr_infer(&x.value, errors);
+                    let slice_ty = self.expr_infer(&x.slice, errors);
+                    match (&base, &slice_ty) {
+                        (Type::TypedDict(typed_dict), Type::Literal(Lit::String(field_name))) => {
+                            if let Some(field) =
+                                typed_dict.fields().get(&Name::new(field_name.clone()))
+                            {
+                                if field.read_only || field.required {
+                                    self.error(
+                                        errors,
+                                        x.slice.range(),
+                                        ErrorKind::DeleteError,
+                                        None,
+                                        format!(
+                                            "Key `{}` in TypedDict `{}` may not be deleted",
+                                            field_name,
+                                            typed_dict.name(),
+                                        ),
+                                    );
+                                }
+                            } else {
+                                self.error(
+                                    errors,
+                                    x.slice.range(),
+                                    ErrorKind::TypedDictKeyError,
+                                    None,
+                                    format!(
+                                        "TypedDict `{}` does not have key `{}`",
+                                        typed_dict.name(),
+                                        field_name
+                                    ),
+                                );
+                            }
+                        }
+                        (_, _) => {
+                            self.call_method_or_error(
+                                &base,
+                                &dunder::DELITEM,
+                                x.range,
+                                &[],
+                                &[],
+                                errors,
+                                Some(&ErrorContext::DelItem(base.clone())),
+                            );
+                        }
+                    }
+                }
+                _ => {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::DeleteError,
+                        None,
+                        "Invalid target for `del`".to_owned(),
+                    );
+                }
+            },
             BindingExpect::UnpackedLength(b, range, expect) => {
                 let iterable_ty = self.solve_binding_inner(b, errors);
                 let iterables = self.iterate(&iterable_ty, *range, errors);
