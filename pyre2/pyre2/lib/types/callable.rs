@@ -82,7 +82,7 @@ impl ParamList {
         self.0.iter().for_each(|x| x.visit(&mut f));
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         self.0.iter_mut().for_each(|x| x.visit_mut(&mut f));
     }
 
@@ -152,7 +152,7 @@ impl Function {
         metadata.visit(f);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         let Self {
             signature,
             metadata,
@@ -184,7 +184,7 @@ impl FuncMetadata {
         self.flags.visit(f);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         self.flags.visit_mut(f);
     }
 }
@@ -211,7 +211,7 @@ impl FuncFlags {
         }
     }
 
-    fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         if let Some(x) = self.is_property_setter_with_getter.as_mut() {
             f(x);
         }
@@ -412,7 +412,7 @@ impl Callable {
         f(ret)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         let Self { params, ret } = self;
         params.visit_mut(&mut f);
         f(ret)
@@ -431,7 +431,7 @@ impl Params {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Params::List(params) => params.visit_mut(f),
             Params::Ellipsis => {}
@@ -468,7 +468,7 @@ impl Param {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Param::PosOnly(ty, _required) => f(ty),
             Param::Pos(_, ty, _required) => f(ty),

@@ -328,8 +328,8 @@ impl TArgs {
         self.0.iter().for_each(f)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
-        self.0.iter_mut().for_each(&mut f)
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+        self.0.iter_mut().for_each(f)
     }
 
     /// Apply a substitution to type arguments.
@@ -458,7 +458,7 @@ impl ClassType {
         self.1.visit(&mut f)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         self.1.visit_mut(&mut f)
     }
 

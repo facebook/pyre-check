@@ -230,7 +230,7 @@ impl TypeAlias {
         f(&self.ty);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         f(&mut self.ty);
     }
 }
@@ -265,7 +265,7 @@ impl BoundMethod {
         func.visit(f);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         let Self { obj, func } = self;
         f(obj);
         func.visit_mut(f);
@@ -312,7 +312,7 @@ impl BoundMethodType {
         }
     }
 
-    fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Self::Function(x) => x.visit_mut(f),
             Self::Forall(x) => x.visit_mut(f),
@@ -341,7 +341,7 @@ impl Overload {
         self.metadata.visit(f);
     }
 
-    fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         self.signatures.iter_mut().for_each(&mut f);
         self.metadata.visit_mut(f);
     }
@@ -409,7 +409,7 @@ impl Forall {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match &mut self.ty {
             ForallType::Function(func) => func.visit_mut(f),
             ForallType::TypeAlias(ta) => ta.visit_mut(f),
@@ -868,7 +868,7 @@ impl Type {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Type::Callable(box c) => c.visit_mut(f),
             Type::Function(box x) => x.visit_mut(f),
@@ -926,7 +926,7 @@ impl Type {
     /// Visit every type, with the guarantee you will have seen included types before the parent.
     pub fn transform_mut(&mut self, mut f: impl FnMut(&mut Type)) {
         fn g(ty: &mut Type, f: &mut impl FnMut(&mut Type)) {
-            ty.visit_mut(|ty| g(ty, f));
+            ty.visit_mut(&mut |ty| g(ty, f));
             f(ty);
         }
         g(self, &mut f);

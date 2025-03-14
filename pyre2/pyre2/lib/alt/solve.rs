@@ -544,7 +544,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 signature: callable,
                 metadata: _,
             }) => {
-                let visit = |t: &mut Type| {
+                let mut visit = |t: &mut Type| {
                     self.tvars_to_tparams_for_type_alias(
                         t,
                         seen_type_vars,
@@ -553,7 +553,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         tparams,
                     )
                 };
-                callable.visit_mut(visit);
+                callable.visit_mut(&mut visit);
             }
             Type::Concatenate(box prefix, box pspec) => {
                 for t in prefix {
@@ -574,7 +574,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 )
             }
             Type::Tuple(tuple) => {
-                let visit = |t: &mut Type| {
+                let mut visit = |t: &mut Type| {
                     self.tvars_to_tparams_for_type_alias(
                         t,
                         seen_type_vars,
@@ -583,7 +583,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         tparams,
                     )
                 };
-                tuple.visit_mut(visit);
+                tuple.visit_mut(&mut visit);
             }
             Type::TypeVar(ty_var) => {
                 let q = match seen_type_vars.entry(ty_var.dupe()) {

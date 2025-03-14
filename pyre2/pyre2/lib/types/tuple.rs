@@ -101,7 +101,7 @@ impl Tuple {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Self::Concrete(elts) => elts.iter_mut().for_each(f),
             Self::Unbounded(ty) => f(ty),
