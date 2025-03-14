@@ -189,14 +189,20 @@ module CallableToDecoratorsMap = struct
 
 
   let filter_decorator decorator =
-    let callee_and_parameters decorator =
-      match decorator.Node.value with
-      | Expression.Call { Call.callee; arguments } -> callee, Some arguments
-      | _ -> decorator, None
-    in
-    (* TODO: Handle @SkipDecoratorWhenInlining. *)
-    let decorator_name = decorator |> callee_and_parameters |> Core.fst |> Expression.show in
-    not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
+    if
+      Analysis.DecoratorPreprocessing.has_any_decorator_action
+        ~actions:(Analysis.DecoratorPreprocessing.Action.Set.of_list [DoNotInline; Discard])
+        decorator
+    then
+      false
+    else
+      let callee_and_parameters decorator =
+        match decorator.Node.value with
+        | Expression.Call { Call.callee; arguments } -> callee, Some arguments
+        | _ -> decorator, None
+      in
+      let decorator_name = decorator |> callee_and_parameters |> Core.fst |> Expression.show in
+      not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
 
 
   let collect_decorators ~callables_to_definitions_map callable =
@@ -245,6 +251,8 @@ module CallableToDecoratorsMap = struct
 
     let cleanup = T.cleanup ~clean_old:true
 
+    (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its
+       shared memory here. *)
     let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =
       let shared_memory = T.create () in
       let shared_memory_add_only = T.add_only shared_memory in

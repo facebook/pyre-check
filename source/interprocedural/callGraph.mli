@@ -447,6 +447,8 @@ module CallableToDecoratorsMap : sig
 
     val empty : unit -> t
 
+    (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its
+       shared memory here. *)
     val create
       :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
       scheduler:Scheduler.t ->

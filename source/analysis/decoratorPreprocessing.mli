@@ -17,6 +17,8 @@ module Action : sig
   [@@deriving eq, show]
 
   val to_mode : t -> string
+
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module Configuration : sig
@@ -29,6 +31,8 @@ module Configuration : sig
 
   val disable_preprocessing : t
 end
+
+val has_any_decorator_action : actions:Action.Set.t -> Expression.t -> bool
 
 val setup_preprocessing : Configuration.t -> unit
 

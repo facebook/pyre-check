@@ -55,9 +55,6 @@ ModelQuery(
     model = CapturedVariables(TaintSource[Test])
 )
 
-# TODO(T171117938): Decorator inlining causes unignored decorators to break closure taint flows
-# Remove `@IgnoreDecorator` when fixed
-@IgnoreDecorator
 def closure_models.some_decorator(): ...
 
 ModelQuery(

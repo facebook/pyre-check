@@ -17,16 +17,21 @@ open Statement
 open Expression
 
 module Action = struct
-  type t =
-    (* Do not try to inline that decorator, keep it as-is. *)
-    | DoNotInline
-    (* Remove that decorator from decorated function, assuming it is a no-op. *)
-    | Discard
-  [@@deriving eq, show]
+  module T = struct
+    type t =
+      (* Do not try to inline that decorator, keep it as-is. *)
+      | DoNotInline
+      (* Remove that decorator from decorated function, assuming it is a no-op. *)
+      | Discard
+    [@@deriving eq, show, compare]
 
-  let to_mode = function
-    | DoNotInline -> "SkipDecoratorWhenInlining"
-    | Discard -> "IgnoreDecorator"
+    let to_mode = function
+      | DoNotInline -> "SkipDecoratorWhenInlining"
+      | Discard -> "IgnoreDecorator"
+  end
+
+  include T
+  module Set = Stdlib.Set.Make (T)
 end
 
 module Configuration = struct
@@ -988,22 +993,28 @@ let find_decorator_body ~get_source decorator_reference =
   >>= List.find ~f:(fun define -> Reference.equal (Define.name define) decorator_reference)
 
 
-let has_decorator_action ~get_decorator_action decorator_name action =
-  Option.equal Action.equal (get_decorator_action decorator_name) (Some action)
+let has_decorator_action decorator_name action =
+  Option.equal Action.equal (DecoratorActionsSharedMemory.get decorator_name) (Some action)
 
 
-let discard_decorators_for_define ~get_decorator_action define =
-  let should_keep_decorator decorator =
-    match Decorator.from_expression decorator with
-    | None -> true
-    | Some { Decorator.name = { Node.value = decorator_name; _ }; _ } ->
-        not (has_decorator_action ~get_decorator_action decorator_name Action.Discard)
+let has_any_decorator_action ~actions decorator =
+  match Decorator.from_expression decorator with
+  | None -> true
+  | Some { Decorator.name = { Node.value = decorator_name; _ }; _ } ->
+      Action.Set.exists (fun action -> has_decorator_action decorator_name action) actions
+
+
+let discard_decorators_for_define define =
+  let actions = Action.Set.singleton Action.Discard in
+  let decorators =
+    define
+    |> get_define_decorators
+    |> List.filter ~f:(fun decorator -> not (has_any_decorator_action ~actions decorator))
   in
-  let decorators = define |> get_define_decorators |> List.filter ~f:should_keep_decorator in
   { define with Define.signature = { define.signature with decorators } }
 
 
-let inline_decorators_for_define ~get_source ~get_decorator_action ~location ~relative_path define =
+let inline_decorators_for_define ~get_source ~location ~relative_path define =
   let uniquify_decorator_data_list =
     uniquify_names
       ~get_reference:(fun { outer_decorator_reference; _ } -> outer_decorator_reference)
@@ -1014,7 +1025,7 @@ let inline_decorators_for_define ~get_source ~get_decorator_action ~location ~re
     match Decorator.from_expression decorator with
     | None -> None
     | Some { Decorator.name = { Node.value = decorator_name; _ }; _ }
-      when has_decorator_action ~get_decorator_action decorator_name Action.DoNotInline ->
+      when has_decorator_action decorator_name Action.DoNotInline ->
         None
     | Some
         {
@@ -1070,20 +1081,13 @@ let preprocess_source ~get_source source =
         | { Node.value = Statement.Define original_define; location } ->
             let define =
               if should_discard then
-                discard_decorators_for_define
-                  ~get_decorator_action:DecoratorActionsSharedMemory.get
-                  original_define
+                discard_decorators_for_define original_define
               else
                 original_define
             in
             let define =
               if should_inline then
-                inline_decorators_for_define
-                  ~get_source
-                  ~get_decorator_action:DecoratorActionsSharedMemory.get
-                  ~location
-                  ~relative_path
-                  define
+                inline_decorators_for_define ~get_source ~location ~relative_path define
               else
                 define
             in

@@ -45,6 +45,7 @@ def test() -> None:
         return value
 
     source = _test_source()
+
     def return_model_taint_tito():
         use_source(source)
 
@@ -85,6 +86,7 @@ def test() -> None:
 
 def test_tito_transform():
     source = _test_source()
+
     def return_model_taint_tito():
         use_source(source)
 
@@ -103,17 +105,20 @@ def test_tito_transform():
     )
     value.reclassify(feature="breadcrumb2")
 
+
 def some_decorator(func):
     def wrapper_func():
         func()
+
     return wrapper_func
+
 
 def test_dsl_source(some_data: str) -> None:
     def local_function_capturing_local_variable():
         _test_sink(some_data)
 
+
 def test_dsl_decorator_source(some_data: str) -> None:
-    # TODO(T171117938): Decorator inlining causes unignored decorators to break closure taint flows
     @some_decorator
     def decorated_local_function_capturing_local_variable():
         _test_sink(some_data)
@@ -139,7 +144,7 @@ def captured_variable_model_parameter_source():
         _test_sink(complicated_name)
 
     model_all_captured_as_parameter_sources()
-    _test_sink(complicated_name) # no issue
+    _test_sink(complicated_name)  # no issue
 
 
 def captured_variable_model_generation_source():
@@ -148,7 +153,7 @@ def captured_variable_model_generation_source():
     # model simulates writing taint to nonlocal
     def model_all_captured_as_generation_sources():
         complicated_name
-        _test_sink(complicated_name) # no issue
+        _test_sink(complicated_name)  # no issue
 
     model_all_captured_as_generation_sources()
     _test_sink(complicated_name)
