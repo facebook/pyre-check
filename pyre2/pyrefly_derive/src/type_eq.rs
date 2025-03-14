@@ -51,19 +51,20 @@ fn derive_type_eq_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStr
     let name = &input.ident;
     let (generics_before, generics_after) = generics(&input.generics)?;
     let type_eq = quote! { crate::types::equality::TypeEq };
+    let type_eq_ctx = quote! { crate::types::equality::TypeEqCtx };
     let body = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
             Fields::Named(fields_named) => {
                 let comparisons = fields_named.named.iter().map(|field| {
                     let field_name = &field.ident;
-                    quote_spanned! { field_name.span() => #type_eq::type_eq(&self.#field_name, &other.#field_name) }
+                    quote_spanned! { field_name.span() => #type_eq::type_eq(&self.#field_name, &other.#field_name, ctx) }
                 });
                 quote_spanned! { fields_named.span() => #(#comparisons)&&* }
             }
             Fields::Unnamed(fields_unnamed) => {
                 let comparisons = fields_unnamed.unnamed.iter().enumerate().map(|(i, _)| {
                     let index = syn::Index::from(i);
-                    quote! { #type_eq::type_eq(&self.#index, &other.#index) }
+                    quote! { #type_eq::type_eq(&self.#index, &other.#index, ctx) }
                 });
                 quote_spanned! { fields_unnamed.span() => #(#comparisons)&&* }
             }
@@ -80,7 +81,7 @@ fn derive_type_eq_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStr
                         let bind_lhs = field_names.iter().zip(&lhs).map(|(name, var)| quote! {#name: #var});
                         let bind_rhs = field_names.iter().zip(&rhs).map(|(name, var)| quote! {#name: #var});
                         let comparisons = lhs.iter().zip(&rhs).map(|(lhs, rhs)| {
-                            quote! { #type_eq::type_eq(#lhs, #rhs) }
+                            quote! { #type_eq::type_eq(#lhs, #rhs, ctx) }
                         });
                         quote_spanned! { variant.span() =>
                             (#name::#variant_name { #(#bind_lhs),*  }, #name::#variant_name {  #(#bind_rhs),*  }) => {
@@ -93,7 +94,7 @@ fn derive_type_eq_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStr
                         let lhs: Vec<_> = field_indices.iter().map(|i| format_ident!("lhs{i}")).collect();
                         let rhs: Vec<_> = field_indices.iter().map(|i| format_ident!("rhs{i}")).collect();
                         let comparisons = lhs.iter().zip(&rhs).map(|(lhs, rhs)| {
-                            quote! { #type_eq::type_eq(#lhs, #rhs) }
+                            quote! { #type_eq::type_eq(#lhs, #rhs, ctx) }
                         });
                         quote_spanned! { variant.span() =>
                             (#name::#variant_name(#(#lhs),*), #name::#variant_name(#(#rhs),*)) => {
@@ -124,7 +125,7 @@ fn derive_type_eq_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStr
     };
     Ok(quote! {
         impl #generics_before #type_eq for #name #generics_after {
-            fn type_eq(&self, other: &Self) -> bool {
+            fn type_eq(&self, other: &Self, ctx: &mut #type_eq_ctx) -> bool {
                 #body
             }
         }

@@ -16,8 +16,12 @@ use crate::module::module_name::ModuleName;
 use crate::util::arc_id::ArcId;
 use crate::util::uniques::Unique;
 
+#[derive(Debug, Default)]
+pub struct TypeEqCtx {}
+
 pub trait TypeEq: Eq {
-    fn type_eq(&self, other: &Self) -> bool {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        let _ = ctx;
         self == other
     }
 }
@@ -50,57 +54,63 @@ impl TypeEq for Unique {}
 impl<T> TypeEq for ArcId<T> {}
 
 impl<T1: TypeEq, T2: TypeEq> TypeEq for (T1, T2) {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.0.type_eq(&other.0) && self.1.type_eq(&other.1)
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.0.type_eq(&other.0, ctx) && self.1.type_eq(&other.1, ctx)
     }
 }
 
 impl<T1: TypeEq, T2: TypeEq, T3: TypeEq> TypeEq for (T1, T2, T3) {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.0.type_eq(&other.0) && self.1.type_eq(&other.1) && self.2.type_eq(&other.2)
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.0.type_eq(&other.0, ctx)
+            && self.1.type_eq(&other.1, ctx)
+            && self.2.type_eq(&other.2, ctx)
     }
 }
 
 impl<T: TypeEq> TypeEq for Vec<T> {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.as_slice().type_eq(other.as_slice())
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.as_slice().type_eq(other.as_slice(), ctx)
     }
 }
 
 impl<T: TypeEq> TypeEq for Vec1<T> {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.as_slice().type_eq(other.as_slice())
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.as_slice().type_eq(other.as_slice(), ctx)
     }
 }
 
 impl<T: TypeEq> TypeEq for [T] {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.len() == other.len() && self.iter().zip(other.iter()).all(|(a, b)| a.type_eq(b))
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.len() == other.len()
+            && self
+                .iter()
+                .zip(other.iter())
+                .all(|(a, b)| a.type_eq(b, ctx))
     }
 }
 
 impl<T: TypeEq + ?Sized> TypeEq for &T {
-    fn type_eq(&self, other: &Self) -> bool {
-        (*self).type_eq(*other)
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        (*self).type_eq(*other, ctx)
     }
 }
 
 impl<T: TypeEq + ?Sized> TypeEq for Box<T> {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.as_ref().type_eq(other.as_ref())
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.as_ref().type_eq(other.as_ref(), ctx)
     }
 }
 
 impl<T: TypeEq + ?Sized> TypeEq for Arc<T> {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.as_ref().type_eq(other.as_ref())
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.as_ref().type_eq(other.as_ref(), ctx)
     }
 }
 
 impl<T: TypeEq> TypeEq for Option<T> {
-    fn type_eq(&self, other: &Self) -> bool {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
         match (self, other) {
-            (Some(a), Some(b)) => a.type_eq(b),
+            (Some(a), Some(b)) => a.type_eq(b, ctx),
             (None, None) => true,
             _ => false,
         }
@@ -108,14 +118,22 @@ impl<T: TypeEq> TypeEq for Option<T> {
 }
 
 impl<K: TypeEq, V: TypeEq> TypeEq for OrderedMap<K, V> {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.len() == other.len() && self.iter().zip(other.iter()).all(|(a, b)| a.type_eq(&b))
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.len() == other.len()
+            && self
+                .iter()
+                .zip(other.iter())
+                .all(|(a, b)| a.type_eq(&b, ctx))
     }
 }
 
 impl<T: TypeEq> TypeEq for OrderedSet<T> {
-    fn type_eq(&self, other: &Self) -> bool {
-        self.len() == other.len() && self.iter().zip(other.iter()).all(|(a, b)| a.type_eq(b))
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.len() == other.len()
+            && self
+                .iter()
+                .zip(other.iter())
+                .all(|(a, b)| a.type_eq(b, ctx))
     }
 }
 
@@ -146,37 +164,47 @@ mod tests {
 
     #[test]
     fn test_type_eq() {
+        let mut ctx = TypeEqCtx::default();
         assert!(
             Foo {
                 x: 1,
                 f: (Bar(1, 2), Baz::A)
             }
-            .type_eq(&Foo {
-                x: 1,
-                f: (Bar(1, 2), Baz::A)
-            })
+            .type_eq(
+                &Foo {
+                    x: 1,
+                    f: (Bar(1, 2), Baz::A)
+                },
+                &mut ctx
+            )
         );
         assert!(
             !Foo {
                 x: 1,
                 f: (Bar(1, 2), Baz::C { x: 1, y: 2 })
             }
-            .type_eq(&Foo {
-                x: 1,
-                f: (Bar(1, 2), Baz::B(true, false))
-            })
+            .type_eq(
+                &Foo {
+                    x: 1,
+                    f: (Bar(1, 2), Baz::B(true, false))
+                },
+                &mut ctx
+            )
         );
         assert!(
             !Foo {
                 x: 1,
                 f: (Bar(1, 2), Baz::A)
             }
-            .type_eq(&Foo {
-                x: 1,
-                f: (Bar(1, 3), Baz::A)
-            })
+            .type_eq(
+                &Foo {
+                    x: 1,
+                    f: (Bar(1, 3), Baz::A)
+                },
+                &mut ctx
+            )
         );
-        assert!(Generic(1).type_eq(&Generic(1)));
-        assert!(!Generic(1).type_eq(&Generic(2)));
+        assert!(Generic(1).type_eq(&Generic(1), &mut ctx));
+        assert!(!Generic(1).type_eq(&Generic(2), &mut ctx));
     }
 }
