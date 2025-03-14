@@ -582,3 +582,40 @@ reveal_type(foo.baz)  # E: revealed type: Module[foo.baz]
 reveal_type(foo)  # E: revealed type: Module[foo]
 "#,
 );
+
+fn env_var_leak() -> TestEnv {
+    TestEnv::one(
+        "foo",
+        r#"
+from typing import TypeVar
+
+T = TypeVar("T")
+
+def copy(a: T) -> T: ...
+
+class Interpret:
+    @property
+    def x(self):
+        return copy(y) # E: Could not find name
+
+    @x.setter
+    def x(self, x):
+        pass
+"#,
+    )
+}
+
+// This test used to crash with Var's leaking between modules
+testcase!(
+    test_var_leak,
+    env_var_leak(),
+    r#"
+from foo import Interpret
+from typing import reveal_type
+
+def test():
+    i = Interpret()
+    reveal_type(i.x) # E: Unknown
+
+"#,
+);

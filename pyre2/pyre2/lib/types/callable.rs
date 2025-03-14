@@ -143,20 +143,22 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+    pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         let Self {
             signature,
-            metadata: _,
+            metadata,
         } = self;
-        signature.visit(f)
+        signature.visit(&mut f);
+        metadata.visit(f);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+    pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         let Self {
             signature,
-            metadata: _,
+            metadata,
         } = self;
-        signature.visit_mut(f)
+        signature.visit_mut(&mut f);
+        metadata.visit_mut(f);
     }
 }
 
@@ -177,6 +179,14 @@ impl FuncMetadata {
             flags: FuncFlags::default(),
         }
     }
+
+    pub fn visit<'a>(&'a self, f: impl FnMut(&'a Type)) {
+        self.flags.visit(f);
+    }
+
+    pub fn visit_mut<'a>(&'a mut self, f: impl FnMut(&'a mut Type)) {
+        self.flags.visit_mut(f);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -192,6 +202,20 @@ pub struct FuncFlags {
     pub has_enum_member_decoration: bool,
     pub is_override: bool,
     pub has_final_decoration: bool,
+}
+
+impl FuncFlags {
+    fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
+        if let Some(x) = self.is_property_setter_with_getter.as_ref() {
+            f(x);
+        }
+    }
+
+    fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
+        if let Some(x) = self.is_property_setter_with_getter.as_mut() {
+            f(x);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -338,10 +338,12 @@ impl Overload {
 
     fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         self.signatures.iter().for_each(&mut f);
+        self.metadata.visit(f);
     }
 
     fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         self.signatures.iter_mut().for_each(&mut f);
+        self.metadata.visit_mut(f);
     }
 }
 
@@ -822,14 +824,11 @@ impl Type {
 
     pub fn visit<'a>(&'a self, mut f: impl FnMut(&'a Type)) {
         match self {
-            Type::Callable(box c)
-            | Type::Function(box Function {
-                signature: c,
-                metadata: _,
-            }) => c.visit(f),
+            Type::Callable(box c) => c.visit(f),
+            Type::Function(box x) => x.visit(f),
             Type::BoundMethod(box b) => b.visit(f),
             Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
-            Type::Overload(overload) => overload.signatures.iter().for_each(f),
+            Type::Overload(overload) => overload.visit(f),
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
@@ -871,14 +870,11 @@ impl Type {
 
     pub fn visit_mut<'a>(&'a mut self, mut f: impl FnMut(&'a mut Type)) {
         match self {
-            Type::Callable(box c)
-            | Type::Function(box Function {
-                signature: c,
-                metadata: _,
-            }) => c.visit_mut(f),
+            Type::Callable(box c) => c.visit_mut(f),
+            Type::Function(box x) => x.visit_mut(f),
             Type::BoundMethod(box b) => b.visit_mut(f),
             Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
-            Type::Overload(overload) => overload.signatures.iter_mut().for_each(f),
+            Type::Overload(overload) => overload.visit_mut(f),
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),
