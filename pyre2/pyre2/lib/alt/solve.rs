@@ -82,7 +82,7 @@ use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
-use crate::types::types::Forall;
+use crate::types::types::Forallable;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -694,7 +694,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => {}
         }
         let ta = TypeAlias::new(name.clone(), ty, style);
-        Forall::new_type_alias(self.type_params(range, tparams, errors), ta)
+        Forallable::TypeAlias(ta).forall(self.type_params(range, tparams, errors))
     }
 
     fn context_value_enter(
@@ -1778,14 +1778,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ),
                     Type::TypeAlias(ta) => {
                         let params_range = params.as_ref().map_or(expr.range(), |x| x.range);
-                        Forall::new_type_alias(
-                            self.type_params(
-                                params_range,
-                                self.scoped_type_params(params.as_ref(), errors),
-                                errors,
-                            ),
-                            ta,
-                        )
+                        Forallable::TypeAlias(ta).forall(self.type_params(
+                            params_range,
+                            self.scoped_type_params(params.as_ref(), errors),
+                            errors,
+                        ))
                     }
                     _ => ta,
                 }
@@ -2123,18 +2120,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         if let Type::Forall(forall) = ty {
             // A generic type alias with no type arguments is OK if all the type params have defaults
             let targs = self.check_and_create_targs(
-                &forall.name(),
-                forall.tparams(),
+                &forall.body.name(),
+                &forall.tparams,
                 Vec::new(),
                 range,
                 errors,
             );
             let param_map = forall
-                .tparams()
+                .tparams
                 .quantified()
                 .zip(targs.as_slice().iter().cloned())
                 .collect::<SmallMap<_, _>>();
-            ty = forall.as_inner_type().subst(&param_map)
+            ty = forall.body.as_type().subst(&param_map)
         };
         if let Some(t) = self.untype_opt(ty.clone(), range) {
             t

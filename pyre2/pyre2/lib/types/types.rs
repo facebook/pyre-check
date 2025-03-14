@@ -275,7 +275,7 @@ impl BoundMethod {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BoundMethodType {
     Function(Function),
-    Forall(ForallFunction),
+    Forall(Forall<Function>),
     Overload(Overload),
 }
 
@@ -283,7 +283,9 @@ impl BoundMethodType {
     pub fn as_type(&self) -> Type {
         match self {
             Self::Function(func) => Type::Function(Box::new(func.clone())),
-            Self::Forall(forall) => Type::Forall(Box::new(Forall::Function(forall.clone()))),
+            Self::Forall(forall) => {
+                Forallable::Function(forall.body.clone()).forall(forall.tparams.clone())
+            }
             Self::Overload(overload) => Type::Overload(overload.clone()),
         }
     }
@@ -291,7 +293,7 @@ impl BoundMethodType {
     fn is_typeguard(&self) -> bool {
         match self {
             Self::Function(func) => func.signature.is_typeguard(),
-            Self::Forall(forall) => forall.func.signature.is_typeguard(),
+            Self::Forall(forall) => forall.body.signature.is_typeguard(),
             Self::Overload(overload) => overload.is_typeguard(),
         }
     }
@@ -299,7 +301,7 @@ impl BoundMethodType {
     fn is_typeis(&self) -> bool {
         match self {
             Self::Function(func) => func.signature.is_typeis(),
-            Self::Forall(forall) => forall.func.signature.is_typeis(),
+            Self::Forall(forall) => forall.body.signature.is_typeis(),
             Self::Overload(overload) => overload.is_typeis(),
         }
     }
@@ -307,7 +309,7 @@ impl BoundMethodType {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
             Self::Function(x) => x.visit(f),
-            Self::Forall(x) => x.func.visit(f),
+            Self::Forall(x) => x.body.visit(f),
             Self::Overload(x) => x.visit(f),
         }
     }
@@ -315,7 +317,7 @@ impl BoundMethodType {
     fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Self::Function(x) => x.visit_mut(f),
-            Self::Forall(x) => x.func.visit_mut(f),
+            Self::Forall(x) => x.body.visit_mut(f),
             Self::Overload(x) => x.visit_mut(f),
         }
     }
@@ -354,131 +356,112 @@ impl Overload {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum OverloadType {
     Callable(Callable),
-    Forall(ForallFunction),
+    Forall(Forall<Function>),
 }
 
 impl OverloadType {
     pub fn as_type(&self) -> Type {
         match self {
             Self::Callable(c) => Type::Callable(Box::new(c.clone())),
-            Self::Forall(forall) => Type::Forall(Box::new(Forall::Function(forall.clone()))),
+            Self::Forall(forall) => {
+                Forallable::Function(forall.body.clone()).forall(forall.tparams.clone())
+            }
         }
     }
 
     fn is_typeguard(&self) -> bool {
         match self {
             Self::Callable(c) => c.is_typeguard(),
-            Self::Forall(forall) => forall.func.signature.is_typeguard(),
+            Self::Forall(forall) => forall.body.signature.is_typeguard(),
         }
     }
 
     fn is_typeis(&self) -> bool {
         match self {
             Self::Callable(c) => c.is_typeis(),
-            Self::Forall(forall) => forall.func.signature.is_typeis(),
+            Self::Forall(forall) => forall.body.signature.is_typeis(),
         }
     }
 
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
             Self::Callable(c) => c.visit(f),
-            Self::Forall(forall) => forall.func.signature.visit(f),
+            Self::Forall(forall) => forall.body.signature.visit(f),
         }
     }
 
     fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
             Self::Callable(c) => c.visit_mut(f),
-            Self::Forall(forall) => forall.func.signature.visit_mut(f),
+            Self::Forall(forall) => forall.body.signature.visit_mut(f),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ForallTypeAlias {
+pub struct Forall<T> {
     pub tparams: TParams,
-    pub alias: TypeAlias,
+    pub body: T,
 }
 
+/// These are things that can have Forall around them, so often you see `Forall<Forallable>`
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ForallFunction {
-    pub tparams: TParams,
-    pub func: Function,
+pub enum Forallable {
+    TypeAlias(TypeAlias),
+    Function(Function),
 }
 
-// TODO(rechen): Create a generic Forall struct.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Forall {
-    TypeAlias(ForallTypeAlias),
-    Function(ForallFunction),
-}
-
-impl Forall {
-    pub fn new_function(tparams: TParams, func: Function) -> Type {
+impl Forallable {
+    pub fn forall(self, tparams: TParams) -> Type {
         if tparams.is_empty() {
-            Type::Function(Box::new(func))
+            self.as_type()
         } else {
-            Type::Forall(Box::new(Forall::Function(ForallFunction { tparams, func })))
-        }
-    }
-
-    pub fn new_type_alias(tparams: TParams, alias: TypeAlias) -> Type {
-        if tparams.is_empty() {
-            Type::TypeAlias(alias)
-        } else {
-            Type::Forall(Box::new(Forall::TypeAlias(ForallTypeAlias {
+            Type::Forall(Box::new(Forall {
                 tparams,
-                alias,
-            })))
+                body: self,
+            }))
         }
     }
 
     pub fn name(&self) -> Name {
         match self {
-            Self::Function(x) => x.func.metadata.kind.as_func_id().func,
-            Self::TypeAlias(x) => (*x.alias.name).clone(),
+            Self::Function(func) => func.metadata.kind.as_func_id().func,
+            Self::TypeAlias(ta) => (*ta.name).clone(),
         }
     }
 
-    pub fn tparams(&self) -> &TParams {
+    pub fn as_type(self) -> Type {
         match self {
-            Self::Function(x) => &x.tparams,
-            Self::TypeAlias(x) => &x.tparams,
-        }
-    }
-
-    pub fn as_inner_type(&self) -> Type {
-        match self {
-            Self::Function(x) => Type::Function(Box::new(x.func.clone())),
-            Self::TypeAlias(x) => Type::TypeAlias(x.alias.clone()),
+            Self::Function(func) => Type::Function(Box::new(func)),
+            Self::TypeAlias(ta) => Type::TypeAlias(ta),
         }
     }
 
     fn is_typeguard(&self) -> bool {
         match self {
-            Self::Function(x) => x.func.signature.is_typeguard(),
+            Self::Function(func) => func.signature.is_typeguard(),
             Self::TypeAlias(_) => false,
         }
     }
 
     fn is_typeis(&self) -> bool {
         match self {
-            Self::Function(x) => x.func.signature.is_typeis(),
+            Self::Function(func) => func.signature.is_typeis(),
             Self::TypeAlias(_) => false,
         }
     }
 
     pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match self {
-            Self::Function(x) => x.func.visit(f),
-            Self::TypeAlias(x) => x.alias.visit(f),
+            Self::Function(func) => func.visit(f),
+            Self::TypeAlias(ta) => ta.visit(f),
         }
     }
 
     pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
         match self {
-            Self::Function(x) => x.func.visit_mut(f),
-            Self::TypeAlias(x) => x.alias.visit_mut(f),
+            Self::Function(func) => func.visit_mut(f),
+            Self::TypeAlias(ta) => ta.visit_mut(f),
         }
     }
 }
@@ -520,7 +503,7 @@ pub enum Type {
     TypedDict(Box<TypedDict>),
     Tuple(Tuple),
     Module(Module),
-    Forall(Box<Forall>),
+    Forall(Box<Forall<Forallable>>),
     Var(Var),
     Quantified(Quantified),
     TypeGuard(Box<Type>),
@@ -675,7 +658,7 @@ impl Type {
                 signature: callable,
                 metadata: _,
             }) => callable.is_typeguard(),
-            Type::Forall(box forall) => forall.is_typeguard(),
+            Type::Forall(box forall) => forall.body.is_typeguard(),
             Type::BoundMethod(method) => method.func.is_typeguard(),
             Type::Overload(overload) => overload.is_typeguard(),
             _ => false,
@@ -689,7 +672,7 @@ impl Type {
                 signature: callable,
                 metadata: _,
             }) => callable.is_typeis(),
-            Type::Forall(box forall) => forall.is_typeis(),
+            Type::Forall(box forall) => forall.body.is_typeis(),
             Type::BoundMethod(method) => method.func.is_typeis(),
             Type::Overload(overload) => overload.is_typeis(),
             _ => false,
@@ -735,7 +718,7 @@ impl Type {
             Type::Callable(_) => Some(CalleeKind::Callable),
             Type::Function(func) => Some(CalleeKind::Function(func.metadata.kind.clone())),
             Type::ClassDef(c) => Some(CalleeKind::Class(c.kind())),
-            Type::Forall(forall) => forall.as_inner_type().callee_kind(),
+            Type::Forall(forall) => forall.body.clone().as_type().callee_kind(),
             Type::Overload(overload) => Some(CalleeKind::Function(overload.metadata.kind.clone())),
             _ => None,
         }
@@ -790,7 +773,10 @@ impl Type {
     fn check_func_metadata<T: Default>(&self, check: &dyn Fn(&FuncMetadata) -> T) -> T {
         match self {
             Type::Function(box func)
-            | Type::Forall(box Forall::Function(ForallFunction { func, .. }))
+            | Type::Forall(box Forall {
+                tparams: _,
+                body: Forallable::Function(func),
+            })
             | Type::BoundMethod(box BoundMethod {
                 func: BoundMethodType::Function(func),
                 ..
@@ -827,7 +813,10 @@ impl Type {
     pub fn transform_func_metadata(&mut self, mut f: impl FnMut(&mut FuncMetadata)) {
         match self {
             Type::Function(box func)
-            | Type::Forall(box Forall::Function(ForallFunction { func, .. }))
+            | Type::Forall(box Forall {
+                tparams: _,
+                body: Forallable::Function(func),
+            })
             | Type::BoundMethod(box BoundMethod {
                 func: BoundMethodType::Function(func),
                 ..
@@ -895,7 +884,7 @@ impl Type {
             Type::ClassType(x) => x.visit(f),
             Type::TypedDict(x) => x.visit(f),
             Type::Tuple(t) => t.visit(f),
-            Type::Forall(forall) => forall.visit(f),
+            Type::Forall(forall) => forall.body.visit(f),
             Type::Concatenate(args, pspec) => {
                 for a in args {
                     f(a)
@@ -941,7 +930,7 @@ impl Type {
             Type::ClassType(x) => x.visit_mut(f),
             Type::TypedDict(x) => x.visit_mut(f),
             Type::Tuple(t) => t.visit_mut(f),
-            Type::Forall(forall) => forall.visit_mut(f),
+            Type::Forall(forall) => forall.body.visit_mut(f),
             Type::Concatenate(args, pspec) => {
                 for a in args {
                     f(a)

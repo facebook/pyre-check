@@ -47,6 +47,7 @@ use crate::types::callable::Required;
 use crate::types::class::ClassKind;
 use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
+use crate::types::types::Forallable;
 use crate::types::types::Overload;
 use crate::types::types::OverloadType;
 use crate::types::types::Type;
@@ -406,13 +407,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 has_final_decoration,
             },
         };
-        let mut ty = Forall::new_function(
-            self.type_params(def.range, tparams, errors),
-            Function {
-                signature: callable,
-                metadata: metadata.clone(),
-            },
-        );
+        let mut ty = Forallable::Function(Function {
+            signature: callable,
+            metadata: metadata.clone(),
+        })
+        .forall(self.type_params(def.range, tparams, errors));
         for x in decorators.into_iter().rev() {
             ty = self.apply_decorator(*x, ty, errors)
         }
@@ -452,7 +451,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         ts.mapped(|(range, t)| match t {
             Type::Callable(box callable) => OverloadType::Callable(callable),
             Type::Function(function) => OverloadType::Callable(function.signature),
-            Type::Forall(box Forall::Function(x)) => OverloadType::Forall(x),
+            Type::Forall(box Forall {
+                tparams,
+                body: Forallable::Function(func),
+            }) => OverloadType::Forall(Forall {
+                tparams,
+                body: func,
+            }),
             Type::Any(any_style) => {
                 OverloadType::Callable(Callable::ellipsis(any_style.propagate()))
             }

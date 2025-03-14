@@ -119,7 +119,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     OverloadType::Callable(signature) => signature,
                     OverloadType::Forall(forall) => {
                         let (qs2, func) =
-                            self.fresh_quantified_function(&forall.tparams, forall.func);
+                            self.fresh_quantified_function(&forall.tparams, forall.body);
                         qs.extend(qs2);
                         func.signature
                     }
@@ -149,8 +149,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Type(box Type::ClassType(cls)) => Some(CallTarget::new(Target::Class(cls))),
             Type::Forall(forall) => {
                 let (qs, t) = self.solver().fresh_quantified(
-                    forall.tparams(),
-                    forall.as_inner_type(),
+                    &forall.tparams,
+                    forall.body.as_type(),
                     self.uniques,
                 );
                 self.as_call_target(t)

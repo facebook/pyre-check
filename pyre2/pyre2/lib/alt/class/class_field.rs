@@ -46,6 +46,7 @@ use crate::types::types::BoundMethod;
 use crate::types::types::BoundMethodType;
 use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
+use crate::types::types::Forallable;
 use crate::types::types::Type;
 
 /// Correctly analyzing which attributes are visible on class objects, as well
@@ -359,9 +360,13 @@ fn make_bound_method_helper(
     should_bind: &dyn Fn(&FuncMetadata) -> bool,
 ) -> Option<Type> {
     let func = match attr {
-        Type::Forall(box Forall::Function(x)) if should_bind(&x.func.metadata) => {
-            Some(BoundMethodType::Forall((*x).clone()))
-        }
+        Type::Forall(box Forall {
+            tparams,
+            body: Forallable::Function(func),
+        }) if should_bind(&func.metadata) => Some(BoundMethodType::Forall(Forall {
+            tparams: tparams.clone(),
+            body: func.clone(),
+        })),
         Type::Function(box func) if should_bind(&func.metadata) => {
             Some(BoundMethodType::Function(func.clone()))
         }

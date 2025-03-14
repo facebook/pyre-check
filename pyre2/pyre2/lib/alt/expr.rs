@@ -1281,18 +1281,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 self.expr_untype(x, TypeFormContext::TypeArgument, errors)
                             });
                             let targs = self.check_and_create_targs(
-                                &forall.name(),
-                                forall.tparams(),
+                                &forall.body.name(),
+                                &forall.tparams,
                                 tys,
                                 x.range,
                                 errors,
                             );
                             let param_map = forall
-                                .tparams()
+                                .tparams
                                 .quantified()
                                 .zip(targs.as_slice().iter().cloned())
                                 .collect::<SmallMap<_, _>>();
-                            forall.as_inner_type().subst(&param_map)
+                            forall.body.as_type().subst(&param_map)
                         }
                         // Note that we have to check for `builtins.type` by name here because this code runs
                         // when we're bootstrapping the stdlib and don't have access to class objects yet.
