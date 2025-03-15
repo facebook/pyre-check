@@ -104,7 +104,7 @@ impl TypedDict {
         fields.values().for_each(|x| f(&x.ty));
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         let Self {
             class: _,
             args,

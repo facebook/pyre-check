@@ -235,7 +235,7 @@ impl TypeAlias {
         f(&self.ty);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         f(&mut self.ty);
     }
 }
@@ -270,7 +270,7 @@ impl BoundMethod {
         func.visit(f);
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         let Self { obj, func } = self;
         f(obj);
         func.visit_mut(f);
@@ -319,7 +319,7 @@ impl BoundMethodType {
         }
     }
 
-    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         match self {
             Self::Function(x) => x.visit_mut(f),
             Self::Forall(x) => x.body.visit_mut(f),
@@ -350,7 +350,7 @@ impl Overload {
         self.metadata.visit(f);
     }
 
-    fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         for t in self.signatures.iter_mut() {
             t.visit_mut(&mut f);
         }
@@ -395,7 +395,7 @@ impl OverloadType {
         }
     }
 
-    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         match self {
             Self::Callable(c) => c.visit_mut(f),
             Self::Forall(forall) => forall.body.signature.visit_mut(f),
@@ -463,7 +463,7 @@ impl Forallable {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         match self {
             Self::Function(func) => func.visit_mut(f),
             Self::TypeAlias(ta) => ta.visit_mut(f),
@@ -925,7 +925,7 @@ impl Type {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         match self {
             Type::Callable(box c) => c.visit_mut(f),
             Type::Function(box x) => x.visit_mut(f),

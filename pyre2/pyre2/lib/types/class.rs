@@ -331,7 +331,7 @@ impl TArgs {
         self.0.iter().for_each(f)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         self.0.iter_mut().for_each(f)
     }
 
@@ -461,7 +461,7 @@ impl ClassType {
         self.1.visit(f)
     }
 
-    pub fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         self.1.visit_mut(f)
     }
 

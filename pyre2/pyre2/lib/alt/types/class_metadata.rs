@@ -169,7 +169,7 @@ impl ClassMetadata {
         self.mro.ancestors_no_object()
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         self.mro.visit_mut(&mut f)
     }
 }
@@ -387,7 +387,7 @@ impl Mro {
         }
     }
 
-    pub fn visit_mut<'a>(&'a mut self, mut f: &mut dyn FnMut(&'a mut Type)) {
+    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         match self {
             Mro::Resolved(ref mut ancestors) => {
                 ancestors.iter_mut().for_each(|c| c.visit_mut(&mut f))
