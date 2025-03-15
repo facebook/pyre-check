@@ -172,7 +172,7 @@ impl Args {
     pub fn run_once(
         self,
         files_to_check: impl FileList + Clone,
-        config_finder: &dyn Fn(&Path) -> ConfigFile,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         self.run_inner(files_to_check, config_finder, allow_forget)
@@ -182,7 +182,7 @@ impl Args {
         self,
         mut watcher: Box<dyn Watcher>,
         files_to_check: impl FileList + Clone,
-        config_finder: &dyn Fn(&Path) -> ConfigFile,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
         loop {
             let res = self
@@ -213,7 +213,7 @@ impl Args {
     fn run_inner(
         self,
         files_to_check: impl FileList,
-        config_finder: &dyn Fn(&Path) -> ConfigFile,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         let args = self;

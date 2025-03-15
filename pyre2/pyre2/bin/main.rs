@@ -108,7 +108,7 @@ async fn run_check(
     args: pyre2::run::CheckArgs,
     watch: bool,
     files_to_check: Globs,
-    config_finder: &dyn Fn(&Path) -> ConfigFile,
+    config_finder: &impl Fn(&Path) -> ConfigFile,
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
     if watch {
