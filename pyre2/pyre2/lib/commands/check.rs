@@ -180,7 +180,7 @@ impl Args {
 
     pub async fn run_watch(
         self,
-        mut watcher: Box<dyn Watcher>,
+        mut watcher: impl Watcher,
         files_to_check: impl FileList + Clone,
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {

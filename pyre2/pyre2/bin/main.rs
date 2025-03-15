@@ -116,7 +116,7 @@ async fn run_check(
         for path in files_to_check.roots() {
             watcher.watch_dir(&path)?;
         }
-        args.run_watch(Box::new(watcher), files_to_check, config_finder)
+        args.run_watch(watcher, files_to_check, config_finder)
             .await?;
         Ok(CommandExitStatus::Success)
     } else {
