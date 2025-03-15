@@ -36,7 +36,7 @@ fn run_test_lsp(test_case: TestCase) {
         for msg in writer_receiver {
             match msg {
                 Message::Response(response) => {
-                    let expected_response = responses.pop().unwrap();
+                    let expected_response = responses.remove(0);
                     assert_eq!(
                         (response.id, &response.result, &response.error.is_none()),
                         (
