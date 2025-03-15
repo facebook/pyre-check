@@ -42,12 +42,6 @@ impl<T> Visit<T> for [T] {
     }
 }
 
-impl<T: ?Sized> Visit<T> for Box<T> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
-        f(self)
-    }
-}
-
 impl<T> Visit<T> for Box<[T]> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         for item in self {
@@ -59,14 +53,6 @@ impl<T> Visit<T> for Box<[T]> {
 impl<T> Visit<T> for Option<T> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         if let Some(item) = self {
-            f(item)
-        }
-    }
-}
-
-impl<T> Visit<T> for Box<Option<T>> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
-        if let Some(item) = &**self {
             f(item)
         }
     }
@@ -101,12 +87,6 @@ impl<T> VisitMut<T> for Box<[T]> {
         for item in self {
             f(item)
         }
-    }
-}
-
-impl<T: ?Sized> VisitMut<T> for Box<T> {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
-        f(self)
     }
 }
 
