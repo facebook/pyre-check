@@ -168,6 +168,11 @@ fn create_loader(loader_inputs: LoaderInputs) -> LoaderId {
     LoaderId::new(CheckLoader { loader_inputs })
 }
 
+struct RequireLevels {
+    specified: Require,
+    default: Require,
+}
+
 impl Args {
     pub fn run_once(
         self,
@@ -210,22 +215,35 @@ impl Args {
         );
     }
 
-    fn run_inner(
-        self,
-        files_to_check: impl FileList,
-        config_finder: &impl Fn(&Path) -> ConfigFile,
-        allow_forget: bool,
-    ) -> anyhow::Result<CommandExitStatus> {
-        let args = self;
-
-        let expanded_file_list = files_to_check.files()?;
-        if expanded_file_list.is_empty() {
-            return Ok(CommandExitStatus::Success);
+    fn get_required_levels(&self) -> RequireLevels {
+        let retain = self.report_binding_memory.is_some()
+            || self.debug_info.is_some()
+            || self.report_trace.is_some();
+        RequireLevels {
+            specified: if retain {
+                Require::Everything
+            } else {
+                Require::Errors
+            },
+            default: if retain {
+                Require::Everything
+            } else if self.check_all {
+                Require::Errors
+            } else {
+                Require::Exports
+            },
         }
+    }
 
+    fn get_handles(
+        &self,
+        expanded_file_list: Vec<PathBuf>,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
+        specified_require: Require,
+    ) -> Vec<(Handle, Require)> {
         let files_and_configs = expanded_file_list.into_map(|path| {
             let mut config = config_finder(&path);
-            args.override_config(&mut config);
+            self.override_config(&mut config);
             (path, config)
         });
         // We want to partition the files to check by their associated search roots, so we can
@@ -243,24 +261,7 @@ impl Args {
                 .push((path, config));
         }
 
-        let retain = args.report_binding_memory.is_some()
-            || args.debug_info.is_some()
-            || args.report_trace.is_some();
-
-        let specified_require = if retain {
-            Require::Everything
-        } else {
-            Require::Errors
-        };
-        let default_require = if retain {
-            Require::Everything
-        } else if args.check_all {
-            Require::Errors
-        } else {
-            Require::Exports
-        };
-
-        let handles: Vec<(Handle, Require)> = partition_by_loader_inputs
+        partition_by_loader_inputs
             .into_iter()
             .flat_map(|(loader_inputs, files_and_configs)| {
                 let files_with_module_name_and_metadata =
@@ -283,7 +284,24 @@ impl Args {
                     },
                 )
             })
-            .collect();
+            .collect()
+    }
+
+    fn run_inner(
+        self,
+        files_to_check: impl FileList,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
+        allow_forget: bool,
+    ) -> anyhow::Result<CommandExitStatus> {
+        let args = self;
+
+        let expanded_file_list = files_to_check.files()?;
+        if expanded_file_list.is_empty() {
+            return Ok(CommandExitStatus::Success);
+        }
+
+        let require_levels = args.get_required_levels();
+        let handles = args.get_handles(expanded_file_list, config_finder, require_levels.specified);
 
         let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
@@ -292,7 +310,7 @@ impl Args {
         let mut holder = Forgetter::new(state, allow_forget);
         let state = holder.as_mut();
 
-        state.run(&handles, default_require, Some(progress));
+        state.run(&handles, require_levels.default, Some(progress));
         let computing = start.elapsed();
         if let Some(path) = args.output {
             let errors = state.collect_errors();
