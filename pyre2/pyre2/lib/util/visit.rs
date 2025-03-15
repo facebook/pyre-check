@@ -9,13 +9,13 @@
 ///
 /// Should call the function on all immediate `To` children of `Self`.
 /// As a special case, if `Self == To` then it should descend one layer.
-pub trait Visit<To: ?Sized = Self> {
+pub trait Visit<To: 'static = Self>: 'static + Sized {
     /// Note the guarantee that every element will be contained in the original structure.
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To));
 }
 
 /// Like `Visit`, but mutably.
-pub trait VisitMut<To: ?Sized = Self> {
+pub trait VisitMut<To: 'static = Self>: 'static + Sized {
     /// In contrast to `visit`, we don't have a guarantee that the results will be in
     /// the original structure. This decision is pragmatic - it's rare to mutate _and_
     /// store the values (since mutating probably means you can't capture them).
@@ -26,7 +26,7 @@ pub trait VisitMut<To: ?Sized = Self> {
 
 // While it is possible to implement the more general `impl<To, T: Visit<To>> Visit<To> for Vec<T>`,
 // we can't tell if To == T or not (no stable type equality in Rust), and thus might miss T.
-impl<T> Visit<T> for Vec<T> {
+impl<T: 'static> Visit<T> for Vec<T> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         for item in self {
             f(item)
@@ -34,7 +34,7 @@ impl<T> Visit<T> for Vec<T> {
     }
 }
 
-impl<T> Visit<T> for [T] {
+impl<T: 'static> Visit<T> for Box<[T]> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         for item in self {
             f(item)
@@ -42,15 +42,7 @@ impl<T> Visit<T> for [T] {
     }
 }
 
-impl<T> Visit<T> for Box<[T]> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
-        for item in self {
-            f(item)
-        }
-    }
-}
-
-impl<T> Visit<T> for Option<T> {
+impl<T: 'static> Visit<T> for Option<T> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         if let Some(item) = self {
             f(item)
@@ -58,7 +50,7 @@ impl<T> Visit<T> for Option<T> {
     }
 }
 
-impl<T> Visit<T> for Option<Box<T>> {
+impl<T: 'static> Visit<T> for Option<Box<T>> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         if let Some(item) = self {
             f(item)
@@ -66,7 +58,7 @@ impl<T> Visit<T> for Option<Box<T>> {
     }
 }
 
-impl<T> VisitMut<T> for Vec<T> {
+impl<T: 'static> VisitMut<T> for Vec<T> {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
         for item in self {
             f(item)
@@ -74,7 +66,7 @@ impl<T> VisitMut<T> for Vec<T> {
     }
 }
 
-impl<T> VisitMut<T> for Option<T> {
+impl<T: 'static> VisitMut<T> for Option<T> {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
         if let Some(item) = self {
             f(item)
@@ -82,7 +74,7 @@ impl<T> VisitMut<T> for Option<T> {
     }
 }
 
-impl<T> VisitMut<T> for Box<[T]> {
+impl<T: 'static> VisitMut<T> for Box<[T]> {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
         for item in self {
             f(item)
@@ -90,7 +82,7 @@ impl<T> VisitMut<T> for Box<[T]> {
     }
 }
 
-impl<T> VisitMut<T> for Option<Box<T>> {
+impl<T: 'static> VisitMut<T> for Option<Box<T>> {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
         if let Some(item) = self {
             f(item)
