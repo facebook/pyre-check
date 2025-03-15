@@ -288,20 +288,18 @@ impl Args {
     }
 
     fn run_inner(
-        self,
+        &self,
         files_to_check: impl FileList,
         config_finder: &impl Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
-        let args = self;
-
         let expanded_file_list = files_to_check.files()?;
         if expanded_file_list.is_empty() {
             return Ok(CommandExitStatus::Success);
         }
 
-        let require_levels = args.get_required_levels();
-        let handles = args.get_handles(expanded_file_list, config_finder, require_levels.specified);
+        let require_levels = self.get_required_levels();
+        let handles = self.get_handles(expanded_file_list, config_finder, require_levels.specified);
 
         let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
@@ -312,18 +310,18 @@ impl Args {
 
         state.run(&handles, require_levels.default, Some(progress));
         let computing = start.elapsed();
-        if let Some(path) = args.output {
+        if let Some(path) = &self.output {
             let errors = state.collect_errors();
-            args.output_format.write_errors_to_file(&path, &errors)?;
+            self.output_format.write_errors_to_file(path, &errors)?;
         } else {
             state.print_errors();
         }
         let printing = start.elapsed();
         memory_trace.stop();
-        if let Some(limit) = args.count_errors {
+        if let Some(limit) = self.count_errors {
             state.print_error_counts(limit);
         }
-        if let Some(path_index) = args.summarize_errors {
+        if let Some(path_index) = self.summarize_errors {
             state.print_error_summary(path_index);
         }
         let error_count = state.count_errors();
@@ -334,24 +332,24 @@ impl Args {
             number_thousands(state.line_count()),
             memory_trace.peak()
         );
-        if let Some(debug_info) = args.debug_info {
+        if let Some(debug_info) = &self.debug_info {
             let mut output =
                 serde_json::to_string_pretty(&state.debug_info(&handles.map(|x| x.0.dupe())))?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
             }
-            fs_anyhow::write(&debug_info, output.as_bytes())?;
+            fs_anyhow::write(debug_info, output.as_bytes())?;
         }
-        if let Some(path) = args.report_binding_memory {
+        if let Some(path) = &self.report_binding_memory {
             fs_anyhow::write(
-                &path,
+                path,
                 report::binding_memory::binding_memory(state).as_bytes(),
             )?;
         }
-        if let Some(path) = args.report_trace {
-            fs_anyhow::write(&path, report::trace::trace(state).as_bytes())?;
+        if let Some(path) = &self.report_trace {
+            fs_anyhow::write(path, report::trace::trace(state).as_bytes())?;
         }
-        if args.expectations {
+        if self.expectations {
             state.check_against_expectations()?;
             Ok(CommandExitStatus::Success)
         } else if error_count > 0 {
