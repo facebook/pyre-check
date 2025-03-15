@@ -60,6 +60,7 @@ use crate::types::types::Var;
 use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
 use crate::util::display::DisplayWithCtx;
+use crate::util::visit::VisitMut;
 
 assert_words!(Key, 5);
 assert_words!(KeyExpect, 1);
@@ -89,7 +90,7 @@ assert_words!(BindingFunction, 21);
 pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 'static {
     const EXPORTED: bool = false;
     type Value: Debug + DisplayWith<Bindings>;
-    type Answer: Clone + Debug + Display + TypeEq;
+    type Answer: Clone + Debug + Display + TypeEq + VisitMut<Type>;
 }
 
 impl Keyed for Key {
@@ -322,6 +323,10 @@ impl DisplayWith<Bindings> for BindingExpect {
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct EmptyAnswer;
 
+impl VisitMut<Type> for EmptyAnswer {
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+}
+
 impl Display for EmptyAnswer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "()")
@@ -330,6 +335,12 @@ impl Display for EmptyAnswer {
 
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct NoneIfRecursive<T>(pub Option<T>);
+
+impl<T: VisitMut<Type>> VisitMut<Type> for NoneIfRecursive<T> {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.0.visit_mut(f);
+    }
+}
 
 impl<T> Display for NoneIfRecursive<T>
 where
@@ -930,6 +941,12 @@ impl DisplayWith<Bindings> for Binding {
 pub struct AnnotationWithTarget {
     pub target: AnnotationTarget,
     pub annotation: Annotation,
+}
+
+impl VisitMut<Type> for AnnotationWithTarget {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.annotation.visit_type_mut(f);
+    }
 }
 
 impl AnnotationWithTarget {

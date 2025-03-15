@@ -58,8 +58,6 @@ pub trait SolveRecursive: Keyed {
     type Recursive: Dupe = ();
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer;
-
-    fn visit_type_mut(v: &mut Self::Answer, f: &mut dyn FnMut(&mut Type));
 }
 
 impl SolveRecursive for Key {
@@ -67,24 +65,17 @@ impl SolveRecursive for Key {
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
         Type::Var(x)
     }
-    fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
-        f(v);
-    }
 }
 impl SolveRecursive for KeyExpect {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         EmptyAnswer
     }
-    fn visit_type_mut(_: &mut Self::Answer, _: &mut dyn FnMut(&mut Type)) {}
 }
 impl SolveRecursive for KeyExport {
     type Recursive = Var;
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
         Type::Var(x)
-    }
-    fn visit_type_mut(v: &mut Type, f: &mut dyn FnMut(&mut Type)) {
-        f(v);
     }
 }
 impl SolveRecursive for KeyFunction {
@@ -94,16 +85,12 @@ impl SolveRecursive for KeyFunction {
         // be recursive, but this definition is required.
         DecoratedFunction::recursive()
     }
-    fn visit_type_mut(v: &mut DecoratedFunction, f: &mut dyn FnMut(&mut Type)) {
-        f(&mut v.ty);
-    }
 }
 impl SolveRecursive for KeyClass {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         NoneIfRecursive(None)
     }
-    fn visit_type_mut(_v: &mut NoneIfRecursive<Class>, _f: &mut dyn FnMut(&mut Type)) {}
 }
 impl SolveRecursive for KeyClassField {
     type Recursive = ();
@@ -112,17 +99,11 @@ impl SolveRecursive for KeyClassField {
         // to work correctly; what we have here is a fallback to permissive gradual typing.
         ClassField::recursive()
     }
-    fn visit_type_mut(v: &mut ClassField, f: &mut dyn FnMut(&mut Type)) {
-        v.visit_type_mut(f);
-    }
 }
 impl SolveRecursive for KeyClassSynthesizedFields {
     type Recursive = ();
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         ClassSynthesizedFields::default()
-    }
-    fn visit_type_mut(v: &mut ClassSynthesizedFields, f: &mut dyn FnMut(&mut Type)) {
-        v.visit_type_mut(f)
     }
 }
 impl SolveRecursive for KeyAnnotation {
@@ -132,24 +113,15 @@ impl SolveRecursive for KeyAnnotation {
             annotation: Annotation::default(),
         }
     }
-    fn visit_type_mut(v: &mut AnnotationWithTarget, f: &mut dyn FnMut(&mut Type)) {
-        v.annotation.ty.iter_mut().for_each(f);
-    }
 }
 impl SolveRecursive for KeyClassMetadata {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         ClassMetadata::recursive()
     }
-    fn visit_type_mut(v: &mut ClassMetadata, f: &mut dyn FnMut(&mut Type)) {
-        v.visit_mut(f);
-    }
 }
 impl SolveRecursive for KeyLegacyTypeParam {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         LegacyTypeParameterLookup::NotParameter(Type::any_implicit())
-    }
-    fn visit_type_mut(v: &mut LegacyTypeParameterLookup, f: &mut dyn FnMut(&mut Type)) {
-        v.not_parameter_mut().into_iter().for_each(f);
     }
 }
 impl SolveRecursive for KeyYield {
@@ -157,19 +129,14 @@ impl SolveRecursive for KeyYield {
         // In practice, we should never have recursive bindings with yield.
         YieldResult::recursive()
     }
-    fn visit_type_mut(v: &mut YieldResult, f: &mut dyn FnMut(&mut Type)) {
-        v.visit_mut(f);
-    }
 }
 impl SolveRecursive for KeyYieldFrom {
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         // In practice, we should never have recursive bindings with yield from.
         YieldFromResult::recursive()
     }
-    fn visit_type_mut(v: &mut YieldFromResult, f: &mut dyn FnMut(&mut Type)) {
-        v.visit_mut(f);
-    }
 }
+
 pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     fn solve(
         answers: &AnswersSolver<Ans>,

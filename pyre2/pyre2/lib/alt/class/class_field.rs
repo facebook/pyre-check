@@ -49,6 +49,7 @@ use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
 use crate::types::types::Forallable;
 use crate::types::types::Type;
+use crate::util::visit::VisitMut;
 
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
@@ -81,6 +82,12 @@ impl ClassFieldInitialization {
 /// both visibility rules and whether method binding should be performed.
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 pub struct ClassField(ClassFieldInner);
+
+impl VisitMut<Type> for ClassField {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.visit_type_mut(f);
+    }
+}
 
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
 enum ClassFieldInner {

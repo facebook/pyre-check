@@ -33,12 +33,18 @@ use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
 use crate::util::display::commas_iter;
 use crate::util::mutable::Mutable;
+use crate::util::visit::VisitMut;
 
 /// The name of a nominal type, e.g. `str`
 #[derive(
     Debug, Clone, Display, Dupe, TypeEq, Eq, PartialEq, Hash, PartialOrd, Ord
 )]
 pub struct Class(ArcId<ClassInner>);
+
+impl VisitMut<Type> for Class {
+    // There are no types stored inside Class
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+}
 
 /// Simple properties of class fields that can be attached to the class definition. Note that this
 /// does not include the type of a field, which needs to be computed lazily to avoid a recursive loop.

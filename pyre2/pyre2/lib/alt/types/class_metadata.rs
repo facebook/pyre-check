@@ -27,6 +27,7 @@ use crate::types::qname::QName;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
+use crate::util::visit::VisitMut;
 
 #[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct ClassMetadata {
@@ -42,6 +43,12 @@ pub struct ClassMetadata {
     has_base_any: bool,
     is_new_type: bool,
     is_final: bool,
+}
+
+impl VisitMut<Type> for ClassMetadata {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.visit_mut(f);
+    }
 }
 
 impl Display for ClassMetadata {
@@ -202,6 +209,12 @@ impl ClassSynthesizedField {
 /// A class's synthesized fields, such as a dataclass's `__init__` method.
 #[derive(Clone, Debug, TypeEq, PartialEq, Eq, Default)]
 pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
+
+impl VisitMut<Type> for ClassSynthesizedFields {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.visit_type_mut(f);
+    }
+}
 
 impl ClassSynthesizedFields {
     pub fn new(fields: SmallMap<Name, ClassSynthesizedField>) -> Self {

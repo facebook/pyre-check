@@ -55,6 +55,7 @@ use crate::util::lock::Mutex;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
+use crate::util::visit::VisitMut;
 
 #[derive(Debug, Default)]
 pub struct Traces {
@@ -362,10 +363,10 @@ impl Answers {
         ));
 
         // Now force all types to be fully resolved.
-        fn post_solve<K: SolveRecursive>(items: &mut SolutionsEntry<K>, solver: &Solver) {
+        fn post_solve<K: Keyed>(items: &mut SolutionsEntry<K>, solver: &Solver) {
             for v in items.values_mut() {
                 let mut vv = (**v).clone();
-                K::visit_type_mut(&mut vv, &mut |x| solver.deep_force_mut(x));
+                vv.visit0_mut(&mut |x| solver.deep_force_mut(x));
                 *v = Arc::new(vv);
             }
         }
@@ -399,7 +400,7 @@ impl Answers {
         };
         let v = solver.get(key);
         let mut vv = (*v).clone();
-        K::visit_type_mut(&mut vv, &mut |x| self.solver.deep_force_mut(x));
+        vv.visit0_mut(&mut |x| self.solver.deep_force_mut(x));
         Arc::new(vv)
     }
 

@@ -12,6 +12,7 @@ use pyrefly_derive::TypeEq;
 
 use crate::types::types::TParamInfo;
 use crate::types::types::Type;
+use crate::util::visit::VisitMut;
 
 // Python's legacy (pre-PEP 695) type variable syntax is not syntactic at all, it requires
 // name resolution of global variables plus multiple sets of rules for when a global that
@@ -25,6 +26,12 @@ use crate::types::types::Type;
 pub enum LegacyTypeParameterLookup {
     Parameter(TParamInfo),
     NotParameter(Type),
+}
+
+impl VisitMut<Type> for LegacyTypeParameterLookup {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.not_parameter_mut().into_iter().for_each(f);
+    }
 }
 
 impl Display for LegacyTypeParameterLookup {

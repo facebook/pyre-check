@@ -42,6 +42,8 @@ use crate::types::typed_dict::TypedDict;
 use crate::util::display::commas_iter;
 use crate::util::uniques::Unique;
 use crate::util::uniques::UniqueFactory;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 /// An introduced synthetic variable to range over as yet unknown types.
 #[derive(Debug, Copy, Clone, Dupe, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -543,6 +545,18 @@ pub enum Type {
     /// So the super instance is represented as `SuperInstance[ClassType(A), ClassType(C)]`.
     SuperInstance(Box<ClassType>, Box<ClassType>),
     None,
+}
+
+impl Visit for Type {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
+        self.visit(f);
+    }
+}
+
+impl VisitMut for Type {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
+        self.visit_mut(f);
+    }
 }
 
 impl Type {
