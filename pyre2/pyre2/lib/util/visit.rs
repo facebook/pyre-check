@@ -14,7 +14,7 @@ pub trait Visit<To: ?Sized = Self> {
 }
 
 /// Like `Visit`, but mutably.
-pub trait VisitMut<To = Self> {
+pub trait VisitMut<To: ?Sized = Self> {
     fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut To));
 }
 
@@ -68,6 +68,44 @@ impl<T> Visit<T> for Box<Option<T>> {
 
 impl<T> Visit<T> for Option<Box<T>> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        if let Some(item) = self {
+            f(item)
+        }
+    }
+}
+
+impl<T> VisitMut<T> for Vec<T> {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        for item in self {
+            f(item)
+        }
+    }
+}
+
+impl<T> VisitMut<T> for Option<T> {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        if let Some(item) = self {
+            f(item)
+        }
+    }
+}
+
+impl<T> VisitMut<T> for Box<[T]> {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        for item in self {
+            f(item)
+        }
+    }
+}
+
+impl<T: ?Sized> VisitMut<T> for Box<T> {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        f(self)
+    }
+}
+
+impl<T> VisitMut<T> for Option<Box<T>> {
+    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
         if let Some(item) = self {
             f(item)
         }
