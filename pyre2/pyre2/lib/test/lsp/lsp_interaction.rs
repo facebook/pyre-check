@@ -85,9 +85,8 @@ fn run_test_lsp(test_case: TestCase) {
     }
 }
 
-#[test]
-fn test_initialize() {
-    let initialize_params = serde_json::json!({
+fn get_initialize_params() -> serde_json::Value {
+    serde_json::json!({
         "rootPath": "/",
         "workspaceFolders": [],
         "processId": std::process::id(),
@@ -109,33 +108,44 @@ fn test_initialize() {
                 },
             },
         },
-    });
+    })
+}
 
-    run_test_lsp(TestCase {
-        test_messages: vec![
-            Message::from(Request {
-                id: RequestId::from(1),
-                method: "initialize".to_owned(),
-                params: initialize_params,
-            }),
-            Message::from(Notification {
-                method: "initialized".to_owned(),
-                params: serde_json::json!({}),
-            }),
-        ],
-        expected_responses: vec![Response {
+fn get_initialize_messages() -> std::vec::Vec<lsp_server::Message> {
+    vec![
+        Message::from(Request {
             id: RequestId::from(1),
-            result: Some(serde_json::json!({
-                "capabilities": {
-                    "completionProvider": { "triggerCharacters": ["."]},
-                    "definitionProvider": true,
-                    "hoverProvider": true,
-                    "inlayHintProvider": true,
-                    "textDocumentSync": 1
-                }
+            method: "initialize".to_owned(),
+            params: get_initialize_params(),
+        }),
+        Message::from(Notification {
+            method: "initialized".to_owned(),
+            params: serde_json::json!({}),
+        }),
+    ]
+}
+
+fn get_initialize_responses() -> std::vec::Vec<lsp_server::Response> {
+    vec![Response {
+        id: RequestId::from(1),
+        result: Some(serde_json::json!({
+            "capabilities": {
+                "completionProvider": { "triggerCharacters": ["."]},
+                "definitionProvider": true,
+                "hoverProvider": true,
+                "inlayHintProvider": true,
+                "textDocumentSync": 1
             }
-            )),
-            error: None,
-        }],
+        }
+        )),
+        error: None,
+    }]
+}
+
+#[test]
+fn test_initialize() {
+    run_test_lsp(TestCase {
+        test_messages: get_initialize_messages(),
+        expected_responses: get_initialize_responses(),
     });
 }
