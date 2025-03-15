@@ -35,7 +35,39 @@ impl VisitMut for Expr {
 
 impl Visit for Stmt {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
-        Visitors::visit_stmt(self, f);
+        match self {
+            Stmt::FunctionDef(x) => x.body.visit(f),
+            Stmt::ClassDef(x) => x.body.visit(f),
+            Stmt::For(x) => {
+                x.body.visit(f);
+                x.orelse.visit(f);
+            }
+            Stmt::While(x) => {
+                x.body.visit(f);
+                x.orelse.visit(f);
+            }
+            Stmt::If(x) => {
+                x.body.visit(f);
+                for x in x.elif_else_clauses.iter() {
+                    x.body.visit(f);
+                }
+            }
+            Stmt::With(x) => x.body.visit(f),
+            Stmt::Match(x) => {
+                for x in x.cases.iter() {
+                    x.body.visit(f);
+                }
+            }
+            Stmt::Try(x) => {
+                x.body.visit(f);
+                x.handlers.iter().for_each(|x| match x {
+                    ExceptHandler::ExceptHandler(x) => x.body.visit(f),
+                });
+                x.orelse.visit(f);
+                x.finalbody.visit(f);
+            }
+            _ => {}
+        }
     }
 }
 
@@ -101,46 +133,6 @@ impl Visit for Pattern {
 struct Visitors;
 
 impl Visitors {
-    fn visit_stmt<'a>(x: &'a Stmt, mut f: impl FnMut(&'a Stmt)) {
-        fn fs<'a>(mut f: impl FnMut(&'a Stmt), xs: &'a [Stmt]) {
-            xs.iter().for_each(&mut f);
-        }
-
-        match x {
-            Stmt::FunctionDef(x) => fs(&mut f, &x.body),
-            Stmt::ClassDef(x) => fs(&mut f, &x.body),
-            Stmt::For(x) => {
-                fs(&mut f, &x.body);
-                fs(&mut f, &x.orelse)
-            }
-            Stmt::While(x) => {
-                fs(&mut f, &x.body);
-                fs(&mut f, &x.orelse);
-            }
-            Stmt::If(x) => {
-                fs(&mut f, &x.body);
-                for x in x.elif_else_clauses.iter() {
-                    fs(&mut f, &x.body);
-                }
-            }
-            Stmt::With(x) => fs(&mut f, &x.body),
-            Stmt::Match(x) => {
-                for x in x.cases.iter() {
-                    fs(&mut f, &x.body);
-                }
-            }
-            Stmt::Try(x) => {
-                fs(&mut f, &x.body);
-                x.handlers.iter().for_each(|x| match x {
-                    ExceptHandler::ExceptHandler(x) => fs(&mut f, &x.body),
-                });
-                fs(&mut f, &x.orelse);
-                fs(&mut f, &x.finalbody);
-            }
-            _ => {}
-        }
-    }
-
     fn visit_expr<'a>(x: &'a Expr, mut f: impl FnMut(&'a Expr)) {
         match x {
             Expr::BoolOp(x) => x.values.iter().for_each(f),
