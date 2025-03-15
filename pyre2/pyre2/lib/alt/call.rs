@@ -36,6 +36,7 @@ use crate::types::types::OverloadType;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::types::types::Var;
+use crate::util::visit::VisitMut;
 pub enum CallStyle<'a> {
     Method(&'a Name),
     BinaryOp(Operator),

@@ -20,6 +20,8 @@ use crate::types::literal::Lit;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
 use crate::util::prelude::SliceExt;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Callable {
@@ -35,6 +37,18 @@ impl Display for Callable {
 
 #[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ParamList(Vec<Param>);
+
+impl Visit<Type> for ParamList {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        self.0.visit(f);
+    }
+}
+
+impl VisitMut<Type> for ParamList {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.0.visit_mut(f);
+    }
+}
 
 impl ParamList {
     pub fn new(xs: Vec<Param>) -> Self {
@@ -77,14 +91,6 @@ impl ParamList {
             param.fmt_with_type(f, wrap)?;
         }
         Ok(())
-    }
-
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.0.iter().for_each(|x| x.visit(f));
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.0.iter_mut().for_each(|x| x.visit_mut(f));
     }
 
     pub fn items(&self) -> &[Param] {
@@ -143,8 +149,8 @@ pub struct Function {
     pub metadata: FuncMetadata,
 }
 
-impl Function {
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+impl Visit<Type> for Function {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         let Self {
             signature,
             metadata,
@@ -152,8 +158,10 @@ impl Function {
         signature.visit(f);
         metadata.visit(f);
     }
+}
 
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+impl VisitMut<Type> for Function {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         let Self {
             signature,
             metadata,
@@ -180,12 +188,16 @@ impl FuncMetadata {
             flags: FuncFlags::default(),
         }
     }
+}
 
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+impl Visit<Type> for FuncMetadata {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         self.flags.visit(f);
     }
+}
 
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+impl VisitMut<Type> for FuncMetadata {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         self.flags.visit_mut(f);
     }
 }
@@ -205,17 +217,15 @@ pub struct FuncFlags {
     pub has_final_decoration: bool,
 }
 
-impl FuncFlags {
+impl Visit<Type> for FuncFlags {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        if let Some(x) = self.is_property_setter_with_getter.as_ref() {
-            f(x);
-        }
+        self.is_property_setter_with_getter.visit(f);
     }
+}
 
+impl VisitMut<Type> for FuncFlags {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        if let Some(x) = self.is_property_setter_with_getter.as_mut() {
-            f(x);
-        }
+        self.is_property_setter_with_getter.visit_mut(f);
     }
 }
 
@@ -406,38 +416,44 @@ impl Callable {
             }
         )
     }
+}
 
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+impl Visit<Type> for Callable {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         let Self { params, ret } = self;
         params.visit(f);
         f(ret)
     }
+}
 
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+impl VisitMut<Type> for Callable {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         let Self { params, ret } = self;
         params.visit_mut(f);
         f(ret)
     }
 }
 
-impl Params {
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+impl Visit<Type> for Params {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match &self {
             Params::List(params) => params.visit(f),
             Params::Ellipsis => {}
             Params::ParamSpec(args, pspec) => {
-                args.iter().for_each(&mut f);
+                args.visit(f);
                 f(pspec);
             }
         }
     }
+}
 
-    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
+impl VisitMut<Type> for Params {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         match self {
             Params::List(params) => params.visit_mut(f),
             Params::Ellipsis => {}
             Params::ParamSpec(args, pspec) => {
-                args.iter_mut().for_each(&mut f);
+                args.visit_mut(f);
                 f(pspec);
             }
         }
@@ -459,7 +475,19 @@ impl Param {
         }
     }
 
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+    #[expect(dead_code)]
+    pub fn is_required(&self) -> bool {
+        match self {
+            Param::PosOnly(_, Required::Required)
+            | Param::Pos(_, _, Required::Required)
+            | Param::KwOnly(_, _, Required::Required) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Visit<Type> for Param {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         match &self {
             Param::PosOnly(ty, _required) => f(ty),
             Param::Pos(_, ty, _required) => f(ty),
@@ -468,24 +496,16 @@ impl Param {
             Param::Kwargs(ty) => f(ty),
         }
     }
+}
 
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+impl VisitMut<Type> for Param {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         match self {
             Param::PosOnly(ty, _required) => f(ty),
             Param::Pos(_, ty, _required) => f(ty),
             Param::VarArg(ty) => f(ty),
             Param::KwOnly(_, ty, _required) => f(ty),
             Param::Kwargs(ty) => f(ty),
-        }
-    }
-
-    #[expect(dead_code)]
-    pub fn is_required(&self) -> bool {
-        match self {
-            Param::PosOnly(_, Required::Required)
-            | Param::Pos(_, _, Required::Required)
-            | Param::KwOnly(_, _, Required::Required) => true,
-            _ => false,
         }
     }
 }

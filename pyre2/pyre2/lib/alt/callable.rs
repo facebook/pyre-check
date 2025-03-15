@@ -32,6 +32,7 @@ use crate::types::tuple::Tuple;
 use crate::types::types::Type;
 use crate::util::display::count;
 use crate::util::prelude::VecExt;
+use crate::util::visit::Visit;
 
 #[derive(Clone, Debug)]
 pub enum CallArg<'a> {
