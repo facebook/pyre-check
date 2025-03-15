@@ -14,6 +14,7 @@ use lsp_server::Notification;
 use lsp_server::Request;
 use lsp_server::RequestId;
 use lsp_server::Response;
+use pretty_assertions::assert_eq;
 
 use crate::commands::lsp::run_lsp;
 use crate::commands::lsp::Args;
@@ -36,8 +37,15 @@ fn run_test_lsp(test_case: TestCase) {
             match msg {
                 Message::Response(response) => {
                     let expected_response = responses.pop().unwrap();
-                    assert_eq!(response.id, expected_response.id);
-                    assert_eq!(response.result, expected_response.result);
+                    assert_eq!(
+                        (response.id, &response.result, &response.error.is_none()),
+                        (
+                            expected_response.id,
+                            &expected_response.result,
+                            &expected_response.error.is_none()
+                        ),
+                        "Response mismatch"
+                    );
                 }
                 Message::Notification(_) | Message::Request(_) => {
                     panic!("Unexpected message {:?}", msg);
