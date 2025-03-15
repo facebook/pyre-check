@@ -42,7 +42,31 @@ impl<T: ?Sized> Visit<T> for Box<T> {
     }
 }
 
+impl<T> Visit<T> for Box<[T]> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        for item in self {
+            f(item)
+        }
+    }
+}
+
 impl<T> Visit<T> for Option<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        if let Some(item) = self {
+            f(item)
+        }
+    }
+}
+
+impl<T> Visit<T> for Box<Option<T>> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        if let Some(item) = &**self {
+            f(item)
+        }
+    }
+}
+
+impl<T> Visit<T> for Option<Box<T>> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         if let Some(item) = self {
             f(item)

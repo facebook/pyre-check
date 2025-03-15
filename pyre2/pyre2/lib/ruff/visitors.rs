@@ -96,7 +96,7 @@ impl Visit<Expr> for ExprFString {
 }
 
 impl Visit for Expr {
-    fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Self)) {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
         match self {
             Expr::BoolOp(x) => x.values.visit(f),
             Expr::Named(x) => {
@@ -159,11 +159,11 @@ impl Visit for Expr {
             Expr::YieldFrom(x) => f(&x.value),
             Expr::Compare(x) => {
                 f(&x.left);
-                x.comparators.iter().for_each(f);
+                x.comparators.visit(f);
             }
             Expr::Call(x) => {
                 f(&x.func);
-                x.arguments.args.iter().for_each(&mut f);
+                x.arguments.args.visit(f);
                 x.arguments.keywords.iter().for_each(|x| f(&x.value));
             }
             Expr::FString(x) => {
@@ -185,9 +185,9 @@ impl Visit for Expr {
             Expr::List(x) => x.elts.visit(f),
             Expr::Tuple(x) => x.elts.visit(f),
             Expr::Slice(x) => {
-                x.lower.as_deref().map(&mut f);
-                x.upper.as_deref().map(&mut f);
-                x.step.as_deref().map(&mut f);
+                x.lower.visit(f);
+                x.upper.visit(f);
+                x.step.visit(f);
             }
             Expr::IpyEscapeCommand(_) => {}
         }
