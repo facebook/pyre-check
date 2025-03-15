@@ -945,7 +945,7 @@ pub struct AnnotationWithTarget {
 
 impl VisitMut<Type> for AnnotationWithTarget {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.annotation.visit_type_mut(f);
+        self.annotation.visit_mut(f);
     }
 }
 

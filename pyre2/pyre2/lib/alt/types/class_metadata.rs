@@ -199,9 +199,9 @@ impl ClassSynthesizedField {
         }
     }
 
-    fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         let mut v = (*self.inner).clone();
-        v.visit_type_mut(f);
+        v.visit_mut(f);
         self.inner = Arc::new(v);
     }
 }
@@ -212,7 +212,7 @@ pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
 
 impl VisitMut<Type> for ClassSynthesizedFields {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.visit_type_mut(f);
+        self.visit_mut(f);
     }
 }
 
@@ -225,9 +225,9 @@ impl ClassSynthesizedFields {
         self.0.get(name)
     }
 
-    pub fn visit_type_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         for field in self.0.values_mut() {
-            field.visit_type_mut(f);
+            field.visit_mut(f);
         }
     }
 }
