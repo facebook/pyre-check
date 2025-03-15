@@ -21,7 +21,9 @@ use crate::util::visit::VisitMut;
 
 impl Visit<Expr> for ModModule {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
-        Visitors::visit_mod_expr(self, f);
+        for x in &self.body {
+            x.visit(f);
+        }
     }
 }
 
@@ -37,9 +39,27 @@ impl Visit for Stmt {
     }
 }
 
+impl Visit<Expr> for Stmt {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
+        struct X<T>(T);
+        impl<'a, T: FnMut(&'a Expr)> SourceOrderVisitor<'a> for X<T> {
+            fn visit_expr(&mut self, x: &'a Expr) {
+                self.0(x);
+            }
+        }
+        walk_stmt(&mut X(f), self);
+    }
+}
+
 impl Visit<Expr> for ExprFString {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
-        Visitors::visit_fstring_expr(self, f);
+        self.value.iter().for_each(|x| match x {
+            FStringPart::FString(x) => x.elements.iter().for_each(|x| match x {
+                FStringElement::Literal(_) => {}
+                FStringElement::Expression(x) => f(&x.expression),
+            }),
+            _ => {}
+        });
     }
 }
 
@@ -61,12 +81,6 @@ impl Visit for Pattern {
 struct Visitors;
 
 impl Visitors {
-    fn visit_mod_expr<'a>(x: &'a ModModule, mut f: impl FnMut(&'a Expr)) {
-        x.body
-            .iter()
-            .for_each(|x| Visitors::visit_stmt_expr(x, &mut f));
-    }
-
     fn visit_stmt<'a>(x: &'a Stmt, mut f: impl FnMut(&'a Stmt)) {
         fn fs<'a>(mut f: impl FnMut(&'a Stmt), xs: &'a [Stmt]) {
             xs.iter().for_each(&mut f);
@@ -105,26 +119,6 @@ impl Visitors {
             }
             _ => {}
         }
-    }
-
-    fn visit_fstring_expr<'a>(x: &'a ExprFString, mut f: impl FnMut(&'a Expr)) {
-        x.value.iter().for_each(|x| match x {
-            FStringPart::FString(x) => x.elements.iter().for_each(|x| match x {
-                FStringElement::Literal(_) => {}
-                FStringElement::Expression(x) => f(&x.expression),
-            }),
-            _ => {}
-        });
-    }
-
-    fn visit_stmt_expr<'a>(x: &'a Stmt, f: impl FnMut(&'a Expr)) {
-        struct X<T>(T);
-        impl<'a, T: FnMut(&'a Expr)> SourceOrderVisitor<'a> for X<T> {
-            fn visit_expr(&mut self, x: &'a Expr) {
-                self.0(x);
-            }
-        }
-        walk_stmt(&mut X(f), x);
     }
 
     fn visit_expr<'a>(x: &'a Expr, mut f: impl FnMut(&'a Expr)) {
@@ -198,7 +192,7 @@ impl Visitors {
                 x.arguments.keywords.iter().for_each(|x| f(&x.value));
             }
             Expr::FString(x) => {
-                Visitors::visit_fstring_expr(x, f);
+                x.visit(&mut f);
             }
             Expr::StringLiteral(_)
             | Expr::BytesLiteral(_)

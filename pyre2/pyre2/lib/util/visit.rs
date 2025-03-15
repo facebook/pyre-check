@@ -17,3 +17,13 @@ pub trait Visit<To = Self> {
 pub trait VisitMut<To = Self> {
     fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut To));
 }
+
+// While it is possible to implement the more general `impl<To, T: Visit<To>> Visit<To> for Vec<T>`,
+// we can't tell if To == T or not (no stable type equality in Rust), and thus might miss T.
+impl<T> Visit<T> for Vec<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        for item in self {
+            f(item)
+        }
+    }
+}
