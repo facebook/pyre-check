@@ -21,7 +21,6 @@ use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
-use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::SuperStyle;
@@ -36,6 +35,7 @@ use crate::error::kind::ErrorKind;
 use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::types::callable::unexpected_keyword;
 use crate::types::types::AnyStyle;
 use crate::util::visit::VisitMut;

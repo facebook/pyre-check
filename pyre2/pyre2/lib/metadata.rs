@@ -27,7 +27,7 @@ use serde::de;
 use serde::de::Visitor;
 use serde::Deserialize;
 
-use crate::ast::Ast;
+use crate::ruff::ast::Ast;
 use crate::util::prelude::SliceExt;
 use crate::util::with_hash::WithHash;
 

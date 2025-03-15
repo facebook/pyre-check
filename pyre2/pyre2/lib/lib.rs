@@ -30,7 +30,6 @@
 #![feature(once_wait)]
 
 mod alt;
-mod ast;
 mod binding;
 #[cfg(not(target_arch = "wasm32"))]
 mod commands;
@@ -43,12 +42,12 @@ mod metadata;
 mod module;
 pub mod playground;
 mod report;
+mod ruff;
 mod solver;
 mod state;
 mod test;
 mod types;
 mod util;
-mod visitors;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::commands::run;

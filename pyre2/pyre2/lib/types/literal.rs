@@ -27,9 +27,9 @@ use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 
 use crate::assert_words;
-use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
+use crate::ruff::ast::Ast;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;

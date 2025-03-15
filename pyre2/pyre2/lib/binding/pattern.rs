@@ -15,7 +15,6 @@ use ruff_python_ast::StmtMatch;
 use ruff_text_size::Ranged;
 use starlark_map::smallmap;
 
-use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingExpect;
 use crate::binding::binding::Key;
@@ -28,6 +27,7 @@ use crate::binding::narrow::NarrowOps;
 use crate::binding::narrow::NarrowVal;
 use crate::error::kind::ErrorKind;
 use crate::graph::index::Idx;
+use crate::ruff::ast::Ast;
 
 impl<'a> BindingsBuilder<'a> {
     // Traverse a pattern and bind all the names; key is the reference for the value that's being matched on

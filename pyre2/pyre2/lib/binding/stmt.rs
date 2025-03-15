@@ -18,7 +18,6 @@ use ruff_python_ast::StmtImportFrom;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
-use crate::ast::Ast;
 use crate::binding::binding::AnnotationStyle;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
@@ -39,6 +38,7 @@ use crate::export::special::SpecialExport;
 use crate::graph::index::Idx;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::types::alias::resolve_typeshed_alias;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::AnyStyle;

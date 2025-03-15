@@ -20,9 +20,9 @@ use ruff_python_ast::Identifier;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
-use crate::ast::AtomicTextRange;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::ruff::ast::AtomicTextRange;
 use crate::util::lock::RwLock;
 use crate::util::mutable::Mutable;
 

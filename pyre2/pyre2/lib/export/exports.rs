@@ -123,9 +123,9 @@ mod tests {
     use starlark_map::smallmap;
 
     use super::*;
-    use crate::ast::Ast;
     use crate::module::module_path::ModulePath;
     use crate::module::module_path::ModuleStyle;
+    use crate::ruff::ast::Ast;
 
     impl LookupExport for SmallMap<ModuleName, Exports> {
         fn get(&self, module: ModuleName) -> Result<Exports, FindError> {

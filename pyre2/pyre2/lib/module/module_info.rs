@@ -17,12 +17,12 @@ use ruff_source_file::SourceLocation;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
-use crate::ast::Ast;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::module::ignore::Ignore;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::ruff::ast::Ast;
 
 #[derive(Debug, Clone, Ord, PartialOrd, PartialEq, Eq, Hash, Default)]
 pub struct SourceRange {

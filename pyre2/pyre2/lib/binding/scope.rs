@@ -21,7 +21,6 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
-use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::ClassFieldInitialValue;
 use crate::binding::binding::Key;
@@ -39,6 +38,7 @@ use crate::metadata::RuntimeMetadata;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::types::class::ClassIndex;
 
 /// Many names may map to the same TextRange (e.g. from foo import *).

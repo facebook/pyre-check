@@ -15,12 +15,12 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 
-use crate::ast::Ast;
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
 use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::types::types::Type;

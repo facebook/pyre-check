@@ -17,7 +17,6 @@ use ruff_python_ast::StmtExpr;
 use ruff_python_ast::StmtFunctionDef;
 use ruff_text_size::Ranged;
 
-use crate::ast::Ast;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
@@ -44,6 +43,7 @@ use crate::dunder;
 use crate::graph::index::Idx;
 use crate::metadata::RuntimeMetadata;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
 

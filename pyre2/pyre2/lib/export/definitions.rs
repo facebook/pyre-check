@@ -22,12 +22,12 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
-use crate::ast::Ast;
 use crate::dunder;
 use crate::metadata::RuntimeMetadata;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModuleStyle;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::util::visit::Visit;
 
 /// How a name is defined.
