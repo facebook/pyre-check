@@ -5,13 +5,23 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::any::Any;
+
 /// Visitors based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
-///
-/// Should call the function on all immediate `To` children of `Self`.
-/// As a special case, if `Self == To` then it should descend one layer.
 pub trait Visit<To: 'static = Self>: 'static + Sized {
-    /// Note the guarantee that every element will be contained in the original structure.
+    /// Should call the function on all the `To` children of `Self`.
+    ///
+    /// Note the lifetime guarantee that every element will be contained in the original structure.
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To));
+
+    /// Like `visit`, but if `To == Self` then calls the function directly.
+    fn visit0<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
+        if let Some(to) = (self as &dyn Any).downcast_ref::<To>() {
+            f(to);
+        } else {
+            self.visit(f)
+        }
+    }
 }
 
 /// Like `Visit`, but mutably.
@@ -22,70 +32,72 @@ pub trait VisitMut<To: 'static = Self>: 'static + Sized {
     /// Lacking the lifetimes means we can have an `Arc` implement `VisitMut` by doing
     /// a `clone()` first.
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To));
+
+    fn visit0_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
+        if let Some(to) = (self as &mut dyn Any).downcast_mut::<To>() {
+            f(to);
+        } else {
+            self.visit_mut(f)
+        }
+    }
 }
 
-// While it is possible to implement the more general `impl<To, T: Visit<To>> Visit<To> for Vec<T>`,
-// we can't tell if To == T or not (no stable type equality in Rust), and thus might miss T.
-impl<T: 'static> Visit<T> for Vec<T> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
-            f(item)
+            item.visit0(f);
         }
     }
 }
 
-impl<T: 'static> Visit<T> for Box<[T]> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec<T> {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
-            f(item)
+            item.visit0_mut(f);
         }
     }
 }
 
-impl<T: 'static> Visit<T> for Option<T> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
-        if let Some(item) = self {
-            f(item)
-        }
-    }
-}
-
-impl<T: 'static> Visit<T> for Option<Box<T>> {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
-        if let Some(item) = self {
-            f(item)
-        }
-    }
-}
-
-impl<T: 'static> VisitMut<T> for Vec<T> {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
+impl<To: 'static, T: Visit<To>> Visit<To> for Box<[T]> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
-            f(item)
+            item.visit0(f);
         }
     }
 }
 
-impl<T: 'static> VisitMut<T> for Option<T> {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
-        if let Some(item) = self {
-            f(item)
-        }
-    }
-}
-
-impl<T: 'static> VisitMut<T> for Box<[T]> {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
+impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<[T]> {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
-            f(item)
+            item.visit0_mut(f);
         }
     }
 }
 
-impl<T: 'static> VisitMut<T> for Option<Box<T>> {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
+impl<To: 'static, T: Visit<To>> Visit<To> for Option<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         if let Some(item) = self {
-            f(item)
+            item.visit0(f)
         }
+    }
+}
+
+impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Option<T> {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
+        if let Some(item) = self {
+            item.visit0_mut(f);
+        }
+    }
+}
+
+impl<To: 'static, T: Visit<To>> Visit<To> for Box<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
+        (**self).visit0(f)
+    }
+}
+
+impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<T> {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
+        (**self).visit0_mut(f)
     }
 }
