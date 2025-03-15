@@ -96,8 +96,101 @@ impl Visit<Expr> for ExprFString {
 }
 
 impl Visit for Expr {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
-        Visitors::visit_expr(self, f);
+    fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Self)) {
+        match self {
+            Expr::BoolOp(x) => x.values.visit(f),
+            Expr::Named(x) => {
+                f(&x.target);
+                f(&x.value);
+            }
+            Expr::BinOp(x) => {
+                f(&x.left);
+                f(&x.right);
+            }
+            Expr::UnaryOp(x) => f(&x.operand),
+            Expr::Lambda(x) => f(&x.body),
+            Expr::If(x) => {
+                f(&x.test);
+                f(&x.body);
+                f(&x.orelse);
+            }
+            Expr::Dict(x) => {
+                x.items.iter().for_each(|x| {
+                    x.key.visit(f);
+                    f(&x.value);
+                });
+            }
+            Expr::Set(x) => x.elts.visit(f),
+            Expr::ListComp(x) => {
+                f(&x.elt);
+                for x in &x.generators {
+                    f(&x.iter);
+                    x.ifs.visit(f);
+                }
+            }
+            Expr::SetComp(x) => {
+                f(&x.elt);
+                for x in &x.generators {
+                    f(&x.iter);
+                    x.ifs.visit(f);
+                }
+            }
+            Expr::DictComp(x) => {
+                f(&x.key);
+                f(&x.value);
+                for x in &x.generators {
+                    f(&x.iter);
+                    x.ifs.visit(f);
+                }
+            }
+            Expr::Generator(x) => {
+                f(&x.elt);
+                for x in &x.generators {
+                    f(&x.iter);
+                    x.ifs.visit(f);
+                }
+            }
+            Expr::Await(x) => f(&x.value),
+            Expr::Yield(x) => {
+                if let Some(value) = &x.value {
+                    f(value)
+                }
+            }
+            Expr::YieldFrom(x) => f(&x.value),
+            Expr::Compare(x) => {
+                f(&x.left);
+                x.comparators.iter().for_each(f);
+            }
+            Expr::Call(x) => {
+                f(&x.func);
+                x.arguments.args.iter().for_each(&mut f);
+                x.arguments.keywords.iter().for_each(|x| f(&x.value));
+            }
+            Expr::FString(x) => {
+                x.visit(f);
+            }
+            Expr::StringLiteral(_)
+            | Expr::BytesLiteral(_)
+            | Expr::NumberLiteral(_)
+            | Expr::BooleanLiteral(_)
+            | Expr::NoneLiteral(_)
+            | Expr::EllipsisLiteral(_) => {}
+            Expr::Attribute(x) => f(&x.value),
+            Expr::Subscript(x) => {
+                f(&x.value);
+                f(&x.slice);
+            }
+            Expr::Starred(x) => f(&x.value),
+            Expr::Name(_) => {}
+            Expr::List(x) => x.elts.visit(f),
+            Expr::Tuple(x) => x.elts.visit(f),
+            Expr::Slice(x) => {
+                x.lower.as_deref().map(&mut f);
+                x.upper.as_deref().map(&mut f);
+                x.step.as_deref().map(&mut f);
+            }
+            Expr::IpyEscapeCommand(_) => {}
+        }
     }
 }
 
@@ -133,103 +226,6 @@ impl Visit for Pattern {
 struct Visitors;
 
 impl Visitors {
-    fn visit_expr<'a>(x: &'a Expr, mut f: impl FnMut(&'a Expr)) {
-        match x {
-            Expr::BoolOp(x) => x.values.iter().for_each(f),
-            Expr::Named(x) => {
-                f(&x.target);
-                f(&x.value);
-            }
-            Expr::BinOp(x) => {
-                f(&x.left);
-                f(&x.right);
-            }
-            Expr::UnaryOp(x) => f(&x.operand),
-            Expr::Lambda(x) => f(&x.body),
-            Expr::If(x) => {
-                f(&x.test);
-                f(&x.body);
-                f(&x.orelse);
-            }
-            Expr::Dict(x) => {
-                x.items.iter().for_each(|x| {
-                    x.key.as_ref().map(&mut f);
-                    f(&x.value);
-                });
-            }
-            Expr::Set(x) => x.elts.iter().for_each(f),
-            Expr::ListComp(x) => {
-                f(&x.elt);
-                for x in &x.generators {
-                    f(&x.iter);
-                    x.ifs.iter().for_each(&mut f);
-                }
-            }
-            Expr::SetComp(x) => {
-                f(&x.elt);
-                for x in &x.generators {
-                    f(&x.iter);
-                    x.ifs.iter().for_each(&mut f);
-                }
-            }
-            Expr::DictComp(x) => {
-                f(&x.key);
-                f(&x.value);
-                for x in &x.generators {
-                    f(&x.iter);
-                    x.ifs.iter().for_each(&mut f);
-                }
-            }
-            Expr::Generator(x) => {
-                f(&x.elt);
-                for x in &x.generators {
-                    f(&x.iter);
-                    x.ifs.iter().for_each(&mut f);
-                }
-            }
-            Expr::Await(x) => f(&x.value),
-            Expr::Yield(x) => {
-                if let Some(value) = &x.value {
-                    f(value)
-                }
-            }
-            Expr::YieldFrom(x) => f(&x.value),
-            Expr::Compare(x) => {
-                f(&x.left);
-                x.comparators.iter().for_each(f);
-            }
-            Expr::Call(x) => {
-                f(&x.func);
-                x.arguments.args.iter().for_each(&mut f);
-                x.arguments.keywords.iter().for_each(|x| f(&x.value));
-            }
-            Expr::FString(x) => {
-                x.visit(&mut f);
-            }
-            Expr::StringLiteral(_)
-            | Expr::BytesLiteral(_)
-            | Expr::NumberLiteral(_)
-            | Expr::BooleanLiteral(_)
-            | Expr::NoneLiteral(_)
-            | Expr::EllipsisLiteral(_) => {}
-            Expr::Attribute(x) => f(&x.value),
-            Expr::Subscript(x) => {
-                f(&x.value);
-                f(&x.slice);
-            }
-            Expr::Starred(x) => f(&x.value),
-            Expr::Name(_) => {}
-            Expr::List(x) => x.elts.iter().for_each(f),
-            Expr::Tuple(x) => x.elts.iter().for_each(f),
-            Expr::Slice(x) => {
-                x.lower.as_deref().map(&mut f);
-                x.upper.as_deref().map(&mut f);
-                x.step.as_deref().map(&mut f);
-            }
-            Expr::IpyEscapeCommand(_) => {}
-        }
-    }
-
     fn visit_expr_mut<'a>(x: &'a mut Expr, mut f: impl FnMut(&'a mut Expr)) {
         match x {
             Expr::BoolOp(x) => x.values.iter_mut().for_each(f),

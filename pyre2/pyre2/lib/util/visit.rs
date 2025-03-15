@@ -9,7 +9,7 @@
 ///
 /// Should call the function on all immediate `To` children of `Self`.
 /// As a special case, if `Self == To` then it should descend one layer.
-pub trait Visit<To = Self> {
+pub trait Visit<To: ?Sized = Self> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To));
 }
 
@@ -23,6 +23,28 @@ pub trait VisitMut<To = Self> {
 impl<T> Visit<T> for Vec<T> {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
         for item in self {
+            f(item)
+        }
+    }
+}
+
+impl<T> Visit<T> for [T] {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        for item in self {
+            f(item)
+        }
+    }
+}
+
+impl<T: ?Sized> Visit<T> for Box<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        f(self)
+    }
+}
+
+impl<T> Visit<T> for Option<T> {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        if let Some(item) = self {
             f(item)
         }
     }
