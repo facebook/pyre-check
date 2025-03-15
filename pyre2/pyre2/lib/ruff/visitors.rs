@@ -71,7 +71,27 @@ impl Visit for Expr {
 
 impl Visit for Pattern {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
-        Visitors::visit_pattern(self, f);
+        match self {
+            Pattern::MatchValue(_) => {}
+            Pattern::MatchSingleton(_) => {}
+            Pattern::MatchSequence(x) => x.patterns.iter().for_each(f),
+            Pattern::MatchMapping(x) => x.patterns.iter().for_each(f),
+            Pattern::MatchClass(x) => x
+                .arguments
+                .patterns
+                .iter()
+                .chain(x.arguments.keywords.iter().map(|x| &x.pattern))
+                .for_each(f),
+            Pattern::MatchStar(_) => {}
+            Pattern::MatchAs(x) => {
+                if let Some(x) = &x.pattern {
+                    f(x);
+                }
+            }
+            Pattern::MatchOr(x) => {
+                x.patterns.iter().for_each(f);
+            }
+        }
     }
 }
 
@@ -327,30 +347,6 @@ impl Visitors {
                 x.step.as_deref_mut().map(&mut f);
             }
             Expr::IpyEscapeCommand(_) => {}
-        }
-    }
-
-    fn visit_pattern<'a>(x: &'a Pattern, mut f: impl FnMut(&'a Pattern)) {
-        match x {
-            Pattern::MatchValue(_) => {}
-            Pattern::MatchSingleton(_) => {}
-            Pattern::MatchSequence(x) => x.patterns.iter().for_each(f),
-            Pattern::MatchMapping(x) => x.patterns.iter().for_each(f),
-            Pattern::MatchClass(x) => x
-                .arguments
-                .patterns
-                .iter()
-                .chain(x.arguments.keywords.iter().map(|x| &x.pattern))
-                .for_each(f),
-            Pattern::MatchStar(_) => {}
-            Pattern::MatchAs(x) => {
-                if let Some(x) = &x.pattern {
-                    f(x);
-                }
-            }
-            Pattern::MatchOr(x) => {
-                x.patterns.iter().for_each(f);
-            }
         }
     }
 }
