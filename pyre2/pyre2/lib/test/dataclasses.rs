@@ -484,3 +484,14 @@ def f(c: C):
     return c.x  # E: `C` has no attribute `x`
     "#,
 );
+
+testcase!(
+    test_call_default,
+    r#"
+from dataclasses import dataclass
+@dataclass
+class A:
+    x: int = int()
+A()  # OK
+    "#,
+);

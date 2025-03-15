@@ -624,7 +624,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         arguments: Arguments { keywords, .. },
                     }) = e
                 {
-                    let mut flags = BoolKeywords::new();
                     // We already type-checked this expression as part of computing the type for the ClassField,
                     // so we can ignore any errors encountered here.
                     let ignore_errors =
@@ -634,6 +633,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         func_ty.callee_kind(),
                         Some(CalleeKind::Function(FunctionKind::DataclassField))
                     ) {
+                        let mut flags = BoolKeywords::new();
                         for kw in keywords {
                             if let Some(id) = &kw.arg
                                 && (id.id == DataclassKeywords::DEFAULT.0
@@ -645,8 +645,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 flags.set_keyword(kw.arg.as_ref(), val);
                             }
                         }
+                        ClassFieldInitialization::Class(Some(flags))
+                    } else {
+                        ClassFieldInitialization::Class(None)
                     }
-                    ClassFieldInitialization::Class(Some(flags))
                 } else {
                     ClassFieldInitialization::Class(None)
                 }
