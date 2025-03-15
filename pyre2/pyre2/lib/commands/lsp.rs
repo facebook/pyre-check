@@ -149,7 +149,7 @@ pub fn run_lsp(
 }
 
 impl Args {
-    pub fn run(self) -> anyhow::Result<CommandExitStatus> {
+    pub fn run(mut self, extra_search_roots: Vec<PathBuf>) -> anyhow::Result<CommandExitStatus> {
         // Note that  we must have our logging only write out to stderr.
         eprintln!("starting generic LSP server");
 
@@ -157,6 +157,7 @@ impl Args {
         // also be implemented to use sockets or HTTP.
         let (connection, io_threads) = Connection::stdio();
 
+        self.include.extend(extra_search_roots);
         run_lsp(
             &connection,
             move || io_threads.join().map_err(anyhow::Error::from),

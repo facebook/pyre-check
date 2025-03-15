@@ -179,7 +179,7 @@ async fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<Com
             }
         }
         Command::BuckCheck(args) => args.run(),
-        Command::Lsp(args) => args.run(),
+        Command::Lsp(args) => args.run(Vec::new()),
     }
 }
 
