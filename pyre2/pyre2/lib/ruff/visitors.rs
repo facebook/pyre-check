@@ -28,7 +28,7 @@ impl Visit<Expr> for ModModule {
 }
 
 impl VisitMut for Expr {
-    fn visit_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut Self)) {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
         match self {
             Expr::BoolOp(x) => x.values.visit_mut(f),
             Expr::Named(x) => {
