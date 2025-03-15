@@ -22,7 +22,7 @@ use ruff_text_size::TextSize;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::ruff::ast::AtomicTextRange;
+use crate::ruff::text_range::AtomicTextRange;
 use crate::util::lock::RwLock;
 use crate::util::mutable::Mutable;
 

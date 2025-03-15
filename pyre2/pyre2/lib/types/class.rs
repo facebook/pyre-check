@@ -22,7 +22,7 @@ use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::ruff::ast::AtomicTextRange;
+use crate::ruff::text_range::AtomicTextRange;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::qname::QName;
