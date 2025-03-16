@@ -414,4 +414,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .map(|ancestor| ancestor.substitute(&class.substitution()))
         }
     }
+
+    pub fn extends_any(&self, cls: &ClassType) -> bool {
+        self.get_metadata_for_class(cls.class_object())
+            .has_base_any()
+    }
 }

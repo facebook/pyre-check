@@ -144,6 +144,18 @@ assert_type(y, int)
 );
 
 testcase!(
+    test_return_notimplemented,
+    r#"
+class C:
+    def __eq__(self, other: object) -> bool:
+        return NotImplemented
+
+    def __lt__(self, other: object) -> bool:
+        return NotImplemented
+"#,
+);
+
+testcase!(
     test_generics,
     r#"
 from typing import Literal

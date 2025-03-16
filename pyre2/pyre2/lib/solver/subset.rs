@@ -655,6 +655,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     want,
                 )
             }
+            (Type::ClassType(ty), _) | (_, Type::ClassType(ty))
+                if self.type_order.extends_any(ty) =>
+            {
+                true
+            }
             (Type::ClassType(got), Type::ClassType(want))
                 if *want == self.type_order.stdlib().float()
                     && *got == self.type_order.stdlib().int() =>

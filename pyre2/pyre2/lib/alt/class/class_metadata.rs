@@ -167,6 +167,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Some((Type::ClassType(c), range)) => {
                         let base_cls = c.class_object();
                         let base_class_metadata = self.get_metadata_for_class(base_cls);
+                        if base_class_metadata.has_base_any() {
+                            has_base_any = true;
+                        }
                         if base_class_metadata.is_typed_dict() {
                             is_typed_dict = true;
                         }
@@ -228,7 +231,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             class_metadata,
                         ))
                     }
-                    // todo zeina: Ideally, we can directly add this class to the list of base classes. Revist this when fixing the "Any" representation.  
+                    // todo zeina: Ideally, we can directly add this class to the list of base classes. Revisit this when fixing the "Any" representation.  
                     Some((Type::Any(_), _)) => {
                         has_base_any = true;
                         None
