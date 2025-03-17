@@ -563,6 +563,27 @@ def f(x: Cat | Dog):
 );
 
 testcase!(
+    test_typeis_union,
+    r#"
+from typing import TypeIs, assert_type
+class A: ...
+class B: ...
+class C: ...
+def is_a_or_b(x: object) -> TypeIs[A | B]:
+    return isinstance(x, A) or isinstance(x, B)
+def f(x:  A | B | C, y: A | C):
+    if is_a_or_b(x):
+        assert_type(x, A | B)
+    else:
+        assert_type(x, C)
+    if is_a_or_b(y):
+        assert_type(y, A)
+    else:
+        assert_type(y, C)
+    "#,
+);
+
+testcase!(
     test_issubclass,
     r#"
 from typing import assert_type

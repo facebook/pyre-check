@@ -278,7 +278,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     });
                     let ret = self.call_infer(call_target, &args, &arguments.keywords, range, errors, None);
                     if let Type::TypeIs(box t) = ret {
-                        return self.narrow_isinstance(ty, t, range, errors);
+                        return self.intersect(ty, &t);
                     }
                 }
                 ty.clone()
@@ -291,7 +291,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     });
                     let ret = self.call_infer(call_target, &args, &arguments.keywords, range, errors, None);
                     if let Type::TypeIs(box t) = ret {
-                        return self.narrow_is_not_instance(ty, t, range, errors);
+                        return self.subtract(ty, &t);
                     }
                 }
                 ty.clone()

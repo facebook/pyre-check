@@ -9261,16 +9261,6 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Never, tuple[str, str]) failed",
-      "description": "assert_type(Never, tuple[str, str]) failed",
-      "line": 19,
-      "name": "assert-type",
-      "stop_column": 44,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "assert_type(A, B) failed",
       "description": "assert_type(A, B) failed",
       "line": 92,
