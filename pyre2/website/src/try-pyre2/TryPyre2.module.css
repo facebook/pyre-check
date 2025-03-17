@@ -69,16 +69,83 @@
 }
 
 .codeEditorContainer {
+    position: relative;
     flex: 3;
     overflow: auto;
     border-bottom: 10;
     background: #fff;
-}
-
-.codeEditor {
     position: 'absolute';
     height: 100%;
 }
+
+.shareButton {
+    position:absolute;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    border-radius: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
+  /* Styles for screens with a maximum width of 768px */
+  @media (max-width: 768px) {
+    .shareButton {
+        bottom: 16px;
+        right: 16px;
+        height: 40px;
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+  }
+  /* Styles for screens with a minimum width of 769px */
+  @media (min-width: 769px) {
+    .shareButton {
+        top:20px;
+        right: 20px;
+        height: 40px;
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+  }
+
+.shareButtonText {
+  transition: opacity 0.2s ease, display 0s 0.2s;
+}
+
+/* Only apply hover transform on non-mobile */
+@media (min-width: 769px) {
+  .shareButton:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@keyframes copySuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.shareButtonCopied {
+  background: rgba(76, 175, 80, 0.95);
+  color: white;
+  border-color: #43a047;
+  animation: copySuccess 0.3s ease;
+}
+
+.shareButtonCopied:hover {
+  background: rgba(67, 160, 71, 1);
+}
+
+.buttonText {
+  display: inline;
+}
+
 
 .results {
     height: 25vh; /* 25% of initial height */

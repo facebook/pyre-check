@@ -24,6 +24,13 @@ import {
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import type {PyreflyErrorMessage} from './TryPyre2Results';
 
+function getCodeFromURL() {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  return code ? LZString.decompressFromEncodedURIComponent(code) : null;
+}
+
 const DEFAULT_PYTHON_PROGRAM = `
 from typing import *
 
@@ -71,7 +78,23 @@ export default component TryPyre2(
     number | null,
   >(null);
   const [model, setModel] = useState(null);
+  const [isCopied, setIsCopied] = useState(false);
 
+  const updateURL = (code: string) => {
+    const compressed = LZString.compressToEncodedURIComponent(code);
+    const newURL = `${window.location.pathname}?code=${compressed}`;
+    window.history.replaceState({}, '', newURL);
+  };
+
+  const copyToClipboard = () => {
+    const currentURL = window.location.href;
+    navigator.clipboard.writeText(currentURL).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  // Only run for initial render, and not on subsequent updates
   useEffect(() => {
     setLoading(true);
     pyre2WasmInitializedPromise
@@ -94,10 +117,17 @@ export default component TryPyre2(
       .getModels()
       .filter(model => model?.uri?.path === `/${sampleFilename}`)[0];
 
-    if (model != null) {
-      // Force update to trigger initial inlay hint
-      model.setValue(model.getValue());
+    if (model == null) {
+      return null;
     }
+
+    const codeFromUrl = getCodeFromURL();
+    if (codeFromUrl != null && model != null) {
+      model.setValue(codeFromUrl);
+    }
+
+    // Force update to trigger initial inlay hint
+    model.setValue(model.getValue());
 
     return model;
   }
@@ -181,7 +211,10 @@ export default component TryPyre2(
         defaultValue={codeSample}
         defaultLanguage="python"
         theme="vs-light"
-        onChange={forceRecheck}
+        onChange={value => {
+          forceRecheck();
+          updateURL(value);
+        }}
         onMount={onEditorMount}
         height={sandboxHeight}
         options={{
@@ -196,7 +229,20 @@ export default component TryPyre2(
   return (
     <div className={styles.tryEditor}>
       <div className={styles.codeEditorContainer}>
-        <div className={styles.codeEditor}>{editor}</div>
+        {editor}
+        {!isCodeSnippet && (
+          <button
+            className={clsx(
+              styles.shareButton,
+              isCopied && styles.shareButtonCopied,
+            )}
+            onClick={copyToClipboard}
+            aria-label="share URL button">
+            <span className={styles.shareButtonText}>
+              {isCopied ? '✓ URL Copied!' : '📋 Share URL'}
+            </span>
+          </button>
+        )}
       </div>
       {showErrorPanel && (
         <div className={styles.resultsContainer}>
