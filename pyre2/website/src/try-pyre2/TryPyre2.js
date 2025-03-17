@@ -24,13 +24,6 @@ import {
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import type {PyreflyErrorMessage} from './TryPyre2Results';
 
-function getCodeFromURL() {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  return code ? LZString.decompressFromEncodedURIComponent(code) : null;
-}
-
 const DEFAULT_PYTHON_PROGRAM = `
 from typing import *
 
@@ -57,10 +50,6 @@ const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise
   })
   .catch(e => console.log(e));
 
-function isMobile(): boolean {
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-}
-
 export default component TryPyre2(
   sampleFilename: string,
   isCodeSnippet: boolean = false,
@@ -80,20 +69,6 @@ export default component TryPyre2(
   const [model, setModel] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
 
-  const updateURL = (code: string) => {
-    const compressed = LZString.compressToEncodedURIComponent(code);
-    const newURL = `${window.location.pathname}?code=${compressed}`;
-    window.history.replaceState({}, '', newURL);
-  };
-
-  const copyToClipboard = () => {
-    const currentURL = window.location.href;
-    navigator.clipboard.writeText(currentURL).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    });
-  };
-
   // Only run for initial render, and not on subsequent updates
   useEffect(() => {
     setLoading(true);
@@ -112,29 +87,9 @@ export default component TryPyre2(
       });
   }, []);
 
-  function fetchCurMonacoModelAndTriggerUpdate() {
-    const model = monaco.editor
-      .getModels()
-      .filter(model => model?.uri?.path === `/${sampleFilename}`)[0];
-
-    if (model == null) {
-      return null;
-    }
-
-    const codeFromUrl = getCodeFromURL();
-    if (codeFromUrl != null && model != null) {
-      model.setValue(codeFromUrl);
-    }
-
-    // Force update to trigger initial inlay hint
-    model.setValue(model.getValue());
-
-    return model;
-  }
-
   // Need to add createModel handler in case monaco model was not created at mount time
   monaco.editor.onDidCreateModel(model => {
-    const curModel = fetchCurMonacoModelAndTriggerUpdate();
+    const curModel = fetchCurMonacoModelAndTriggerUpdate(sampleFilename);
     setModel(curModel);
     forceRecheck();
   });
@@ -169,7 +124,7 @@ export default component TryPyre2(
   }
 
   function onEditorMount(editor: any) {
-    const model = fetchCurMonacoModelAndTriggerUpdate();
+    const model = fetchCurMonacoModelAndTriggerUpdate(sampleFilename);
     setModel(model);
 
     if (isCodeSnippet) {
@@ -236,7 +191,7 @@ export default component TryPyre2(
               styles.shareButton,
               isCopied && styles.shareButtonCopied,
             )}
-            onClick={copyToClipboard}
+            onClick={() => copyToClipboard(setIsCopied)}
             aria-label="share URL button">
             <span className={styles.shareButtonText}>
               {isCopied ? '✓ URL Copied!' : '📋 Share URL'}
@@ -255,4 +210,49 @@ export default component TryPyre2(
       )}
     </div>
   );
+}
+
+function updateURL(code: string) {
+  const compressed = LZString.compressToEncodedURIComponent(code);
+  const newURL = `${window.location.pathname}?code=${compressed}`;
+  window.history.replaceState({}, '', newURL);
+}
+
+function copyToClipboard(setIsCopied: boolean => void) {
+  const currentURL = window.location.href;
+  navigator.clipboard.writeText(currentURL).then(() => {
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  });
+}
+
+function getCodeFromURL() {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  return code ? LZString.decompressFromEncodedURIComponent(code) : null;
+}
+
+function fetchCurMonacoModelAndTriggerUpdate(fileName: string) {
+  const model = monaco.editor
+    .getModels()
+    .filter(model => model?.uri?.path === `/${fileName}`)[0];
+
+  if (model == null) {
+    return null;
+  }
+
+  const codeFromUrl = getCodeFromURL();
+  if (codeFromUrl != null && model != null) {
+    model.setValue(codeFromUrl);
+  }
+
+  // Force update to trigger initial inlay hint
+  model.setValue(model.getValue());
+
+  return model;
+}
+
+function isMobile(): boolean {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
