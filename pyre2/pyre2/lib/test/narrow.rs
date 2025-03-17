@@ -518,10 +518,10 @@ from typing import assert_type, Literal
 class A: ...
 class B: ...
 
-x: A | B
-y = isinstance(x, A) and (z := True)
-assert_type(x, A | B)
-assert_type(z, Literal[True])
+def test(x: A | B):
+    y = isinstance(x, A) and (z := True)
+    assert_type(x, A | B)
+    assert_type(z, Literal[True])
     "#,
 );
 

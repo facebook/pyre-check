@@ -372,10 +372,10 @@ testcase!(
 from typing import assert_type
 class C[T]:
     type X = list[T]
-    x: X
+    x: X = []
 def f(c: C[int]):
     assert_type(c.x, list[int])
-    x: c.X
+    x: c.X = []
     assert_type(x, list[int])
 bad1: C.X  # E: Generic attribute `X` of class `C` is not visible on the class
 bad2: C[int].X  # E: Generic attribute `X` of class `C` is not visible on the class

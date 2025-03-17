@@ -141,7 +141,7 @@ class B:
     def __init__(self, a: A):
         a.x: int = 1  # E: Type cannot be declared in assignment to non-self attribute `a.x`
 
-a: A
+a: A = A()
 a.x: int = 5  # E: Type cannot be declared in assignment to non-self attribute `a.x`
     "#,
 );
@@ -381,7 +381,7 @@ class B[T]:
 class C[T](A[int], B[T]):
     z: bool
 
-c: C[str]
+c: C[str] = C()
 assert_type(c.x, int)
 assert_type(c.y, str)
 assert_type(c.z, bool)
@@ -401,7 +401,7 @@ class B[T](A[list[T]]):
 class C[T](B[T]):
     z: bool
 
-c: C[str]
+c: C[str] = C()
 assert_type(c.x, list[str])
 assert_type(c.y, str)
 assert_type(c.z, bool)

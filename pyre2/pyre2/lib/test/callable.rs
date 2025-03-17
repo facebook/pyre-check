@@ -48,8 +48,8 @@ testcase!(
     test_callable_invalid_annotation,
     r#"
 from typing import Callable, assert_type, Any
-x: Callable[int]  # E: Callable requires exactly two arguments but 1 was found
-assert_type(x, Callable[..., Any])
+def test(x: Callable[int]):  # E: Callable requires exactly two arguments but 1 was found
+    assert_type(x, Callable[..., Any])
 "#,
 );
 

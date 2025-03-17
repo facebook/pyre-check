@@ -33,18 +33,18 @@ testcase!(
     test_branches,
     r#"
 from typing import assert_type, overload
-x: bool
-if x:
-    def f(x: str) -> bytes: ...
-else:
-    @overload
-    def f(x: int) -> int: ...
-    @overload
-    def f(x: str) -> str: ...
-    def f(x: int | str) -> int | str:
-        return x
-def g(x: str):
-    assert_type(f(x), bytes | str)
+def test(x: bool):
+    if x:
+        def f(x: str) -> bytes: ...
+    else:
+        @overload
+        def f(x: int) -> int: ...
+        @overload
+        def f(x: str) -> str: ...
+        def f(x: int | str) -> int | str:
+            return x
+    def g(x: str):
+        assert_type(f(x), bytes | str)
     "#,
 );
 

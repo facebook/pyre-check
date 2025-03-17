@@ -78,7 +78,7 @@ T = TypeVar("T")
 class C(Generic[T]):
     x: T
 
-c: C[int]
+c: C[int] = C()
 assert_type(c.x, int)
     "#,
 );
@@ -97,7 +97,7 @@ class C(Generic[T]):
 class D(Generic[S], C[list[S]]):
     pass
 
-d: D[int]
+d: D[int] = D()
 assert_type(d.x, list[int])
     "#,
 );
@@ -130,7 +130,7 @@ class C(Generic[_T]):
     c: _T
 class D(A[_T], C[_U], B[_T]):
     pass
-x: D[int, str]
+x: D[int, str] = D()
 assert_type(x.a, int)
 assert_type(x.b, int)
 assert_type(x.c, str)

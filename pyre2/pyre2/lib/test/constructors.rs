@@ -73,10 +73,9 @@ testcase!(
 class C:
     def __init__[T](self: T, x: T):
         pass
-
-c: C
-C(c)  # OK
-C(0)  # E: Argument `Literal[0]` is not assignable to parameter `x` with type `C`
+def test(c: C):
+    C(c)  # OK
+    C(0)  # E: Argument `Literal[0]` is not assignable to parameter `x` with type `C`
     "#,
 );
 
@@ -86,9 +85,9 @@ testcase!(
 class C[T1]:
     def __init__[T2](self: T2, x: T2):
         pass
-c: C[int]
-C[int](c)  # OK
-C[str](c)  # E: Argument `C[int]` is not assignable to parameter `x` with type `C[str]`
+def test(c: C[int]):
+    C[int](c)  # OK
+    C[str](c)  # E: Argument `C[int]` is not assignable to parameter `x` with type `C[str]`
     "#,
 );
 
