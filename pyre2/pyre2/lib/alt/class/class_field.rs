@@ -710,7 +710,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             } if descriptor_getter.is_some() || descriptor_setter.is_some() => {
                 Attribute::descriptor(
                     ty.clone(),
-                    DescriptorBase::ClassDef(cls.clone()),
+                    DescriptorBase::ClassDef(cls.dupe()),
                     descriptor_getter.clone(),
                     descriptor_setter.clone(),
                 )
@@ -718,7 +718,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
                 ..
-            } => Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.clone())),
+            } => Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.dupe())),
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Class(_),
                 ty,

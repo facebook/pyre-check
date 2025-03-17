@@ -157,7 +157,7 @@ impl Stdlib {
 
     fn primitive(cls: &StdlibResult<Class>) -> ClassType {
         // Note: this construction will panic if we incorrectly mark a generic type as primitive.
-        ClassType::new_for_stdlib(Self::unwrap(cls).clone(), TArgs::default())
+        ClassType::new_for_stdlib(Self::unwrap(cls).dupe(), TArgs::default())
     }
 
     pub fn object_class_type(&self) -> &ClassType {
@@ -222,7 +222,7 @@ impl Stdlib {
 
     fn apply(cls: &StdlibResult<Class>, targs: Vec<Type>) -> ClassType {
         // Note: this construction will panic if we use `apply` with the wrong arity.
-        ClassType::new_for_stdlib(Self::unwrap(cls).clone(), TArgs::new(targs))
+        ClassType::new_for_stdlib(Self::unwrap(cls).dupe(), TArgs::new(targs))
     }
 
     pub fn base_exception_group(&self, x: Type) -> ClassType {

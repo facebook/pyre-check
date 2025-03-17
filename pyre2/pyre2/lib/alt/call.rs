@@ -646,7 +646,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // and the class object as `objtype`.
         let (objtype, obj) = match base {
             DescriptorBase::Instance(classtype) => (
-                Type::ClassDef(classtype.class_object().clone()),
+                Type::ClassDef(classtype.class_object().dupe()),
                 Type::ClassType(classtype),
             ),
             DescriptorBase::ClassDef(class) => (Type::ClassDef(class), Type::None),

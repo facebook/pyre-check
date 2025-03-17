@@ -1661,7 +1661,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::ClassDef(x, decorators) => match &self.get_idx(*x).0 {
                 None => Type::any_implicit(),
                 Some(cls) => {
-                    let mut ty = Type::ClassDef(cls.clone());
+                    let mut ty = Type::ClassDef(cls.dupe());
                     for x in decorators.iter().rev() {
                         ty = self.apply_decorator(*x, ty, errors)
                     }

@@ -324,6 +324,7 @@ mod tests {
     use std::path::PathBuf;
     use std::sync::Arc;
 
+    use dupe::Dupe;
     use ruff_python_ast::Identifier;
     use ruff_text_size::TextSize;
     use starlark_map::ordered_map::OrderedMap;
@@ -404,7 +405,7 @@ mod tests {
         );
 
         fn class_type(class: &Class, targs: TArgs) -> Type {
-            Type::ClassType(ClassType::new(class.clone(), targs))
+            Type::ClassType(ClassType::new(class.dupe(), targs))
         }
 
         assert_eq!(
