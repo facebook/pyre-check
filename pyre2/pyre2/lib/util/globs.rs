@@ -43,6 +43,10 @@ impl Globs {
         )
     }
 
+    pub fn from_root(self, root: &Path) -> Self {
+        Self::new_with_root(root, self.0)
+    }
+
     fn pattern_relative_to_root(root: &Path, pattern: String) -> String {
         let pattern_root = Self::get_root_for_pattern(&pattern);
         if pattern_root.is_absolute() {
