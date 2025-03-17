@@ -180,8 +180,15 @@ impl Args {
         config_finder: &impl Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
+        let expanded_file_list = files_to_check.files()?;
+        if expanded_file_list.is_empty() {
+            return Ok(CommandExitStatus::Success);
+        }
+
         let mut holder = Forgetter::new(State::new(), allow_forget);
-        self.run_inner(holder.as_mut(), files_to_check, config_finder)
+        let require_levels = self.get_required_levels();
+        let handles = self.get_handles(expanded_file_list, config_finder, require_levels.specified);
+        self.run_inner(holder.as_mut(), &handles, require_levels.default)
     }
 
     pub async fn run_watch(
@@ -190,9 +197,15 @@ impl Args {
         files_to_check: impl FileList + Clone,
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
+        // TODO: We currently make 2 unrealistic assumptions, which should be fixed in the future:
+        // - Glob expansion is stable across incremental runs.
+        // - Config search is stable across incremental runs.
+        let expanded_file_list = files_to_check.files()?;
+        let require_levels = self.get_required_levels();
+        let handles = self.get_handles(expanded_file_list, config_finder, require_levels.specified);
         let mut state = State::new();
         loop {
-            let res = self.run_inner(&mut state, files_to_check.clone(), config_finder);
+            let res = self.run_inner(&mut state, &handles, require_levels.default);
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
@@ -290,22 +303,14 @@ impl Args {
     fn run_inner(
         &self,
         state: &mut State,
-        files_to_check: impl FileList,
-        config_finder: &impl Fn(&Path) -> ConfigFile,
+        handles: &[(Handle, Require)],
+        default_require: Require,
     ) -> anyhow::Result<CommandExitStatus> {
-        let expanded_file_list = files_to_check.files()?;
-        if expanded_file_list.is_empty() {
-            return Ok(CommandExitStatus::Success);
-        }
-
-        let require_levels = self.get_required_levels();
-        let handles = self.get_handles(expanded_file_list, config_finder, require_levels.specified);
-
         let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
 
-        state.run(&handles, require_levels.default, Some(progress));
+        state.run(handles, default_require, Some(progress));
         let computing = start.elapsed();
         if let Some(path) = &self.output {
             let errors = state.collect_errors();
