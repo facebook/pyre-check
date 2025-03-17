@@ -950,7 +950,6 @@ impl State {
     /// Called if the files read from the disk might have changed.
     /// Specify which files might have changed.
     /// You must use the same absolute/relative paths as were given by `find`.
-    #[expect(dead_code)]
     pub fn invalidate_disk(&mut self, files: &[PathBuf]) {
         // We create the set out of ModulePath as it allows us to reuse the fact `ModulePath` has cheap hash
         // when checking the modules.

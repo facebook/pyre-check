@@ -41,6 +41,7 @@ use crate::state::loader::LoaderId;
 use crate::state::require::Require;
 use crate::state::state::State;
 use crate::state::subscriber::ProgressBarSubscriber;
+use crate::util::display;
 use crate::util::display::number_thousands;
 use crate::util::forgetter::Forgetter;
 use crate::util::fs_anyhow;
@@ -48,6 +49,7 @@ use crate::util::listing::FileList;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
+use crate::util::watcher::CategorizedEvents;
 use crate::util::watcher::Watcher;
 
 #[derive(Debug, Clone, ValueEnum, Default)]
@@ -173,6 +175,21 @@ struct RequireLevels {
     default: Require,
 }
 
+async fn get_watcher_events(watcher: &mut impl Watcher) -> anyhow::Result<CategorizedEvents> {
+    loop {
+        let events = CategorizedEvents::new(watcher.wait().await?);
+        if !events.is_empty() {
+            return Ok(events);
+        }
+        if !events.unknown.is_empty() {
+            return Err(anyhow::anyhow!(
+                "Cannot handle uncategorized watcher event on paths [{}]",
+                display::commas_iter(|| events.unknown.iter().map(|x| x.display()))
+            ));
+        }
+    }
+}
+
 impl Args {
     pub fn run_once(
         self,
@@ -209,12 +226,9 @@ impl Args {
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
-            loop {
-                let events = watcher.wait().await?;
-                if events.iter().any(|x| !x.kind.is_access()) {
-                    break;
-                }
-            }
+            let events = get_watcher_events(&mut watcher).await?;
+            // TODO: Handle add/remove events.
+            state.invalidate_disk(&events.modified);
         }
     }
 
