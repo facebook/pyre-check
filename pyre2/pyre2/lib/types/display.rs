@@ -240,8 +240,7 @@ impl<'a> TypeDisplayContext<'a> {
                     }
                 }
                 if let Some(i) = lit_idx {
-                    let internal_lits = commas_iter(|| lits.iter().map(|t| format!("{t}")));
-                    display_types.insert(i, format!("Literal[{internal_lits}]"));
+                    display_types.insert(i, format!("Literal[{}]", commas_iter(|| &lits)));
                 }
                 write!(f, "{}", display_types.join(" | "))
             }
