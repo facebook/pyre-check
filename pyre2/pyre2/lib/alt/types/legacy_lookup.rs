@@ -14,14 +14,14 @@ use crate::types::types::TParamInfo;
 use crate::types::types::Type;
 use crate::util::visit::VisitMut;
 
-// Python's legacy (pre-PEP 695) type variable syntax is not syntactic at all, it requires
-// name resolution of global variables plus multiple sets of rules for when a global that
-// is a type variable placeholder is allowed to be used as a type parameter.
-//
-// This type represents the result of such a lookup: given a name appearing in a function or
-// a class, we either determine that the name is *not* a type variable and return the type
-// for the name, or we determine that it is one and create a `Quantified` that
-// represents that variable as a type parameter.
+/// Python's legacy (pre-PEP 695) type variable syntax is not syntactic at all, it requires
+/// name resolution of global variables plus multiple sets of rules for when a global that
+/// is a type variable placeholder is allowed to be used as a type parameter.
+///
+/// This type represents the result of such a lookup: given a name appearing in a function or
+/// a class, we either determine that the name is *not* a type variable and return the type
+/// for the name, or we determine that it is one and create a `Quantified` that
+/// represents that variable as a type parameter.
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LegacyTypeParameterLookup {
     Parameter(TParamInfo),
