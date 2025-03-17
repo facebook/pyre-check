@@ -403,7 +403,6 @@ impl DisplayWith<ModuleInfo> for KeyClass {
 }
 
 /// A reference to a field in a class.
-/// The range is the range of the class name, not the field name.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct KeyClassField(pub ClassIndex, pub Name);
 
