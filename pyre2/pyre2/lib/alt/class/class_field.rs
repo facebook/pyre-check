@@ -527,7 +527,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         // Enum handling:
         // - Check whether the field is a member (which depends only on its type and name)
-        // - Validate that a member should not have an annotation, and should respect any explicit annotatin on `_value_`
+        // - Validate that a member should not have an annotation, and should respect any explicit annotation on `_value_`
         //
         // TODO(stroxler, yangdanny): We currently operate on promoted types, which means we do not infer `Literal[...]`
         // types for the `.value` / `._value_` attributes of literals. This is permitted in the spec although not optimal

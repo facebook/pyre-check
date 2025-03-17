@@ -91,7 +91,7 @@ pub struct Args {
         env = clap_env("COUNT_ERRORS")
     )]
     count_errors: Option<usize>,
-    /// Summarize errors by directory. The optional index argument specificies which file path segment will be used to group errors.
+    /// Summarize errors by directory. The optional index argument specifies which file path segment will be used to group errors.
     /// The default index is 0. For errors in `/foo/bar/...`, this will group errors by `/foo`. If index is 1, errors will be grouped by `/foo/bar`.
     /// An index larger than the number of path segments will group by the final path element, i.e. the file name.
     #[clap(
