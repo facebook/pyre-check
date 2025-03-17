@@ -162,6 +162,8 @@ pub enum FlowStyle {
     ImportAs(ModuleName),
     /// Am I a function definition? Used to chain overload definitions.
     FunctionDef(Idx<KeyFunction>),
+    /// The name was previously bound, but is now unbound due to `del`
+    Unbound,
 }
 
 #[derive(Debug, Clone)]

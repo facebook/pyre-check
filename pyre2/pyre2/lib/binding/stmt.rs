@@ -225,6 +225,13 @@ impl<'a> BindingsBuilder<'a> {
                         BindingExpect::Delete(Box::new(target.clone())),
                     );
                     self.ensure_expr(target);
+                    // If the target is a name, mark it as unbound
+                    if let Expr::Name(name) = target {
+                        let key = Key::Usage(ShortIdentifier::expr_name(name));
+                        let idx = self.table.types.0.insert(key);
+                        self.scopes
+                            .update_flow_info(&name.id, idx, Some(FlowStyle::Unbound));
+                    }
                 }
             }
             Stmt::Assign(ref x)
@@ -382,7 +389,6 @@ impl<'a> BindingsBuilder<'a> {
                     } else {
                         None
                     };
-
                     let binding = if let Some(mut value) = binding_value {
                         // Handle forward references in explicit type aliases.
                         if self.as_special_export(&x.annotation) == Some(SpecialExport::TypeAlias) {
