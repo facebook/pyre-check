@@ -169,3 +169,21 @@ def test_issue_with_tito_copy_multiple_possible_dictlike_objects():
     copied_d = tito_copy_multiple_possible_dictlike_objects(d)
     # TODO(T184001071,T184018510): This should be caught, but it's not.
     _test_sink(copied_d["tainted"])
+
+class A:
+    attribute: str = ""
+
+def test_no_issue_sanitize():
+    x = A()
+    x.attribute = _test_source()
+    x.attribute = ""
+    _test_sink(x.attribute)
+
+def sanitize_attribute(x: A) -> None:
+    x.attribute = ""
+
+def test_no_issue_sanitize_via_call():
+    x = A()
+    x.attribute = _test_source()
+    sanitize_attribute(x)
+    _test_sink(x.attribute)  # TODO(T218153519): False positive

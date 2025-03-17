@@ -364,6 +364,80 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.test_no_issue_sanitize_via_call",
+    "callable_line": 185,
+    "code": 5002,
+    "line": 189,
+    "start": 15,
+    "end": 26,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "attribute" }
+            ],
+            "origin": {
+              "filename": "attributes.py",
+              "line": 187,
+              "start": 18,
+              "end": 32
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "attributes.py",
+              "line": 189,
+              "start": 15,
+              "end": 26
+            },
+            "call_site": "189:4-189:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "attribute" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "attributes.test_no_issue_sanitize_via_call:5002:0:Call|_test_sink|0|formal(arg):f2f0fa27fd66c9fb66742bf855642e3b"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{attributes.C.dictionary}",
@@ -485,7 +559,7 @@
               "start": 19,
               "end": 30
             },
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "call_site": "126:8-126:31"
           }

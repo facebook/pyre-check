@@ -47,6 +47,15 @@ Call dependencies
     "_test_source (fun)", "list.append (method)",
     "attributes.D.buffer (object)"
   ],
+  "attributes.test_no_issue_sanitize (fun)": [
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "attributes.test_no_issue_sanitize_via_call (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "attributes.sanitize_attribute (fun)", "object.__init__ (method)",
+    "object.__new__ (method)"
+  ],
   "attributes.test_no_issue_with_other_key_of_dictionary (fun)": [
     "_test_sink (fun)", "dict.__getitem__ (method)",
     "attributes.C.dictionary (object)"
