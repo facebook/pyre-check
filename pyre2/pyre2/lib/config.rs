@@ -65,7 +65,7 @@ impl Default for ConfigFile {
 
 impl ConfigFile {
     pub fn default_project_includes() -> Globs {
-        Globs::new(vec![".".to_owned()])
+        Globs::new(vec!["".to_owned()])
     }
 
     pub fn default_python_platform() -> String {
@@ -73,7 +73,7 @@ impl ConfigFile {
     }
 
     pub fn default_search_roots() -> Vec<PathBuf> {
-        vec![PathBuf::from(".")]
+        vec![PathBuf::from("")]
     }
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
