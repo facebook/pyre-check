@@ -200,6 +200,7 @@ class AsyncIterator(AsyncIterable[_T_co], Protocol[_T_co]):
 
 class AsyncGenerator(AsyncIterator[_YieldT], Protocol[_YieldT, _SendT]):
     def __anext__(self) -> Coroutine[Any, Any, _YieldT]: ...
+    # @lint-ignore SPELL
     def asend(self, value: _SendT, /) -> Coroutine[Any, Any, _YieldT]: ...
 
 class Awaitable(Protocol[_T_co]):
