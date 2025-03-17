@@ -321,6 +321,25 @@ class C(Generic[T]): pass";
 }
 
 #[test]
+fn test_incremental_class_generic_field() {
+    let code = "
+class C[T]:
+    x: T
+";
+    // Modules that change, but shouldn't
+    const BROKEN: &str = "main";
+
+    let mut i = Incremental::new();
+    i.set("lib", code);
+    i.set("main", "from lib import C");
+    i.check(&["main"], &["main", "lib"]);
+    i.set("lib", &format!("{code} # after"));
+    i.check(&["main"], &["lib", BROKEN]);
+    i.set("lib", &format!("# before\n{code}"));
+    i.check(&["main"], &["lib", BROKEN]);
+}
+
+#[test]
 fn test_change_require() {
     let t = TestEnv::one("foo", "x: str = 1");
     let mut state = State::new();
