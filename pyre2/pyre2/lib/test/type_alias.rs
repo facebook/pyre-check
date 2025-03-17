@@ -439,7 +439,7 @@ def f(x: X | str):
 );
 
 testcase_with_bug!(
-    "TODO zeina: Consider a huristic of when to interpret the RHS of an assignment as a type.",
+    "TODO zeina: Consider a heuristic of when to interpret the RHS of an assignment as a type.",
     test_type_alias_union,
     r#"
 from typing import Union

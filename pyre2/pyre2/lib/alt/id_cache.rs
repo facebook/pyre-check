@@ -137,7 +137,7 @@ pub struct IdCache(Mutex<IdCacheInner>);
 struct IdCacheInner {
     /// Things that were created last time and we can reuse.
     reusable: HashMap<ImmutableKey<Identifiable>, Vec<Identifiable>>,
-    /// Things we have created afresh this time, or taken from the resuable list.
+    /// Things we have created afresh this time, or taken from the reusable list.
     /// Note that due to races on Calculation, we might end up trying to create
     /// the same `Identifiable` twice, and in order to avoid invalidating the
     /// interface, we need to reuse perfectly identical things we have created.

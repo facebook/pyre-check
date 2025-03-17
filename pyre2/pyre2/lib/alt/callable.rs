@@ -56,7 +56,7 @@ impl Ranged for CallArg<'_> {
 impl CallArg<'_> {
     // Splat arguments might be fixed-length tuples, which are handled precisely, or have unknown
     // length. This function evaluates splat args to determine how many params should be consumed,
-    // but does not evaulate other expressions, which might be contextually typed.
+    // but does not evaluate other expressions, which might be contextually typed.
     fn pre_eval<Ans: LookupAnswer>(
         &self,
         solver: &AnswersSolver<Ans>,

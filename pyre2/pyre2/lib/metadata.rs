@@ -282,7 +282,7 @@ impl RuntimeMetadata {
     }
 
     /// Like `Ast::if_branches`, but skips branch that statically evaluate to `false`,
-    /// and stops if any branch evalutes to `true`.
+    /// and stops if any branch evaluates to `true`.
     pub fn pruned_if_branches<'a, 'b: 'a>(
         &'a self,
         x: &'b StmtIf,

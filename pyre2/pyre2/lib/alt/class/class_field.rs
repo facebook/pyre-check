@@ -944,7 +944,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Get the class's `__init__` method, if we should analyze it
     /// We skip analyzing the call to `__init__` if:
     /// (1) it isn't defined (possible if we've been passed a custom typeshed), or
-    /// (2) the class overrides `object.__new__` but not `object.__init__`, in wich case the
+    /// (2) the class overrides `object.__new__` but not `object.__init__`, in which case the
     ///     `__init__` call always succeeds at runtime.
     pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
         let init_method = self.get_class_member(cls.class_object(), &dunder::INIT)?;

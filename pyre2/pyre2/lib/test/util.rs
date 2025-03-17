@@ -141,7 +141,7 @@ impl TestEnv {
             .0
             .into_iter()
             // Reverse so we start at the last file, which is likely to be what the user
-            // would have openned, so make it most faithful.
+            // would have opened, so make it most faithful.
             .rev()
             .map(|(x, (path, _))| {
                 (
@@ -222,7 +222,7 @@ pub fn extract_cursors_for_test(source: &str) -> Vec<TextSize> {
     for (line_index, line_str) in source.lines().enumerate() {
         for (row_index, _) in line_str.match_indices('^') {
             if prev_line.len() < row_index {
-                panic!("Invald cursor at {}:{}", line_index, row_index);
+                panic!("Invalid cursor at {}:{}", line_index, row_index);
             }
             let position = index.offset(
                 OneIndexed::from_zero_indexed(line_index - 1),

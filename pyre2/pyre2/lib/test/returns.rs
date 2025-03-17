@@ -151,7 +151,7 @@ testcase!(
 def f(b: bool) -> int:  # E: Function declared to return `int`, but one or more paths are missing an explicit `return`
     return 1
     # This code is unreachable. A linter should spot this.
-    # But for now, it's perfectly reasonble to say the `pass`
+    # But for now, it's perfectly reasonable to say the `pass`
     # has the wrong type, and a `return` should be here.
     pass
 "#,

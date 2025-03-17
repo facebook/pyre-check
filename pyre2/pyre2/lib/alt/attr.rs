@@ -89,8 +89,8 @@ struct Descriptor {
     base: DescriptorBase,
     /// If `__get__` exists on the descriptor, this is the type of `__get__`
     /// method type (as resolved by accessing it on an instance of the
-    /// desriptor). It is typically a `BoundMethod` although it is possible for
-    /// a user to erronously define a `__get__` with any type, including a
+    /// descriptor). It is typically a `BoundMethod` although it is possible for
+    /// a user to erroneously define a `__get__` with any type, including a
     /// non-callable one.
     getter: Option<Type>,
     /// If `__set__` exists on the descriptor, this is the type of `__set__`. Similar considerations

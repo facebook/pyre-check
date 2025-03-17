@@ -127,7 +127,7 @@ impl<'a> BindingsBuilder<'a> {
                     );
                 }
                 // If this is a self-assignment, record it because we may use it to infer
-                // the existance of an instance-only attribute.
+                // the existence of an instance-only attribute.
                 self.bind_attr_if_self(x, value_binding, None);
             }
             Expr::Subscript(x) => {

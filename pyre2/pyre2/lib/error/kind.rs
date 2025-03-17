@@ -37,9 +37,9 @@ pub enum ErrorKind {
     AssertType,
     /// An error raised when async is not used when it should be, or perhaps used when it shouldn't be.
     AsyncError,
-    /// Attemping to call a function with the wrong number of arguments.
+    /// Attempting to call a function with the wrong number of arguments.
     BadArgumentCount,
-    /// Attemping to call a function with an argument that does not match the parameter's type.
+    /// Attempting to call a function with an argument that does not match the parameter's type.
     BadArgumentType,
     /// Assigning a value of the wrong type to a variable.
     BadAssignment,
@@ -50,7 +50,7 @@ pub enum ErrorKind {
     /// A function definition has some typing-related error.
     /// e.g. putting a non-default argument after a default argument.
     BadFunctionDefinition,
-    /// Attemping to call a function with an incorrect keyword argument.
+    /// Attempting to call a function with an incorrect keyword argument.
     /// e.g. f(x=1, x=2), or perhaps f(y=1) (where `f` has no parameter `y`).
     BadKeywordArgument,
     /// A subclass field or method incorrectly overrides a field/method of a parent class.
@@ -61,7 +61,7 @@ pub enum ErrorKind {
     /// Attempting to specialize a generic class with incorrect type arguments.
     /// e.g. `type[int, str]` is an error because `type` accepts only 1 type arg.
     BadSpecialization,
-    /// An error casued by unpacking.
+    /// An error caused by unpacking.
     /// e.g. attempting to unpack an iterable into the wrong number of variables.
     BadUnpacking,
     /// Attempting to `del` something that cannot be deleted
@@ -69,7 +69,7 @@ pub enum ErrorKind {
     /// An error related to the import machinery.
     /// e.g. failed to import a module.
     ImportError,
-    /// Attemping to access a container with an incorrect index.
+    /// Attempting to access a container with an incorrect index.
     /// This only occurs when pyre can statically verify that the index is incorrect.
     IndexError,
     /// Internal Pyre error.
@@ -136,7 +136,7 @@ pub enum ErrorKind {
     UnexpectedKeyword,
     /// Attempting to use a name that is not defined.
     UnknownName,
-    /// Attemping to apply an operator to arguments that do not support it.
+    /// Attempting to apply an operator to arguments that do not support it.
     UnsupportedOperand,
     /// Attempting to use a feature that is not yet supported.
     #[allow(dead_code)]

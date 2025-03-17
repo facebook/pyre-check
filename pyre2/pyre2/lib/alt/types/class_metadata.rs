@@ -514,7 +514,7 @@ impl Linearization {
         // as revered vecs) that is not in the "tail" of any chain, then strip it from all chains.
         let mut ancestors = Vec::new();
         while !ancestor_chains.is_empty() {
-            // Identify a candiate for the next MRO entry: it must be the next ancestor in some chain,
+            // Identify a candidate for the next MRO entry: it must be the next ancestor in some chain,
             // and not be in the tail of any chain.
             let mut selected = None;
             for candidate_chain in ancestor_chains.iter() {

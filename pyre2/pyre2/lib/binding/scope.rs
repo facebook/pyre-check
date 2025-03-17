@@ -54,7 +54,7 @@ pub struct StaticInfo {
     /// How many times this will be redefined
     pub count: usize,
     /// True if this is going to appear as a `Key::Import``.
-    /// A little fiddly to keep syncronised with the other field.
+    /// A little fiddly to keep synchronised with the other field.
     pub uses_key_import: bool,
 }
 

@@ -174,7 +174,7 @@ impl Display for ClassInner {
 // - "member" refers to a name defined on a class, including inherited members whose
 //   types should be expressed in terms of the current classe's type parameters.
 // - "attribute" refers to a value actually accessed from an instance or class object,
-//   which involves subtituting type arguments for the class type parameters as
+//   which involves substituting type arguments for the class type parameters as
 //   well as descriptor handling (including method binding).
 impl Class {
     pub fn new_identity(
