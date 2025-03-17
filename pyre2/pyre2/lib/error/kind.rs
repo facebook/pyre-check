@@ -134,6 +134,8 @@ pub enum ErrorKind {
     TypeMismatch,
     /// An error caused by a keyword argument used in the wrong place.
     UnexpectedKeyword,
+    /// Attempting to use a name that may be unbound or uninitialized
+    UnboundName,
     /// Attempting to use a name that is not defined.
     UnknownName,
     /// Attempting to apply an operator to arguments that do not support it.

@@ -99,6 +99,27 @@ def f1() -> None:
 );
 
 testcase!(
+    test_unbound_name,
+    r#"
+x: int
+x + 1  # E: `x` is uninitialized
+x = 1
+x + 1  # OK
+del x
+x + 1  # E: `x` is unbound
+
+y = 1
+y + 1  # OK
+del y
+y + 1  # E: `y` is unbound
+
+# check that we don't fall back to Any when the variable is annotated
+z: int
+z = str(z)  # E: `z` is uninitialized  # E: `str` is not assignable to variable `z` with type `int`
+"#,
+);
+
+testcase!(
     test_extend_final,
     r#"
 from typing import final

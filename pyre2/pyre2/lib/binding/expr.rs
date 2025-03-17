@@ -28,6 +28,7 @@ use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::Flow;
+use crate::binding::scope::FlowStyle;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::dunder;
@@ -58,6 +59,27 @@ impl<'a> BindingsBuilder<'a> {
         let key = Key::Usage(ShortIdentifier::new(name));
         match value {
             Some(value) => {
+                if !self.module_info.path().is_interface() {
+                    match self.scopes.get_flow_style(&name.id) {
+                        Some(FlowStyle::Unbound) => {
+                            self.error(
+                                name.range,
+                                format!("`{name}` is unbound"),
+                                ErrorKind::UnboundName,
+                            );
+                        }
+                        Some(FlowStyle::Annotated {
+                            is_initialized: false,
+                        }) => {
+                            self.error(
+                                name.range,
+                                format!("`{name}` is uninitialized"),
+                                ErrorKind::UnboundName,
+                            );
+                        }
+                        _ => {}
+                    }
+                }
                 self.table.insert(key, value);
             }
             None if name.id == dunder::FILE || name.id == dunder::NAME => {

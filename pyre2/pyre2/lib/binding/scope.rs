@@ -435,6 +435,11 @@ impl Scopes {
         None
     }
 
+    pub fn get_flow_style(&self, name: &Name) -> Option<&FlowStyle> {
+        self.get_flow_info(name)
+            .and_then(|info| info.style.as_ref())
+    }
+
     pub fn get_special_entry<'a>(&'a self, name: &Name) -> Option<SpecialEntry<'a>> {
         let flow = self.get_flow_info(name)?;
         let entry = match &flow.style {
