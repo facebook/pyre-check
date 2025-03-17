@@ -125,7 +125,6 @@
 }
 @media screen and (min-width: 992px) {
   .title, .subtitle {
-    width: 960px;
     max-width: 100%;
   }
   .title {
@@ -137,7 +136,6 @@
 }
 @media screen and (min-width: 1200px) {
   .title, .subtitle {
-    width: 1140px;
     max-width: 100%;
   }
   .title {
