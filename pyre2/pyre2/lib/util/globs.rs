@@ -44,6 +44,7 @@ impl Globs {
     }
 
     pub fn from_root(self, root: &Path) -> Self {
+        // TODO(connernilsen): store root as part of globs to make it easier to rewrite later on
         Self::new_with_root(root, self.0)
     }
 

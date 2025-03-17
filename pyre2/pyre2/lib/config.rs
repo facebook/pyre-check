@@ -80,14 +80,38 @@ impl ConfigFile {
         RuntimeMetadata::new(self.python_version, self.python_platform.clone())
     }
 
-    pub fn from_file(p: &Path) -> anyhow::Result<ConfigFile> {
+    fn rewrite_with_path_to_config(&mut self, config_root: &Path) {
+        // TODO(connernilsen): store root as part of config to make it easier to rewrite later on
+        self.project_includes = self.project_includes.clone().from_root(config_root);
+        self.search_roots.iter_mut().for_each(|search_root| {
+            let mut base = config_root.to_path_buf();
+            base.push(search_root.as_path());
+            *search_root = base;
+        });
+        self.search_roots.push(config_root.to_path_buf());
+        self.site_package_path
+            .iter_mut()
+            .for_each(|site_package_path| {
+                let mut base = config_root.to_path_buf();
+                base.push(site_package_path.as_path());
+                *site_package_path = base;
+            });
+    }
+
+    pub fn from_file(config_path: &Path) -> anyhow::Result<ConfigFile> {
         // TODO(connernilsen): fix return type and handle config searching
-        let config_str = fs::read_to_string(p)?;
-        if p.file_name() == Some(OsStr::new(&PYPROJECT_FILE_NAME)) {
+        let config_str = fs::read_to_string(config_path)?;
+        let mut config = if config_path.file_name() == Some(OsStr::new(&PYPROJECT_FILE_NAME)) {
             Self::parse_pyproject_toml(&config_str)
         } else {
             Self::parse_config(&config_str)
+        }?;
+
+        if let Some(config_root) = config_path.parent() {
+            config.rewrite_with_path_to_config(config_root);
         }
+
+        Ok(config)
     }
 
     fn parse_config(config_str: &str) -> anyhow::Result<ConfigFile> {
@@ -227,5 +251,20 @@ mod tests {
         ";
         let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
         assert_eq!(config, ConfigFile::default(),);
+    }
+
+    #[test]
+    fn test_rewrite_with_path_to_config() {
+        let mut config = ConfigFile::default();
+        let path_str = "path/to/my/config".to_owned();
+        let test_path = PathBuf::from(path_str.clone());
+        config.rewrite_with_path_to_config(&test_path);
+
+        let expected_config = ConfigFile {
+            project_includes: Globs::new(vec![path_str + "/"]),
+            search_roots: vec![test_path.clone(), test_path.clone()],
+            ..ConfigFile::default()
+        };
+        assert_eq!(config, expected_config);
     }
 }
