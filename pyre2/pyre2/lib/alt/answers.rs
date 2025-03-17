@@ -150,20 +150,30 @@ impl DisplayWith<ModuleInfo> for Solutions {
 }
 
 pub struct SolutionsDifference<'a> {
-    key: &'a dyn DisplayWith<ModuleInfo>,
-    lhs: Option<&'a dyn Display>,
-    rhs: Option<&'a dyn Display>,
+    key: (&'a dyn DisplayWith<ModuleInfo>, &'a dyn Debug),
+    lhs: Option<(&'a dyn Display, &'a dyn Debug)>,
+    rhs: Option<(&'a dyn Display, &'a dyn Debug)>,
+}
+
+impl Debug for SolutionsDifference<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SolutionsDifference")
+            .field("key", self.key.1)
+            .field("lhs", &self.lhs.map(|x| x.1))
+            .field("rhs", &self.rhs.map(|x| x.1))
+            .finish()
+    }
 }
 
 impl DisplayWith<ModuleInfo> for SolutionsDifference<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
-        let missing = |f: &mut fmt::Formatter, x| match x {
+        let missing = |f: &mut fmt::Formatter, x: Option<(&dyn Display, &dyn Debug)>| match x {
             None => write!(f, "missing"),
-            Some(x) => write!(f, "`{x}`"),
+            Some(x) => write!(f, "`{}`", x.0),
         };
 
         write!(f, "`")?;
-        self.key.fmt(f, ctx)?;
+        self.key.0.fmt(f, ctx)?;
         write!(f, "` was ")?;
         missing(f, self.lhs)?;
         write!(f, " now ")?;
@@ -201,9 +211,9 @@ impl Solutions {
                 for (k, v) in y.iter() {
                     if !x.contains_key(k) {
                         return Some(SolutionsDifference {
-                            key: k,
+                            key: (k, k),
                             lhs: None,
-                            rhs: Some(v),
+                            rhs: Some((v, v)),
                         });
                     }
                 }
@@ -213,15 +223,15 @@ impl Solutions {
                 match y.get(k) {
                     Some(v2) if !v.type_eq(v2, &mut TypeEqCtx::default()) => {
                         return Some(SolutionsDifference {
-                            key: k,
-                            lhs: Some(v),
-                            rhs: Some(v2),
+                            key: (k, k),
+                            lhs: Some((v, v)),
+                            rhs: Some((v2, v2)),
                         });
                     }
                     None => {
                         return Some(SolutionsDifference {
-                            key: k,
-                            lhs: Some(v),
+                            key: (k, k),
+                            lhs: Some((v, v)),
                             rhs: None,
                         });
                     }
