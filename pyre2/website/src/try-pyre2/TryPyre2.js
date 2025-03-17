@@ -133,58 +133,17 @@ export default component TryPyre2(
     editorRef.current = editor;
   }
 
-  let editor = null;
-  if (isCodeSnippet) {
-    editor = (
-      <Editor
-        defaultPath={sampleFilename}
-        defaultValue={codeSample}
-        defaultLanguage="python"
-        theme="vs-light"
-        onChange={forceRecheck}
-        onMount={onEditorMount}
-        height={editorHeightforCodeSnippet}
-        options={{
-          readOnly: isMobile(),
-          minimap: {enabled: false},
-          hover: {enabled: true, above: false},
-          scrollBeyondLastLine: false,
-          overviewRulerBorder: false,
-        }}
-      />
-    );
-  } else {
-    // TODO (T217559369): Instead of manually calculating the sandbox height, we should
-    // use flexbox behavior to make the sandbox height to be 75% of the screen
-    // This doesn't seem to work with the monaco editor currently.
-    const screenHeight = window.innerHeight;
-    const sandboxHeight = (screenHeight * 75) / 100;
-
-    editor = (
-      <Editor
-        defaultPath={sampleFilename}
-        defaultValue={codeSample}
-        defaultLanguage="python"
-        theme="vs-light"
-        onChange={value => {
-          forceRecheck();
-          updateURL(value);
-        }}
-        onMount={onEditorMount}
-        height={sandboxHeight}
-        options={{
-          minimap: {enabled: false},
-          hover: {enabled: true, above: false},
-          scrollBeyondLastLine: false,
-          overviewRulerBorder: false,
-        }}
-      />
-    );
-  }
   return (
     <div className={styles.tryEditor}>
       <div className={styles.codeEditorContainer}>
-        {editor}
+        {getPyre2Editor(
+          isCodeSnippet,
+          sampleFilename,
+          codeSample,
+          forceRecheck,
+          onEditorMount,
+          editorHeightforCodeSnippet,
+        )}
         {!isCodeSnippet && (
           <button
             className={clsx(
@@ -255,4 +214,61 @@ function fetchCurMonacoModelAndTriggerUpdate(fileName: string) {
 
 function isMobile(): boolean {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
+function getPyre2Editor(
+  isCodeSnippet: boolean,
+  fileName: string,
+  codeSample: string,
+  forceRecheck: () => void,
+  onEditorMount: (editor: any) => void,
+  editorHeightforCodeSnippet: number | null,
+) {
+  if (isCodeSnippet) {
+    return (
+      <Editor
+        defaultPath={fileName}
+        defaultValue={codeSample}
+        defaultLanguage="python"
+        theme="vs-light"
+        onChange={forceRecheck}
+        onMount={onEditorMount}
+        height={editorHeightforCodeSnippet}
+        options={{
+          readOnly: isMobile(),
+          minimap: {enabled: false},
+          hover: {enabled: true, above: false},
+          scrollBeyondLastLine: false,
+          overviewRulerBorder: false,
+        }}
+      />
+    );
+  } else {
+    // TODO (T217559369): Instead of manually calculating the sandbox height, we should
+    // use flexbox behavior to make the sandbox height to be 75% of the screen
+    // This doesn't seem to work with the monaco editor currently.
+    const screenHeight = window.innerHeight;
+    const sandboxHeight = (screenHeight * 75) / 100;
+
+    return (
+      <Editor
+        defaultPath={fileName}
+        defaultValue={codeSample}
+        defaultLanguage="python"
+        theme="vs-light"
+        onChange={value => {
+          forceRecheck();
+          updateURL(value);
+        }}
+        onMount={onEditorMount}
+        height={sandboxHeight}
+        options={{
+          minimap: {enabled: false},
+          hover: {enabled: true, above: false},
+          scrollBeyondLastLine: false,
+          overviewRulerBorder: false,
+        }}
+      />
+    );
+  }
 }
