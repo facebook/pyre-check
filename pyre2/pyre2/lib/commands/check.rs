@@ -180,7 +180,8 @@ impl Args {
         config_finder: &impl Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
-        self.run_inner(files_to_check, config_finder, allow_forget)
+        let mut holder = Forgetter::new(State::new(), allow_forget);
+        self.run_inner(holder.as_mut(), files_to_check, config_finder)
     }
 
     pub async fn run_watch(
@@ -189,10 +190,9 @@ impl Args {
         files_to_check: impl FileList + Clone,
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
+        let mut state = State::new();
         loop {
-            let res = self
-                .clone()
-                .run_inner(files_to_check.clone(), config_finder, false);
+            let res = self.run_inner(&mut state, files_to_check.clone(), config_finder);
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
@@ -289,9 +289,9 @@ impl Args {
 
     fn run_inner(
         &self,
+        state: &mut State,
         files_to_check: impl FileList,
         config_finder: &impl Fn(&Path) -> ConfigFile,
-        allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
         let expanded_file_list = files_to_check.files()?;
         if expanded_file_list.is_empty() {
@@ -304,9 +304,6 @@ impl Args {
         let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
-        let state = State::new();
-        let mut holder = Forgetter::new(state, allow_forget);
-        let state = holder.as_mut();
 
         state.run(&handles, require_levels.default, Some(progress));
         let computing = start.elapsed();
