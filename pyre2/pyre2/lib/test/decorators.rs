@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_simple_function_decorator,
@@ -163,8 +162,7 @@ reveal_type(f)  # E: revealed type: (x: int) -> int
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler) Decorated methods are not always getting bound properly.",
+testcase!(
     test_callable_class_as_decorator,
     r#"
 import dataclasses
@@ -185,6 +183,56 @@ class C:
     def f(self, x: int) -> int:
         return x
 
-assert_type(C().f(42), int)  # E:  Missing argument `x` # E: Argument `Literal[42]` is not assignable to parameter `self` with type `C`
+assert_type(C().f(42), int)
+    "#,
+);
+
+testcase!(
+    test_decorate_to_any,
+    r#"
+from typing import Any, assert_type
+
+def decorate(f) -> Any: ...
+
+class C:
+    @decorate
+    def f(self, x: int): ...
+
+# `f` is `Any` now, we should be able to call it with anything and get back `Any`.
+assert_type(C().f("any", b"thing"), Any)
+    "#,
+);
+
+testcase!(
+    test_decorate_to_generic_callable,
+    r#"
+from typing import Any, Callable, TypeVar, assert_type
+T = TypeVar('T')
+
+def decorate(f) -> Callable[[Any, T], T]:
+    return lambda _, x: x
+
+class C:
+    @decorate
+    def f(self): ...
+
+assert_type(C().f(0), int)
+    "#,
+);
+
+testcase!(
+    test_decorate_generic_function,
+    r#"
+from typing import assert_type
+
+def decorate[T](f: T) -> T:
+    return f
+
+class C:
+    @decorate
+    def f[T](self, x: T) -> T:
+        return x
+
+assert_type(C().f(0), int)
     "#,
 );
