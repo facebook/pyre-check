@@ -1420,3 +1420,20 @@ class B:
 A() + B()
     "#,
 );
+
+testcase!(
+    test_function_stub,
+    r#"
+def not_a_stub() -> int:  # E: Function declared to return `int` but is missing an explicit `return`
+    pass
+
+def is_a_stub0(self) -> int:  # No error expected here.
+    ...
+
+def is_a_stub1(self) -> int:  # No error expected here.
+    """
+    Some docstring
+    """
+    ...
+    "#,
+);

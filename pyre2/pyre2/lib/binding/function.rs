@@ -341,14 +341,22 @@ fn function_last_expressions<'a>(x: &'a [Stmt], config: &RuntimeMetadata) -> Opt
     Some(res)
 }
 
-fn is_ellipse(x: &[Stmt]) -> bool {
+fn is_docstring(x: &Stmt) -> bool {
     match x {
-        [
-            Stmt::Expr(StmtExpr {
-                value: box Expr::EllipsisLiteral(_),
-                ..
-            }),
-        ] => true,
+        Stmt::Expr(StmtExpr {
+            value: box Expr::StringLiteral(..),
+            ..
+        }) => true,
+        _ => false,
+    }
+}
+
+fn is_ellipse(x: &[Stmt]) -> bool {
+    match x.iter().find(|x| !is_docstring(x)) {
+        Some(Stmt::Expr(StmtExpr {
+            value: box Expr::EllipsisLiteral(_),
+            ..
+        })) => true,
         _ => false,
     }
 }
