@@ -93,21 +93,67 @@ impl TestSubscriber {
     }
 }
 
-pub struct ProgressBarSubscriber(ProgressBar);
+/// Progress bar subscriber that shows the progress of the computation.
+/// Slightly tweaked to never show decreasing percentages.
+pub struct ProgressBarSubscriber {
+    /// The actual progress bar drawn to the screen.
+    progress_bar: ProgressBar,
+    /// The mutable data we have.
+    state: Mutex<ProgressBarState>,
+}
+
+const PROGRESS_BAR_LENGTH: u64 = 1_000_000;
+
+#[derive(Debug, Clone, Copy, Dupe)]
+struct ProgressBarState {
+    /// Number between 0 and PROGRESS_BAR_LENGTH representing how far I was last time.
+    last_progress: u64,
+    /// Number of `start_work` calls.
+    started: u64,
+    /// Number of `finish_work` calls.
+    finished: u64,
+}
+
+impl ProgressBarSubscriber {
+    fn event(&self, f: impl FnOnce(&mut ProgressBarState)) {
+        let millis = self.progress_bar.elapsed().as_millis();
+
+        // Do as little as possible with the lock held.
+        let mut state = self.state.lock();
+        f(&mut state);
+        let mut progress = (state.finished * PROGRESS_BAR_LENGTH) / state.started.max(1);
+        // In the first second, we don't want to complete more than 10%, as we might be discovering
+        let limit = if millis > 1000 {
+            PROGRESS_BAR_LENGTH
+        } else {
+            (PROGRESS_BAR_LENGTH * (millis as u64)) / 10000
+        };
+        progress = progress.min(limit).max(state.last_progress);
+        state.last_progress = progress;
+        let state_value = *state;
+        drop(state);
+
+        self.progress_bar.set_message(format!(
+            "{:>7}/{:<7}",
+            state_value.finished, state_value.started
+        ));
+        self.progress_bar.set_position(progress);
+    }
+}
 
 impl Subscriber for ProgressBarSubscriber {
     fn start_work(&self, _: Handle) {
-        self.0.inc_length(1);
+        self.event(|x| x.started += 1);
     }
 
     fn finish_work(&self, _: Handle, _: Arc<Load>) {
-        self.0.inc(1);
+        self.event(|x| x.finished += 1);
     }
 }
 
 impl Drop for ProgressBarSubscriber {
     fn drop(&mut self) {
-        self.0.finish_and_clear();
+        self.progress_bar.finish_and_clear();
     }
 }
 
@@ -115,11 +161,19 @@ impl ProgressBarSubscriber {
     pub fn new() -> Self {
         let progress_bar = ProgressBar::new(0);
         progress_bar.set_style(
-            ProgressStyle::with_template(
-                "[{elapsed_precise}] {wide_bar:.yellow/red} {pos:>7}/{len:7} {msg}",
-            )
-            .unwrap(),
+            ProgressStyle::with_template("[{elapsed_precise}] {wide_bar:.yellow/red} {msg}")
+                .unwrap(),
         );
-        Self(progress_bar)
+        progress_bar.set_length(PROGRESS_BAR_LENGTH);
+        let me = Self {
+            progress_bar,
+            state: Mutex::new(ProgressBarState {
+                last_progress: 0,
+                started: 0,
+                finished: 0,
+            }),
+        };
+        me.event(|_| ());
+        me
     }
 }
