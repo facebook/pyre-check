@@ -1,0 +1,48 @@
+---
+id: import-resolution
+title: Import Resolution
+slug: /import-resolution
+
+description: How Pyrefly finds and resolves imports
+---
+
+# Import Resolution
+
+This doc describes how imports in a given file are found and their bindings are
+resolved, including files that are being type checked.
+
+NOTE: see the [Configuration documentation](configuration.md) for more info on
+the config items referenced below.
+
+## Relative Imports
+
+If the import is relative (starting with one or more dots), the import is
+resolved relative to the path of the file importing it. A single dot at the
+beginning of the import (e.g. `.file.to.import`) represents the current
+directory, and more dots (e.g. `..other.file`) will continue to walk upward.
+
+## Absolute Imports
+
+For absolute imports, Pyrefly uses the following import strategy:
+
+1. Try to import from each entry in `import_roots` in the order they appear
+   using the module finding strategy. a. NOTE: we append the config file's
+   directory to `search_roots` automatically when using a config file as a
+   sensible last-resort for attempting an import.
+2. Try to import from `typeshed`.
+3. Try to import from each entry in `site_package_path` in the order it appears
+   using the module finding strategy.
+4. Return an import error.
+
+# Stub Files vs Source Files
+
+A
+[stub file](https://typing.python.org/en/latest/spec/distributing.html#stub-files)
+is any file that ends with a `.pyi` file suffix. They have many uses, including
+adding typing to non-Python extension code, distributing typing information
+separate from implementation, or overriding an implementation with more accurate
+typing information.
+
+Pyrefly loads typing information from imports by first searching for a relevant
+`.pyi` file, then falling back to a `.py` file, for each attempt at an import
+above.
