@@ -87,15 +87,15 @@ use crate::util::prelude::VecExt;
 
 #[derive(Debug, Parser, Clone)]
 pub struct Args {
-    #[clap(long = "include", short = 'I', env = clap_env("INCLUDE"))]
-    pub(crate) include: Vec<PathBuf>,
+    #[clap(long = "search-path", env = clap_env("SEARCH_PATH"))]
+    pub(crate) search_path: Vec<PathBuf>,
 }
 
 struct Server<'a> {
     send: &'a dyn Fn(Message),
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
-    include: Vec<PathBuf>,
+    search_path: Vec<PathBuf>,
     state: Mutex<State>,
     config: RuntimeMetadata,
     loader: LoaderId,
@@ -131,9 +131,9 @@ pub fn run_lsp(
             return Err(e.into());
         }
     };
-    let include = args.include;
+    let search_path = args.search_path;
     let send = |msg| connection.sender.send(msg).unwrap();
-    let mut server = Server::new(&send, initialization_params, include);
+    let mut server = Server::new(&send, initialization_params, search_path);
     eprintln!("Reading messages");
     for msg in &connection.receiver {
         if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
@@ -149,7 +149,7 @@ pub fn run_lsp(
 }
 
 impl Args {
-    pub fn run(mut self, extra_search_roots: Vec<PathBuf>) -> anyhow::Result<CommandExitStatus> {
+    pub fn run(mut self, extra_search_paths: Vec<PathBuf>) -> anyhow::Result<CommandExitStatus> {
         // Note that  we must have our logging only write out to stderr.
         eprintln!("starting generic LSP server");
 
@@ -157,7 +157,7 @@ impl Args {
         // also be implemented to use sockets or HTTP.
         let (connection, io_threads) = Connection::stdio();
 
-        self.include.extend(extra_search_roots);
+        self.search_path.extend(extra_search_paths);
         run_lsp(
             &connection,
             move || io_threads.join().map_err(anyhow::Error::from),
@@ -169,18 +169,18 @@ impl Args {
 #[derive(Debug, Clone)]
 struct LspLoader {
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
-    search_roots: Vec<PathBuf>,
+    search_path: Vec<PathBuf>,
 }
 
 impl Loader for LspLoader {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
-        if let Some(path) = find_module(module, &self.search_roots) {
+        if let Some(path) = find_module(module, &self.search_path) {
             Ok(path)
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok(path)
         } else {
             // TODO(connernilsen): add site package path here
-            Err(FindError::search_path(&self.search_roots, &[]))
+            Err(FindError::search_path(&self.search_path, &[]))
         }
     }
 
@@ -271,17 +271,17 @@ impl<'a> Server<'a> {
     fn new(
         send: &'a dyn Fn(Message),
         initialize_params: InitializeParams,
-        include: Vec<PathBuf>,
+        search_path: Vec<PathBuf>,
     ) -> Self {
         let open_files = Arc::new(Mutex::new(SmallMap::new()));
         let loader = LoaderId::new(LspLoader {
             open_files: open_files.dupe(),
-            search_roots: include.clone(),
+            search_path: search_path.clone(),
         });
         Self {
             send,
             initialize_params,
-            include,
+            search_path,
             state: Mutex::new(State::new()),
             config: RuntimeMetadata::default(),
             loader,
@@ -312,7 +312,7 @@ impl<'a> Server<'a> {
             .map(|x| {
                 (
                     Handle::new(
-                        module_from_path(x, &self.include),
+                        module_from_path(x, &self.search_path),
                         ModulePath::memory(x.clone()),
                         self.config.dupe(),
                         self.loader.dupe(),
@@ -390,7 +390,7 @@ impl<'a> Server<'a> {
 
     fn make_handle(&self, uri: &Url) -> Handle {
         let path = uri.to_file_path().unwrap();
-        let module = module_from_path(&path, &self.include);
+        let module = module_from_path(&path, &self.search_path);
         let module_path = if self.open_files.lock().contains_key(&path) {
             ModulePath::memory(path)
         } else {

@@ -31,7 +31,7 @@ struct TestCase {
 }
 fn run_test_lsp(test_case: TestCase) {
     let args = Args {
-        include: vec![PathBuf::from_str(TEST_PYTHON_PATH).unwrap()],
+        search_path: vec![PathBuf::from_str(TEST_PYTHON_PATH).unwrap()],
     };
     let (writer_sender, writer_receiver) = bounded::<Message>(0);
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
