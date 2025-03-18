@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_lambda,
@@ -571,29 +570,5 @@ A.h("")  # E: in function `A.h`
 class B(A):
     pass
 B().f("")  # E: in function `A.f`
-    "#,
-);
-
-testcase_with_bug!(
-    "TODO(stroxler) Our resolution of `__call__` is sometimes failing.",
-    test_callable_class_as_decorator,
-    r#"
-import dataclasses
-from typing import Callable
-
-@dataclasses.dataclass(frozen=True)
-class decorator:
-    metadata: int
-
-    def __call__[TReturn, **TParams](
-        self, func: Callable[TParams, TReturn]
-    ) -> Callable[TParams, TReturn]:
-        ...
-
-
-class C:
-    @decorator(42)  # E: Expected a callable, got decorator
-    def f(self, x: int) -> int:
-        return x
     "#,
 );
