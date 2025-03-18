@@ -447,3 +447,15 @@ class Y: pass
 X = Union[int, "Y"] # E: Expected a type form, got instance of `Literal['Y']`
     "#,
 );
+
+testcase_with_bug!(
+    "Causing issues with argparse library",
+    test_type_alias_argparse,
+    r#"
+from typing import Callable, Any
+def foo(x: Callable[[str], Any]) -> None:
+    pass 
+
+foo(str) # E: Argument `type[str]` is not assignable to parameter `x` with type `(str) -> Any` in function `foo`
+    "#,
+);
