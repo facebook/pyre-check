@@ -47,7 +47,10 @@ fn run_test_lsp(test_case: TestCase) {
                         "Response mismatch"
                     );
                 }
-                Message::Notification(_) | Message::Request(_) => {
+                Message::Notification(notification) => {
+                    eprintln!("Received notification: {:?}", notification);
+                }
+                Message::Request(_) => {
                     panic!("Unexpected message {:?}", msg);
                 }
             };
