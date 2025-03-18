@@ -114,13 +114,16 @@ let test_match_actuals_to_formals _ =
   let named ?(actual_path = []) name =
     { AccessPath.root = AccessPath.Root.NamedParameter { name }; actual_path; formal_path = [] }
   in
-  let assert_match ~signature ~call ~expected =
+  let assert_match ?formals ~signature ~call ~expected () =
     let actuals = Test.parse_single_call call |> fun { Call.arguments; _ } -> arguments in
     let formals =
-      Test.parse_single_define signature
-      |> (fun { Define.signature = { Define.Signature.parameters; _ }; _ } -> parameters)
-      |> AccessPath.normalize_parameters
-      |> List.map ~f:(fun { AccessPath.NormalizedParameter.root; _ } -> root)
+      match formals with
+      | Some formals -> formals
+      | None ->
+          Test.parse_single_define signature
+          |> (fun { Define.signature = { Define.Signature.parameters; _ }; _ } -> parameters)
+          |> AccessPath.normalize_parameters
+          |> List.map ~f:(fun { AccessPath.NormalizedParameter.root; _ } -> root)
     in
     let sort =
       let compare (left_expression, left_matches) (right_expression, right_matches) =
@@ -143,18 +146,24 @@ let test_match_actuals_to_formals _ =
     in
     assert_equal ~printer (sort expected) (sort actual)
   in
-  assert_match ~signature:"def foo(x): ..." ~call:"foo(1)" ~expected:["1", [positional (0, "x")]];
-  assert_match ~signature:"def foo(x): ..." ~call:"foo(x=1)" ~expected:["1", [positional (0, "x")]];
+  assert_match ~signature:"def foo(x): ..." ~call:"foo(1)" ~expected:["1", [positional (0, "x")]] ();
+  assert_match
+    ~signature:"def foo(x): ..."
+    ~call:"foo(x=1)"
+    ~expected:["1", [positional (0, "x")]]
+    ();
   assert_match
     ~signature:"def foo(*args): ..."
     ~call:"foo(1)"
-    ~expected:["1", [starred ~position:0 ~formal_path:0]];
-  assert_match ~signature:"def foo(*args): ..." ~call:"foo(x=1)" ~expected:["1", []];
+    ~expected:["1", [starred ~position:0 ~formal_path:0]]
+    ();
+  assert_match ~signature:"def foo(*args): ..." ~call:"foo(x=1)" ~expected:["1", []] ();
   assert_match
     ~signature:"def foo(*args): ..."
     ~call:"foo(1, foo)"
     ~expected:
-      ["1", [starred ~position:0 ~formal_path:0]; "foo", [starred ~position:0 ~formal_path:1]];
+      ["1", [starred ~position:0 ~formal_path:0]; "foo", [starred ~position:0 ~formal_path:1]]
+    ();
   assert_match
     ~signature:"def foo(x, *args): ..."
     ~call:"foo(1, 2, 3)"
@@ -163,7 +172,8 @@ let test_match_actuals_to_formals _ =
         "1", [positional (0, "x")];
         "2", [starred ~position:1 ~formal_path:0];
         "3", [starred ~position:1 ~formal_path:1];
-      ];
+      ]
+    ();
   assert_match
     ~signature:"def foo(x, y): ..."
     ~call:"foo(*[1, 2, 3, 4])"
@@ -174,11 +184,13 @@ let test_match_actuals_to_formals _ =
             positional ~actual_path:[Abstract.TreeDomain.Label.Index "0"] (0, "x");
             positional ~actual_path:[Abstract.TreeDomain.Label.Index "1"] (1, "y");
           ] );
-      ];
+      ]
+    ();
   assert_match
     ~signature:"def foo(**kwargs): ..."
     ~call:"foo(x=1)"
-    ~expected:["1", [double_starred "x"]];
+    ~expected:["1", [double_starred "x"]]
+    ();
   assert_match
     ~signature:"def foo(a, b, *rest, c, d, **kw): ..."
     ~call:"foo(1, 2, 3, *[4], 5, c = 6, q = 7, r = 8, **{9:9})"
@@ -216,16 +228,19 @@ let test_match_actuals_to_formals _ =
         "6", [named "c"];
         "7", [double_starred ~excluded:["d"; "c"; "b"; "a"] "q"];
         "8", [double_starred ~excluded:["d"; "c"; "b"; "a"] "r"];
-      ];
+      ]
+    ();
   assert_match
     ~signature:"def foo(x): ..."
     ~call:"foo(**{'x': 1})"
     ~expected:
-      [{|**{ "x":1 }|}, [positional ~actual_path:[Abstract.TreeDomain.Label.Index "x"] (0, "x")]];
+      [{|**{ "x":1 }|}, [positional ~actual_path:[Abstract.TreeDomain.Label.Index "x"] (0, "x")]]
+    ();
   assert_match
     ~signature:"def foo(x, /): ..."
     ~call:"foo(1)"
-    ~expected:["1", [positional ~positional_only:true (0, "x")]];
+    ~expected:["1", [positional ~positional_only:true (0, "x")]]
+    ();
   assert_match
     ~signature:"def foo(x, /, y, *z): ..."
     ~call:"foo(5, 6, 7)"
@@ -241,7 +256,24 @@ let test_match_actuals_to_formals _ =
               formal_path = [Abstract.TreeDomain.Label.Index "0"];
             };
           ] );
-      ];
+      ]
+    ();
+  assert_match
+    ~signature:{|
+  class Foo:
+    def foo(self, x):
+      return 0
+  |}
+    ~formals:
+      [AccessPath.Root.PositionalParameter { position = 1; name = "x"; positional_only = false }]
+      (* This simulates a taint model where only formal argument `x` is tainted. *)
+    ~call:"Foo.foo(*args, **kwargs)"
+    ~expected:
+      [
+        "**kwargs", [positional ~actual_path:[Abstract.TreeDomain.Label.Index "x"] (1, "x")];
+        "*args", [positional ~actual_path:[Abstract.TreeDomain.Label.Index "1"] (1, "x")];
+      ]
+    ();
   ()
 
 
