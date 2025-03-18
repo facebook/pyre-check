@@ -68,10 +68,24 @@ impl<'a> BindingsBuilder<'a> {
                                 ErrorKind::UnboundName,
                             );
                         }
+                        Some(FlowStyle::PossiblyUnbound) => {
+                            self.error(
+                                name.range,
+                                format!("`{name}` may be unbound"),
+                                ErrorKind::UnboundName,
+                            );
+                        }
                         Some(FlowStyle::Uninitialized) => {
                             self.error(
                                 name.range,
                                 format!("`{name}` is uninitialized"),
+                                ErrorKind::UnboundName,
+                            );
+                        }
+                        Some(FlowStyle::PossiblyUninitialized) => {
+                            self.error(
+                                name.range,
+                                format!("`{name}` may be uninitialized"),
                                 ErrorKind::UnboundName,
                             );
                         }

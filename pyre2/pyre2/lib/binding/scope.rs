@@ -160,6 +160,10 @@ pub enum FlowStyle {
     ImportAs(ModuleName),
     /// Am I a function definition? Used to chain overload definitions.
     FunctionDef(Idx<KeyFunction>),
+    /// The name is possibly unbound (perhaps due to merging branches)
+    PossiblyUnbound,
+    /// The name is possibly uninitialized (perhaps due to merging branches)
+    PossiblyUninitialized,
     /// The name was previously bound, but is now unbound due to `del`
     Unbound,
     /// The name was in an annotated declaration like `x: int` but not initialized

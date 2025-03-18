@@ -770,17 +770,38 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn merge_flow_style(&mut self, styles: Vec<Option<&FlowStyle>>) -> Option<FlowStyle> {
-        // If these are all identical, return the identical ones.
-        // Otherwise give up and return None, since not clear how to merge otherwise.
         let mut it = styles.into_iter();
-        let first = it.next()??;
+        let mut merged = it.next()?;
         for x in it {
-            if x? != first {
-                // TODO: Merging of flow style is hacky. What properties should be merged?
-                return None;
+            match (merged, x) {
+                // If they're identical, keep it
+                (l, r) if l == r => {}
+                // Uninitialized takes precedence over Unbound
+                (Some(FlowStyle::Uninitialized), Some(FlowStyle::Unbound)) => {}
+                (Some(FlowStyle::Unbound), Some(FlowStyle::Uninitialized)) => {
+                    merged = Some(&FlowStyle::Uninitialized);
+                }
+                // Unbound and bound branches merge into PossiblyUnbound
+                // Uninitialized and bound branches merge into PossiblyUninitialized
+                (Some(FlowStyle::Unbound), _) => {
+                    return Some(FlowStyle::PossiblyUnbound);
+                }
+                (Some(FlowStyle::Uninitialized), _) => {
+                    return Some(FlowStyle::PossiblyUninitialized);
+                }
+                (_, Some(FlowStyle::PossiblyUnbound | FlowStyle::Unbound)) => {
+                    return Some(FlowStyle::PossiblyUnbound);
+                }
+                (_, Some(FlowStyle::PossiblyUninitialized | FlowStyle::Uninitialized)) => {
+                    return Some(FlowStyle::PossiblyUninitialized);
+                }
+                // Unclear how to merge, default to None
+                _ => {
+                    merged = None;
+                }
             }
         }
-        Some(first.clone())
+        merged.cloned()
     }
 
     pub fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange) -> Flow {

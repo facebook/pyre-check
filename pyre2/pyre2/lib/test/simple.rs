@@ -120,6 +120,59 @@ z = str(z)  # E: `z` is uninitialized  # E: `str` is not assignable to variable 
 );
 
 testcase!(
+    test_unbound_merge_flow,
+    r#"
+def test(cond: bool):
+    if cond:
+        a: int
+    else:
+        a = 1
+    a  # E: `a` may be uninitialized
+    if cond:
+        b: int
+    else:
+        b = 1
+        del b
+    b  # E: `b` is uninitialized
+    if cond:
+        c: int
+    else:
+        c: int = 1
+    c  # E: `c` may be uninitialized
+    if cond:
+        d = 1
+    else:
+        d = 1
+        del d
+    d  # E: `d` may be unbound
+    if cond:
+        e = 1
+    else:
+        e: int
+    e  # E: `e` may be uninitialized
+    if cond:
+        f = 1
+        del f
+    else:
+        f: int
+    f  # E: `f` is uninitialized
+    if cond:
+        g = 1
+        del g
+    else:
+        g = 1
+    g  # E: `g` may be unbound
+    if cond:
+        h = 1
+        del h
+    else:
+        h = 1
+        del h
+    h  # E: `h` is unbound
+"#,
+);
+
+testcase!(
     test_extend_final,
     r#"
 from typing import final
