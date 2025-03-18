@@ -53,12 +53,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_level_taint.py",
-              "line": 18,
-              "start": 4,
-              "end": 14
-            },
+            "origin": { "line": 18, "start": 4, "end": 14 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "18:4-18:42"
@@ -95,12 +90,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_level_taint.py",
-              "line": 18,
-              "start": 20,
-              "end": 41
-            },
+            "origin": { "line": 18, "start": 20, "end": 41 },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -121,12 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_level_taint.py",
-              "line": 18,
-              "start": 20,
-              "end": 41
-            },
+            "origin": { "line": 18, "start": 20, "end": 41 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "18:4-18:42"

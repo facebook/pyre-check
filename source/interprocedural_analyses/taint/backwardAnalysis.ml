@@ -435,7 +435,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
-          ~qualifier:FunctionContext.qualifier
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
         |> GlobalModel.get_sinks
@@ -605,9 +604,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~argument:(Some argument)
           ~f
       in
-      let location =
-        Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
-      in
       let convert_partial_sinks_into_triggered
           ({ SinkTreeWithHandle.sink_tree; _ } as sink_tree_with_handle)
         =
@@ -627,7 +623,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~transform_non_leaves
               ~model:taint_model
               ~call_site
-              ~location
+              ~location:argument.Node.location
               ~call_target
               ~arguments
               ~sink_matches
@@ -1105,7 +1101,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
-              ~qualifier:FunctionContext.qualifier
               ~expression
               ~interval:FunctionContext.caller_class_interval
           in
@@ -1734,7 +1729,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
-              ~qualifier:FunctionContext.qualifier
               ~expression:base
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
@@ -2130,7 +2124,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~callee:call_target.CallGraph.CallTarget.target
         ~pyre_in_context
         ~call_site
-        ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+        ~location
         FunctionContext.string_combine_partial_sink_tree
     in
     let taint =
@@ -2138,7 +2132,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> CallModel.StringFormatCall.implicit_string_literal_sinks
            ~pyre_in_context
            ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
-           ~module_reference:FunctionContext.qualifier
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.join taint
       |> BackwardState.Tree.join string_combine_partial_sink_tree
@@ -2451,7 +2444,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
-              ~qualifier:FunctionContext.qualifier
               ~expression:target
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
@@ -2516,7 +2508,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~pyre_in_context
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
-            ~qualifier:FunctionContext.qualifier
             ~expression:target
             ~interval:FunctionContext.caller_class_interval
         in
@@ -2591,7 +2582,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let return_sink =
           CallModel.return_sink
             ~pyre_in_context
-            ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+            ~location
             ~callee:FunctionContext.callable
             ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint
           |> BackwardState.Tree.add_local_breadcrumb (Features.propagated_return_sink ())

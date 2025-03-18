@@ -126,12 +126,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "access_token" }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 21,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 21, "start": 8, "end": 22 }
           }
         ]
       }
@@ -161,12 +156,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 26,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 26, "start": 8, "end": 22 }
           }
         ]
       }
@@ -196,12 +186,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 31,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 31, "start": 8, "end": 22 }
           }
         ]
       }
@@ -234,12 +219,7 @@
               { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
-            "origin": {
-              "filename": "select.py",
-              "line": 41,
-              "start": 11,
-              "end": 22
-            }
+            "origin": { "line": 41, "start": 11, "end": 22 }
           }
         ]
       }
@@ -263,12 +243,7 @@
               { "always-via": "propagated-return-sink" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
-            "origin": {
-              "filename": "select.py",
-              "line": 41,
-              "start": 4,
-              "end": 48
-            }
+            "origin": { "line": 41, "start": 4, "end": 48 }
           }
         ]
       },
@@ -330,12 +305,7 @@
               { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
-            "origin": {
-              "filename": "select.py",
-              "line": 41,
-              "start": 11,
-              "end": 22
-            }
+            "origin": { "line": 41, "start": 11, "end": 22 }
           }
         ]
       },
@@ -351,12 +321,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 41,
-              "start": 4,
-              "end": 48
-            }
+            "origin": { "line": 41, "start": 4, "end": 48 }
           }
         ]
       }
@@ -383,12 +348,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 13,
-              "start": 9,
-              "end": 24
-            },
+            "origin": { "line": 13, "start": 9, "end": 24 },
             "call_site": "13:4-13:25"
           }
         ]
@@ -434,12 +394,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "payload" }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 12,
-              "start": 21,
-              "end": 28
-            },
+            "origin": { "line": 12, "start": 21, "end": 28 },
             "call_site": "12:0-13:25"
           }
         ]
@@ -454,12 +409,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 13,
-              "start": 9,
-              "end": 24
-            },
+            "origin": { "line": 13, "start": 9, "end": 24 },
             "call_site": "13:4-13:25"
           }
         ]
@@ -496,12 +446,7 @@
               { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
-            "origin": {
-              "filename": "select.py",
-              "line": 37,
-              "start": 9,
-              "end": 46
-            },
+            "origin": { "line": 37, "start": 9, "end": 46 },
             "call_site": "37:4-37:47"
           }
         ]
@@ -540,12 +485,7 @@
               { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
-            "origin": {
-              "filename": "select.py",
-              "line": 37,
-              "start": 9,
-              "end": 20
-            }
+            "origin": { "line": 37, "start": 9, "end": 20 }
           }
         ]
       },
@@ -559,12 +499,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 37,
-              "start": 9,
-              "end": 46
-            },
+            "origin": { "line": 37, "start": 9, "end": 46 },
             "call_site": "37:4-37:47"
           }
         ]
@@ -600,12 +535,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "payload" }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 17,
-              "start": 9,
-              "end": 31
-            },
+            "origin": { "line": 17, "start": 9, "end": 31 },
             "call_site": "17:4-17:32"
           }
         ]
@@ -654,12 +584,7 @@
               { "has": "first-field" },
               { "first-field": "GET" }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 16,
-              "start": 21,
-              "end": 28
-            },
+            "origin": { "line": 16, "start": 21, "end": 28 },
             "call_site": "16:0-17:32"
           }
         ]
@@ -674,12 +599,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "select.py",
-              "line": 17,
-              "start": 9,
-              "end": 31
-            },
+            "origin": { "line": 17, "start": 9, "end": 31 },
             "call_site": "17:4-17:32"
           }
         ]

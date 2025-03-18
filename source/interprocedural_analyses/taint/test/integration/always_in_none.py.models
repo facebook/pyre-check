@@ -105,12 +105,7 @@
               { "line": 21, "start": 17, "end": 36 },
               { "line": 29, "start": 21, "end": 40 }
             ],
-            "origin": {
-              "filename": "always_in_none.py",
-              "line": 33,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 33, "start": 15, "end": 21 },
             "call_site": "33:4-33:22"
           }
         ]
@@ -145,12 +140,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "always_in_none.py",
-              "line": 21,
-              "start": 17,
-              "end": 60
-            },
+            "origin": { "line": 21, "start": 17, "end": 60 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           },
@@ -166,12 +156,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "always_in_none.py",
-              "line": 29,
-              "start": 21,
-              "end": 64
-            },
+            "origin": { "line": 29, "start": 21, "end": 64 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -188,12 +173,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "always_in_none.py",
-              "line": 33,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 33, "start": 15, "end": 21 },
             "call_site": "33:4-33:22"
           }
         ]

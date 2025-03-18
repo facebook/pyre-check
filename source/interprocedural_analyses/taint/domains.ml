@@ -178,7 +178,7 @@ module CallSite = struct
 
   (* No output if this is redundant w.r.t. other locations in `CallInfo`. *)
   let to_json ~location call_site =
-    if equal call_site (Location.strip_module location) then
+    if equal call_site location then
       []
     else
       ["call_site", `String (show call_site)]
@@ -198,7 +198,7 @@ module CallInfo = struct
     | Tito of { class_intervals: ClassIntervals.t }
     (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
     | Origin of {
-        location: Location.WithModule.t;
+        location: Location.t;
         class_intervals: ClassIntervals.t;
         call_site: CallSite.t;
       }
@@ -206,7 +206,7 @@ module CallInfo = struct
     | CallSite of {
         port: AccessPath.Root.t;
         path: AccessPath.Path.t;
-        location: Location.WithModule.t;
+        location: Location.t;
         callees: Target.t list;
         class_intervals: ClassIntervals.t;
         call_site: CallSite.t;
@@ -246,7 +246,7 @@ module CallInfo = struct
           "Origin(call_site=%a, location=%a, class_intervals=%a)"
           CallSite.pp
           call_site
-          Location.WithModule.pp
+          Location.pp
           location
           ClassIntervals.pp
           class_intervals
@@ -257,7 +257,7 @@ module CallInfo = struct
           (String.concat ~sep:", " (List.map ~f:Target.external_name callees))
           CallSite.pp
           call_site
-          Location.WithModule.pp
+          Location.pp
           location
           AccessPath.pp
           (AccessPath.create port path)
@@ -290,7 +290,7 @@ module CallInfo = struct
 
 
   (* Returns the (dictionary key * json) to emit *)
-  let to_json ~resolve_module_path trace : (string * Yojson.Safe.t) list =
+  let to_json trace : (string * Yojson.Safe.t) list =
     let class_intervals_to_json call_info_intervals =
       if ClassIntervals.is_top call_info_intervals then
         []
@@ -301,7 +301,7 @@ module CallInfo = struct
     | Declaration _ -> ["declaration", `Null]
     | Tito { class_intervals } -> ["tito", `Assoc (class_intervals_to_json class_intervals)]
     | Origin { location; class_intervals; call_site } ->
-        let location_json = location_with_module_to_json ~resolve_module_path location in
+        let location_json = location_to_json location in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
         (("origin", `Assoc location_json) :: class_intervals_json_list)
         @ CallSite.to_json ~location call_site
@@ -309,7 +309,7 @@ module CallInfo = struct
         let callee_json =
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
         in
-        let location_json = location_with_module_to_json ~resolve_module_path location in
+        let location_json = location_to_json location in
         let full_port = AccessPath.create port path in
         let call_json =
           [
@@ -417,7 +417,7 @@ module ExtraTraceFirstHop = struct
     let to_json { call_info; leaf_kind; message } =
       let json =
         List.append
-          (CallInfo.to_json ~resolve_module_path:None call_info)
+          (CallInfo.to_json call_info)
           [
             "leaf_kind", `String (show_leaf_kind leaf_kind);
             "trace_kind", `String (leaf_kind |> trace_kind |> TraceKind.show);
@@ -629,7 +629,7 @@ module type TAINT_DOMAIN = sig
   val apply_call
     :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
     call_site:CallSite.t ->
-    location:Location.WithModule.t ->
+    location:Location.t ->
     callee:Target.t ->
     arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
@@ -668,7 +668,6 @@ module type TAINT_DOMAIN = sig
       callee:Target.t ->
       bool) ->
     trace_kind:TraceKind.t option ->
-    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     export_leaf_names:ExportLeafNames.t ->
     t ->
     Yojson.Safe.t
@@ -859,14 +858,7 @@ end = struct
     Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
 
-  let to_json
-      ~expand_overrides
-      ~is_valid_callee
-      ~trace_kind
-      ~resolve_module_path
-      ~export_leaf_names
-      taint
-    =
+  let to_json ~expand_overrides ~is_valid_callee ~trace_kind ~export_leaf_names taint =
     let cons_if_non_empty key list assoc =
       if List.is_empty list then
         assoc
@@ -899,7 +891,7 @@ end = struct
     in
 
     let trace_to_json (trace_info, local_taint) =
-      let json = CallInfo.to_json ~resolve_module_path trace_info in
+      let json = CallInfo.to_json trace_info in
 
       let tito_positions =
         LocalTaintDomain.get LocalTaintDomain.Slots.TitoPosition local_taint
@@ -1476,8 +1468,7 @@ end = struct
       match call_info with
       | CallInfo.Origin { class_intervals; _ } ->
           let call_info =
-            CallInfo.Origin
-              { location = Location.WithModule.any; class_intervals; call_site = CallSite.any }
+            CallInfo.Origin { location = Location.any; class_intervals; call_site = CallSite.any }
           in
           call_info, local_taint
       | CallSite { port; path; location = _; callees; class_intervals; call_site = _ } ->
@@ -1486,7 +1477,7 @@ end = struct
               {
                 port;
                 path;
-                location = Location.WithModule.any;
+                location = Location.any;
                 callees;
                 class_intervals;
                 call_site = CallSite.any;
@@ -1836,14 +1827,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       end)
       (Tree)
 
-  let to_json
-      ~expand_overrides
-      ~is_valid_callee
-      ~trace_kind
-      ~resolve_module_path
-      ~export_leaf_names
-      environment
-    =
+  let to_json ~expand_overrides ~is_valid_callee ~trace_kind ~export_leaf_names environment =
     let element_to_json json_list (root, tree) =
       let path_to_json (path, tip) json_list =
         let port = AccessPath.create root path in
@@ -1851,13 +1835,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
           [
             "port", `String (AccessPath.show port);
             ( "taint",
-              Taint.to_json
-                ~expand_overrides
-                ~is_valid_callee
-                ~trace_kind
-                ~resolve_module_path
-                ~export_leaf_names
-                tip );
+              Taint.to_json ~expand_overrides ~is_valid_callee ~trace_kind ~export_leaf_names tip );
           ] )
         :: json_list
       in

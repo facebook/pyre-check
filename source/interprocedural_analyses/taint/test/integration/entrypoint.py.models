@@ -23,12 +23,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 21,
-              "start": 8,
-              "end": 12
-            },
+            "origin": { "line": 21, "start": 8, "end": 12 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -44,12 +39,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 21,
-              "start": 8,
-              "end": 12
-            },
+            "origin": { "line": 21, "start": 8, "end": 12 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "21:8-21:22"
@@ -91,12 +81,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 17,
-              "start": 8,
-              "end": 12
-            },
+            "origin": { "line": 17, "start": 8, "end": 12 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -112,12 +97,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 17,
-              "start": 8,
-              "end": 12
-            },
+            "origin": { "line": 17, "start": 8, "end": 12 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "17:8-17:22"
@@ -159,12 +139,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 63,
-              "start": 8,
-              "end": 12
-            }
+            "origin": { "line": 63, "start": 8, "end": 12 }
           }
         ]
       },
@@ -178,12 +153,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 63,
-              "start": 8,
-              "end": 12
-            },
+            "origin": { "line": 63, "start": 8, "end": 12 },
             "call_site": "63:8-63:22"
           }
         ]
@@ -223,12 +193,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 57,
-              "start": 4,
-              "end": 8
-            }
+            "origin": { "line": 57, "start": 4, "end": 8 }
           }
         ]
       },
@@ -242,12 +207,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 57,
-              "start": 4,
-              "end": 8
-            },
+            "origin": { "line": 57, "start": 4, "end": 8 },
             "call_site": "57:4-57:18"
           }
         ]
@@ -287,12 +247,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 32,
-              "start": 4,
-              "end": 8
-            }
+            "origin": { "line": 32, "start": 4, "end": 8 }
           }
         ]
       },
@@ -306,12 +261,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 32,
-              "start": 4,
-              "end": 8
-            },
+            "origin": { "line": 32, "start": 4, "end": 8 },
             "call_site": "32:4-32:18"
           }
         ]
@@ -351,12 +301,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 48,
-              "start": 43,
-              "end": 47
-            }
+            "origin": { "line": 48, "start": 43, "end": 47 }
           }
         ]
       },
@@ -372,12 +317,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "entrypoint.py",
-                "line": 48,
-                "start": 43,
-                "end": 47
-              },
+              "position": { "line": 48, "start": 43, "end": 47 },
               "resolves_to": [
                 "entrypoint.transitive_call_with_globals_passed_in"
               ],
@@ -422,12 +362,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 26,
-              "start": 8,
-              "end": 12
-            }
+            "origin": { "line": 26, "start": 8, "end": 12 }
           }
         ]
       },
@@ -441,12 +376,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 26,
-              "start": 8,
-              "end": 12
-            },
+            "origin": { "line": 26, "start": 8, "end": 12 },
             "call_site": "26:8-26:22"
           }
         ]
@@ -486,12 +416,7 @@
                 "kind": "GlobalSource"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 44,
-              "start": 4,
-              "end": 8
-            }
+            "origin": { "line": 44, "start": 4, "end": 8 }
           }
         ]
       },
@@ -505,12 +430,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 44,
-              "start": 4,
-              "end": 8
-            },
+            "origin": { "line": 44, "start": 4, "end": 8 },
             "call_site": "44:4-44:18"
           }
         ]
@@ -558,12 +478,7 @@
                 "kind": "MutationSink"
               }
             ],
-            "origin": {
-              "filename": "entrypoint.py",
-              "line": 40,
-              "start": 4,
-              "end": 14
-            },
+            "origin": { "line": 40, "start": 4, "end": 14 },
             "call_site": "40:4-40:24"
           }
         ]

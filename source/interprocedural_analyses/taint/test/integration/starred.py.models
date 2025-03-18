@@ -28,12 +28,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "starred.py",
-              "line": 15,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 15, "start": 21, "end": 35 }
           }
         ]
       },
@@ -50,12 +45,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "starred.py",
-                "line": 16,
-                "start": 9,
-                "end": 14
-              },
+              "position": { "line": 16, "start": 9, "end": 14 },
               "resolves_to": [ "starred.sink" ],
               "port": "formal(json, position=0)",
               "call_site": "16:4-16:15"
@@ -364,12 +354,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "starred.py",
-              "line": 11,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 11, "start": 15, "end": 19 },
             "call_site": "11:4-11:20"
           }
         ]

@@ -22,7 +22,7 @@ module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 type t = {
   models: Model.WithCallTarget.t list;
   pyre_in_context: PyrePysaEnvironment.InContext.t;
-  location: Location.WithModule.t;
+  location: Location.t;
   interval: Interprocedural.ClassIntervalSet.t;
 }
 
@@ -45,7 +45,7 @@ let get_global_targets ~call_graph ~expression =
   | _ -> []
 
 
-let from_expression ~pyre_in_context ~call_graph ~get_callee_model ~qualifier ~expression ~interval =
+let from_expression ~pyre_in_context ~call_graph ~get_callee_model ~expression ~interval =
   let fetch_model ({ CallGraph.CallTarget.target; _ } as call_target) =
     let model =
       CallModel.at_callsite ~pyre_in_context ~get_callee_model ~call_target:target ~arguments:[]
@@ -53,7 +53,7 @@ let from_expression ~pyre_in_context ~call_graph ~get_callee_model ~qualifier ~e
     { Model.WithCallTarget.model; call_target }
   in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
-  let location = Node.location expression |> Location.with_module ~module_reference:qualifier in
+  let location = Node.location expression in
   { models; pyre_in_context; location; interval }
 
 
@@ -73,7 +73,7 @@ let get_source { models; pyre_in_context; location; interval } =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] generations
     |> ForwardState.Tree.apply_call
          ~pyre_in_context
-         ~call_site:(location |> Location.strip_module |> CallSite.create)
+         ~call_site:(CallSite.create location)
          ~location
          ~callee:target
          ~arguments:[]
@@ -98,7 +98,7 @@ let get_sinks { models; pyre_in_context; location; interval } =
       BackwardState.read ~root:global_root ~path:[] sink_taint
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
-           ~call_site:(location |> Location.strip_module |> CallSite.create)
+           ~call_site:(CallSite.create location)
            ~location
            ~callee:target
            ~arguments:[]

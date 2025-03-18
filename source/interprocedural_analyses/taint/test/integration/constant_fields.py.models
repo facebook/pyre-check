@@ -194,12 +194,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "constant_fields.py",
-              "line": 53,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 53, "start": 28, "end": 42 }
           }
         ]
       }
@@ -229,12 +224,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "CONSTANT_A" }
             ],
-            "origin": {
-              "filename": "constant_fields.py",
-              "line": 41,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 41, "start": 20, "end": 34 }
           }
         ]
       }
@@ -264,12 +254,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "CONSTANT_B" }
             ],
-            "origin": {
-              "filename": "constant_fields.py",
-              "line": 47,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 47, "start": 20, "end": 34 }
           }
         ]
       }
@@ -299,12 +284,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "TRACKED_FIELD" }
             ],
-            "origin": {
-              "filename": "constant_fields.py",
-              "line": 18,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 18, "start": 34, "end": 48 }
           }
         ]
       }
@@ -334,12 +314,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "constant_fields.py",
-              "line": 24,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 24, "start": 36, "end": 50 }
           }
         ]
       }
@@ -369,12 +344,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "constant_fields.py",
-              "line": 30,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 30, "start": 36, "end": 50 }
           }
         ]
       }

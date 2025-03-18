@@ -27,12 +27,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "my-data" } ],
-            "origin": {
-              "filename": "conditional.py",
-              "line": 23,
-              "start": 8,
-              "end": 30
-            }
+            "origin": { "line": 23, "start": 8, "end": 30 }
           }
         ]
       },
@@ -48,12 +43,7 @@
                 "kind": "InTest"
               }
             ],
-            "origin": {
-              "filename": "conditional.py",
-              "line": 24,
-              "start": 7,
-              "end": 8
-            }
+            "origin": { "line": 24, "start": 7, "end": 8 }
           }
         ]
       }
@@ -91,12 +81,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "other" } ],
-            "origin": {
-              "filename": "conditional.py",
-              "line": 29,
-              "start": 8,
-              "end": 28
-            }
+            "origin": { "line": 29, "start": 8, "end": 28 }
           }
         ]
       },
@@ -112,12 +97,7 @@
                 "kind": "InTest"
               }
             ],
-            "origin": {
-              "filename": "conditional.py",
-              "line": 30,
-              "start": 16,
-              "end": 17
-            }
+            "origin": { "line": 30, "start": 16, "end": 17 }
           }
         ]
       }

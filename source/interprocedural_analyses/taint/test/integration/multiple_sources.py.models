@@ -26,12 +26,7 @@
                 "kind": "TestE"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 269,
-              "start": 44,
-              "end": 54
-            }
+            "origin": { "line": 269, "start": 44, "end": 54 }
           }
         ]
       },
@@ -58,12 +53,7 @@
                 "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 269,
-              "start": 44,
-              "end": 54
-            },
+            "origin": { "line": 269, "start": 44, "end": 54 },
             "call_site": "269:4-269:55"
           }
         ]
@@ -106,12 +96,7 @@
                 "kind": "TestD"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 268,
-              "start": 44,
-              "end": 54
-            }
+            "origin": { "line": 268, "start": 44, "end": 54 }
           }
         ]
       },
@@ -138,12 +123,7 @@
                 "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 268,
-              "start": 44,
-              "end": 54
-            },
+            "origin": { "line": 268, "start": 44, "end": 54 },
             "call_site": "268:4-268:55"
           }
         ]
@@ -186,12 +166,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 30,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 30, "start": 9, "end": 29 }
           }
         ]
       },
@@ -215,12 +190,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 31,
-              "start": 22,
-              "end": 24
-            },
+            "origin": { "line": 31, "start": 22, "end": 24 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "31:4-31:25"
@@ -265,12 +235,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 118,
-              "start": 34,
-              "end": 54
-            }
+            "origin": { "line": 118, "start": 34, "end": 54 }
           }
         ]
       },
@@ -297,12 +262,7 @@
                 "kind": "Triggered[TestA]@PartialSink[ExpectsEitherTestB]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 118,
-              "start": 34,
-              "end": 54
-            },
+            "origin": { "line": 118, "start": 34, "end": 54 },
             "call_site": "118:4-118:55"
           }
         ]
@@ -345,12 +305,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 77,
-              "start": 43,
-              "end": 63
-            }
+            "origin": { "line": 77, "start": 43, "end": 63 }
           }
         ]
       },
@@ -377,12 +332,7 @@
                 "kind": "Triggered[TestB]@PartialSink[ExpectsEitherTestB]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 77,
-              "start": 43,
-              "end": 63
-            },
+            "origin": { "line": 77, "start": 43, "end": 63 },
             "call_site": "77:4-77:64"
           }
         ]
@@ -425,12 +375,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 76,
-              "start": 43,
-              "end": 63
-            }
+            "origin": { "line": 76, "start": 43, "end": 63 }
           }
         ]
       },
@@ -457,12 +402,7 @@
                 "kind": "Triggered[TestA]@PartialSink[ExpectsEitherTestB]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 76,
-              "start": 43,
-              "end": 63
-            },
+            "origin": { "line": 76, "start": 43, "end": 63 },
             "call_site": "76:4-76:64"
           }
         ]
@@ -505,12 +445,7 @@
                 "kind": "TestC"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 243,
-              "start": 35,
-              "end": 45
-            }
+            "origin": { "line": 243, "start": 35, "end": 45 }
           }
         ]
       },
@@ -531,12 +466,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 243,
-                "start": 35,
-                "end": 45
-              },
+              "position": { "line": 243, "start": 35, "end": 45 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d"
               ],
@@ -584,12 +514,7 @@
                 "kind": "TestC"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 234,
-              "start": 41,
-              "end": 51
-            }
+            "origin": { "line": 234, "start": 41, "end": 51 }
           }
         ]
       },
@@ -610,12 +535,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 234,
-                "start": 41,
-                "end": 51
-              },
+              "position": { "line": 234, "start": 41, "end": 51 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_and_e"
               ],
@@ -663,12 +583,7 @@
                 "kind": "TestC"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 234,
-              "start": 41,
-              "end": 51
-            }
+            "origin": { "line": 234, "start": 41, "end": 51 }
           }
         ]
       },
@@ -689,12 +604,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 234,
-                "start": 41,
-                "end": 51
-              },
+              "position": { "line": 234, "start": 41, "end": 51 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_and_e"
               ],
@@ -742,12 +652,7 @@
                 "kind": "TestC"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 255,
-              "start": 40,
-              "end": 50
-            }
+            "origin": { "line": 255, "start": 40, "end": 50 }
           }
         ]
       },
@@ -768,12 +673,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 255,
-                "start": 40,
-                "end": 50
-              },
+              "position": { "line": 255, "start": 40, "end": 50 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_or_e"
               ],
@@ -821,12 +721,7 @@
                 "kind": "TestC"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 255,
-              "start": 40,
-              "end": 50
-            }
+            "origin": { "line": 255, "start": 40, "end": 50 }
           }
         ]
       },
@@ -847,12 +742,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 255,
-                "start": 40,
-                "end": 50
-              },
+              "position": { "line": 255, "start": 40, "end": 50 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_c_from_d_or_e"
               ],
@@ -900,12 +790,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 50,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 50, "start": 9, "end": 29 }
           }
         ]
       },
@@ -923,12 +808,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 51,
-                "start": 34,
-                "end": 36
-              },
+              "position": { "line": 51, "start": 34, "end": 36 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_context"
               ],
@@ -976,12 +856,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 137,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 137, "start": 9, "end": 29 }
           }
         ]
       },
@@ -999,12 +874,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 138,
-                "start": 44,
-                "end": 46
-              },
+              "position": { "line": 138, "start": 44, "end": 46 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_context_more_hops"
               ],
@@ -1052,12 +922,7 @@
                 "kind": "TestE"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 264,
-              "start": 34,
-              "end": 44
-            }
+            "origin": { "line": 264, "start": 34, "end": 44 }
           }
         ]
       },
@@ -1078,12 +943,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 264,
-                "start": 34,
-                "end": 44
-              },
+              "position": { "line": 264, "start": 34, "end": 44 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_d_and_e"
               ],
@@ -1131,12 +991,7 @@
                 "kind": "TestD"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 263,
-              "start": 34,
-              "end": 44
-            }
+            "origin": { "line": 263, "start": 34, "end": 44 }
           }
         ]
       },
@@ -1157,12 +1012,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 263,
-                "start": 34,
-                "end": 44
-              },
+              "position": { "line": 263, "start": 34, "end": 44 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_d_and_e"
               ],
@@ -1210,12 +1060,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 45,
-              "start": 9,
-              "end": 32
-            }
+            "origin": { "line": 45, "start": 9, "end": 32 }
           }
         ]
       },
@@ -1241,12 +1086,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 46,
-                "start": 32,
-                "end": 34
-              },
+              "position": { "line": 46, "start": 32, "end": 34 },
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_input"
               ],
@@ -1298,12 +1138,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 175,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 175, "start": 9, "end": 29 }
           }
         ]
       },
@@ -1329,12 +1164,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 176,
-                "start": 30,
-                "end": 32
-              },
+              "position": { "line": 176, "start": 30, "end": 32 },
               "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
               "port": "formal(vc, position=1)",
               "call_site": "176:4-176:33"
@@ -1380,12 +1210,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 186,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 186, "start": 9, "end": 29 }
           }
         ]
       },
@@ -1403,12 +1228,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 187,
-                "start": 44,
-                "end": 46
-              },
+              "position": { "line": 187, "start": 44, "end": 46 },
               "resolves_to": [
                 "multiple_sources.wrapper_node_get_send_triggered_context"
               ],
@@ -1456,12 +1276,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 153,
-              "start": 47,
-              "end": 67
-            }
+            "origin": { "line": 153, "start": 47, "end": 67 }
           }
         ]
       },
@@ -1488,12 +1303,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 153,
-              "start": 47,
-              "end": 67
-            },
+            "origin": { "line": 153, "start": 47, "end": 67 },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "153:4-153:68"
@@ -1538,12 +1348,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 153,
-              "start": 47,
-              "end": 67
-            }
+            "origin": { "line": 153, "start": 47, "end": 67 }
           }
         ]
       },
@@ -1570,12 +1375,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 153,
-              "start": 47,
-              "end": 67
-            },
+            "origin": { "line": 153, "start": 47, "end": 67 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "153:4-153:68"
@@ -1620,12 +1420,7 @@
                 "kind": "PermissiveContext"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 158,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 158, "start": 9, "end": 29 }
           }
         ]
       },
@@ -1643,12 +1438,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 159,
-                "start": 31,
-                "end": 33
-              },
+              "position": { "line": 159, "start": 31, "end": 33 },
               "resolves_to": [
                 "multiple_sources.multiple_triggered_context"
               ],
@@ -1948,12 +1738,7 @@
                 "kind": "Triggered[TestD]@PartialSink[ShareBothSinksLeft]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 238,
-              "start": 32,
-              "end": 33
-            },
+            "origin": { "line": 238, "start": 32, "end": 33 },
             "call_site": "238:4-238:46"
           }
         ]
@@ -1991,12 +1776,7 @@
                 "kind": "Triggered[TestD]@PartialSink[ShareBothSinksLeft]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 228,
-              "start": 32,
-              "end": 33
-            },
+            "origin": { "line": 228, "start": 32, "end": 33 },
             "call_site": "228:4-228:46"
           },
           {
@@ -2019,12 +1799,7 @@
                 "kind": "Triggered[TestE]@PartialSink[ShareBothSinksLeft]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 229,
-              "start": 32,
-              "end": 33
-            },
+            "origin": { "line": 229, "start": 32, "end": 33 },
             "call_site": "229:4-229:46"
           }
         ]
@@ -2062,12 +1837,7 @@
                 "kind": "Triggered[TestD]@PartialSink[ShareBothSinksLeft]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 248,
-              "start": 36,
-              "end": 37
-            },
+            "origin": { "line": 248, "start": 36, "end": 37 },
             "call_site": "248:8-248:50"
           },
           {
@@ -2090,12 +1860,7 @@
                 "kind": "Triggered[TestE]@PartialSink[ShareBothSinksLeft]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 250,
-              "start": 36,
-              "end": 37
-            },
+            "origin": { "line": 250, "start": 36, "end": 37 },
             "call_site": "250:8-250:50"
           }
         ]
@@ -2130,12 +1895,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 36,
-              "start": 22,
-              "end": 24
-            },
+            "origin": { "line": 36, "start": 22, "end": 24 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "36:4-36:25"
@@ -2178,12 +1938,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 133,
-              "start": 22,
-              "end": 24
-            },
+            "origin": { "line": 133, "start": 22, "end": 24 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "133:4-133:25"
@@ -2223,12 +1978,7 @@
                 "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 259,
-              "start": 44,
-              "end": 45
-            },
+            "origin": { "line": 259, "start": 44, "end": 45 },
             "call_site": "259:4-259:46"
           }
         ]
@@ -2272,12 +2022,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 41, "start": 13, "end": 15 } ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 41,
-              "start": 4,
-              "end": 16
-            },
+            "origin": { "line": 41, "start": 4, "end": 16 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "41:4-41:25"
@@ -2360,12 +2105,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 164,
-              "start": 23,
-              "end": 25
-            },
+            "origin": { "line": 164, "start": 23, "end": 25 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "164:4-164:26"
@@ -2387,12 +2127,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 166,
-              "start": 23,
-              "end": 25
-            },
+            "origin": { "line": 166, "start": 23, "end": 25 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "166:4-166:26"
@@ -2572,12 +2307,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 127,
-              "start": 11,
-              "end": 34
-            }
+            "origin": { "line": 127, "start": 11, "end": 34 }
           }
         ]
       }
@@ -2603,12 +2333,7 @@
                 "kind": "PartialSink[PermissiveContextSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 170,
-              "start": 22,
-              "end": 24
-            },
+            "origin": { "line": 170, "start": 22, "end": 24 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "170:4-170:25"
@@ -2636,12 +2361,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 170, "start": 13, "end": 15 } ],
-            "origin": {
-              "filename": "multiple_sources.py",
-              "line": 170,
-              "start": 4,
-              "end": 16
-            },
+            "origin": { "line": 170, "start": 4, "end": 16 },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "170:4-170:25"
@@ -2677,12 +2397,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources.py",
-                "line": 182,
-                "start": 30,
-                "end": 32
-              },
+              "position": { "line": 182, "start": 30, "end": 32 },
               "resolves_to": [ "multiple_sources.wrapper_node_get_send" ],
               "port": "formal(vc, position=1)",
               "call_site": "182:4-182:33"

@@ -149,12 +149,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 34, "start": 32, "end": 42 } ],
-            "origin": {
-              "filename": "sanitize_discard_flows.py",
-              "line": 34,
-              "start": 32,
-              "end": 42
-            }
+            "origin": { "line": 34, "start": 32, "end": 42 }
           }
         ]
       }

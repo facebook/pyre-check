@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 39,
-              "start": 26,
-              "end": 40
-            }
+            "origin": { "line": 39, "start": 26, "end": 40 }
           }
         ]
       },
@@ -50,12 +45,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "dataclass_taint.py",
-                "line": 39,
-                "start": 26,
-                "end": 40
-              },
+              "position": { "line": 39, "start": 26, "end": 40 },
               "resolves_to": [ "dataclass_taint.DataClassWIthInit.__init__" ],
               "port": "formal(bad, position=1)",
               "call_site": "39:4-39:41"
@@ -114,12 +104,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": {
-                "filename": "dataclass_taint.py",
-                "line": 61,
-                "start": 10,
-                "end": 42
-              },
+              "position": { "line": 61, "start": 10, "end": 42 },
               "resolves_to": [ "dataclass_taint.WeirdDataClass.__init__" ],
               "port": "formal(self, position=0)[bad]"
             }
@@ -137,12 +122,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 62,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 62, "start": 15, "end": 22 },
             "call_site": "62:4-62:23"
           }
         ]
@@ -189,12 +169,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 105,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 105, "start": 28, "end": 42 }
           }
         ]
       },
@@ -213,12 +188,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 105,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 105, "start": 4, "end": 25 }
           }
         ]
       }
@@ -257,12 +227,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 99,
-              "start": 51,
-              "end": 65
-            }
+            "origin": { "line": 99, "start": 51, "end": 65 }
           }
         ]
       },
@@ -281,12 +246,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 99,
-              "start": 51,
-              "end": 65
-            },
+            "origin": { "line": 99, "start": 51, "end": 65 },
             "call_site": "99:4-99:78"
           }
         ]
@@ -327,12 +287,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 118,
-              "start": 56,
-              "end": 70
-            }
+            "origin": { "line": 118, "start": 56, "end": 70 }
           }
         ]
       },
@@ -354,12 +309,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 118,
-              "start": 56,
-              "end": 70
-            },
+            "origin": { "line": 118, "start": 56, "end": 70 },
             "call_site": "118:4-118:83"
           }
         ]
@@ -572,12 +522,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 35,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 35, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "35:8-35:23"
@@ -801,12 +746,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 51,
-              "start": 23,
-              "end": 31
-            },
+            "origin": { "line": 51, "start": 23, "end": 31 },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
             "call_site": "51:4-53:53"
@@ -837,12 +777,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 53,
-              "start": 8,
-              "end": 53
-            },
+            "origin": { "line": 53, "start": 8, "end": 53 },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false
           }
@@ -939,12 +874,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 18,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 18, "start": 28, "end": 42 }
           }
         ]
       }
@@ -982,12 +912,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 18,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 18, "start": 28, "end": 42 }
           }
         ]
       },
@@ -1002,12 +927,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 19,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 19, "start": 15, "end": 22 },
             "call_site": "19:4-19:23"
           }
         ]
@@ -1051,12 +971,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 24, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 24,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 24, "start": 28, "end": 42 }
           }
         ]
       }
@@ -1129,12 +1044,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 146,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 146, "start": 15, "end": 21 },
             "call_site": "146:4-146:22"
           }
         ]
@@ -1180,12 +1090,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "bad" }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 145,
-              "start": 34,
-              "end": 47
-            },
+            "origin": { "line": 145, "start": 34, "end": 47 },
             "call_site": "145:0-146:22"
           }
         ]
@@ -1201,12 +1106,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 146,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 146, "start": 15, "end": 21 },
             "call_site": "146:4-146:22"
           }
         ]
@@ -1246,12 +1146,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 150, "start": 28, "end": 29 } ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 150,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 150, "start": 15, "end": 30 },
             "call_site": "150:4-150:31"
           }
         ]
@@ -1273,12 +1168,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 150, "start": 25, "end": 26 } ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 150,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 150, "start": 15, "end": 30 },
             "call_site": "150:4-150:31"
           }
         ]
@@ -1304,12 +1194,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 86,
-              "start": 15,
-              "end": 34
-            },
+            "origin": { "line": 86, "start": 15, "end": 34 },
             "call_site": "86:4-86:35"
           }
         ]
@@ -1325,12 +1210,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 85,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 85, "start": 15, "end": 30 },
             "call_site": "85:4-85:31"
           }
         ]
@@ -1365,12 +1245,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 85,
-              "start": 15,
-              "end": 30
-            }
+            "origin": { "line": 85, "start": 15, "end": 30 }
           }
         ]
       },
@@ -1385,12 +1260,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 85,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 85, "start": 15, "end": 30 },
             "call_site": "85:4-85:31"
           }
         ]
@@ -1424,12 +1294,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 74,
-              "start": 15,
-              "end": 34
-            },
+            "origin": { "line": 74, "start": 15, "end": 34 },
             "call_site": "74:4-74:35"
           }
         ]
@@ -1445,12 +1310,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 73,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 73, "start": 15, "end": 30 },
             "call_site": "73:4-73:31"
           }
         ]
@@ -1485,12 +1345,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 73,
-              "start": 15,
-              "end": 30
-            }
+            "origin": { "line": 73, "start": 15, "end": 30 }
           }
         ]
       },
@@ -1505,12 +1360,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dataclass_taint.py",
-              "line": 73,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 73, "start": 15, "end": 30 },
             "call_site": "73:4-73:31"
           }
         ]
@@ -1547,12 +1397,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "dataclass_taint.py",
-                "line": 57,
-                "start": 11,
-                "end": 43
-              },
+              "position": { "line": 57, "start": 11, "end": 43 },
               "resolves_to": [ "dataclass_taint.WeirdDataClass.__init__" ],
               "port": "formal(self, position=0)[bad]"
             }

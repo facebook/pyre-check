@@ -27,12 +27,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 41,
-              "start": 8,
-              "end": 16
-            }
+            "origin": { "line": 41, "start": 8, "end": 16 }
           }
         ]
       },
@@ -81,12 +76,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 42,
-                "start": 12,
-                "end": 13
-              },
+              "position": { "line": 42, "start": 12, "end": 13 },
               "resolves_to": [ "multi_sink_ports.wrapper" ],
               "port": "formal(x, position=0)",
               "call_site": "42:4-42:14"
@@ -104,12 +94,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 42,
-                "start": 12,
-                "end": 13
-              },
+              "position": { "line": 42, "start": 12, "end": 13 },
               "resolves_to": [ "multi_sink_ports.wrapper" ],
               "port": "formal(x, position=0)[_params]",
               "call_site": "42:4-42:14"
@@ -172,12 +157,7 @@
               { "via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 82, "start": 27, "end": 32 } ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 81,
-              "start": 12,
-              "end": 20
-            }
+            "origin": { "line": 81, "start": 12, "end": 20 }
           }
         ]
       },
@@ -226,12 +206,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 83,
-                "start": 13,
-                "end": 18
-              },
+              "position": { "line": 83, "start": 13, "end": 18 },
               "resolves_to": [ "multi_sink_ports.wrapper2" ],
               "port": "formal(x, position=0)",
               "call_site": "83:4-83:19"
@@ -249,12 +224,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 83,
-                "start": 13,
-                "end": 18
-              },
+              "position": { "line": 83, "start": 13, "end": 18 },
               "resolves_to": [ "multi_sink_ports.wrapper2" ],
               "port": "formal(x, position=0)[_params]",
               "call_site": "83:4-83:19"
@@ -347,12 +317,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 58,
-                "start": 28,
-                "end": 32
-              },
+              "position": { "line": 58, "start": 28, "end": 32 },
               "resolves_to": [ "multi_sink_ports.splitwrapper" ],
               "port": "formal(x, position=0)[_params]",
               "call_site": "58:15-58:33"
@@ -416,12 +381,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 67,
-              "start": 10,
-              "end": 18
-            },
+            "origin": { "line": 67, "start": 10, "end": 18 },
             "call_site": "67:4-67:19"
           }
         ]
@@ -446,12 +406,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 66,
-              "start": 10,
-              "end": 16
-            },
+            "origin": { "line": 66, "start": 10, "end": 16 },
             "call_site": "66:4-66:17"
           }
         ]
@@ -618,12 +573,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 29,
-              "start": 10,
-              "end": 11
-            },
+            "origin": { "line": 29, "start": 10, "end": 11 },
             "call_site": "29:4-29:12"
           },
           {
@@ -643,12 +593,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 30,
-              "start": 10,
-              "end": 11
-            },
+            "origin": { "line": 30, "start": 10, "end": 11 },
             "call_site": "30:4-30:12"
           },
           {
@@ -661,12 +606,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 31,
-              "start": 10,
-              "end": 11
-            },
+            "origin": { "line": 31, "start": 10, "end": 11 },
             "call_site": "31:4-31:12"
           }
         ]
@@ -724,12 +664,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 46,
-                "start": 17,
-                "end": 18
-              },
+              "position": { "line": 46, "start": 17, "end": 18 },
               "resolves_to": [ "multi_sink_ports.split" ],
               "port": "formal(x, position=0)[_params]",
               "call_site": "46:11-46:19"
@@ -792,12 +727,7 @@
               { "via": "split" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 36, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "multi_sink_ports.py",
-              "line": 37,
-              "start": 10,
-              "end": 11
-            },
+            "origin": { "line": 37, "start": 10, "end": 11 },
             "call_site": "37:4-37:12"
           },
           {
@@ -823,12 +753,7 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 36,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 36, "start": 14, "end": 15 },
               "resolves_to": [ "multi_sink_ports.split" ],
               "port": "formal(x, position=0)[_params]",
               "call_site": "36:8-36:16"
@@ -848,12 +773,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 36,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 36, "start": 14, "end": 15 },
               "resolves_to": [ "multi_sink_ports.split" ],
               "port": "formal(x, position=0)[_params]",
               "call_site": "36:8-36:16"
@@ -893,12 +813,7 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 77,
-                "start": 13,
-                "end": 19
-              },
+              "position": { "line": 77, "start": 13, "end": 19 },
               "resolves_to": [ "multi_sink_ports.log_call" ],
               "port": "formal(params, position=0)",
               "call_site": "77:4-77:30"
@@ -927,12 +842,7 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 74,
-                "start": 19,
-                "end": 20
-              },
+              "position": { "line": 74, "start": 19, "end": 20 },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
               "port": "formal(self, position=0)[_params]",
               "call_site": "74:19-74:27"
@@ -958,12 +868,7 @@
             ],
             "tito_positions": [ { "line": 74, "start": 19, "end": 20 } ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 77,
-                "start": 21,
-                "end": 29
-              },
+              "position": { "line": 77, "start": 21, "end": 29 },
               "resolves_to": [ "multi_sink_ports.log_call" ],
               "port": "formal(response, position=1)",
               "call_site": "77:4-77:30"
@@ -983,12 +888,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multi_sink_ports.py",
-                "line": 74,
-                "start": 19,
-                "end": 20
-              },
+              "position": { "line": 74, "start": 19, "end": 20 },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
               "port": "formal(self, position=0)[_params]",
               "call_site": "74:19-74:27"

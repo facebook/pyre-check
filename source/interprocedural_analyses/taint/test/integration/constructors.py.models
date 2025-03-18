@@ -26,12 +26,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "constructors.py",
-                "line": 75,
-                "start": 4,
-                "end": 20
-              },
+              "position": { "line": 75, "start": 4, "end": 20 },
               "resolves_to": [ "constructors.BothNewAndInit.__new__" ],
               "port": "result[foo]"
             }
@@ -51,12 +46,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "constructors.py",
-                "line": 75,
-                "start": 4,
-                "end": 20
-              },
+              "position": { "line": 75, "start": 4, "end": 20 },
               "resolves_to": [ "constructors.BothNewAndInit.__init__" ],
               "port": "formal(self, position=0)[foo]"
             }
@@ -105,12 +95,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 115, "start": 25, "end": 39 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 115,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 115, "start": 25, "end": 39 }
           }
         ]
       },
@@ -125,12 +110,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 115,
-              "start": 15,
-              "end": 40
-            },
+            "origin": { "line": 115, "start": 15, "end": 40 },
             "call_site": "115:4-115:41"
           }
         ]
@@ -178,12 +158,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 124,
-              "start": 8,
-              "end": 36
-            }
+            "origin": { "line": 124, "start": 8, "end": 36 }
           }
         ]
       },
@@ -198,12 +173,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 125,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 125, "start": 15, "end": 16 },
             "call_site": "125:4-125:17"
           }
         ]
@@ -246,12 +216,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 123,
-              "start": 15,
-              "end": 43
-            }
+            "origin": { "line": 123, "start": 15, "end": 43 }
           }
         ]
       },
@@ -266,12 +231,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 123,
-              "start": 15,
-              "end": 43
-            },
+            "origin": { "line": 123, "start": 15, "end": 43 },
             "call_site": "123:4-123:44"
           }
         ]
@@ -314,12 +274,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 141, "start": 51, "end": 65 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 141,
-              "start": 51,
-              "end": 65
-            }
+            "origin": { "line": 141, "start": 51, "end": 65 }
           }
         ]
       },
@@ -334,12 +289,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 141,
-              "start": 15,
-              "end": 66
-            },
+            "origin": { "line": 141, "start": 15, "end": 66 },
             "call_site": "141:4-141:67"
           }
         ]
@@ -390,12 +340,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 156, "start": 48, "end": 62 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 156,
-              "start": 48,
-              "end": 62
-            }
+            "origin": { "line": 156, "start": 48, "end": 62 }
           }
         ]
       },
@@ -410,12 +355,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 156,
-              "start": 15,
-              "end": 69
-            },
+            "origin": { "line": 156, "start": 15, "end": 69 },
             "call_site": "156:4-156:70"
           }
         ]
@@ -464,12 +404,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 95, "start": 34, "end": 48 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 95,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 95, "start": 34, "end": 48 }
           }
         ]
       },
@@ -484,12 +419,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 95,
-              "start": 15,
-              "end": 49
-            },
+            "origin": { "line": 95, "start": 15, "end": 49 },
             "call_site": "95:4-95:50"
           }
         ]
@@ -536,12 +466,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 105, "start": 33, "end": 47 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 105,
-              "start": 33,
-              "end": 47
-            }
+            "origin": { "line": 105, "start": 33, "end": 47 }
           }
         ]
       },
@@ -556,12 +481,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 105,
-              "start": 15,
-              "end": 48
-            },
+            "origin": { "line": 105, "start": 15, "end": 48 },
             "call_site": "105:4-105:49"
           }
         ]
@@ -606,12 +526,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 61,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 61, "start": 21, "end": 35 }
           }
         ]
       },
@@ -628,12 +543,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "constructors.py",
-                "line": 61,
-                "start": 21,
-                "end": 35
-              },
+              "position": { "line": 61, "start": 21, "end": 35 },
               "resolves_to": [ "constructors.ChildWithNew.__new__" ],
               "port": "formal(input, position=1)",
               "call_site": "61:8-61:36"
@@ -683,12 +593,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 186, "start": 43, "end": 57 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 186,
-              "start": 43,
-              "end": 57
-            }
+            "origin": { "line": 186, "start": 43, "end": 57 }
           }
         ]
       },
@@ -703,12 +608,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 186,
-              "start": 15,
-              "end": 58
-            },
+            "origin": { "line": 186, "start": 15, "end": 58 },
             "call_site": "186:4-186:59"
           }
         ]
@@ -758,12 +658,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 185, "start": 39, "end": 53 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 185,
-              "start": 39,
-              "end": 53
-            }
+            "origin": { "line": 185, "start": 39, "end": 53 }
           }
         ]
       },
@@ -778,12 +673,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 185,
-              "start": 15,
-              "end": 58
-            },
+            "origin": { "line": 185, "start": 15, "end": 58 },
             "call_site": "185:4-185:59"
           }
         ]
@@ -833,12 +723,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 172, "start": 48, "end": 62 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 172,
-              "start": 48,
-              "end": 62
-            }
+            "origin": { "line": 172, "start": 48, "end": 62 }
           }
         ]
       },
@@ -853,12 +738,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 172,
-              "start": 15,
-              "end": 63
-            },
+            "origin": { "line": 172, "start": 15, "end": 63 },
             "call_site": "172:4-172:64"
           }
         ]
@@ -908,12 +788,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 171, "start": 44, "end": 58 } ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 171,
-              "start": 44,
-              "end": 58
-            }
+            "origin": { "line": 171, "start": 44, "end": 58 }
           }
         ]
       },
@@ -928,12 +803,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 171,
-              "start": 15,
-              "end": 63
-            },
+            "origin": { "line": 171, "start": 15, "end": 63 },
             "call_site": "171:4-171:64"
           }
         ]
@@ -984,12 +854,7 @@
               { "has": "first-field" }, { "first-field": "x" }
             ],
             "call": {
-              "position": {
-                "filename": "constructors.py",
-                "line": 44,
-                "start": 8,
-                "end": 29
-              },
+              "position": { "line": 44, "start": 8, "end": 29 },
               "resolves_to": [ "constructors.SourceInConstructor.__init__" ],
               "port": "formal(self, position=0)[x]"
             }
@@ -1007,12 +872,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 45,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 45, "start": 15, "end": 18 },
             "call_site": "45:4-45:19"
           }
         ]
@@ -1103,12 +963,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 80,
-              "start": 17,
-              "end": 31
-            },
+            "origin": { "line": 80, "start": 17, "end": 31 },
             "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1135,12 +990,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 71,
-              "start": 19,
-              "end": 27
-            },
+            "origin": { "line": 71, "start": 19, "end": 27 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "71:8-71:28"
@@ -1170,12 +1020,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 67,
-              "start": 18,
-              "end": 32
-            }
+            "origin": { "line": 67, "start": 18, "end": 32 }
           }
         ]
       }
@@ -1200,12 +1045,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 56,
-              "start": 19,
-              "end": 24
-            },
+            "origin": { "line": 56, "start": 19, "end": 24 },
             "call_site": "56:8-56:25"
           }
         ]
@@ -1331,12 +1171,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "constructors.py",
-                "line": 85,
-                "start": 8,
-                "end": 15
-              },
+              "position": { "line": 85, "start": 8, "end": 15 },
               "resolves_to": [ "constructors.BaseConstructor.__init__" ],
               "port": "formal(self, position=0)[x]",
               "call_site": "85:8-85:26"
@@ -1775,12 +1610,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 199,
-              "start": 19,
-              "end": 33
-            },
+            "origin": { "line": 199, "start": 19, "end": 33 },
             "caller_interval": [ { "lower": 46, "upper": 47 } ],
             "is_self_call": false
           }
@@ -1861,12 +1691,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 23,
-              "start": 13,
-              "end": 34
-            },
+            "origin": { "line": 23, "start": 13, "end": 34 },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
             "is_self_call": false,
             "call_site": "23:8-23:35"
@@ -1946,12 +1771,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructors.py",
-              "line": 39,
-              "start": 17,
-              "end": 31
-            },
+            "origin": { "line": 39, "start": 17, "end": 31 },
             "caller_interval": [ { "lower": 50, "upper": 51 } ],
             "is_self_call": false
           }

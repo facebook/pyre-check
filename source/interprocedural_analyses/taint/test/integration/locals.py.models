@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "locals.py",
-              "line": 18,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 18, "start": 8, "end": 22 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "locals.py",
-                "line": 24,
-                "start": 15,
-                "end": 25
-              },
+              "position": { "line": 24, "start": 15, "end": 25 },
               "resolves_to": [ "locals.named_sink" ],
               "port": "formal(x, position=0)",
               "call_site": "24:4-24:26"
@@ -100,12 +90,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "x" }
             ],
-            "origin": {
-              "filename": "locals.py",
-              "line": 18,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 18, "start": 8, "end": 22 }
           }
         ]
       },
@@ -120,12 +105,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "locals.py",
-              "line": 20,
-              "start": 15,
-              "end": 28
-            },
+            "origin": { "line": 20, "start": 15, "end": 28 },
             "call_site": "20:4-20:29"
           }
         ]
@@ -214,12 +194,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "locals.py",
-              "line": 12,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 12, "start": 15, "end": 16 },
             "call_site": "12:4-12:17"
           }
         ]
@@ -271,12 +246,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "x" }
             ],
-            "origin": {
-              "filename": "locals.py",
-              "line": 28,
-              "start": 29,
-              "end": 30
-            },
+            "origin": { "line": 28, "start": 29, "end": 30 },
             "call_site": "28:0-30:29"
           }
         ]
@@ -292,12 +262,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "locals.py",
-              "line": 29,
-              "start": 15,
-              "end": 28
-            },
+            "origin": { "line": 29, "start": 15, "end": 28 },
             "call_site": "29:4-29:29"
           }
         ]

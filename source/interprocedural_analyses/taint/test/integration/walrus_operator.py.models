@@ -307,12 +307,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "walrus_operator.py",
-              "line": 12,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 12, "start": 10, "end": 24 }
           }
         ]
       }

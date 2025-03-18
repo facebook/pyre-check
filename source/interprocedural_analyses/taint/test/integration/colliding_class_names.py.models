@@ -191,12 +191,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "colliding_class_names.py",
-              "line": 16,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 16, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -225,12 +220,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "colliding_class_names.py",
-              "line": 11,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 11, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }

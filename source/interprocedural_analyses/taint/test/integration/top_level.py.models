@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "top_level.py",
-              "line": 16,
-              "start": 4,
-              "end": 18
-            }
+            "origin": { "line": 16, "start": 4, "end": 18 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "top_level.py",
-                "line": 17,
-                "start": 4,
-                "end": 5
-              },
+              "position": { "line": 17, "start": 4, "end": 5 },
               "resolves_to": [ "top_level.foo" ],
               "port": "formal(x, position=0)",
               "call_site": "17:0-17:6"
@@ -97,12 +87,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "top_level.py",
-              "line": 8,
-              "start": 4,
-              "end": 18
-            }
+            "origin": { "line": 8, "start": 4, "end": 18 }
           }
         ]
       },
@@ -117,12 +102,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "top_level.py",
-              "line": 9,
-              "start": 11,
-              "end": 12
-            },
+            "origin": { "line": 9, "start": 11, "end": 12 },
             "call_site": "9:0-9:13"
           }
         ]
@@ -425,12 +405,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "top_level.py",
-              "line": 13,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 13, "start": 15, "end": 16 },
             "call_site": "13:4-13:17"
           }
         ]

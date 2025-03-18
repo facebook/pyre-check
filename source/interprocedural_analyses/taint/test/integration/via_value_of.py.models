@@ -60,12 +60,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 100,
-              "start": 15,
-              "end": 24
-            },
+            "origin": { "line": 100, "start": 15, "end": 24 },
             "call_site": "100:4-100:25"
           }
         ]
@@ -106,12 +101,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 92,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 92, "start": 11, "end": 25 }
           }
         ]
       }
@@ -143,12 +133,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 39,
-              "start": 11,
-              "end": 47
-            }
+            "origin": { "line": 39, "start": 11, "end": 47 }
           }
         ]
       }
@@ -178,12 +163,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:named>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 43,
-              "start": 11,
-              "end": 57
-            }
+            "origin": { "line": 43, "start": 11, "end": 57 }
           }
         ]
       }
@@ -215,12 +195,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 72,
-              "start": 22,
-              "end": 31
-            },
+            "origin": { "line": 72, "start": 22, "end": 31 },
             "call_site": "72:4-72:39"
           }
         ]
@@ -251,12 +226,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:args>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 76,
-              "start": 22,
-              "end": 41
-            },
+            "origin": { "line": 76, "start": 22, "end": 41 },
             "call_site": "76:4-76:42"
           }
         ]
@@ -287,12 +257,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 80,
-              "start": 22,
-              "end": 52
-            },
+            "origin": { "line": 80, "start": 22, "end": 52 },
             "call_site": "80:4-80:53"
           }
         ]
@@ -463,12 +428,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_kwargs>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 140,
-              "start": 11,
-              "end": 55
-            }
+            "origin": { "line": 140, "start": 11, "end": 55 }
           }
         ]
       }
@@ -498,12 +458,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:args>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 129,
-              "start": 11,
-              "end": 45
-            }
+            "origin": { "line": 129, "start": 11, "end": 45 }
           }
         ]
       }
@@ -524,12 +479,7 @@
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "local_features": [ { "always-via-value": "attached to sink" } ],
             "call": {
-              "position": {
-                "filename": "via_value_of.py",
-                "line": 104,
-                "start": 19,
-                "end": 28
-              },
+              "position": { "line": 104, "start": 19, "end": 28 },
               "resolves_to": [ "via_value_of.attach_to_sink" ],
               "port": "formal(parameter, position=0)",
               "call_site": "104:4-104:49"
@@ -556,12 +506,7 @@
               { "always-via-value": "attached to source" }
             ],
             "call": {
-              "position": {
-                "filename": "via_value_of.py",
-                "line": 96,
-                "start": 11,
-                "end": 49
-              },
+              "position": { "line": 96, "start": 11, "end": 49 },
               "resolves_to": [ "via_value_of.attach_to_source" ],
               "port": "result"
             }
@@ -624,12 +569,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "False" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 27,
-              "start": 11,
-              "end": 43
-            }
+            "origin": { "line": 27, "start": 11, "end": 43 }
           }
         ]
       }
@@ -659,12 +599,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "FOO" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 31,
-              "start": 11,
-              "end": 48
-            }
+            "origin": { "line": 31, "start": 11, "end": 48 }
           }
         ]
       }
@@ -694,12 +629,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 134,
-              "start": 11,
-              "end": 48
-            }
+            "origin": { "line": 134, "start": 11, "end": 48 }
           }
         ]
       }
@@ -729,12 +659,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<missing>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 35,
-              "start": 11,
-              "end": 38
-            }
+            "origin": { "line": 35, "start": 11, "end": 38 }
           }
         ]
       }
@@ -764,12 +689,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "2" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 150,
-              "start": 11,
-              "end": 60
-            }
+            "origin": { "line": 150, "start": 11, "end": 60 }
           }
         ]
       }
@@ -799,12 +719,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "1" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 23,
-              "start": 11,
-              "end": 39
-            }
+            "origin": { "line": 23, "start": 11, "end": 39 }
           }
         ]
       }
@@ -834,12 +749,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:kwargs>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 145,
-              "start": 11,
-              "end": 53
-            }
+            "origin": { "line": 145, "start": 11, "end": 53 }
           }
         ]
       }
@@ -871,12 +781,7 @@
             "local_features": [
               { "always-via-parameter-value": "parameter_value" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 112,
-              "start": 11,
-              "end": 51
-            }
+            "origin": { "line": 112, "start": 11, "end": 51 }
           }
         ]
       }
@@ -906,12 +811,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "2" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 120,
-              "start": 11,
-              "end": 44
-            }
+            "origin": { "line": 120, "start": 11, "end": 44 }
           }
         ]
       }
@@ -941,12 +841,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "2" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 124,
-              "start": 11,
-              "end": 57
-            }
+            "origin": { "line": 124, "start": 11, "end": 57 }
           }
         ]
       }
@@ -976,12 +871,7 @@
               }
             ],
             "local_features": [ { "always-via-tag-value": "B" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 210,
-              "start": 11,
-              "end": 48
-            }
+            "origin": { "line": 210, "start": 11, "end": 48 }
           }
         ]
       }
@@ -1011,12 +901,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "second" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 64,
-              "start": 29,
-              "end": 36
-            },
+            "origin": { "line": 64, "start": 29, "end": 36 },
             "call_site": "64:11-64:47"
           }
         ]
@@ -1045,12 +930,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "via_value_of.py",
-                "line": 88,
-                "start": 14,
-                "end": 23
-              },
+              "position": { "line": 88, "start": 14, "end": 23 },
               "resolves_to": [ "via_value_of.meta_sink" ],
               "port": "formal(parameter, position=0)",
               "call_site": "88:4-88:41"
@@ -1084,12 +964,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "A" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 19,
-              "start": 11,
-              "end": 41
-            }
+            "origin": { "line": 19, "start": 11, "end": 41 }
           }
         ]
       }
@@ -1119,12 +994,7 @@
               { "always-via-value": "second" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 55, "start": 13, "end": 27 } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 55,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 55, "start": 13, "end": 27 }
           }
         ]
       }
@@ -1156,12 +1026,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 155,
-              "start": 11,
-              "end": 55
-            }
+            "origin": { "line": 155, "start": 11, "end": 55 }
           }
         ]
       }
@@ -1193,12 +1058,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 196,
-              "start": 11,
-              "end": 65
-            }
+            "origin": { "line": 196, "start": 11, "end": 65 }
           }
         ]
       }
@@ -1228,12 +1088,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:named>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 160,
-              "start": 11,
-              "end": 58
-            }
+            "origin": { "line": 160, "start": 11, "end": 58 }
           }
         ]
       }
@@ -1265,12 +1120,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 165,
-              "start": 11,
-              "end": 51
-            }
+            "origin": { "line": 165, "start": 11, "end": 51 }
           }
         ]
       }
@@ -1302,12 +1152,7 @@
             "local_features": [
               { "always-via-value": "<unknown:positional>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 170,
-              "start": 11,
-              "end": 54
-            }
+            "origin": { "line": 170, "start": 11, "end": 54 }
           }
         ]
       }
@@ -1339,12 +1184,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 175,
-              "start": 11,
-              "end": 58
-            }
+            "origin": { "line": 175, "start": 11, "end": 58 }
           }
         ]
       }
@@ -1376,12 +1216,7 @@
             "local_features": [
               { "always-via-value": "<unknown:named_or_positional>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 180,
-              "start": 11,
-              "end": 61
-            }
+            "origin": { "line": 180, "start": 11, "end": 61 }
           }
         ]
       }
@@ -1413,12 +1248,7 @@
             "local_features": [
               { "always-via-value": "<unknown:args_or_named>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 202,
-              "start": 11,
-              "end": 68
-            }
+            "origin": { "line": 202, "start": 11, "end": 68 }
           }
         ]
       }
@@ -1448,12 +1278,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "<unknown:named>" } ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 185,
-              "start": 11,
-              "end": 61
-            }
+            "origin": { "line": 185, "start": 11, "end": 61 }
           }
         ]
       }
@@ -1485,12 +1310,7 @@
             "local_features": [
               { "always-via-value": "<unknown:named_or_positional>" }
             ],
-            "origin": {
-              "filename": "via_value_of.py",
-              "line": 190,
-              "start": 11,
-              "end": 64
-            }
+            "origin": { "line": 190, "start": 11, "end": 64 }
           }
         ]
       }
@@ -1518,12 +1338,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "via_value_of.py",
-                "line": 47,
-                "start": 11,
-                "end": 23
-              },
+              "position": { "line": 47, "start": 11, "end": 23 },
               "resolves_to": [ "via_value_of.meta" ],
               "port": "result"
             }

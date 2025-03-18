@@ -28,12 +28,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "multiline.py",
-              "line": 14,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 14, "start": 8, "end": 22 }
           }
         ]
       },
@@ -48,12 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "multiline.py",
-              "line": 12,
-              "start": 15,
-              "end": 15
-            },
+            "origin": { "line": 12, "start": 15, "end": 15 },
             "call_site": "12:4-15:6"
           }
         ]

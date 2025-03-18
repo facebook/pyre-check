@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 61,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 61, "start": 12, "end": 26 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 63,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 63, "start": 19, "end": 20 },
             "call_site": "63:8-63:21"
           }
         ]
@@ -203,12 +193,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 41, "start": 27, "end": 28 } ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 39,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 39, "start": 8, "end": 22 }
           }
         ]
       }
@@ -240,12 +225,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 39,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 39, "start": 8, "end": 22 }
           }
         ]
       },
@@ -260,12 +240,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 43,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 43, "start": 19, "end": 20 },
             "call_site": "43:8-43:21"
           }
         ]
@@ -302,12 +277,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 22,
-              "start": 15,
-              "end": 22
-            }
+            "origin": { "line": 22, "start": 15, "end": 22 }
           }
         ]
       }
@@ -337,12 +307,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 15, "start": 15, "end": 17 } ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 14,
-              "start": 9,
-              "end": 29
-            }
+            "origin": { "line": 14, "start": 9, "end": 29 }
           },
           {
             "kinds": [
@@ -353,12 +318,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 15,
-              "start": 11,
-              "end": 18
-            }
+            "origin": { "line": 15, "start": 11, "end": 18 }
           }
         ]
       }
@@ -384,12 +344,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 10,
-              "start": 11,
-              "end": 18
-            }
+            "origin": { "line": 10, "start": 11, "end": 18 }
           }
         ]
       }
@@ -437,12 +392,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 70,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 70, "start": 15, "end": 29 }
           }
         ]
       }
@@ -469,12 +419,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 84,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 84, "start": 15, "end": 29 }
           }
         ]
       }
@@ -501,12 +446,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 77,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 77, "start": 15, "end": 29 }
           }
         ]
       }
@@ -531,12 +471,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 35,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 35, "start": 19, "end": 20 },
             "call_site": "35:8-35:21"
           }
         ]
@@ -585,12 +520,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 50, "start": 27, "end": 28 } ],
-            "origin": {
-              "filename": "exception_test.py",
-              "line": 49,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 49, "start": 12, "end": 26 }
           }
         ]
       }

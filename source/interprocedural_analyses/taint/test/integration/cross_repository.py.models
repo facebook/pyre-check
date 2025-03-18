@@ -28,12 +28,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 22,
-              "start": 8,
-              "end": 30
-            }
+            "origin": { "line": 22, "start": 8, "end": 30 }
           }
         ]
       },
@@ -48,12 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 23,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 23, "start": 15, "end": 16 },
             "call_site": "23:4-23:17"
           }
         ]
@@ -96,12 +86,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 31,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 31, "start": 13, "end": 27 }
           }
         ]
       },
@@ -120,12 +105,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 32,
-              "start": 33,
-              "end": 39
-            },
+            "origin": { "line": 32, "start": 33, "end": 39 },
             "call_site": "32:4-32:40"
           }
         ]
@@ -458,12 +438,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 10,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 10, "start": 15, "end": 31 },
             "call_site": "10:4-10:32"
           }
         ]
@@ -523,12 +498,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 9,
-              "start": 28,
-              "end": 44
-            },
+            "origin": { "line": 9, "start": 28, "end": 44 },
             "call_site": "9:0-10:32"
           }
         ]
@@ -544,12 +514,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 10,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 10, "start": 15, "end": 31 },
             "call_site": "10:4-10:32"
           }
         ]
@@ -653,12 +618,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 44,
-              "start": 23,
-              "end": 24
-            },
+            "origin": { "line": 44, "start": 23, "end": 24 },
             "call_site": "44:4-44:25"
           }
         ]
@@ -685,12 +645,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "cross_repository.py",
-                "line": 48,
-                "start": 46,
-                "end": 47
-              },
+              "position": { "line": 48, "start": 46, "end": 47 },
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_sink_once"
               ],
@@ -727,12 +682,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "cross_repository.py",
-              "line": 36,
-              "start": 11,
-              "end": 33
-            }
+            "origin": { "line": 36, "start": 11, "end": 33 }
           }
         ]
       }
@@ -758,12 +708,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "cross_repository.py",
-                "line": 40,
-                "start": 11,
-                "end": 56
-              },
+              "position": { "line": 40, "start": 11, "end": 56 },
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_source_once"
               ],

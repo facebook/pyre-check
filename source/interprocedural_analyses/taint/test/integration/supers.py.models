@@ -26,12 +26,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 53,
-                "start": 16,
-                "end": 25
-              },
+              "position": { "line": 53, "start": 16, "end": 25 },
               "resolves_to": [ "supers.B.f4" ],
               "port": "result"
             },
@@ -54,12 +49,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 53,
-                "start": 16,
-                "end": 25
-              },
+              "position": { "line": 53, "start": 16, "end": 25 },
               "resolves_to": [ "supers.B.f5" ],
               "port": "formal(x, position=1)",
               "call_site": "53:8-53:26"
@@ -110,12 +100,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 81,
-                "start": 4,
-                "end": 7
-              },
+              "position": { "line": 81, "start": 4, "end": 7 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]"
             }
@@ -135,12 +120,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 81,
-                "start": 4,
-                "end": 7
-              },
+              "position": { "line": 81, "start": 4, "end": 7 },
               "resolves_to": [ "supers.B.g1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "81:4-81:12"
@@ -190,12 +170,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 106,
-                "start": 4,
-                "end": 7
-              },
+              "position": { "line": 106, "start": 4, "end": 7 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]"
             }
@@ -215,12 +190,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 106,
-                "start": 4,
-                "end": 7
-              },
+              "position": { "line": 106, "start": 4, "end": 7 },
               "resolves_to": [ "supers.C.g1", "supers.D.g1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "106:4-106:12"
@@ -270,12 +240,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 116,
-                "start": 8,
-                "end": 11
-              },
+              "position": { "line": 116, "start": 8, "end": 11 },
               "resolves_to": [ "supers.A.__init__" ],
               "port": "formal(self, position=0)[attribute]"
             }
@@ -295,12 +260,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 117,
-                "start": 4,
-                "end": 5
-              },
+              "position": { "line": 117, "start": 4, "end": 5 },
               "resolves_to": [ "supers.D.g1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "117:4-117:10"
@@ -364,12 +324,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]"
             },
@@ -399,12 +354,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]"
             },
@@ -421,12 +371,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]"
             },
@@ -456,12 +401,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]"
             },
@@ -737,12 +677,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "supers.py",
-              "line": 11,
-              "start": 25,
-              "end": 39
-            },
+            "origin": { "line": 11, "start": 25, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false
           }
@@ -769,12 +704,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "supers.py",
-              "line": 14,
-              "start": 19,
-              "end": 33
-            },
+            "origin": { "line": 14, "start": 19, "end": 33 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false,
             "call_site": "14:8-14:34"
@@ -802,12 +732,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "supers.py",
-              "line": 17,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 17, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false,
             "call_site": "17:8-17:21"
@@ -837,12 +762,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "supers.py",
-              "line": 20,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 20, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 11 } ],
             "is_self_call": false
           }
@@ -871,12 +791,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "supers.py",
-              "line": 34,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 34, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
           }
@@ -903,12 +818,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "supers.py",
-              "line": 37,
-              "start": 26,
-              "end": 27
-            },
+            "origin": { "line": 37, "start": 26, "end": 27 },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false,
             "call_site": "37:15-37:28"
@@ -961,12 +871,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 40,
-                "start": 8,
-                "end": 22
-              },
+              "position": { "line": 40, "start": 8, "end": 22 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "40:8-40:27"
@@ -984,12 +889,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 41,
-                "start": 8,
-                "end": 15
-              },
+              "position": { "line": 41, "start": 8, "end": 15 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "41:8-41:20"
@@ -1030,12 +930,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 42,
-                "start": 19,
-                "end": 31
-              },
+              "position": { "line": 42, "start": 19, "end": 31 },
               "resolves_to": [ "supers.A.f3" ],
               "port": "result"
             },
@@ -1058,12 +953,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 42,
-                "start": 19,
-                "end": 31
-              },
+              "position": { "line": 42, "start": 19, "end": 31 },
               "resolves_to": [ "supers.A.f2" ],
               "port": "formal(x, position=1)",
               "call_site": "42:8-42:32"
@@ -1106,12 +996,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 61,
-                "start": 15,
-                "end": 22
-              },
+              "position": { "line": 61, "start": 15, "end": 22 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "61:15-61:27"
@@ -1144,12 +1029,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "supers.py",
-                "line": 66,
-                "start": 8,
-                "end": 15
-              },
+              "position": { "line": 66, "start": 8, "end": 15 },
               "resolves_to": [ "supers.A.f1" ],
               "port": "formal(self, position=0)[attribute]",
               "call_site": "66:8-66:20"

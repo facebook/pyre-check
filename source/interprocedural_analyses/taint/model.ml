@@ -76,7 +76,6 @@ module Forward = struct
               ~expand_overrides:None
               ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
               ~trace_kind:(Some TraceKind.Source)
-              ~resolve_module_path:None
               ~export_leaf_names:ExportLeafNames.Always
               generations))
 
@@ -125,7 +124,6 @@ module Backward = struct
                 ~expand_overrides:None
                 ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
                 ~trace_kind:(Some TraceKind.Sink)
-                ~resolve_module_path:None
                 ~export_leaf_names:ExportLeafNames.Always
                 sink_taint))
     in
@@ -140,7 +138,6 @@ module Backward = struct
                 ~expand_overrides:None
                 ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
                 ~trace_kind:None
-                ~resolve_module_path:None
                 ~export_leaf_names:ExportLeafNames.Always
                 taint_in_taint_out))
     in
@@ -225,7 +222,6 @@ module ParameterSources = struct
               ~expand_overrides:None
               ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
               ~trace_kind:None
-              ~resolve_module_path:None
               ~export_leaf_names:ExportLeafNames.Always
               parameter_sources))
 
@@ -1024,7 +1020,6 @@ let to_json
               ~expand_overrides
               ~is_valid_callee
               ~trace_kind:(Some TraceKind.Source)
-              ~resolve_module_path
               ~export_leaf_names
               generations );
         ]
@@ -1040,7 +1035,6 @@ let to_json
               ~expand_overrides
               ~is_valid_callee
               ~trace_kind:(Some TraceKind.Sink)
-              ~resolve_module_path
               ~export_leaf_names
               sink_taint );
         ]
@@ -1057,7 +1051,6 @@ let to_json
               ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
                 (* should only contain CallInfo.Tito *)
               ~trace_kind:None
-              ~resolve_module_path
               ~export_leaf_names
               taint_in_taint_out );
         ]
@@ -1074,7 +1067,6 @@ let to_json
               ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
                 (* should only contain CallInfo.Declaration *)
               ~trace_kind:None
-              ~resolve_module_path
               ~export_leaf_names
               parameter_sources );
         ]

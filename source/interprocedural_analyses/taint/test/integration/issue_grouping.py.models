@@ -26,12 +26,7 @@
                 "kind": "SourceB"
               }
             ],
-            "origin": {
-              "filename": "issue_grouping.py",
-              "line": 31,
-              "start": 13,
-              "end": 23
-            }
+            "origin": { "line": 31, "start": 13, "end": 23 }
           }
         ]
       },
@@ -52,12 +47,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "issue_grouping.py",
-                "line": 32,
-                "start": 15,
-                "end": 16
-              },
+              "position": { "line": 32, "start": 15, "end": 16 },
               "resolves_to": [ "issue_grouping.multi_sink" ],
               "port": "formal(d, position=0)[b]",
               "call_site": "32:4-32:17"
@@ -103,12 +93,7 @@
                 "kind": "SourceA"
               }
             ],
-            "origin": {
-              "filename": "issue_grouping.py",
-              "line": 30,
-              "start": 13,
-              "end": 23
-            }
+            "origin": { "line": 30, "start": 13, "end": 23 }
           }
         ]
       },
@@ -129,12 +114,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "issue_grouping.py",
-                "line": 32,
-                "start": 15,
-                "end": 16
-              },
+              "position": { "line": 32, "start": 15, "end": 16 },
               "resolves_to": [ "issue_grouping.multi_sink" ],
               "port": "formal(d, position=0)[a]",
               "call_site": "32:4-32:17"
@@ -175,12 +155,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "issue_grouping.py",
-              "line": 24,
-              "start": 11,
-              "end": 17
-            },
+            "origin": { "line": 24, "start": 11, "end": 17 },
             "call_site": "24:4-24:18"
           }
         ]
@@ -200,12 +175,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": {
-              "filename": "issue_grouping.py",
-              "line": 25,
-              "start": 11,
-              "end": 17
-            },
+            "origin": { "line": 25, "start": 11, "end": 17 },
             "call_site": "25:4-25:18"
           }
         ]

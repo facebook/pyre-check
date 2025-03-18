@@ -43,12 +43,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "return_sinks.py",
-                "line": 30,
-                "start": 28,
-                "end": 31
-              },
+              "position": { "line": 30, "start": 28, "end": 31 },
               "resolves_to": [ "return_sinks.sink_on_return_and_tito" ],
               "port": "formal(arg, position=0)",
               "call_site": "30:4-30:32"
@@ -96,12 +91,7 @@
               }
             ],
             "local_features": [ { "always-via": "propagated-return-sink" } ],
-            "origin": {
-              "filename": "return_sinks.py",
-              "line": 25,
-              "start": 4,
-              "end": 14
-            }
+            "origin": { "line": 25, "start": 4, "end": 14 }
           }
         ]
       },

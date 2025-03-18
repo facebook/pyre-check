@@ -35,12 +35,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 116,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 116, "start": 42, "end": 56 }
           }
         ]
       },
@@ -55,12 +50,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 120,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 120, "start": 15, "end": 31 },
             "call_site": "120:4-120:32"
           }
         ]
@@ -123,12 +113,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 116,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 116, "start": 42, "end": 56 }
           }
         ]
       },
@@ -143,12 +128,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 119,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 119, "start": 15, "end": 25 },
             "call_site": "119:4-119:26"
           }
         ]
@@ -211,12 +191,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 116,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 116, "start": 42, "end": 56 }
           }
         ]
       },
@@ -231,12 +206,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 118,
-              "start": 15,
-              "end": 35
-            },
+            "origin": { "line": 118, "start": 15, "end": 35 },
             "call_site": "118:4-118:36"
           }
         ]
@@ -299,12 +269,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 116,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 116, "start": 42, "end": 56 }
           }
         ]
       },
@@ -319,12 +284,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 117,
-              "start": 15,
-              "end": 35
-            },
+            "origin": { "line": 117, "start": 15, "end": 35 },
             "call_site": "117:4-117:36"
           }
         ]
@@ -387,12 +347,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 111,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 111, "start": 31, "end": 45 }
           }
         ]
       },
@@ -407,12 +362,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 114,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 114, "start": 15, "end": 31 },
             "call_site": "114:4-114:32"
           }
         ]
@@ -475,12 +425,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 111,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 111, "start": 31, "end": 45 }
           }
         ]
       },
@@ -495,12 +440,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 113,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 113, "start": 15, "end": 25 },
             "call_site": "113:4-113:26"
           }
         ]
@@ -563,12 +503,7 @@
               { "via": "model-tito-shaping" }
             ],
             "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 111,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 111, "start": 31, "end": 45 }
           }
         ]
       },
@@ -583,12 +518,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 112,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 112, "start": 15, "end": 25 },
             "call_site": "112:4-112:26"
           }
         ]
@@ -906,12 +836,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 41, "start": 24, "end": 27 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 42,
-              "start": 47,
-              "end": 53
-            },
+            "origin": { "line": 42, "start": 47, "end": 53 },
             "call_site": "42:34-42:54"
           },
           {
@@ -936,12 +861,7 @@
             ],
             "tito_positions": [ { "line": 42, "start": 42, "end": 45 } ],
             "call": {
-              "position": {
-                "filename": "model_shaping.py",
-                "line": 42,
-                "start": 34,
-                "end": 54
-              },
+              "position": { "line": 42, "start": 34, "end": 54 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
               "call_site": "42:20-42:69"
@@ -970,12 +890,7 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": {
-                "filename": "model_shaping.py",
-                "line": 49,
-                "start": 56,
-                "end": 57
-              },
+              "position": { "line": 49, "start": 56, "end": 57 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
               "call_site": "49:42-49:72"
@@ -1006,12 +921,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "call": {
-              "position": {
-                "filename": "model_shaping.py",
-                "line": 54,
-                "start": 34,
-                "end": 35
-              },
+              "position": { "line": 54, "start": 34, "end": 35 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
               "call_site": "54:20-54:50"
@@ -1040,12 +950,7 @@
               { "always-via": "model-sink-shaping" }
             ],
             "call": {
-              "position": {
-                "filename": "model_shaping.py",
-                "line": 64,
-                "start": 34,
-                "end": 35
-              },
+              "position": { "line": 64, "start": 34, "end": 35 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
               "call_site": "64:20-64:50"
@@ -1126,12 +1031,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "model_shaping.py",
-                "line": 34,
-                "start": 25,
-                "end": 28
-              },
+              "position": { "line": 34, "start": 25, "end": 28 },
               "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj, position=0)",
               "call_site": "34:11-34:43"
@@ -1216,12 +1116,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "model_shaping.py",
-                "line": 75,
-                "start": 18,
-                "end": 21
-              },
+              "position": { "line": 75, "start": 18, "end": 21 },
               "resolves_to": [ "model_shaping.asdict" ],
               "port": "formal(obj, position=0)",
               "call_site": "75:11-75:22"
@@ -1279,12 +1174,7 @@
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 79, "start": 21, "end": 35 } ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 79,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 79, "start": 21, "end": 35 }
           }
         ]
       }
@@ -1339,12 +1229,7 @@
               { "always-via": "broadening" },
               { "always-via": "model-sink-shaping" }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 83,
-              "start": 9,
-              "end": 16
-            },
+            "origin": { "line": 83, "start": 9, "end": 16 },
             "call_site": "83:4-83:17"
           },
           {
@@ -1359,12 +1244,7 @@
               { "always-via": "broadening" },
               { "always-via": "model-sink-shaping" }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 84,
-              "start": 9,
-              "end": 16
-            },
+            "origin": { "line": 84, "start": 9, "end": 16 },
             "call_site": "84:4-84:17"
           },
           {
@@ -1374,12 +1254,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 85,
-              "start": 9,
-              "end": 12
-            },
+            "origin": { "line": 85, "start": 9, "end": 12 },
             "call_site": "85:4-85:13"
           }
         ]
@@ -1394,12 +1269,7 @@
                 "kind": "SQL"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 86,
-              "start": 9,
-              "end": 16
-            },
+            "origin": { "line": 86, "start": 9, "end": 16 },
             "call_site": "86:4-86:17"
           }
         ]
@@ -1426,12 +1296,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 92,
-              "start": 17,
-              "end": 35
-            }
+            "origin": { "line": 92, "start": 17, "end": 35 }
           },
           {
             "kinds": [
@@ -1447,12 +1312,7 @@
               { "always-via": "model-shaping" },
               { "always-via": "broadening" }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 93,
-              "start": 23,
-              "end": 41
-            }
+            "origin": { "line": 93, "start": 23, "end": 41 }
           },
           {
             "kinds": [
@@ -1468,12 +1328,7 @@
               { "always-via": "model-shaping" },
               { "always-via": "broadening" }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 94,
-              "start": 29,
-              "end": 47
-            }
+            "origin": { "line": 94, "start": 29, "end": 47 }
           }
         ]
       },
@@ -1487,12 +1342,7 @@
                 "kind": "Cookies"
               }
             ],
-            "origin": {
-              "filename": "model_shaping.py",
-              "line": 98,
-              "start": 23,
-              "end": 33
-            }
+            "origin": { "line": 98, "start": 23, "end": 33 }
           }
         ]
       }

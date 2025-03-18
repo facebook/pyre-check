@@ -28,12 +28,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 64, "start": 14, "end": 29 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 61,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 61, "start": 22, "end": 45 }
           }
         ]
       },
@@ -57,12 +52,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 64,
-              "start": 4,
-              "end": 34
-            }
+            "origin": { "line": 64, "start": 4, "end": 34 }
           }
         ]
       }
@@ -106,12 +96,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 62, "start": 14, "end": 29 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 61,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 61, "start": 22, "end": 45 }
           }
         ]
       },
@@ -135,12 +120,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 62,
-              "start": 4,
-              "end": 31
-            }
+            "origin": { "line": 62, "start": 4, "end": 31 }
           }
         ]
       }
@@ -184,12 +164,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 50, "start": 13, "end": 28 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 49,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 49, "start": 22, "end": 45 }
           }
         ]
       },
@@ -213,12 +188,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 50,
-              "start": 4,
-              "end": 30
-            }
+            "origin": { "line": 50, "start": 4, "end": 30 }
           }
         ]
       }
@@ -260,12 +230,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 101,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 101, "start": 22, "end": 45 }
           }
         ]
       },
@@ -286,12 +251,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 103,
-                "start": 56,
-                "end": 71
-              },
+              "position": { "line": 103, "start": 56, "end": 71 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
@@ -341,12 +301,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 101,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 101, "start": 22, "end": 45 }
           }
         ]
       },
@@ -367,12 +322,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 102,
-                "start": 53,
-                "end": 68
-              },
+              "position": { "line": 102, "start": 53, "end": 68 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
@@ -419,12 +369,7 @@
                 "kind": "StringMayBeSQL"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 92,
-              "start": 17,
-              "end": 25
-            }
+            "origin": { "line": 92, "start": 17, "end": 25 }
           }
         ]
       },
@@ -445,12 +390,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 93,
-                "start": 32,
-                "end": 37
-              },
+              "position": { "line": 93, "start": 32, "end": 37 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_sql"
               ],
@@ -500,12 +440,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 82,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 82, "start": 22, "end": 45 }
           }
         ]
       },
@@ -526,12 +461,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources_string_operations.py",
-                "line": 83,
-                "start": 44,
-                "end": 59
-              },
+              "position": { "line": 83, "start": 44, "end": 59 },
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_user_controlled"
               ],
@@ -583,12 +513,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 56, "start": 13, "end": 28 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 54,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 54, "start": 22, "end": 45 }
           }
         ]
       },
@@ -612,12 +537,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 56,
-              "start": 4,
-              "end": 30
-            }
+            "origin": { "line": 56, "start": 4, "end": 30 }
           }
         ]
       }
@@ -661,12 +581,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 55, "start": 13, "end": 28 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 54,
-              "start": 22,
-              "end": 45
-            }
+            "origin": { "line": 54, "start": 22, "end": 45 }
           }
         ]
       },
@@ -690,12 +605,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 55,
-              "start": 4,
-              "end": 30
-            }
+            "origin": { "line": 55, "start": 4, "end": 30 }
           }
         ]
       }
@@ -739,12 +649,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 39, "start": 24, "end": 39 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 29,
-              "start": 27,
-              "end": 50
-            }
+            "origin": { "line": 29, "start": 27, "end": 50 }
           }
         ]
       },
@@ -766,12 +671,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 39,
-              "start": 4,
-              "end": 40
-            }
+            "origin": { "line": 39, "start": 4, "end": 40 }
           }
         ]
       }
@@ -815,12 +715,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 32, "start": 22, "end": 37 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 29,
-              "start": 27,
-              "end": 50
-            }
+            "origin": { "line": 29, "start": 27, "end": 50 }
           }
         ]
       },
@@ -842,12 +737,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 32,
-              "start": 4,
-              "end": 38
-            }
+            "origin": { "line": 32, "start": 4, "end": 38 }
           }
         ]
       }
@@ -891,12 +781,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 31, "start": 17, "end": 32 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 29,
-              "start": 27,
-              "end": 50
-            }
+            "origin": { "line": 29, "start": 27, "end": 50 }
           }
         ]
       },
@@ -918,12 +803,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 31,
-              "start": 4,
-              "end": 33
-            }
+            "origin": { "line": 31, "start": 4, "end": 33 }
           }
         ]
       }
@@ -967,12 +847,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 37, "start": 12, "end": 27 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 29,
-              "start": 27,
-              "end": 50
-            }
+            "origin": { "line": 29, "start": 27, "end": 50 }
           }
         ]
       },
@@ -994,12 +869,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 37,
-              "start": 4,
-              "end": 27
-            }
+            "origin": { "line": 37, "start": 4, "end": 27 }
           }
         ]
       }
@@ -1040,12 +910,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 35, "start": 22, "end": 27 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 28,
-              "start": 17,
-              "end": 25
-            }
+            "origin": { "line": 28, "start": 17, "end": 25 }
           }
         ]
       },
@@ -1067,12 +932,7 @@
                 "kind": "Triggered[UserControlled]@PartialSink[StringMayBeSQLSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 35,
-              "start": 4,
-              "end": 27
-            }
+            "origin": { "line": 35, "start": 4, "end": 27 }
           }
         ]
       }
@@ -1116,12 +976,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 34, "start": 12, "end": 27 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 29,
-              "start": 27,
-              "end": 50
-            }
+            "origin": { "line": 29, "start": 27, "end": 50 }
           }
         ]
       },
@@ -1143,12 +998,7 @@
                 "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 34,
-              "start": 4,
-              "end": 27
-            }
+            "origin": { "line": 34, "start": 4, "end": 27 }
           }
         ]
       }
@@ -1194,12 +1044,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 24, "start": 8, "end": 28 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 24,
-              "start": 8,
-              "end": 52
-            }
+            "origin": { "line": 24, "start": 8, "end": 52 }
           }
         ]
       }
@@ -1237,12 +1082,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 97, "start": 21, "end": 25 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 97,
-              "start": 4,
-              "end": 27
-            }
+            "origin": { "line": 97, "start": 4, "end": 27 }
           }
         ]
       },
@@ -1270,12 +1110,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 97, "start": 7, "end": 11 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 97,
-              "start": 4,
-              "end": 27
-            }
+            "origin": { "line": 97, "start": 4, "end": 27 }
           }
         ]
       }
@@ -1313,12 +1148,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 88, "start": 24, "end": 27 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 88,
-              "start": 4,
-              "end": 29
-            }
+            "origin": { "line": 88, "start": 4, "end": 29 }
           }
         ]
       }
@@ -1356,12 +1186,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 78, "start": 14, "end": 17 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 78,
-              "start": 4,
-              "end": 19
-            }
+            "origin": { "line": 78, "start": 4, "end": 19 }
           }
         ]
       }
@@ -1401,12 +1226,7 @@
               { "line": 109, "start": 22, "end": 23 },
               { "line": 109, "start": 22, "end": 27 }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 107,
-              "start": 13,
-              "end": 36
-            }
+            "origin": { "line": 107, "start": 13, "end": 36 }
           }
         ]
       }
@@ -1443,12 +1263,7 @@
               { "line": 123, "start": 8, "end": 19 },
               { "line": 123, "start": 13, "end": 18 }
             ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 123,
-              "start": 4,
-              "end": 19
-            }
+            "origin": { "line": 123, "start": 4, "end": 19 }
           }
         ]
       }
@@ -1482,12 +1297,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 114, "start": 8, "end": 13 } ],
-            "origin": {
-              "filename": "multiple_sources_string_operations.py",
-              "line": 114,
-              "start": 4,
-              "end": 13
-            }
+            "origin": { "line": 114, "start": 4, "end": 13 }
           }
         ]
       }

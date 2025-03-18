@@ -30,12 +30,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 109,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 109, "start": 27, "end": 41 }
           }
         ]
       },
@@ -50,12 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 113,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 113, "start": 15, "end": 19 },
             "call_site": "113:4-113:20"
           }
         ]
@@ -108,12 +98,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 109,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 109, "start": 27, "end": 41 }
           }
         ]
       },
@@ -128,12 +113,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 110,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 110, "start": 15, "end": 19 },
             "call_site": "110:4-110:20"
           }
         ]
@@ -186,12 +166,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 98,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 98, "start": 31, "end": 45 }
           }
         ]
       },
@@ -206,12 +181,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 100,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 100, "start": 15, "end": 19 },
             "call_site": "100:4-100:20"
           }
         ]
@@ -264,12 +234,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 98,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 98, "start": 31, "end": 45 }
           }
         ]
       },
@@ -284,12 +249,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 99,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 99, "start": 15, "end": 19 },
             "call_site": "99:4-99:20"
           }
         ]
@@ -339,12 +299,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 70,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 70, "start": 11, "end": 25 }
           }
         ]
       },
@@ -359,12 +314,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 71,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 71, "start": 15, "end": 19 },
             "call_site": "71:4-71:20"
           }
         ]
@@ -480,12 +430,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 13,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 13, "start": 20, "end": 34 }
           }
         ]
       }
@@ -512,12 +457,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 26,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 26, "start": 9, "end": 23 }
           }
         ]
       },
@@ -534,12 +474,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 27,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 27, "start": 9, "end": 23 }
           }
         ]
       },
@@ -556,12 +491,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 28,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 28, "start": 9, "end": 23 }
           }
         ]
       }
@@ -643,12 +573,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 55, "start": 13, "end": 27 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 55,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 55, "start": 13, "end": 27 }
           }
         ]
       }
@@ -677,12 +602,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 62, "start": 13, "end": 27 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 62,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 62, "start": 13, "end": 27 }
           }
         ]
       }
@@ -710,12 +630,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 37,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 37, "start": 19, "end": 20 },
             "call_site": "37:8-37:21"
           }
         ]
@@ -754,12 +669,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 22, "start": 16, "end": 25 } ],
-            "origin": {
-              "filename": "lists.py",
-              "line": 20,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 20, "start": 9, "end": 23 }
           }
         ]
       }

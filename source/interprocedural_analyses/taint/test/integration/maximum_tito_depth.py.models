@@ -25,12 +25,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 69, "start": 19, "end": 20 } ],
-            "origin": {
-              "filename": "maximum_tito_depth.py",
-              "line": 68,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 68, "start": 8, "end": 22 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "maximum_tito_depth.py",
-              "line": 70,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 70, "start": 15, "end": 16 },
             "call_site": "70:4-70:17"
           }
         ]

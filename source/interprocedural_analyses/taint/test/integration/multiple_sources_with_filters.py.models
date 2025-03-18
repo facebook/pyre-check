@@ -28,12 +28,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources_with_filters.py",
-                "line": 32,
-                "start": 45,
-                "end": 74
-              },
+              "position": { "line": 32, "start": 45, "end": 74 },
               "resolves_to": [
                 "multiple_sources_with_filters.second_source_distance_zero"
               ],
@@ -71,12 +66,7 @@
                 "kind": "Triggered[FirstSource]@PartialSink[SecondPartialSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 32,
-              "start": 45,
-              "end": 74
-            },
+            "origin": { "line": 32, "start": 45, "end": 74 },
             "call_site": "32:4-32:75"
           }
         ]
@@ -119,12 +109,7 @@
                 "kind": "SecondSource"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 29,
-              "start": 31,
-              "end": 46
-            }
+            "origin": { "line": 29, "start": 31, "end": 46 }
           }
         ]
       },
@@ -151,12 +136,7 @@
                 "kind": "Triggered[FirstSource]@PartialSink[SecondPartialSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 29,
-              "start": 31,
-              "end": 46
-            },
+            "origin": { "line": 29, "start": 31, "end": 46 },
             "call_site": "29:4-29:47"
           }
         ]
@@ -199,12 +179,7 @@
                 "kind": "SecondSource"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 44,
-              "start": 23,
-              "end": 38
-            }
+            "origin": { "line": 44, "start": 23, "end": 38 }
           }
         ]
       },
@@ -225,12 +200,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "multiple_sources_with_filters.py",
-                "line": 44,
-                "start": 23,
-                "end": 38
-              },
+              "position": { "line": 44, "start": 23, "end": 38 },
               "resolves_to": [
                 "multiple_sources_with_filters.sink_distance_zero"
               ],
@@ -289,12 +259,7 @@
                 "kind": "FirstSource"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 17,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 17, "start": 11, "end": 25 }
           }
         ]
       }
@@ -367,12 +332,7 @@
                 "kind": "SecondSource"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 23,
-              "start": 11,
-              "end": 26
-            }
+            "origin": { "line": 23, "start": 11, "end": 26 }
           }
         ]
       }
@@ -409,12 +369,7 @@
                 "kind": "Triggered[FirstSource]@PartialSink[SecondPartialSink]"
               }
             ],
-            "origin": {
-              "filename": "multiple_sources_with_filters.py",
-              "line": 38,
-              "start": 31,
-              "end": 32
-            },
+            "origin": { "line": 38, "start": 31, "end": 32 },
             "call_site": "38:4-38:33"
           }
         ]

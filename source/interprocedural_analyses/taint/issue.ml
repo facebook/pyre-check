@@ -760,7 +760,6 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
       ~expand_overrides
       ~is_valid_callee
       ~trace_kind:(Some TraceKind.Source)
-      ~resolve_module_path:(Some resolve_module_path)
       ~export_leaf_names:ExportLeafNames.Always
       issue.flow.source_taint
   in
@@ -769,7 +768,6 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
       ~expand_overrides
       ~is_valid_callee
       ~trace_kind:(Some TraceKind.Sink)
-      ~resolve_module_path:(Some resolve_module_path)
       ~export_leaf_names:ExportLeafNames.Always
       issue.flow.sink_taint
   in

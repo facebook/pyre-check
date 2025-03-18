@@ -26,12 +26,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_attribute.py",
-                "line": 77,
-                "start": 4,
-                "end": 7
-              },
+              "position": { "line": 77, "start": 4, "end": 7 },
               "resolves_to": [ "class_attribute.A.__init__" ],
               "port": "formal(self, position=0)[d]"
             }
@@ -51,12 +46,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_attribute.py",
-                "line": 77,
-                "start": 4,
-                "end": 7
-              },
+              "position": { "line": 77, "start": 4, "end": 7 },
               "resolves_to": [ "class_attribute.A.sink_d" ],
               "port": "formal(self, position=0)[d]",
               "call_site": "77:4-77:16"
@@ -271,12 +261,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_attribute.py",
-              "line": 19,
-              "start": 17,
-              "end": 31
-            },
+            "origin": { "line": 19, "start": 17, "end": 31 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -319,12 +304,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_attribute.py",
-              "line": 30,
-              "start": 19,
-              "end": 25
-            },
+            "origin": { "line": 30, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "30:8-30:26"
@@ -352,12 +332,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_attribute.py",
-              "line": 35,
-              "start": 19,
-              "end": 25
-            },
+            "origin": { "line": 35, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "35:8-35:26"

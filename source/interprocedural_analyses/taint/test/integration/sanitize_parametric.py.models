@@ -28,12 +28,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "sanitize_parametric.py",
-                "line": 50,
-                "start": 8,
-                "end": 31
-              },
+              "position": { "line": 50, "start": 8, "end": 31 },
               "resolves_to": [ "sanitize_parametric.partial_issue_sources" ],
               "port": "result"
             }
@@ -57,12 +52,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "sanitize_parametric.py",
-                "line": 51,
-                "start": 24,
-                "end": 25
-              },
+              "position": { "line": 51, "start": 24, "end": 25 },
               "resolves_to": [ "sanitize_parametric.partial_issue_sinks" ],
               "port": "formal(x, position=0)",
               "call_site": "51:4-51:26"
@@ -171,12 +161,7 @@
                 "kind": "TestA[X]"
               }
             ],
-            "origin": {
-              "filename": "sanitize_parametric.py",
-              "line": 41,
-              "start": 17,
-              "end": 18
-            },
+            "origin": { "line": 41, "start": 17, "end": 18 },
             "call_site": "41:8-41:19"
           },
           {
@@ -193,12 +178,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 43, "start": 35, "end": 36 } ],
-            "origin": {
-              "filename": "sanitize_parametric.py",
-              "line": 44,
-              "start": 17,
-              "end": 18
-            },
+            "origin": { "line": 44, "start": 17, "end": 18 },
             "call_site": "44:8-44:19"
           }
         ]
@@ -230,12 +210,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 34, "start": 36, "end": 37 } ],
-            "origin": {
-              "filename": "sanitize_parametric.py",
-              "line": 33,
-              "start": 12,
-              "end": 24
-            }
+            "origin": { "line": 33, "start": 12, "end": 24 }
           },
           {
             "kinds": [
@@ -249,12 +224,7 @@
                 "kind": "TestA[Y]"
               }
             ],
-            "origin": {
-              "filename": "sanitize_parametric.py",
-              "line": 36,
-              "start": 15,
-              "end": 27
-            }
+            "origin": { "line": 36, "start": 15, "end": 27 }
           }
         ]
       }

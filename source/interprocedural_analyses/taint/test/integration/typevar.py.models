@@ -103,12 +103,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "typevar.py",
-              "line": 17,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 17, "start": 15, "end": 26 },
             "call_site": "17:4-17:27"
           }
         ]
@@ -154,12 +149,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "typevar.py",
-              "line": 17,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 17, "start": 15, "end": 26 }
           }
         ]
       },
@@ -174,12 +164,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "typevar.py",
-              "line": 17,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 17, "start": 15, "end": 26 },
             "call_site": "17:4-17:27"
           }
         ]

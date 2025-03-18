@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 15,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 15, "start": 13, "end": 27 }
           }
         ]
       },
@@ -49,12 +44,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 16,
-              "start": 13,
-              "end": 14
-            },
+            "origin": { "line": 16, "start": 13, "end": 14 },
             "call_site": "16:4-16:23"
           }
         ]
@@ -97,12 +87,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 20,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 20, "start": 31, "end": 45 }
           }
         ]
       },
@@ -122,12 +107,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 21,
-              "start": 18,
-              "end": 19
-            },
+            "origin": { "line": 21, "start": 18, "end": 19 },
             "call_site": "21:4-21:23"
           }
         ]
@@ -173,12 +153,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 25,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 25, "start": 13, "end": 27 }
           }
         ]
       },
@@ -198,12 +173,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 26,
-              "start": 23,
-              "end": 24
-            },
+            "origin": { "line": 26, "start": 23, "end": 24 },
             "call_site": "26:4-26:25"
           }
         ]
@@ -249,12 +219,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 46,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 46, "start": 13, "end": 27 }
           }
         ]
       },
@@ -274,12 +239,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "str" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 47,
-              "start": 9,
-              "end": 10
-            },
+            "origin": { "line": 47, "start": 9, "end": 10 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "47:4-47:19"
@@ -324,12 +284,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 51,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 51, "start": 24, "end": 38 }
           }
         ]
       },
@@ -351,12 +306,7 @@
             "local_features": [
               { "always-via-type": "typing.Dict[str, int]" }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 52,
-              "start": 14,
-              "end": 15
-            },
+            "origin": { "line": 52, "start": 14, "end": 15 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "52:4-52:19"
@@ -402,12 +352,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 56,
-              "start": 17,
-              "end": 31
-            }
+            "origin": { "line": 56, "start": 17, "end": 31 }
           }
         ]
       },
@@ -431,12 +376,7 @@
                 "always-via-type": "model_query_parameters_viatypeof.Test2_T"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 57,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 57, "start": 19, "end": 20 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "57:4-57:21"
@@ -485,12 +425,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 61,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 61, "start": 13, "end": 27 }
           }
         ]
       },
@@ -510,12 +445,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "int" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 62,
-              "start": 9,
-              "end": 10
-            },
+            "origin": { "line": 62, "start": 9, "end": 10 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "62:4-62:19"
@@ -563,12 +493,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 66,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 66, "start": 29, "end": 43 }
           }
         ]
       },
@@ -592,12 +517,7 @@
                 "always-via-type": "typing.List[typing.List[model_query_parameters_viatypeof.Test2_T]]"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 67,
-              "start": 14,
-              "end": 15
-            },
+            "origin": { "line": 67, "start": 14, "end": 15 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "67:4-67:19"
@@ -646,12 +566,7 @@
               }
             ],
             "local_features": [ { "always-type": "scalar" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 71,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 71, "start": 15, "end": 29 }
           }
         ]
       },
@@ -671,12 +586,7 @@
               }
             ],
             "local_features": [ { "always-via-type": "float" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 72,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 72, "start": 19, "end": 20 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "72:4-72:21"
@@ -723,12 +633,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 88,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 88, "start": 13, "end": 27 }
           }
         ]
       },
@@ -748,12 +653,7 @@
               }
             ],
             "local_features": [ { "always-via-tag-type": "str" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 89,
-              "start": 13,
-              "end": 14
-            },
+            "origin": { "line": 89, "start": 13, "end": 14 },
             "call_site": "89:4-89:23"
           }
         ]
@@ -796,12 +696,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 93,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 93, "start": 31, "end": 45 }
           }
         ]
       },
@@ -821,12 +716,7 @@
               }
             ],
             "local_features": [ { "always-via-tag-type": "str" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 94,
-              "start": 18,
-              "end": 19
-            },
+            "origin": { "line": 94, "start": 18, "end": 19 },
             "call_site": "94:4-94:23"
           }
         ]
@@ -872,12 +762,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 98,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 98, "start": 13, "end": 27 }
           }
         ]
       },
@@ -897,12 +782,7 @@
               }
             ],
             "local_features": [ { "always-via-tag-type": "int" } ],
-            "origin": {
-              "filename": "model_query_parameters_viatypeof.py",
-              "line": 99,
-              "start": 23,
-              "end": 24
-            },
+            "origin": { "line": 99, "start": 23, "end": 24 },
             "call_site": "99:4-99:25"
           }
         ]

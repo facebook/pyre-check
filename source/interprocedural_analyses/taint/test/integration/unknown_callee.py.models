@@ -33,12 +33,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 32, "start": 35, "end": 36 } ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 31,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 31, "start": 14, "end": 28 }
           }
         ]
       },
@@ -53,12 +48,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 33,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 33, "start": 15, "end": 21 },
             "call_site": "33:4-33:22"
           }
         ]
@@ -406,12 +396,7 @@
               { "always-via": "broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 18,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 18, "start": 15, "end": 21 },
             "call_site": "18:4-18:22"
           }
         ]
@@ -452,12 +437,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 17, "start": 17, "end": 18 } ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 16,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 16, "start": 14, "end": 28 }
           }
         ]
       },
@@ -472,12 +452,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 18,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 18, "start": 15, "end": 21 },
             "call_site": "18:4-18:22"
           }
         ]
@@ -520,12 +495,7 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 12,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 12, "start": 15, "end": 16 },
             "call_site": "12:4-12:17"
           }
         ]
@@ -560,12 +530,7 @@
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 11, "start": 17, "end": 18 } ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 10,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 10, "start": 8, "end": 22 }
           }
         ]
       },
@@ -580,12 +545,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 12,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 12, "start": 15, "end": 16 },
             "call_site": "12:4-12:17"
           }
         ]
@@ -630,12 +590,7 @@
               { "always-via": "broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 23,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 23, "start": 15, "end": 21 },
             "call_site": "23:4-23:22"
           }
         ]
@@ -659,12 +614,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 22, "start": 17, "end": 20 } ],
-            "origin": {
-              "filename": "unknown_callee.py",
-              "line": 23,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 23, "start": 15, "end": 21 },
             "call_site": "23:4-23:22"
           }
         ]

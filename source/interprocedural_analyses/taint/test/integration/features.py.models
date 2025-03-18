@@ -36,12 +36,7 @@
               { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "features.py",
-                "line": 94,
-                "start": 17,
-                "end": 39
-              },
+              "position": { "line": 94, "start": 17, "end": 39 },
               "resolves_to": [ "features.async_tuple_of_bools" ],
               "port": "result[0]"
             }
@@ -59,12 +54,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 95,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 95, "start": 15, "end": 16 },
             "call_site": "95:4-95:17"
           }
         ]
@@ -123,12 +113,7 @@
               { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "features.py",
-                "line": 78,
-                "start": 11,
-                "end": 34
-              },
+              "position": { "line": 78, "start": 11, "end": 34 },
               "resolves_to": [ "features.return_tuple_of_bools" ],
               "port": "result[0]"
             }
@@ -146,12 +131,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 79,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 79, "start": 15, "end": 16 },
             "call_site": "79:4-79:17"
           }
         ]
@@ -206,12 +186,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 59, "start": 13, "end": 14 } ],
-            "origin": {
-              "filename": "features.py",
-              "line": 58,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 58, "start": 8, "end": 22 }
           }
         ]
       },
@@ -226,12 +201,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 60,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 60, "start": 15, "end": 16 },
             "call_site": "60:4-60:17"
           }
         ]
@@ -290,12 +260,7 @@
             ],
             "tito_positions": [ { "line": 69, "start": 22, "end": 23 } ],
             "call": {
-              "position": {
-                "filename": "features.py",
-                "line": 68,
-                "start": 8,
-                "end": 32
-              },
+              "position": { "line": 68, "start": 8, "end": 32 },
               "resolves_to": [ "features.returns_tainted_object" ],
               "port": "result"
             }
@@ -313,12 +278,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 70,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 70, "start": 15, "end": 30 },
             "call_site": "70:4-70:31"
           }
         ]
@@ -370,12 +330,7 @@
             "local_features": [
               { "always-type": "bool" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 103,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 103, "start": 8, "end": 22 }
           }
         ]
       },
@@ -390,12 +345,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 105,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 105, "start": 15, "end": 23 },
             "call_site": "105:4-105:24"
           }
         ]
@@ -444,12 +394,7 @@
             "local_features": [
               { "always-type": "bool" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 103,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 103, "start": 8, "end": 22 }
           }
         ]
       },
@@ -464,12 +409,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 104,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 104, "start": 15, "end": 23 },
             "call_site": "104:4-104:24"
           }
         ]
@@ -618,12 +558,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 90,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 90, "start": 11, "end": 25 }
           }
         ]
       },
@@ -645,12 +580,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 90,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 90, "start": 27, "end": 41 }
           }
         ]
       }
@@ -796,12 +726,7 @@
               { "always-via": "copy" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 121, "start": 20, "end": 21 } ],
-            "origin": {
-              "filename": "features.py",
-              "line": 119,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 119, "start": 8, "end": 22 }
           }
         ]
       }
@@ -833,12 +758,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 74,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 74, "start": 11, "end": 25 }
           }
         ]
       },
@@ -860,12 +780,7 @@
               { "always-type": "bool" },
               { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 74,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 74, "start": 27, "end": 41 }
           }
         ]
       }
@@ -892,12 +807,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "features.py",
-              "line": 64,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 64, "start": 11, "end": 25 }
           }
         ]
       }

@@ -28,12 +28,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 18, "start": 24, "end": 38 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 18,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 18, "start": 24, "end": 38 }
           }
         ]
       },
@@ -48,12 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 19,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 19, "start": 15, "end": 16 },
             "call_site": "19:4-19:17"
           }
         ]
@@ -103,12 +93,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 23, "start": 24, "end": 38 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 23,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 23, "start": 24, "end": 38 }
           }
         ]
       },
@@ -123,12 +108,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 24,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 24, "start": 15, "end": 16 },
             "call_site": "24:4-24:17"
           }
         ]
@@ -178,12 +158,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 29, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 29,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 29, "start": 28, "end": 42 }
           },
           {
             "kinds": [
@@ -199,12 +174,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 31, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 31,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 31, "start": 28, "end": 42 }
           }
         ]
       },
@@ -219,12 +189,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 32,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 32, "start": 15, "end": 16 },
             "call_site": "32:4-32:17"
           }
         ]
@@ -275,12 +240,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 37, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 37,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 37, "start": 28, "end": 42 }
           },
           {
             "kinds": [
@@ -292,12 +252,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 39,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 39, "start": 12, "end": 26 }
           }
         ]
       },
@@ -312,12 +267,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 40,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 40, "start": 15, "end": 16 },
             "call_site": "40:4-40:17"
           }
         ]
@@ -363,12 +313,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 45,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 45, "start": 12, "end": 26 }
           },
           {
             "kinds": [
@@ -384,12 +329,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 47, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 47,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 47, "start": 28, "end": 42 }
           }
         ]
       },
@@ -404,12 +344,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 48,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 48, "start": 15, "end": 16 },
             "call_site": "48:4-48:17"
           }
         ]
@@ -459,12 +394,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 54, "start": 9, "end": 10 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 52,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 52, "start": 8, "end": 22 }
           }
         ]
       },
@@ -479,12 +409,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 55,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 55, "start": 15, "end": 16 },
             "call_site": "55:4-55:17"
           }
         ]
@@ -676,12 +601,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 68, "start": 22, "end": 23 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 69,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 69, "start": 15, "end": 16 },
             "call_site": "69:4-69:17"
           }
         ]
@@ -713,12 +633,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 64, "start": 25, "end": 26 } ],
-            "origin": {
-              "filename": "strings.py",
-              "line": 63,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 63, "start": 8, "end": 22 }
           }
         ]
       }

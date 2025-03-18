@@ -240,12 +240,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "first_index.py",
-              "line": 12,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 12, "start": 14, "end": 28 }
           },
           {
             "kinds": [
@@ -260,12 +255,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": {
-              "filename": "first_index.py",
-              "line": 12,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 12, "start": 35, "end": 49 }
           }
         ]
       }
@@ -300,12 +290,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "first_index.py",
-              "line": 12,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 12, "start": 14, "end": 28 }
           },
           {
             "kinds": [
@@ -320,12 +305,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": {
-              "filename": "first_index.py",
-              "line": 12,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 12, "start": 35, "end": 49 }
           }
         ]
       },
@@ -340,12 +320,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "first_index.py",
-              "line": 17,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 17, "start": 15, "end": 16 },
             "call_site": "17:4-17:17"
           }
         ]
@@ -396,12 +371,7 @@
               { "first-index": "d" }
             ],
             "call": {
-              "position": {
-                "filename": "first_index.py",
-                "line": 22,
-                "start": 8,
-                "end": 26
-              },
+              "position": { "line": 22, "start": 8, "end": 26 },
               "resolves_to": [ "first_index.alternate_fields" ],
               "port": "result"
             }
@@ -440,12 +410,7 @@
               { "first-index": "e" }
             ],
             "call": {
-              "position": {
-                "filename": "first_index.py",
-                "line": 31,
-                "start": 8,
-                "end": 22
-              },
+              "position": { "line": 31, "start": 8, "end": 22 },
               "resolves_to": [ "first_index.local_fields" ],
               "port": "result"
             }

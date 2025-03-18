@@ -34,7 +34,6 @@ from typing import (
     Iterable,
     List,
     NamedTuple,
-    NotRequired,
     Optional,
     Set,
     Tuple,
@@ -555,23 +554,60 @@ def leaf_name_to_string(leaf: Dict[str, str]) -> str:
     return name
 
 
-class SourceLocationWithFilename(TypedDict):
+class SourceLocationWithFilename(NamedTuple):
     filename: str
-    path: NotRequired[str]
+    path: Optional[str]
     line: int
     start: int
     end: int
 
+    def print(self, prefix: str, indent: str) -> None:
+        filename = self.filename
+        path = self.path
+        if filename == "*" and path is not None:
+            filename = path
+        print(f"{indent}{prefix}{blue(filename)}:{blue(self.line)}:{blue(self.start)}")
 
-def print_location(
-    position: SourceLocationWithFilename, prefix: str, indent: str
+
+class SourceLocation(NamedTuple):
+    line: int
+    start: int
+    end: int
+
+    @staticmethod
+    def from_json(json: Dict[str, int]) -> "SourceLocation":
+        return SourceLocation(line=json["line"], start=json["start"], end=json["end"])
+
+    def add_filename(
+        self, filename: str, path: Optional[str]
+    ) -> SourceLocationWithFilename:
+        return SourceLocationWithFilename(
+            filename=filename, path=path, line=self.line, start=self.start, end=self.end
+        )
+
+
+def print_filename(json: Dict[str, str], prefix: str, indent: str) -> None:
+    filename = json["filename"]
+    path = json.get("path")
+    if filename == "*" and path is not None:
+        print(f"{indent}{prefix}{blue(path)}")
+    else:
+        print(f"{indent}{prefix}{blue(filename)}")
+
+
+def print_json_location(
+    location: Dict[str, Union[str, int]], prefix: str, indent: str
 ) -> None:
-    filename = position["filename"]
-    if filename == "*" and "path" in position:
-        filename = position["path"]
-    print(
-        f'{indent}{prefix}{blue(filename)}:{blue(position["line"])}:{blue(position["start"])}'
-    )
+    filename = location.get("filename")
+    path = location.get("path")
+    line = location["line"]
+    start = location["start"]
+    if filename is not None and filename != "*":
+        print(f"{indent}{prefix}{blue(filename)}:{blue(line)}:{blue(start)}")
+    elif path is not None:
+        print(f"{indent}{prefix}{blue(path)}:{blue(line)}:{blue(start)}")
+    else:
+        print(f"{indent}{prefix}{blue(line)}:{blue(start)}")
 
 
 def print_call_info(local_taint: Dict[str, Any], indent: str) -> None:
@@ -580,9 +616,9 @@ def print_call_info(local_taint: Dict[str, Any], indent: str) -> None:
         print(f'{indent}CalleePort: {green(call["port"])}')
         for resolve_to in call["resolves_to"]:
             print(f"{indent}Callee: {blue(resolve_to)}")
-        print_location(call["position"], prefix="Location: ", indent=indent)
+        print_json_location(call["position"], prefix="Location: ", indent=indent)
     elif "origin" in local_taint:
-        print_location(
+        print_json_location(
             local_taint["origin"], prefix="Origin: Location: ", indent=indent
         )
     elif "declaration" in local_taint:
@@ -664,6 +700,7 @@ def print_model(
         print_json(model)
     elif options.format == "text":
         print(f"Model for {green(model['callable'])}")
+        print_filename(model, prefix="Location: ", indent="")
         print("Sources:")
         print_taint_conditions(model.get("sources", []), is_tito=False)
         print("Sinks:")
@@ -718,7 +755,16 @@ class TaintFrame(NamedTuple):
 
     def key(
         self,
-    ) -> Tuple[ConditionKind, str, str, Optional[str], Optional[str], str, str]:
+    ) -> Tuple[
+        ConditionKind,
+        str,
+        str,
+        Optional[str],
+        Optional[str],
+        str,
+        SourceLocationWithFilename,
+        str,
+    ]:
         return (
             self.condition_kind,
             self.caller,
@@ -726,12 +772,13 @@ class TaintFrame(NamedTuple):
             self.callee,
             self.callee_port,
             self.taint_kind,
+            self.location,
             str(self.type_interval),
         )
 
 
 def get_frames_from_extra_traces(
-    caller: str, extra_traces: List[Dict[str, Any]]
+    caller: str, filename: str, path: Optional[str], extra_traces: List[Dict[str, Any]]
 ) -> Iterable[TaintFrame]:
     for extra_trace in extra_traces:
         if extra_trace["trace_kind"] == "source":
@@ -752,7 +799,9 @@ def get_frames_from_extra_traces(
                     callee_port=call["port"],
                     taint_kind=extra_trace["leaf_kind"],
                     distance=None,
-                    location=call["position"],
+                    location=SourceLocation.from_json(call["position"]).add_filename(
+                        filename, path
+                    ),
                     shared_local_features=[],
                     local_features=[],
                     type_interval={},
@@ -761,6 +810,8 @@ def get_frames_from_extra_traces(
 
 def get_frames_from_local_taints(
     caller: str,
+    filename: str,
+    path: Optional[str],
     condition_kind: ConditionKind,
     port: str,
     local_taints: List[Dict[str, Any]],
@@ -770,24 +821,24 @@ def get_frames_from_local_taints(
     for local_taint in local_taints:
         if include_subtraces and deduplicate:
             yield from get_frames_from_extra_traces(
-                caller, local_taint.get("extra_traces", [])
+                caller, filename, path, local_taint.get("extra_traces", [])
             )
 
         if "origin" in local_taint:
             for flow_details in local_taint.get("kinds", []):
                 if include_subtraces and deduplicate:
                     yield from get_frames_from_extra_traces(
-                        caller, flow_details.get("extra_traces", [])
+                        caller, filename, path, flow_details.get("extra_traces", [])
                     )
 
                 for leaf in flow_details.get("leaves", [{}]):
                     if include_subtraces and not deduplicate:
                         # subtraces are attached to a taint frame, so those will be duplicated
                         yield from get_frames_from_extra_traces(
-                            caller, local_taint.get("extra_traces", [])
+                            caller, filename, path, local_taint.get("extra_traces", [])
                         )
                         yield from get_frames_from_extra_traces(
-                            caller, flow_details.get("extra_traces", [])
+                            caller, filename, path, flow_details.get("extra_traces", [])
                         )
                     yield TaintFrame(
                         condition_kind=condition_kind,
@@ -797,7 +848,9 @@ def get_frames_from_local_taints(
                         callee_port=leaf.get("port", None),
                         taint_kind=flow_details["kind"],
                         distance=flow_details.get("length", 0),
-                        location=local_taint["origin"],
+                        location=SourceLocation.from_json(
+                            local_taint["origin"]
+                        ).add_filename(filename, path),
                         shared_local_features=local_taint.get("local_features", []),
                         local_features=flow_details.get("local_features", []),
                         type_interval=local_taint.get("type_interval", {}),
@@ -807,17 +860,17 @@ def get_frames_from_local_taints(
             for flow_details in local_taint.get("kinds", []):
                 if include_subtraces and deduplicate:
                     yield from get_frames_from_extra_traces(
-                        caller, flow_details.get("extra_traces", [])
+                        caller, filename, path, flow_details.get("extra_traces", [])
                     )
 
                 for resolved in call.get("resolves_to", []):
                     if include_subtraces and not deduplicate:
                         # subtraces are attached to a taint frame, so those will be duplicated
                         yield from get_frames_from_extra_traces(
-                            caller, local_taint.get("extra_traces", [])
+                            caller, filename, path, local_taint.get("extra_traces", [])
                         )
                         yield from get_frames_from_extra_traces(
-                            caller, flow_details.get("extra_traces", [])
+                            caller, filename, path, flow_details.get("extra_traces", [])
                         )
                     yield TaintFrame(
                         condition_kind=condition_kind,
@@ -827,7 +880,9 @@ def get_frames_from_local_taints(
                         callee_port=call["port"],
                         taint_kind=flow_details["kind"],
                         distance=flow_details.get("length", 0),
-                        location=call["position"],
+                        location=SourceLocation.from_json(
+                            call["position"]
+                        ).add_filename(filename, path),
                         shared_local_features=local_taint.get("local_features", []),
                         local_features=flow_details.get("local_features", []),
                         type_interval=local_taint.get("type_interval", {}),
@@ -840,6 +895,8 @@ def get_frames_from_local_taints(
 
 def get_frames_from_taint_conditions(
     caller: str,
+    filename: str,
+    path: Optional[str],
     condition_kind: ConditionKind,
     conditions: List[Dict[str, Any]],
     include_subtraces: bool = False,
@@ -848,6 +905,8 @@ def get_frames_from_taint_conditions(
     for taint in conditions:
         yield from get_frames_from_local_taints(
             caller,
+            filename,
+            path,
             condition_kind,
             taint["port"],
             taint["taint"],
@@ -867,6 +926,8 @@ def print_model_size_stats(callable: str) -> None:
     trace_frames_per_callee = collections.defaultdict(int)
     for frame in get_frames_from_taint_conditions(
         callable,
+        model["filename"],
+        model.get("path"),
         ConditionKind.SOURCE,
         model.get("sources", []),
         include_subtraces=True,
@@ -881,6 +942,8 @@ def print_model_size_stats(callable: str) -> None:
         trace_frames_per_callee[frame.callee] += 1
     for frame in get_frames_from_taint_conditions(
         callable,
+        model["filename"],
+        model.get("path"),
         ConditionKind.SINK,
         model.get("sinks", []),
         include_subtraces=True,
@@ -973,7 +1036,7 @@ def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
             print("Issue:")
             print(f'  Code: {issue["code"]}')
             # pyre-ignore: issue contains a location
-            print_location(issue, "Location: ", indent=" " * 2)
+            print_json_location(issue, "Location: ", indent=" " * 2)
             print(f'  Message: {blue(issue["message"])}')
             print(f'  Handle: {green(issue["master_handle"])}')
             for trace in issue["traces"]:
@@ -1028,6 +1091,8 @@ def get_closest_next_frame(
     shortest_frame = None
     for frame in get_frames_from_taint_conditions(
         caller=callee,
+        filename=model["filename"],
+        path=model.get("path"),
         condition_kind=condition_kind,
         conditions=model.get(condition_kind.model_key(), []),
         include_subtraces=False,
@@ -1070,7 +1135,7 @@ def print_shortest_trace(
         print(
             f"Callee: {blue(frame.callee or '')} Port: {blue(frame.callee_port or '')} Distance: {frame.distance}"
         )
-        print_location(frame.location, prefix="Location: ", indent="")
+        frame.location.print(prefix="Location: ", indent="")
 
         if frame.distance == 0:  # leaf
             return
@@ -1101,6 +1166,8 @@ def print_reachable_leaves(
     for frame in itertools.chain(
         get_frames_from_taint_conditions(
             caller=callable,
+            filename=model["filename"],
+            path=model.get("path"),
             condition_kind=ConditionKind.SOURCE,
             conditions=model.get("sources", []),
             include_subtraces=include_subtraces,
@@ -1108,6 +1175,8 @@ def print_reachable_leaves(
         ),
         get_frames_from_taint_conditions(
             caller=callable,
+            filename=model["filename"],
+            path=model.get("path"),
             condition_kind=ConditionKind.SINK,
             conditions=model.get("sinks", []),
             include_subtraces=include_subtraces,
@@ -1135,12 +1204,14 @@ def print_reachable_leaves(
             print(
                 f"Leaf: {blue(frame.callee or '')} Port: {blue(frame.callee_port or '')}"
             )
-            print_location(frame.location, prefix="Location: ", indent="")
+            frame.location.print(prefix="Location: ", indent="")
             continue
 
         model = get_raw_model(frame.callee, cache=cache)
         for next_frame in get_frames_from_taint_conditions(
             caller=frame.callee,
+            filename=model["filename"],
+            path=model.get("path"),
             condition_kind=condition_kind,
             conditions=model.get(condition_kind.model_key(), []),
             include_subtraces=False,

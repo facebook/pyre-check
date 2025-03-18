@@ -118,12 +118,7 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": {
-              "filename": "missing_type.py",
-              "line": 32,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 32, "start": 15, "end": 16 },
             "call_site": "32:4-32:17"
           }
         ]
@@ -150,12 +145,7 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": {
-              "filename": "missing_type.py",
-              "line": 19,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 19, "start": 15, "end": 16 },
             "call_site": "19:4-19:17"
           }
         ]

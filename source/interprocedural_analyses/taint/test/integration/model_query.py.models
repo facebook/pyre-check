@@ -23,12 +23,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 154,
-              "start": 17,
-              "end": 31
-            }
+            "origin": { "line": 154, "start": 17, "end": 31 }
           }
         ]
       },
@@ -47,12 +42,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 154,
-              "start": 4,
-              "end": 14
-            }
+            "origin": { "line": 154, "start": 4, "end": 14 }
           }
         ]
       }
@@ -90,12 +80,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 154,
-              "start": 17,
-              "end": 31
-            }
+            "origin": { "line": 154, "start": 17, "end": 31 }
           }
         ]
       },
@@ -114,12 +99,7 @@
                 "kind": "SinkA"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 154,
-              "start": 4,
-              "end": 14
-            }
+            "origin": { "line": 154, "start": 4, "end": 14 }
           }
         ]
       }
@@ -374,12 +354,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 43,
-              "start": 12,
-              "end": 16
-            },
+            "origin": { "line": 43, "start": 12, "end": 16 },
             "caller_interval": [ { "lower": 20, "upper": 25 } ],
             "is_self_call": false,
             "call_site": "43:4-44:16"
@@ -464,12 +439,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 22,
-              "start": 26,
-              "end": 30
-            },
+            "origin": { "line": 22, "start": 26, "end": 30 },
             "caller_interval": [ { "lower": 26, "upper": 27 } ],
             "is_self_call": false,
             "call_site": "22:4-23:16"
@@ -642,12 +612,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 129,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 129, "start": 15, "end": 26 },
             "call_site": "129:4-129:27"
           }
         ]
@@ -682,12 +647,7 @@
                 "kind": "SourceA"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 129,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 129, "start": 15, "end": 26 }
           }
         ]
       },
@@ -701,12 +661,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 129,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 129, "start": 15, "end": 26 },
             "call_site": "129:4-129:27"
           }
         ]
@@ -739,12 +694,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 174,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 174, "start": 15, "end": 29 },
             "call_site": "174:4-174:30"
           }
         ]
@@ -779,12 +729,7 @@
                 "kind": "SourceB"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 174,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 174, "start": 15, "end": 29 }
           }
         ]
       },
@@ -798,12 +743,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 174,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 174, "start": 15, "end": 29 },
             "call_site": "174:4-174:30"
           }
         ]
@@ -836,12 +776,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 179,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 179, "start": 15, "end": 30 },
             "call_site": "179:4-179:31"
           }
         ]
@@ -876,12 +811,7 @@
                 "kind": "SourceB"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 179,
-              "start": 15,
-              "end": 30
-            }
+            "origin": { "line": 179, "start": 15, "end": 30 }
           }
         ]
       },
@@ -895,12 +825,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 179,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 179, "start": 15, "end": 30 },
             "call_site": "179:4-179:31"
           }
         ]
@@ -933,12 +858,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 184,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 184, "start": 15, "end": 29 },
             "call_site": "184:4-184:30"
           }
         ]
@@ -973,12 +893,7 @@
                 "kind": "SourceB"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 184,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 184, "start": 15, "end": 29 }
           }
         ]
       },
@@ -992,12 +907,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 184,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 184, "start": 15, "end": 29 },
             "call_site": "184:4-184:30"
           }
         ]
@@ -1030,12 +940,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 134,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 134, "start": 15, "end": 25 },
             "call_site": "134:4-134:26"
           }
         ]
@@ -1070,12 +975,7 @@
                 "kind": "SourceA"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 134,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 134, "start": 15, "end": 25 }
           }
         ]
       },
@@ -1089,12 +989,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 134,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 134, "start": 15, "end": 25 },
             "call_site": "134:4-134:26"
           }
         ]
@@ -1127,12 +1022,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 139,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 139, "start": 15, "end": 26 },
             "call_site": "139:4-139:27"
           }
         ]
@@ -1167,12 +1057,7 @@
                 "kind": "SourceA"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 139,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 139, "start": 15, "end": 26 }
           }
         ]
       },
@@ -1186,12 +1071,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 139,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 139, "start": 15, "end": 26 },
             "call_site": "139:4-139:27"
           }
         ]
@@ -1224,12 +1104,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 144,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 144, "start": 15, "end": 25 },
             "call_site": "144:4-144:26"
           }
         ]
@@ -1264,12 +1139,7 @@
                 "kind": "SourceA"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 144,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 144, "start": 15, "end": 25 }
           }
         ]
       },
@@ -1283,12 +1153,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 144,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 144, "start": 15, "end": 25 },
             "call_site": "144:4-144:26"
           }
         ]
@@ -1335,12 +1200,7 @@
                 "kind": "SinkB"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 149,
-              "start": 4,
-              "end": 15
-            }
+            "origin": { "line": 149, "start": 4, "end": 15 }
           }
         ]
       }
@@ -1377,12 +1237,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 147,
-              "start": 36,
-              "end": 42
-            },
+            "origin": { "line": 147, "start": 36, "end": 42 },
             "call_site": "147:0-149:24"
           }
         ]
@@ -1402,12 +1257,7 @@
                 "kind": "SinkB"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 149,
-              "start": 4,
-              "end": 15
-            }
+            "origin": { "line": 149, "start": 4, "end": 15 }
           }
         ]
       }
@@ -1445,12 +1295,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 147,
-              "start": 36,
-              "end": 42
-            },
+            "origin": { "line": 147, "start": 36, "end": 42 },
             "call_site": "147:0-149:24"
           }
         ]
@@ -1470,12 +1315,7 @@
                 "kind": "SinkA"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 149,
-              "start": 4,
-              "end": 15
-            }
+            "origin": { "line": 149, "start": 4, "end": 15 }
           }
         ]
       }
@@ -1520,12 +1360,7 @@
                 "kind": "SourceD"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 159,
-              "start": 11,
-              "end": 22
-            }
+            "origin": { "line": 159, "start": 11, "end": 22 }
           }
         ]
       }
@@ -1544,12 +1379,7 @@
               }
             ],
             "local_features": [ { "always-via": "propagated-return-sink" } ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 159,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 159, "start": 4, "end": 22 }
           }
         ]
       },
@@ -1598,12 +1428,7 @@
                 "kind": "SourceD"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 159,
-              "start": 11,
-              "end": 22
-            }
+            "origin": { "line": 159, "start": 11, "end": 22 }
           }
         ]
       },
@@ -1619,12 +1444,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 159,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 159, "start": 4, "end": 22 }
           }
         ]
       }
@@ -1661,12 +1481,7 @@
                 "kind": "SourceC"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 159,
-              "start": 11,
-              "end": 22
-            }
+            "origin": { "line": 159, "start": 11, "end": 22 }
           }
         ]
       },
@@ -1682,12 +1497,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 159,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 159, "start": 4, "end": 22 }
           }
         ]
       }
@@ -1714,12 +1524,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 164,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 164, "start": 15, "end": 25 },
             "call_site": "164:4-164:26"
           }
         ]
@@ -1754,12 +1559,7 @@
                 "kind": "SourceE"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 164,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 164, "start": 15, "end": 25 }
           }
         ]
       },
@@ -1773,12 +1573,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 164,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 164, "start": 15, "end": 25 },
             "call_site": "164:4-164:26"
           }
         ]
@@ -1821,12 +1616,7 @@
                 "kind": "SourceC"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 164,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 164, "start": 15, "end": 25 }
           }
         ]
       },
@@ -1840,12 +1630,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 164,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 164, "start": 15, "end": 25 },
             "call_site": "164:4-164:26"
           }
         ]
@@ -1878,12 +1663,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 169,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 169, "start": 15, "end": 30 },
             "call_site": "169:4-169:31"
           }
         ]
@@ -1918,12 +1698,7 @@
                 "kind": "SourceB"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 169,
-              "start": 15,
-              "end": 30
-            }
+            "origin": { "line": 169, "start": 15, "end": 30 }
           }
         ]
       },
@@ -1937,12 +1712,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 169,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 169, "start": 15, "end": 30 },
             "call_site": "169:4-169:31"
           }
         ]
@@ -2059,12 +1829,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 188,
-              "start": 15,
-              "end": 35
-            },
+            "origin": { "line": 188, "start": 15, "end": 35 },
             "call_site": "188:4-188:36"
           }
         ]
@@ -2079,12 +1844,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 189,
-              "start": 15,
-              "end": 34
-            },
+            "origin": { "line": 189, "start": 15, "end": 34 },
             "call_site": "189:4-189:35"
           }
         ]
@@ -2109,12 +1869,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 193,
-              "start": 15,
-              "end": 34
-            },
+            "origin": { "line": 193, "start": 15, "end": 34 },
             "call_site": "193:4-193:35"
           },
           {
@@ -2124,12 +1879,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query.py",
-              "line": 194,
-              "start": 15,
-              "end": 34
-            },
+            "origin": { "line": 194, "start": 15, "end": 34 },
             "call_site": "194:4-194:35"
           }
         ]

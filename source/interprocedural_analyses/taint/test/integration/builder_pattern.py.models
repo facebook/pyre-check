@@ -30,12 +30,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 79, "start": 32, "end": 46 } ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 79,
-              "start": 32,
-              "end": 46
-            }
+            "origin": { "line": 79, "start": 32, "end": 46 }
           }
         ]
       },
@@ -50,12 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 81,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 81, "start": 15, "end": 29 },
             "call_site": "81:4-81:30"
           }
         ]
@@ -108,12 +98,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 79, "start": 32, "end": 46 } ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 79,
-              "start": 32,
-              "end": 46
-            }
+            "origin": { "line": 79, "start": 32, "end": 46 }
           }
         ]
       },
@@ -128,12 +113,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 80,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 80, "start": 15, "end": 22 },
             "call_site": "80:4-80:23"
           }
         ]
@@ -182,12 +162,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 51, "start": 46, "end": 60 } ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 51,
-              "start": 46,
-              "end": 60
-            }
+            "origin": { "line": 51, "start": 46, "end": 60 }
           }
         ]
       },
@@ -204,12 +179,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builder_pattern.py",
-                "line": 51,
-                "start": 4,
-                "end": 61
-              },
+              "position": { "line": 51, "start": 4, "end": 61 },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self, position=0)[_saved]",
               "call_site": "51:4-51:74"
@@ -261,12 +231,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 110, "start": 8, "end": 22 } ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 110,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 110, "start": 8, "end": 22 }
           }
         ]
       },
@@ -283,12 +248,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builder_pattern.py",
-                "line": 109,
-                "start": 4,
-                "end": 4
-              },
+              "position": { "line": 109, "start": 4, "end": 4 },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self, position=0)[_saved]",
               "call_site": "109:4-111:18"
@@ -340,12 +300,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 64, "start": 8, "end": 22 } ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 64,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 64, "start": 8, "end": 22 }
           }
         ]
       },
@@ -362,12 +317,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builder_pattern.py",
-                "line": 63,
-                "start": 4,
-                "end": 4
-              },
+              "position": { "line": 63, "start": 4, "end": 4 },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
               "port": "formal(self, position=0)[_saved]",
               "call_site": "63:4-65:18"
@@ -460,12 +410,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builder_pattern.py",
-              "line": 27,
-              "start": 19,
-              "end": 30
-            },
+            "origin": { "line": 27, "start": 19, "end": 30 },
             "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "27:8-27:31"

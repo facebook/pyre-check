@@ -35,12 +35,7 @@
               { "first-field": "bad" }
             ],
             "call": {
-              "position": {
-                "filename": "named_tuples.py",
-                "line": 66,
-                "start": 8,
-                "end": 23
-              },
+              "position": { "line": 66, "start": 8, "end": 23 },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
               "port": "result[bad]"
             }
@@ -58,12 +53,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 68,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 68, "start": 15, "end": 19 },
             "call_site": "68:4-68:20"
           }
         ]
@@ -120,12 +110,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": {
-                "filename": "named_tuples.py",
-                "line": 21,
-                "start": 8,
-                "end": 23
-              },
+              "position": { "line": 21, "start": 8, "end": 23 },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
               "port": "result[bad]"
             }
@@ -143,12 +128,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 22,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 22, "start": 15, "end": 20 },
             "call_site": "22:4-22:21"
           }
         ]
@@ -203,12 +183,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": {
-                "filename": "named_tuples.py",
-                "line": 56,
-                "start": 8,
-                "end": 25
-              },
+              "position": { "line": 56, "start": 8, "end": 25 },
               "resolves_to": [ "named_tuples.inherited_tuple" ],
               "port": "result[bad]"
             }
@@ -226,12 +201,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 57,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 57, "start": 15, "end": 20 },
             "call_site": "57:4-57:21"
           }
         ]
@@ -278,12 +248,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 92,
-              "start": 39,
-              "end": 53
-            }
+            "origin": { "line": 92, "start": 39, "end": 53 }
           }
         ]
       },
@@ -304,12 +269,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "named_tuples.py",
-                "line": 92,
-                "start": 39,
-                "end": 53
-              },
+              "position": { "line": 92, "start": 39, "end": 53 },
               "resolves_to": [
                 "named_tuples.NamedTupleWithTaintedAttribute.__init__"
               ],
@@ -363,12 +323,7 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": {
-                "filename": "named_tuples.py",
-                "line": 38,
-                "start": 8,
-                "end": 27
-              },
+              "position": { "line": 38, "start": 8, "end": 27 },
               "resolves_to": [ "named_tuples.tainted_old_tuple" ],
               "port": "result[bad]"
             }
@@ -386,12 +341,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 39,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 39, "start": 15, "end": 20 },
             "call_site": "39:4-39:21"
           }
         ]
@@ -538,12 +488,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 86,
-              "start": 0,
-              "end": 0
-            },
+            "origin": { "line": 86, "start": 0, "end": 0 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -641,12 +586,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 79,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 79, "start": 15, "end": 19 },
             "call_site": "79:4-79:20"
           }
         ]
@@ -662,12 +602,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 78,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 78, "start": 15, "end": 23 },
             "call_site": "78:4-78:24"
           }
         ]
@@ -696,12 +631,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 83,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 83, "start": 15, "end": 19 },
             "call_site": "83:4-83:20"
           }
         ]
@@ -734,12 +664,7 @@
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "call": {
-              "position": {
-                "filename": "named_tuples.py",
-                "line": 73,
-                "start": 8,
-                "end": 23
-              },
+              "position": { "line": 73, "start": 8, "end": 23 },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
               "port": "result[bad]"
             }
@@ -771,12 +696,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 52, "start": 35, "end": 49 } ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 52,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 52, "start": 35, "end": 49 }
           }
         ]
       }
@@ -805,12 +725,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 34, "start": 35, "end": 49 } ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 34,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 34, "start": 35, "end": 49 }
           }
         ]
       }
@@ -839,12 +754,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 17, "start": 28, "end": 42 } ],
-            "origin": {
-              "filename": "named_tuples.py",
-              "line": 17,
-              "start": 28,
-              "end": 42
-            }
+            "origin": { "line": 17, "start": 28, "end": 42 }
           }
         ]
       }

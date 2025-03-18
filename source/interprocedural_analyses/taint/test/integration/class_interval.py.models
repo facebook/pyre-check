@@ -26,12 +26,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 390,
-                "start": 8,
-                "end": 13
-              },
+              "position": { "line": 390, "start": 8, "end": 13 },
               "resolves_to": [ "class_interval.A13.f" ],
               "port": "result"
             },
@@ -51,12 +46,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 391,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 391, "start": 15, "end": 16 },
             "call_site": "391:4-391:17"
           }
         ]
@@ -106,12 +96,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 742, "start": 20, "end": 34 } ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 742,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 742, "start": 20, "end": 34 }
           }
         ]
       },
@@ -126,12 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 742,
-              "start": 15,
-              "end": 35
-            },
+            "origin": { "line": 742, "start": 15, "end": 35 },
             "call_site": "742:4-742:36"
           }
         ]
@@ -181,12 +161,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 498,
-                "start": 15,
-                "end": 21
-              },
+              "position": { "line": 498, "start": 15, "end": 21 },
               "resolves_to": [ "class_interval.B16.m0" ],
               "port": "result"
             },
@@ -206,12 +181,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 498,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 498, "start": 15, "end": 21 },
             "call_site": "498:4-498:22"
           }
         ]
@@ -254,12 +224,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 106,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 106, "start": 9, "end": 23 }
           }
         ]
       },
@@ -276,12 +241,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 106,
-                "start": 9,
-                "end": 23
-              },
+              "position": { "line": 106, "start": 9, "end": 23 },
               "resolves_to": [ "class_interval.B2.m0" ],
               "port": "formal(x, position=1)",
               "call_site": "106:4-106:24"
@@ -329,12 +289,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 148,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 148, "start": 9, "end": 23 }
           }
         ]
       },
@@ -351,12 +306,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 148,
-                "start": 9,
-                "end": 23
-              },
+              "position": { "line": 148, "start": 9, "end": 23 },
               "resolves_to": [
                 "class_interval.B3.m0", "class_interval.C3.m0"
               ],
@@ -406,12 +356,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 552,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 552, "start": 11, "end": 25 }
           }
         ]
       },
@@ -429,12 +374,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 552,
-                "start": 11,
-                "end": 25
-              },
+              "position": { "line": 552, "start": 11, "end": 25 },
               "resolves_to": [ "class_interval.A17.m2" ],
               "port": "formal(arg, position=1)",
               "call_site": "552:4-552:26"
@@ -488,12 +428,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false
           }
@@ -518,12 +453,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false
           }
@@ -550,12 +480,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 25, "upper": 26 } ],
             "is_self_call": false
           }
@@ -582,12 +507,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [
               { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
             ],
@@ -616,12 +536,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [
               { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
             ],
@@ -650,12 +565,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
             "is_self_call": false
           }
@@ -681,12 +591,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 57, "upper": 58 } ],
             "is_self_call": false
           },
@@ -699,12 +604,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 59, "upper": 60 } ],
             "is_self_call": false
           }
@@ -729,12 +629,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "is_self_call": false
           }
@@ -760,12 +655,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 87, "upper": 88 } ],
             "is_self_call": false
           }
@@ -816,12 +706,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 93, "upper": 94 } ],
             "is_self_call": false
           }
@@ -938,12 +823,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 109, "upper": 110 } ],
             "is_self_call": false
           }
@@ -968,12 +848,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 116, "upper": 117 } ],
             "is_self_call": false
           }
@@ -998,12 +873,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 127, "upper": 128 } ],
             "is_self_call": false
           }
@@ -1028,12 +898,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 134, "upper": 135 } ],
             "is_self_call": false
           }
@@ -1060,12 +925,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 139, "upper": 142 } ],
             "is_self_call": false
           },
@@ -1078,12 +938,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
             },
@@ -1114,12 +969,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
             "is_self_call": false
           }
@@ -1145,12 +995,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 87, "upper": 88 } ],
             "is_self_call": false
           }
@@ -1197,12 +1042,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 93, "upper": 94 } ],
             "is_self_call": false
           }
@@ -1250,12 +1090,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 109, "upper": 110 } ],
             "is_self_call": false
           }
@@ -1281,12 +1116,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
@@ -1303,12 +1133,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
@@ -1339,12 +1164,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 139, "upper": 142 } ],
             "is_self_call": false
           },
@@ -1357,12 +1177,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
             },
@@ -1391,12 +1206,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false
           }
@@ -1421,12 +1231,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false
           }
@@ -1453,12 +1258,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 25, "upper": 26 } ],
             "is_self_call": false
           }
@@ -1485,12 +1285,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [
               { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
             ],
@@ -1518,12 +1313,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 57, "upper": 58 } ],
             "is_self_call": false
           }
@@ -1548,12 +1338,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "is_self_call": false
           }
@@ -1642,12 +1427,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
+              "position": { "line": -1, "start": -1, "end": -1 },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
@@ -1676,12 +1456,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 116, "upper": 117 } ],
             "is_self_call": false
           }
@@ -1706,12 +1481,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 127, "upper": 128 } ],
             "is_self_call": false
           }
@@ -1738,12 +1508,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
             "is_self_call": false
           }
@@ -1769,12 +1534,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 59, "upper": 60 } ],
             "is_self_call": false
           }
@@ -1799,12 +1559,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "is_self_call": false
           }
@@ -1858,12 +1613,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 134, "upper": 135 } ],
             "is_self_call": false
           }
@@ -1890,12 +1640,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [
               { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
             ],
@@ -2004,12 +1749,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 19,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 19, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.C0.m2" ],
               "port": "formal(x, position=1)",
               "call_site": "19:8-19:18"
@@ -2042,12 +1782,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 50,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 50, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.C1.m2" ],
               "port": "formal(x, position=1)",
               "call_site": "50:8-50:18"
@@ -2083,12 +1818,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 345,
-              "start": 8,
-              "end": 11
-            },
+            "origin": { "line": 345, "start": 8, "end": 11 },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
@@ -2136,12 +1866,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 372,
-                "start": 15,
-                "end": 23
-              },
+              "position": { "line": 372, "start": 15, "end": 23 },
               "resolves_to": [ "class_interval.C13.g" ],
               "port": "result"
             },
@@ -2173,12 +1898,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 411,
-                "start": 15,
-                "end": 24
-              },
+              "position": { "line": 411, "start": 15, "end": 24 },
               "resolves_to": [ "class_interval.C14.m2" ],
               "port": "result"
             },
@@ -2212,12 +1932,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 440,
-                "start": 15,
-                "end": 24
-              },
+              "position": { "line": 440, "start": 15, "end": 24 },
               "resolves_to": [ "class_interval.E15.m2" ],
               "port": "result"
             },
@@ -2251,12 +1966,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 473,
-                "start": 15,
-                "end": 24
-              },
+              "position": { "line": 473, "start": 15, "end": 24 },
               "resolves_to": [ "class_interval.D16.m2" ],
               "port": "result"
             },
@@ -2282,12 +1992,7 @@
           {
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 512,
-                "start": 15,
-                "end": 18
-              },
+              "position": { "line": 512, "start": 15, "end": 18 },
               "resolves_to": [
                 "class_interval.C17.m1", "class_interval.D17.m1"
               ],
@@ -2301,12 +2006,7 @@
           {
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 512,
-                "start": 15,
-                "end": 18
-              },
+              "position": { "line": 512, "start": 15, "end": 18 },
               "resolves_to": [
                 "class_interval.C17.m1", "class_interval.D17.m1"
               ],
@@ -2335,12 +2035,7 @@
           {
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 520,
-                "start": 15,
-                "end": 18
-              },
+              "position": { "line": 520, "start": 15, "end": 18 },
               "resolves_to": [ "class_interval.D17.m1" ],
               "port": "formal(arg, position=1)",
               "call_site": "520:8-520:19"
@@ -2373,12 +2068,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 586,
-                "start": 13,
-                "end": 16
-              },
+              "position": { "line": 586, "start": 13, "end": 16 },
               "resolves_to": [ "class_interval.A19.m1" ],
               "port": "formal(arg, position=1)",
               "call_site": "586:8-586:17"
@@ -2410,12 +2100,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 590,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 590, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 68, "upper": 69 } ],
             "is_self_call": false,
             "call_site": "590:8-590:23"
@@ -2444,12 +2129,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 595,
-                "start": 13,
-                "end": 16
-              },
+              "position": { "line": 595, "start": 13, "end": 16 },
               "resolves_to": [ "class_interval.A19.m3" ],
               "port": "formal(arg, position=1)",
               "call_site": "595:8-595:17"
@@ -2481,12 +2161,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 598,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 598, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 68, "upper": 69 } ],
             "is_self_call": false,
             "call_site": "598:8-598:23"
@@ -2515,12 +2190,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 84,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 84, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.D2.m2" ],
               "port": "formal(x, position=1)",
               "call_site": "84:8-84:18"
@@ -2547,12 +2217,7 @@
           {
             "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 653,
-                "start": 22,
-                "end": 25
-              },
+              "position": { "line": 653, "start": 22, "end": 25 },
               "resolves_to": [ "class_interval.B21.m1" ],
               "port": "formal(arg, position=1)",
               "call_site": "653:15-653:26"
@@ -2616,12 +2281,7 @@
           {
             "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 679,
-                "start": 23,
-                "end": 26
-              },
+              "position": { "line": 679, "start": 23, "end": 26 },
               "resolves_to": [ "class_interval.B22.m1" ],
               "port": "formal(arg, position=1)",
               "call_site": "679:15-679:27"
@@ -2747,12 +2407,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 747, "start": 24, "end": 33 } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 747,
-                "start": 24,
-                "end": 33
-              },
+              "position": { "line": 747, "start": 24, "end": 33 },
               "resolves_to": [ "class_interval.B24.m1" ],
               "port": "result"
             },
@@ -2803,12 +2458,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 120,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 120, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.C3.m2" ],
               "port": "formal(x, position=1)",
               "call_site": "120:8-120:18"
@@ -2841,12 +2491,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 162,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 162, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.C4.m3" ],
               "port": "formal(x, position=1)",
               "call_site": "162:8-162:18"
@@ -2879,12 +2524,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 198,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 198, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.D5.m2" ],
               "port": "formal(x, position=1)",
               "call_site": "198:8-198:18"
@@ -2917,12 +2557,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 237,
-                "start": 15,
-                "end": 24
-              },
+              "position": { "line": 237, "start": 15, "end": 24 },
               "resolves_to": [ "class_interval.B6.m0" ],
               "port": "result"
             },
@@ -2973,12 +2608,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 289,
-                "start": 12,
-                "end": 19
-              },
+              "position": { "line": 289, "start": 12, "end": 19 },
               "resolves_to": [ "class_interval.B7.foo" ],
               "port": "result"
             },
@@ -3010,12 +2640,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 313,
-                "start": 19,
-                "end": 29
-              },
+              "position": { "line": 313, "start": 19, "end": 29 },
               "resolves_to": [ "class_interval.A8.baz" ],
               "port": "result"
             },
@@ -3032,12 +2657,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 320,
-                "start": 19,
-                "end": 27
-              },
+              "position": { "line": 320, "start": 19, "end": 27 },
               "resolves_to": [ "class_interval.B8.foo" ],
               "port": "result"
             },
@@ -3054,12 +2674,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 323,
-                "start": 19,
-                "end": 29
-              },
+              "position": { "line": 323, "start": 19, "end": 29 },
               "resolves_to": [ "class_interval.A8.baz" ],
               "port": "result"
             },
@@ -3103,12 +2718,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 328,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 328, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 148, "upper": 149 } ],
             "is_self_call": false
           }
@@ -3137,12 +2747,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 333,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 333, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 150, "upper": 151 } ],
             "is_self_call": false
           }
@@ -3170,12 +2775,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 486,
-                "start": 15,
-                "end": 24
-              },
+              "position": { "line": 486, "start": 15, "end": 24 },
               "resolves_to": [ "class_interval.A16.m1" ],
               "port": "result"
             },
@@ -3207,12 +2807,7 @@
                 "kind": "SinkB"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 562,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 562, "start": 15, "end": 18 },
             "call_site": "562:8-562:19"
           }
         ]
@@ -3239,12 +2834,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 92,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 92, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.A2.m1" ],
               "port": "formal(x, position=1)",
               "call_site": "92:8-92:18"
@@ -3277,12 +2867,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 663,
-              "start": 26,
-              "end": 29
-            },
+            "origin": { "line": 663, "start": 26, "end": 29 },
             "caller_interval": [ { "lower": 87, "upper": 88 } ],
             "is_self_call": false,
             "call_site": "663:15-663:30"
@@ -3333,12 +2918,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 687,
-              "start": 26,
-              "end": 29
-            },
+            "origin": { "line": 687, "start": 26, "end": 29 },
             "caller_interval": [ { "lower": 93, "upper": 94 } ],
             "is_self_call": false,
             "call_site": "687:15-687:30"
@@ -3390,12 +2970,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 759,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 759, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 109, "upper": 110 } ],
             "is_self_call": false
           }
@@ -3423,12 +2998,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 128,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 128, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)",
               "call_site": "128:8-128:18"
@@ -3462,12 +3032,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 246,
-              "start": 19,
-              "end": 33
-            },
+            "origin": { "line": 246, "start": 19, "end": 33 },
             "caller_interval": [ { "lower": 139, "upper": 142 } ],
             "is_self_call": false
           },
@@ -3480,12 +3045,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 248,
-                "start": 19,
-                "end": 28
-              },
+              "position": { "line": 248, "start": 19, "end": 28 },
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
             },
@@ -3518,12 +3078,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 281,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 281, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 152, "upper": 153 } ],
             "is_self_call": false
           }
@@ -3551,12 +3106,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 278,
-                "start": 15,
-                "end": 25
-              },
+              "position": { "line": 278, "start": 15, "end": 25 },
               "resolves_to": [ "class_interval.B7.bar" ],
               "port": "result"
             },
@@ -3589,12 +3139,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 302,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 302, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 154, "upper": 155 } ],
             "is_self_call": false
           }
@@ -3621,12 +3166,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 34,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 34, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false,
             "call_site": "34:8-34:21"
@@ -3654,12 +3194,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 66,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 66, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false,
             "call_site": "66:8-66:21"
@@ -3689,12 +3224,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 360,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 360, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 19, "upper": 20 } ],
             "is_self_call": false
           }
@@ -3723,12 +3253,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 386,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 386, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 25, "upper": 26 } ],
             "is_self_call": false
           }
@@ -3757,12 +3282,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 419,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 419, "start": 15, "end": 29 },
             "caller_interval": [
               { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
             ],
@@ -3792,12 +3312,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 532,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 532, "start": 15, "end": 18 },
             "caller_interval": [ { "lower": 57, "upper": 58 } ],
             "is_self_call": false,
             "call_site": "532:8-532:19"
@@ -3820,12 +3335,7 @@
           {
             "kinds": [ { "length": 1, "kind": "SinkB" } ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 569,
-                "start": 14,
-                "end": 17
-              },
+              "position": { "line": 569, "start": 14, "end": 17 },
               "resolves_to": [ "class_interval.B18.m" ],
               "port": "formal(arg, position=0)",
               "call_site": "569:8-569:18"
@@ -3854,12 +3364,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 625,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 625, "start": 19, "end": 22 },
             "caller_interval": [
               { "lower": 80, "upper": 81 }, { "lower": 83, "upper": 84 }
             ],
@@ -3960,12 +3465,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 133,
-                "start": 16,
-                "end": 17
-              },
+              "position": { "line": 133, "start": 16, "end": 17 },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)",
               "call_site": "133:8-133:18"
@@ -3997,12 +3497,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 136,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 136, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 116, "upper": 117 } ],
             "is_self_call": false,
             "call_site": "136:8-136:21"
@@ -4030,12 +3525,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 175,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 175, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 127, "upper": 128 } ],
             "is_self_call": false,
             "call_site": "175:8-175:21"
@@ -4065,12 +3555,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 494,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 494, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 48, "upper": 49 } ],
             "is_self_call": false
           }
@@ -4098,12 +3583,7 @@
                 "kind": "SinkC"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 538,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 538, "start": 15, "end": 18 },
             "caller_interval": [ { "lower": 59, "upper": 60 } ],
             "is_self_call": false,
             "call_site": "538:8-538:19"
@@ -4131,12 +3611,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 102,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 102, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 72, "upper": 73 } ],
             "is_self_call": false,
             "call_site": "102:8-102:21"
@@ -4196,12 +3671,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 215,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 215, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 134, "upper": 135 } ],
             "is_self_call": false,
             "call_site": "215:8-215:21"
@@ -4231,12 +3701,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 448,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 448, "start": 15, "end": 29 },
             "caller_interval": [
               { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
             ],
@@ -4299,12 +3764,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 263,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 263, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 158, "upper": 159 } ],
             "is_self_call": false
           }
@@ -4407,12 +3867,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 337,
-                "start": 11,
-                "end": 18
-              },
+              "position": { "line": 337, "start": 11, "end": 18 },
               "resolves_to": [ "class_interval.A9.f" ],
               "port": "result"
             }
@@ -4525,12 +3980,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 364, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 367,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 367, "start": 15, "end": 16 },
             "call_site": "367:4-367:17"
           }
         ]

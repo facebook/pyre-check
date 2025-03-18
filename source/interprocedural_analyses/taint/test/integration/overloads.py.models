@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overloads.py",
-              "line": 46,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 46, "start": 8, "end": 22 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overloads.py",
-                "line": 48,
-                "start": 18,
-                "end": 19
-              },
+              "position": { "line": 48, "start": 18, "end": 19 },
               "resolves_to": [ "overloads.A.call_me" ],
               "port": "formal(x, position=1)",
               "call_site": "48:8-48:20"
@@ -359,12 +349,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overloads.py",
-              "line": 32,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 32, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "32:8-32:21"
@@ -392,12 +377,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overloads.py",
-              "line": 27,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 27, "start": 15, "end": 16 },
             "call_site": "27:4-27:17"
           }
         ]
@@ -424,12 +404,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overloads.py",
-                "line": 23,
-                "start": 12,
-                "end": 13
-              },
+              "position": { "line": 23, "start": 12, "end": 13 },
               "resolves_to": [ "overloads.call_me" ],
               "port": "formal(x, position=0)",
               "call_site": "23:4-23:14"

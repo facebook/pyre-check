@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 151,
-              "start": 43,
-              "end": 57
-            }
+            "origin": { "line": 151, "start": 43, "end": 57 }
           }
         ]
       },
@@ -50,12 +45,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 151,
-                "start": 43,
-                "end": 57
-              },
+              "position": { "line": 151, "start": 43, "end": 57 },
               "resolves_to": [
                 "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]"
               ],
@@ -106,12 +96,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 147,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 147, "start": 31, "end": 45 }
           }
         ]
       },
@@ -132,12 +117,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 147,
-                "start": 31,
-                "end": 45
-              },
+              "position": { "line": 147, "start": 31, "end": 45 },
               "resolves_to": [
                 "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]"
               ],
@@ -188,12 +168,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 161,
-              "start": 44,
-              "end": 58
-            }
+            "origin": { "line": 161, "start": 44, "end": 58 }
           }
         ]
       },
@@ -214,12 +189,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 161,
-                "start": 44,
-                "end": 58
-              },
+              "position": { "line": 161, "start": 44, "end": 58 },
               "resolves_to": [
                 "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]"
               ],
@@ -270,12 +240,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 165,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 165, "start": 19, "end": 33 }
           }
         ]
       },
@@ -292,12 +257,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 165,
-                "start": 19,
-                "end": 33
-              },
+              "position": { "line": 165, "start": 19, "end": 33 },
               "resolves_to": [
                 "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]"
               ],
@@ -345,12 +305,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 149,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 149, "start": 34, "end": 48 }
           }
         ]
       },
@@ -371,12 +326,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 149,
-                "start": 34,
-                "end": 48
-              },
+              "position": { "line": 149, "start": 34, "end": 48 },
               "resolves_to": [
                 "decorator_location.decorated_skip_this_decorator"
               ],
@@ -427,12 +377,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 155,
-              "start": 44,
-              "end": 58
-            }
+            "origin": { "line": 155, "start": 44, "end": 58 }
           }
         ]
       },
@@ -453,12 +398,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 155,
-                "start": 44,
-                "end": 58
-              },
+              "position": { "line": 155, "start": 44, "end": 58 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_factory"
               ],
@@ -509,12 +449,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 157,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 157, "start": 42, "end": 56 }
           }
         ]
       },
@@ -535,12 +470,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 157,
-                "start": 42,
-                "end": 56
-              },
+              "position": { "line": 157, "start": 42, "end": 56 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_class"
               ],
@@ -591,12 +521,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 153,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 153, "start": 36, "end": 50 }
           }
         ]
       },
@@ -617,12 +542,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 153,
-                "start": 36,
-                "end": 50
-              },
+              "position": { "line": 153, "start": 36, "end": 50 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator"
               ],
@@ -673,12 +593,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 159,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 159, "start": 41, "end": 55 }
           }
         ]
       },
@@ -699,12 +614,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 159,
-                "start": 41,
-                "end": 55
-              },
+              "position": { "line": 159, "start": 41, "end": 55 },
               "resolves_to": [
                 "decorator_location.decorated_ignore_then_skip_decorator"
               ],
@@ -803,12 +713,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 122,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 122, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -838,12 +743,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 96,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 96, "start": 15, "end": 16 },
             "call_site": "96:4-96:17"
           }
         ]
@@ -872,12 +772,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 80,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 80, "start": 15, "end": 16 },
             "call_site": "80:4-80:17"
           }
         ]
@@ -906,12 +801,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 90,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 90, "start": 15, "end": 16 },
             "call_site": "90:4-90:17"
           }
         ]
@@ -940,12 +830,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 85,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 85, "start": 15, "end": 16 },
             "call_site": "85:4-85:17"
           }
         ]
@@ -974,12 +859,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 75,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 75, "start": 15, "end": 16 },
             "call_site": "75:4-75:17"
           }
         ]
@@ -1008,12 +888,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 102,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 102, "start": 15, "end": 16 },
             "call_site": "102:4-102:17"
           }
         ]
@@ -1042,12 +917,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 64,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 64, "start": 15, "end": 16 },
             "call_site": "64:4-64:17"
           }
         ]
@@ -1076,12 +946,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 69,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 69, "start": 15, "end": 16 },
             "call_site": "69:4-69:17"
           }
         ]
@@ -1110,12 +975,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 117,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 117, "start": 15, "end": 16 },
             "call_site": "117:4-117:17"
           }
         ]
@@ -1226,12 +1086,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 108,
-              "start": 19,
-              "end": 26
-            },
+            "origin": { "line": 108, "start": 19, "end": 26 },
             "call_site": "108:8-108:27"
           }
         ]
@@ -1255,12 +1110,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 108,
-              "start": 19,
-              "end": 26
-            },
+            "origin": { "line": 108, "start": 19, "end": 26 },
             "call_site": "108:8-108:27"
           }
         ]
@@ -1289,12 +1139,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 36,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 36, "start": 19, "end": 20 },
             "call_site": "36:8-36:21"
           }
         ]
@@ -1323,12 +1168,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 19,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 19, "start": 19, "end": 20 },
             "call_site": "19:8-19:21"
           },
           {
@@ -1347,12 +1187,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 21,
-                "start": 20,
-                "end": 21
-              },
+              "position": { "line": 21, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
@@ -1384,12 +1219,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 19,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 19, "start": 19, "end": 20 },
             "call_site": "19:8-19:21"
           },
           {
@@ -1408,12 +1238,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 20,
-                "start": 10,
-                "end": 11
-              },
+              "position": { "line": 20, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator"
               ],
@@ -1437,12 +1262,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 21,
-                "start": 20,
-                "end": 21
-              },
+              "position": { "line": 21, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
@@ -1474,12 +1294,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 19,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 19, "start": 19, "end": 20 },
             "call_site": "19:8-19:21"
           },
           {
@@ -1498,12 +1313,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 20,
-                "start": 10,
-                "end": 11
-              },
+              "position": { "line": 20, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]"
               ],
@@ -1527,12 +1337,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 21,
-                "start": 20,
-                "end": 21
-              },
+              "position": { "line": 21, "start": 20, "end": 21 },
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
@@ -1566,12 +1371,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 16,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 16, "start": 19, "end": 20 },
             "call_site": "16:8-16:21"
           }
         ]
@@ -1600,12 +1400,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 28,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 28, "start": 19, "end": 20 },
             "call_site": "28:8-28:21"
           }
         ]
@@ -1632,12 +1427,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 28,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 28, "start": 19, "end": 20 },
             "call_site": "28:8-28:21"
           },
           {
@@ -1656,12 +1446,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 29,
-                "start": 10,
-                "end": 11
-              },
+              "position": { "line": 29, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator"
               ],
@@ -1693,12 +1478,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "decorator_location.py",
-              "line": 28,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 28, "start": 19, "end": 20 },
             "call_site": "28:8-28:21"
           },
           {
@@ -1717,12 +1497,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 29,
-                "start": 10,
-                "end": 11
-              },
+              "position": { "line": 29, "start": 10, "end": 11 },
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2"
               ],

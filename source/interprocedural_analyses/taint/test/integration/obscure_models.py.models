@@ -32,12 +32,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 90, "start": 35, "end": 36 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 89,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 89, "start": 14, "end": 28 }
           }
         ]
       },
@@ -51,12 +46,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 91,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 91, "start": 15, "end": 21 },
             "call_site": "91:4-91:22"
           }
         ]
@@ -107,12 +97,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 103, "start": 34, "end": 48 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 103,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 103, "start": 34, "end": 48 }
           }
         ]
       },
@@ -126,12 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 103,
-              "start": 15,
-              "end": 49
-            },
+            "origin": { "line": 103, "start": 15, "end": 49 },
             "call_site": "103:4-103:50"
           }
         ]
@@ -336,12 +316,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 75, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 76,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 76, "start": 15, "end": 21 },
             "call_site": "76:4-76:22"
           }
         ]
@@ -382,12 +357,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 75, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 74,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 74, "start": 14, "end": 28 }
           }
         ]
       },
@@ -401,12 +371,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 76,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 76, "start": 15, "end": 21 },
             "call_site": "76:4-76:22"
           }
         ]
@@ -450,12 +415,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 69, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 70,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 70, "start": 15, "end": 16 },
             "call_site": "70:4-70:17"
           }
         ]
@@ -491,12 +451,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 69, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 68,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 68, "start": 8, "end": 22 }
           }
         ]
       },
@@ -510,12 +465,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 70,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 70, "start": 15, "end": 16 },
             "call_site": "70:4-70:17"
           }
         ]
@@ -556,12 +506,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 36, "start": 24, "end": 38 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 36,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 36, "start": 24, "end": 38 }
           }
         ]
       }
@@ -610,12 +555,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 60, "start": 45, "end": 59 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 60,
-              "start": 45,
-              "end": 59
-            }
+            "origin": { "line": 60, "start": 45, "end": 59 }
           }
         ]
       }
@@ -645,12 +585,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 44, "start": 43, "end": 57 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 44,
-              "start": 43,
-              "end": 57
-            }
+            "origin": { "line": 44, "start": 43, "end": 57 }
           }
         ]
       }
@@ -699,12 +634,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 56, "start": 51, "end": 65 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 56,
-              "start": 51,
-              "end": 65
-            }
+            "origin": { "line": 56, "start": 51, "end": 65 }
           }
         ]
       }
@@ -734,12 +664,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 40, "start": 44, "end": 58 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 40,
-              "start": 44,
-              "end": 58
-            }
+            "origin": { "line": 40, "start": 44, "end": 58 }
           }
         ]
       }
@@ -789,12 +714,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 48,
-              "start": 11,
-              "end": 51
-            },
+            "origin": { "line": 48, "start": 11, "end": 51 },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           },
@@ -811,12 +731,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 48, "start": 36, "end": 50 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 48,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 48, "start": 36, "end": 50 }
           }
         ]
       }
@@ -865,12 +780,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 64, "start": 15, "end": 16 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 64,
-              "start": 15,
-              "end": 50
-            },
+            "origin": { "line": 64, "start": 15, "end": 50 },
             "call_site": "64:4-64:51"
           }
         ]
@@ -908,12 +818,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 64, "start": 35, "end": 49 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 64,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 64, "start": 35, "end": 49 }
           }
         ]
       },
@@ -927,12 +832,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 64,
-              "start": 15,
-              "end": 50
-            },
+            "origin": { "line": 64, "start": 15, "end": 50 },
             "call_site": "64:4-64:51"
           }
         ]
@@ -978,12 +878,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 80, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 81,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 81, "start": 15, "end": 21 },
             "call_site": "81:4-81:22"
           }
         ]
@@ -1007,12 +902,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 80, "start": 18, "end": 21 } ],
-            "origin": {
-              "filename": "obscure_models.py",
-              "line": 81,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 81, "start": 15, "end": 21 },
             "call_site": "81:4-81:22"
           }
         ]

@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructor_inheritance.py",
-              "line": 21,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 21, "start": 29, "end": 43 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "constructor_inheritance.py",
-                "line": 21,
-                "start": 29,
-                "end": 43
-              },
+              "position": { "line": 21, "start": 29, "end": 43 },
               "resolves_to": [
                 "constructor_inheritance.MyBaseClass.__init__"
               ],
@@ -264,12 +254,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "constructor_inheritance.py",
-              "line": 12,
-              "start": 19,
-              "end": 27
-            },
+            "origin": { "line": 12, "start": 19, "end": 27 },
             "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "12:8-12:28"

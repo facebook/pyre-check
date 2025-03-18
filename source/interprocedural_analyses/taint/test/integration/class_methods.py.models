@@ -23,12 +23,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 18,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 18, "start": 13, "end": 27 }
           }
         ]
       },
@@ -44,12 +39,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 18,
-                "start": 13,
-                "end": 27
-              },
+              "position": { "line": 18, "start": 13, "end": 27 },
               "resolves_to": [ "class_methods.Test.foo" ],
               "port": "formal(x, position=1)",
               "call_site": "18:4-18:28"
@@ -94,12 +84,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 107,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 107, "start": 36, "end": 50 }
           }
         ]
       },
@@ -115,12 +100,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 107,
-                "start": 36,
-                "end": 50
-              },
+              "position": { "line": 107, "start": 36, "end": 50 },
               "resolves_to": [
                 "class_methods.C.one_hop_static_abstractmethod"
               ],
@@ -167,12 +147,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 102,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 102, "start": 27, "end": 41 }
           }
         ]
       },
@@ -188,12 +163,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 102,
-                "start": 27,
-                "end": 41
-              },
+              "position": { "line": 102, "start": 27, "end": 41 },
               "resolves_to": [ "class_methods.C.one_hop_class_method" ],
               "port": "formal(arg, position=1)",
               "call_site": "102:4-102:42"
@@ -238,12 +208,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 106,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 106, "start": 35, "end": 49 }
           }
         ]
       },
@@ -259,12 +224,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 106,
-                "start": 35,
-                "end": 49
-              },
+              "position": { "line": 106, "start": 35, "end": 49 },
               "resolves_to": [
                 "class_methods.C.one_hop_class_abstractmethod"
               ],
@@ -311,12 +271,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 101,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 101, "start": 36, "end": 50 }
           }
         ]
       },
@@ -332,12 +287,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 101,
-                "start": 36,
-                "end": 50
-              },
+              "position": { "line": 101, "start": 36, "end": 50 },
               "resolves_to": [
                 "class_methods.C.one_hop_abstract_class_method"
               ],
@@ -389,12 +339,7 @@
               { "line": 112, "start": 29, "end": 43 },
               { "line": 113, "start": 15, "end": 16 }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 112,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 112, "start": 29, "end": 43 }
           }
         ]
       },
@@ -408,12 +353,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 113,
-              "start": 15,
-              "end": 37
-            },
+            "origin": { "line": 113, "start": 15, "end": 37 },
             "call_site": "113:4-113:38"
           }
         ]
@@ -463,12 +403,7 @@
               { "line": 125, "start": 31, "end": 45 },
               { "line": 127, "start": 15, "end": 16 }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 125,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 125, "start": 31, "end": 45 }
           }
         ]
       },
@@ -482,12 +417,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 127,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 127, "start": 15, "end": 25 },
             "call_site": "127:4-127:26"
           }
         ]
@@ -523,12 +453,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
@@ -552,12 +477,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
@@ -581,12 +501,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
@@ -610,12 +525,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
@@ -671,12 +581,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 35,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 35, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 8, "upper": 11 } ],
             "is_self_call": false,
             "call_site": "35:8-35:23"
@@ -699,12 +604,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 31,
-                "start": 34,
-                "end": 37
-              },
+              "position": { "line": 31, "start": 34, "end": 37 },
               "resolves_to": [ "class_methods.D.abstract_class_method" ],
               "port": "formal(arg, position=1)",
               "call_site": "31:8-31:38"
@@ -730,12 +630,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 56,
-                "start": 33,
-                "end": 36
-              },
+              "position": { "line": 56, "start": 33, "end": 36 },
               "resolves_to": [ "class_methods.D.class_abstractmethod" ],
               "port": "formal(arg, position=1)",
               "call_site": "56:8-56:37"
@@ -762,12 +657,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 39,
-                "start": 25,
-                "end": 28
-              },
+              "position": { "line": 39, "start": 25, "end": 28 },
               "resolves_to": [ "class_methods.C.class_method" ],
               "port": "formal(arg, position=1)",
               "call_site": "39:8-39:29"
@@ -794,12 +684,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "class_methods.py",
-                "line": 66,
-                "start": 34,
-                "end": 37
-              },
+              "position": { "line": 66, "start": 34, "end": 37 },
               "resolves_to": [ "class_methods.C.static_abstractmethod" ],
               "port": "formal(arg, position=0)",
               "call_site": "66:8-66:38"
@@ -829,12 +714,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 61,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 61, "start": 19, "end": 22 },
             "call_site": "61:8-61:23"
           }
         ]
@@ -859,12 +739,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 82,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 82, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false,
             "call_site": "82:8-82:23"
@@ -891,12 +766,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 85,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 85, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false,
             "call_site": "85:8-85:23"
@@ -923,12 +793,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 89,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 89, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false,
             "call_site": "89:8-89:23"
@@ -1022,12 +887,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_methods.py",
-              "line": 14,
-              "start": 26,
-              "end": 27
-            },
+            "origin": { "line": 14, "start": 26, "end": 27 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "14:15-14:28"

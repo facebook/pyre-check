@@ -287,12 +287,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "kwargs_and_args.py",
-              "line": 30,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 30, "start": 15, "end": 22 },
             "call_site": "30:4-30:23"
           }
         ]
@@ -320,12 +315,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "kwargs_and_args.py",
-              "line": 20,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 20, "start": 24, "end": 38 }
           }
         ]
       }
@@ -361,12 +351,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "kwargs_and_args.py",
-              "line": 14,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 14, "start": 15, "end": 22 },
             "call_site": "14:4-14:23"
           }
         ]

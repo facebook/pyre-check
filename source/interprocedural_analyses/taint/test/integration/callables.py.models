@@ -26,12 +26,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 56, "start": 42, "end": 56 } ],
-            "origin": {
-              "filename": "callables.py",
-              "line": 56,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 56, "start": 42, "end": 56 }
           }
         ]
       },
@@ -48,12 +43,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "callables.py",
-                "line": 58,
-                "start": 14,
-                "end": 23
-              },
+              "position": { "line": 58, "start": 14, "end": 23 },
               "resolves_to": [
                 "callables.ConcreteEventProcessor.async_call_tainted"
               ],
@@ -120,12 +110,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -150,12 +135,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -180,12 +160,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -210,12 +185,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -428,12 +398,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "callables.py",
-              "line": 33,
-              "start": 19,
-              "end": 31
-            },
+            "origin": { "line": 33, "start": 19, "end": 31 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "call_site": "33:8-33:32"
@@ -461,12 +426,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "callables.py",
-              "line": 30,
-              "start": 19,
-              "end": 30
-            },
+            "origin": { "line": 30, "start": 19, "end": 30 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "call_site": "30:8-30:31"

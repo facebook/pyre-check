@@ -23,12 +23,7 @@
                 "kind": "WithSubkind[A]"
               }
             ],
-            "origin": {
-              "filename": "parametric_models.py",
-              "line": 26,
-              "start": 12,
-              "end": 15
-            }
+            "origin": { "line": 26, "start": 12, "end": 15 }
           },
           {
             "kinds": [
@@ -39,12 +34,7 @@
                 "kind": "WithSubkind[B]"
               }
             ],
-            "origin": {
-              "filename": "parametric_models.py",
-              "line": 28,
-              "start": 12,
-              "end": 15
-            }
+            "origin": { "line": 28, "start": 12, "end": 15 }
           }
         ]
       },
@@ -60,12 +50,7 @@
                 "kind": "ExpectsSubkind"
               }
             ],
-            "origin": {
-              "filename": "parametric_models.py",
-              "line": 30,
-              "start": 9,
-              "end": 10
-            },
+            "origin": { "line": 30, "start": 9, "end": 10 },
             "call_site": "30:4-30:11"
           }
         ]
@@ -105,12 +90,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parametric_models.py",
-              "line": 49,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 49, "start": 8, "end": 22 }
           }
         ]
       },
@@ -141,12 +121,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "parametric_models.py",
-                "line": 50,
-                "start": 18,
-                "end": 19
-              },
+              "position": { "line": 50, "start": 18, "end": 19 },
               "resolves_to": [ "parametric_models.inferred_sink" ],
               "port": "formal(x, position=0)",
               "call_site": "50:4-50:20"
@@ -236,12 +211,7 @@
                 "kind": "SinkWithSubkind[SinkA]"
               }
             ],
-            "origin": {
-              "filename": "parametric_models.py",
-              "line": 43,
-              "start": 23,
-              "end": 24
-            },
+            "origin": { "line": 43, "start": 23, "end": 24 },
             "call_site": "43:8-43:25"
           },
           {
@@ -256,12 +226,7 @@
                 "kind": "SinkWithSubkind[SinkB]"
               }
             ],
-            "origin": {
-              "filename": "parametric_models.py",
-              "line": 45,
-              "start": 23,
-              "end": 24
-            },
+            "origin": { "line": 45, "start": 23, "end": 24 },
             "call_site": "45:8-45:25"
           }
         ]

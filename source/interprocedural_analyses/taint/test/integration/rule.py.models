@@ -23,12 +23,7 @@
                 "kind": "MyTestSource"
               }
             ],
-            "origin": {
-              "filename": "rule.py",
-              "line": 16,
-              "start": 8,
-              "end": 16
-            }
+            "origin": { "line": 16, "start": 8, "end": 16 }
           }
         ]
       },
@@ -42,12 +37,7 @@
                 "kind": "MyTestSink"
               }
             ],
-            "origin": {
-              "filename": "rule.py",
-              "line": 17,
-              "start": 9,
-              "end": 10
-            },
+            "origin": { "line": 17, "start": 9, "end": 10 },
             "call_site": "17:4-17:11"
           }
         ]

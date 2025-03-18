@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 100,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 100, "start": 10, "end": 24 }
           }
         ]
       },
@@ -48,12 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 100,
-              "start": 10,
-              "end": 24
-            },
+            "origin": { "line": 100, "start": 10, "end": 24 },
             "receiver_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
             "call_site": "100:4-100:25"
@@ -247,12 +237,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 116,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 116, "start": 15, "end": 26 },
             "call_site": "116:4-116:27"
           }
         ]
@@ -278,12 +263,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 120,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 120, "start": 15, "end": 25 },
             "call_site": "120:4-120:26"
           }
         ]
@@ -309,12 +289,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 68,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 68, "start": 15, "end": 26 },
             "call_site": "68:4-68:27"
           }
         ]
@@ -353,12 +328,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 68,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 68, "start": 15, "end": 26 }
           }
         ]
       },
@@ -373,12 +343,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 68,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 68, "start": 15, "end": 26 },
             "call_site": "68:4-68:27"
           }
         ]
@@ -412,12 +377,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 72,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 72, "start": 15, "end": 25 },
             "call_site": "72:4-72:26"
           }
         ]
@@ -456,12 +416,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 72,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 72, "start": 15, "end": 25 }
           }
         ]
       },
@@ -476,12 +431,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 72,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 72, "start": 15, "end": 25 },
             "call_site": "72:4-72:26"
           }
         ]
@@ -515,12 +465,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 76,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 76, "start": 15, "end": 26 },
             "call_site": "76:4-76:27"
           }
         ]
@@ -563,12 +508,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 76,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 76, "start": 15, "end": 26 }
           }
         ]
       },
@@ -583,12 +523,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 76,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 76, "start": 15, "end": 26 },
             "call_site": "76:4-76:27"
           }
         ]
@@ -622,12 +557,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 80,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 80, "start": 15, "end": 25 },
             "call_site": "80:4-80:26"
           }
         ]
@@ -670,12 +600,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 80,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 80, "start": 15, "end": 25 }
           }
         ]
       },
@@ -690,12 +615,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 80,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 80, "start": 15, "end": 25 },
             "call_site": "80:4-80:26"
           }
         ]
@@ -729,12 +649,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 84,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 84, "start": 15, "end": 26 },
             "call_site": "84:4-84:27"
           }
         ]
@@ -769,12 +684,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 84,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 84, "start": 15, "end": 26 }
           }
         ]
       },
@@ -789,12 +699,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 84,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 84, "start": 15, "end": 26 },
             "call_site": "84:4-84:27"
           }
         ]
@@ -828,12 +733,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 88,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 88, "start": 15, "end": 25 },
             "call_site": "88:4-88:26"
           }
         ]
@@ -868,12 +768,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 88,
-              "start": 15,
-              "end": 25
-            }
+            "origin": { "line": 88, "start": 15, "end": 25 }
           }
         ]
       },
@@ -888,12 +783,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 88,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 88, "start": 15, "end": 25 },
             "call_site": "88:4-88:26"
           }
         ]
@@ -927,12 +817,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 92,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 92, "start": 15, "end": 26 },
             "call_site": "92:4-92:27"
           }
         ]
@@ -958,12 +843,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_transitive_extends.py",
-              "line": 96,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 96, "start": 15, "end": 25 },
             "call_site": "96:4-96:26"
           }
         ]

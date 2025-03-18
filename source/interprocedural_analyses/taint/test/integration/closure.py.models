@@ -24,12 +24,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 294,
-              "start": 18,
-              "end": 33
-            }
+            "origin": { "line": 294, "start": 18, "end": 33 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 301,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 301, "start": 15, "end": 18 },
             "call_site": "301:4-301:19"
           }
         ]
@@ -95,12 +85,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 304,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 304, "start": 10, "end": 24 }
           }
         ]
       },
@@ -115,12 +100,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 307,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 307, "start": 15, "end": 18 },
             "call_site": "307:4-307:19"
           }
         ]
@@ -166,12 +146,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 289,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 289, "start": 10, "end": 24 }
           }
         ]
       },
@@ -186,12 +161,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 301,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 301, "start": 15, "end": 18 },
             "call_site": "301:4-301:19"
           }
         ]
@@ -234,12 +204,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 92,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 92, "start": 8, "end": 22 }
           }
         ]
       },
@@ -259,12 +224,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 93,
-                "start": 4,
-                "end": 10
-              },
+              "position": { "line": 93, "start": 4, "end": 10 },
               "resolves_to": [
                 "closure.nonlocal_closure_define_before_variable_initialization.read"
               ],
@@ -314,12 +274,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 190,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 190, "start": 14, "end": 28 }
           }
         ]
       },
@@ -339,12 +294,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 196,
-                "start": 4,
-                "end": 10
-              },
+              "position": { "line": 196, "start": 4, "end": 10 },
               "resolves_to": [ "closure.nonlocal_closure_flow.sink" ],
               "port": "captured_variable($local_closure?nonlocal_closure_flow$obj)"
             }
@@ -391,12 +341,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 69,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 69, "start": 8, "end": 22 }
           }
         ]
       },
@@ -416,12 +361,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 76,
-                "start": 4,
-                "end": 22
-              },
+              "position": { "line": 76, "start": 4, "end": 22 },
               "resolves_to": [
                 "closure.nonlocal_closure_multiple_reads.conditional_read"
               ],
@@ -475,12 +415,7 @@
               { "always-type": "scalar" },
               { "always-via": "captured-variable" }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 169,
-              "start": 16,
-              "end": 30
-            }
+            "origin": { "line": 169, "start": 16, "end": 30 }
           }
         ]
       },
@@ -495,12 +430,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 174,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 174, "start": 15, "end": 16 },
             "call_site": "174:4-174:17"
           }
         ]
@@ -548,12 +478,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 259,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 259, "start": 24, "end": 38 }
           }
         ]
       },
@@ -568,12 +493,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 268,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 268, "start": 15, "end": 20 },
             "call_site": "268:4-268:21"
           }
         ]
@@ -618,12 +538,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 10,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 10, "start": 8, "end": 22 }
           }
         ]
       },
@@ -643,12 +558,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 16,
-                "start": 4,
-                "end": 12
-              },
+              "position": { "line": 16, "start": 4, "end": 12 },
               "resolves_to": [
                 "closure.nonlocal_closure_read_reduction.inner"
               ],
@@ -697,12 +607,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 11,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 11, "start": 8, "end": 22 }
           }
         ]
       },
@@ -719,12 +624,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 16,
-                "start": 10,
-                "end": 11
-              },
+              "position": { "line": 16, "start": 10, "end": 11 },
               "resolves_to": [
                 "closure.nonlocal_closure_read_reduction.inner"
               ],
@@ -776,12 +676,7 @@
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 152, "start": 17, "end": 27 } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 144,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 144, "start": 15, "end": 29 }
           }
         ]
       },
@@ -801,12 +696,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 160,
-                "start": 4,
-                "end": 14
-              },
+              "position": { "line": 160, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
               "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
             }
@@ -855,12 +745,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 144,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 144, "start": 15, "end": 29 }
           }
         ]
       },
@@ -880,12 +765,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 160,
-                "start": 4,
-                "end": 14
-              },
+              "position": { "line": 160, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
               "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)"
             }
@@ -936,12 +816,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 152, "start": 22, "end": 26 } ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 151,
-                "start": 11,
-                "end": 19
-              },
+              "position": { "line": 151, "start": 11, "end": 19 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.source" ],
               "port": "result"
             }
@@ -961,12 +836,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 160,
-                "start": 9,
-                "end": 13
-              },
+              "position": { "line": 160, "start": 9, "end": 13 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
               "port": "formal(obj2, position=0)",
               "call_site": "160:4-160:14"
@@ -1018,12 +888,7 @@
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 316, "start": 13, "end": 20 } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 311,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 311, "start": 8, "end": 22 }
           }
         ]
       },
@@ -1038,12 +903,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 317,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 317, "start": 15, "end": 21 },
             "call_site": "317:4-317:22"
           }
         ]
@@ -1090,12 +950,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 276,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 276, "start": 14, "end": 28 }
           }
         ]
       },
@@ -1110,12 +965,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 282,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 282, "start": 15, "end": 18 },
             "call_site": "282:4-282:19"
           }
         ]
@@ -1162,12 +1012,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 134,
-                "start": 8,
-                "end": 16
-              },
+              "position": { "line": 134, "start": 8, "end": 16 },
               "resolves_to": [
                 "closure.nonlocal_closure_write_reduction.source"
               ],
@@ -1187,12 +1032,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 136,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 136, "start": 15, "end": 16 },
             "call_site": "136:4-136:17"
           }
         ]
@@ -1236,12 +1076,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 131,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 131, "start": 12, "end": 26 }
           }
         ]
       },
@@ -1256,12 +1091,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 135,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 135, "start": 15, "end": 16 },
             "call_site": "135:4-135:17"
           }
         ]
@@ -1306,12 +1136,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 21,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 21, "start": 8, "end": 22 }
           }
         ]
       },
@@ -1328,12 +1153,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 22,
-                "start": 37,
-                "end": 38
-              },
+              "position": { "line": 22, "start": 37, "end": 38 },
               "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
               "port": "formal(z, position=1)",
               "call_site": "22:4-22:39"
@@ -1379,12 +1199,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 20,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 20, "start": 8, "end": 22 }
           }
         ]
       },
@@ -1404,12 +1219,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 22,
-                "start": 34,
-                "end": 35
-              },
+              "position": { "line": 22, "start": 34, "end": 35 },
               "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
               "port": "formal(x, position=0)",
               "call_site": "22:4-22:39"
@@ -1457,12 +1267,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 34,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 34, "start": 8, "end": 22 }
           }
         ]
       },
@@ -1479,12 +1284,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 35,
-                "start": 41,
-                "end": 42
-              },
+              "position": { "line": 35, "start": 41, "end": 42 },
               "resolves_to": [ "closure.wrapper_for_taint_propagation_hof" ],
               "port": "formal(z, position=1)",
               "call_site": "35:4-35:43"
@@ -1530,12 +1330,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 321,
-              "start": 33,
-              "end": 47
-            }
+            "origin": { "line": 321, "start": 33, "end": 47 }
           }
         ]
       },
@@ -1556,12 +1351,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 321,
-                "start": 33,
-                "end": 47
-              },
+              "position": { "line": 321, "start": 33, "end": 47 },
               "resolves_to": [ "closure.wrapper_for_tito_propagation" ],
               "port": "formal(x, position=0)",
               "call_site": "321:4-321:48"
@@ -1783,12 +1573,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 107,
-              "start": 19,
-              "end": 24
-            },
+            "origin": { "line": 107, "start": 19, "end": 24 },
             "call_site": "107:8-107:25"
           }
         ]
@@ -1858,12 +1643,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 47,
-                "start": 6,
-                "end": 7
-              },
+              "position": { "line": 47, "start": 6, "end": 7 },
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation_hof.inner"
               ],
@@ -1941,12 +1721,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 294,
-              "start": 18,
-              "end": 33
-            }
+            "origin": { "line": 294, "start": 18, "end": 33 }
           }
         ]
       }
@@ -1972,12 +1747,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 90,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 90, "start": 19, "end": 20 },
             "call_site": "90:8-90:21"
           }
         ]
@@ -2004,12 +1774,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 193,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 193, "start": 19, "end": 22 },
             "call_site": "193:8-193:23"
           }
         ]
@@ -2038,12 +1803,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 190,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 190, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2071,12 +1831,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 218,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 218, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2108,12 +1863,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 218,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 218, "start": 14, "end": 28 }
           }
         ]
       },
@@ -2128,12 +1878,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 219,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 219, "start": 19, "end": 22 },
             "call_site": "219:8-219:23"
           }
         ]
@@ -2170,12 +1915,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 73,
-              "start": 23,
-              "end": 24
-            },
+            "origin": { "line": 73, "start": 23, "end": 24 },
             "call_site": "73:12-73:25"
           }
         ]
@@ -2204,12 +1944,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 169,
-              "start": 16,
-              "end": 30
-            }
+            "origin": { "line": 169, "start": 16, "end": 30 }
           }
         ]
       }
@@ -2237,12 +1972,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 259,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 259, "start": 24, "end": 38 }
           }
         ]
       }
@@ -2275,12 +2005,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 259,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 259, "start": 24, "end": 38 }
           }
         ]
       },
@@ -2295,12 +2020,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 263,
-              "start": 19,
-              "end": 24
-            },
+            "origin": { "line": 263, "start": 19, "end": 24 },
             "call_site": "263:8-263:25"
           }
         ]
@@ -2341,12 +2061,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 259,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 259, "start": 24, "end": 38 }
           }
         ]
       }
@@ -2364,12 +2079,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 261,
-              "start": 23,
-              "end": 28
-            },
+            "origin": { "line": 261, "start": 23, "end": 28 },
             "call_site": "261:12-261:29"
           }
         ]
@@ -2403,12 +2113,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 259,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 259, "start": 24, "end": 38 }
           }
         ]
       },
@@ -2423,12 +2128,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 261,
-              "start": 23,
-              "end": 28
-            },
+            "origin": { "line": 261, "start": 23, "end": 28 },
             "call_site": "261:12-261:29"
           }
         ]
@@ -2469,12 +2169,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 259,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 259, "start": 24, "end": 38 }
           }
         ]
       }
@@ -2500,12 +2195,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 207,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 207, "start": 19, "end": 22 },
             "call_site": "207:8-207:23"
           }
         ]
@@ -2534,12 +2224,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 204,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 204, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2565,12 +2250,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 232,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 232, "start": 19, "end": 22 },
             "call_site": "232:8-232:23"
           }
         ]
@@ -2599,12 +2279,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 229,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 229, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2630,12 +2305,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 14,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 14, "start": 19, "end": 20 },
             "call_site": "14:8-14:21"
           }
         ]
@@ -2651,12 +2321,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 15,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 15, "start": 19, "end": 20 },
             "call_site": "15:8-15:21"
           }
         ]
@@ -2683,12 +2348,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 158,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 158, "start": 19, "end": 23 },
             "call_site": "158:8-158:24"
           }
         ]
@@ -2705,12 +2365,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 156,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 156, "start": 19, "end": 23 },
             "call_site": "156:8-156:24"
           }
         ]
@@ -2726,12 +2381,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 157,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 157, "start": 19, "end": 23 },
             "call_site": "157:8-157:24"
           }
         ]
@@ -2760,12 +2410,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 144,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 144, "start": 15, "end": 29 }
           }
         ]
       },
@@ -2782,12 +2427,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 145,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 145, "start": 15, "end": 29 }
           }
         ]
       }
@@ -2868,12 +2508,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 276,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 276, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2901,12 +2536,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 276,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 276, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2932,12 +2562,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 276,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 276, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2965,12 +2590,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 131,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 131, "start": 12, "end": 26 }
           }
         ]
       },
@@ -2987,12 +2607,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 132,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 132, "start": 15, "end": 29 }
           }
         ]
       }
@@ -3021,12 +2636,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 55,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 55, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
               "port": "captured_variable($parameter$z)"
             }
@@ -3048,12 +2658,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 55,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 55, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
               "port": "captured_variable($parameter$y)"
             }
@@ -3075,12 +2680,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 55,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 55, "start": 4, "end": 11 },
               "resolves_to": [ "closure.parameter_order_swap.inner" ],
               "port": "captured_variable($parameter$x)"
             }
@@ -3109,12 +2709,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 54,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 54, "start": 19, "end": 20 },
             "call_site": "54:8-54:21"
           }
         ]
@@ -3131,12 +2726,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 52,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 52, "start": 19, "end": 20 },
             "call_site": "52:8-52:21"
           }
         ]
@@ -3153,12 +2743,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 53,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 53, "start": 19, "end": 20 },
             "call_site": "53:8-53:21"
           }
         ]
@@ -3188,12 +2773,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 65,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 65, "start": 4, "end": 11 },
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
@@ -3217,12 +2797,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 65,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 65, "start": 4, "end": 11 },
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
@@ -3246,12 +2821,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 65,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 65, "start": 4, "end": 11 },
               "resolves_to": [
                 "closure.parameter_order_swap_different_variable_names.inner"
               ],
@@ -3282,12 +2852,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 64,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 64, "start": 19, "end": 20 },
             "call_site": "64:8-64:21"
           }
         ]
@@ -3304,12 +2869,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 62,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 62, "start": 19, "end": 20 },
             "call_site": "62:8-62:21"
           }
         ]
@@ -3326,12 +2886,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 63,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 63, "start": 19, "end": 20 },
             "call_site": "63:8-63:21"
           }
         ]
@@ -3364,12 +2919,7 @@
               { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 349, "start": 15, "end": 22 } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 349,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 349, "start": 15, "end": 25 },
             "call_site": "349:4-349:26"
           }
         ]
@@ -3442,12 +2992,7 @@
               }
             ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 343,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 343, "start": 15, "end": 18 },
             "call_site": "343:4-343:19"
           }
         ]
@@ -3474,12 +3019,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 29,
-                "start": 10,
-                "end": 11
-              },
+              "position": { "line": 29, "start": 10, "end": 11 },
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation.inner"
               ],
@@ -3504,12 +3044,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 29,
-                "start": 4,
-                "end": 12
-              },
+              "position": { "line": 29, "start": 4, "end": 12 },
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation.inner"
               ],
@@ -3540,12 +3075,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 27,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 27, "start": 19, "end": 20 },
             "call_site": "27:8-27:21"
           }
         ]
@@ -3561,12 +3091,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 28,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 28, "start": 19, "end": 20 },
             "call_site": "28:8-28:21"
           }
         ]
@@ -3593,12 +3118,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 43,
-                "start": 33,
-                "end": 34
-              },
+              "position": { "line": 43, "start": 33, "end": 34 },
               "resolves_to": [
                 "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]"
               ],
@@ -3630,12 +3150,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 40,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 40, "start": 19, "end": 20 },
             "call_site": "40:8-40:21"
           }
         ]
@@ -3651,12 +3166,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 41,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 41, "start": 19, "end": 20 },
             "call_site": "41:8-41:21"
           }
         ]
@@ -3686,12 +3196,7 @@
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 328, "start": 15, "end": 22 } ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 328,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 328, "start": 15, "end": 22 },
             "call_site": "328:4-328:23"
           }
         ]

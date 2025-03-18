@@ -25,12 +25,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 44,
-                "start": 22,
-                "end": 43
-              },
+              "position": { "line": 44, "start": 22, "end": 43 },
               "resolves_to": [ "maximum_trace_length.source_distance_one" ],
               "port": "result"
             }
@@ -49,12 +44,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 44,
-                "start": 22,
-                "end": 43
-              },
+              "position": { "line": 44, "start": 22, "end": 43 },
               "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
               "port": "formal(x, position=0)",
               "call_site": "44:4-44:44"
@@ -99,12 +89,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 40,
-                "start": 23,
-                "end": 44
-              },
+              "position": { "line": 40, "start": 23, "end": 44 },
               "resolves_to": [ "maximum_trace_length.source_distance_one" ],
               "port": "result"
             }
@@ -123,12 +108,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 40,
-                "start": 23,
-                "end": 44
-              },
+              "position": { "line": 40, "start": 23, "end": 44 },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
               "port": "formal(x, position=0)",
               "call_site": "40:4-40:45"
@@ -173,12 +153,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 36,
-                "start": 23,
-                "end": 45
-              },
+              "position": { "line": 36, "start": 23, "end": 45 },
               "resolves_to": [ "maximum_trace_length.source_distance_zero" ],
               "port": "result"
             }
@@ -197,12 +172,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 36,
-                "start": 23,
-                "end": 45
-              },
+              "position": { "line": 36, "start": 23, "end": 45 },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
               "port": "formal(x, position=0)",
               "call_site": "36:4-36:46"
@@ -293,12 +263,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 27,
-                "start": 23,
-                "end": 24
-              },
+              "position": { "line": 27, "start": 23, "end": 24 },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
               "port": "formal(x, position=0)",
               "call_site": "27:4-27:25"
@@ -326,12 +291,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "maximum_trace_length.py",
-              "line": 23,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 23, "start": 15, "end": 16 },
             "call_site": "23:4-23:17"
           }
         ]
@@ -352,12 +312,7 @@
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "maximum_trace_length.py",
-                "line": 14,
-                "start": 11,
-                "end": 33
-              },
+              "position": { "line": 14, "start": 11, "end": 33 },
               "resolves_to": [ "maximum_trace_length.source_distance_zero" ],
               "port": "result"
             }
@@ -386,12 +341,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "maximum_trace_length.py",
-              "line": 10,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 10, "start": 11, "end": 25 }
           }
         ]
       }

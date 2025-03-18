@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 74,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 74, "start": 8, "end": 22 }
           }
         ]
       },
@@ -49,12 +44,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 79,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 79, "start": 4, "end": 11 },
               "resolves_to": [
                 "nested_callables.access_variables_in_outer_scope_issue.inner"
               ],
@@ -103,12 +93,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 28,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 28, "start": 10, "end": 24 }
           }
         ]
       },
@@ -129,12 +114,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 28,
-                "start": 10,
-                "end": 24
-              },
+              "position": { "line": 28, "start": 10, "end": 24 },
               "resolves_to": [ "nested_callables.outer" ],
               "port": "formal(x, position=0)",
               "call_site": "28:4-28:25"
@@ -183,12 +163,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 13,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 13, "start": 12, "end": 26 }
           }
         ]
       },
@@ -203,12 +178,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 14,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 14, "start": 19, "end": 20 },
             "call_site": "14:8-14:21"
           }
         ]
@@ -251,12 +221,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 103,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 103, "start": 41, "end": 55 }
           }
         ]
       },
@@ -276,12 +241,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 103,
-                "start": 41,
-                "end": 55
-              },
+              "position": { "line": 103, "start": 41, "end": 55 },
               "resolves_to": [
                 "nested_callables.access_parameter_in_inner_scope_sink"
               ],
@@ -335,12 +295,7 @@
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 114, "start": 52, "end": 66 } ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 114,
-              "start": 52,
-              "end": 66
-            }
+            "origin": { "line": 114, "start": 52, "end": 66 }
           }
         ]
       },
@@ -355,12 +310,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 114,
-              "start": 15,
-              "end": 67
-            },
+            "origin": { "line": 114, "start": 15, "end": 67 },
             "call_site": "114:4-114:68"
           }
         ]
@@ -412,12 +362,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 92,
-                "start": 15,
-                "end": 55
-              },
+              "position": { "line": 92, "start": 15, "end": 55 },
               "resolves_to": [
                 "nested_callables.access_variables_in_outer_scope_source"
               ],
@@ -437,12 +382,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 92,
-              "start": 15,
-              "end": 55
-            },
+            "origin": { "line": 92, "start": 15, "end": 55 },
             "call_site": "92:4-92:56"
           }
         ]
@@ -752,12 +692,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 99,
-                "start": 4,
-                "end": 11
-              },
+              "position": { "line": 99, "start": 4, "end": 11 },
               "resolves_to": [
                 "nested_callables.access_parameter_in_inner_scope_sink.inner"
               ],
@@ -788,12 +723,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 97,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 97, "start": 19, "end": 20 },
             "call_site": "97:8-97:21"
           }
         ]
@@ -869,12 +799,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 77,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 77, "start": 19, "end": 20 },
             "call_site": "77:8-77:21"
           }
         ]
@@ -906,12 +831,7 @@
               { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 88, "start": 11, "end": 18 } ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 83,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 83, "start": 8, "end": 22 }
           }
         ]
       }
@@ -958,12 +878,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 17,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 17, "start": 15, "end": 29 }
           }
         ]
       }
@@ -1067,12 +982,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 24,
-                "start": 17,
-                "end": 18
-              },
+              "position": { "line": 24, "start": 17, "end": 18 },
               "resolves_to": [ "nested_callables.outer.inner" ],
               "port": "formal(x, position=0)",
               "call_site": "24:11-24:19"
@@ -1104,12 +1014,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 22,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 22, "start": 19, "end": 20 },
             "call_site": "22:8-22:21"
           }
         ]
@@ -1143,12 +1048,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 39,
-                "start": 33,
-                "end": 34
-              },
+              "position": { "line": 39, "start": 33, "end": 34 },
               "resolves_to": [
                 "nested_callables.outer_calling_other_function.inner_calling_other_function"
               ],
@@ -1187,12 +1087,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 37,
-                "start": 18,
-                "end": 19
-              },
+              "position": { "line": 37, "start": 18, "end": 19 },
               "resolves_to": [ "nested_callables.some_sink" ],
               "port": "formal(x, position=0)",
               "call_site": "37:8-37:20"
@@ -1295,12 +1190,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "nested_callables.py",
-              "line": 32,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 32, "start": 15, "end": 16 },
             "call_site": "32:4-32:17"
           }
         ]

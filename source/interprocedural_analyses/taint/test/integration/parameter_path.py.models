@@ -30,12 +30,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 177, "start": 28, "end": 61 } ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 177,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 177, "start": 41, "end": 55 }
           }
         ]
       },
@@ -50,12 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 177,
-              "start": 15,
-              "end": 69
-            },
+            "origin": { "line": 177, "start": 15, "end": 69 },
             "call_site": "177:4-177:70"
           }
         ]
@@ -102,12 +92,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 77,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 77, "start": 23, "end": 37 }
           }
         ]
       },
@@ -126,12 +111,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 77,
-              "start": 22,
-              "end": 41
-            },
+            "origin": { "line": 77, "start": 22, "end": 41 },
             "call_site": "77:4-77:42"
           }
         ]
@@ -172,12 +152,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 102,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 102, "start": 24, "end": 38 }
           }
         ]
       },
@@ -196,12 +171,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 102,
-              "start": 18,
-              "end": 47
-            },
+            "origin": { "line": 102, "start": 18, "end": 47 },
             "call_site": "102:4-102:48"
           }
         ]
@@ -242,12 +212,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 88,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 88, "start": 25, "end": 39 }
           }
         ]
       },
@@ -266,12 +231,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 88,
-              "start": 20,
-              "end": 49
-            },
+            "origin": { "line": 88, "start": 20, "end": 49 },
             "call_site": "88:4-88:50"
           }
         ]
@@ -312,12 +272,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 83,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 83, "start": 27, "end": 41 }
           }
         ]
       },
@@ -336,12 +291,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 83,
-              "start": 23,
-              "end": 42
-            },
+            "origin": { "line": 83, "start": 23, "end": 42 },
             "call_site": "83:4-83:43"
           }
         ]
@@ -384,12 +334,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 22,
-              "start": 22,
-              "end": 39
-            }
+            "origin": { "line": 22, "start": 22, "end": 39 }
           }
         ]
       },
@@ -404,12 +349,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 23,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 23, "start": 15, "end": 20 },
             "call_site": "23:4-23:21"
           }
         ]
@@ -455,12 +395,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 49,
-              "start": 8,
-              "end": 25
-            }
+            "origin": { "line": 49, "start": 8, "end": 25 }
           }
         ]
       },
@@ -475,12 +410,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 50,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 50, "start": 15, "end": 21 },
             "call_site": "50:4-50:22"
           }
         ]
@@ -527,12 +457,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 28,
-              "start": 22,
-              "end": 40
-            }
+            "origin": { "line": 28, "start": 22, "end": 40 }
           }
         ]
       },
@@ -547,12 +472,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 30,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 30, "start": 15, "end": 20 },
             "call_site": "30:4-30:21"
           }
         ]
@@ -599,12 +519,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 151, "start": 32, "end": 61 } ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 151,
-              "start": 46,
-              "end": 60
-            }
+            "origin": { "line": 151, "start": 46, "end": 60 }
           }
         ]
       },
@@ -619,12 +534,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 151,
-              "start": 15,
-              "end": 67
-            },
+            "origin": { "line": 151, "start": 15, "end": 67 },
             "call_site": "151:4-151:68"
           }
         ]
@@ -677,12 +587,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 141, "start": 45, "end": 64 } ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 141,
-              "start": 46,
-              "end": 60
-            }
+            "origin": { "line": 141, "start": 46, "end": 60 }
           }
         ]
       },
@@ -697,12 +602,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 141,
-              "start": 15,
-              "end": 68
-            },
+            "origin": { "line": 141, "start": 15, "end": 68 },
             "call_site": "141:4-141:69"
           }
         ]
@@ -755,12 +655,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 162, "start": 29, "end": 58 } ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 162,
-              "start": 35,
-              "end": 49
-            }
+            "origin": { "line": 162, "start": 35, "end": 49 }
           }
         ]
       },
@@ -775,12 +670,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 164,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 164, "start": 15, "end": 21 },
             "call_site": "164:4-164:22"
           }
         ]
@@ -829,12 +719,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 125, "start": 35, "end": 54 } ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 125,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 125, "start": 36, "end": 50 }
           }
         ]
       },
@@ -849,12 +734,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 125,
-              "start": 15,
-              "end": 55
-            },
+            "origin": { "line": 125, "start": 15, "end": 55 },
             "call_site": "125:4-125:56"
           }
         ]
@@ -901,12 +781,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 131, "start": 36, "end": 55 } ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 131,
-              "start": 40,
-              "end": 54
-            }
+            "origin": { "line": 131, "start": 40, "end": 54 }
           }
         ]
       },
@@ -921,12 +796,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 131,
-              "start": 15,
-              "end": 56
-            },
+            "origin": { "line": 131, "start": 15, "end": 56 },
             "call_site": "131:4-131:57"
           }
         ]
@@ -971,12 +841,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 108,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 108, "start": 10, "end": 24 }
           }
         ]
       },
@@ -995,12 +860,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 109,
-              "start": 21,
-              "end": 22
-            },
+            "origin": { "line": 109, "start": 21, "end": 22 },
             "call_site": "109:4-109:23"
           }
         ]
@@ -1046,12 +906,7 @@
             "local_features": [
               { "has": "first-field" }, { "first-field": "a" }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 59,
-              "start": 8,
-              "end": 28
-            }
+            "origin": { "line": 59, "start": 8, "end": 28 }
           }
         ]
       },
@@ -1066,12 +921,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 60,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 60, "start": 15, "end": 18 },
             "call_site": "60:4-60:19"
           }
         ]
@@ -1184,12 +1034,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 41,
-              "start": 11,
-              "end": 26
-            }
+            "origin": { "line": 41, "start": 11, "end": 26 }
           }
         ]
       }
@@ -1223,12 +1068,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 34,
-              "start": 20,
-              "end": 35
-            }
+            "origin": { "line": 34, "start": 20, "end": 35 }
           }
         ]
       },
@@ -1243,12 +1083,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "parameter_path.py",
-              "line": 37,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 37, "start": 15, "end": 20 },
             "call_site": "37:4-37:21"
           }
         ]

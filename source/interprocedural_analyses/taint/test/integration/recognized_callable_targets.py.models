@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "recognized_callable_targets.py",
-              "line": 15,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 15, "start": 8, "end": 22 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "recognized_callable_targets.py",
-                "line": 16,
-                "start": 35,
-                "end": 36
-              },
+              "position": { "line": 16, "start": 35, "end": 36 },
               "resolves_to": [
                 "recognized_callable_targets.callable_target"
               ],
@@ -359,12 +349,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "recognized_callable_targets.py",
-              "line": 11,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 11, "start": 15, "end": 18 },
             "call_site": "11:4-11:19"
           }
         ]

@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 233,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 233, "start": 19, "end": 33 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 233,
-              "start": 19,
-              "end": 33
-            },
+            "origin": { "line": 233, "start": 19, "end": 33 },
             "call_site": "233:8-233:34"
           }
         ]
@@ -98,12 +88,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 159, "start": 38, "end": 52 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 159,
-              "start": 38,
-              "end": 52
-            }
+            "origin": { "line": 159, "start": 38, "end": 52 }
           }
         ]
       },
@@ -118,12 +103,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 161,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 161, "start": 15, "end": 29 },
             "call_site": "161:4-161:30"
           }
         ]
@@ -179,12 +159,7 @@
               { "line": 159, "start": 38, "end": 52 },
               { "line": 160, "start": 15, "end": 18 }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 159,
-              "start": 38,
-              "end": 52
-            }
+            "origin": { "line": 159, "start": 38, "end": 52 }
           }
         ]
       },
@@ -199,12 +174,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 160,
-              "start": 15,
-              "end": 20
-            },
+            "origin": { "line": 160, "start": 15, "end": 20 },
             "call_site": "160:4-160:21"
           }
         ]
@@ -251,12 +221,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 95,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 95, "start": 20, "end": 34 }
           }
         ]
       },
@@ -273,12 +238,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 95,
-                "start": 20,
-                "end": 34
-              },
+              "position": { "line": 95, "start": 20, "end": 34 },
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
@@ -331,12 +291,7 @@
               { "line": 115, "start": 10, "end": 24 },
               { "line": 117, "start": 15, "end": 16 }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 115,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 115, "start": 10, "end": 24 }
           }
         ]
       },
@@ -351,12 +306,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 117,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 117, "start": 15, "end": 18 },
             "call_site": "117:4-117:19"
           }
         ]
@@ -404,12 +354,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 128,
-              "start": 15,
-              "end": 46
-            }
+            "origin": { "line": 128, "start": 15, "end": 46 }
           }
         ]
       },
@@ -424,12 +369,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 128,
-              "start": 15,
-              "end": 46
-            },
+            "origin": { "line": 128, "start": 15, "end": 46 },
             "call_site": "128:4-128:47"
           }
         ]
@@ -472,12 +412,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 186,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 186, "start": 25, "end": 39 }
           }
         ]
       },
@@ -494,12 +429,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 186,
-                "start": 25,
-                "end": 39
-              },
+              "position": { "line": 186, "start": 25, "end": 39 },
               "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
               "port": "formal(y, position=1)",
               "call_site": "186:11-186:40"
@@ -540,12 +470,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false
           }
@@ -581,12 +506,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
             "is_self_call": false
           }
@@ -613,12 +533,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false
           }
@@ -647,12 +562,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false
           }
@@ -671,12 +581,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
             "is_self_call": false
           }
@@ -760,12 +665,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false
           }
@@ -862,12 +762,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 29,
-                "start": 19,
-                "end": 36
-              },
+              "position": { "line": 29, "start": 19, "end": 36 },
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
@@ -921,12 +816,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 20,
-              "start": 23,
-              "end": 37
-            },
+            "origin": { "line": 20, "start": 23, "end": 37 },
             "caller_interval": [ { "lower": 2, "upper": 7 } ],
             "is_self_call": false
           }
@@ -947,12 +837,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 21, "start": 15, "end": 19 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 20,
-              "start": 23,
-              "end": 37
-            },
+            "origin": { "line": 20, "start": 23, "end": 37 },
             "caller_interval": [ { "lower": 2, "upper": 7 } ],
             "is_self_call": false
           },
@@ -965,12 +850,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 21,
-                "start": 15,
-                "end": 31
-              },
+              "position": { "line": 21, "start": 15, "end": 31 },
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
@@ -1002,12 +882,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 24,
-              "start": 25,
-              "end": 39
-            },
+            "origin": { "line": 24, "start": 25, "end": 39 },
             "caller_interval": [ { "lower": 2, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1025,12 +900,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 25,
-                "start": 15,
-                "end": 31
-              },
+              "position": { "line": 25, "start": 15, "end": 31 },
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
@@ -1108,12 +978,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 36,
-              "start": 23,
-              "end": 37
-            },
+            "origin": { "line": 36, "start": 23, "end": 37 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -1134,12 +999,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 37, "start": 15, "end": 19 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 36,
-              "start": 23,
-              "end": 37
-            },
+            "origin": { "line": 36, "start": 23, "end": 37 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -1168,12 +1028,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 40,
-              "start": 25,
-              "end": 39
-            },
+            "origin": { "line": 40, "start": 25, "end": 39 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -1222,12 +1077,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 81,
-              "start": 19,
-              "end": 24
-            },
+            "origin": { "line": 81, "start": 19, "end": 24 },
             "caller_interval": [ { "lower": 27, "upper": 30 } ],
             "is_self_call": false,
             "call_site": "81:8-81:25"
@@ -1257,12 +1107,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 47,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 47, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false
           }
@@ -1291,12 +1136,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 50,
-              "start": 25,
-              "end": 39
-            },
+            "origin": { "line": 50, "start": 25, "end": 39 },
             "caller_interval": [ { "lower": 5, "upper": 6 } ],
             "is_self_call": false
           }
@@ -1314,12 +1154,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 51,
-                "start": 15,
-                "end": 31
-              },
+              "position": { "line": 51, "start": 15, "end": 31 },
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
@@ -1377,12 +1212,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 181, "start": 38, "end": 52 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 181,
-              "start": 38,
-              "end": 52
-            },
+            "origin": { "line": 181, "start": 38, "end": 52 },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
@@ -1401,12 +1231,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 180,
-              "start": 19,
-              "end": 25
-            },
+            "origin": { "line": 180, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "call_site": "180:8-180:26"
@@ -1434,12 +1259,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 170,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 170, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
             "call_site": "170:8-170:21"
@@ -1457,12 +1277,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 169,
-              "start": 19,
-              "end": 25
-            },
+            "origin": { "line": 169, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false,
             "call_site": "169:8-169:26"
@@ -1636,12 +1451,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 280, "start": 32, "end": 46 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 280,
-              "start": 32,
-              "end": 46
-            },
+            "origin": { "line": 280, "start": 32, "end": 46 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false
           }
@@ -1664,12 +1474,7 @@
               { "via": "obscure:model" }, { "via": "tito" }
             ],
             "tito_positions": [ { "line": 280, "start": 8, "end": 12 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 281,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 281, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
             "call_site": "281:8-281:24"
@@ -1708,12 +1513,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 280, "start": 32, "end": 46 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 280,
-              "start": 32,
-              "end": 46
-            },
+            "origin": { "line": 280, "start": 32, "end": 46 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false
           }
@@ -1730,12 +1530,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 281,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 281, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
             "call_site": "281:8-281:24"
@@ -1780,12 +1575,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 268, "start": 27, "end": 41 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 268,
-              "start": 27,
-              "end": 41
-            },
+            "origin": { "line": 268, "start": 27, "end": 41 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false
           }
@@ -1806,12 +1596,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 269, "start": 19, "end": 23 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 269,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 269, "start": 19, "end": 35 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
             "call_site": "269:8-269:36"
@@ -1851,12 +1636,7 @@
               { "line": 268, "start": 27, "end": 41 },
               { "line": 269, "start": 19, "end": 23 }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 268,
-              "start": 27,
-              "end": 41
-            },
+            "origin": { "line": 268, "start": 27, "end": 41 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false
           }
@@ -1873,12 +1653,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 269,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 269, "start": 19, "end": 35 },
             "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
             "call_site": "269:8-269:36"
@@ -1991,12 +1766,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 60,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 60, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false,
             "call_site": "60:8-60:24"
@@ -2028,12 +1798,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 64,
-              "start": 20,
-              "end": 24
-            },
+            "origin": { "line": 64, "start": 20, "end": 24 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false,
             "call_site": "64:4-65:12"
@@ -2088,12 +1853,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 68,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 68, "start": 15, "end": 31 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": true
           }
@@ -2113,12 +1873,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 68,
-                "start": 15,
-                "end": 19
-              },
+              "position": { "line": 68, "start": 15, "end": 19 },
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
@@ -2157,24 +1912,14 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 71, "start": 27, "end": 41 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 71,
-              "start": 27,
-              "end": 41
-            },
+            "origin": { "line": 71, "start": 27, "end": 41 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false
           },
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 71,
-                "start": 8,
-                "end": 12
-              },
+              "position": { "line": 71, "start": 8, "end": 12 },
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property@setter"
               ],
@@ -2214,12 +1959,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 71,
-              "start": 27,
-              "end": 41
-            },
+            "origin": { "line": 71, "start": 27, "end": 41 },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": false
           }
@@ -2238,12 +1978,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 71,
-                "start": 27,
-                "end": 41
-              },
+              "position": { "line": 71, "start": 27, "end": 41 },
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
@@ -2287,12 +2022,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 213,
-                "start": 23,
-                "end": 24
-              },
+              "position": { "line": 213, "start": 23, "end": 24 },
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
@@ -2332,12 +2062,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 213,
-              "start": 15,
-              "end": 44
-            }
+            "origin": { "line": 213, "start": 15, "end": 44 }
           }
         ]
       },
@@ -2352,12 +2077,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 213,
-              "start": 15,
-              "end": 44
-            },
+            "origin": { "line": 213, "start": 15, "end": 44 },
             "call_site": "213:4-213:45"
           }
         ]
@@ -2420,12 +2140,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 208, "start": 31, "end": 32 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 209,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 209, "start": 15, "end": 30 },
             "call_site": "209:4-209:31"
           },
           {
@@ -2439,12 +2154,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 208, "start": 31, "end": 32 } ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 209,
-                "start": 15,
-                "end": 18
-              },
+              "position": { "line": 209, "start": 15, "end": 18 },
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
@@ -2484,12 +2194,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 209,
-              "start": 15,
-              "end": 30
-            }
+            "origin": { "line": 209, "start": 15, "end": 30 }
           }
         ]
       },
@@ -2504,12 +2209,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 209,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 209, "start": 15, "end": 30 },
             "call_site": "209:4-209:31"
           }
         ]
@@ -2551,12 +2251,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 199, "start": 31, "end": 45 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 199,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 199, "start": 31, "end": 45 }
           },
           {
             "kinds": [
@@ -2570,12 +2265,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 200,
-              "start": 11,
-              "end": 26
-            }
+            "origin": { "line": 200, "start": 11, "end": 26 }
           }
         ]
       }
@@ -2613,12 +2303,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 199, "start": 31, "end": 45 } ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 199,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 199, "start": 31, "end": 45 }
           }
         ]
       },
@@ -2635,12 +2320,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "properties.py",
-                "line": 200,
-                "start": 11,
-                "end": 14
-              },
+              "position": { "line": 200, "start": 11, "end": 14 },
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],

@@ -513,24 +513,18 @@ module StringFormatCall = struct
     location: Location.t;
   }
 
-  let implicit_string_literal_sources
-      ~pyre_in_context
-      ~implicit_sources
-      ~module_reference
-      { value; location }
-    =
+  let implicit_string_literal_sources ~pyre_in_context ~implicit_sources { value; location } =
     let literal_string_regular_expressions = implicit_sources.TaintConfiguration.literal_strings in
     if String.is_empty value || List.is_empty literal_string_regular_expressions then
       ForwardTaint.bottom
     else
-      let value_location = Location.with_module ~module_reference location in
       let add_matching_source_kind so_far { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
           ForwardTaint.singleton CallInfo.declaration kind Frame.initial
           |> ForwardTaint.apply_call
                ~pyre_in_context
                ~call_site:(CallSite.create location)
-               ~location:value_location
+               ~location
                ~callee:Target.ArtificialTargets.str_literal
                ~arguments:[]
                ~port:AccessPath.Root.LocalResult
@@ -548,26 +542,20 @@ module StringFormatCall = struct
         ~init:ForwardTaint.bottom
 
 
-  let implicit_string_literal_sinks
-      ~pyre_in_context
-      ~implicit_sinks
-      ~module_reference
-      { value; location }
-    =
+  let implicit_string_literal_sinks ~pyre_in_context ~implicit_sinks { value; location } =
     let literal_string_regular_expressions =
       implicit_sinks.TaintConfiguration.literal_string_sinks
     in
     if String.is_empty value || List.is_empty literal_string_regular_expressions then
       BackwardTaint.bottom
     else
-      let value_location = Location.with_module ~module_reference location in
       let add_matching_sink_kind so_far { TaintConfiguration.pattern; sink_kind } =
         if Re2.matches pattern value then
           BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
           |> BackwardTaint.apply_call
                ~pyre_in_context
                ~call_site:(CallSite.create location)
-               ~location:value_location
+               ~location
                ~callee:Target.ArtificialTargets.str_literal
                ~arguments:[]
                ~port:AccessPath.Root.LocalResult
@@ -662,7 +650,7 @@ let return_sink ~pyre_in_context ~location ~callee ~sink_model =
     BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] sink_model
     |> BackwardState.Tree.apply_call
          ~pyre_in_context
-         ~call_site:(location |> Location.strip_module |> CallSite.create)
+         ~call_site:(CallSite.create location)
          ~location
          ~callee
            (* When the source and sink meet at the return statement, we want the leaf callable to be

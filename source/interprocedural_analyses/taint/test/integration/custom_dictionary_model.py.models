@@ -26,12 +26,7 @@
                 "kind": "Test2"
               }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 26,
-              "start": 6,
-              "end": 22
-            }
+            "origin": { "line": 26, "start": 6, "end": 22 }
           }
         ]
       },
@@ -47,12 +42,7 @@
                 "kind": "SinkKey"
               }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 26,
-              "start": 6,
-              "end": 22
-            },
+            "origin": { "line": 26, "start": 6, "end": 22 },
             "call_site": "26:4-26:29"
           }
         ]
@@ -95,12 +85,7 @@
                 "kind": "Test2"
               }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 21,
-              "start": 13,
-              "end": 29
-            }
+            "origin": { "line": 21, "start": 13, "end": 29 }
           }
         ]
       },
@@ -116,12 +101,7 @@
                 "kind": "SinkValue"
               }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 21,
-              "start": 13,
-              "end": 29
-            },
+            "origin": { "line": 21, "start": 13, "end": 29 },
             "call_site": "21:4-21:29"
           }
         ]
@@ -166,12 +146,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 37,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 37, "start": 6, "end": 20 }
           }
         ]
       },
@@ -186,12 +161,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 38,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 38, "start": 15, "end": 16 },
             "call_site": "38:4-38:17"
           }
         ]
@@ -241,12 +211,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 31,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 31, "start": 13, "end": 27 }
           }
         ]
       },
@@ -261,12 +226,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "custom_dictionary_model.py",
-              "line": 32,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 32, "start": 15, "end": 16 },
             "call_site": "32:4-32:17"
           }
         ]

@@ -143,12 +143,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 55, "start": 26, "end": 27 } ],
-            "origin": {
-              "filename": "side_effects.py",
-              "line": 56,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 56, "start": 15, "end": 16 },
             "call_site": "56:4-56:17"
           }
         ]
@@ -182,12 +177,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 17, "start": 16, "end": 30 } ],
-            "origin": {
-              "filename": "side_effects.py",
-              "line": 17,
-              "start": 16,
-              "end": 30
-            }
+            "origin": { "line": 17, "start": 16, "end": 30 }
           }
         ]
       }
@@ -220,12 +210,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 11, "start": 19, "end": 33 } ],
-            "origin": {
-              "filename": "side_effects.py",
-              "line": 11,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 11, "start": 19, "end": 33 }
           }
         ]
       }
@@ -258,12 +243,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 23, "start": 23, "end": 37 } ],
-            "origin": {
-              "filename": "side_effects.py",
-              "line": 23,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 23, "start": 23, "end": 37 }
           }
         ]
       }
@@ -292,12 +272,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 35, "start": 13, "end": 27 } ],
-            "origin": {
-              "filename": "side_effects.py",
-              "line": 35,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 35, "start": 13, "end": 27 }
           }
         ]
       }
@@ -324,12 +299,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 49, "start": 19, "end": 20 } ],
-            "origin": {
-              "filename": "side_effects.py",
-              "line": 50,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 50, "start": 15, "end": 16 },
             "call_site": "50:4-50:17"
           }
         ]

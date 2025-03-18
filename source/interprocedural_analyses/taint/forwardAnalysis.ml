@@ -266,7 +266,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 |> BackwardTaint.apply_call
                      ~pyre_in_context
                      ~call_site:(CallSite.create location)
-                     ~location:value_location_with_module
+                     ~location
                      ~callee:call_target.CallGraph.CallTarget.target
                      ~arguments:[]
                      ~port:AccessPath.Root.LocalResult
@@ -536,9 +536,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~argument:(Some argument)
           ~f
       in
-      let location =
-        Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
-      in
       let sink_trees =
         track_apply_call_step ApplyCallForArgumentSinks (fun () ->
             CallModel.sink_trees_of_argument
@@ -546,7 +543,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~transform_non_leaves:(fun _ tree -> tree)
               ~model:taint_model
               ~call_site
-              ~location
+              ~location:argument.Node.location
               ~call_target
               ~arguments
               ~sink_matches
@@ -604,6 +601,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let () =
         track_apply_call_step CheckIssuesForArgument (fun () ->
             List.iter sink_trees ~f:(fun { SinkTreeWithHandle.sink_tree; handle; _ } ->
+                let location =
+                  Location.with_module
+                    ~module_reference:FunctionContext.qualifier
+                    argument.Node.location
+                in
                 (* Check for issues. *)
                 check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree;
                 (* Check for issues for combined source rules. *)
@@ -628,7 +630,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~pyre_in_context
                   ~model:taint_model
                   ~call_site
-                  ~location
+                  ~location:argument.Node.location
                   ~call_target
                   ~arguments
                   ~is_class_method
@@ -671,8 +673,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> ForwardState.Tree.apply_call
                  ~pyre_in_context
                  ~call_site
-                 ~location:
-                   (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
+                 ~location:call_location
                  ~callee:target
                  ~arguments
                  ~port:AccessPath.Root.LocalResult
@@ -720,7 +721,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
-          ~qualifier:FunctionContext.qualifier
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location:argument.Node.location ~source_tree;
@@ -1897,7 +1897,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
-          ~qualifier:FunctionContext.qualifier
           ~expression:base
           ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location:base.Node.location ~source_tree:taint;
@@ -2297,7 +2296,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
-              ~qualifier:FunctionContext.qualifier
               ~expression
               ~interval:FunctionContext.caller_class_interval
           in
@@ -2368,14 +2366,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~callee:call_target.CallGraph.CallTarget.target
         ~pyre_in_context
         ~call_site
-        ~location:(Location.with_module ~module_reference:FunctionContext.qualifier call_location)
+        ~location:call_location
         FunctionContext.string_combine_partial_sink_tree
     in
     let string_literal_taint =
       CallModel.StringFormatCall.implicit_string_literal_sources
         ~pyre_in_context
         ~implicit_sources:FunctionContext.taint_configuration.implicit_sources
-        ~module_reference:FunctionContext.qualifier
         string_literal
     in
     let triggered_sinks = Issue.TriggeredSinkForCall.create () in
@@ -2568,7 +2565,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
-              ~qualifier:FunctionContext.qualifier
               ~expression:{ Node.value; location }
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_source
@@ -2771,7 +2767,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
-          ~qualifier:FunctionContext.qualifier
           ~expression:target
           ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location ~source_tree;
@@ -2826,7 +2821,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                |> BackwardTaint.apply_call
                     ~pyre_in_context
                     ~call_site
-                    ~location
+                    ~location:(Location.strip_module location)
                     ~callee:Interprocedural.Target.ArtificialTargets.condition
                     ~arguments:[]
                     ~port:
@@ -2877,7 +2872,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~pyre_in_context
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
-            ~qualifier:FunctionContext.qualifier
             ~expression:target
             ~interval:FunctionContext.caller_class_interval
         in
@@ -2965,9 +2959,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let taint, state =
           analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
         in
-        let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         check_flow
-          ~location
+          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
           ~sink_handle:IssueHandle.Sink.Return
           ~source_tree:taint
           ~sink_tree:
@@ -3015,10 +3008,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           original = { Node.location; value = { Parameter.value; _ } };
         }
       =
-      let prime =
-        let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
-        apply_call ~location ~root:parameter_root
-      in
+      let prime = apply_call ~location ~root:parameter_root in
       let default_value_taint, state =
         match value with
         | None -> ForwardState.Tree.bottom, state
@@ -3037,10 +3027,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* The origin for captured variables taint is at the inner function boundry due to there
              being no explicit parameter to mark as location *)
           (* TODO(T184561320): Pull in location of `nonlocal` statement if present *)
-          let location =
-            Location.with_module ~module_reference:FunctionContext.qualifier define_location
-          in
-          let taint = apply_call ~location ~root in
+          let taint = apply_call ~location:define_location ~root in
           store_taint
             ~root:(AccessPath.Root.captured_variable_to_variable root)
             ~path:[]

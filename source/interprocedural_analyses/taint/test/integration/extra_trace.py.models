@@ -37,12 +37,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 97, "start": 27, "end": 33 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 96,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 96, "start": 13, "end": 27 }
           }
         ]
       },
@@ -56,12 +51,7 @@
                 "kind": "TestSink"
               }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 98,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 98, "start": 15, "end": 23 },
             "call_site": "98:4-98:24"
           }
         ]
@@ -125,12 +115,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 113, "start": 27, "end": 33 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 112,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 112, "start": 13, "end": 27 }
           }
         ]
       },
@@ -144,12 +129,7 @@
                 "kind": "TestSink"
               }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 114,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 114, "start": 15, "end": 23 },
             "call_site": "114:4-114:24"
           }
         ]
@@ -184,12 +164,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -236,12 +211,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
           }
@@ -328,12 +298,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 108,
-              "start": 27,
-              "end": 30
-            },
+            "origin": { "line": 108, "start": 27, "end": 30 },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "call_site": "108:15-108:31"
@@ -438,12 +403,7 @@
               { "line": 68, "start": 34, "end": 37 },
               { "line": 70, "start": 27, "end": 30 }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 71,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 71, "start": 15, "end": 19 },
             "call_site": "71:4-71:20"
           }
         ]
@@ -522,12 +482,7 @@
               { "line": 61, "start": 32, "end": 34 },
               { "line": 62, "start": 25, "end": 27 }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 57,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 57, "start": 9, "end": 23 }
           }
         ]
       }
@@ -547,12 +502,7 @@
           {
             "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
-              "position": {
-                "filename": "extra_trace.py",
-                "line": 38,
-                "start": 30,
-                "end": 33
-              },
+              "position": { "line": 38, "start": 30, "end": 33 },
               "resolves_to": [ "extra_trace.nested_transform_x" ],
               "port": "formal(arg, position=0)",
               "call_site": "38:11-38:34"
@@ -617,12 +567,7 @@
             ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 83, "start": 26, "end": 29 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 84,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 84, "start": 15, "end": 18 },
             "call_site": "84:4-84:19"
           }
         ]
@@ -669,12 +614,7 @@
             ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 77, "start": 25, "end": 27 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 75,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 75, "start": 9, "end": 23 }
           }
         ]
       }
@@ -700,12 +640,7 @@
                 "kind": "TransformX:ExtraTraceSink"
               }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 34,
-              "start": 23,
-              "end": 26
-            },
+            "origin": { "line": 34, "start": 23, "end": 26 },
             "call_site": "34:11-34:27"
           }
         ]
@@ -782,12 +717,7 @@
               { "line": 51, "start": 16, "end": 20 },
               { "line": 52, "start": 24, "end": 28 }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 53,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 53, "start": 15, "end": 19 },
             "call_site": "53:4-53:20"
           }
         ]
@@ -847,12 +777,7 @@
               { "line": 44, "start": 14, "end": 16 },
               { "line": 45, "start": 22, "end": 24 }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 42,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 42, "start": 9, "end": 23 }
           }
         ]
       }
@@ -896,12 +821,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 92, "start": 32, "end": 46 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 92,
-              "start": 32,
-              "end": 46
-            }
+            "origin": { "line": 92, "start": 32, "end": 46 }
           }
         ]
       }
@@ -964,23 +884,13 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 88, "start": 42, "end": 45 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 88,
-              "start": 23,
-              "end": 46
-            },
+            "origin": { "line": 88, "start": 23, "end": 46 },
             "call_site": "88:11-88:47"
           },
           {
             "kinds": [ { "length": 1, "kind": "TransformX:ExtraTraceSink" } ],
             "call": {
-              "position": {
-                "filename": "extra_trace.py",
-                "line": 88,
-                "start": 42,
-                "end": 45
-              },
+              "position": { "line": 88, "start": 42, "end": 45 },
               "resolves_to": [ "extra_trace.nested_transform_x" ],
               "port": "formal(arg, position=0)",
               "call_site": "88:23-88:46"
@@ -1098,12 +1008,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 26, "start": 16, "end": 19 } ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 27,
-              "start": 23,
-              "end": 27
-            },
+            "origin": { "line": 27, "start": 23, "end": 27 },
             "call_site": "27:11-27:28"
           },
           {
@@ -1133,12 +1038,7 @@
               { "line": 27, "start": 23, "end": 27 },
               { "line": 28, "start": 16, "end": 20 }
             ],
-            "origin": {
-              "filename": "extra_trace.py",
-              "line": 29,
-              "start": 23,
-              "end": 27
-            },
+            "origin": { "line": 29, "start": 23, "end": 27 },
             "call_site": "29:11-29:28"
           }
         ]

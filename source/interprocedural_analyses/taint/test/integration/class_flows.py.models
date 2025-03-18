@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 57,
-              "start": 32,
-              "end": 46
-            }
+            "origin": { "line": 57, "start": 32, "end": 46 }
           }
         ]
       },
@@ -48,12 +43,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 57,
-              "start": 4,
-              "end": 29
-            }
+            "origin": { "line": 57, "start": 4, "end": 29 }
           }
         ]
       }
@@ -92,12 +82,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 22,
-              "start": 26,
-              "end": 40
-            }
+            "origin": { "line": 22, "start": 26, "end": 40 }
           }
         ]
       },
@@ -116,12 +101,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 22,
-              "start": 4,
-              "end": 23
-            }
+            "origin": { "line": 22, "start": 4, "end": 23 }
           }
         ]
       }
@@ -160,12 +140,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 34,
-              "start": 26,
-              "end": 40
-            }
+            "origin": { "line": 34, "start": 26, "end": 40 }
           }
         ]
       },
@@ -184,12 +159,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 34,
-              "start": 4,
-              "end": 23
-            }
+            "origin": { "line": 34, "start": 4, "end": 23 }
           }
         ]
       }
@@ -228,12 +198,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 42,
-              "start": 43,
-              "end": 57
-            }
+            "origin": { "line": 42, "start": 43, "end": 57 }
           }
         ]
       },
@@ -252,12 +217,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 42,
-              "start": 4,
-              "end": 40
-            }
+            "origin": { "line": 42, "start": 4, "end": 40 }
           }
         ]
       }
@@ -296,12 +256,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 46,
-              "start": 42,
-              "end": 56
-            }
+            "origin": { "line": 46, "start": 42, "end": 56 }
           }
         ]
       },
@@ -320,12 +275,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 46,
-              "start": 4,
-              "end": 39
-            }
+            "origin": { "line": 46, "start": 4, "end": 39 }
           }
         ]
       }
@@ -364,12 +314,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 53,
-              "start": 47,
-              "end": 61
-            }
+            "origin": { "line": 53, "start": 47, "end": 61 }
           }
         ]
       },
@@ -388,12 +333,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 53,
-              "start": 8,
-              "end": 44
-            }
+            "origin": { "line": 53, "start": 8, "end": 44 }
           }
         ]
       }
@@ -432,12 +372,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 79,
-              "start": 63,
-              "end": 77
-            }
+            "origin": { "line": 79, "start": 63, "end": 77 }
           }
         ]
       },
@@ -454,12 +389,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_flows.py",
-                "line": 79,
-                "start": 63,
-                "end": 77
-              },
+              "position": { "line": 79, "start": 63, "end": 77 },
               "resolves_to": [
                 "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db"
               ],
@@ -509,12 +439,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 90,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 90, "start": 36, "end": 50 }
           }
         ]
       },
@@ -531,12 +456,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_flows.py",
-                "line": 90,
-                "start": 36,
-                "end": 50
-              },
+              "position": { "line": 90, "start": 36, "end": 50 },
               "resolves_to": [
                 "class_flows.HasDecoratedClassmethod.to_sink"
               ],
@@ -654,12 +574,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "class_flows.py",
-                "line": 66,
-                "start": 49,
-                "end": 55
-              },
+              "position": { "line": 66, "start": 49, "end": 55 },
               "resolves_to": [
                 "class_flows.HasClassmethods._get_multi_word_results"
               ],
@@ -693,12 +608,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 70,
-              "start": 19,
-              "end": 25
-            },
+            "origin": { "line": 70, "start": 19, "end": 25 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "call_site": "70:8-70:26"
@@ -726,12 +636,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "class_flows.py",
-              "line": 86,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 86, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "call_site": "86:8-86:21"

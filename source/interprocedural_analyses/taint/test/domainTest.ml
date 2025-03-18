@@ -24,13 +24,11 @@ let test_partition_call_map context =
       { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
     |> Interprocedural.Target.from_regular
   in
-  let location = Location.WithModule.any in
-  let call_site = location |> Location.strip_module |> CallSite.create in
   let call_taint1 =
     ForwardTaint.apply_call
       ~pyre_in_context
-      ~call_site
-      ~location
+      ~call_site:CallSite.any
+      ~location:Location.any
       ~callee
       ~arguments:[]
       ~port:Interprocedural.AccessPath.Root.LocalResult
@@ -43,8 +41,8 @@ let test_partition_call_map context =
   let call_taint2 =
     ForwardTaint.apply_call
       ~pyre_in_context
-      ~call_site
-      ~location
+      ~call_site:CallSite.any
+      ~location:Location.any
       ~callee
       ~arguments:[]
       ~port:Interprocedural.AccessPath.Root.LocalResult

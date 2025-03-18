@@ -284,12 +284,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "if_sinks.py",
-              "line": 10,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 10, "start": 15, "end": 16 },
             "call_site": "10:4-10:17"
           }
         ]
@@ -315,12 +310,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "if_sinks.py",
-              "line": 14,
-              "start": 18,
-              "end": 19
-            },
+            "origin": { "line": 14, "start": 18, "end": 19 },
             "call_site": "14:7-14:20"
           }
         ]

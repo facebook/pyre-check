@@ -26,12 +26,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "http_request.py",
-              "line": 24,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 24, "start": 15, "end": 26 }
           }
         ]
       },
@@ -46,12 +41,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "http_request.py",
-              "line": 24,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 24, "start": 15, "end": 26 },
             "call_site": "24:4-24:27"
           }
         ]
@@ -94,12 +84,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "http_request.py",
-              "line": 20,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 20, "start": 15, "end": 26 }
           }
         ]
       },
@@ -114,12 +99,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "http_request.py",
-              "line": 20,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 20, "start": 15, "end": 26 },
             "call_site": "20:4-20:27"
           }
         ]
@@ -162,12 +142,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "http_request.py",
-              "line": 15,
-              "start": 15,
-              "end": 26
-            }
+            "origin": { "line": 15, "start": 15, "end": 26 }
           }
         ]
       },
@@ -182,12 +157,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "http_request.py",
-              "line": 15,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 15, "start": 15, "end": 26 },
             "call_site": "15:4-15:27"
           }
         ]

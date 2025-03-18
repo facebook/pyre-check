@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "binary_operators.py",
-              "line": 16,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 16, "start": 10, "end": 24 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "binary_operators.py",
-                "line": 16,
-                "start": 10,
-                "end": 24
-              },
+              "position": { "line": 16, "start": 10, "end": 24 },
               "resolves_to": [ "binary_operators.Add.__add__" ],
               "port": "formal(other, position=1)",
               "call_site": "16:4-16:24"
@@ -99,12 +89,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "binary_operators.py",
-              "line": 21,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 21, "start": 11, "end": 25 }
           }
         ]
       },
@@ -121,12 +106,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "binary_operators.py",
-                "line": 21,
-                "start": 11,
-                "end": 25
-              },
+              "position": { "line": 21, "start": 11, "end": 25 },
               "resolves_to": [ "binary_operators.Add.__add__" ],
               "port": "formal(other, position=1)",
               "call_site": "21:4-21:25"
@@ -339,12 +319,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "binary_operators.py",
-              "line": 11,
-              "start": 19,
-              "end": 24
-            },
+            "origin": { "line": 11, "start": 19, "end": 24 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "11:8-11:25"

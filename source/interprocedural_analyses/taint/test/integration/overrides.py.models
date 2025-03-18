@@ -26,12 +26,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 110,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 110, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
@@ -53,12 +48,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 111,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 111, "start": 14, "end": 15 },
               "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg, position=1)",
               "call_site": "111:4-111:16"
@@ -108,12 +98,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 110,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 110, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
@@ -135,12 +120,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 112,
-                "start": 20,
-                "end": 21
-              },
+              "position": { "line": 112, "start": 20, "end": 21 },
               "resolves_to": [ "overrides.B.classMethod" ],
               "port": "formal(arg, position=1)",
               "call_site": "112:4-112:22"
@@ -191,12 +171,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 78,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 78, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
@@ -218,12 +193,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 79,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 79, "start": 14, "end": 15 },
               "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
               "port": "formal(arg, position=1)",
               "call_site": "79:4-79:16"
@@ -273,12 +243,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 78,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 78, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
@@ -300,12 +265,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 80,
-                "start": 20,
-                "end": 21
-              },
+              "position": { "line": 80, "start": 20, "end": 21 },
               "resolves_to": [ "overrides.B.classMethod" ],
               "port": "formal(arg, position=1)",
               "call_site": "80:4-80:22"
@@ -356,12 +316,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 126,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 126, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB" ],
               "port": "result"
             },
@@ -380,12 +335,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 126,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 126, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.D.methodB" ],
               "port": "result"
             },
@@ -407,12 +357,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 127,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 127, "start": 14, "end": 15 },
               "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg, position=1)",
               "call_site": "127:4-127:16"
@@ -462,12 +407,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 142,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 142, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.D.methodB" ],
               "port": "result"
             },
@@ -489,12 +429,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 143,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 143, "start": 14, "end": 15 },
               "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg, position=1)",
               "call_site": "143:4-143:16"
@@ -544,12 +479,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 116,
-                "start": 8,
-                "end": 19
-              },
+              "position": { "line": 116, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
@@ -571,12 +501,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 117,
-                "start": 18,
-                "end": 19
-              },
+              "position": { "line": 117, "start": 18, "end": 19 },
               "resolves_to": [ "overrides.B.classMethod" ],
               "port": "formal(arg, position=1)",
               "call_site": "117:4-117:20"
@@ -630,12 +555,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 247,
-              "start": 15,
-              "end": 32
-            },
+            "origin": { "line": 247, "start": 15, "end": 32 },
             "receiver_interval": [ { "lower": 22, "upper": 25 } ],
             "is_self_call": false
           }
@@ -652,12 +572,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 247,
-              "start": 15,
-              "end": 32
-            },
+            "origin": { "line": 247, "start": 15, "end": 32 },
             "call_site": "247:4-247:33"
           }
         ]
@@ -689,12 +604,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false
           }
@@ -721,12 +631,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
           }
@@ -754,12 +659,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
           }
@@ -784,12 +684,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           }
@@ -816,12 +711,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           },
@@ -835,12 +725,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -865,12 +750,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           }
@@ -895,12 +775,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false
           },
@@ -912,12 +787,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -955,12 +825,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           },
@@ -974,12 +839,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -1035,12 +895,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -1076,12 +931,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -1119,12 +969,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -1275,12 +1120,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 35,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 35, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false,
             "call_site": "35:8-35:23"
@@ -1310,12 +1150,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 203,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 203, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
           }
@@ -1372,12 +1207,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 49,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 49, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "call_site": "49:8-49:23"
@@ -1407,12 +1237,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 45,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 45, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           }
@@ -1537,12 +1362,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 71,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 71, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "call_site": "71:8-71:23"
@@ -1572,12 +1392,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 74,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 74, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
           }
@@ -1618,12 +1433,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 181,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 181, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 27, "upper": 28 } ],
             "is_self_call": false,
             "call_site": "181:8-181:23"
@@ -1692,12 +1502,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 229,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 229, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 35, "upper": 36 } ],
             "is_self_call": false
           }
@@ -1728,12 +1533,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 158, "start": 15, "end": 29 } ],
-            "origin": {
-              "filename": "overrides.py",
-              "line": 158,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 158, "start": 15, "end": 29 }
           }
         ]
       }

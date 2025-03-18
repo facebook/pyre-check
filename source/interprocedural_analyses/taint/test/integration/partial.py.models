@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "partial.py",
-              "line": 38,
-              "start": 58,
-              "end": 72
-            }
+            "origin": { "line": 38, "start": 58, "end": 72 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "partial.py",
-                "line": 38,
-                "start": 58,
-                "end": 72
-              },
+              "position": { "line": 38, "start": 58, "end": 72 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
               "call_site": "38:4-38:77"
@@ -97,12 +87,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "partial.py",
-              "line": 28,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 28, "start": 8, "end": 22 }
           }
         ]
       },
@@ -119,12 +104,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "partial.py",
-                "line": 29,
-                "start": 41,
-                "end": 42
-              },
+              "position": { "line": 29, "start": 41, "end": 42 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
               "call_site": "29:4-29:43"
@@ -170,12 +150,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "partial.py",
-              "line": 18,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 18, "start": 8, "end": 22 }
           }
         ]
       },
@@ -192,12 +167,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "partial.py",
-                "line": 19,
-                "start": 39,
-                "end": 40
-              },
+              "position": { "line": 19, "start": 39, "end": 40 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
               "call_site": "19:4-19:41"
@@ -893,12 +863,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "partial.py",
-              "line": 14,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 14, "start": 15, "end": 16 },
             "call_site": "14:4-14:17"
           }
         ]

@@ -85,12 +85,7 @@
               { "always-via": "string_concat_rhs" },
               { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 59,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 59, "start": 19, "end": 20 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "59:8-59:21"
@@ -118,12 +113,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 87,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 87, "start": 15, "end": 16 },
             "call_site": "87:4-87:17"
           }
         ]
@@ -179,12 +169,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 86,
-              "start": 31,
-              "end": 32
-            },
+            "origin": { "line": 86, "start": 31, "end": 32 },
             "call_site": "86:0-87:17"
           }
         ]
@@ -200,12 +185,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 87,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 87, "start": 15, "end": 16 },
             "call_site": "87:4-87:17"
           }
         ]
@@ -243,12 +223,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 63,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 63, "start": 8, "end": 22 }
           }
         ]
       }
@@ -300,12 +275,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 63,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 63, "start": 8, "end": 22 }
           }
         ]
       },
@@ -326,12 +296,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 64,
-              "start": 4,
-              "end": 12
-            }
+            "origin": { "line": 64, "start": 4, "end": 12 }
           }
         ]
       }
@@ -417,12 +382,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 80,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 80, "start": 12, "end": 26 }
           }
         ]
       },
@@ -486,12 +446,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "attach_features.py",
-                "line": 19,
-                "start": 11,
-                "end": 33
-              },
+              "position": { "line": 19, "start": 11, "end": 33 },
               "resolves_to": [ "attach_features.source_with_inferred" ],
               "port": "result"
             }
@@ -519,12 +474,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 25,
-              "start": 15,
-              "end": 36
-            },
+            "origin": { "line": 25, "start": 15, "end": 36 },
             "call_site": "25:4-25:37"
           }
         ]
@@ -550,12 +500,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_rhs" } ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 24,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 24, "start": 15, "end": 26 },
             "call_site": "24:4-24:27"
           }
         ]
@@ -581,12 +526,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 23,
-              "start": 15,
-              "end": 25
-            },
+            "origin": { "line": 23, "start": 15, "end": 25 },
             "call_site": "23:4-23:26"
           }
         ]
@@ -630,12 +570,7 @@
               { "always-via": "string_concat_rhs" },
               { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 54,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 54, "start": 15, "end": 16 },
             "call_site": "54:4-54:17"
           }
         ]
@@ -665,12 +600,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "attach_features.py",
-                "line": 29,
-                "start": 18,
-                "end": 26
-              },
+              "position": { "line": 29, "start": 18, "end": 26 },
               "resolves_to": [ "attach_features.inferred_sink" ],
               "port": "formal(taint_left, position=0)",
               "call_site": "29:4-29:45"
@@ -724,12 +654,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 14,
-              "start": 8,
-              "end": 16
-            }
+            "origin": { "line": 14, "start": 8, "end": 16 }
           }
         ]
       }
@@ -793,12 +718,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_rhs" } ],
-            "origin": {
-              "filename": "attach_features.py",
-              "line": 37,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 37, "start": 15, "end": 18 },
             "call_site": "37:4-37:19"
           }
         ]

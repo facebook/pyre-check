@@ -30,12 +30,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 96, "start": 17, "end": 31 } ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 96,
-              "start": 17,
-              "end": 31
-            }
+            "origin": { "line": 96, "start": 17, "end": 31 }
           }
         ]
       },
@@ -50,12 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 98,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 98, "start": 15, "end": 16 },
             "call_site": "98:4-98:17"
           }
         ]
@@ -102,12 +92,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 83,
-              "start": 37,
-              "end": 51
-            }
+            "origin": { "line": 83, "start": 37, "end": 51 }
           }
         ]
       },
@@ -124,12 +109,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 83,
-                "start": 37,
-                "end": 51
-              },
+              "position": { "line": 83, "start": 37, "end": 51 },
               "resolves_to": [
                 "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]"
               ],
@@ -179,12 +159,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 127,
-                "start": 15,
-                "end": 62
-              },
+              "position": { "line": 127, "start": 15, "end": 62 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_source]"
               ],
@@ -204,12 +179,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 127,
-              "start": 15,
-              "end": 62
-            },
+            "origin": { "line": 127, "start": 15, "end": 62 },
             "call_site": "127:4-127:63"
           }
         ]
@@ -254,12 +224,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 126,
-                "start": 15,
-                "end": 61
-              },
+              "position": { "line": 126, "start": 15, "end": 61 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_source]"
               ],
@@ -279,12 +244,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 126,
-              "start": 15,
-              "end": 61
-            },
+            "origin": { "line": 126, "start": 15, "end": 61 },
             "call_site": "126:4-126:62"
           }
         ]
@@ -329,12 +289,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 124,
-                "start": 15,
-                "end": 62
-              },
+              "position": { "line": 124, "start": 15, "end": 62 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=_test_source, formal(g, position=1)=higher_order_functions.safe]"
               ],
@@ -354,12 +309,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 124,
-              "start": 15,
-              "end": 62
-            },
+            "origin": { "line": 124, "start": 15, "end": 62 },
             "call_site": "124:4-124:63"
           }
         ]
@@ -404,12 +354,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 122,
-                "start": 15,
-                "end": 61
-              },
+              "position": { "line": 122, "start": 15, "end": 61 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=_test_source, formal(g, position=1)=higher_order_functions.safe]"
               ],
@@ -429,12 +374,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 122,
-              "start": 15,
-              "end": 61
-            },
+            "origin": { "line": 122, "start": 15, "end": 61 },
             "call_site": "122:4-122:62"
           }
         ]
@@ -477,12 +417,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 22,
-              "start": 40,
-              "end": 54
-            }
+            "origin": { "line": 22, "start": 40, "end": 54 }
           }
         ]
       },
@@ -499,12 +434,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 22,
-                "start": 40,
-                "end": 54
-              },
+              "position": { "line": 22, "start": 40, "end": 54 },
               "resolves_to": [
                 "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]"
               ],
@@ -552,12 +482,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 52,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 52, "start": 49, "end": 63 }
           }
         ]
       },
@@ -574,12 +499,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 52,
-                "start": 49,
-                "end": 63
-              },
+              "position": { "line": 52, "start": 49, "end": 63 },
               "resolves_to": [
                 "higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]"
               ],
@@ -627,12 +547,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 38,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 38, "start": 29, "end": 43 }
           }
         ]
       },
@@ -649,12 +564,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 38,
-                "start": 29,
-                "end": 43
-              },
+              "position": { "line": 38, "start": 29, "end": 43 },
               "resolves_to": [ "higher_order_functions.higher_order_method" ],
               "port": "formal(arg, position=1)",
               "call_site": "38:4-38:44"
@@ -960,12 +870,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 27,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 27, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "27:8-27:23"
@@ -993,12 +898,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 30,
-              "start": 19,
-              "end": 23
-            },
+            "origin": { "line": 30, "start": 19, "end": 23 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "30:8-30:24"
@@ -1052,12 +952,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 144,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 144, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1115,12 +1010,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 61,
-              "start": 11,
-              "end": 15
-            }
+            "origin": { "line": 61, "start": 11, "end": 15 }
           }
         ]
       }
@@ -1189,12 +1079,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 79,
-              "start": 6,
-              "end": 7
-            },
+            "origin": { "line": 79, "start": 6, "end": 7 },
             "call_site": "79:4-79:8"
           }
         ]
@@ -1269,12 +1154,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 112,
-              "start": 17,
-              "end": 18
-            },
+            "origin": { "line": 112, "start": 17, "end": 18 },
             "call_site": "112:15-112:19"
           }
         ]
@@ -1324,12 +1204,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 112,
-              "start": 15,
-              "end": 19
-            }
+            "origin": { "line": 112, "start": 15, "end": 19 }
           }
         ]
       }
@@ -1379,12 +1254,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 114,
-              "start": 17,
-              "end": 18
-            },
+            "origin": { "line": 114, "start": 17, "end": 18 },
             "call_site": "114:15-114:19"
           }
         ]
@@ -1434,12 +1304,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 114,
-              "start": 15,
-              "end": 19
-            }
+            "origin": { "line": 114, "start": 15, "end": 19 }
           }
         ]
       }
@@ -1488,12 +1353,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 10,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 10, "start": 15, "end": 18 },
             "call_site": "10:4-10:19"
           }
         ]
@@ -1537,12 +1397,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 18,
-                "start": 6,
-                "end": 9
-              },
+              "position": { "line": 18, "start": 6, "end": 9 },
               "resolves_to": [ "higher_order_functions.C.method_to_sink" ],
               "port": "formal(arg, position=1)",
               "call_site": "18:4-18:10"
@@ -1570,12 +1425,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 18,
-                "start": 6,
-                "end": 9
-              },
+              "position": { "line": 18, "start": 6, "end": 9 },
               "resolves_to": [ "higher_order_functions.goes_to_sink" ],
               "port": "formal(arg, position=0)",
               "call_site": "18:4-18:10"
@@ -1604,12 +1454,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 48,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 48, "start": 15, "end": 18 },
             "call_site": "48:4-48:19"
           }
         ]
@@ -1633,12 +1478,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 48,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 48, "start": 15, "end": 18 },
             "call_site": "48:4-48:19"
           },
           {
@@ -1650,12 +1490,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 47,
-                "start": 6,
-                "end": 9
-              },
+              "position": { "line": 47, "start": 6, "end": 9 },
               "resolves_to": [ "higher_order_functions.goes_to_sink" ],
               "port": "formal(arg, position=0)",
               "call_site": "47:4-47:10"
@@ -1685,12 +1520,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 34,
-                "start": 44,
-                "end": 47
-              },
+              "position": { "line": 34, "start": 44, "end": 47 },
               "resolves_to": [
                 "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink]"
               ],
@@ -1721,12 +1551,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 103,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 103, "start": 19, "end": 22 },
             "call_site": "103:8-103:23"
           }
         ]
@@ -1756,12 +1581,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 70, "start": 24, "end": 25 } ],
-            "origin": {
-              "filename": "higher_order_functions.py",
-              "line": 69,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 69, "start": 8, "end": 22 }
           }
         ]
       }
@@ -1787,12 +1607,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 75,
-                "start": 11,
-                "end": 33
-              },
+              "position": { "line": 75, "start": 11, "end": 33 },
               "resolves_to": [
                 "higher_order_functions.apply[formal(f, position=0)=_test_source]"
               ],
@@ -1856,12 +1671,7 @@
             ],
             "tito_positions": [ { "line": 151, "start": 24, "end": 25 } ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 151,
-                "start": 24,
-                "end": 25
-              },
+              "position": { "line": 151, "start": 24, "end": 25 },
               "resolves_to": [
                 "higher_order_functions.CallableSource.__call__"
               ],
@@ -1917,12 +1727,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 131,
-                "start": 46,
-                "end": 47
-              },
+              "position": { "line": 131, "start": 46, "end": 47 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=_test_sink, formal(g, position=1)=higher_order_functions.safe]"
               ],
@@ -1943,12 +1748,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 133,
-                "start": 47,
-                "end": 48
-              },
+              "position": { "line": 133, "start": 47, "end": 48 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=_test_sink, formal(g, position=1)=higher_order_functions.safe]"
               ],
@@ -1969,12 +1769,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 135,
-                "start": 46,
-                "end": 47
-              },
+              "position": { "line": 135, "start": 46, "end": 47 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_sink]"
               ],
@@ -1995,12 +1790,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 136,
-                "start": 47,
-                "end": 48
-              },
+              "position": { "line": 136, "start": 47, "end": 48 },
               "resolves_to": [
                 "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_sink]"
               ],
@@ -2035,12 +1825,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 107,
-                "start": 20,
-                "end": 21
-              },
+              "position": { "line": 107, "start": 20, "end": 21 },
               "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
               "call_site": "107:4-107:22"
@@ -2060,12 +1845,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 107,
-                "start": 17,
-                "end": 18
-              },
+              "position": { "line": 107, "start": 17, "end": 18 },
               "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
               "call_site": "107:4-107:22"
@@ -2088,12 +1868,7 @@
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
-              "position": {
-                "filename": "higher_order_functions.py",
-                "line": 107,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 107, "start": 14, "end": 15 },
               "resolves_to": [ "higher_order_functions.sink_args" ],
               "port": "formal(*args, position=0)[*]",
               "call_site": "107:4-107:22"

@@ -18,12 +18,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 25,
-              "start": 11,
-              "end": 31
-            }
+            "origin": { "line": 25, "start": 11, "end": 31 }
           }
         ]
       }
@@ -49,12 +44,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 15,
-              "start": 11,
-              "end": 47
-            }
+            "origin": { "line": 15, "start": 11, "end": 47 }
           }
         ]
       }
@@ -80,12 +70,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 20,
-              "start": 11,
-              "end": 31
-            }
+            "origin": { "line": 20, "start": 11, "end": 31 }
           }
         ]
       }
@@ -111,12 +96,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 10,
-              "start": 11,
-              "end": 28
-            }
+            "origin": { "line": 10, "start": 11, "end": 28 }
           }
         ]
       }
@@ -148,12 +128,7 @@
                 "kind": "IPAddress"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 33,
-              "start": 11,
-              "end": 30
-            }
+            "origin": { "line": 33, "start": 11, "end": 30 }
           }
         ]
       }
@@ -226,12 +201,7 @@
                 "kind": "GoogleAPIKey"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 45,
-              "start": 21,
-              "end": 62
-            }
+            "origin": { "line": 45, "start": 21, "end": 62 }
           }
         ]
       }
@@ -257,12 +227,7 @@
                 "kind": "GoogleAPIKey"
               }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 40,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 40, "start": 21, "end": 35 }
           }
         ]
       }
@@ -293,12 +258,7 @@
               { "line": 66, "start": 11, "end": 16 },
               { "line": 66, "start": 11, "end": 23 }
             ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 66,
-              "start": 11,
-              "end": 16
-            }
+            "origin": { "line": 66, "start": 11, "end": 16 }
           },
           {
             "kinds": [
@@ -311,12 +271,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 66, "start": 26, "end": 29 } ],
-            "origin": {
-              "filename": "implicit_sources.py",
-              "line": 66,
-              "start": 26,
-              "end": 29
-            }
+            "origin": { "line": 66, "start": 26, "end": 29 }
           }
         ]
       }

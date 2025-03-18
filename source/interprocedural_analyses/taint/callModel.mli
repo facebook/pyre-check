@@ -83,7 +83,7 @@ val sink_trees_of_argument
   transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
   model:Model.t ->
   call_site:CallSite.t ->
-  location:Location.WithModule.t ->
+  location:Location.t ->
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
   sink_matches:AccessPath.argument_match list ->
@@ -96,7 +96,7 @@ val source_tree_of_argument
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
   model:Model.t ->
   call_site:CallSite.t ->
-  location:Location.WithModule.t ->
+  location:Location.t ->
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
   is_class_method:bool ->
@@ -154,21 +154,19 @@ module StringFormatCall : sig
     :  callee:Target.t ->
     pyre_in_context:PyrePysaEnvironment.InContext.t ->
     call_site:CallSite.t ->
-    location:Location.WithModule.t ->
+    location:Location.t ->
     BackwardState.Tree.t ->
     BackwardState.Tree.t
 
   val implicit_string_literal_sources
     :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
     implicit_sources:TaintConfiguration.implicit_sources ->
-    module_reference:Reference.t ->
     string_literal ->
     ForwardTaint.t
 
   val implicit_string_literal_sinks
     :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
     implicit_sinks:TaintConfiguration.implicit_sinks ->
-    module_reference:Reference.t ->
     string_literal ->
     BackwardTaint.t
 
@@ -196,7 +194,7 @@ val arguments_for_string_format
 (* At a call site, extract the returned sink from `sink_model` of `callee` *)
 val return_sink
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
-  location:Location.WithModule.t ->
+  location:Location.t ->
   callee:Target.t ->
   sink_model:BackwardState.t ->
   BackwardState.Tree.t

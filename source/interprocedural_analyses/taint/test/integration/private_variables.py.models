@@ -30,12 +30,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 70, "start": 30, "end": 44 } ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 70,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 70, "start": 30, "end": 44 }
           }
         ]
       },
@@ -50,12 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 70,
-              "start": 15,
-              "end": 60
-            },
+            "origin": { "line": 70, "start": 15, "end": 60 },
             "call_site": "70:4-70:61"
           }
         ]
@@ -104,12 +94,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 50, "start": 48, "end": 62 } ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 50,
-              "start": 48,
-              "end": 62
-            }
+            "origin": { "line": 50, "start": 48, "end": 62 }
           }
         ]
       },
@@ -130,12 +115,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 50,
-                "start": 32,
-                "end": 64
-              },
+              "position": { "line": 50, "start": 32, "end": 64 },
               "resolves_to": [
                 "private_variables.Simple.expand_subexpression"
               ],
@@ -197,12 +177,7 @@
               { "line": 66, "start": 15, "end": 44 },
               { "line": 66, "start": 29, "end": 43 }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 66,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 66, "start": 29, "end": 43 }
           }
         ]
       },
@@ -217,12 +192,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 66,
-              "start": 15,
-              "end": 62
-            },
+            "origin": { "line": 66, "start": 15, "end": 62 },
             "call_site": "66:4-66:63"
           }
         ]
@@ -280,12 +250,7 @@
               { "line": 64, "start": 15, "end": 44 },
               { "line": 64, "start": 29, "end": 43 }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 64,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 64, "start": 29, "end": 43 }
           }
         ]
       },
@@ -300,12 +265,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 64,
-              "start": 15,
-              "end": 62
-            },
+            "origin": { "line": 64, "start": 15, "end": 62 },
             "call_site": "64:4-64:63"
           }
         ]
@@ -363,12 +323,7 @@
               { "line": 62, "start": 15, "end": 44 },
               { "line": 62, "start": 29, "end": 43 }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 62,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 62, "start": 29, "end": 43 }
           }
         ]
       },
@@ -383,12 +338,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 62,
-              "start": 15,
-              "end": 61
-            },
+            "origin": { "line": 62, "start": 15, "end": 61 },
             "call_site": "62:4-62:62"
           }
         ]
@@ -446,12 +396,7 @@
               { "line": 60, "start": 15, "end": 45 },
               { "line": 60, "start": 30, "end": 44 }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 60,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 60, "start": 30, "end": 44 }
           }
         ]
       },
@@ -466,12 +411,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 60,
-              "start": 15,
-              "end": 63
-            },
+            "origin": { "line": 60, "start": 15, "end": 63 },
             "call_site": "60:4-60:64"
           }
         ]
@@ -529,12 +469,7 @@
               { "line": 58, "start": 15, "end": 45 },
               { "line": 58, "start": 30, "end": 44 }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 58,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 58, "start": 30, "end": 44 }
           }
         ]
       },
@@ -549,12 +484,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 58,
-              "start": 15,
-              "end": 63
-            },
+            "origin": { "line": 58, "start": 15, "end": 63 },
             "call_site": "58:4-58:64"
           }
         ]
@@ -612,12 +542,7 @@
               { "line": 56, "start": 15, "end": 45 },
               { "line": 56, "start": 30, "end": 44 }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 56,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 56, "start": 30, "end": 44 }
           }
         ]
       },
@@ -632,12 +557,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 56,
-              "start": 15,
-              "end": 62
-            },
+            "origin": { "line": 56, "start": 15, "end": 62 },
             "call_site": "56:4-56:63"
           }
         ]
@@ -685,12 +605,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 136,
-              "start": 53,
-              "end": 67
-            }
+            "origin": { "line": 136, "start": 53, "end": 67 }
           }
         ]
       },
@@ -711,12 +626,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 136,
-                "start": 53,
-                "end": 67
-              },
+              "position": { "line": 136, "start": 53, "end": 67 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_unmangled"
               ],
@@ -764,12 +674,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 138,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 138, "start": 49, "end": 63 }
           }
         ]
       },
@@ -790,12 +695,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 138,
-                "start": 49,
-                "end": 63
-              },
+              "position": { "line": 138, "start": 49, "end": 63 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_query"
               ],
@@ -843,12 +743,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 134,
-              "start": 51,
-              "end": 65
-            }
+            "origin": { "line": 134, "start": 51, "end": 65 }
           }
         ]
       },
@@ -869,12 +764,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 134,
-                "start": 51,
-                "end": 65
-              },
+              "position": { "line": 134, "start": 51, "end": 65 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSinkModels.set_model_mangled"
               ],
@@ -926,12 +816,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 112,
-                "start": 15,
-                "end": 63
-              },
+              "position": { "line": 112, "start": 15, "end": 63 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSourceModels.get_model_query"
               ],
@@ -953,12 +838,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 112,
-              "start": 15,
-              "end": 63
-            },
+            "origin": { "line": 112, "start": 15, "end": 63 },
             "call_site": "112:4-112:64"
           }
         ]
@@ -1003,12 +883,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 110,
-                "start": 15,
-                "end": 67
-              },
+              "position": { "line": 110, "start": 15, "end": 67 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSourceModels.get_model_unmangled"
               ],
@@ -1030,12 +905,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 110,
-              "start": 15,
-              "end": 67
-            },
+            "origin": { "line": 110, "start": 15, "end": 67 },
             "call_site": "110:4-110:68"
           }
         ]
@@ -1080,12 +950,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 108,
-                "start": 15,
-                "end": 65
-              },
+              "position": { "line": 108, "start": 15, "end": 65 },
               "resolves_to": [
                 "private_variables.PrivateAttributeSourceModels.get_model_mangled"
               ],
@@ -1107,12 +972,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 108,
-              "start": 15,
-              "end": 65
-            },
+            "origin": { "line": 108, "start": 15, "end": 65 },
             "call_site": "108:4-108:66"
           }
         ]
@@ -1155,12 +1015,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 46, "start": 18, "end": 32 } ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 46,
-              "start": 18,
-              "end": 32
-            }
+            "origin": { "line": 46, "start": 18, "end": 32 }
           }
         ]
       },
@@ -1177,12 +1032,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 46,
-                "start": 4,
-                "end": 33
-              },
+              "position": { "line": 46, "start": 4, "end": 33 },
               "resolves_to": [ "private_variables.Simple.public_into_sink" ],
               "port": "formal(self, position=0)[value]",
               "call_site": "46:4-46:52"
@@ -1234,12 +1084,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 43, "start": 19, "end": 33 } ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 43,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 43, "start": 19, "end": 33 }
           }
         ]
       },
@@ -1256,12 +1101,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 43,
-                "start": 4,
-                "end": 34
-              },
+              "position": { "line": 43, "start": 4, "end": 34 },
               "resolves_to": [ "private_variables.Simple.private_into_sink" ],
               "port": "formal(self, position=0)[_Simple__value]",
               "call_site": "43:4-43:54"
@@ -1313,12 +1153,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 39, "start": 19, "end": 33 } ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 39,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 39, "start": 19, "end": 33 }
           }
         ]
       },
@@ -1335,12 +1170,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "private_variables.py",
-                "line": 39,
-                "start": 4,
-                "end": 34
-              },
+              "position": { "line": 39, "start": 4, "end": 34 },
               "resolves_to": [ "private_variables.Simple.private_into_sink" ],
               "port": "formal(self, position=0)[_Simple__value]",
               "call_site": "39:4-39:54"
@@ -1507,12 +1337,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 82,
-              "start": 19,
-              "end": 28
-            },
+            "origin": { "line": 82, "start": 19, "end": 28 },
             "call_site": "82:8-82:29"
           }
         ]
@@ -1542,12 +1367,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 123,
-              "start": 8,
-              "end": 28
-            },
+            "origin": { "line": 123, "start": 8, "end": 28 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1578,12 +1398,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 129,
-              "start": 8,
-              "end": 26
-            },
+            "origin": { "line": 129, "start": 8, "end": 26 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1614,12 +1429,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 126,
-              "start": 8,
-              "end": 30
-            },
+            "origin": { "line": 126, "start": 8, "end": 30 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
@@ -1650,12 +1460,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 97,
-              "start": 15,
-              "end": 35
-            },
+            "origin": { "line": 97, "start": 15, "end": 35 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1697,12 +1502,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 103,
-              "start": 15,
-              "end": 33
-            },
+            "origin": { "line": 103, "start": 15, "end": 33 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1744,12 +1544,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 100,
-              "start": 15,
-              "end": 37
-            },
+            "origin": { "line": 100, "start": 15, "end": 37 },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
           }
@@ -1828,12 +1623,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 24,
-              "start": 19,
-              "end": 36
-            },
+            "origin": { "line": 24, "start": 19, "end": 36 },
             "call_site": "24:8-24:37"
           }
         ]
@@ -1955,12 +1745,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 16,
-              "start": 19,
-              "end": 31
-            },
+            "origin": { "line": 16, "start": 19, "end": 31 },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "call_site": "16:8-16:32"
@@ -1988,12 +1773,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "private_variables.py",
-              "line": 19,
-              "start": 19,
-              "end": 29
-            },
+            "origin": { "line": 19, "start": 19, "end": 29 },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "call_site": "19:8-19:30"

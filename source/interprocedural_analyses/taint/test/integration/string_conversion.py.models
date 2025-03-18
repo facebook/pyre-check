@@ -33,12 +33,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 114, "start": 12, "end": 13 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 110,
-              "start": 10,
-              "end": 21
-            }
+            "origin": { "line": 110, "start": 10, "end": 21 }
           }
         ]
       },
@@ -52,12 +47,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 114,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 114, "start": 9, "end": 15 },
             "call_site": "114:4-114:16"
           }
         ]
@@ -115,12 +105,7 @@
               { "line": 112, "start": 12, "end": 18 },
               { "line": 112, "start": 16, "end": 17 }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 110,
-              "start": 10,
-              "end": 21
-            }
+            "origin": { "line": 110, "start": 10, "end": 21 }
           }
         ]
       },
@@ -134,12 +119,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 112,
-              "start": 9,
-              "end": 20
-            },
+            "origin": { "line": 112, "start": 9, "end": 20 },
             "call_site": "112:4-112:21"
           }
         ]
@@ -196,12 +176,7 @@
             ],
             "tito_positions": [ { "line": 52, "start": 18, "end": 29 } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 52,
-                "start": 18,
-                "end": 29
-              },
+              "position": { "line": 52, "start": 18, "end": 29 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -220,12 +195,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 52,
-              "start": 9,
-              "end": 37
-            },
+            "origin": { "line": 52, "start": 9, "end": 37 },
             "call_site": "52:4-52:38"
           }
         ]
@@ -279,12 +249,7 @@
             ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 47,
-                "start": 18,
-                "end": 19
-              },
+              "position": { "line": 47, "start": 18, "end": 19 },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
             },
@@ -303,12 +268,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 47,
-              "start": 9,
-              "end": 27
-            },
+            "origin": { "line": 47, "start": 9, "end": 27 },
             "call_site": "47:4-47:28"
           }
         ]
@@ -361,12 +321,7 @@
             ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 42,
-                "start": 18,
-                "end": 19
-              },
+              "position": { "line": 42, "start": 18, "end": 19 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -385,12 +340,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 42,
-              "start": 9,
-              "end": 27
-            },
+            "origin": { "line": 42, "start": 9, "end": 27 },
             "call_site": "42:4-42:28"
           }
         ]
@@ -445,12 +395,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 95, "start": 12, "end": 13 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 92,
-              "start": 17,
-              "end": 28
-            }
+            "origin": { "line": 92, "start": 17, "end": 28 }
           },
           {
             "kinds": [
@@ -467,12 +412,7 @@
             ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 95,
-                "start": 12,
-                "end": 13
-              },
+              "position": { "line": 95, "start": 12, "end": 13 },
               "resolves_to": [ "string_conversion.C.__str__" ],
               "port": "result"
             },
@@ -491,12 +431,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 95,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 95, "start": 9, "end": 15 },
             "call_site": "95:4-95:16"
           }
         ]
@@ -552,12 +487,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 105, "start": 12, "end": 13 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 103,
-              "start": 8,
-              "end": 19
-            }
+            "origin": { "line": 103, "start": 8, "end": 19 }
           }
         ]
       },
@@ -571,12 +501,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 105,
-              "start": 9,
-              "end": 18
-            },
+            "origin": { "line": 105, "start": 9, "end": 18 },
             "call_site": "105:4-105:19"
           }
         ]
@@ -629,12 +554,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 195,
-                "start": 9,
-                "end": 15
-              },
+              "position": { "line": 195, "start": 9, "end": 15 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -653,12 +573,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 195,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 195, "start": 9, "end": 15 },
             "call_site": "195:4-195:16"
           }
         ]
@@ -711,12 +626,7 @@
               { "line": 64, "start": 12, "end": 37 },
               { "line": 64, "start": 14, "end": 36 }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 64,
-              "start": 14,
-              "end": 25
-            }
+            "origin": { "line": 64, "start": 14, "end": 25 }
           }
         ]
       },
@@ -730,12 +640,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 64,
-              "start": 9,
-              "end": 39
-            },
+            "origin": { "line": 64, "start": 9, "end": 39 },
             "call_site": "64:4-64:40"
           }
         ]
@@ -788,12 +693,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 32,
-                "start": 9,
-                "end": 16
-              },
+              "position": { "line": 32, "start": 9, "end": 16 },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
             },
@@ -812,12 +712,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 32,
-              "start": 9,
-              "end": 16
-            },
+            "origin": { "line": 32, "start": 9, "end": 16 },
             "call_site": "32:4-32:17"
           }
         ]
@@ -865,12 +760,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 37,
-                "start": 9,
-                "end": 15
-              },
+              "position": { "line": 37, "start": 9, "end": 15 },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
             },
@@ -889,12 +779,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 37,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 37, "start": 9, "end": 15 },
             "call_site": "37:4-37:16"
           }
         ]
@@ -942,12 +827,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 27,
-                "start": 9,
-                "end": 15
-              },
+              "position": { "line": 27, "start": 9, "end": 15 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -966,12 +846,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 27,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 27, "start": 9, "end": 15 },
             "call_site": "27:4-27:16"
           }
         ]
@@ -1038,12 +913,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
@@ -1075,12 +945,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            },
+            "origin": { "line": -1, "start": -1, "end": -1 },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
@@ -1243,12 +1108,7 @@
                 "kind": "UserControlled"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 87,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 87, "start": 15, "end": 21 },
             "caller_interval": [ { "lower": 10, "upper": 11 } ],
             "is_self_call": false
           }
@@ -1292,12 +1152,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 170, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 169,
-              "start": 12,
-              "end": 26
-            },
+            "origin": { "line": 169, "start": 12, "end": 26 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -1331,12 +1186,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 22,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 22, "start": 15, "end": 26 },
             "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
@@ -1370,12 +1220,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 17,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 17, "start": 15, "end": 26 },
             "caller_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false
           }
@@ -1587,12 +1432,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 143, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 142,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 142, "start": 23, "end": 37 }
           }
         ]
       }
@@ -1623,12 +1463,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 148, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 147,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 147, "start": 23, "end": 37 }
           }
         ]
       }
@@ -1660,12 +1495,7 @@
             ],
             "tito_positions": [ { "line": 188, "start": 11, "end": 17 } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 188,
-                "start": 11,
-                "end": 17
-              },
+              "position": { "line": 188, "start": 11, "end": 17 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -1698,12 +1528,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 73, "start": 12, "end": 13 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 73,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 73, "start": 9, "end": 15 },
             "call_site": "73:4-73:16"
           }
         ]
@@ -1744,12 +1569,7 @@
             ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 73,
-                "start": 12,
-                "end": 13
-              },
+              "position": { "line": 73, "start": 12, "end": 13 },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
             },
@@ -1768,12 +1588,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 73,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 73, "start": 9, "end": 15 },
             "call_site": "73:4-73:16"
           }
         ]
@@ -1816,12 +1631,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 99, "start": 12, "end": 13 } ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 99,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 99, "start": 9, "end": 15 },
             "call_site": "99:4-99:16"
           }
         ]
@@ -1859,12 +1669,7 @@
             ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 99,
-                "start": 12,
-                "end": 13
-              },
+              "position": { "line": 99, "start": 12, "end": 13 },
               "resolves_to": [ "string_conversion.C.__str__" ],
               "port": "result"
             },
@@ -1883,12 +1688,7 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "origin": {
-              "filename": "string_conversion.py",
-              "line": 99,
-              "start": 9,
-              "end": 15
-            },
+            "origin": { "line": 99, "start": 9, "end": 15 },
             "call_site": "99:4-99:16"
           }
         ]
@@ -1918,12 +1718,7 @@
             "kinds": [ { "length": 1, "kind": "UserControlled" } ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 120,
-                "start": 17,
-                "end": 23
-              },
+              "position": { "line": 120, "start": 17, "end": 23 },
               "resolves_to": [ "string_conversion.C.__str__" ],
               "port": "result"
             },
@@ -2001,12 +1796,7 @@
             ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
-              "position": {
-                "filename": "string_conversion.py",
-                "line": 164,
-                "start": 14,
-                "end": 15
-              },
+              "position": { "line": 164, "start": 14, "end": 15 },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
             },

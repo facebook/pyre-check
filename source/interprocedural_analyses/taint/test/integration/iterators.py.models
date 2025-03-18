@@ -30,12 +30,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 34, "start": 23, "end": 62 } ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 34,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 34, "start": 31, "end": 45 }
           }
         ]
       },
@@ -50,12 +45,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 36,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 36, "start": 15, "end": 23 },
             "call_site": "36:4-36:24"
           }
         ]
@@ -108,12 +98,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 34, "start": 23, "end": 62 } ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 34,
-              "start": 31,
-              "end": 45
-            }
+            "origin": { "line": 34, "start": 31, "end": 45 }
           }
         ]
       },
@@ -128,12 +113,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 35,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 35, "start": 15, "end": 16 },
             "call_site": "35:4-35:17"
           }
         ]
@@ -182,12 +162,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 31, "start": 23, "end": 37 } ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 31,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 31, "start": 23, "end": 37 }
           }
         ]
       },
@@ -202,12 +177,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 32,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 32, "start": 15, "end": 16 },
             "call_site": "32:4-32:17"
           }
         ]
@@ -252,12 +222,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 28,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 28, "start": 9, "end": 23 }
           }
         ]
       },
@@ -272,12 +237,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 29,
-              "start": 15,
-              "end": 28
-            },
+            "origin": { "line": 29, "start": 15, "end": 28 },
             "call_site": "29:4-29:29"
           }
         ]
@@ -323,12 +283,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "bad" }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 20,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 20, "start": 24, "end": 38 }
           }
         ]
       },
@@ -343,12 +298,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 22,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 22, "start": 15, "end": 23 },
             "call_site": "22:4-22:24"
           }
         ]
@@ -394,12 +344,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 14,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 14, "start": 19, "end": 33 }
           }
         ]
       },
@@ -414,12 +359,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 18,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 18, "start": 15, "end": 22 },
             "call_site": "18:4-18:23"
           }
         ]
@@ -462,12 +402,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 14,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 14, "start": 19, "end": 33 }
           }
         ]
       },
@@ -482,12 +417,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 17,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 17, "start": 15, "end": 22 },
             "call_site": "17:4-17:23"
           }
         ]
@@ -530,12 +460,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 14,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 14, "start": 19, "end": 33 }
           }
         ]
       },
@@ -550,12 +475,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 16,
-              "start": 15,
-              "end": 22
-            },
+            "origin": { "line": 16, "start": 15, "end": 22 },
             "call_site": "16:4-16:23"
           }
         ]
@@ -598,12 +518,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 11,
-              "start": 16,
-              "end": 30
-            }
+            "origin": { "line": 11, "start": 16, "end": 30 }
           }
         ]
       },
@@ -618,12 +533,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 12,
-              "start": 15,
-              "end": 35
-            },
+            "origin": { "line": 12, "start": 15, "end": 35 },
             "call_site": "12:4-12:36"
           }
         ]
@@ -711,12 +621,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 52,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 52, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }
@@ -745,12 +650,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "iterators.py",
-              "line": 42,
-              "start": 21,
-              "end": 35
-            },
+            "origin": { "line": 42, "start": 21, "end": 35 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }

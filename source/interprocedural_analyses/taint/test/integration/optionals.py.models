@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "optionals.py",
-              "line": 24,
-              "start": 32,
-              "end": 46
-            }
+            "origin": { "line": 24, "start": 32, "end": 46 }
           }
         ]
       },
@@ -46,12 +41,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "optionals.py",
-                "line": 24,
-                "start": 32,
-                "end": 46
-              },
+              "position": { "line": 24, "start": 32, "end": 46 },
               "resolves_to": [ "optionals.Client.offer" ],
               "port": "formal(message, position=1)",
               "call_site": "24:4-24:47"
@@ -359,12 +349,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "optionals.py",
-              "line": 12,
-              "start": 19,
-              "end": 26
-            },
+            "origin": { "line": 12, "start": 19, "end": 26 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "12:8-12:27"

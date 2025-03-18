@@ -27,12 +27,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 27, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 26,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 26, "start": 8, "end": 22 }
           }
         ]
       },
@@ -46,12 +41,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 27,
-              "start": 4,
-              "end": 10
-            }
+            "origin": { "line": 27, "start": 4, "end": 10 }
           }
         ]
       }
@@ -91,12 +81,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 17, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 16,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 16, "start": 8, "end": 22 }
           }
         ]
       },
@@ -112,12 +97,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 17,
-              "start": 4,
-              "end": 12
-            }
+            "origin": { "line": 17, "start": 4, "end": 12 }
           }
         ]
       }
@@ -157,12 +137,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 66, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 65,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 65, "start": 14, "end": 28 }
           },
           {
             "kinds": [
@@ -177,12 +152,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 66, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 65,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 65, "start": 34, "end": 48 }
           }
         ]
       },
@@ -198,12 +168,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 66,
-              "start": 4,
-              "end": 18
-            }
+            "origin": { "line": 66, "start": 4, "end": 18 }
           }
         ]
       }
@@ -243,12 +208,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 61, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 60,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 60, "start": 8, "end": 22 }
           }
         ]
       },
@@ -264,12 +224,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 61,
-              "start": 18,
-              "end": 25
-            }
+            "origin": { "line": 61, "start": 18, "end": 25 }
           }
         ]
       }
@@ -312,12 +267,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 36, "start": 13, "end": 17 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 35,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 35, "start": 8, "end": 22 }
           }
         ]
       },
@@ -333,12 +283,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 36,
-              "start": 4,
-              "end": 10
-            }
+            "origin": { "line": 36, "start": 4, "end": 10 }
           }
         ]
       }
@@ -381,12 +326,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 45, "start": 17, "end": 18 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 44,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 44, "start": 8, "end": 22 }
           }
         ]
       },
@@ -402,12 +342,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 45,
-              "start": 4,
-              "end": 14
-            }
+            "origin": { "line": 45, "start": 4, "end": 14 }
           }
         ]
       }
@@ -443,12 +378,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 103,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 103, "start": 34, "end": 48 }
           }
         ]
       },
@@ -469,12 +399,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "implicit_sinks.py",
-                "line": 103,
-                "start": 34,
-                "end": 48
-              },
+              "position": { "line": 103, "start": 34, "end": 48 },
               "resolves_to": [
                 "implicit_sinks.string_literal_arguments_sink"
               ],
@@ -548,12 +473,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 52, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 52,
-              "start": 4,
-              "end": 19
-            }
+            "origin": { "line": 52, "start": 4, "end": 19 }
           }
         ]
       }
@@ -583,12 +503,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 22, "start": 18, "end": 19 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 22,
-              "start": 4,
-              "end": 10
-            }
+            "origin": { "line": 22, "start": 4, "end": 10 }
           }
         ]
       }
@@ -618,12 +533,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 12, "start": 8, "end": 9 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 12,
-              "start": 4,
-              "end": 12
-            }
+            "origin": { "line": 12, "start": 4, "end": 12 }
           }
         ]
       }
@@ -653,12 +563,7 @@
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 56, "start": 14, "end": 15 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 56,
-              "start": 18,
-              "end": 25
-            }
+            "origin": { "line": 56, "start": 18, "end": 25 }
           }
         ]
       }
@@ -688,12 +593,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 31, "start": 13, "end": 17 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 31,
-              "start": 4,
-              "end": 10
-            }
+            "origin": { "line": 31, "start": 4, "end": 10 }
           }
         ]
       }
@@ -723,12 +623,7 @@
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 40, "start": 17, "end": 18 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 40,
-              "start": 4,
-              "end": 14
-            }
+            "origin": { "line": 40, "start": 4, "end": 14 }
           }
         ]
       }
@@ -758,12 +653,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 95, "start": 8, "end": 16 } ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 95,
-              "start": 8,
-              "end": 39
-            }
+            "origin": { "line": 95, "start": 8, "end": 39 }
           }
         ]
       }
@@ -803,12 +693,7 @@
               { "line": 95, "start": 37, "end": 38 },
               { "line": 99, "start": 8, "end": 9 }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 93,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 93, "start": 8, "end": 22 }
           }
         ]
       },
@@ -822,12 +707,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 95,
-              "start": 8,
-              "end": 39
-            }
+            "origin": { "line": 95, "start": 8, "end": 39 }
           },
           {
             "kinds": [
@@ -838,12 +718,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "implicit_sinks.py",
-              "line": 99,
-              "start": 12,
-              "end": 23
-            }
+            "origin": { "line": 99, "start": 12, "end": 23 }
           }
         ]
       }

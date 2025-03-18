@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 450,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 450, "start": 8, "end": 22 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 452,
-              "start": 21,
-              "end": 22
-            },
+            "origin": { "line": 452, "start": 21, "end": 22 },
             "call_site": "452:10-452:23"
           }
         ]
@@ -96,12 +86,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 222,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 222, "start": 9, "end": 23 }
           }
         ]
       },
@@ -116,12 +101,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 223,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 223, "start": 15, "end": 16 },
             "call_site": "223:4-223:17"
           }
         ]
@@ -171,12 +151,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 228,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 228, "start": 6, "end": 20 }
           }
         ]
       },
@@ -191,12 +166,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 229,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 229, "start": 15, "end": 16 },
             "call_site": "229:4-229:17"
           }
         ]
@@ -245,12 +215,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 478,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 478, "start": 15, "end": 29 }
           }
         ]
       },
@@ -265,12 +230,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 480,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 480, "start": 15, "end": 19 },
             "call_site": "480:4-480:20"
           }
         ]
@@ -319,12 +279,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 472,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 472, "start": 12, "end": 26 }
           }
         ]
       },
@@ -339,12 +294,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 473,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 473, "start": 15, "end": 19 },
             "call_site": "473:4-473:20"
           }
         ]
@@ -400,12 +350,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 499, "start": 13, "end": 46 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 499,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 499, "start": 30, "end": 44 }
           }
         ]
       },
@@ -420,12 +365,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 502,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 502, "start": 15, "end": 21 },
             "call_site": "502:4-502:22"
           }
         ]
@@ -486,12 +426,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 499, "start": 13, "end": 46 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 499,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 499, "start": 30, "end": 44 }
           }
         ]
       },
@@ -506,12 +441,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 501,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 501, "start": 15, "end": 21 },
             "call_site": "501:4-501:22"
           }
         ]
@@ -572,12 +502,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 499, "start": 13, "end": 46 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 499,
-              "start": 30,
-              "end": 44
-            }
+            "origin": { "line": 499, "start": 30, "end": 44 }
           }
         ]
       },
@@ -592,12 +517,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 500,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 500, "start": 15, "end": 21 },
             "call_site": "500:4-500:22"
           }
         ]
@@ -658,12 +578,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 494, "start": 13, "end": 36 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 494,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 494, "start": 20, "end": 34 }
           }
         ]
       },
@@ -678,12 +593,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 496,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 496, "start": 15, "end": 21 },
             "call_site": "496:4-496:22"
           }
         ]
@@ -744,12 +654,7 @@
               { "always-via": "broadening" }
             ],
             "tito_positions": [ { "line": 494, "start": 13, "end": 36 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 494,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 494, "start": 20, "end": 34 }
           }
         ]
       },
@@ -764,12 +669,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 495,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 495, "start": 15, "end": 21 },
             "call_site": "495:4-495:22"
           }
         ]
@@ -828,12 +728,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 485, "start": 15, "end": 36 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 485,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 485, "start": 21, "end": 35 }
           }
         ]
       },
@@ -848,12 +743,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 488,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 488, "start": 15, "end": 21 },
             "call_site": "488:4-488:22"
           }
         ]
@@ -908,12 +798,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 485, "start": 15, "end": 36 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 485,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 485, "start": 21, "end": 35 }
           }
         ]
       },
@@ -928,12 +813,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 486,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 486, "start": 15, "end": 26 },
             "call_site": "486:4-486:27"
           }
         ]
@@ -983,12 +863,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 168,
-              "start": 24,
-              "end": 38
-            }
+            "origin": { "line": 168, "start": 24, "end": 38 }
           }
         ]
       },
@@ -1003,12 +878,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 170,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 170, "start": 15, "end": 31 },
             "call_site": "170:4-170:32"
           }
         ]
@@ -1054,12 +924,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 87,
-              "start": 39,
-              "end": 53
-            }
+            "origin": { "line": 87, "start": 39, "end": 53 }
           }
         ]
       },
@@ -1081,12 +946,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "dictionary.py",
-                "line": 87,
-                "start": 33,
-                "end": 54
-              },
+              "position": { "line": 87, "start": 33, "end": 54 },
               "resolves_to": [ "dictionary.update_dictionary_indirectly" ],
               "port": "formal(arg, position=0)[*]",
               "call_site": "87:4-87:55"
@@ -1132,12 +992,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 462,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 462, "start": 6, "end": 20 }
           }
         ]
       },
@@ -1154,12 +1009,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "dictionary.py",
-                "line": 463,
-                "start": 25,
-                "end": 26
-              },
+              "position": { "line": 463, "start": 25, "end": 26 },
               "resolves_to": [ "dictionary.backward_weak_update" ],
               "port": "formal(d, position=0).**keys",
               "call_site": "463:4-463:27"
@@ -1209,12 +1059,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 462,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 462, "start": 6, "end": 20 }
           }
         ]
       },
@@ -1229,12 +1074,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 464,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 464, "start": 15, "end": 23 },
             "call_site": "464:4-464:24"
           }
         ]
@@ -1283,12 +1123,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "with_feature" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 202,
-              "start": 38,
-              "end": 52
-            }
+            "origin": { "line": 202, "start": 38, "end": 52 }
           }
         ]
       },
@@ -1303,12 +1138,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 204,
-              "start": 19,
-              "end": 39
-            },
+            "origin": { "line": 204, "start": 19, "end": 39 },
             "call_site": "204:8-204:40"
           }
         ]
@@ -1356,12 +1186,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 524, "start": 28, "end": 51 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 524,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 524, "start": 36, "end": 50 }
           }
         ]
       },
@@ -1376,12 +1201,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 524,
-              "start": 15,
-              "end": 52
-            },
+            "origin": { "line": 524, "start": 15, "end": 52 },
             "call_site": "524:4-524:53"
           }
         ]
@@ -1430,12 +1250,7 @@
               { "has": "first-index" }, { "first-index": "foo" }
             ],
             "tito_positions": [ { "line": 530, "start": 15, "end": 16 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 529,
-              "start": 16,
-              "end": 30
-            }
+            "origin": { "line": 529, "start": 16, "end": 30 }
           }
         ]
       },
@@ -1450,12 +1265,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 530,
-              "start": 15,
-              "end": 27
-            },
+            "origin": { "line": 530, "start": 15, "end": 27 },
             "call_site": "530:4-530:28"
           }
         ]
@@ -1504,12 +1314,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "bar" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 537,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 537, "start": 41, "end": 55 }
           }
         ]
       },
@@ -1524,12 +1329,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 539,
-              "start": 37,
-              "end": 45
-            },
+            "origin": { "line": 539, "start": 37, "end": 45 },
             "call_site": "539:26-539:46"
           }
         ]
@@ -1578,12 +1378,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "foo" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 537,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 537, "start": 25, "end": 39 }
           }
         ]
       },
@@ -1598,12 +1393,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 539,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 539, "start": 15, "end": 23 },
             "call_site": "539:4-539:24"
           }
         ]
@@ -1651,12 +1441,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 328, "start": 31, "end": 32 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 327,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 327, "start": 14, "end": 28 }
           }
         ]
       },
@@ -1671,12 +1456,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 328,
-              "start": 15,
-              "end": 33
-            },
+            "origin": { "line": 328, "start": 15, "end": 33 },
             "call_site": "328:4-328:34"
           }
         ]
@@ -1721,12 +1501,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 333,
-              "start": 29,
-              "end": 43
-            }
+            "origin": { "line": 333, "start": 29, "end": 43 }
           }
         ]
       },
@@ -1741,12 +1516,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 344,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 344, "start": 19, "end": 20 },
             "call_site": "344:8-344:21"
           }
         ]
@@ -1789,12 +1559,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 332,
-              "start": 22,
-              "end": 36
-            }
+            "origin": { "line": 332, "start": 22, "end": 36 }
           }
         ]
       },
@@ -1809,12 +1574,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 336,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 336, "start": 19, "end": 20 },
             "call_site": "336:8-336:21"
           }
         ]
@@ -1860,12 +1620,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 270,
-              "start": 27,
-              "end": 41
-            }
+            "origin": { "line": 270, "start": 27, "end": 41 }
           }
         ]
       },
@@ -1880,12 +1635,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 273,
-              "start": 19,
-              "end": 25
-            },
+            "origin": { "line": 273, "start": 19, "end": 25 },
             "call_site": "273:8-273:26"
           }
         ]
@@ -1935,12 +1685,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 264,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 264, "start": 20, "end": 34 }
           }
         ]
       },
@@ -1955,12 +1700,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 266,
-              "start": 15,
-              "end": 34
-            },
+            "origin": { "line": 266, "start": 15, "end": 34 },
             "call_site": "266:4-266:35"
           }
         ]
@@ -2010,12 +1750,7 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 256,
-              "start": 43,
-              "end": 57
-            }
+            "origin": { "line": 256, "start": 43, "end": 57 }
           }
         ]
       },
@@ -2030,12 +1765,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 258,
-              "start": 15,
-              "end": 38
-            },
+            "origin": { "line": 258, "start": 15, "end": 38 },
             "call_site": "258:4-258:39"
           }
         ]
@@ -2085,12 +1815,7 @@
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 313, "start": 38, "end": 52 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 313,
-              "start": 38,
-              "end": 52
-            }
+            "origin": { "line": 313, "start": 38, "end": 52 }
           }
         ]
       },
@@ -2105,12 +1830,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 313,
-              "start": 15,
-              "end": 53
-            },
+            "origin": { "line": 313, "start": 15, "end": 53 },
             "call_site": "313:4-313:54"
           }
         ]
@@ -2160,12 +1880,7 @@
               { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 318, "start": 41, "end": 55 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 318,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 318, "start": 41, "end": 55 }
           }
         ]
       },
@@ -2180,12 +1895,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 318,
-              "start": 15,
-              "end": 56
-            },
+            "origin": { "line": 318, "start": 15, "end": 56 },
             "call_site": "318:4-318:57"
           }
         ]
@@ -2231,12 +1941,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 289,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 289, "start": 15, "end": 29 }
           }
         ]
       },
@@ -2251,12 +1956,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 290,
-              "start": 43,
-              "end": 44
-            },
+            "origin": { "line": 290, "start": 43, "end": 44 },
             "call_site": "290:32-290:45"
           }
         ]
@@ -2304,12 +2004,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 74, "start": 36, "end": 50 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 74,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 74, "start": 36, "end": 50 }
           }
         ]
       },
@@ -2328,12 +2023,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 74,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 74, "start": 4, "end": 22 }
           }
         ]
       }
@@ -2637,12 +2327,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 175,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 175, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "175:8-175:23"
@@ -2670,12 +2355,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 457,
-              "start": 21,
-              "end": 22
-            },
+            "origin": { "line": 457, "start": 21, "end": 22 },
             "call_site": "457:10-457:23"
           }
         ]
@@ -2701,12 +2381,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 431,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 431, "start": 15, "end": 23 },
             "call_site": "431:4-431:24"
           }
         ]
@@ -2754,12 +2429,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "dictionary.py",
-                "line": 252,
-                "start": 33,
-                "end": 41
-              },
+              "position": { "line": 252, "start": 33, "end": 41 },
               "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
               "port": "formal(d, position=0).**keys",
               "call_site": "252:4-252:42"
@@ -2790,12 +2460,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 214,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 214, "start": 9, "end": 23 }
           }
         ]
       }
@@ -2880,12 +2545,7 @@
               { "has": "first-index" }, { "first-index": "A" }
             ],
             "tito_positions": [ { "line": 162, "start": 19, "end": 25 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 163,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 163, "start": 15, "end": 16 },
             "call_site": "163:4-163:17"
           },
           {
@@ -2900,12 +2560,7 @@
               { "has": "first-index" }, { "first-index": "a" }
             ],
             "tito_positions": [ { "line": 162, "start": 19, "end": 25 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 164,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 164, "start": 15, "end": 21 },
             "call_site": "164:4-164:22"
           }
         ]
@@ -2937,12 +2592,7 @@
               { "has": "first-index" }, { "first-index": "b" }
             ],
             "tito_positions": [ { "line": 124, "start": 19, "end": 25 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 123,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 123, "start": 14, "end": 28 }
           }
         ]
       }
@@ -2991,12 +2641,7 @@
               }
             ],
             "tito_positions": [ { "line": 145, "start": 17, "end": 31 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 145,
-              "start": 17,
-              "end": 31
-            }
+            "origin": { "line": 145, "start": 17, "end": 31 }
           }
         ]
       },
@@ -3014,12 +2659,7 @@
               }
             ],
             "tito_positions": [ { "line": 146, "start": 17, "end": 31 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 146,
-              "start": 17,
-              "end": 31
-            }
+            "origin": { "line": 146, "start": 17, "end": 31 }
           }
         ]
       },
@@ -3036,12 +2676,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 140,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 140, "start": 13, "end": 27 }
           }
         ]
       }
@@ -3070,12 +2705,7 @@
               { "has": "first-index" }, { "first-index": "c" }
             ],
             "tito_positions": [ { "line": 108, "start": 32, "end": 33 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 111,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 111, "start": 15, "end": 21 },
             "call_site": "111:4-111:22"
           }
         ]
@@ -3094,12 +2724,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "b" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 110,
-              "start": 15,
-              "end": 21
-            },
+            "origin": { "line": 110, "start": 15, "end": 21 },
             "call_site": "110:4-110:22"
           }
         ]
@@ -3128,12 +2753,7 @@
               }
             ],
             "tito_positions": [ { "line": 130, "start": 19, "end": 33 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 130,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 130, "start": 19, "end": 33 }
           }
         ]
       }
@@ -3160,12 +2780,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 48,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 48, "start": 13, "end": 27 }
           }
         ]
       }
@@ -3195,12 +2810,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 36,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 36, "start": 13, "end": 27 }
           }
         ]
       }
@@ -3225,12 +2835,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 26,
-              "start": 30,
-              "end": 33
-            },
+            "origin": { "line": 26, "start": 30, "end": 33 },
             "call_site": "26:19-26:34"
           }
         ]
@@ -3288,12 +2893,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 54,
-              "start": 18,
-              "end": 32
-            }
+            "origin": { "line": 54, "start": 18, "end": 32 }
           }
         ]
       }
@@ -3323,12 +2923,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "a" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 60,
-              "start": 18,
-              "end": 32
-            }
+            "origin": { "line": 60, "start": 18, "end": 32 }
           }
         ]
       }
@@ -3355,12 +2950,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 21,
-              "start": 19,
-              "end": 33
-            }
+            "origin": { "line": 21, "start": 19, "end": 33 }
           }
         ]
       }
@@ -3427,12 +3017,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 198,
-              "start": 20,
-              "end": 21
-            },
+            "origin": { "line": 198, "start": 20, "end": 21 },
             "call_site": "198:9-198:22"
           }
         ]
@@ -3460,12 +3045,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 189,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 189, "start": 9, "end": 23 }
           }
         ]
       }
@@ -3490,12 +3070,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 194,
-              "start": 25,
-              "end": 26
-            },
+            "origin": { "line": 194, "start": 25, "end": 26 },
             "call_site": "194:14-194:27"
           }
         ]
@@ -3523,12 +3098,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 184,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 184, "start": 14, "end": 28 }
           }
         ]
       }
@@ -3555,12 +3125,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 444,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 444, "start": 6, "end": 20 }
           }
         ]
       }
@@ -3608,12 +3173,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 241,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 241, "start": 9, "end": 23 }
           }
         ]
       }
@@ -3696,12 +3256,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 233,
-              "start": 16,
-              "end": 17
-            },
+            "origin": { "line": 233, "start": 16, "end": 17 },
             "call_site": "233:5-233:18"
           }
         ]
@@ -3753,12 +3308,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 179,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 179, "start": 6, "end": 20 }
           }
         ]
       },
@@ -3775,12 +3325,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "dictionary.py",
-                "line": 179,
-                "start": 6,
-                "end": 20
-              },
+              "position": { "line": 179, "start": 6, "end": 20 },
               "resolves_to": [ "dictionary.SpecialSetitemDict.__setitem__" ],
               "port": "formal(key, position=1)",
               "call_site": "179:4-179:25"
@@ -3827,12 +3372,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 373, "start": 15, "end": 16 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 373,
-              "start": 15,
-              "end": 36
-            },
+            "origin": { "line": 373, "start": 15, "end": 36 },
             "call_site": "373:4-373:37"
           }
         ]
@@ -3861,12 +3401,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 377,
-              "start": 15,
-              "end": 32
-            },
+            "origin": { "line": 377, "start": 15, "end": 32 },
             "call_site": "377:4-377:33"
           }
         ]
@@ -3892,12 +3427,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 351,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 351, "start": 19, "end": 20 },
             "call_site": "351:8-351:21"
           }
         ]
@@ -3923,12 +3453,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 364,
-              "start": 19,
-              "end": 20
-            },
+            "origin": { "line": 364, "start": 19, "end": 20 },
             "call_site": "364:8-364:21"
           }
         ]
@@ -3960,12 +3485,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 381, "start": 15, "end": 16 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 381,
-              "start": 15,
-              "end": 36
-            },
+            "origin": { "line": 381, "start": 15, "end": 36 },
             "call_site": "381:4-381:37"
           }
         ]
@@ -3994,12 +3514,7 @@
             "local_features": [
               { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 385,
-              "start": 15,
-              "end": 32
-            },
+            "origin": { "line": 385, "start": 15, "end": 32 },
             "call_site": "385:4-385:33"
           }
         ]
@@ -4027,12 +3542,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 368,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 368, "start": 20, "end": 34 }
           }
         ]
       }
@@ -4104,12 +3614,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 83, "start": 30, "end": 33 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 83,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 83, "start": 4, "end": 22 }
           }
         ]
       },
@@ -4130,12 +3635,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 83, "start": 30, "end": 33 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 83,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 83, "start": 4, "end": 22 }
           }
         ]
       }
@@ -4165,12 +3665,7 @@
               }
             ],
             "tito_positions": [ { "line": 78, "start": 36, "end": 37 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 78,
-              "start": 4,
-              "end": 22
-            }
+            "origin": { "line": 78, "start": 4, "end": 22 }
           },
           {
             "kinds": [
@@ -4181,12 +3676,7 @@
               }
             ],
             "tito_positions": [ { "line": 78, "start": 36, "end": 37 } ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 79,
-              "start": 15,
-              "end": 33
-            },
+            "origin": { "line": 79, "start": 15, "end": 33 },
             "call_site": "79:4-79:34"
           }
         ]
@@ -4214,12 +3704,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 436,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 436, "start": 12, "end": 26 }
           }
         ]
       },
@@ -4236,12 +3721,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "dictionary.py",
-              "line": 436,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 436, "start": 12, "end": 26 }
           }
         ]
       }

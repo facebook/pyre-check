@@ -29,12 +29,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 28,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 28, "start": 15, "end": 18 }
           }
         ]
       },
@@ -49,12 +44,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 28,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 28, "start": 15, "end": 18 },
             "call_site": "28:4-28:19"
           }
         ]
@@ -103,12 +93,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 34,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 34, "start": 15, "end": 18 }
           }
         ]
       },
@@ -123,12 +108,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 34,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 34, "start": 15, "end": 18 },
             "call_site": "34:4-34:19"
           }
         ]
@@ -177,12 +157,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 39,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 39, "start": 15, "end": 18 }
           }
         ]
       },
@@ -197,12 +172,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 39,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 39, "start": 15, "end": 18 },
             "call_site": "39:4-39:19"
           }
         ]
@@ -251,12 +221,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 44,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 44, "start": 15, "end": 18 }
           }
         ]
       },
@@ -271,12 +236,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 44,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 44, "start": 15, "end": 18 },
             "call_site": "44:4-44:19"
           }
         ]
@@ -325,12 +285,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 55,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 55, "start": 15, "end": 18 }
           }
         ]
       },
@@ -345,12 +300,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 55,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 55, "start": 15, "end": 18 },
             "call_site": "55:4-55:19"
           }
         ]
@@ -399,12 +349,7 @@
             "local_features": [
               { "always-via-type": "typing.Optional[float]" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 60,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 60, "start": 15, "end": 18 }
           }
         ]
       },
@@ -419,12 +364,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 60,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 60, "start": 15, "end": 18 },
             "call_site": "60:4-60:19"
           }
         ]
@@ -661,12 +601,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 79,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 79, "start": 15, "end": 16 },
             "call_site": "79:4-79:17"
           }
         ]
@@ -712,12 +647,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 77,
-              "start": 4,
-              "end": 32
-            },
+            "origin": { "line": 77, "start": 4, "end": 32 },
             "call_site": "76:0-79:17"
           }
         ]
@@ -733,12 +663,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 79,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 79, "start": 15, "end": 16 },
             "call_site": "79:4-79:17"
           }
         ]
@@ -772,12 +697,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 85,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 85, "start": 15, "end": 16 },
             "call_site": "85:4-85:17"
           }
         ]
@@ -823,12 +743,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 83,
-              "start": 42,
-              "end": 78
-            },
+            "origin": { "line": 83, "start": 42, "end": 78 },
             "call_site": "82:0-85:17"
           }
         ]
@@ -844,12 +759,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 85,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 85, "start": 15, "end": 16 },
             "call_site": "85:4-85:17"
           }
         ]
@@ -883,12 +793,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 69,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 69, "start": 15, "end": 16 },
             "call_site": "69:4-69:17"
           }
         ]
@@ -917,12 +822,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 73,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 73, "start": 15, "end": 16 },
             "call_site": "73:4-73:17"
           }
         ]
@@ -948,12 +848,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_annotated.py",
-              "line": 91,
-              "start": 15,
-              "end": 16
-            },
+            "origin": { "line": 91, "start": 15, "end": 16 },
             "call_site": "91:4-91:17"
           }
         ]

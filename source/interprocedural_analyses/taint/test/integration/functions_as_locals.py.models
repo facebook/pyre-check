@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 58,
-              "start": 9,
-              "end": 23
-            }
+            "origin": { "line": 58, "start": 9, "end": 23 }
           }
         ]
       },
@@ -50,12 +45,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 58,
-                "start": 9,
-                "end": 23
-              },
+              "position": { "line": 58, "start": 9, "end": 23 },
               "resolves_to": [ "functions_as_locals.barB" ],
               "port": "formal(arg2, position=1)",
               "call_site": "58:4-58:24"
@@ -104,12 +94,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 57,
-              "start": 6,
-              "end": 20
-            }
+            "origin": { "line": 57, "start": 6, "end": 20 }
           }
         ]
       },
@@ -126,12 +111,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 57,
-                "start": 6,
-                "end": 20
-              },
+              "position": { "line": 57, "start": 6, "end": 20 },
               "resolves_to": [ "functions_as_locals.barA" ],
               "port": "formal(arg1, position=0)",
               "call_site": "57:4-57:24"
@@ -177,12 +157,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 15,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 15, "start": 8, "end": 22 }
           }
         ]
       },
@@ -199,12 +174,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 18,
-                "start": 6,
-                "end": 7
-              },
+              "position": { "line": 18, "start": 6, "end": 7 },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
               "call_site": "18:4-18:8"
@@ -250,12 +220,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 15,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 15, "start": 8, "end": 22 }
           }
         ]
       },
@@ -272,12 +237,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 17,
-                "start": 8,
-                "end": 9
-              },
+              "position": { "line": 17, "start": 8, "end": 9 },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
               "call_site": "17:4-17:10"
@@ -323,12 +283,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 33,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 33, "start": 8, "end": 22 }
           }
         ]
       },
@@ -345,12 +300,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 35,
-                "start": 6,
-                "end": 7
-              },
+              "position": { "line": 35, "start": 6, "end": 7 },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg, position=1)",
               "call_site": "35:4-35:8"
@@ -398,12 +348,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 33,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 33, "start": 8, "end": 22 }
           }
         ]
       },
@@ -420,12 +365,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 34,
-                "start": 8,
-                "end": 9
-              },
+              "position": { "line": 34, "start": 8, "end": 9 },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg, position=1)",
               "call_site": "34:4-34:10"
@@ -684,12 +624,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 28,
-              "start": 19,
-              "end": 22
-            },
+            "origin": { "line": 28, "start": 19, "end": 22 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "28:8-28:23"
@@ -717,12 +652,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 44,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 44, "start": 15, "end": 19 },
             "call_site": "44:4-44:20"
           }
         ]
@@ -751,12 +681,7 @@
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 48,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 48, "start": 15, "end": 19 },
             "call_site": "48:4-48:20"
           }
         ]
@@ -782,12 +707,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "functions_as_locals.py",
-              "line": 11,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 11, "start": 15, "end": 18 },
             "call_site": "11:4-11:19"
           }
         ]
@@ -814,12 +734,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 23,
-                "start": 6,
-                "end": 9
-              },
+              "position": { "line": 23, "start": 6, "end": 9 },
               "resolves_to": [ "functions_as_locals.foo" ],
               "port": "formal(arg, position=0)",
               "call_site": "23:4-23:10"
@@ -849,12 +764,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "functions_as_locals.py",
-                "line": 40,
-                "start": 6,
-                "end": 9
-              },
+              "position": { "line": 40, "start": 6, "end": 9 },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg, position=1)",
               "call_site": "40:4-40:10"

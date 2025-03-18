@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 46,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 46, "start": 25, "end": 39 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 46,
-              "start": 25,
-              "end": 39
-            },
+            "origin": { "line": 46, "start": 25, "end": 39 },
             "call_site": "46:14-46:40"
           }
         ]
@@ -314,12 +304,7 @@
               { "line": 32, "start": 14, "end": 31 },
               { "line": 32, "start": 25, "end": 30 }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 31,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 31, "start": 12, "end": 26 }
           }
         ]
       }
@@ -351,12 +336,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 31,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 31, "start": 12, "end": 26 }
           }
         ]
       },
@@ -371,12 +351,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 32,
-              "start": 25,
-              "end": 30
-            },
+            "origin": { "line": 32, "start": 25, "end": 30 },
             "call_site": "32:14-32:31"
           }
         ]
@@ -412,12 +387,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 27,
-              "start": 18,
-              "end": 21
-            },
+            "origin": { "line": 27, "start": 18, "end": 21 },
             "call_site": "27:7-27:22"
           }
         ]
@@ -443,12 +413,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 41,
-              "start": 25,
-              "end": 33
-            },
+            "origin": { "line": 41, "start": 25, "end": 33 },
             "call_site": "41:14-41:34"
           }
         ]
@@ -478,12 +443,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 23, "start": 18, "end": 21 } ],
-            "origin": {
-              "filename": "format.py",
-              "line": 23,
-              "start": 15,
-              "end": 23
-            },
+            "origin": { "line": 23, "start": 15, "end": 23 },
             "call_site": "23:4-23:24"
           }
         ]
@@ -515,12 +475,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 15, "start": 14, "end": 28 } ],
-            "origin": {
-              "filename": "format.py",
-              "line": 15,
-              "start": 14,
-              "end": 28
-            }
+            "origin": { "line": 15, "start": 14, "end": 28 }
           }
         ]
       }
@@ -556,12 +511,7 @@
               { "line": 37, "start": 19, "end": 36 },
               { "line": 37, "start": 21, "end": 35 }
             ],
-            "origin": {
-              "filename": "format.py",
-              "line": 37,
-              "start": 21,
-              "end": 35
-            }
+            "origin": { "line": 37, "start": 21, "end": 35 }
           }
         ]
       }
@@ -592,12 +542,7 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 11, "start": 14, "end": 19 } ],
-            "origin": {
-              "filename": "format.py",
-              "line": 10,
-              "start": 12,
-              "end": 26
-            }
+            "origin": { "line": 10, "start": 12, "end": 26 }
           }
         ]
       }

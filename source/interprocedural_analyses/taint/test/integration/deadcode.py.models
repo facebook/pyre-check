@@ -24,12 +24,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "deadcode.py",
-              "line": 39,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 39, "start": 15, "end": 29 }
           }
         ]
       },
@@ -44,12 +39,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "deadcode.py",
-              "line": 39,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 39, "start": 15, "end": 29 },
             "call_site": "39:4-39:30"
           }
         ]

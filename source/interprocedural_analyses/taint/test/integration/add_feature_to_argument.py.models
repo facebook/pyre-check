@@ -29,12 +29,7 @@
               { "first-index": "<numeric>" },
               { "always-via": "string_concat_lhs" }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 49,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 49, "start": 15, "end": 29 }
           }
         ]
       },
@@ -49,12 +44,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 51,
-              "start": 15,
-              "end": 19
-            },
+            "origin": { "line": 51, "start": 15, "end": 19 },
             "call_site": "51:4-51:20"
           }
         ]
@@ -155,12 +145,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 77, "start": 26, "end": 27 } ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 78,
-              "start": 25,
-              "end": 26
-            },
+            "origin": { "line": 78, "start": 25, "end": 26 },
             "call_site": "78:4-78:30"
           }
         ]
@@ -263,12 +248,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 18,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 18, "start": 8, "end": 22 }
           }
         ]
       }
@@ -301,12 +281,7 @@
               { "via": "model-shaping" },
               { "via": "broadening" }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 38,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 38, "start": 8, "end": 22 }
           }
         ]
       }
@@ -336,12 +311,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 24,
-              "start": 32,
-              "end": 41
-            },
+            "origin": { "line": 24, "start": 32, "end": 41 },
             "call_site": "24:11-24:45"
           }
         ]
@@ -372,12 +342,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 63,
-              "start": 33,
-              "end": 46
-            },
+            "origin": { "line": 63, "start": 33, "end": 46 },
             "call_site": "63:8-63:47"
           }
         ]
@@ -398,12 +363,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 61,
-              "start": 29,
-              "end": 42
-            },
+            "origin": { "line": 61, "start": 29, "end": 42 },
             "call_site": "61:8-61:46"
           }
         ]
@@ -437,12 +397,7 @@
               { "always-via": "string_concat_lhs" },
               { "always-via": "tito" }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 82,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 82, "start": 8, "end": 22 }
           }
         ]
       }
@@ -472,12 +427,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 44,
-              "start": 25,
-              "end": 34
-            },
+            "origin": { "line": 44, "start": 25, "end": 34 },
             "call_site": "44:4-44:39"
           },
           {
@@ -489,12 +439,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 45,
-              "start": 15,
-              "end": 24
-            },
+            "origin": { "line": 45, "start": 15, "end": 24 },
             "call_site": "45:4-45:25"
           }
         ]
@@ -525,12 +470,7 @@
                 "kind": "AddFeatureToArgument"
               }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 55,
-              "start": 54,
-              "end": 63
-            },
+            "origin": { "line": 55, "start": 54, "end": 63 },
             "call_site": "55:33-55:67"
           },
           {
@@ -542,12 +482,7 @@
               }
             ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 56,
-              "start": 15,
-              "end": 24
-            },
+            "origin": { "line": 56, "start": 15, "end": 24 },
             "call_site": "56:4-56:25"
           }
         ]
@@ -576,12 +511,7 @@
             "local_features": [
               { "via": "string_concat_rhs" }, { "via": "string_concat_lhs" }
             ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 68,
-              "start": 15,
-              "end": 24
-            },
+            "origin": { "line": 68, "start": 15, "end": 24 },
             "call_site": "68:4-68:25"
           }
         ]
@@ -598,12 +528,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "add_feature_to_argument.py",
-                "line": 67,
-                "start": 35,
-                "end": 44
-              },
+              "position": { "line": 67, "start": 35, "end": 44 },
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
@@ -625,12 +550,7 @@
               }
             ],
             "call": {
-              "position": {
-                "filename": "add_feature_to_argument.py",
-                "line": 67,
-                "start": 35,
-                "end": 44
-              },
+              "position": { "line": 67, "start": 35, "end": 44 },
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
@@ -664,12 +584,7 @@
               }
             ],
             "local_features": [ { "always-via-value": "second" } ],
-            "origin": {
-              "filename": "add_feature_to_argument.py",
-              "line": 32,
-              "start": 8,
-              "end": 22
-            }
+            "origin": { "line": 32, "start": 8, "end": 22 }
           }
         ]
       }

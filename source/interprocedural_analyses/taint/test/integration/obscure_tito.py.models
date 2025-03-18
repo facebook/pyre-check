@@ -164,12 +164,7 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 33, "start": 20, "end": 34 } ],
-            "origin": {
-              "filename": "obscure_tito.py",
-              "line": 33,
-              "start": 20,
-              "end": 34
-            }
+            "origin": { "line": 33, "start": 20, "end": 34 }
           }
         ]
       }
@@ -198,12 +193,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "obscure_tito.py",
-              "line": 38,
-              "start": 22,
-              "end": 31
-            },
+            "origin": { "line": 38, "start": 22, "end": 31 },
             "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "38:4-38:32"
@@ -235,12 +225,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 27, "start": 13, "end": 27 } ],
-            "origin": {
-              "filename": "obscure_tito.py",
-              "line": 27,
-              "start": 13,
-              "end": 27
-            }
+            "origin": { "line": 27, "start": 13, "end": 27 }
           }
         ]
       }

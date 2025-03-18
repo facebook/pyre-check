@@ -69,12 +69,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 75,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 75, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 12, "upper": 13 } ],
             "is_self_call": false
           }
@@ -115,12 +110,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 75,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 75, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 12, "upper": 13 } ],
             "is_self_call": false
           }
@@ -141,12 +131,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 75,
-              "start": 8,
-              "end": 29
-            }
+            "origin": { "line": 75, "start": 8, "end": 29 }
           }
         ]
       }
@@ -176,12 +161,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 78,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 78, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 12, "upper": 13 } ],
             "is_self_call": false
           }
@@ -222,12 +202,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 78,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 78, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 12, "upper": 13 } ],
             "is_self_call": false
           }
@@ -248,12 +223,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 78,
-              "start": 8,
-              "end": 29
-            }
+            "origin": { "line": 78, "start": 8, "end": 29 }
           }
         ]
       }
@@ -283,12 +253,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 69,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 69, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 12, "upper": 13 } ],
             "is_self_call": false
           }
@@ -317,12 +282,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 72,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 72, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 12, "upper": 13 } ],
             "is_self_call": false
           }
@@ -351,12 +311,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 32,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 32, "start": 11, "end": 25 }
           }
         ]
       }
@@ -395,12 +350,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 32,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 32, "start": 11, "end": 25 }
           }
         ]
       },
@@ -419,12 +369,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 32,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 32, "start": 4, "end": 25 }
           }
         ]
       }
@@ -454,12 +399,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 36,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 36, "start": 11, "end": 25 }
           }
         ]
       }
@@ -498,12 +438,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 36,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 36, "start": 11, "end": 25 }
           }
         ]
       },
@@ -522,12 +457,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 36,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 36, "start": 4, "end": 25 }
           }
         ]
       }
@@ -557,12 +487,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 40,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 40, "start": 11, "end": 25 }
           }
         ]
       }
@@ -601,12 +526,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 40,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 40, "start": 11, "end": 25 }
           }
         ]
       },
@@ -625,12 +545,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 40,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 40, "start": 4, "end": 25 }
           }
         ]
       }
@@ -660,12 +575,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 44,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 44, "start": 11, "end": 25 }
           }
         ]
       }
@@ -704,12 +614,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 44,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 44, "start": 11, "end": 25 }
           }
         ]
       },
@@ -728,12 +633,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 44,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 44, "start": 4, "end": 25 }
           }
         ]
       }
@@ -763,12 +663,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 48,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 48, "start": 11, "end": 25 }
           }
         ]
       }
@@ -795,12 +690,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 102,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 102, "start": 11, "end": 25 }
           }
         ]
       }
@@ -839,12 +729,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 102,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 102, "start": 11, "end": 25 }
           }
         ]
       },
@@ -863,12 +748,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 102,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 102, "start": 4, "end": 25 }
           }
         ]
       }
@@ -898,12 +778,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 106,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 106, "start": 11, "end": 25 }
           }
         ]
       }
@@ -942,12 +817,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 106,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 106, "start": 11, "end": 25 }
           }
         ]
       },
@@ -966,12 +836,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 106,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 106, "start": 4, "end": 25 }
           }
         ]
       }
@@ -1001,12 +866,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 110,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 110, "start": 11, "end": 25 }
           }
         ]
       }
@@ -1045,12 +905,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 110,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 110, "start": 11, "end": 25 }
           }
         ]
       },
@@ -1069,12 +924,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 110,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 110, "start": 4, "end": 25 }
           }
         ]
       }
@@ -1104,12 +954,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 114,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 114, "start": 11, "end": 25 }
           }
         ]
       }
@@ -1148,12 +993,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 114,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 114, "start": 11, "end": 25 }
           }
         ]
       },
@@ -1172,12 +1012,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 114,
-              "start": 4,
-              "end": 25
-            }
+            "origin": { "line": 114, "start": 4, "end": 25 }
           }
         ]
       }
@@ -1207,12 +1042,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "model_query_return_annotation_extends.py",
-              "line": 118,
-              "start": 11,
-              "end": 25
-            }
+            "origin": { "line": 118, "start": 11, "end": 25 }
           }
         ]
       }

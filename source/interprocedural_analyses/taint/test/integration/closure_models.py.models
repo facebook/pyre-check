@@ -26,12 +26,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 170,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 170, "start": 15, "end": 31 },
             "call_site": "170:4-170:32"
           }
         ]
@@ -74,12 +69,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 159,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 159, "start": 15, "end": 31 },
             "call_site": "159:4-159:32"
           }
         ]
@@ -120,12 +110,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 174,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 174, "start": 23, "end": 37 }
           }
         ]
       },
@@ -144,12 +129,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 180,
-              "start": 4,
-              "end": 33
-            }
+            "origin": { "line": 180, "start": 4, "end": 33 }
           }
         ]
       }
@@ -191,12 +171,7 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 134, "start": 15, "end": 43 } ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 128,
-              "start": 23,
-              "end": 37
-            }
+            "origin": { "line": 128, "start": 23, "end": 37 }
           }
         ]
       },
@@ -211,12 +186,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 134,
-              "start": 15,
-              "end": 43
-            },
+            "origin": { "line": 134, "start": 15, "end": 43 },
             "call_site": "134:4-134:44"
           }
         ]
@@ -261,12 +231,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 13,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 13, "start": 15, "end": 29 }
           }
         ]
       },
@@ -285,12 +250,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 13,
-              "start": 15,
-              "end": 29
-            },
+            "origin": { "line": 13, "start": 15, "end": 29 },
             "call_site": "13:4-13:30"
           }
         ]
@@ -461,12 +421,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 167,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 167, "start": 19, "end": 35 },
             "call_site": "167:8-167:36"
           }
         ]
@@ -507,12 +462,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 166,
-              "start": 4,
-              "end": 4
-            }
+            "origin": { "line": 166, "start": 4, "end": 4 }
           }
         ]
       },
@@ -527,12 +477,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 167,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 167, "start": 19, "end": 35 },
             "call_site": "167:8-167:36"
           }
         ]
@@ -573,12 +518,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 156,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 156, "start": 19, "end": 35 },
             "call_site": "156:8-156:36"
           }
         ]
@@ -605,12 +545,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 144,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 144, "start": 19, "end": 35 },
             "call_site": "144:8-144:36"
           }
         ]
@@ -651,12 +586,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 143,
-              "start": 4,
-              "end": 4
-            }
+            "origin": { "line": 143, "start": 4, "end": 4 }
           }
         ]
       },
@@ -671,12 +601,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 144,
-              "start": 19,
-              "end": 35
-            },
+            "origin": { "line": 144, "start": 19, "end": 35 },
             "call_site": "144:8-144:36"
           }
         ]
@@ -1083,12 +1008,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 42,
-              "start": 15,
-              "end": 29
-            }
+            "origin": { "line": 42, "start": 15, "end": 29 }
           }
         ]
       }
@@ -1114,12 +1034,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 124,
-              "start": 19,
-              "end": 28
-            },
+            "origin": { "line": 124, "start": 19, "end": 28 },
             "call_site": "124:8-124:29"
           }
         ]
@@ -1161,12 +1076,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 123,
-              "start": 4,
-              "end": 4
-            }
+            "origin": { "line": 123, "start": 4, "end": 4 }
           }
         ]
       },
@@ -1181,12 +1091,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 124,
-              "start": 19,
-              "end": 28
-            },
+            "origin": { "line": 124, "start": 19, "end": 28 },
             "call_site": "124:8-124:29"
           }
         ]
@@ -1221,12 +1126,7 @@
               }
             ],
             "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 118,
-              "start": 19,
-              "end": 28
-            },
+            "origin": { "line": 118, "start": 19, "end": 28 },
             "call_site": "118:8-118:29"
           }
         ]
@@ -1268,12 +1168,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 117,
-              "start": 4,
-              "end": 4
-            }
+            "origin": { "line": 117, "start": 4, "end": 4 }
           }
         ]
       },
@@ -1288,12 +1183,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "closure_models.py",
-              "line": 118,
-              "start": 19,
-              "end": 28
-            },
+            "origin": { "line": 118, "start": 19, "end": 28 },
             "call_site": "118:8-118:29"
           }
         ]

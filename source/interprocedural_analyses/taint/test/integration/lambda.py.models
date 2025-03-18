@@ -33,12 +33,7 @@
               { "line": 49, "start": 20, "end": 82 },
               { "line": 49, "start": 45, "end": 81 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 49,
-              "start": 52,
-              "end": 66
-            }
+            "origin": { "line": 49, "start": 52, "end": 66 }
           }
         ]
       },
@@ -53,12 +48,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 51,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 51, "start": 15, "end": 31 },
             "call_site": "51:4-51:32"
           }
         ]
@@ -116,12 +106,7 @@
               { "line": 49, "start": 20, "end": 82 },
               { "line": 49, "start": 45, "end": 81 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 49,
-              "start": 52,
-              "end": 66
-            }
+            "origin": { "line": 49, "start": 52, "end": 66 }
           }
         ]
       },
@@ -136,12 +121,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 50,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 50, "start": 15, "end": 26 },
             "call_site": "50:4-50:27"
           }
         ]
@@ -199,12 +179,7 @@
               { "line": 44, "start": 20, "end": 68 },
               { "line": 44, "start": 45, "end": 67 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 44,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 44, "start": 49, "end": 63 }
           }
         ]
       },
@@ -219,12 +194,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 47,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 47, "start": 15, "end": 26 },
             "call_site": "47:4-47:27"
           }
         ]
@@ -280,12 +250,7 @@
               { "line": 44, "start": 20, "end": 68 },
               { "line": 44, "start": 45, "end": 67 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 44,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 44, "start": 49, "end": 63 }
           }
         ]
       },
@@ -300,12 +265,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 46,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 46, "start": 15, "end": 26 },
             "call_site": "46:4-46:27"
           }
         ]
@@ -361,12 +321,7 @@
               { "line": 44, "start": 20, "end": 68 },
               { "line": 44, "start": 45, "end": 67 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 44,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 44, "start": 49, "end": 63 }
           }
         ]
       },
@@ -381,12 +336,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 45,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 45, "start": 15, "end": 26 },
             "call_site": "45:4-45:27"
           }
         ]
@@ -442,12 +392,7 @@
               { "line": 40, "start": 20, "end": 62 },
               { "line": 40, "start": 45, "end": 61 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 40,
-              "start": 46,
-              "end": 60
-            }
+            "origin": { "line": 40, "start": 46, "end": 60 }
           }
         ]
       },
@@ -462,12 +407,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 42,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 42, "start": 15, "end": 26 },
             "call_site": "42:4-42:27"
           }
         ]
@@ -523,12 +463,7 @@
               { "line": 40, "start": 20, "end": 62 },
               { "line": 40, "start": 45, "end": 61 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 40,
-              "start": 46,
-              "end": 60
-            }
+            "origin": { "line": 40, "start": 46, "end": 60 }
           }
         ]
       },
@@ -543,12 +478,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 41,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 41, "start": 15, "end": 26 },
             "call_site": "41:4-41:27"
           }
         ]
@@ -605,12 +535,7 @@
               { "always-via": "issue-broadening" }
             ],
             "call": {
-              "position": {
-                "filename": "lambda.py",
-                "line": 63,
-                "start": 15,
-                "end": 30
-              },
+              "position": { "line": 63, "start": 15, "end": 30 },
               "resolves_to": [ "lambda.lambda_source" ],
               "port": "result[*]"
             }
@@ -628,12 +553,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 63,
-              "start": 15,
-              "end": 30
-            },
+            "origin": { "line": 63, "start": 15, "end": 30 },
             "call_site": "63:4-63:31"
           }
         ]
@@ -691,12 +611,7 @@
               { "line": 32, "start": 20, "end": 59 },
               { "line": 32, "start": 24, "end": 48 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 32,
-              "start": 34,
-              "end": 48
-            }
+            "origin": { "line": 32, "start": 34, "end": 48 }
           }
         ]
       },
@@ -711,12 +626,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 33,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 33, "start": 15, "end": 26 },
             "call_site": "33:4-33:27"
           }
         ]
@@ -776,12 +686,7 @@
               { "line": 29, "start": 20, "end": 79 },
               { "line": 29, "start": 42, "end": 78 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 29,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 29, "start": 49, "end": 63 }
           }
         ]
       },
@@ -796,12 +701,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 30,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 30, "start": 15, "end": 26 },
             "call_site": "30:4-30:27"
           }
         ]
@@ -863,12 +763,7 @@
               { "line": 26, "start": 20, "end": 79 },
               { "line": 26, "start": 42, "end": 78 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 26,
-              "start": 49,
-              "end": 63
-            }
+            "origin": { "line": 26, "start": 49, "end": 63 }
           }
         ]
       },
@@ -883,12 +778,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 27,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 27, "start": 15, "end": 26 },
             "call_site": "27:4-27:27"
           }
         ]
@@ -950,12 +840,7 @@
               { "line": 21, "start": 20, "end": 74 },
               { "line": 21, "start": 57, "end": 73 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 21,
-              "start": 58,
-              "end": 72
-            }
+            "origin": { "line": 21, "start": 58, "end": 72 }
           }
         ]
       },
@@ -970,12 +855,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 24,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 24, "start": 15, "end": 31 },
             "call_site": "24:4-24:32"
           }
         ]
@@ -1037,12 +917,7 @@
               { "line": 21, "start": 20, "end": 74 },
               { "line": 21, "start": 57, "end": 73 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 21,
-              "start": 58,
-              "end": 72
-            }
+            "origin": { "line": 21, "start": 58, "end": 72 }
           }
         ]
       },
@@ -1057,12 +932,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 23,
-              "start": 15,
-              "end": 31
-            },
+            "origin": { "line": 23, "start": 15, "end": 31 },
             "call_site": "23:4-23:32"
           }
         ]
@@ -1124,12 +994,7 @@
               { "line": 21, "start": 20, "end": 74 },
               { "line": 21, "start": 57, "end": 73 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 21,
-              "start": 58,
-              "end": 72
-            }
+            "origin": { "line": 21, "start": 58, "end": 72 }
           }
         ]
       },
@@ -1144,12 +1009,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 22,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 22, "start": 15, "end": 26 },
             "call_site": "22:4-22:27"
           }
         ]
@@ -1211,12 +1071,7 @@
               { "line": 16, "start": 20, "end": 60 },
               { "line": 16, "start": 37, "end": 59 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 16,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 16, "start": 41, "end": 55 }
           }
         ]
       },
@@ -1231,12 +1086,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 19,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 19, "start": 15, "end": 26 },
             "call_site": "19:4-19:27"
           }
         ]
@@ -1298,12 +1148,7 @@
               { "line": 16, "start": 20, "end": 60 },
               { "line": 16, "start": 37, "end": 59 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 16,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 16, "start": 41, "end": 55 }
           }
         ]
       },
@@ -1318,12 +1163,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 18,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 18, "start": 15, "end": 26 },
             "call_site": "18:4-18:27"
           }
         ]
@@ -1385,12 +1225,7 @@
               { "line": 16, "start": 20, "end": 60 },
               { "line": 16, "start": 37, "end": 59 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 16,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 16, "start": 41, "end": 55 }
           }
         ]
       },
@@ -1405,12 +1240,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 17,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 17, "start": 15, "end": 26 },
             "call_site": "17:4-17:27"
           }
         ]
@@ -1472,12 +1302,7 @@
               { "line": 12, "start": 20, "end": 54 },
               { "line": 12, "start": 37, "end": 53 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 12,
-              "start": 38,
-              "end": 52
-            }
+            "origin": { "line": 12, "start": 38, "end": 52 }
           }
         ]
       },
@@ -1492,12 +1317,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 14,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 14, "start": 15, "end": 26 },
             "call_site": "14:4-14:27"
           }
         ]
@@ -1559,12 +1379,7 @@
               { "line": 12, "start": 20, "end": 54 },
               { "line": 12, "start": 37, "end": 53 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 12,
-              "start": 38,
-              "end": 52
-            }
+            "origin": { "line": 12, "start": 38, "end": 52 }
           }
         ]
       },
@@ -1579,12 +1394,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 13,
-              "start": 15,
-              "end": 26
-            },
+            "origin": { "line": 13, "start": 15, "end": 26 },
             "call_site": "13:4-13:27"
           }
         ]
@@ -1725,12 +1535,7 @@
               { "line": 59, "start": 16, "end": 51 },
               { "line": 59, "start": 36, "end": 50 }
             ],
-            "origin": {
-              "filename": "lambda.py",
-              "line": 59,
-              "start": 36,
-              "end": 50
-            }
+            "origin": { "line": 59, "start": 36, "end": 50 }
           }
         ]
       }

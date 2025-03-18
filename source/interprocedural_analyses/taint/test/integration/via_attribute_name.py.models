@@ -23,12 +23,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 78,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 78, "start": 10, "end": 24 }
           }
         ]
       },
@@ -48,12 +43,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "x" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 78,
-              "start": 4,
-              "end": 7
-            }
+            "origin": { "line": 78, "start": 4, "end": 7 }
           }
         ]
       }
@@ -91,12 +81,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 82,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 82, "start": 10, "end": 24 }
           }
         ]
       },
@@ -116,12 +101,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "y" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 82,
-              "start": 4,
-              "end": 7
-            }
+            "origin": { "line": 82, "start": 4, "end": 7 }
           }
         ]
       }
@@ -159,12 +139,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 86,
-              "start": 10,
-              "end": 24
-            }
+            "origin": { "line": 86, "start": 10, "end": 24 }
           }
         ]
       },
@@ -184,12 +159,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 86,
-              "start": 4,
-              "end": 7
-            }
+            "origin": { "line": 86, "start": 4, "end": 7 }
           }
         ]
       }
@@ -238,12 +208,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 33, "start": 23, "end": 39 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 33,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 33, "start": 25, "end": 39 }
           }
         ]
       },
@@ -257,12 +222,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 39,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 39, "start": 15, "end": 18 },
             "call_site": "39:4-39:19"
           }
         ]
@@ -318,12 +278,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 97, "start": 41, "end": 55 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 97,
-              "start": 41,
-              "end": 55
-            }
+            "origin": { "line": 97, "start": 41, "end": 55 }
           }
         ]
       },
@@ -337,12 +292,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 97,
-              "start": 15,
-              "end": 68
-            },
+            "origin": { "line": 97, "start": 15, "end": 68 },
             "call_site": "97:4-97:69"
           }
         ]
@@ -394,12 +344,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 101, "start": 47, "end": 61 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 101,
-              "start": 47,
-              "end": 61
-            }
+            "origin": { "line": 101, "start": 47, "end": 61 }
           }
         ]
       },
@@ -413,12 +358,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 101,
-              "start": 15,
-              "end": 68
-            },
+            "origin": { "line": 101, "start": 15, "end": 68 },
             "call_site": "101:4-101:69"
           }
         ]
@@ -470,12 +410,7 @@
               { "always-via": "issue-broadening" }
             ],
             "tito_positions": [ { "line": 105, "start": 53, "end": 67 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 105,
-              "start": 53,
-              "end": 67
-            }
+            "origin": { "line": 105, "start": 53, "end": 67 }
           }
         ]
       },
@@ -489,12 +424,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 105,
-              "start": 15,
-              "end": 68
-            },
+            "origin": { "line": 105, "start": 15, "end": 68 },
             "call_site": "105:4-105:69"
           }
         ]
@@ -546,12 +476,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 18, "start": 23, "end": 39 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 18,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 18, "start": 25, "end": 39 }
           }
         ]
       },
@@ -565,12 +490,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 19,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 19, "start": 15, "end": 18 },
             "call_site": "19:4-19:19"
           }
         ]
@@ -622,12 +542,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 23, "start": 23, "end": 39 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 23,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 23, "start": 25, "end": 39 }
           }
         ]
       },
@@ -641,12 +556,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 24,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 24, "start": 15, "end": 18 },
             "call_site": "24:4-24:19"
           }
         ]
@@ -698,12 +608,7 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 28, "start": 23, "end": 39 } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 28,
-              "start": 25,
-              "end": 39
-            }
+            "origin": { "line": 28, "start": 25, "end": 39 }
           }
         ]
       },
@@ -717,12 +622,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 29,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 29, "start": 15, "end": 18 },
             "call_site": "29:4-29:19"
           }
         ]
@@ -1312,12 +1212,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 67,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 67, "start": 15, "end": 18 },
             "call_site": "67:4-67:19"
           }
         ]
@@ -1332,12 +1227,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 67,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 67, "start": 15, "end": 18 },
             "call_site": "67:4-67:19"
           }
         ]
@@ -1352,12 +1242,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 67,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 67, "start": 15, "end": 18 },
             "call_site": "67:4-67:19"
           }
         ]
@@ -1393,12 +1278,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "x" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 62,
-              "start": 10,
-              "end": 13
-            }
+            "origin": { "line": 62, "start": 10, "end": 13 }
           },
           {
             "kinds": [
@@ -1413,12 +1293,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "y" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 64,
-              "start": 14,
-              "end": 17
-            }
+            "origin": { "line": 64, "start": 14, "end": 17 }
           },
           {
             "kinds": [
@@ -1433,12 +1308,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 66,
-              "start": 14,
-              "end": 17
-            }
+            "origin": { "line": 66, "start": 14, "end": 17 }
           }
         ]
       },
@@ -1452,12 +1322,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 67,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 67, "start": 15, "end": 18 },
             "call_site": "67:4-67:19"
           }
         ]
@@ -1494,12 +1359,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 50,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 50, "start": 15, "end": 18 },
             "call_site": "50:4-50:19"
           }
         ]
@@ -1535,12 +1395,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "x" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 50,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 50, "start": 15, "end": 18 }
           }
         ]
       },
@@ -1554,12 +1409,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 50,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 50, "start": 15, "end": 18 },
             "call_site": "50:4-50:19"
           }
         ]
@@ -1592,12 +1442,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 54,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 54, "start": 15, "end": 18 },
             "call_site": "54:4-54:19"
           }
         ]
@@ -1633,12 +1478,7 @@
               }
             ],
             "local_features": [ { "always-via-attribute": "y" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 54,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 54, "start": 15, "end": 18 }
           }
         ]
       },
@@ -1652,12 +1492,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 54,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 54, "start": 15, "end": 18 },
             "call_site": "54:4-54:19"
           }
         ]
@@ -1690,12 +1525,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 58,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 58, "start": 15, "end": 18 },
             "call_site": "58:4-58:19"
           }
         ]
@@ -1731,12 +1561,7 @@
               }
             ],
             "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 58,
-              "start": 15,
-              "end": 18
-            }
+            "origin": { "line": 58, "start": 15, "end": 18 }
           }
         ]
       },
@@ -1750,12 +1575,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": {
-              "filename": "via_attribute_name.py",
-              "line": 58,
-              "start": 15,
-              "end": 18
-            },
+            "origin": { "line": 58, "start": 15, "end": 18 },
             "call_site": "58:4-58:19"
           }
         ]
