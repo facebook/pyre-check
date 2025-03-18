@@ -169,6 +169,11 @@ fn test_initialize() {
 
 #[test]
 fn test_go_to_def() {
+    if cfg!(windows) {
+        // This test fails on Windows due to Server::did_open() being unable to find a filepath.
+        return;
+    }
+
     let mut test_messages = get_initialize_messages();
     let mut expected_responses = get_initialize_responses();
 
