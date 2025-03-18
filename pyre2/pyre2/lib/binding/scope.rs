@@ -145,8 +145,6 @@ pub struct Flow {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FlowStyle {
-    /// Am I initialized, or am I the result of `x: int`?
-    Annotated { is_initialized: bool },
     /// Am I a type-annotated assignment in a class body?
     AnnotatedClassField { initial_value: Option<Expr> },
     /// Am I the result of an import (which needs merging).
@@ -164,6 +162,8 @@ pub enum FlowStyle {
     FunctionDef(Idx<KeyFunction>),
     /// The name was previously bound, but is now unbound due to `del`
     Unbound,
+    /// The name was in an annotated declaration like `x: int` but not initialized
+    Uninitialized,
 }
 
 #[derive(Debug, Clone)]

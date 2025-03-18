@@ -68,9 +68,7 @@ impl<'a> BindingsBuilder<'a> {
                                 ErrorKind::UnboundName,
                             );
                         }
-                        Some(FlowStyle::Annotated {
-                            is_initialized: false,
-                        }) => {
+                        Some(FlowStyle::Uninitialized) => {
                             self.error(
                                 name.range,
                                 format!("`{name}` is uninitialized"),

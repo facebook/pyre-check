@@ -371,11 +371,11 @@ impl<'a> BindingsBuilder<'a> {
                     let ann_key = self.table.insert(ann_key, ann_val);
                     let flow_style = if in_class_body {
                         let initial_value = x.value.as_deref().cloned();
-                        FlowStyle::AnnotatedClassField { initial_value }
+                        Some(FlowStyle::AnnotatedClassField { initial_value })
+                    } else if x.value.is_some() {
+                        None
                     } else {
-                        FlowStyle::Annotated {
-                            is_initialized: x.value.is_some(),
-                        }
+                        Some(FlowStyle::Uninitialized)
                     };
                     let binding_value = if let Some(value) = x.value {
                         // Treat a name as initialized, but skip actually checking the value, if we are assigning `...` in a stub.
@@ -407,7 +407,7 @@ impl<'a> BindingsBuilder<'a> {
                             Box::new(Binding::AnyType(AnyStyle::Implicit)),
                         )
                     };
-                    if let Some(ann) = self.bind_definition(&name, binding, Some(flow_style))
+                    if let Some(ann) = self.bind_definition(&name, binding, flow_style)
                         && ann != ann_key
                     {
                         self.table.insert(

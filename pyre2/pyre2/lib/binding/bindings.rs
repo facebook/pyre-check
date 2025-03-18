@@ -703,13 +703,7 @@ impl<'a> BindingsBuilder<'a> {
             .current_mut()
             .stat
             .add(name.id.clone(), name.range, Some(annot));
-        self.bind_key(
-            &name.id,
-            key,
-            Some(FlowStyle::Annotated {
-                is_initialized: true,
-            }),
-        );
+        self.bind_key(&name.id, key, None);
     }
 
     /// Helper for loops, inserts a phi key for every name in the given flow.
