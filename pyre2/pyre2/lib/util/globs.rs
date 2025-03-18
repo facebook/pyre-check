@@ -81,12 +81,12 @@ impl Globs {
     }
 
     fn get_root_for_pattern(pattern: &str) -> PathBuf {
+        let pattern = Path::new(pattern);
         let mut path = PathBuf::new();
 
         // we need to add any path prefix and root items (there should be at most one of each,
         // and prefix only exists on windows) to the root we're building
-        let parsed_path = PathBuf::from(pattern);
-        parsed_path
+        pattern
             .components()
             .take_while(|comp| {
                 match comp {
