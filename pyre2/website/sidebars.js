@@ -25,13 +25,8 @@ module.exports = {
     ...fbInternalOnly([
       {
         type: 'category',
-        label: 'Introduction',
-        items: ['getting-started', 'install'],
-      },
-      {
-        type: 'category',
         label: 'Internal Docs',
-        items: ['fb/error-kinds'],
+        items: ['fb/getting-started', 'fb/install', 'fb/error-kinds'],
       },
     ]),
   ],
