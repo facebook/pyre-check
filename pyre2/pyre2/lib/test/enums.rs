@@ -137,6 +137,20 @@ class MyEnum(Enum):
 );
 
 testcase!(
+    test_value_annotation_irrelevant_for_getattr,
+    r#"
+from enum import Enum
+
+class MyEnum(Enum):
+    X = 1
+    Y = "FOO"
+
+    # We won't be resolving the type of `_value_` through `__getattr__`
+    def __getattr__(self, name: str) -> int: ...
+"#,
+);
+
+testcase!(
     test_enum_member,
     r#"
 from enum import Enum, nonmember, member

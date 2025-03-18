@@ -29,6 +29,7 @@ use crate::types::callable::FuncMetadata;
 use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::class::ClassType;
+use crate::types::literal::Lit;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
@@ -685,5 +686,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             context,
         );
         self.call_infer(call_target, &args, &[], range, errors, context)
+    }
+
+    pub fn call_getattr(
+        &self,
+        getattr_ty: Type,
+        attr_name: Name,
+        range: TextRange,
+        errors: &ErrorCollector,
+        context: Option<&ErrorContext>,
+    ) -> Type {
+        let call_target =
+            self.as_call_target_or_error(getattr_ty, CallStyle::FreeForm, range, errors, context);
+        let attr_name_ty = Type::Literal(Lit::String(attr_name.as_str().into()));
+        self.call_infer(
+            call_target,
+            &[CallArg::Type(&attr_name_ty, range)],
+            &[],
+            range,
+            errors,
+            context,
+        )
     }
 }

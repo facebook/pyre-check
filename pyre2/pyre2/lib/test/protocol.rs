@@ -296,3 +296,18 @@ f(A())
 f(B())  # E: Argument `B` is not assignable to parameter `x` with type `Hashable`
     "#,
 );
+
+testcase!(
+    test_protocol_getattr,
+    r#"
+from typing import Protocol
+class P(Protocol):
+    x: int
+def f(proto: P) -> None: ...
+
+class C:
+    def __getattr__(self, name: str) -> int: ...
+
+f(C()) # E: Argument `C` is not assignable to parameter `proto` with type `P`
+    "#,
+);

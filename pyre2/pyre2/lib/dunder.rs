@@ -21,6 +21,7 @@ pub const EXIT: Name = Name::new_static("__exit__");
 pub const FILE: Name = Name::new_static("__file__");
 pub const GE: Name = Name::new_static("__ge__");
 pub const GET: Name = Name::new_static("__get__");
+pub const GETATTR: Name = Name::new_static("__getattr__");
 pub const GETITEM: Name = Name::new_static("__getitem__");
 pub const GT: Name = Name::new_static("__gt__");
 pub const HASH: Name = Name::new_static("__hash__");

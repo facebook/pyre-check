@@ -562,3 +562,48 @@ assert_type(A.x, int)
 A.y  # E: Instance-only attribute `y` of class `A` is not visible on the class
     "#,
 );
+
+testcase!(
+    test_object_getattr,
+    r#"
+from typing import assert_type
+
+class Foo:
+    def __getattr__(self, name: str) -> int: ...
+
+def test(foo: Foo) -> None:
+    assert_type(foo.x, int)
+    assert_type(foo.y, int)
+    foo.x = 1  # E: Object of class `Foo` has no attribute `x`
+    del foo.y  # E: Object of class `Foo` has no attribute `y`
+    "#,
+);
+
+testcase!(
+    test_object_getattr_wrong_signature,
+    r#"
+from typing import assert_type
+
+class Foo:
+    def __getattr__(self, name: int) -> int: ...
+
+def test(foo: Foo) -> None:
+    assert_type(foo.x, int)  # E: Argument `Literal['x']` is not assignable to parameter `name`
+    assert_type(foo.y, int)  # E: Argument `Literal['y']` is not assignable to parameter `name`
+    foo.x = 1  # E: Object of class `Foo` has no attribute `x`
+    del foo.y  # E: Object of class `Foo` has no attribute `y`
+    "#,
+);
+
+testcase!(
+    test_module_getattr,
+    TestEnv::one("foo", "def __getattr__(name: str) -> int: ..."),
+    r#"
+from typing import assert_type
+import foo
+assert_type(foo.x, int)
+assert_type(foo.y, int)
+foo.x = 1  # E: No attribute `x` in module `foo`
+del foo.y  # E: No attribute `y` in module `foo`
+    "#,
+);
