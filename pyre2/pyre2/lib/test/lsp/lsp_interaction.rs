@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::path::PathBuf;
+use std::str::FromStr;
 use std::thread;
 
 use crossbeam_channel::bounded;
@@ -19,13 +21,17 @@ use pretty_assertions::assert_eq;
 use crate::commands::lsp::run_lsp;
 use crate::commands::lsp::Args;
 
+// Fake python root directory (not necessary to exist on the filesystem)
+// since we simply send the file contents on file open
+const TEST_PYTHON_PATH: &str = "/tmp/test_python_root";
+
 struct TestCase {
     test_messages: Vec<Message>,
     expected_responses: Vec<Response>,
 }
 fn run_test_lsp(test_case: TestCase) {
     let args = Args {
-        include: Vec::new(),
+        include: vec![PathBuf::from_str(TEST_PYTHON_PATH).unwrap()],
     };
     let (writer_sender, writer_receiver) = bounded::<Message>(0);
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
@@ -158,5 +164,62 @@ fn test_initialize() {
     run_test_lsp(TestCase {
         test_messages: get_initialize_messages(),
         expected_responses: get_initialize_responses(),
+    });
+}
+
+#[test]
+fn test_go_to_def() {
+    let mut test_messages = get_initialize_messages();
+    let mut expected_responses = get_initialize_responses();
+
+    test_messages.push(Message::from(Notification {
+        method: "textDocument/didOpen".to_owned(),
+        params: serde_json::json!({
+            "textDocument": {
+                "uri": format!("file://{}/foo.py", TEST_PYTHON_PATH),
+                "languageId": "python",
+                "version": 1,
+                "text": "class Foo: ...\n\n\nFoo\n"
+            }
+        }),
+    }));
+
+    // Add a go-to-definition request
+    test_messages.push(Message::from(Request {
+        id: RequestId::from(2),
+        method: "textDocument/definition".to_owned(),
+        params: serde_json::json!({
+            "textDocument": {
+                "uri": format!("file://{}/foo.py", TEST_PYTHON_PATH)
+            },
+            "position": {
+                "line": 3,
+                "character": 0
+            }
+        }),
+    }));
+
+    // Add the expected response for the go-to-definition request
+    expected_responses.push(Response {
+        id: RequestId::from(2),
+        result: Some(serde_json::json!({
+            "uri": format!("file://{}/foo.py", TEST_PYTHON_PATH),
+            "range": {
+                "start": {
+                    "line": 0,
+                    "character": 6
+                },
+                "end": {
+                    "line": 0,
+                    "character": 9
+                }
+            }
+        })),
+        error: None,
+    });
+
+    run_test_lsp(TestCase {
+        test_messages,
+        expected_responses,
     });
 }
