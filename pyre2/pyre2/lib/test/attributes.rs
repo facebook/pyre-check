@@ -607,3 +607,30 @@ foo.x = 1  # E: No attribute `x` in module `foo`
 del foo.y  # E: No attribute `y` in module `foo`
     "#,
 );
+
+testcase!(
+    test_any_subclass,
+    r#"
+from typing import Any, assert_type
+
+class A(Any):
+    x: int
+
+class B(A):
+    y: str
+
+def test0(a: A, b: B, ta: type[A]) -> None:
+    assert_type(a.x, int)
+    assert_type(b.x, int)
+    assert_type(b.y, str)
+    assert_type(ta.mro(), list[type])
+
+    assert_type(a.z, Any)
+    assert_type(b.z, Any)
+    assert_type(ta.z, Any)
+
+class Test(B):
+    def m(self) -> None:
+        assert_type(super().z, Any)
+    "#,
+);

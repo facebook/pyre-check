@@ -830,12 +830,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeBase::ClassInstance(class) => {
                 match self.get_instance_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
+                    None if self.extends_any(&class) => {
+                        LookupResult::found_type(Type::Any(AnyStyle::Implicit))
+                    }
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
                 }
             }
             AttributeBase::SuperInstance(cls, obj) => {
                 match self.get_super_attribute(&cls, &obj, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
+                    None if self.extends_any(&obj) => {
+                        LookupResult::found_type(Type::Any(AnyStyle::Implicit))
+                    }
                     None => LookupResult::NotFound(NotFound::Attribute(cls)),
                 }
             }
@@ -853,6 +859,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         };
                         match instance_attr {
                             Some(attr) => LookupResult::Found(attr),
+                            None if metadata.has_base_any() => {
+                                // We can't immediately fall back to Any in this case -- `type[Any]` is actually a special
+                                // AttributeBase which requires additional lookup on `type` itself before the Any fallback.
+                                self.lookup_attr_from_attribute_base(
+                                    AttributeBase::TypeAny(AnyStyle::Implicit),
+                                    attr_name,
+                                )
+                            }
                             None => LookupResult::NotFound(NotFound::ClassAttribute(class)),
                         }
                     }
