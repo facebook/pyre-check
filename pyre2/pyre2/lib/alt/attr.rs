@@ -402,27 +402,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Either::Left(got) => {
                         self.expr(
                             got,
-                            Some((
-                                &want,
-                                &TypeCheckContext {
-                                    kind: TypeCheckKind::Attribute(attr_name.clone()),
-                                    context: context.map(|ctx| ctx()),
-                                },
-                            )),
+                            Some((&want, &|| TypeCheckContext {
+                                kind: TypeCheckKind::Attribute(attr_name.clone()),
+                                context: context.map(|ctx| ctx()),
+                            })),
                             errors,
                         );
                     }
                     Either::Right(got) => {
-                        self.check_type(
-                            &want,
-                            got,
-                            range,
-                            errors,
-                            &TypeCheckContext {
-                                kind: TypeCheckKind::Attribute(attr_name.clone()),
-                                context: context.map(|ctx| ctx()),
-                            },
-                        );
+                        self.check_type(&want, got, range, errors, &|| TypeCheckContext {
+                            kind: TypeCheckKind::Attribute(attr_name.clone()),
+                            context: context.map(|ctx| ctx()),
+                        });
                     }
                 },
                 AttributeInner::ReadOnly(_) => {

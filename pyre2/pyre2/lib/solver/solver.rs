@@ -342,14 +342,15 @@ impl Solver {
         errors: &ErrorCollector,
         error_kind: ErrorKind,
         loc: TextRange,
-        tcc: &TypeCheckContext,
+        tcc: &dyn Fn() -> TypeCheckContext,
     ) {
+        let tcc = tcc();
         let msg = tcc.kind.format_error(
             &self.for_display(got.clone()),
             &self.for_display(want.clone()),
             errors.module_info().name(),
         );
-        match &tcc.context {
+        match tcc.context {
             Some(ctx) => {
                 errors.add(loc, msg, error_kind, Some(&|| ctx.clone()));
             }
@@ -448,14 +449,9 @@ impl Solver {
                 drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
-                    self.error(
-                        &t,
-                        &got,
-                        errors,
-                        ErrorKind::TypeMismatch,
-                        loc,
-                        &TypeCheckContext::unknown(),
-                    );
+                    self.error(&t, &got, errors, ErrorKind::TypeMismatch, loc, &|| {
+                        TypeCheckContext::unknown()
+                    });
                 }
             }
             _ => {

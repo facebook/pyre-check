@@ -160,12 +160,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     self.expr(
                         default,
-                        Some((
-                            ty,
-                            &TypeCheckContext::of_kind(TypeCheckKind::FunctionParameterDefault(
+                        Some((ty, &|| {
+                            TypeCheckContext::of_kind(TypeCheckKind::FunctionParameterDefault(
                                 name.id.clone(),
-                            )),
-                        )),
+                            ))
+                        })),
                         errors,
                     );
                 }

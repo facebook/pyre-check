@@ -591,7 +591,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Type,
         loc: TextRange,
         errors: &ErrorCollector,
-        tcc: &TypeCheckContext,
+        tcc: &dyn Fn() -> TypeCheckContext,
     ) -> Type {
         if matches!(got, Type::Any(AnyStyle::Error)) {
             // Don't propagate errors

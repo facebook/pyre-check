@@ -802,7 +802,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &exit_type,
             range,
             errors,
-            &TypeCheckContext {
+            &|| TypeCheckContext {
                 kind: TypeCheckKind::MagicMethodReturn(
                     context_manager_type.clone(),
                     kind.as_exit_dunder(),
@@ -1191,20 +1191,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
         match binding {
-            Binding::Expr(ann, e) => {
-                let ty = ann.map(|k| {
-                    let annot = self.get_idx(k);
-                    let tcc = TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(
-                        &annot.target,
-                    ));
-                    (annot, tcc)
-                });
-                self.expr(
-                    e,
-                    ty.as_ref().and_then(|(x, tcc)| x.ty().map(|t| (t, tcc))),
-                    errors,
-                )
-            }
+            Binding::Expr(ann, e) => match ann {
+                Some(k) => {
+                    let annot = self.get_idx(*k);
+                    let tcc: &dyn Fn() -> TypeCheckContext = &|| {
+                        TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(
+                            &annot.target,
+                        ))
+                    };
+                    self.expr(e, annot.ty().map(|t| (t, tcc)), errors)
+                }
+                None => self.expr(e, None, errors),
+            },
             Binding::TypeVar(ann, name, x) => {
                 let ty = Type::type_form(self.typevar_from_call(name.clone(), x, errors).to_type());
                 if let Some(k) = ann
@@ -1217,13 +1215,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             },
                     } = &*self.get_idx(*k)
                 {
-                    self.check_type(
-                        want,
-                        &ty,
-                        x.range,
-                        errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
-                    )
+                    self.check_type(want, &ty, x.range, errors, &|| {
+                        TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
+                    })
                 } else {
                     ty
                 }
@@ -1241,13 +1235,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             },
                     } = &*self.get_idx(*k)
                 {
-                    self.check_type(
-                        want,
-                        &ty,
-                        x.range,
-                        errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
-                    )
+                    self.check_type(want, &ty, x.range, errors, &|| {
+                        TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
+                    })
                 } else {
                     ty
                 }
@@ -1267,13 +1257,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             },
                     } = &*self.get_idx(*k)
                 {
-                    self.check_type(
-                        want,
-                        &ty,
-                        x.range,
-                        errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
-                    )
+                    self.check_type(want, &ty, x.range, errors, &|| {
+                        TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
+                    })
                 } else {
                     ty
                 }
@@ -1299,15 +1285,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     } else if is_generator {
                         if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
-                            self.check_type(
-                                &return_ty,
-                                &implicit_return,
-                                *range,
-                                errors,
-                                &TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
+                            self.check_type(&return_ty, &implicit_return, *range, errors, &|| {
+                                TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
                                     !x.returns.is_empty(),
-                                )),
-                            );
+                                ))
+                            });
                         } else {
                             self.error(
                                 errors,
@@ -1318,15 +1300,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         }
                     } else {
-                        self.check_type(
-                            &ty,
-                            &implicit_return,
-                            *range,
-                            errors,
-                            &TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
+                        self.check_type(&ty, &implicit_return, *range, errors, &|| {
+                            TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
                                 !x.returns.is_empty(),
-                            )),
-                        );
+                            ))
+                        });
                     }
                     ty
                 } else {
@@ -1391,15 +1369,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     } else if x.is_generator {
                         let hint =
                             hint.and_then(|ty| self.decompose_generator(ty).map(|(_, _, r)| r));
-                        let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
-                        self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
+                        let tcc: &dyn Fn() -> TypeCheckContext =
+                            &|| TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
+                        self.expr(expr, hint.as_ref().map(|t| (t, tcc)), errors)
                     } else if matches!(hint, Some(Type::TypeGuard(_) | Type::TypeIs(_))) {
                         let hint = Some(Type::ClassType(self.stdlib.bool()));
-                        let tcc = TypeCheckContext::of_kind(TypeCheckKind::TypeGuardReturn);
-                        self.expr(expr, hint.as_ref().map(|t| (t, &tcc)), errors)
+                        let tcc: &dyn Fn() -> TypeCheckContext =
+                            &|| TypeCheckContext::of_kind(TypeCheckKind::TypeGuardReturn);
+                        self.expr(expr, hint.as_ref().map(|t| (t, tcc)), errors)
                     } else {
-                        let tcc = TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
-                        self.expr(expr, hint.map(|t| (t, &tcc)), errors)
+                        let tcc: &dyn Fn() -> TypeCheckContext =
+                            &|| TypeCheckContext::of_kind(TypeCheckKind::ExplicitFunctionReturn);
+                        self.expr(expr, hint.map(|t| (t, tcc)), errors)
                     }
                 } else {
                     Type::None
@@ -1438,13 +1419,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 let check_exception_type = |exception_type: Type, range| {
                     let exception = self.untype(exception_type, range, errors);
-                    self.check_type(
-                        &base_exception_type,
-                        &exception,
-                        range,
-                        errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::ExceptionClass),
-                    );
+                    self.check_type(&base_exception_type, &exception, range, errors, &|| {
+                        TypeCheckContext::of_kind(TypeCheckKind::ExceptionClass)
+                    });
                     if let Some(base_exception_group_any_type) =
                         base_exception_group_any_type.as_ref()
                         && !exception.is_any()
@@ -1514,9 +1491,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 let hint =
                     ty.and_then(|x| x.ty().map(|ty| self.stdlib.iterable(ty.clone()).to_type()));
-                let tcc = TypeCheckContext::unknown();
+                let tcc: &dyn Fn() -> TypeCheckContext = &|| TypeCheckContext::unknown();
                 let iterables = self.iterate(
-                    &self.expr(e, hint.as_ref().map(|t| (t, &tcc)), errors),
+                    &self.expr(e, hint.as_ref().map(|t| (t, tcc)), errors),
                     e.range(),
                     errors,
                 );
@@ -1535,13 +1512,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.context_value(context_manager.clone(), *kind, e.range(), errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty().map(|t| (t, &x.target))) {
-                    Some((ty, target)) => self.check_type(
-                        ty,
-                        &context_value,
-                        e.range(),
-                        errors,
-                        &TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target)),
-                    ),
+                    Some((ty, target)) => {
+                        self.check_type(ty, &context_value, e.range(), errors, &|| {
+                            TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
+                        })
+                    }
                     None => context_value,
                 }
             }
@@ -1742,22 +1717,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::NameAssign(name, annot_key, expr) => {
-                let annot = annot_key.as_ref().map(|(style, k)| {
-                    let tcc = TypeCheckContext::of_kind(match style {
-                        AnnotationStyle::Direct => TypeCheckKind::AnnAssign,
-                        AnnotationStyle::Forwarded => TypeCheckKind::AnnotatedName(name.clone()),
-                    });
-                    (self.get_idx(*k), tcc)
-                });
-                let ty = self.expr(
-                    expr,
-                    annot.as_ref().and_then(|(x, tcc)| x.ty().map(|t| (t, tcc))),
-                    errors,
-                );
-                match (annot, &ty) {
-                    (Some((annot, _)), _)
-                        if annot.annotation.qualifiers.contains(&Qualifier::TypeAlias) =>
-                    {
+                let (has_type_alias_qualifier, ty) = match annot_key.as_ref() {
+                    Some((style, k)) => {
+                        let annot = self.get_idx(*k);
+                        let tcc: &dyn Fn() -> TypeCheckContext = &|| {
+                            TypeCheckContext::of_kind(match style {
+                                AnnotationStyle::Direct => TypeCheckKind::AnnAssign,
+                                AnnotationStyle::Forwarded => {
+                                    TypeCheckKind::AnnotatedName(name.clone())
+                                }
+                            })
+                        };
+                        let hint = annot.ty().map(|t| (t, tcc));
+                        (
+                            Some(annot.annotation.qualifiers.contains(&Qualifier::TypeAlias)),
+                            self.expr(expr, hint, errors),
+                        )
+                    }
+                    None => (None, self.expr(expr, None, errors)),
+                };
+                match (has_type_alias_qualifier, &ty) {
+                    (Some(true), _) => {
                         self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, expr, errors)
                     }
                     // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
@@ -2023,17 +2003,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let yield_ty = if let Some(expr) = x.value.as_ref() {
                         self.expr(
                             expr,
-                            Some((&yield_hint, &TypeCheckContext::unknown())),
+                            Some((&yield_hint, &|| TypeCheckContext::unknown())),
                             errors,
                         )
                     } else {
-                        self.check_type(
-                            &yield_hint,
-                            &Type::None,
-                            x.range,
-                            errors,
-                            &TypeCheckContext::unknown(),
-                        )
+                        self.check_type(&yield_hint, &Type::None, x.range, errors, &|| {
+                            TypeCheckContext::unknown()
+                        })
                     };
                     Arc::new(YieldResult { yield_ty, send_ty })
                 } else {
@@ -2098,7 +2074,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     YieldFromResult::any_error()
                 };
                 if let Some(want) = want {
-                    self.check_type(want, &ty, x.range, errors, &TypeCheckContext::unknown());
+                    self.check_type(want, &ty, x.range, errors, &|| TypeCheckContext::unknown());
                 }
                 Arc::new(res)
             }
