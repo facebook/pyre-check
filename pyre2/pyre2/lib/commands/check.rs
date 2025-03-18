@@ -64,8 +64,8 @@ pub struct Args {
     /// Write the errors to a file, instead of printing them.
     #[arg(long, short = 'o', env = clap_env("OUTPUT"))]
     output: Option<PathBuf>,
-    #[clap(long, short = 'I', env = clap_env("INCLUDE"))]
-    include: Option<Vec<PathBuf>>,
+    #[clap(long, env = clap_env("SEARCH_PATH"))]
+    search_path: Option<Vec<PathBuf>>,
     #[clap(long, value_enum, default_value_t, env = clap_env("OUTPUT_FORMAT"))]
     output_format: OutputFormat,
     /// Check all reachable modules, not just the ones that are passed in explicitly on CLI positional arguments.
@@ -111,7 +111,7 @@ pub struct Args {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct LoaderInputs {
-    search_roots: Vec<PathBuf>,
+    search_path: Vec<PathBuf>,
     site_package_path: Vec<PathBuf>,
 }
 
@@ -122,7 +122,7 @@ struct CheckLoader {
 
 impl Loader for CheckLoader {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
-        if let Some(path) = find_module(module, &self.loader_inputs.search_roots) {
+        if let Some(path) = find_module(module, &self.loader_inputs.search_path) {
             Ok(path)
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok(path)
@@ -130,7 +130,7 @@ impl Loader for CheckLoader {
             Ok(path)
         } else {
             Err(FindError::search_path(
-                &self.loader_inputs.search_roots,
+                &self.loader_inputs.search_path,
                 &self.loader_inputs.site_package_path,
             ))
         }
@@ -235,7 +235,7 @@ impl Args {
     fn override_config(&self, config: &mut ConfigFile) {
         set_if_some(&mut config.python_platform, self.python_platform.as_ref());
         set_if_some(&mut config.python_version, self.python_version.as_ref());
-        set_if_some(&mut config.search_roots, self.include.as_ref());
+        set_if_some(&mut config.search_path, self.search_path.as_ref());
         set_if_some(
             &mut config.site_package_path,
             self.site_package_path.as_ref(),
@@ -279,7 +279,7 @@ impl Args {
             SmallMap::new();
         for (path, config) in files_and_configs {
             let key = LoaderInputs {
-                search_roots: config.search_roots.clone(),
+                search_path: config.search_path.clone(),
                 site_package_path: config.site_package_path.clone(),
             };
             partition_by_loader_inputs
@@ -293,7 +293,7 @@ impl Args {
             .flat_map(|(loader_inputs, files_and_configs)| {
                 let files_with_module_name_and_metadata =
                     files_and_configs.into_map(|(path, config)| {
-                        let module_name = module_from_path(&path, &loader_inputs.search_roots);
+                        let module_name = module_from_path(&path, &loader_inputs.search_path);
                         (path, module_name, config.get_runtime_metadata())
                     });
                 let loader = create_loader(loader_inputs);

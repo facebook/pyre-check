@@ -31,10 +31,11 @@ pub struct ConfigFile {
     #[serde(default = "ConfigFile::default_project_includes")]
     pub project_includes: Globs,
 
-    /// corresponds to --include (soon to be renamed to --search-path) in Args
+    /// corresponds to --search-path in Args, the list of directories where imports are
+    /// found (including type checked files).
     // TODO(connernilsen): set this to config directory when config is found
-    #[serde(default = "ConfigFile::default_search_roots")]
-    pub search_roots: Vec<PathBuf>,
+    #[serde(default = "ConfigFile::default_search_path")]
+    pub search_path: Vec<PathBuf>,
 
     /// The default Python platform to use, likely `linux`
     // TODO(connernilsen): use python_executable if not set
@@ -54,7 +55,7 @@ pub struct ConfigFile {
 impl Default for ConfigFile {
     fn default() -> ConfigFile {
         ConfigFile {
-            search_roots: Self::default_search_roots(),
+            search_path: Self::default_search_path(),
             python_platform: Self::default_python_platform(),
             python_version: PythonVersion::default(),
             site_package_path: Vec::new(),
@@ -72,7 +73,7 @@ impl ConfigFile {
         DEFAULT_PYTHON_PLATFORM.to_owned()
     }
 
-    pub fn default_search_roots() -> Vec<PathBuf> {
+    pub fn default_search_path() -> Vec<PathBuf> {
         vec![PathBuf::from("")]
     }
 
@@ -83,12 +84,12 @@ impl ConfigFile {
     fn rewrite_with_path_to_config(&mut self, config_root: &Path) {
         // TODO(connernilsen): store root as part of config to make it easier to rewrite later on
         self.project_includes = self.project_includes.clone().from_root(config_root);
-        self.search_roots.iter_mut().for_each(|search_root| {
+        self.search_path.iter_mut().for_each(|search_root| {
             let mut base = config_root.to_path_buf();
             base.push(search_root.as_path());
             *search_root = base;
         });
-        self.search_roots.push(config_root.to_path_buf());
+        self.search_path.push(config_root.to_path_buf());
         self.site_package_path
             .iter_mut()
             .for_each(|site_package_path| {
@@ -262,7 +263,7 @@ mod tests {
 
         let expected_config = ConfigFile {
             project_includes: Globs::new(vec![path_str]),
-            search_roots: vec![test_path.clone(), test_path.clone()],
+            search_path: vec![test_path.clone(), test_path.clone()],
             ..ConfigFile::default()
         };
         assert_eq!(config, expected_config);

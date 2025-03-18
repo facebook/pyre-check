@@ -33,7 +33,7 @@ ERROR */same_name.py*:1:10-* (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/hidden1.py && \
 > echo "import hidden1; y: int = hidden1.x" > $TMPDIR/hidden2.py && \
-> $PYRE2 check $TMPDIR/hidden2.py --include=$TMPDIR
+> $PYRE2 check $TMPDIR/hidden2.py --search-path=$TMPDIR
 ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` [type-mismatch] (glob)
  INFO 1 errors, * (glob)
 [1]
@@ -44,7 +44,7 @@ ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` [type-mismatch] (gl
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/shown1.py && \
 > echo "import shown1; y: int = shown1.x" > $TMPDIR/shown2.py && \
-> $PYRE2 check $TMPDIR/shown2.py --include=$TMPDIR --check-all 2>&1 | grep -v "overrides"
+> $PYRE2 check $TMPDIR/shown2.py --search-path=$TMPDIR --check-all 2>&1 | grep -v "overrides"
 ERROR */shown*.py:1:* (glob)
 ERROR */shown*.py:1:* (glob)
 * INFO * errors, * (glob)

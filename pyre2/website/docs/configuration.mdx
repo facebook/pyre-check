@@ -26,11 +26,11 @@ The following is the order in which configuration options are selected:
   - Type: list of Unix Glob patterns
   - Default: `["./**/*.py"]`
   - Flag equivalent: Equivalent to `FILES...`
-- `search_roots`: a file path describing a root from which imports should be found and imported from. This this takes second highest precedence in import resolution, after `project_includes`, but before `typeshed` and `site_package_path`.
+- `search_path`: a file path describing a root from which imports should be found and imported from (including modules in `project_includes`). This this takes second highest precedence in import resolution, after `project_includes`, but before `typeshed` and `site_package_path`.
   - Type: list of directories
   - Default: `["."]`
-  - Flag equivalent: `--include` (soon changing to `--search-roots`), `-I`
-  - ENV equivalent: `PYRE_INCLUDE`
+  - Flag equivalent: `--search-path`
+  - ENV equivalent: `PYRE_SEARCH_PATH`
 - `site_package_path`: a file path describing a root from which imports should be found and imported from. This takes the lowest priority in import resolution, after `project_includes`, `typeshed`,  and `search_roots`.
   - Type: list of directories
   - Default: `["."]`

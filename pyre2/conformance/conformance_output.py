@@ -217,7 +217,7 @@ def get_conformance_output(directory: str) -> Dict[str, List[Dict[str, Any]]]:
                 "--output",
                 tmp_file.name,
                 "--output-format=json",
-                "--include",
+                "--search-path",
                 directory,
             ]
             + files_to_check
