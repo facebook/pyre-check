@@ -170,6 +170,18 @@ pub enum FlowStyle {
     Uninitialized,
 }
 
+impl FlowStyle {
+    pub fn error_message(&self, name: &Identifier) -> Option<String> {
+        match self {
+            Self::Unbound => Some(format!("`{name}` is unbound")),
+            Self::Uninitialized => Some(format!("`{name}` is uninitialized")),
+            Self::PossiblyUnbound => Some(format!("`{name}` may be unbound")),
+            Self::PossiblyUninitialized => Some(format!("`{name}` may be uninitialized")),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FlowInfo {
     pub key: Idx<Key>,

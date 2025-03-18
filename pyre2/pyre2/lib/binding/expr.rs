@@ -28,7 +28,6 @@ use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::Flow;
-use crate::binding::scope::FlowStyle;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::dunder;
@@ -60,36 +59,12 @@ impl<'a> BindingsBuilder<'a> {
         match value {
             Some(value) => {
                 if !self.module_info.path().is_interface() {
-                    match self.scopes.get_flow_style(&name.id) {
-                        Some(FlowStyle::Unbound) => {
-                            self.error(
-                                name.range,
-                                format!("`{name}` is unbound"),
-                                ErrorKind::UnboundName,
-                            );
-                        }
-                        Some(FlowStyle::PossiblyUnbound) => {
-                            self.error(
-                                name.range,
-                                format!("`{name}` may be unbound"),
-                                ErrorKind::UnboundName,
-                            );
-                        }
-                        Some(FlowStyle::Uninitialized) => {
-                            self.error(
-                                name.range,
-                                format!("`{name}` is uninitialized"),
-                                ErrorKind::UnboundName,
-                            );
-                        }
-                        Some(FlowStyle::PossiblyUninitialized) => {
-                            self.error(
-                                name.range,
-                                format!("`{name}` may be uninitialized"),
-                                ErrorKind::UnboundName,
-                            );
-                        }
-                        _ => {}
+                    if let Some(error_message) = self
+                        .scopes
+                        .get_flow_style(&name.id)
+                        .and_then(|style| style.error_message(name))
+                    {
+                        self.error(name.range, error_message, ErrorKind::UnboundName);
                     }
                 }
                 self.table.insert(key, value);
