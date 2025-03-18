@@ -261,7 +261,7 @@ mod tests {
         config.rewrite_with_path_to_config(&test_path);
 
         let expected_config = ConfigFile {
-            project_includes: Globs::new(vec![path_str + "/"]),
+            project_includes: Globs::new(vec![path_str]),
             search_roots: vec![test_path.clone(), test_path.clone()],
             ..ConfigFile::default()
         };
