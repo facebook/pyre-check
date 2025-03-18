@@ -135,7 +135,7 @@ impl Static {
     }
 }
 
-/// The current value of the name, plus optionally the current value of the annotation.
+/// Flow-sensitive information about a name.
 #[derive(Default, Clone, Debug)]
 pub struct Flow {
     pub info: SmallMap<Name, FlowInfo>,
