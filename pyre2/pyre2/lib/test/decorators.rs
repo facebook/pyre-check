@@ -164,11 +164,11 @@ reveal_type(f)  # E: revealed type: (x: int) -> int
 );
 
 testcase_with_bug!(
-    "TODO(stroxler) Our resolution of `__call__` is sometimes failing.",
+    "TODO(stroxler) Decorated methods are not always getting bound properly.",
     test_callable_class_as_decorator,
     r#"
 import dataclasses
-from typing import Callable
+from typing import Callable, assert_type
 
 @dataclasses.dataclass(frozen=True)
 class decorator:
@@ -181,8 +181,10 @@ class decorator:
 
 
 class C:
-    @decorator(42)  # E: Expected a callable, got decorator
+    @decorator(42)
     def f(self, x: int) -> int:
         return x
+
+assert_type(C().f(42), int)  # E:  Missing argument `x` # E: Argument `Literal[42]` is not assignable to parameter `self` with type `C`
     "#,
 );

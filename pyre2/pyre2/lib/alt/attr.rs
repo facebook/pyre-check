@@ -723,9 +723,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         inner: AttributeInner,
     ) -> Option<Type> {
         match inner {
-            AttributeInner::ReadWrite(ty) => Some(ty),
-            AttributeInner::ReadOnly(_)
-            | AttributeInner::NoAccess(_)
+            // TODO(stroxler): ReadWrite attributes are not actually methods but limiting access to
+            // ReadOnly breaks unit tests; we should investigate callsites to understand this better.
+            AttributeInner::ReadOnly(ty) | AttributeInner::ReadWrite(ty) => Some(ty),
+            AttributeInner::NoAccess(_)
             | AttributeInner::Property(..)
             | AttributeInner::Descriptor(..) => None,
         }
