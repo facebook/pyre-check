@@ -3,4 +3,4 @@
 export DOCUSAURUS_BASE_URL="$1"
 export INTERNAL_STATIC_DOCS=1
 yarn install
-yarn build
+scripts/build.sh
