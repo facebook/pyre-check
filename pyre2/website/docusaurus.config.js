@@ -13,6 +13,7 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 function getNavBarItems() {
   return [
+    // TODO (T217317240) remove this check when we are ready to publish docs to public
     process.env.INTERNAL_STATIC_DOCS
       ? {
           to: 'en/docs/fb/',
@@ -27,12 +28,15 @@ function getNavBarItems() {
       label: 'Learn Python Typing',
       position: 'left',
     },
-    {
-      to: 'try/',
-      activeBasePath: 'try',
-      label: 'Try',
-      position: 'left',
-    },
+    // Hide sandbox for internal users since wasm is not supported internally
+    process.env.INTERNAL_STATIC_DOCS
+      ? null
+      : {
+          to: 'try/',
+          activeBasePath: 'try',
+          label: 'Try',
+          position: 'left',
+        },
     // Please keep GitHub link to the right for consistency.
     {
       href: 'https://github.com/facebook/pyrefly',
