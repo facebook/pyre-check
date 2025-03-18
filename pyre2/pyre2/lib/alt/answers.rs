@@ -8,6 +8,7 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -36,6 +37,7 @@ use crate::graph::index::Idx;
 use crate::graph::index_map::IndexMap;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
+use crate::module::module_path::ModulePath;
 use crate::solver::solver::Solver;
 use crate::solver::type_order::TypeOrder;
 use crate::table;
@@ -165,15 +167,25 @@ impl Debug for SolutionsDifference<'_> {
     }
 }
 
-impl DisplayWith<ModuleInfo> for SolutionsDifference<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &ModuleInfo) -> fmt::Result {
+impl Display for SolutionsDifference<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let missing = |f: &mut fmt::Formatter, x: Option<(&dyn Display, &dyn Debug)>| match x {
             None => write!(f, "missing"),
             Some(x) => write!(f, "`{}`", x.0),
         };
 
+        // The key has type DisplayWith<ModuleInfo>.
+        // We don't know if the key originates on the LHS or RHS, so we don't know which is the appropriate ModuleInfo.
+        // However, we do know it is exported, and exported things can't rely on locations, so regardless
+        // of the ModuleInfo, it should display the same. Therefore, we fake one up.
+        let fake_module_info = ModuleInfo::new(
+            ModuleName::builtins(),
+            ModulePath::memory(PathBuf::new()),
+            Default::default(),
+        );
+
         write!(f, "`")?;
-        self.key.0.fmt(f, ctx)?;
+        self.key.0.fmt(f, &fake_module_info)?;
         write!(f, "` was ")?;
         missing(f, self.lhs)?;
         write!(f, " now ")?;

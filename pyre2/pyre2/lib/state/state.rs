@@ -357,15 +357,8 @@ impl State {
                         && let Some(difference) = old.first_difference(new)
                     {
                         debug!(
-                            "Exports changed for `{}`: {}",
+                            "Exports changed for `{}`: {difference}",
                             module_data.handle.module(),
-                            writer
-                                .steps
-                                .load
-                                .as_ref()
-                                .unwrap()
-                                .module_info
-                                .display(&difference)
                         );
                         changed = true;
                         writer.epochs.changed = self.now;
