@@ -441,17 +441,6 @@ assert_type(f(), str)
 );
 
 testcase!(
-    test_method_cannot_see_class_scope,
-    r#"
-class C:
-    x: int
-
-    def m(self) -> None:
-        x  # E: Could not find name `x`
-"#,
-);
-
-testcase!(
     test_class_rebind_attribute,
     r#"
 from typing import assert_type
@@ -464,19 +453,6 @@ class C:
     attribute = f(attribute)
 
 assert_type(C().attribute, int)
-"#,
-);
-
-testcase!(
-    test_more_class_scope,
-    r#"
-x: int = 0
-class C:
-    x: str = x # E: `Literal[0]` is not assignable to `str`
-    y: int = x # E: `str` is not assignable to `int`
-    def m(self) -> str:
-        # x refers to global x: int
-        return x # E: Returned type `Literal[0]` is not assignable to declared return type `str`
 "#,
 );
 

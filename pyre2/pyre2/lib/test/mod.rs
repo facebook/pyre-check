@@ -35,6 +35,7 @@ mod paramspec;
 mod perf;
 mod protocol;
 mod returns;
+mod scope;
 mod simple;
 mod state;
 mod tuple;
