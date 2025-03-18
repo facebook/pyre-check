@@ -633,7 +633,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
         range: TextRange,
         kind: ErrorKind,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         msg: String,
     ) -> Type {
         errors.add(range, msg, kind, context);

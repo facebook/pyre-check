@@ -303,7 +303,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) -> Type {
         let lookup_result = self.lookup_attr(base, attr_name);
@@ -329,7 +329,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) -> Option<Type> {
         match self.lookup_attr(base, attr_name) {
@@ -384,7 +384,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: Either<&Expr, &Type>,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) {
         match self.lookup_attr(base, attr_name) {
@@ -406,7 +406,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &want,
                                 &TypeCheckContext {
                                     kind: TypeCheckKind::Attribute(attr_name.clone()),
-                                    context: context.cloned(),
+                                    context: context.map(|ctx| ctx()),
                                 },
                             )),
                             errors,
@@ -420,7 +420,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             &TypeCheckContext {
                                 kind: TypeCheckKind::Attribute(attr_name.clone()),
-                                context: context.cloned(),
+                                context: context.map(|ctx| ctx()),
                             },
                         );
                     }
@@ -526,7 +526,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Expr,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) {
         self.check_attr_set(
@@ -547,7 +547,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         got: &Type,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) {
         self.check_attr_set(
@@ -567,7 +567,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) {
         match self.lookup_attr(base, attr_name) {
@@ -728,7 +728,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr: Attribute,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Result<Type, NoAccessReason> {
         match attr.inner {
             AttributeInner::NoAccess(reason) => Err(reason),
@@ -806,7 +806,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) -> Result<Type, String> {
         match lookup {

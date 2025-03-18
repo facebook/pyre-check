@@ -344,16 +344,19 @@ impl Solver {
         loc: TextRange,
         tcc: &TypeCheckContext,
     ) {
-        errors.add(
-            loc,
-            tcc.kind.format_error(
-                &self.for_display(got.clone()),
-                &self.for_display(want.clone()),
-                errors.module_info().name(),
-            ),
-            error_kind,
-            tcc.context.as_ref(),
+        let msg = tcc.kind.format_error(
+            &self.for_display(got.clone()),
+            &self.for_display(want.clone()),
+            errors.module_info().name(),
         );
+        match &tcc.context {
+            Some(ctx) => {
+                errors.add(loc, msg, error_kind, Some(&|| ctx.clone()));
+            }
+            None => {
+                errors.add(loc, msg, error_kind, None);
+            }
+        }
     }
 
     /// Union a list of types together. In the process may cause some variables to be forced.

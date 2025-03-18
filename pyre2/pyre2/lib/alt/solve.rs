@@ -446,7 +446,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .flat_map(|t| self.iterate(t, range, errors))
                 .collect(),
             _ => {
-                let context = ErrorContext::Iteration(iterable.clone());
+                let context = || ErrorContext::Iteration(iterable.clone());
                 let ty = self
                     .unwrap_iterable(iterable)
                     .or_else(|| {
@@ -468,7 +468,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             range,
                             ErrorKind::NotIterable,
                             None,
-                            context.format(),
+                            context().format(),
                         )
                     });
                 vec![Iterable::OfType(ty)]
@@ -704,7 +704,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         kind: ContextManagerKind,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
         match kind {
             ContextManagerKind::Sync => self.call_method_or_error(
@@ -743,7 +743,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         kind: ContextManagerKind,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
         let base_exception_class_type = Type::type_form(self.stdlib.base_exception().to_type());
         let arg1 = Type::Union(vec![base_exception_class_type, Type::None]);
@@ -792,7 +792,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
-        let context = ErrorContext::BadContextManager(context_manager_type.clone());
+        let context = || ErrorContext::BadContextManager(context_manager_type.clone());
         let enter_type =
             self.context_value_enter(&context_manager_type, kind, range, errors, Some(&context));
         let exit_type =
@@ -803,8 +803,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             range,
             errors,
             &TypeCheckContext {
-                kind: TypeCheckKind::MagicMethodReturn(context_manager_type, kind.as_exit_dunder()),
-                context: Some(context),
+                kind: TypeCheckKind::MagicMethodReturn(
+                    context_manager_type.clone(),
+                    kind.as_exit_dunder(),
+                ),
+                context: Some(context()),
             },
         );
         // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
@@ -983,7 +986,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &[],
                                 &[],
                                 errors,
-                                Some(&ErrorContext::DelItem(base.clone())),
+                                Some(&|| ErrorContext::DelItem(base.clone())),
                             );
                         }
                     }
@@ -1602,7 +1605,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ],
                         &[],
                         errors,
-                        Some(&ErrorContext::SetItem(base.clone())),
+                        Some(&|| ErrorContext::SetItem(base.clone())),
                     ),
                 }
             }
@@ -1808,7 +1811,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
                 let binding_ty = self.get_idx(*key).arc_clone();
-                let context = ErrorContext::MatchPositional(binding_ty.clone());
+                let context = || ErrorContext::MatchPositional(binding_ty.clone());
                 let match_args = self.attr_infer(
                     &binding_ty,
                     &dunder::MATCH_ARGS,

@@ -139,11 +139,11 @@ impl CallArgPreEval<'_> {
         range: TextRange,
         arg_errors: &ErrorCollector,
         call_errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) {
         let tcc = TypeCheckContext {
             kind: TypeCheckKind::CallArgument(param_name.cloned(), callable_name.cloned()),
-            context: context.cloned(),
+            context: context.map(|ctx| ctx()),
         };
         match self {
             Self::Type(ty, done) => {
@@ -219,7 +219,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         arg_errors: &ErrorCollector,
         call_errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) {
         let error = |errors, range, kind, context, msg: String| {
             self.error(
@@ -356,7 +356,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 arg_errors,
                 &TypeCheckContext {
                     kind: TypeCheckKind::CallVarArgs(callable_name.clone()),
-                    context: context.cloned(),
+                    context: context.map(|ctx| ctx()),
                 },
             );
         }
@@ -473,7 +473,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                             Some(name.clone()),
                                             callable_name.clone(),
                                         ),
-                                        context: context.cloned(),
+                                        context: context.map(|ctx| ctx()),
                                     },
                                 );
                             });
@@ -498,7 +498,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                                     None,
                                                     callable_name.clone(),
                                                 ),
-                                                context: context.cloned(),
+                                                context: context.map(|ctx| ctx()),
                                             },
                                         );
                                     });
@@ -569,7 +569,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 callable_name.clone(),
                             )
                         },
-                        context: context.cloned(),
+                        context: context.map(|ctx| ctx()),
                     };
                     self.expr_with_separate_check_errors(
                         &kw.value,
@@ -602,7 +602,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 Some(name.clone()),
                                 callable_name.clone(),
                             ),
-                            context: context.cloned(),
+                            context: context.map(|ctx| ctx()),
                         },
                     );
                 }
@@ -627,7 +627,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         arg_errors: &ErrorCollector,
         call_errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
         match callable.params {
             Params::List(params) => {

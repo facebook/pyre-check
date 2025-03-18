@@ -109,12 +109,12 @@ impl ErrorCollector {
         range: TextRange,
         msg: String,
         kind: ErrorKind,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) {
         let source_range = self.module_info.source_range(range);
         let is_ignored = self.module_info.is_ignored(&source_range, &msg);
         let full_msg = match context {
-            Some(ctx) => vec1![ctx.format(), msg],
+            Some(ctx) => vec1![ctx().format(), msg],
             None => vec1![msg],
         };
         if self.style != ErrorStyle::Never {

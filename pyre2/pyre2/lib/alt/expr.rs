@@ -138,7 +138,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         attr_name: &Name,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
         self.distribute_over_union(obj, |obj| {
             self.type_of_attr_get(obj, attr_name, range, errors, context, "Expr::attr_infer")
@@ -150,7 +150,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         method_type: Type,
         range: TextRange,
         errors: &ErrorCollector,
-        context: &ErrorContext,
+        context: &dyn Fn() -> ErrorContext,
         op: Operator,
         call_arg_type: &Type,
     ) -> Type {
@@ -173,7 +173,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
         let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
-            let context = ErrorContext::BinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
+            let context =
+                || ErrorContext::BinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
 
             let method_type_dunder = self.type_of_attr_get_if_found(
                 lhs,
@@ -714,7 +715,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::UnaryOp(x) => {
                 let t = self.expr_infer(&x.operand, errors);
                 let unop = |t: &Type, f: &dyn Fn(&Lit) -> Option<Type>, method: &Name| {
-                    let context = ErrorContext::UnaryOp(x.op.as_str().to_owned(), t.clone());
+                    let context = || ErrorContext::UnaryOp(x.op.as_str().to_owned(), t.clone());
                     match t {
                         Type::Literal(lit) if let Some(ret) = f(lit) => ret,
                         Type::ClassType(_) => self.call_method_or_error(
@@ -740,7 +741,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             x.range,
                             ErrorKind::UnsupportedOperand,
                             None,
-                            context.format(),
+                            context().format(),
                         ),
                     }
                 };
@@ -1090,8 +1091,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 for (op, comparator) in comparisons {
                     let right = self.expr_infer(comparator, errors);
                     let right_range = comparator.range();
-                    let context =
-                        ErrorContext::BinaryOp(op.as_str().to_owned(), left.clone(), right.clone());
+                    let context = || {
+                        ErrorContext::BinaryOp(op.as_str().to_owned(), left.clone(), right.clone())
+                    };
                     let compare_by_method = |ty, method, arg| {
                         self.call_method(ty, &method, x.range, &[arg], &[], errors, Some(&context))
                     };
@@ -1101,7 +1103,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             x.range,
                             ErrorKind::UnsupportedOperand,
                             None,
-                            context.format(),
+                            context().format(),
                         );
                     };
                     match op {
@@ -1353,7 +1355,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &x.slice,
                                 x.range,
                                 errors,
-                                Some(&ErrorContext::Index(fun.clone())),
+                                Some(&|| ErrorContext::Index(fun.clone())),
                             ),
                         Type::Tuple(_) if xs.len() == 1 => self.call_method_or_error(
                             &fun,
@@ -1362,7 +1364,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[CallArg::Expr(&x.slice)],
                             &[],
                             errors,
-                            Some(&ErrorContext::Index(fun.clone())),
+                            Some(&|| ErrorContext::Index(fun.clone())),
                         ),
                         Type::Any(style) => style.propagate(),
                         Type::ClassType(ref cls)
@@ -1373,7 +1375,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &x.slice,
                                 x.range,
                                 errors,
-                                Some(&ErrorContext::Index(fun.clone())),
+                                Some(&|| ErrorContext::Index(fun.clone())),
                             )
                         }
                         Type::ClassType(_) => self.call_method_or_error(
@@ -1383,7 +1385,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &[CallArg::Expr(&x.slice)],
                             &[],
                             errors,
-                            Some(&ErrorContext::Index(fun.clone())),
+                            Some(&|| ErrorContext::Index(fun.clone())),
                         ),
                         Type::TypedDict(typed_dict) => {
                             let key_ty = self.expr_infer(&x.slice, errors);
@@ -1485,7 +1487,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         slice: &Expr,
         range: TextRange,
         errors: &ErrorCollector,
-        context: Option<&ErrorContext>,
+        context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
         let xs = Ast::unpack_slice(slice);
         match &xs[0] {
