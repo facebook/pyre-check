@@ -218,14 +218,18 @@ async def main() -> None:
 
     foo_with_helper_function(_test_source(), "hello")
 
-    Foo().foo(_test_source())
+    Foo().foo(_test_source())  # Sink is on the 1st argument (False negative)
+    Foo().foo(x=_test_source())  # Expect an issue
+    Foo.foo(Foo(), _test_source())  # Expect an issue
 
     Foo().bar(x=_test_source())  # Sink is on the keyword argument
 
     # Sink is on the keyword argument
     Foo().self_has_generic_type(other=Foo(), x=_test_source())
 
-    Foo.some_class_method(_test_source())
+    Foo.some_class_method(
+        _test_source()
+    )  # Sink is on the 1st argument (False negative)
 
 
 def discard_second_parameter_inner(first_parameter: int) -> None:

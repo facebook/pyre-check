@@ -31,7 +31,7 @@ class C:
 
 
 def higher_order_method(c: C, arg):
-    higher_order_function(c.method_to_sink, arg)
+    higher_order_function(c.method_to_sink, arg)  # Expect an issue (False negative)
 
 
 def test_higher_order_method():

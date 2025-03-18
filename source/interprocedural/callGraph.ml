@@ -4375,7 +4375,7 @@ module HigherOrderCallGraph = struct
               List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state)
         in
         let create_call_target = function
-          | Some callee_target :: parameter_targets ->
+          | Some ({ CallTarget.implicit_receiver; _ } as callee_target) :: parameter_targets ->
               let callee_regular, closure =
                 match CallTarget.target callee_target with
                 | Target.Regular regular -> regular, Target.ParameterMap.empty
@@ -4404,15 +4404,34 @@ module HigherOrderCallGraph = struct
                        Some right)
                      closure
               in
+              let implicit_receiver =
+                match unresolved with
+                | Unresolved.True _ ->
+                    (* Since the original call graphs cannot find the callees, the callee must be
+                       discovered by higher order call graph building. Since it is unclear whether
+                       the callee is always a function or a method under any context, the arguments
+                       must be explicit, unless the callee is a bound method. *)
+                    log
+                      "Setting `implicit_receiver` to false for callee target `%a`"
+                      CallTarget.pp
+                      callee_target;
+                    false
+                | Unresolved.False -> implicit_receiver
+              in
               if Target.ParameterMap.is_empty parameters then
                 (* Treat as regular target when (1) no parameter targets exist or (2) we cannot find
                    function bodies, so that the taint analysis can still use
                    `higher_order_parameters`. *)
-                Some { callee_target with CallTarget.target = Target.Regular callee_regular }
+                Some
+                  {
+                    callee_target with
+                    CallTarget.target = Target.Regular callee_regular;
+                    implicit_receiver;
+                  }
               else
                 Target.Parameterized { regular = callee_regular; parameters }
                 |> validate_target
-                >>| fun target -> { callee_target with CallTarget.target }
+                >>| fun target -> { callee_target with CallTarget.target; implicit_receiver }
           | _ -> None
         in
         (* Treat an empty list as a single element list so that in each result of the cartesian
