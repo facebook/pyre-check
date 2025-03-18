@@ -20,7 +20,7 @@ pub struct Error {
     path: ModulePath,
     range: SourceRange,
     error_kind: ErrorKind,
-    msg: Vec1<String>,
+    msg: Box<str>,
     is_ignored: bool,
 }
 
@@ -31,7 +31,7 @@ impl Display for Error {
             "{}:{}: {} [{}]",
             self.path,
             self.range,
-            self.msg(),
+            self.msg,
             self.error_kind.to_name()
         )
     }
@@ -45,6 +45,11 @@ impl Error {
         is_ignored: bool,
         error_kind: ErrorKind,
     ) -> Self {
+        let msg = if msg.len() == 1 {
+            msg.into_iter().next().unwrap().into_boxed_str()
+        } else {
+            msg.join("\n  ").into_boxed_str()
+        };
         Self {
             path,
             range,
@@ -62,8 +67,8 @@ impl Error {
         &self.path
     }
 
-    pub fn msg(&self) -> String {
-        self.msg.join("\n  ")
+    pub fn msg(&self) -> &str {
+        &self.msg
     }
 
     pub fn is_ignored(&self) -> bool {

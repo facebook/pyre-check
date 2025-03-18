@@ -41,8 +41,8 @@ impl LegacyError {
             // -2 is chosen because it's an unused error code in Pyre1
             code: -2, // TODO: replace this dummy value
             name: error.error_kind().to_name(),
-            description: msg.clone(),
-            concise_description: msg,
+            description: msg.to_owned(),
+            concise_description: msg.to_owned(),
         }
     }
 }
