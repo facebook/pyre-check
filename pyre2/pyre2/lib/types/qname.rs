@@ -22,13 +22,11 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::types::equality::TypeEq;
 use crate::types::equality::TypeEqCtx;
-use crate::util::lock::RwLock;
 
 /// A name, plus where it is defined.
 pub struct QName {
     name: Identifier,
-    module_name: ModuleName,
-    module_info: RwLock<ModuleInfo>,
+    module: ModuleInfo,
 }
 
 impl Debug for QName {
@@ -38,7 +36,7 @@ impl Debug for QName {
             // The full details of ModuleInfo are pretty boring in most cases,
             // and we only cache it so we can defer expanding the range.
             // Therefore, shorten the Debug output, as ModuleInfo is pretty big.
-            .field("module", &self.module_name)
+            .field("module", &self.module.name())
             .finish()
     }
 }
@@ -53,7 +51,7 @@ impl Eq for QName {}
 
 impl TypeEq for QName {
     fn type_eq(&self, other: &Self, _: &mut TypeEqCtx) -> bool {
-        self.name.id == other.name.id && self.module_name == other.module_name
+        self.name.id == other.name.id && self.module.name() == other.module.name()
     }
 }
 
@@ -81,16 +79,12 @@ impl QName {
             &self.name.id,
             self.name.range.start(),
             self.name.range.end(),
-            self.module_name,
+            self.module.name(),
         )
     }
 
     pub fn new(name: Identifier, module: ModuleInfo) -> Self {
-        Self {
-            name,
-            module_name: module.name(),
-            module_info: RwLock::new(module),
-        }
+        Self { name, module }
     }
 
     pub fn id(&self) -> &Name {
@@ -102,11 +96,11 @@ impl QName {
     }
 
     pub fn module_info(&self) -> ModuleInfo {
-        self.module_info.read().dupe()
+        self.module.dupe()
     }
 
     pub fn module_name(&self) -> ModuleName {
-        self.module_name
+        self.module.name()
     }
 
     pub fn fmt_name(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -121,9 +115,9 @@ impl QName {
         write!(
             f,
             "{}.{}@{}",
-            self.module_name,
+            self.module_name(),
             self.name,
-            self.module_info.read().source_range(self.name.range)
+            self.module.source_range(self.name.range)
         )
     }
 }

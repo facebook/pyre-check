@@ -35,6 +35,7 @@ impl<T> Mutex<T> {
 pub struct RwLock<T>(sync::RwLock<T>);
 
 impl<T> RwLock<T> {
+    #[allow(dead_code)] // Part of the API
     pub fn new(t: T) -> Self {
         Self(sync::RwLock::new(t))
     }
