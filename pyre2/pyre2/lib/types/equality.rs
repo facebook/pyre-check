@@ -107,6 +107,9 @@ impl<T: TypeEq + ?Sized> TypeEq for Box<T> {
 
 impl<T: TypeEq + ?Sized> TypeEq for Arc<T> {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        if Arc::ptr_eq(self, other) {
+            return true;
+        }
         self.as_ref().type_eq(other.as_ref(), ctx)
     }
 }
