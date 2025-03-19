@@ -587,12 +587,6 @@ let get_module_and_definition ~pyre_api callable =
   Map.find_opt callable callables >>| fun define -> qualifier, define
 
 
-let get_callable_location ~pyre_api callable =
-  get_module_and_definition ~pyre_api callable
-  >>| fun (module_reference, { Node.location; _ }) ->
-  Location.with_module ~module_reference location
-
-
 let resolve_method ~pyre_api ~class_type ~method_name =
   let callable_implementation =
     Type.split class_type
@@ -657,6 +651,13 @@ module DefinesSharedMemory = struct
     type t = T.ReadOnly.t
 
     let get = T.ReadOnly.get ~cache:true
+
+    let get_location handle target =
+      target
+      |> strip_parameters
+      |> get handle
+      >>| fun { Define.qualifier; define = { Node.location; _ } } ->
+      Location.with_module ~module_reference:qualifier location
   end
 
   let read_only = T.read_only

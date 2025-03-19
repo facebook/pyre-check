@@ -1111,6 +1111,9 @@ let run_taint_analysis
   let summary =
     match save_results_to with
     | Some result_directory ->
+        let callables_to_definitions_map =
+          Target.DefinesSharedMemory.read_only callables_to_definitions_map
+        in
         TaintReporting.save_results_to_directory
           ~scheduler
           ~taint_configuration:taint_configuration_shared_memory
@@ -1118,7 +1121,8 @@ let run_taint_analysis
           ~output_format
           ~local_root
           ~resolve_module_path
-          ~resolve_callable_location:(Target.get_callable_location ~pyre_api)
+          ~resolve_callable_location:
+            (Target.DefinesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
           ~override_graph:override_graph_shared_memory_read_only
           ~callables
           ~skipped_overrides

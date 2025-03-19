@@ -224,6 +224,8 @@ module DefinesSharedMemory : sig
     type t
 
     val get : t -> T.t -> Define.t option
+
+    val get_location : t -> T.t -> Ast.Location.WithModule.t option
   end
 
   val empty : unit -> t
@@ -241,11 +243,6 @@ module DefinesSharedMemory : sig
 
   val add_alist_sequential : t -> (T.t * Define.t) list -> t
 end
-
-val get_callable_location
-  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-  t ->
-  Ast.Location.WithModule.t option
 
 val resolve_method
   :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->

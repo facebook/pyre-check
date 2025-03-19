@@ -1098,7 +1098,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.pass_local_variable_to_x.inner[local($parameter$f)=decorator_location.handle_request]",
-    "filename": "*",
+    "filename": "decorator_location.py",
+    "callable_line": 107,
     "sinks": [
       {
         "port": "formal(request, position=0)",
@@ -1205,7 +1206,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.decorated_logging_ignore_this_decorator]",
-    "filename": "*",
+    "filename": "decorator_location.py",
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1281,7 +1283,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging.inner[local($local_decorator_location?with_logging$some_helper)=decorator_location.with_logging.some_helper, local($parameter$f)=decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]]",
-    "filename": "*",
+    "filename": "decorator_location.py",
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1415,7 +1418,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging2_skip_this_decorator]",
-    "filename": "*",
+    "filename": "decorator_location.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1467,7 +1471,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging2.inner[local($parameter$f)=decorator_location.decorated_logging_logging2]",
-    "filename": "*",
+    "filename": "decorator_location.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(x, position=0)",

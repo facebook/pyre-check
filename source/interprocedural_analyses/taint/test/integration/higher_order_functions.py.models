@@ -933,7 +933,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply[formal(f, position=0)=_test_source]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 60,
     "sources": [
       {
         "port": "result",
@@ -980,7 +981,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.has_tito]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 60,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -1006,7 +1008,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 78,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1079,7 +1082,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=_test_sink, formal(g, position=1)=higher_order_functions.safe]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 110,
     "sinks": [
       {
         "port": "formal(x, position=3)",
@@ -1131,7 +1135,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=_test_source, formal(g, position=1)=higher_order_functions.safe]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 110,
     "sources": [
       {
         "port": "result",
@@ -1181,7 +1186,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_sink]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 110,
     "sinks": [
       {
         "port": "formal(x, position=3)",
@@ -1233,7 +1239,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_source]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 110,
     "sources": [
       {
         "port": "result",
@@ -1328,7 +1335,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.self_to_sink]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1357,7 +1365,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1412,7 +1421,8 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]",
-    "filename": "*",
+    "filename": "higher_order_functions.py",
+    "callable_line": 46,
     "sinks": [
       {
         "port": "formal(arg, position=1)",

@@ -1247,7 +1247,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 285,
     "sinks": [
       {
         "port": "formal(**kwargs)[into_sink]",
@@ -1322,7 +1323,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 360,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1968,7 +1970,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 252,
     "sinks": [
       {
         "port": "formal(**kwargs)[x]",
@@ -2078,7 +2081,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2132,7 +2136,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 61,
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -2157,7 +2162,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 61,
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -2182,7 +2188,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(**kwargs)[x]",
@@ -2231,7 +2238,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(**kwargs)[x]",
@@ -2280,7 +2288,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(**kwargs)[x]",
@@ -2329,7 +2338,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(**kwargs)[y]",
@@ -2386,7 +2396,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(**kwargs)",
@@ -2443,7 +2454,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 46,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -2497,7 +2509,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 133,
     "sinks": [
       {
         "port": "formal(first_parameter, position=0)",
@@ -2583,7 +2596,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 151,
     "sinks": [
       {
         "port": "formal(*args, position=0)",
@@ -2614,7 +2628,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 31,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2676,7 +2691,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 86,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -2701,7 +2717,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 94,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -2829,7 +2846,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
-    "filename": "*",
+    "filename": "decorator.py",
+    "callable_line": 115,
     "sinks": [
       {
         "port": "formal(*args, position=0)",
