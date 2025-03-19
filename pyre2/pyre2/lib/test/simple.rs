@@ -1449,3 +1449,12 @@ def A(x: int | Literal[0], y: int | Literal[255]):
     x - y # E: `-` is not supported # E: TODO: Expr::binop_infer attribute base undefined
     "#,
 );
+
+testcase_with_bug!(
+    "PyTorch TODO: This testcase shouldn't have errors. iadd not supported.",
+    test_incremental_add,
+    r#"
+def f(x: int):
+    x += 1 # E: Object of class `int` has no attribute `__iadd__` 
+    "#,
+);
