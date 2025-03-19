@@ -30,6 +30,13 @@ Call dependencies
   "decorator._strip_first_parameter_.inner (fun)[local($parameter$f)=decorator.decorated (fun)]": [
     "decorator.decorated (fun)"
   ],
+  "decorator.conditional_decorator_factory.add_sink.inner (fun)": [
+    "_test_sink (fun)"
+  ],
+  "decorator.conditional_decorator_factory.add_sink.inner (fun)[local($parameter$f)=decorator.sink_via_conditional_decorator_factory (fun)]": [
+    "_test_sink (fun)",
+    "decorator.sink_via_conditional_decorator_factory (fun)"
+  ],
   "decorator.decorated (fun)": [ "_test_sink (fun)" ],
   "decorator.decorated@decorated (fun)": [
     "decorator._strip_first_parameter_ (fun)[formal(f, position=0)=decorator.decorated (fun)]"
@@ -75,6 +82,25 @@ Call dependencies
   "decorator.foo_with_sink@decorated (fun)": [
     "decorator.with_logging_no_sink (fun)[formal(f, position=0)=decorator.foo_with_sink (fun)]"
   ],
+  "decorator.issue_via_conditional_decorator_factory (fun)": [
+    "_test_source (fun)",
+    "decorator.sink_via_conditional_decorator_factory (fun)",
+    "decorator.conditional_decorator_factory.add_sink.inner (fun)[local($parameter$f)=decorator.sink_via_conditional_decorator_factory (fun)]"
+  ],
+  "decorator.issue_via_conditional_no_op_decorator_factory (fun)": [
+    "_test_source (fun)",
+    "decorator.sink_via_conditional_no_op_decorator_factory (fun)"
+  ],
+  "decorator.issue_via_no_op_decorator (fun)": [
+    "_test_source (fun)", "decorator.sink_via_no_op_decorator (fun)"
+  ],
+  "decorator.issue_via_no_op_decorator_factory (fun)": [
+    "_test_source (fun)"
+  ],
+  "decorator.issue_via_trivial_decorator (fun)": [
+    "_test_source (fun)",
+    "decorator.trivial_decorator.inner (fun)[local($parameter$f)=decorator.sink_via_trivial_decorator (fun)]"
+  ],
   "decorator.main (fun)": [
     "_test_source (fun)", "object.__init__ (method)",
     "object.__new__ (method)",
@@ -96,7 +122,7 @@ Call dependencies
     "_test_sink (fun)"
   ],
   "decorator.second_parameter_source_inlineable_decorator@decorated (fun)": [
-    "decorator.no_op_decorator (fun)[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator (fun)]"
+    "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator (fun)]"
   ],
   "decorator.second_parameter_source_inlineable_decorator_with_inner (fun)": [
     "decorator.second_parameter_source_inlineable_decorator_with_inner.inner (fun)"
@@ -105,13 +131,43 @@ Call dependencies
     "_test_sink (fun)"
   ],
   "decorator.second_parameter_source_inlineable_decorator_with_inner@decorated (fun)": [
-    "decorator.no_op_decorator (fun)[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator_with_inner (fun)]"
+    "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator_with_inner (fun)]"
   ],
   "decorator.second_parameter_source_with_non_inlineable_decorator (fun)": [
     "_test_sink (fun)"
   ],
   "decorator.second_parameter_source_with_non_inlineable_decorator@decorated (fun)": [
     "decorator.discard_second_parameter_non_inlineable (fun)[formal(f, position=0)=decorator.second_parameter_source_with_non_inlineable_decorator (fun)]"
+  ],
+  "decorator.sink_via_conditional_decorator_factory (fun)": [ "print (fun)" ],
+  "decorator.sink_via_conditional_decorator_factory@decorated (fun)": [
+    "decorator.conditional_decorator_factory (fun)",
+    "decorator.conditional_decorator_factory.add_sink (fun)[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory (fun)]",
+    "decorator.conditional_decorator_factory.identity (fun)[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory (fun)]"
+  ],
+  "decorator.sink_via_conditional_no_op_decorator_factory (fun)": [
+    "_test_sink (fun)"
+  ],
+  "decorator.sink_via_conditional_no_op_decorator_factory@decorated (fun)": [
+    "decorator.conditional_no_op_decorator_factory (fun)",
+    "decorator.conditional_no_op_decorator_factory.inner_false (fun)[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory (fun)]",
+    "decorator.conditional_no_op_decorator_factory.inner_true (fun)[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory (fun)]"
+  ],
+  "decorator.sink_via_no_op_decorator (fun)": [ "_test_sink (fun)" ],
+  "decorator.sink_via_no_op_decorator@decorated (fun)": [
+    "decorator.no_op_decorator (fun)[formal(f, position=0)=decorator.sink_via_no_op_decorator (fun)]"
+  ],
+  "decorator.sink_via_no_op_decorator_factory (fun)": [ "_test_sink (fun)" ],
+  "decorator.sink_via_no_op_decorator_factory@decorated (fun)": [
+    "decorator.no_op_decorator_factory (fun)",
+    "decorator.no_op_decorator_factory.inner (fun)[formal(f, position=0)=decorator.sink_via_no_op_decorator_factory (fun)]"
+  ],
+  "decorator.sink_via_trivial_decorator (fun)": [ "_test_sink (fun)" ],
+  "decorator.sink_via_trivial_decorator@decorated (fun)": [
+    "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
+  ],
+  "decorator.trivial_decorator.inner (fun)[local($parameter$f)=decorator.sink_via_trivial_decorator (fun)]": [
+    "decorator.sink_via_trivial_decorator (fun)"
   ],
   "decorator.using_decorated (fun)": [
     "decorator._strip_first_parameter_.inner (fun)[local($parameter$f)=decorator.decorated (fun)]"

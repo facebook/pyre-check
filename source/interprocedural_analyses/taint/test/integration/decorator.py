@@ -171,7 +171,7 @@ async def foo_with_helper_function(x: int, y: str) -> None:
     print(x, y)
 
 
-T = TypeVar("T", bound="Foo")
+TFoo = TypeVar("T", bound="Foo")
 
 
 class Foo:
@@ -189,7 +189,7 @@ class Foo:
         print(x)
 
     @with_logging_args_kwargs_no_sink
-    def self_has_generic_type(self: T, other: T, x: str) -> None:
+    def self_has_generic_type(self: TFoo, other: TFoo, x: str) -> None:
         other.bar(x=x)  # Sink is on the keyword argument
 
     @classmethod
@@ -248,19 +248,19 @@ def second_parameter_source_with_non_inlineable_decorator(arg1: int, arg2: str) 
     _test_sink(arg2)  # Issue here
 
 
-def no_op_decorator(f: Callable[P, None]) -> Callable[P, None]:
+def trivial_decorator(f: Callable[P, None]) -> Callable[P, None]:
     def inner(*args: P.args, **kwargs: P.kwargs) -> None:
         f(*args, **kwargs)
 
     return inner
 
 
-@no_op_decorator
+@trivial_decorator
 def second_parameter_source_inlineable_decorator(arg1: int, arg2: str) -> None:
     _test_sink(arg2)  # Issue here
 
 
-@no_op_decorator
+@trivial_decorator
 def second_parameter_source_inlineable_decorator_with_inner(
     arg1: int, arg2: str
 ) -> None:
@@ -268,6 +268,15 @@ def second_parameter_source_inlineable_decorator_with_inner(
         _test_sink(arg2)
 
     inner()  # Issue here
+
+
+@trivial_decorator
+def sink_via_trivial_decorator(x: str) -> None:
+    _test_sink(x)
+
+
+def issue_via_trivial_decorator() -> None:
+    sink_via_trivial_decorator(_test_source())
 
 
 def _strip_first_parameter_(
@@ -286,3 +295,86 @@ def decorated(self, into_sink) -> None:
 
 def using_decorated(into_decorated):
     decorated(into_decorated)
+
+
+T = TypeVar("T")
+
+
+def no_op_decorator(f: T) -> T:
+    return f
+
+
+@no_op_decorator
+def sink_via_no_op_decorator(x: str) -> None:
+    _test_sink(x)
+
+
+def issue_via_no_op_decorator() -> None:
+    sink_via_no_op_decorator(_test_source())
+
+
+# pyre-ignore
+def no_op_decorator_factory(flag: bool) -> Callable[[T], T]:
+    def inner(f: T) -> T:
+        f.__doc___ = "dummy doc"
+        return f
+
+    return inner
+
+
+@no_op_decorator_factory(True)
+def sink_via_no_op_decorator_factory(x: str) -> None:
+    _test_sink(x)
+
+
+def issue_via_no_op_decorator_factory() -> None:
+    sink_via_no_op_decorator_factory(_test_source())  # TODO: False negative
+
+
+# pyre-ignore
+def conditional_no_op_decorator_factory(flag: bool) -> Callable[[T], T]:
+    if flag:
+        def inner_true(f: T) -> T:
+            return f
+
+        return inner_true
+    else:
+        def inner_false(f: T) -> T:
+            return f
+
+        return inner_false
+
+
+@conditional_no_op_decorator_factory(False)
+def sink_via_conditional_no_op_decorator_factory(x: str) -> None:
+    _test_sink(x)
+
+
+def issue_via_conditional_no_op_decorator_factory():
+    sink_via_conditional_no_op_decorator_factory(_test_source())
+
+
+def conditional_decorator_factory(flag: bool) -> Callable[[Callable[[str], None]], Callable[[str], None]]:
+    if flag:
+        def add_sink(f: Callable[[str], None]) -> Callable[[str], None]:
+            def inner(x: str) -> None:
+                _test_sink(x)
+                f(x)
+
+            return inner
+
+        return add_sink
+    else:
+        def identity(f: Callable[[str], None]) -> Callable[[str], None]:
+            return f
+
+        return identity
+
+
+@conditional_decorator_factory(True)
+def sink_via_conditional_decorator_factory(x: str) -> None:
+    print(x)
+
+
+def issue_via_conditional_decorator_factory():
+    sink_via_conditional_decorator_factory(_test_source())
