@@ -474,10 +474,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn id_cache(&self) -> &IdCache {
-        &self.current.id_cache
-    }
-
     pub fn bindings(&self) -> &Bindings {
         self.bindings
     }

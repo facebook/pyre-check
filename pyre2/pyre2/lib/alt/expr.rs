@@ -454,7 +454,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
 
-        self.id_cache().type_var(
+        TypeVar::new(
             name,
             self.module_info().dupe(),
             restriction.unwrap_or(Restriction::Unrestricted),
@@ -551,7 +551,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
         }
 
-        self.id_cache().param_spec(name, self.module_info().dupe())
+        ParamSpec::new(name, self.module_info().dupe())
     }
 
     pub fn typevartuple_from_call(
@@ -645,8 +645,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-        self.id_cache()
-            .type_var_tuple(name, self.module_info().dupe())
+        TypeVarTuple::new(name, self.module_info().dupe())
     }
 
     pub fn expr_infer(&self, x: &Expr, errors: &ErrorCollector) -> Type {
