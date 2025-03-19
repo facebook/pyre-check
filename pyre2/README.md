@@ -45,33 +45,25 @@ the `pyre2/pyre2` directory works as well.
 
 ### Deploying to PyPI
 
-We don't yet have an automatic deployment process set up, so we have to upload
-new versions manually to PyPI. This must be done by a Meta internal developer.
+Once a week, a
+[CodemodService job](https://www.internalfb.com/code/fbsource/xplat/scripts/codemod_service/configs/fbcode_pyrefly_version_upgrade.toml)
+generates a diff to update the version number. Accept this diff to upload a new
+version to PyPI.
 
-Prerequisites:
+If you'd like to do a manual release between the weekly automated releases,
+follow the instructions in
+[version.bzl](https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/pyre2/pyre2/version.bzl)
+to update the version number.
 
-- Have permission to run GitHub workflows and download workflow artifacts in
-  https://github.com/facebook/pyre-check.
-- Have permission to upload to https://pypi.org/project/pyrefly/.
-- Have created a PyPI upload token and a `.pypirc` file (steps 2-3 of this
-  [tutorial](https://kynan.github.io/blog/2020/05/23/how-to-upload-your-package-to-the-python-package-index-pypi-test-server)).
+Behind the scenes, what's happening is:
 
-Steps:
-
-1. Bump `CARGO_PACKAGE_VERSION` in the `TARGETS` file.
-1. Run `arc autocargo .` in the directory containing `Cargo.toml` to regenerate
-   it.
-1. Check in your changes.
-1. Once the version bump has been exported to GitHub, run the "Build binaries"
-   workflow:
-   https://github.com/facebook/pyrefly/actions/workflows/build_binaries.yml.
-1. Once the workflow has completed, download and unzip the `dist` artifact.
-1. Run these commands in a virtual environment to upload to PyPI:
-
-```
-$ pip install twine
-$ twine upload dist/*
-```
+- The
+  [publish_to_pypi workflow](https://github.com/facebook/pyrefly/blob/main/.github/workflows/publish_to_pypi.yml)
+  triggers on any change to version.bzl.
+- This workflow calls the
+  [build_binaries workflow](https://github.com/facebook/pyrefly/blob/main/.github/workflows/build_binaries.yml)
+  to build release artifacts, uploads them, and tags the corresponding commit
+  with the version number.
 
 ## Coding conventions
 
