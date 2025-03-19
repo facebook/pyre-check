@@ -259,7 +259,14 @@ pub struct Loop(pub Vec<(LoopExit, Flow)>);
 #[derive(Clone, Debug)]
 pub struct Scope {
     pub range: TextRange,
+    /// Things that are defined in this scope, statically, e.g. `x = 1` or `def f():`.
+    /// Populated at the beginning before entering the scope.
     pub stat: Static,
+    /// Things that are defined in this scope as they are reached.
+    /// Initially starts out empty, but is populated as statements are encountered.
+    /// Updated if there are multiple assignments. E.g. `x = 1; x = 2` would update the `x` binding twice.
+    /// All flow bindings will have a static binding, _usually_ in this scope, but occasionally
+    /// in a parent scope (e.g. for narrowing operations).
     pub flow: Flow,
     /// Are Flow types above this unreachable.
     /// Set when we enter something like a function, and can't guarantee what flow values are in scope.
