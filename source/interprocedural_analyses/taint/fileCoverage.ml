@@ -18,10 +18,11 @@ module File = struct
   include T
   module Set = SerializableSet.Make (T)
 
-  let from_callable ~pyre_api ~resolve_module_path callable =
+  let from_callable ~callables_to_definitions_map ~resolve_module_path callable =
     Option.some_if (Interprocedural.Target.is_function_or_method callable) callable
-    >>= Interprocedural.Target.get_module_and_definition ~pyre_api
-    >>| fst
+    >>= Interprocedural.Target.DefinesSharedMemory.ReadOnly.get_location
+          callables_to_definitions_map
+    >>| (fun { Ast.Location.WithModule.module_reference; _ } -> module_reference)
     >>= resolve_module_path
     >>= function
     | { Interprocedural.RepositoryPath.filename = Some filename; _ } ->
@@ -43,7 +44,13 @@ let union { files = files_left } { files = files_right } =
 
 
 (* Add the files that contain any of the given callables. *)
-let from_callables ~scheduler ~scheduler_policies ~pyre_api ~resolve_module_path ~callables =
+let from_callables
+    ~scheduler
+    ~scheduler_policies
+    ~callables_to_definitions_map
+    ~resolve_module_path
+    ~callables
+  =
   let scheduler_policy =
     Scheduler.Policy.from_configuration_or_default
       scheduler_policies
@@ -62,7 +69,8 @@ let from_callables ~scheduler ~scheduler_policies ~pyre_api ~resolve_module_path
     ~map:(fun callables ->
       let files =
         callables
-        |> List.filter_map ~f:(File.from_callable ~pyre_api ~resolve_module_path)
+        |> List.filter_map
+             ~f:(File.from_callable ~callables_to_definitions_map ~resolve_module_path)
         |> File.Set.of_list
       in
       { files })

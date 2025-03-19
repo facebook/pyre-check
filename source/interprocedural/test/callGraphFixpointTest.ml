@@ -77,6 +77,8 @@ let assert_higher_order_call_graph_fixpoint
       ~override_graph:override_graph_shared_memory
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
+      ~callables_to_definitions_map:
+        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =

@@ -528,7 +528,7 @@ let remove_sinks model =
   { model with backward = { model.backward with sink_taint = BackwardState.empty } }
 
 
-let add_obscure_sink ~pyre_api ~call_target model =
+let add_obscure_sink ~callables_to_definitions_map ~call_target model =
   let real_target =
     match Target.get_regular call_target with
     | Target.Regular.Function _ -> Some call_target
@@ -540,11 +540,16 @@ let add_obscure_sink ~pyre_api ~call_target model =
   match real_target with
   | None -> model
   | Some real_target -> (
-      match Target.get_module_and_definition ~pyre_api real_target with
+      match Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map real_target with
       | None ->
           let () = Log.warning "Found no definition for %a" Target.pp_pretty real_target in
           model
-      | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
+      | Some
+          {
+            Target.DefinesSharedMemory.Define.define =
+              { value = { signature = { parameters; _ }; _ }; _ };
+            _;
+          } ->
           let open Domains in
           let sink =
             BackwardTaint.singleton CallInfo.declaration (Sinks.NamedSink "Obscure") Frame.initial

@@ -136,7 +136,11 @@ val remove_obscureness : t -> t
 
 val remove_sinks : t -> t
 
-val add_obscure_sink : pyre_api:PyrePysaEnvironment.ReadOnly.t -> call_target:Target.t -> t -> t
+val add_obscure_sink
+  :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+  call_target:Target.t ->
+  t ->
+  t
 
 val join : t -> t -> t
 

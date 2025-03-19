@@ -473,6 +473,7 @@ val call_graph_of_define
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
@@ -643,6 +644,7 @@ module DecoratorResolution : sig
     pyre_in_context:PyrePysaEnvironment.InContext.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     Target.t ->
     t
@@ -659,6 +661,7 @@ module DecoratorResolution : sig
       scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
       method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+      callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
       decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
       Target.t list ->
       t

@@ -70,7 +70,7 @@ let unknown_callee_model _ =
 let add_obscure_models
     ~scheduler
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
-    ~pyre_api
+    ~callables_to_definitions_map
     ~stubs
     ~initial_models
   =
@@ -90,7 +90,7 @@ let add_obscure_models
         ~f:(fun ~target ~model ->
           if Model.is_obscure model then
             model
-            |> Model.add_obscure_sink ~pyre_api ~call_target:target
+            |> Model.add_obscure_sink ~callables_to_definitions_map ~call_target:target
             |> Model.remove_obscureness
           else
             model)
@@ -105,7 +105,7 @@ let add_obscure_models
       ~init:(SharedModels.add_only models)
       ~f:(fun models target ->
         Model.empty_model
-        |> Model.add_obscure_sink ~pyre_api ~call_target:target
+        |> Model.add_obscure_sink ~callables_to_definitions_map ~call_target:target
         |> Model.remove_obscureness
         |> SharedModels.AddOnly.add models target)
       stubs_without_model

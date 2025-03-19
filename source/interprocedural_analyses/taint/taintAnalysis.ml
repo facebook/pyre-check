@@ -332,6 +332,7 @@ let initialize_models
     ~taint_configuration
     ~taint_configuration_shared_memory
     ~class_hierarchy_graph
+    ~callables_to_definitions_map
     ~initial_callables
     ~method_kinds
   =
@@ -426,7 +427,8 @@ let initialize_models
     MissingFlow.add_obscure_models
       ~scheduler
       ~static_analysis_configuration
-      ~pyre_api
+      ~callables_to_definitions_map:
+        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~stubs:stubs_hashset
       ~initial_models:models
   in
@@ -451,9 +453,9 @@ let compact_ocaml_heap ~name =
 
 
 let compute_coverage
-    ~pyre_api
     ~scheduler
     ~scheduler_policies
+    ~callables_to_definitions_map
     ~resolve_module_path
     ~callables_to_analyze
     ~all_callables
@@ -469,7 +471,7 @@ let compute_coverage
     FileCoverage.from_callables
       ~scheduler
       ~scheduler_policies
-      ~pyre_api
+      ~callables_to_definitions_map
       ~resolve_module_path
       ~callables:callables_to_analyze
   in
@@ -713,6 +715,7 @@ let run_taint_analysis
       ~taint_configuration
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
+      ~callables_to_definitions_map
       ~initial_callables
       ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
   in
@@ -819,6 +822,8 @@ let run_taint_analysis
                ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
           ~override_graph:override_graph_shared_memory
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+          ~callables_to_definitions_map:
+            (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
           ~decorators:
             (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
                callables_to_decorators_map)
@@ -1071,9 +1076,10 @@ let run_taint_analysis
       FileCoverage.empty, RuleCoverage.empty
     else
       compute_coverage
-        ~pyre_api
         ~scheduler
         ~scheduler_policies
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
         ~resolve_module_path
         ~callables_to_analyze
         ~all_callables

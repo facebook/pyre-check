@@ -73,6 +73,8 @@ let assert_taint ~context source expected =
           (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
           |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+        ~callables_to_definitions_map:
+          (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
         ~qualifier
         ~define:(Ast.Node.value define)
     in

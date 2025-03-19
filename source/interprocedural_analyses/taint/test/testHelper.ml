@@ -670,7 +670,8 @@ let initialize
           MissingFlow.add_obscure_models
             ~scheduler
             ~static_analysis_configuration
-            ~pyre_api
+            ~callables_to_definitions_map:
+              (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
             ~stubs:(Target.HashSet.of_list stubs)
             ~initial_models:models
         in
@@ -721,6 +722,8 @@ let initialize
       ~scheduler_policy
       ~override_graph:override_graph_shared_memory
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+      ~callables_to_definitions_map:
+        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       definitions
   in

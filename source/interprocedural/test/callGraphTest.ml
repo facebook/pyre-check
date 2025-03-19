@@ -68,6 +68,8 @@ let compute_define_call_graph
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+      ~callables_to_definitions_map:
+        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~qualifier:module_name
       ~define
   in
@@ -7873,6 +7875,8 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                 ~override_graph:
                   (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
                 ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+                ~callables_to_definitions_map:
+                  (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
                 ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
            |> TestResult.from_actual
            |> fun result -> callable, result)
