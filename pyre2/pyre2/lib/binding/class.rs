@@ -146,7 +146,8 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.pop(); // annotation scope
         let mut fields = SmallMap::new();
         for (name, info) in last_scope.flow.info.iter() {
-            // A name with flow info but not static info is a reference to something that's not a class field.
+            // A name with flow in the last_scope, but whose static is in a parent scope, is a reference to something that isn't a class field.
+            // Can occur when we narrow a parent scopes variable, thus producing a fresh flow for it, but no static.
             if let Some(stat_info) = last_scope.stat.0.get(name) {
                 let binding = BindingClassField {
                     class: definition_key,
