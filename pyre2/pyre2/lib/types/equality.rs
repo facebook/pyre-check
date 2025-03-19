@@ -51,38 +51,59 @@ impl TypeEq for Unique {
     }
 }
 
-fn type_eq_identity<T>(x: &T, y: &T, ctx: &mut SmallMap<T, T>) -> bool
+fn type_eq_identity<T>(
+    x: &T,
+    y: &T,
+    ctx: &mut TypeEqCtx,
+    map: impl Fn(&mut TypeEqCtx) -> &mut SmallMap<T, T>,
+    eq: impl FnOnce(&mut TypeEqCtx) -> bool,
+) -> bool
 where
-    T: Mutable + Dupe + Eq + Hash,
+    T: Dupe + Eq + Hash,
 {
-    match ctx.entry(x.dupe()) {
-        Entry::Occupied(e) => e.get() == y,
-        Entry::Vacant(e) => {
-            if x.immutable_eq(y) {
-                e.insert(y.dupe());
-                true
-            } else {
-                false
-            }
-        }
+    if let Some(res) = map(ctx).get(x) {
+        return res == y;
     }
+    if !eq(ctx) {
+        return false;
+    }
+    map(ctx).insert(x.dupe(), y.dupe());
+    true
 }
 
 impl TypeEq for ParamSpec {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
-        type_eq_identity(self, other, &mut ctx.param_spec)
+        type_eq_identity(
+            self,
+            other,
+            ctx,
+            |ctx| &mut ctx.param_spec,
+            |_| self.immutable_eq(other),
+        )
     }
 }
 
 impl TypeEq for TypeVar {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
-        type_eq_identity(self, other, &mut ctx.type_var)
+        type_eq_identity(
+            self,
+            other,
+            ctx,
+            |ctx| &mut ctx.type_var,
+            |_| self.immutable_eq(other),
+        )
     }
 }
 
 impl TypeEq for TypeVarTuple {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
-        type_eq_identity(self, other, &mut ctx.type_var_tuple)
+        type_eq_identity(
+            self,
+            other,
+            ctx,
+            |ctx| &mut ctx.type_var_tuple,
+            |_| self.immutable_eq(other),
+        )
     }
 }
 
