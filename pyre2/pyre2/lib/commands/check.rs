@@ -22,6 +22,7 @@ use starlark_map::small_map::SmallMap;
 use tracing::info;
 
 use crate::clap_env;
+use crate::commands::suppress;
 use crate::commands::util::module_from_path;
 use crate::config::set_if_some;
 use crate::config::ConfigFile;
@@ -32,6 +33,7 @@ use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
+use crate::module::module_path::ModulePathDetails;
 use crate::report;
 use crate::run::CommandExitStatus;
 use crate::state::handle::Handle;
@@ -104,6 +106,9 @@ pub struct Args {
         env = clap_env("SUMMARIZE_ERRORS")
     )]
     summarize_errors: Option<usize>,
+    /// Suppress errors found in the input files.
+    #[clap(long, env = clap_env("SUPPRESS_ERRORS"))]
+    suppress_errors: bool,
     /// Check against any `E:` lines in the file.
     #[clap(long, env = clap_env("EXPECTATIONS"))]
     expectations: bool,
@@ -364,6 +369,18 @@ impl Args {
         }
         if let Some(path) = &self.report_trace {
             fs_anyhow::write(path, report::trace::trace(state).as_bytes())?;
+        }
+        if self.suppress_errors {
+            let errors: SmallMap<PathBuf, Vec<Error>> = state
+                .collect_errors()
+                .into_iter()
+                .filter(|e| matches!(e.path().details(), ModulePathDetails::FileSystem(_)))
+                .fold(SmallMap::new(), |mut acc, e| {
+                    let path = PathBuf::from(e.path().to_string());
+                    acc.entry(path).or_default().push(e);
+                    acc
+                });
+            suppress::suppress_errors(&errors);
         }
         if self.expectations {
             state.check_against_expectations()?;
