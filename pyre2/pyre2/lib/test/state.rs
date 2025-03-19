@@ -339,6 +339,14 @@ class C(Generic[T]): pass
 class D(C[T]): pass",
         BROKEN,
     );
+
+    test_interface_consistent(
+        "
+from typing import TypeVar
+class C: pass
+T = TypeVar('T', bound=C)",
+        false,
+    );
 }
 
 #[test]
