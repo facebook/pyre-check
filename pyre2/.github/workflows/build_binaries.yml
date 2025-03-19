@@ -7,6 +7,7 @@ on:
       - pyre2/Cargo.toml
       - pyre2/pyproject.toml
   workflow_dispatch:
+  workflow_call:
 
 env:
   PACKAGE_NAME: pyrefly
