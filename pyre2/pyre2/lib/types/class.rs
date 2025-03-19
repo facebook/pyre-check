@@ -207,7 +207,7 @@ impl Display for ClassInner {
 //   which involves substituting type arguments for the class type parameters as
 //   well as descriptor handling (including method binding).
 impl Class {
-    pub fn new_identity(
+    pub fn new(
         index: ClassIndex,
         name: Identifier,
         module_info: ModuleInfo,

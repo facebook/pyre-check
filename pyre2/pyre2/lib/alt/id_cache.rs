@@ -202,21 +202,17 @@ impl IdCache {
         tparams: TParams,
         fields: SmallMap<Name, ClassFieldProperties>,
     ) -> Class {
-        Class::new_identity(index, name, module_info, tparams, fields)
+        Class::new(index, name, module_info, tparams, fields)
     }
 
     pub fn param_spec(&self, name: Identifier, module: ModuleInfo) -> ParamSpec {
-        self.get(Identifiable::ParamSpec(ParamSpec::new_identity(
-            name, module,
-        )))
-        .unwrap_param_spec()
+        self.get(Identifiable::ParamSpec(ParamSpec::new(name, module)))
+            .unwrap_param_spec()
     }
 
     pub fn type_var_tuple(&self, name: Identifier, module: ModuleInfo) -> TypeVarTuple {
-        self.get(Identifiable::TypeVarTuple(TypeVarTuple::new_identity(
-            name, module,
-        )))
-        .unwrap_type_var_tuple()
+        self.get(Identifiable::TypeVarTuple(TypeVarTuple::new(name, module)))
+            .unwrap_type_var_tuple()
     }
 
     pub fn type_var(
@@ -227,7 +223,7 @@ impl IdCache {
         default: Option<Type>,
         variance: Option<Variance>,
     ) -> TypeVar {
-        self.get(Identifiable::TypeVar(TypeVar::new_identity(
+        self.get(Identifiable::TypeVar(TypeVar::new(
             name,
             module,
             restriction,
