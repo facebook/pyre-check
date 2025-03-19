@@ -22,7 +22,6 @@ use crate::module::module_name::ModuleName;
 use crate::types::param_spec::ParamSpec;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var_tuple::TypeVarTuple;
-use crate::util::arc_id::ArcId;
 use crate::util::mutable::Mutable;
 use crate::util::uniques::Unique;
 
@@ -135,10 +134,6 @@ impl TypeEq for str {}
 impl TypeEq for Name {}
 impl TypeEq for ModuleName {}
 impl TypeEq for TextRange {}
-
-// We don't need to recursively call type_eq since we are doing
-// pointer equality. So don't see whatever is inside.
-impl<T> TypeEq for ArcId<T> {}
 
 impl<T0: TypeEq, T1: TypeEq> TypeEq for (T0, T1) {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
