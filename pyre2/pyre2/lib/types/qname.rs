@@ -20,7 +20,6 @@ use ruff_text_size::TextSize;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::ruff::text_range::AtomicTextRange;
 use crate::types::equality::TypeEq;
 use crate::types::equality::TypeEqCtx;
 use crate::util::lock::RwLock;
@@ -30,7 +29,7 @@ pub struct QName {
     /// The `name` and `range` must be consistent.
     /// They always come from a single `Identifier`.
     name: Name,
-    range: AtomicTextRange,
+    range: TextRange,
     module_name: ModuleName,
     module_info: RwLock<ModuleInfo>,
 }
@@ -81,14 +80,18 @@ impl Display for QName {
 
 impl QName {
     fn key(&self) -> (&Name, TextSize, TextSize, ModuleName) {
-        let range = self.range.get();
-        (&self.name, range.start(), range.end(), self.module_name)
+        (
+            &self.name,
+            self.range.start(),
+            self.range.end(),
+            self.module_name,
+        )
     }
 
     pub fn new(name: Identifier, module: ModuleInfo) -> Self {
         Self {
             name: name.id,
-            range: AtomicTextRange::new(name.range),
+            range: name.range,
             module_name: module.name(),
             module_info: RwLock::new(module),
         }
@@ -99,7 +102,7 @@ impl QName {
     }
 
     pub fn range(&self) -> TextRange {
-        self.range.get()
+        self.range
     }
 
     pub fn module_info(&self) -> ModuleInfo {
@@ -124,7 +127,7 @@ impl QName {
             "{}.{}@{}",
             self.module_name,
             self.name,
-            self.module_info.read().source_range(self.range.get())
+            self.module_info.read().source_range(self.range)
         )
     }
 }

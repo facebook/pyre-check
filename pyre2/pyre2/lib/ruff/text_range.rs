@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#![allow(dead_code)]
+
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 

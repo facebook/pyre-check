@@ -24,7 +24,6 @@ use starlark_map::small_map::SmallMap;
 
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
-use crate::ruff::text_range::AtomicTextRange;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::equality::TypeEq;
@@ -87,10 +86,10 @@ impl VisitMut<Type> for Class {
 
 /// Simple properties of class fields that can be attached to the class definition. Note that this
 /// does not include the type of a field, which needs to be computed lazily to avoid a recursive loop.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClassFieldProperties {
     is_annotated: bool,
-    range: AtomicTextRange,
+    range: TextRange,
 }
 
 impl PartialEq for ClassFieldProperties {
@@ -102,15 +101,6 @@ impl PartialEq for ClassFieldProperties {
 impl Eq for ClassFieldProperties {}
 impl TypeEq for ClassFieldProperties {}
 
-impl Clone for ClassFieldProperties {
-    fn clone(&self) -> Self {
-        Self {
-            is_annotated: self.is_annotated,
-            range: AtomicTextRange::new(self.range.get()),
-        }
-    }
-}
-
 /// The index of a class within the file, used as a reference to data associated with the class.
 #[derive(
     Debug, Clone, Dupe, Copy, TypeEq, Eq, PartialEq, Hash, PartialOrd, Ord, Display
@@ -121,7 +111,7 @@ impl ClassFieldProperties {
     pub fn new(is_annotated: bool, range: TextRange) -> Self {
         Self {
             is_annotated,
-            range: AtomicTextRange::new(range),
+            range,
         }
     }
 }
@@ -257,7 +247,7 @@ impl Class {
     }
 
     pub fn field_decl_range(&self, name: &Name) -> Option<TextRange> {
-        Some(self.0.fields.get(name)?.range.get())
+        Some(self.0.fields.get(name)?.range)
     }
 
     pub fn has_qname(&self, module: &str, name: &str) -> bool {
