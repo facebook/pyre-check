@@ -21,7 +21,7 @@ use crate::util::arc_id::ArcId;
 use crate::util::mutable::Mutable;
 
 /// Used to represent TypeVar calls. Each TypeVar is unique, so use the ArcId to separate them.
-#[derive(Clone, Dupe, Debug, TypeEq, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct TypeVar(ArcId<TypeVarInner>);
 
 impl Display for TypeVar {

@@ -10,7 +10,6 @@ use std::fmt::Display;
 use std::hash::Hasher;
 
 use dupe::Dupe;
-use pyrefly_derive::TypeEq;
 use ruff_python_ast::Identifier;
 
 use crate::module::module_info::ModuleInfo;
@@ -20,7 +19,7 @@ use crate::util::arc_id::ArcId;
 use crate::util::mutable::Mutable;
 
 /// Used to represent ParamSpec calls. Each ParamSpec is unique, so use the ArcId to separate them.
-#[derive(Clone, Dupe, Debug, TypeEq, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct ParamSpec(ArcId<ParamSpecInner>);
 
 impl Display for ParamSpec {

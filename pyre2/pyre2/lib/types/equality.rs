@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::hash::Hash;
 use std::sync::Arc;
 
+use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::ordered_map::OrderedMap;
@@ -17,7 +19,11 @@ use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
 
 use crate::module::module_name::ModuleName;
+use crate::types::param_spec::ParamSpec;
+use crate::types::type_var::TypeVar;
+use crate::types::type_var_tuple::TypeVarTuple;
 use crate::util::arc_id::ArcId;
+use crate::util::mutable::Mutable;
 use crate::util::uniques::Unique;
 
 /// Compare a set of types using the same context.
@@ -27,6 +33,10 @@ use crate::util::uniques::Unique;
 pub struct TypeEqCtx {
     /// These Var's on the LHS are equal to those on the RHS
     unique: SmallMap<Unique, Unique>,
+    // Things that have identity
+    param_spec: SmallMap<ParamSpec, ParamSpec>,
+    type_var: SmallMap<TypeVar, TypeVar>,
+    type_var_tuple: SmallMap<TypeVarTuple, TypeVarTuple>,
 }
 
 impl TypeEq for Unique {
@@ -38,6 +48,41 @@ impl TypeEq for Unique {
                 true
             }
         }
+    }
+}
+
+fn type_eq_identity<T>(x: &T, y: &T, ctx: &mut SmallMap<T, T>) -> bool
+where
+    T: Mutable + Dupe + Eq + Hash,
+{
+    match ctx.entry(x.dupe()) {
+        Entry::Occupied(e) => e.get() == y,
+        Entry::Vacant(e) => {
+            if x.immutable_eq(y) {
+                e.insert(y.dupe());
+                true
+            } else {
+                false
+            }
+        }
+    }
+}
+
+impl TypeEq for ParamSpec {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        type_eq_identity(self, other, &mut ctx.param_spec)
+    }
+}
+
+impl TypeEq for TypeVar {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        type_eq_identity(self, other, &mut ctx.type_var)
+    }
+}
+
+impl TypeEq for TypeVarTuple {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        type_eq_identity(self, other, &mut ctx.type_var_tuple)
     }
 }
 

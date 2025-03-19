@@ -167,6 +167,10 @@ impl IdCache {
     }
 
     fn get(&self, mut x: Identifiable) -> Identifiable {
+        if true {
+            return x;
+        }
+
         let mut lock = self.0.lock();
 
         // First check if we have already created this thing this time around.
