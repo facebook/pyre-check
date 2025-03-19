@@ -1046,6 +1046,105 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     from typing import ParamSpec, Protocol, TypeVar
+     T = TypeVar("T")
+     P = ParamSpec("P")
+     class DecoratorProtocol(Protocol):
+       def __call__(self, func: Callable[P, T]) -> Callable[P, T]: ...
+     def log(flag: bool) -> DecoratorProtocol:
+       def inner(func: Callable[P, T]) -> Callable[P, T]:
+         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+           return func(*args, **kwargs)
+         return wrapper
+       return inner
+     @log(flag=True)
+     def foo():
+       return  # Test building higher order call graphs for decorated targets
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.log"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.log.inner"; kind = Normal });
+                   ];
+               };
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.foo"; kind = Decorated }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "13:1-13:15",
+                       LocationCallees.Compound
+                         (SerializableStringMap.of_alist_exn
+                            [
+                              ( "log",
+                                ExpressionCallees.from_call
+                                  (CallCallees.create
+                                     ~call_targets:
+                                       [
+                                         CallTarget.create_regular
+                                           (Target.Regular.Function
+                                              { name = "test.log"; kind = Normal });
+                                       ]
+                                     ()) );
+                              ( "test.log($parameter$flag = True)",
+                                ExpressionCallees.from_call
+                                  (CallCallees.create
+                                     ~call_targets:
+                                       [
+                                         CallTarget.create_regular
+                                           ~implicit_receiver:true
+                                           ~implicit_dunder_call:true
+                                           ~receiver_class:"test.DecoratorProtocol"
+                                           (Target.Regular.Method
+                                              {
+                                                class_name = "test.DecoratorProtocol";
+                                                method_name = "__call__";
+                                                kind = Normal;
+                                              });
+                                       ]
+                                     ~higher_order_parameters:
+                                       (HigherOrderParameterMap.from_list
+                                          [
+                                            {
+                                              index = 0;
+                                              call_targets =
+                                                [
+                                                  CallTarget.create_regular
+                                                    (Target.Regular.Function
+                                                       { name = "test.foo"; kind = Normal });
+                                                ];
+                                              unresolved = CallGraph.Unresolved.False;
+                                            };
+                                          ])
+                                     ()) );
+                            ]) );
+                     ( "14:0-15:8",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~callable_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
