@@ -214,6 +214,7 @@ impl Solutions {
         fn f<'a, K: Keyed>(
             x: &'a SolutionsEntry<K>,
             y: &'a Solutions,
+            ctx: &mut TypeEqCtx,
         ) -> Option<SolutionsDifference<'a>>
         where
             SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
@@ -233,7 +234,7 @@ impl Solutions {
             }
             for (k, v) in x.iter() {
                 match y.get(k) {
-                    Some(v2) if !v.type_eq(v2, &mut TypeEqCtx::default()) => {
+                    Some(v2) if !v.type_eq(v2, ctx) => {
                         return Some(SolutionsDifference {
                             key: (k, k),
                             lhs: Some((v, v)),
@@ -254,9 +255,12 @@ impl Solutions {
         }
 
         let mut difference = None;
+        // Important we have a single TypeEqCtx, so that we don't have
+        // types used in different ways.
+        let mut ctx = TypeEqCtx::default();
         table_for_each!(self.0, |x| {
             if difference.is_none() {
-                difference = f(x, other);
+                difference = f(x, other, &mut ctx);
             }
         });
         difference

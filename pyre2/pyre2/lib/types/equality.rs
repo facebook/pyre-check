@@ -11,6 +11,7 @@ use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::ordered_map::OrderedMap;
 use starlark_map::ordered_set::OrderedSet;
+use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use vec1::Vec1;
@@ -19,8 +20,26 @@ use crate::module::module_name::ModuleName;
 use crate::util::arc_id::ArcId;
 use crate::util::uniques::Unique;
 
+/// Compare a set of types using the same context.
+/// This will enable unique's to match, so important to use a single context
+/// for all type comparisons.
 #[derive(Debug, Default)]
-pub struct TypeEqCtx {}
+pub struct TypeEqCtx {
+    /// These Var's on the LHS are equal to those on the RHS
+    unique: SmallMap<Unique, Unique>,
+}
+
+impl TypeEq for Unique {
+    fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        match ctx.unique.entry(*self) {
+            Entry::Occupied(e) => e.get() == other,
+            Entry::Vacant(e) => {
+                e.insert(*other);
+                true
+            }
+        }
+    }
+}
 
 pub trait TypeEq: Eq {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
@@ -50,8 +69,6 @@ impl TypeEq for str {}
 impl TypeEq for Name {}
 impl TypeEq for ModuleName {}
 impl TypeEq for TextRange {}
-
-impl TypeEq for Unique {}
 
 // We don't need to recursively call type_eq since we are doing
 // pointer equality. So don't see whatever is inside.
@@ -169,6 +186,20 @@ mod tests {
     use pyrefly_derive::TypeEq;
 
     use super::*;
+    use crate::types::callable::Callable;
+    use crate::types::callable::FuncFlags;
+    use crate::types::callable::FuncMetadata;
+    use crate::types::callable::Function;
+    use crate::types::callable::FunctionKind;
+    use crate::types::callable::ParamList;
+    use crate::types::quantified::Quantified;
+    use crate::types::quantified::QuantifiedKind;
+    use crate::types::type_var::Restriction;
+    use crate::types::types::Forallable;
+    use crate::types::types::TParamInfo;
+    use crate::types::types::TParams;
+    use crate::types::types::Type;
+    use crate::util::uniques::UniqueFactory;
 
     #[derive(TypeEq, PartialEq, Eq, Debug)]
     struct Foo {
@@ -233,5 +264,39 @@ mod tests {
         );
         assert!(Generic(1).type_eq(&Generic(1), &mut ctx));
         assert!(!Generic(1).type_eq(&Generic(2), &mut ctx));
+    }
+
+    #[test]
+    fn test_equal_forall() {
+        let uniques = UniqueFactory::new();
+
+        fn mk_function(uniques: &UniqueFactory) -> Type {
+            let q = Quantified::new(uniques, QuantifiedKind::TypeVar);
+            Forallable::Function(Function {
+                signature: Callable::list(ParamList::everything(), q.to_type()),
+                metadata: FuncMetadata {
+                    kind: FunctionKind::Overload,
+                    flags: FuncFlags::default(),
+                },
+            })
+            .forall(
+                TParams::new(vec![TParamInfo {
+                    name: Name::new("test"),
+                    quantified: q,
+                    restriction: Restriction::Unrestricted,
+                    default: None,
+                    variance: None,
+                }])
+                .unwrap(),
+            )
+        }
+
+        let a = mk_function(&uniques);
+        let b = mk_function(&uniques);
+        assert_eq!(a, a);
+        assert_ne!(a, b);
+
+        assert!(a.type_eq(&a, &mut TypeEqCtx::default()));
+        assert!(a.type_eq(&b, &mut TypeEqCtx::default()));
     }
 }

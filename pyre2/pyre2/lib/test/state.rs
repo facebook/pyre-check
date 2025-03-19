@@ -298,6 +298,7 @@ fn test_interface_consistent(code: &str, broken: bool) {
 
 #[test]
 fn test_interfaces() {
+    #[allow(dead_code)]
     const BROKEN: bool = true;
 
     test_interface_consistent("x: int = 1\ndef f(y: bool) -> list[str]: return []", false);
@@ -307,7 +308,7 @@ fn test_interfaces() {
 
     // These should not change, but do because the quality algorithm doesn't deal
     // well with Forall.
-    test_interface_consistent("def f[X](x: X) -> X: ...", BROKEN);
+    test_interface_consistent("def f[X](x: X) -> X: ...", false);
 
     // These should not change, but do because the quality algorithm doesn't deal
     // well with Forall.
@@ -316,11 +317,11 @@ fn test_interfaces() {
 from typing import TypeVar, Generic
 T = TypeVar('T')
 class C(Generic[T]): pass",
-        BROKEN,
+        false,
     );
 
     // Another failing example
-    test_interface_consistent("class C[T]: x: T", BROKEN);
+    test_interface_consistent("class C[T]: x: T", false);
 
     // Another failing example
     test_interface_consistent(
@@ -328,7 +329,7 @@ class C(Generic[T]): pass",
 from typing import TypeVar, Generic
 T = TypeVar('T')
 class C(Generic[T]): x: T",
-        BROKEN,
+        false,
     );
 
     test_interface_consistent(
@@ -337,7 +338,7 @@ from typing import TypeVar, Generic
 T = TypeVar('T')
 class C(Generic[T]): pass
 class D(C[T]): pass",
-        BROKEN,
+        false,
     );
 
     test_interface_consistent(
@@ -354,7 +355,7 @@ class C:
     def __init__[R](self, field: R) -> None:
         self.field = R
 ",
-        BROKEN,
+        false,
     );
 }
 
