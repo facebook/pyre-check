@@ -10,9 +10,12 @@ use std::fmt::Display;
 use std::hash::Hasher;
 
 use dupe::Dupe;
+use pyrefly_derive::TypeEq;
 use ruff_python_ast::Identifier;
 
 use crate::module::module_info::ModuleInfo;
+use crate::types::equality::TypeEq;
+use crate::types::equality::TypeEqCtx;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
@@ -28,7 +31,7 @@ impl Display for TypeVarTuple {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, TypeEq, Eq, Ord, PartialOrd)]
 struct TypeVarTupleInner {
     qname: QName,
 }
@@ -46,6 +49,10 @@ impl TypeVarTuple {
 
     pub fn to_type(&self) -> Type {
         Type::TypeVarTuple(self.dupe())
+    }
+
+    pub fn type_eq_inner(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
+        self.0.type_eq(&other.0, ctx)
     }
 }
 

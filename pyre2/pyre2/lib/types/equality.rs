@@ -22,7 +22,6 @@ use crate::module::module_name::ModuleName;
 use crate::types::param_spec::ParamSpec;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var_tuple::TypeVarTuple;
-use crate::util::mutable::Mutable;
 use crate::util::uniques::Unique;
 
 /// Compare a set of types using the same context.
@@ -77,7 +76,7 @@ impl TypeEq for ParamSpec {
             other,
             ctx,
             |ctx| &mut ctx.param_spec,
-            |_| self.immutable_eq(other),
+            |ctx| self.type_eq_inner(other, ctx),
         )
     }
 }
@@ -89,7 +88,7 @@ impl TypeEq for TypeVar {
             other,
             ctx,
             |ctx| &mut ctx.type_var,
-            |_| self.immutable_eq(other),
+            |ctx| self.type_eq_inner(other, ctx),
         )
     }
 }
@@ -101,7 +100,7 @@ impl TypeEq for TypeVarTuple {
             other,
             ctx,
             |ctx| &mut ctx.type_var_tuple,
-            |_| self.immutable_eq(other),
+            |ctx| self.type_eq_inner(other, ctx),
         )
     }
 }
