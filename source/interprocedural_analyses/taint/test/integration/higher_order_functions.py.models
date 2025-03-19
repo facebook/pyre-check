@@ -933,6 +933,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply[formal(f, position=0)=_test_source]",
+    "filename": "*",
     "sources": [
       {
         "port": "result",
@@ -979,6 +980,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.has_tito]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -1004,6 +1006,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1076,6 +1079,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=_test_sink, formal(g, position=1)=higher_order_functions.safe]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(x, position=3)",
@@ -1127,6 +1131,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=_test_source, formal(g, position=1)=higher_order_functions.safe]",
+    "filename": "*",
     "sources": [
       {
         "port": "result",
@@ -1176,6 +1181,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_sink]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(x, position=3)",
@@ -1227,6 +1233,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.conditional_apply[formal(f, position=0)=higher_order_functions.safe, formal(g, position=1)=_test_source]",
+    "filename": "*",
     "sources": [
       {
         "port": "result",
@@ -1321,6 +1328,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.self_to_sink]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1349,6 +1357,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1403,6 +1412,7 @@
   "kind": "model",
   "data": {
     "callable": "higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(arg, position=1)",

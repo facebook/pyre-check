@@ -1200,6 +1200,7 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.Test2_C.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(z, position=3)",
@@ -1263,6 +1264,7 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.Test3_C.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(z, position=3)",
@@ -1313,6 +1315,7 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.Test4_C.__init__",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(z, position=3)",

@@ -431,6 +431,7 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClass.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(benign, position=2)",
@@ -553,6 +554,7 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(bad, position=1)",
@@ -595,6 +597,7 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(bad, position=1)",
@@ -650,6 +653,7 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClassWithOtherSource.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(not_tainted, position=2)",
@@ -686,6 +690,7 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClassWithSource.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(not_tainted, position=2)",

@@ -1005,7 +1005,7 @@ let to_json
           >>| (fun { Ast.Location.WithModule.module_reference; start = { line; _ }; _ } ->
                 Domains.module_path_to_json ~resolve_module_path module_reference
                 @ ["callable_line", `Int line])
-          |> Option.value ~default:[]
+          |> Option.value ~default:["filename", `String "*"]
         in
         model_json @ location_json
     | _ -> model_json

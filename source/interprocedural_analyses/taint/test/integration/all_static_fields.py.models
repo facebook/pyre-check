@@ -182,6 +182,7 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.Dataclass.__init__",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(d, position=2)",

@@ -1630,6 +1630,7 @@
   "kind": "model",
   "data": {
     "callable": "closure.higher_order_function[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner]",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(z, position=1)",
@@ -2547,6 +2548,7 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.wrapper[local($local_closure?nonlocal_closure_wrapper_flow$source)=closure.nonlocal_closure_wrapper_flow.source]",
+    "filename": "*",
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",

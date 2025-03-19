@@ -77,6 +77,7 @@
   "kind": "model",
   "data": {
     "callable": "missing_type.UnknownSinkDef.unknown",
+    "filename": "*",
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -90,6 +91,7 @@
   "kind": "model",
   "data": {
     "callable": "missing_type.UnknownSourceDef.unknown",
+    "filename": "*",
     "sources": [
       {
         "port": "result",

@@ -69,13 +69,6 @@ let module_path_to_json ~resolve_module_path module_reference : (string * Yojson
   | None -> []
 
 
-let location_with_module_to_json ~resolve_module_path location_with_module
-    : (string * Yojson.Safe.t) list
-  =
-  module_path_to_json ~resolve_module_path location_with_module.Location.WithModule.module_reference
-  @ location_to_json (Location.strip_module location_with_module)
-
-
 (* Class intervals reduce false positives by removing traces in which the taint is propagated along
    a sequence of calls in which exists a subsequence of calls where the receiver objects are
    "incompatible" with each other, in terms of not respecting the subclass relations.

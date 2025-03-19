@@ -724,6 +724,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.outer]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -753,6 +754,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_model_query_tito]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -782,6 +784,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_model_taint]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -811,6 +814,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_model_taint_tito]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -840,6 +844,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test.return_taint]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -869,6 +874,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test_tito_transform.return_model_query_tito]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -898,6 +904,7 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify[formal(inner, position=0)=closure_models.test_tito_transform.return_model_taint_tito]",
+    "filename": "*",
     "tito": [
       {
         "port": "formal(inner, position=0)",
