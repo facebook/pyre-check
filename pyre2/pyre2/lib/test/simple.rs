@@ -1458,3 +1458,18 @@ def f(x: int):
     x += 1 # E: Object of class `int` has no attribute `__iadd__` 
     "#,
 );
+
+testcase_with_bug!(
+    "Should probably error when setting the field",
+    test_generic_init_field,
+    r#"
+from typing import reveal_type
+
+class C:
+    def __init__[R](self, field: R):
+        self.field = field
+
+c = C("test")
+reveal_type(c.field)  # E: revealed type: ?_TypeVar
+"#,
+);
