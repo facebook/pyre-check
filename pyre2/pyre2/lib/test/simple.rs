@@ -1437,3 +1437,15 @@ def is_a_stub1(self) -> int:  # No error expected here.
     ...
     "#,
 );
+
+testcase_with_bug!(
+    "PyTorch TODO: This testcase shouldn't have errors. The issues are:
+    1- implement missing binary operations
+    2- the error about `-` is not supported between `Literal[255]` and `Literal[0] | int` looks wrong ",
+    test_simple_operations,
+    r#"
+from typing import Literal
+def A(x: int | Literal[0], y: int | Literal[255]):
+    x - y # E: `-` is not supported # E: TODO: Expr::binop_infer attribute base undefined
+    "#,
+);
