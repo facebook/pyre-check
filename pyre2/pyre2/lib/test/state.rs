@@ -266,77 +266,79 @@ fn test_incremental_cyclic() {
     i.check(&["foo"], &["foo", "foo", "bar"]);
 }
 
+/// Check that the interface is consistent as we change things.
+fn test_interface_consistent(code: &str, broken: bool) {
+    let mut i = Incremental::new();
+    i.set("main", code);
+    i.check(&["main"], &["main"]);
+    let base = i.state.get_solutions(&i.handle("main")).unwrap();
+
+    i.set("main", &format!("{code} # after"));
+    i.check(&["main"], &["main"]);
+    let suffix = i.state.get_solutions(&i.handle("main")).unwrap();
+
+    i.set("main", &format!("# before\n{code}"));
+    i.check(&["main"], &["main"]);
+    let prefix = i.state.get_solutions(&i.handle("main")).unwrap();
+
+    let same = base.first_difference(&base);
+    let suffix = suffix.first_difference(&base);
+    let prefix = prefix.first_difference(&base);
+    if !broken {
+        assert!(same.is_none(), "{code:?} led to {same:?}");
+        assert!(suffix.is_none(), "{code:?} led to {suffix:?}");
+        assert!(prefix.is_none(), "{code:?} led to {prefix:?}");
+    } else {
+        assert!(
+            same.is_some() || suffix.is_some() || prefix.is_some(),
+            "{code:?} now works"
+        );
+    }
+}
+
 #[test]
-fn test_incremental_class() {
+fn test_interfaces() {
+    const BROKEN: bool = true;
+
+    test_interface_consistent("x: int = 1\ndef f(y: bool) -> list[str]: return []", false);
+
     // Important to have a class with a field, as those also have positions
-    let class = "class X: y: int";
+    test_interface_consistent("class X: y: int", false);
 
-    // Class has equality with ArcId, so need to make sure they have equality
-    let mut i = Incremental::new();
-    i.set("main", "import foo; x = foo.X()");
-    i.set("foo", class);
-    i.check(&["main"], &["main", "foo"]);
-    i.set("foo", &format!("{class} # after"));
-    i.check(&["main"], &["foo"]);
-    i.set("foo", &format!("# before\n{class}"));
-    i.check(&["main"], &["foo"]);
-}
-
-#[test]
-fn test_incremental_generic_function() {
     // These should not change, but do because the quality algorithm doesn't deal
     // well with Forall.
-    const BROKEN: &str = "main";
+    test_interface_consistent("def f[X](x: X) -> X: ...", BROKEN);
 
-    let code = "def f[X](x: X) -> X: ...";
-    let mut i = Incremental::new();
-    i.set("lib", code);
-    i.set("main", "from lib import f");
-    i.check(&["main"], &["main", "lib"]);
-    i.set("lib", &format!("{code} # after"));
-    i.check(&["main"], &["lib", BROKEN]);
-    i.set("lib", &format!("# before\n{code}"));
-    i.check(&["main"], &["lib", BROKEN]);
-}
-
-#[test]
-fn test_incremental_generic_class() {
     // These should not change, but do because the quality algorithm doesn't deal
     // well with Forall.
-    const BROKEN: &str = "main";
-
-    let code = "
+    test_interface_consistent(
+        "
 from typing import TypeVar, Generic
 T = TypeVar('T')
-class C(Generic[T]): pass";
+class C(Generic[T]): pass",
+        BROKEN,
+    );
 
-    let mut i = Incremental::new();
-    i.set("lib", code);
-    i.set("main", "from lib import C");
-    i.check(&["main"], &["main", "lib"]);
-    i.set("lib", &format!("{code} # after"));
-    i.check(&["main"], &["lib", BROKEN]);
-    i.set("lib", &format!("# before\n{code}"));
-    i.check(&["main"], &["lib", BROKEN]);
-}
+    // Another failing example
+    test_interface_consistent("class C[T]: x: T", BROKEN);
 
-#[test]
-fn test_incremental_class_generic_field() {
-    let code = "
-class C[T]:
-    x: T
-";
-    // Modules that change, but shouldn't
-    const BROKEN: &str = "main";
+    // Another failing example
+    test_interface_consistent(
+        "
+from typing import TypeVar, Generic
+T = TypeVar('T')
+class C(Generic[T]): x: T",
+        BROKEN,
+    );
 
-    let mut i = Incremental::new();
-    i.set("lib", code);
-    i.set("main", "from lib import C");
-    i.check(&["main"], &["main", "lib"]);
-    i.set("lib", &format!("{code} # after"));
-    i.check(&["main"], &["lib", BROKEN]);
-    i.set("lib", &format!("# before\n{code}"));
-    i.check(&["main"], &["lib", BROKEN]);
+    test_interface_consistent(
+        "
+from typing import TypeVar, Generic
+T = TypeVar('T')
+class C(Generic[T]): pass
+class D(C[T]): pass",
+        BROKEN,
+    );
 }
 
 #[test]
