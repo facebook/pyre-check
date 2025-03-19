@@ -347,6 +347,15 @@ class C: pass
 T = TypeVar('T', bound=C)",
         false,
     );
+
+    test_interface_consistent(
+        "
+class C:
+    def __init__[R](self, field: R) -> None:
+        self.field = R
+",
+        BROKEN,
+    );
 }
 
 #[test]
