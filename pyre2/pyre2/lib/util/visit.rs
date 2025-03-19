@@ -129,21 +129,21 @@ impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<T> {
     }
 }
 
-impl<To: 'static, T1: Visit<To>, T2: Visit<To>> Visit<To> for (T1, T2) {
+impl<To: 'static, T0: Visit<To>, T1: Visit<To>> Visit<To> for (T0, T1) {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         self.0.visit0(f);
         self.1.visit0(f);
     }
 }
 
-impl<To: 'static, T1: VisitMut<To>, T2: VisitMut<To>> VisitMut<To> for (T1, T2) {
+impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>> VisitMut<To> for (T0, T1) {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         self.0.visit0_mut(f);
         self.1.visit0_mut(f);
     }
 }
 
-impl<To: 'static, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>> Visit<To> for (T1, T2, T3) {
+impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>> Visit<To> for (T0, T1, T2) {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         self.0.visit0(f);
         self.1.visit0(f);
@@ -151,8 +151,8 @@ impl<To: 'static, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>> Visit<To> for (T1
     }
 }
 
-impl<To: 'static, T1: VisitMut<To>, T2: VisitMut<To>, T3: VisitMut<To>> VisitMut<To>
-    for (T1, T2, T3)
+impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>> VisitMut<To>
+    for (T0, T1, T2)
 {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         self.0.visit0_mut(f);
@@ -161,8 +161,8 @@ impl<To: 'static, T1: VisitMut<To>, T2: VisitMut<To>, T3: VisitMut<To>> VisitMut
     }
 }
 
-impl<To: 'static, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>, T4: Visit<To>> Visit<To>
-    for (T1, T2, T3, T4)
+impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>> Visit<To>
+    for (T0, T1, T2, T3)
 {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         self.0.visit0(f);
@@ -172,8 +172,8 @@ impl<To: 'static, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>, T4: Visit<To>> Vi
     }
 }
 
-impl<To: 'static, T1: VisitMut<To>, T2: VisitMut<To>, T3: VisitMut<To>, T4: VisitMut<To>>
-    VisitMut<To> for (T1, T2, T3, T4)
+impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>, T3: VisitMut<To>>
+    VisitMut<To> for (T0, T1, T2, T3)
 {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         self.0.visit0_mut(f);

@@ -57,13 +57,13 @@ impl TypeEq for Unique {}
 // pointer equality. So don't see whatever is inside.
 impl<T> TypeEq for ArcId<T> {}
 
-impl<T1: TypeEq, T2: TypeEq> TypeEq for (T1, T2) {
+impl<T0: TypeEq, T1: TypeEq> TypeEq for (T0, T1) {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
         self.0.type_eq(&other.0, ctx) && self.1.type_eq(&other.1, ctx)
     }
 }
 
-impl<T1: TypeEq, T2: TypeEq, T3: TypeEq> TypeEq for (T1, T2, T3) {
+impl<T0: TypeEq, T1: TypeEq, T2: TypeEq> TypeEq for (T0, T1, T2) {
     fn type_eq(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
         self.0.type_eq(&other.0, ctx)
             && self.1.type_eq(&other.1, ctx)
