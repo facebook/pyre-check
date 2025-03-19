@@ -407,6 +407,20 @@ impl BindingTable {
     }
 }
 
+/// Errors that can occur when we try to look up a name
+pub enum LookupError {
+    /// We can't find the name at all
+    NotFound,
+}
+
+impl LookupError {
+    pub fn message(&self, name: &Identifier) -> String {
+        match self {
+            Self::NotFound => format!("Could not find name `{name}`"),
+        }
+    }
+}
+
 impl<'a> BindingsBuilder<'a> {
     pub fn init_static_scope(&mut self, x: &[Stmt], top_level: bool) {
         self.scopes.current_mut().stat.stmts(
@@ -468,32 +482,32 @@ impl<'a> BindingsBuilder<'a> {
         self.errors.add(range, msg, error_kind, None);
     }
 
-    fn lookup_name(&mut self, name: &Name) -> Option<Idx<Key>> {
+    fn lookup_name(&mut self, name: &Name) -> Result<Idx<Key>, LookupError> {
         let mut barrier = false;
         for scope in self.scopes.iter_rev() {
             if !barrier && let Some(flow) = scope.flow.info.get(name) {
-                return Some(flow.key);
+                return Ok(flow.key);
             } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(info) = scope.stat.0.get(name)
             {
                 let key = info.as_key(name);
-                return Some(self.table.types.0.insert(key));
+                return Ok(self.table.types.0.insert(key));
             }
             barrier = barrier || scope.barrier;
         }
-        None
+        Err(LookupError::NotFound)
     }
 
-    pub fn forward_lookup(&mut self, name: &Identifier) -> Option<Binding> {
+    pub fn forward_lookup(&mut self, name: &Identifier) -> Result<Binding, LookupError> {
         self.lookup_name(&name.id).map(Binding::Forward)
     }
 
     pub fn lookup_legacy_tparam(
         &mut self,
         name: &Identifier,
-    ) -> Either<Idx<KeyLegacyTypeParam>, Option<Idx<Key>>> {
+    ) -> Either<Idx<KeyLegacyTypeParam>, Result<Idx<Key>, LookupError>> {
         let found = self.lookup_name(&name.id);
-        if let Some(mut idx) = found {
+        if let Ok(mut idx) = found {
             loop {
                 if let Some(b) = self.table.types.1.get(idx) {
                     match b {
@@ -647,7 +661,7 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn bind_narrow_ops(&mut self, narrow_ops: &NarrowOps, use_range: TextRange) {
         for (name, (op, op_range)) in narrow_ops.0.iter() {
-            if let Some(name_key) = self.lookup_name(name) {
+            if let Ok(name_key) = self.lookup_name(name) {
                 let binding_key = self.table.insert(
                     Key::Narrow(name.clone(), *op_range, use_range),
                     Binding::Narrow(name_key, Box::new(op.clone()), use_range),
@@ -892,6 +906,7 @@ impl LegacyTParamBuilder {
                 builder
                     .lookup_legacy_tparam(name)
                     .map_left(|idx| (name.clone(), idx))
+                    .map_right(|right| right.ok())
             });
         match result {
             Either::Left((_, idx)) => {
