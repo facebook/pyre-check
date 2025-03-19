@@ -47,6 +47,11 @@ impl Globs {
         Self::new_with_root(root, self.0)
     }
 
+    /// Given a glob pattern, return the directories that can contain files that match the pattern.
+    pub fn roots(&self) -> Vec<PathBuf> {
+        self.0.map(|s| Self::get_root_for_pattern(s))
+    }
+
     fn pattern_relative_to_root(root: &Path, pattern: String) -> String {
         let parsed_pattern = Path::new(&pattern);
         if parsed_pattern.has_root() {
@@ -157,11 +162,6 @@ impl Globs {
 }
 
 impl FileList for Globs {
-    /// Given a glob pattern, return the directories that can contain files that match the pattern.
-    fn roots(&self) -> Vec<PathBuf> {
-        self.0.map(|s| Self::get_root_for_pattern(s))
-    }
-
     fn files(&self) -> anyhow::Result<Vec<PathBuf>> {
         let mut result = SmallSet::new();
         for pattern in &self.0 {

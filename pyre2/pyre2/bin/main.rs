@@ -23,7 +23,6 @@ use pyre2::run::CheckArgs;
 use pyre2::run::CommandExitStatus;
 use pyre2::run::LspArgs;
 use pyre2::ConfigFile;
-use pyre2::FileList;
 use pyre2::Globs;
 use pyre2::NotifyWatcher;
 
