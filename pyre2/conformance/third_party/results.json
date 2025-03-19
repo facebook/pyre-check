@@ -1,9 +1,9 @@
 {
   "total": 133,
-  "pass": 38,
-  "fail": 95,
+  "pass": 39,
+  "fail": 94,
   "pass_rate": 0.29,
-  "differences": 533,
+  "differences": 530,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -14,6 +14,7 @@
     "directives_cast.py",
     "directives_no_type_check.py",
     "directives_reveal_type.py",
+    "directives_type_checking.py",
     "directives_type_ignore.py",
     "directives_type_ignore_file2.py",
     "directives_version_platform.py",
@@ -80,7 +81,6 @@
     "dataclasses_transform_meta.py": 9,
     "dataclasses_usage.py": 5,
     "directives_deprecated.py": 11,
-    "directives_type_checking.py": 3,
     "directives_type_ignore_file1.py": 1,
     "enums_behaviors.py": 5,
     "enums_members.py": 6,

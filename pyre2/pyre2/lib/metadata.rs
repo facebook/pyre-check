@@ -240,6 +240,14 @@ impl RuntimeMetadata {
                 ])),
                 _ => None,
             },
+            Expr::Name(name) if name.id == "TYPE_CHECKING" => Some(Value::Bool(true)),
+            Expr::Attribute(ExprAttribute {
+                value: box Expr::Name(name),
+                attr,
+                ..
+            }) if &name.id == "typing" && attr.as_str() == "TYPE_CHECKING" => {
+                Some(Value::Bool(true))
+            }
             Expr::Tuple(x) => Some(Value::Tuple(
                 x.elts.try_map(|x| self.evaluate(x).ok_or(())).ok()?,
             )),

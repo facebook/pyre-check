@@ -5277,38 +5277,7 @@
       "stop_line": 20
     }
   ],
-  "directives_type_checking.py": [
-    {
-      "code": -2,
-      "column": 14,
-      "concise_description": "`Literal['']` is not assignable to `int`",
-      "description": "`Literal['']` is not assignable to `int`",
-      "line": 11,
-      "name": "type-mismatch",
-      "stop_column": 16,
-      "stop_line": 11
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Inconsistent type annotations for b: list[str], list[int]",
-      "description": "Inconsistent type annotations for b: list[str], list[int]",
-      "line": 16,
-      "name": "annotation-mismatch",
-      "stop_column": 6,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(list[int] | list[str], list[int]) failed",
-      "description": "assert_type(list[int] | list[str], list[int]) failed",
-      "line": 18,
-      "name": "assert-type",
-      "stop_column": 26,
-      "stop_line": 18
-    }
-  ],
+  "directives_type_checking.py": [],
   "directives_type_ignore.py": [],
   "directives_type_ignore_file1.py": [
     {

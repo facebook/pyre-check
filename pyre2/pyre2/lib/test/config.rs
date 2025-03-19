@@ -76,3 +76,34 @@ else:
 assert_type(Y(), int)
 "#,
 );
+
+testcase!(
+    test_typechecking_constant,
+    r#"
+import typing
+from typing import TYPE_CHECKING, assert_type
+if TYPE_CHECKING:
+    X0 = str
+else:
+    X0 = int
+assert_type(X0(), str)
+
+if typing.TYPE_CHECKING:
+    X1 = str
+else:
+    X1 = int
+assert_type(X1(), str)
+
+if not TYPE_CHECKING:
+    Y0 = str
+else:
+    Y0 = int
+assert_type(Y0(), int)
+
+if not typing.TYPE_CHECKING:
+    Y1 = str
+else:
+    Y1 = int
+assert_type(Y1(), int)
+"#,
+);

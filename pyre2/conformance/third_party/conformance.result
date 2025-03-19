@@ -294,11 +294,7 @@
   ],
   "directives_no_type_check.py": [],
   "directives_reveal_type.py": [],
-  "directives_type_checking.py": [
-    "Line 11: Unexpected errors [\"`Literal['']` is not assignable to `int`\"]",
-    "Line 16: Unexpected errors ['Inconsistent type annotations for b: list[str], list[int]']",
-    "Line 18: Unexpected errors ['assert_type(list[int] | list[str], list[int]) failed']"
-  ],
+  "directives_type_checking.py": [],
   "directives_type_ignore.py": [],
   "directives_type_ignore_file1.py": [
     "Line 16: Unexpected errors [\"`Literal['']` is not assignable to `int`\"]"
