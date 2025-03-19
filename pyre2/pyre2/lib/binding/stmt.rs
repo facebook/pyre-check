@@ -224,7 +224,11 @@ impl<'a> BindingsBuilder<'a> {
                         KeyExpect(target.range()),
                         BindingExpect::Delete(Box::new(target.clone())),
                     );
-                    self.ensure_expr(target);
+                    if let Expr::Name(name) = target {
+                        self.ensure_mutable_name(name);
+                    } else {
+                        self.ensure_expr(target);
+                    }
                     // If the target is a name, mark it as unbound
                     if let Expr::Name(name) = target {
                         let key = Key::Usage(ShortIdentifier::expr_name(name));
@@ -340,7 +344,11 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::AugAssign(mut x) => {
-                self.ensure_expr(&mut x.target);
+                if let Expr::Name(name) = &*x.target {
+                    self.ensure_mutable_name(name);
+                } else {
+                    self.ensure_expr(&mut x.target);
+                }
                 self.ensure_expr(&mut x.value);
                 let make_binding = |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
                 self.bind_target(&x.target, &make_binding, None);

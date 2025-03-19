@@ -39,10 +39,10 @@ testcase_with_bug!(
 def f1() -> None:
   x: str = "John"
   def f2() -> None:
-    del x  # Not OK
+    del x  # E: `x` is not mutable from the current scope
   def f3() -> None:
     nonlocal x  # E: TODO: StmtNonlocal
-    del x  # OK
+    del x  # OK  # E: `x` is not mutable from the current scope
   def f4() -> None:
     nonlocal x  # E: TODO: StmtNonlocal
     x = 1  # Not OK

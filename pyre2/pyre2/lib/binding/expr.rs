@@ -16,6 +16,7 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBoolOp;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprLambda;
+use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
@@ -27,6 +28,7 @@ use crate::binding::binding::SuperStyle;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::bindings::LookupError;
+use crate::binding::bindings::LookupKind;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::Flow;
 use crate::binding::scope::Scope;
@@ -48,7 +50,12 @@ impl<'a> BindingsBuilder<'a> {
     /// record an error and fall back to `Any`.
     ///
     /// This function is the the core scope lookup logic for binding creation.
-    fn ensure_name(&mut self, name: &Identifier, value: Result<Binding, LookupError>) {
+    fn ensure_name(
+        &mut self,
+        name: &Identifier,
+        value: Result<Binding, LookupError>,
+        kind: LookupKind,
+    ) {
         if name.is_empty() {
             // We only get empty identifiers if Ruff has done error correction,
             // so there must be a parse error.
@@ -59,7 +66,10 @@ impl<'a> BindingsBuilder<'a> {
         let key = Key::Usage(ShortIdentifier::new(name));
         match value {
             Ok(value) => {
-                if !self.module_info.path().is_interface() {
+                if !self.module_info.path().is_interface()
+                    && matches!(kind, LookupKind::Regular | LookupKind::Mutable)
+                {
+                    // Don't check flow for global/nonlocal lookups
                     if let Some(error_message) = self
                         .scopes
                         .get_flow_style(&name.id)
@@ -79,6 +89,14 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.insert(key, Binding::AnyType(AnyStyle::Error));
             }
         }
+    }
+
+    pub fn ensure_mutable_name(&mut self, x: &ExprName) {
+        let name = Ast::expr_name_identifier(x.clone());
+        let binding = self
+            .lookup_name(&name.id, LookupKind::Mutable)
+            .map(Binding::Forward);
+        self.ensure_name(&name, binding, LookupKind::Mutable);
     }
 
     fn bind_comprehensions(&mut self, range: TextRange, comprehensions: &mut [Comprehension]) {
@@ -284,7 +302,7 @@ impl<'a> BindingsBuilder<'a> {
             Expr::Name(x) => {
                 let name = Ast::expr_name_identifier(x.clone());
                 let binding = self.forward_lookup(&name);
-                self.ensure_name(&name, binding);
+                self.ensure_name(&name, binding, LookupKind::Regular);
                 false
             }
             Expr::Named(x) => {
@@ -353,7 +371,7 @@ impl<'a> BindingsBuilder<'a> {
                         .ok_or(LookupError::NotFound),
                     None => self.forward_lookup(&name),
                 };
-                self.ensure_name(&name, binding);
+                self.ensure_name(&name, binding, LookupKind::Regular);
             }
             Expr::Subscript(ExprSubscript { value, .. })
                 if self.as_special_export(value) == Some(SpecialExport::Literal) =>
