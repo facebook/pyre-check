@@ -14,20 +14,18 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
-import NewLandingPage from './newLandingPage';
 
 // This import serves no runtime purposes, but we import it to force webpack to run babel on it,
 // so we can test whether babel can handle newer syntax.
 import '../js/parser-playground';
 
-export default component Home() {
+const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
+console.log('shouldShowNewLandingPage', shouldShowNewLandingPage);
+export default component NewLandingPage() {
   const context = useDocusaurusContext();
   const {siteConfig} = context;
 
-  // TODO (T218370640): replace current landing page with new landing page
-  return process.env.INTERNAL_STATIC_DOCS ? (
-    <NewLandingPage />
-  ) : (
+  return (
     <Layout
       title="Pyrefly: A Static Type Checker for Python"
       description={siteConfig.description}>
