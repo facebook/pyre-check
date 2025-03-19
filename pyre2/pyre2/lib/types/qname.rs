@@ -11,8 +11,6 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::hash::Hash;
-use std::hash::Hasher;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
@@ -26,7 +24,6 @@ use crate::ruff::text_range::AtomicTextRange;
 use crate::types::equality::TypeEq;
 use crate::types::equality::TypeEqCtx;
 use crate::util::lock::RwLock;
-use crate::util::mutable::Mutable;
 
 /// A name, plus where it is defined.
 pub struct QName {
@@ -129,30 +126,5 @@ impl QName {
             self.name,
             self.module_info.read().source_range(self.range.get())
         )
-    }
-}
-
-impl Mutable for QName {
-    fn immutable_eq(&self, other: &QName) -> bool {
-        self.name == other.name && self.module_name == other.module_name
-    }
-
-    fn immutable_hash<H: Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-        self.module_name.hash(state);
-    }
-
-    fn mutable_eq(&self, other: &Self) -> bool {
-        // We don't check the `module_info` here, because it's always derived from the `module_name`.
-        self.range.get() == other.range.get()
-    }
-
-    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
-        self.range.get().hash(state);
-    }
-
-    fn mutate(&self, x: &QName) {
-        *self.module_info.write() = x.module_info().dupe();
-        self.range.set(x.range.get());
     }
 }

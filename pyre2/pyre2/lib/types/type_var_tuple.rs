@@ -7,7 +7,6 @@
 
 use std::fmt;
 use std::fmt::Display;
-use std::hash::Hasher;
 
 use dupe::Dupe;
 use pyrefly_derive::TypeEq;
@@ -19,7 +18,6 @@ use crate::types::equality::TypeEqCtx;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
-use crate::util::mutable::Mutable;
 
 /// Used to represent TypeVarTuple calls. Each TypeVarTuple is unique, so use the ArcId to separate them.
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -53,27 +51,5 @@ impl TypeVarTuple {
 
     pub fn type_eq_inner(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
         self.0.type_eq(&other.0, ctx)
-    }
-}
-
-impl Mutable for TypeVarTuple {
-    fn immutable_eq(&self, other: &TypeVarTuple) -> bool {
-        self.0.qname.immutable_eq(&other.0.qname)
-    }
-
-    fn immutable_hash<H: Hasher>(&self, state: &mut H) {
-        self.0.qname.immutable_hash(state);
-    }
-
-    fn mutable_eq(&self, other: &Self) -> bool {
-        self.0.qname.mutable_eq(&other.0.qname)
-    }
-
-    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
-        self.0.qname.mutable_hash(state);
-    }
-
-    fn mutate(&self, x: &TypeVarTuple) {
-        self.0.qname.mutate(&x.0.qname);
     }
 }

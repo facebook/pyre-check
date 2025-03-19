@@ -23,6 +23,7 @@ impl AtomicTextRange {
         Self::from_u64(self.0.load(Ordering::Relaxed))
     }
 
+    #[allow(dead_code)]
     pub fn set(&self, range: TextRange) {
         self.0.store(Self::to_u64(range), Ordering::Relaxed);
     }

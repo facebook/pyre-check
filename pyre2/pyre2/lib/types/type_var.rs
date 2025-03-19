@@ -8,7 +8,6 @@
 use std::fmt;
 use std::fmt::Display;
 use std::hash::Hash;
-use std::hash::Hasher;
 
 use dupe::Dupe;
 use pyrefly_derive::TypeEq;
@@ -20,7 +19,6 @@ use crate::types::equality::TypeEqCtx;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
-use crate::util::mutable::Mutable;
 
 /// Used to represent TypeVar calls. Each TypeVar is unique, so use the ArcId to separate them.
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
@@ -93,33 +91,5 @@ impl TypeVar {
 
     pub fn type_eq_inner(&self, other: &Self, ctx: &mut TypeEqCtx) -> bool {
         self.0.type_eq(&other.0, ctx)
-    }
-}
-
-impl Mutable for TypeVar {
-    fn immutable_eq(&self, other: &TypeVar) -> bool {
-        self.0.qname.immutable_eq(&other.0.qname)
-            && self.0.restriction == other.0.restriction
-            && self.0.default == other.0.default
-            && self.0.variance == other.0.variance
-    }
-
-    fn immutable_hash<H: Hasher>(&self, state: &mut H) {
-        self.0.qname.immutable_hash(state);
-        self.0.restriction.hash(state);
-        self.0.default.hash(state);
-        self.0.variance.hash(state);
-    }
-
-    fn mutable_eq(&self, other: &Self) -> bool {
-        self.0.qname.mutable_eq(&other.0.qname)
-    }
-
-    fn mutable_hash<H: Hasher>(&self, state: &mut H) {
-        self.0.qname.mutable_hash(state);
-    }
-
-    fn mutate(&self, x: &TypeVar) {
-        self.0.qname.mutate(&x.0.qname);
     }
 }
