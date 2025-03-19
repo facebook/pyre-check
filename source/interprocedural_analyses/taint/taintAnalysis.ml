@@ -800,6 +800,13 @@ let run_taint_analysis
           ~start_message:"Building decorator resolution"
           ~end_message:"Decorator resolution built"
       in
+      let () =
+        Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory
+        .save_decorator_counts_to_directory
+          ~static_analysis_configuration
+          ~scheduler
+          callables_to_decorators_map
+      in
       let decorator_resolution =
         Interprocedural.CallGraph.DecoratorResolution.Results.resolve_batch_exn
           ~debug:false

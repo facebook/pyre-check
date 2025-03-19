@@ -251,6 +251,72 @@ module CallableToDecoratorsMap = struct
 
     let cleanup = T.cleanup ~clean_old:true
 
+    let save_decorator_counts_to_directory
+        ~static_analysis_configuration:
+          {
+            Configuration.StaticAnalysis.save_results_to;
+            output_format;
+            configuration = { local_root; _ };
+            _;
+          }
+        ~scheduler
+        shared_memory
+      =
+      let module DecoratorCount = struct
+        type t = {
+          count: int;
+          decorator: string;
+        }
+        [@@deriving compare]
+
+        let to_json { count; decorator } =
+          [
+            {
+              NewlineDelimitedJson.Line.kind = DecoratorCount;
+              data = `Assoc ["count", `Int count; "decorator", `String decorator];
+            };
+          ]
+      end
+      in
+      let create_decorator_count = function
+        | [] -> None
+        | decorator :: _ as decorators ->
+            Some { DecoratorCount.count = List.length decorators; decorator }
+      in
+      let decorator_counts =
+        shared_memory
+        |> T.to_alist
+        |> List.map ~f:(fun (_, { decorators; _ }) -> List.map ~f:Expression.show decorators)
+        |> List.concat
+        |> List.sort_and_group ~compare:String.compare
+        |> List.filter_map ~f:create_decorator_count
+        |> List.sort ~compare:DecoratorCount.compare
+        |> List.rev
+      in
+      let filename_prefix = "decorator-counts" in
+      match save_results_to with
+      | Some directory -> (
+          Log.info "Writing the decorator counts to `%s`" (PyrePath.absolute directory);
+          match output_format with
+          | Configuration.TaintOutputFormat.Json ->
+              NewlineDelimitedJson.write_file
+                ~path:
+                  (PyrePath.append directory ~element:(Format.asprintf "%s.json" filename_prefix))
+                ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+                ~to_json_lines:DecoratorCount.to_json
+                decorator_counts
+          | Configuration.TaintOutputFormat.ShardedJson ->
+              NewlineDelimitedJson.remove_sharded_files ~directory ~filename_prefix;
+              NewlineDelimitedJson.write_sharded_files
+                ~scheduler
+                ~directory
+                ~filename_prefix
+                ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+                ~to_json_lines:DecoratorCount.to_json
+                decorator_counts)
+      | None -> ()
+
+
     (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its
        shared memory here. *)
     let create ~callables_to_definitions_map ~scheduler ~scheduler_policy callables =

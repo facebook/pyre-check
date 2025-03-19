@@ -31,6 +31,7 @@ module Kind = struct
     | HigherOrderCallGraph
     | Module
     | Function
+    | DecoratorCount
 
   let show = function
     | Model -> "model"
@@ -39,6 +40,7 @@ module Kind = struct
     | HigherOrderCallGraph -> "higher_order_call_graph"
     | Module -> "module"
     | Function -> "function"
+    | DecoratorCount -> "decorator_count"
 end
 
 module Line = struct

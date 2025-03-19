@@ -457,6 +457,12 @@ module CallableToDecoratorsMap : sig
       t
 
     val cleanup : t -> unit
+
+    val save_decorator_counts_to_directory
+      :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+      scheduler:Scheduler.t ->
+      t ->
+      unit
   end
 end
 

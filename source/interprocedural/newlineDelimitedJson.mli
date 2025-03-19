@@ -13,6 +13,7 @@ module Kind : sig
     | HigherOrderCallGraph
     | Module
     | Function
+    | DecoratorCount
 
   val show : t -> string
 end
