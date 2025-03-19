@@ -26,10 +26,7 @@ use crate::util::lock::RwLock;
 
 /// A name, plus where it is defined.
 pub struct QName {
-    /// The `name` and `range` must be consistent.
-    /// They always come from a single `Identifier`.
-    name: Name,
-    range: TextRange,
+    name: Identifier,
     module_name: ModuleName,
     module_info: RwLock<ModuleInfo>,
 }
@@ -56,7 +53,7 @@ impl Eq for QName {}
 
 impl TypeEq for QName {
     fn type_eq(&self, other: &Self, _: &mut TypeEqCtx) -> bool {
-        self.name == other.name && self.module_name == other.module_name
+        self.name.id == other.name.id && self.module_name == other.module_name
     }
 }
 
@@ -81,28 +78,27 @@ impl Display for QName {
 impl QName {
     fn key(&self) -> (&Name, TextSize, TextSize, ModuleName) {
         (
-            &self.name,
-            self.range.start(),
-            self.range.end(),
+            &self.name.id,
+            self.name.range.start(),
+            self.name.range.end(),
             self.module_name,
         )
     }
 
     pub fn new(name: Identifier, module: ModuleInfo) -> Self {
         Self {
-            name: name.id,
-            range: name.range,
+            name,
             module_name: module.name(),
             module_info: RwLock::new(module),
         }
     }
 
     pub fn id(&self) -> &Name {
-        &self.name
+        &self.name.id
     }
 
     pub fn range(&self) -> TextRange {
-        self.range
+        self.name.range
     }
 
     pub fn module_info(&self) -> ModuleInfo {
@@ -127,7 +123,7 @@ impl QName {
             "{}.{}@{}",
             self.module_name,
             self.name,
-            self.module_info.read().source_range(self.range)
+            self.module_info.read().source_range(self.name.range)
         )
     }
 }
