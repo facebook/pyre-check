@@ -634,3 +634,36 @@ class Test(B):
         assert_type(super().z, Any)
     "#,
 );
+
+testcase_with_bug!(
+    "PyTorch TODO: support `with` expression and raise the right error at the C() call site",
+    test_with,
+    r#"
+class C:
+    def __init__(self) -> None:
+        self.prev = False
+    def __enter__(self) -> None:
+        self.prev = False
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.prev = False
+    def __new__(cls, orig_func=None):
+        if orig_func is None:
+            return super().__new__(
+                cls  # E: Expected 0 positional arguments, got 1 in function `object.__new__` 
+            ) 
+def f():
+    with C():  # E: TODO: Expr::call_method attribute base undefined # E: Cannot use `object | None` as a context manager
+        pass
+    "#,
+);
+
+testcase_with_bug!(
+    "PyTorch TODO: There should be no error here",
+    test_attr_base,
+    r#"
+def f(x, key, dict):
+    for param in x:
+        if key in dict:  # E: TODO: Expr::call_method attribute base undefined 
+            pass
+    "#,
+);
