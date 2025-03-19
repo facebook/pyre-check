@@ -100,6 +100,10 @@ pub enum TypeCheckKind {
     Attribute(Name),
     /// A check against a user-declared type annotation on a variable name.
     AnnotatedName(Name),
+    /// Check the type of an iteration variable (the `x` in `for x in seq`) against the iterable.
+    // When checking iteration variables (the `x` in `for x in seq`), we transform the type annotation of the variable if it exists.
+    // We need to carry around the actual un-transformed type of `x` to avoid a confusing error message.
+    IterationVariableMismatch(Name, Type),
     /// var: SomeType = some_value check. This is separate from AnnotatedName because we can
     /// emit a more compact error message for this case.
     AnnAssign,

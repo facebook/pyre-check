@@ -1489,9 +1489,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::IterableValue(ann, e) => {
                 let ty = ann.map(|k| self.get_idx(k));
-                let hint =
-                    ty.and_then(|x| x.ty().map(|ty| self.stdlib.iterable(ty.clone()).to_type()));
-                let tcc: &dyn Fn() -> TypeCheckContext = &|| TypeCheckContext::unknown();
+                let tcc: &dyn Fn() -> TypeCheckContext = &|| {
+                    let (name, annot_type) =
+                        ty.clone()
+                            .map_or((Name::new_static("_"), Type::any_implicit()), |t| {
+                                (
+                                    t.target.name().clone(),
+                                    t.ty().unwrap_or(&Type::any_implicit()).clone(),
+                                )
+                            });
+                    TypeCheckContext::of_kind(TypeCheckKind::IterationVariableMismatch(
+                        name, annot_type,
+                    ))
+                };
+                let hint = ty
+                    .clone()
+                    .and_then(|x| x.ty().map(|ty| self.stdlib.iterable(ty.clone()).to_type()));
                 let iterables = self.iterate(
                     &self.expr(e, hint.as_ref().map(|t| (t, tcc)), errors),
                     e.range(),

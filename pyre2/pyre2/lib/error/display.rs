@@ -139,6 +139,12 @@ impl TypeCheckKind {
                 var,
                 ctx.display(want),
             ),
+            Self::IterationVariableMismatch(var, real_want) => format!(
+                "Cannot use variable `{}` with type `{}` to iterate through `{}`",
+                var,
+                ctx.display(real_want),
+                ctx.display(got),
+            ),
             // In an annotated assignment, the variable, type, and assigned value are all in the
             // same statement, so we can make the error message more concise and assume the context
             // is clear from the surrounding code.

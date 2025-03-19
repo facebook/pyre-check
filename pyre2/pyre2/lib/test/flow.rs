@@ -295,7 +295,7 @@ testcase!(
     r#"
 def f(x: list[int]) -> None:
     i: str = ""
-    for i in x: # E: EXPECTED list[int] <: Iterable[str]
+    for i in x: # E: Cannot use variable `i` with type `str` to iterate through `list[int]`
         pass
     "#,
 );
