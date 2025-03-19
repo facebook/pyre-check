@@ -17,8 +17,6 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 
-use crate::alt::id_cache::IdCache;
-use crate::alt::id_cache::IdCacheHistory;
 use crate::alt::traits::Solve;
 use crate::alt::traits::SolveRecursive;
 use crate::binding::binding::Keyed;
@@ -73,7 +71,6 @@ pub struct Traces {
 /// We never issue contains queries on these maps.
 #[derive(Debug)]
 pub struct Answers {
-    id_cache: IdCache,
     solver: Solver,
     table: AnswerTable,
     trace: Option<Mutex<Traces>>,
@@ -295,12 +292,7 @@ pub trait LookupAnswer: Sized {
 }
 
 impl Answers {
-    pub fn new(
-        bindings: &Bindings,
-        solver: Solver,
-        history: IdCacheHistory,
-        enable_trace: bool,
-    ) -> Self {
+    pub fn new(bindings: &Bindings, solver: Solver, enable_trace: bool) -> Self {
         fn presize<K: SolveRecursive>(items: &mut AnswerEntry<K>, bindings: &Bindings)
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
@@ -320,7 +312,6 @@ impl Answers {
         };
 
         Self {
-            id_cache: IdCache::new(history),
             solver,
             table,
             trace,
@@ -435,10 +426,6 @@ impl Answers {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
     {
         self.table.get::<K>().get(k)?.get()
-    }
-
-    pub fn id_cache_history(&self) -> IdCacheHistory {
-        self.id_cache.history()
     }
 
     pub fn for_display(&self, t: Type) -> Type {

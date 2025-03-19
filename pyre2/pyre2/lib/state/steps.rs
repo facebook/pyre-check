@@ -18,7 +18,6 @@ use ruff_text_size::TextRange;
 use crate::alt::answers::Answers;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::answers::Solutions;
-use crate::alt::id_cache::IdCacheHistory;
 use crate::binding::bindings::Bindings;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
@@ -114,7 +113,7 @@ pub struct Steps {
     pub ast: Option<Arc<ModModule>>,
     pub exports: Option<Exports>,
     pub answers: Option<Arc<(Bindings, Arc<Answers>)>>,
-    pub solutions: Option<Arc<(IdCacheHistory, Arc<Solutions>)>>,
+    pub solutions: Option<Arc<Solutions>>,
 }
 
 impl Steps {
@@ -178,7 +177,7 @@ impl Step {
             Step::Load => compute_step!(<Lookup> load =),
             Step::Ast => compute_step!(<Lookup> ast = load),
             Step::Exports => compute_step!(<Lookup> exports = load, ast),
-            Step::Answers => compute_step!(<Lookup> answers = load, ast, exports, #solutions),
+            Step::Answers => compute_step!(<Lookup> answers = load, ast, exports),
             Step::Solutions => compute_step!(<Lookup> solutions = load, answers),
         }
     }
@@ -220,7 +219,6 @@ impl Step {
         load: Arc<Load>,
         ast: Arc<ModModule>,
         exports: Exports,
-        previous_solutions: Option<Arc<(IdCacheHistory, Arc<Solutions>)>>,
     ) -> Arc<(Bindings, Arc<Answers>)> {
         let solver = Solver::new();
         let enable_trace = ctx.require.keep_answers_trace();
@@ -236,11 +234,7 @@ impl Step {
             ctx.uniques,
             enable_trace,
         );
-        let history = previous_solutions
-            .as_ref()
-            .map(|s| s.0.clone())
-            .unwrap_or_default();
-        let answers = Answers::new(&bindings, solver, history, enable_trace);
+        let answers = Answers::new(&bindings, solver, enable_trace);
         Arc::new((bindings, Arc::new(answers)))
     }
 
@@ -249,7 +243,7 @@ impl Step {
         ctx: &Context<Lookup>,
         load: Arc<Load>,
         answers: Arc<(Bindings, Arc<Answers>)>,
-    ) -> Arc<(IdCacheHistory, Arc<Solutions>)> {
+    ) -> Arc<Solutions> {
         let solutions = answers.1.solve(
             ctx.lookup,
             ctx.lookup,
@@ -261,7 +255,6 @@ impl Step {
                 || ctx.require.keep_answers_trace()
                 || ctx.require.keep_answers(),
         );
-        let history = answers.1.id_cache_history();
-        Arc::new((history, Arc::new(solutions)))
+        Arc::new(solutions)
     }
 }
