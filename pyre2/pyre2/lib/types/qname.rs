@@ -23,6 +23,8 @@ use ruff_text_size::TextSize;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::ruff::text_range::AtomicTextRange;
+use crate::types::equality::TypeEq;
+use crate::types::equality::TypeEqCtx;
 use crate::util::lock::RwLock;
 use crate::util::mutable::Mutable;
 
@@ -55,6 +57,12 @@ impl PartialEq for QName {
 }
 
 impl Eq for QName {}
+
+impl TypeEq for QName {
+    fn type_eq(&self, other: &Self, _: &mut TypeEqCtx) -> bool {
+        self.name == other.name && self.module_name == other.module_name
+    }
+}
 
 impl PartialOrd for QName {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {

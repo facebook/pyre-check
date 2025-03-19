@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::hash::Hasher;
+use std::sync::Arc;
 
 use dupe::Dupe;
 use parse_display::Display;
@@ -25,21 +27,59 @@ use crate::module::module_name::ModuleName;
 use crate::ruff::text_range::AtomicTextRange;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
+use crate::types::equality::TypeEq;
 use crate::types::qname::QName;
 use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::types::TParams;
 use crate::types::types::Type;
-use crate::util::arc_id::ArcId;
 use crate::util::display::commas_iter;
 use crate::util::mutable::Mutable;
 use crate::util::visit::VisitMut;
 
 /// The name of a nominal type, e.g. `str`
-#[derive(
-    Debug, Clone, Display, Dupe, TypeEq, Eq, PartialEq, Hash, PartialOrd, Ord
-)]
-pub struct Class(ArcId<ClassInner>);
+#[derive(Debug, Clone, TypeEq, Display, Dupe)]
+pub struct Class(Arc<ClassInner>);
+
+impl Class {
+    /// Key to use for equality purposes. If we have the same module and index,
+    /// we must point at the same class underneath.
+    fn key_eq(&self) -> (ClassIndex, ModuleName) {
+        (self.0.index, self.0.qname.module_name())
+    }
+
+    /// Key to use for comparison purposes. Main used to sort identifiers in union,
+    /// and then alphabetically sorting by the name gives a predictable answer.
+    fn key_ord(&self) -> (&QName, ClassIndex) {
+        (&self.0.qname, self.0.index)
+    }
+}
+
+impl Hash for Class {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.key_eq().hash(state)
+    }
+}
+
+impl PartialEq for Class {
+    fn eq(&self, other: &Self) -> bool {
+        self.key_eq().eq(&other.key_eq())
+    }
+}
+
+impl Eq for Class {}
+
+impl Ord for Class {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.key_ord().cmp(&other.key_ord())
+    }
+}
+
+impl PartialOrd for Class {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 impl VisitMut<Type> for Class {
     // There are no types stored inside Class
@@ -54,6 +94,15 @@ pub struct ClassFieldProperties {
     range: AtomicTextRange,
 }
 
+impl PartialEq for ClassFieldProperties {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_annotated == other.is_annotated
+    }
+}
+
+impl Eq for ClassFieldProperties {}
+impl TypeEq for ClassFieldProperties {}
+
 impl Clone for ClassFieldProperties {
     fn clone(&self) -> Self {
         Self {
@@ -65,7 +114,7 @@ impl Clone for ClassFieldProperties {
 
 /// The index of a class within the file, used as a reference to data associated with the class.
 #[derive(
-    Debug, Clone, Dupe, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Display
+    Debug, Clone, Dupe, Copy, TypeEq, Eq, PartialEq, Hash, PartialOrd, Ord, Display
 )]
 pub struct ClassIndex(pub u32);
 
@@ -100,6 +149,7 @@ impl Mutable for ClassFieldProperties {
     }
 }
 
+#[derive(TypeEq, Eq, PartialEq)]
 struct ClassInner {
     index: ClassIndex,
     qname: QName,
@@ -139,26 +189,6 @@ impl ClassKind {
     }
 }
 
-impl PartialEq for ClassInner {
-    fn eq(&self, other: &Self) -> bool {
-        self.qname == other.qname
-    }
-}
-
-impl Eq for ClassInner {}
-
-impl PartialOrd for ClassInner {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for ClassInner {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.qname.cmp(&other.qname)
-    }
-}
-
 impl Display for ClassInner {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "class {}", self.qname.id())?;
@@ -184,7 +214,7 @@ impl Class {
         tparams: TParams,
         fields: SmallMap<Name, ClassFieldProperties>,
     ) -> Self {
-        Self(ArcId::new(ClassInner {
+        Self(Arc::new(ClassInner {
             index,
             qname: QName::new(name, module_info),
             tparams,
