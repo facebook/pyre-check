@@ -111,6 +111,8 @@ pub enum TypeCheckKind {
     ExceptionClass,
     /// Yielding a value that conflicts with the return annotation.
     YieldValue,
+    /// Bare yield when the return annotation expects an actual value.
+    UnexpectedBareYield,
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]

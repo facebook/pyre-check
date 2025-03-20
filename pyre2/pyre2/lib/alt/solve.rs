@@ -2022,7 +2022,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         )
                     } else {
                         self.check_type(&yield_hint, &Type::None, x.range, errors, &|| {
-                            TypeCheckContext::unknown()
+                            TypeCheckContext::of_kind(TypeCheckKind::UnexpectedBareYield)
                         })
                     };
                     Arc::new(YieldResult { yield_ty, send_ty })

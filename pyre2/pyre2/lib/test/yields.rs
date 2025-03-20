@@ -169,6 +169,17 @@ assert_type(async_count_up_to(), AsyncGenerator[int, None])
 );
 
 testcase!(
+    test_bare_yield,
+    r#"
+from typing import Generator
+
+def bare_yield() -> Generator[int, None, None]:
+    yield  # E: Expected to yield a value of type `int`
+
+"#,
+);
+
+testcase!(
     test_async_infer_send,
     r#"
 from typing import AsyncGenerator, assert_type

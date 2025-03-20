@@ -96,7 +96,7 @@
     "Line 87: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 182: Unexpected errors ['assert_type(() -> AsyncIterator[int], () -> Coroutine[Any, Any, AsyncIterator[int]]) failed']",
-    "Line 187: Unexpected errors ['EXPECTED None <: int']"
+    "Line 187: Unexpected errors ['Expected to yield a value of type `int`, but a bare `yield` gives `None` instead']"
   ],
   "annotations_methods.py": [
     "Line 19: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",

@@ -1381,8 +1381,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED None <: int",
-      "description": "EXPECTED None <: int",
+      "concise_description": "Expected to yield a value of type `int`, but a bare `yield` gives `None` instead",
+      "description": "Expected to yield a value of type `int`, but a bare `yield` gives `None` instead",
       "line": 187,
       "name": "type-mismatch",
       "stop_column": 10,
