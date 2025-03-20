@@ -159,6 +159,21 @@ impl Globs {
         }
         Ok(result)
     }
+
+    /// Returns true if the given file matches any of the contained globs.
+    /// NOTE: whole directories will not be matched without a trailing `**`.
+    /// See tests for example.
+    #[allow(unused)]
+    fn matches(&self, file: &Path) -> anyhow::Result<bool> {
+        for pattern_str in &self.0 {
+            let pattern = glob::Pattern::new(pattern_str)
+                .with_context(|| format!("When resolving pattern `{pattern_str}"))?;
+            if pattern.matches_path(file) {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
 }
 
 impl FileList for Globs {
@@ -452,5 +467,54 @@ mod tests {
         ))));
         assert!(Globs::is_python_extension(Some(OsStr::new("py"))));
         assert!(Globs::is_python_extension(Some(OsStr::new("pyi"))));
+    }
+
+    #[test]
+    fn test_matches_path() {
+        let patterns = Globs::new(vec!["**/__pycache__/**".to_owned(), "**/.*".to_owned()]);
+
+        assert!(patterns.matches(Path::new("__pycache__/")).unwrap());
+        assert!(
+            patterns
+                .matches(Path::new("__pycache__/some/cached/file.pyc"))
+                .unwrap()
+        );
+        assert!(patterns.matches(Path::new("path/to/__pycache__/")).unwrap());
+        assert!(patterns.matches(Path::new(".hidden")).unwrap());
+        assert!(patterns.matches(Path::new("path/to/.hidden")).unwrap());
+        assert!(!patterns.matches(Path::new("just/a/regular.file")).unwrap());
+        assert!(!patterns.matches(Path::new("file/with/a.dot")).unwrap());
+
+        // Note: these pattenrs show how missing `**` and `/` suffixes work on directories
+        assert!(
+            !Globs::new(vec!["**/__pycache__".to_owned()])
+                .matches(Path::new("__pycache__/some/file.pyc"))
+                .unwrap()
+        );
+        assert!(
+            !Globs::new(vec!["**/__pycache__/".to_owned()])
+                .matches(Path::new("__pycache__/some/file.pyc"))
+                .unwrap()
+        );
+        assert!(
+            !Globs::new(vec!["**/__pycache__".to_owned()])
+                .matches(Path::new("__pycache__/"))
+                .unwrap()
+        );
+        assert!(
+            Globs::new(vec!["**/__pycache__".to_owned()])
+                .matches(Path::new("__pycache__"))
+                .unwrap()
+        );
+        assert!(
+            Globs::new(vec!["**/__pycache__/".to_owned()])
+                .matches(Path::new("__pycache__/"))
+                .unwrap()
+        );
+        assert!(
+            !Globs::new(vec!["**/__pycache__/".to_owned()])
+                .matches(Path::new("__pycache__"))
+                .unwrap()
+        );
     }
 }
