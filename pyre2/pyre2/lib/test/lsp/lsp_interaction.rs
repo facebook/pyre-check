@@ -8,8 +8,10 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::thread;
+use std::time::Duration;
 
 use crossbeam_channel::bounded;
+use crossbeam_channel::RecvTimeoutError;
 use lsp_server::Connection;
 use lsp_server::Message;
 use lsp_server::Notification;
@@ -30,6 +32,7 @@ struct TestCase {
     expected_responses: Vec<Response>,
 }
 fn run_test_lsp(test_case: TestCase) {
+    let timeout = Duration::from_secs(25);
     let args = Args {
         search_path: vec![PathBuf::from_str(TEST_PYTHON_PATH).unwrap()],
     };
@@ -37,40 +40,55 @@ fn run_test_lsp(test_case: TestCase) {
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
 
     // spawn thread to handle writes from language server to client
-    let writer: thread::JoinHandle<Result<(), std::io::Error>> = thread::spawn(move || {
+    let writer_thread: thread::JoinHandle<Result<(), std::io::Error>> = thread::spawn(move || {
         let mut responses = test_case.expected_responses.clone();
-        for msg in writer_receiver {
-            match msg {
-                Message::Response(response) => {
-                    let expected_response = responses.remove(0);
-                    assert_eq!(
-                        (response.id, &response.result, &response.error.is_none()),
-                        (
-                            expected_response.id,
-                            &expected_response.result,
-                            &expected_response.error.is_none()
-                        ),
-                        "Response mismatch"
-                    );
-                }
-                Message::Notification(notification) => {
-                    eprintln!("Received notification: {:?}", notification);
-                }
-                Message::Request(_) => {
-                    panic!("Unexpected message {:?}", msg);
-                }
-            };
+
+        loop {
             if responses.is_empty() {
                 break;
             }
+
+            match writer_receiver.recv_timeout(timeout) {
+                Ok(msg) => {
+                    match msg {
+                        Message::Response(response) => {
+                            let expected_response = responses.remove(0);
+                            assert_eq!(
+                                (response.id, &response.result, &response.error.is_none()),
+                                (
+                                    expected_response.id,
+                                    &expected_response.result,
+                                    &expected_response.error.is_none()
+                                ),
+                                "Response mismatch"
+                            );
+                        }
+                        Message::Notification(notification) => {
+                            eprintln!("Received notification: {:?}", notification);
+                        }
+                        Message::Request(_) => {
+                            panic!("Unexpected message {:?}", msg);
+                        }
+                    };
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    panic!("Timeout waiting for response. Expected ${:?}.", responses,);
+                }
+                Err(RecvTimeoutError::Disconnected) => {
+                    panic!("Channel disconnected. Expected ${:?}.", responses);
+                }
+            }
         }
+
         Ok(())
     });
 
     // spawn thread to handle reads of messages from client to language server
-    let reader: thread::JoinHandle<Result<(), std::io::Error>> = thread::spawn(move || {
+    let reader_thread: thread::JoinHandle<Result<(), std::io::Error>> = thread::spawn(move || {
         test_case.test_messages.iter().for_each(|msg| {
-            reader_sender.send(msg.clone()).unwrap();
+            if let Err(err) = reader_sender.send_timeout(msg.clone(), timeout) {
+                panic!("Failed to send message to language server: {:?}", err);
+            }
         });
         Ok(())
     });
@@ -80,25 +98,28 @@ fn run_test_lsp(test_case: TestCase) {
         receiver: reader_receiver,
     };
 
-    match run_lsp(
-        &connection,
-        || {
-            match reader.join() {
-                Ok(r) => r?,
-                Err(err) => return Err(anyhow::format_err!("reader panicked: {:?}", err)),
-            }
-            match writer.join() {
-                Ok(r) => r?,
-                Err(err) => {
-                    return Err(anyhow::format_err!("writer panicked: {:?}", err));
+    // spawn thread to run the language server
+    let lsp_thread: thread::JoinHandle<Result<(), std::io::Error>> = thread::spawn(move || {
+        run_lsp(&connection, || Ok(()), args)
+            .map(|_| ())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))
+    });
+
+    let threads = vec![
+        ("reader", reader_thread),
+        ("writer", writer_thread),
+        ("lsp", lsp_thread),
+    ];
+
+    for (name, handle) in threads {
+        match handle.join() {
+            Ok(result) => {
+                if let Err(err) = result {
+                    panic!("{} thread error: {:?}", name, err);
                 }
             }
-            Ok(())
-        },
-        args,
-    ) {
-        Ok(_) => {}
-        Err(err) => panic!("run_lsp failed: {:?}", err),
+            Err(err) => panic!("{} thread panicked: {:?}", name, err),
+        }
     }
 }
 
