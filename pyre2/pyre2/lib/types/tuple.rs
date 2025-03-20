@@ -12,6 +12,8 @@ use pyrefly_derive::TypeEq;
 
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 /*
 Eventually this will have to be generalized enough to handle at least four cases:
@@ -30,6 +32,26 @@ pub enum Tuple {
     Unbounded(Box<Type>),
     // tuple[t1, t2, *t3, t4, t5], where t3 must be a type var tuple or unbounded tuple
     Unpacked(Box<(Vec<Type>, Type, Vec<Type>)>),
+}
+
+impl Visit<Type> for Tuple {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        match self {
+            Self::Concrete(x) => x.visit0(f),
+            Self::Unbounded(x) => x.visit0(f),
+            Self::Unpacked(x) => x.visit0(f),
+        }
+    }
+}
+
+impl VisitMut<Type> for Tuple {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        match self {
+            Self::Concrete(x) => x.visit0_mut(f),
+            Self::Unbounded(x) => x.visit0_mut(f),
+            Self::Unpacked(x) => x.visit0_mut(f),
+        }
+    }
 }
 
 impl Default for Tuple {
@@ -87,33 +109,5 @@ impl Tuple {
             }
         };
         write!(f, "tuple[{content}]")
-    }
-
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match self {
-            Self::Concrete(elts) => elts.iter().for_each(f),
-            Self::Unbounded(ty) => f(ty),
-            Self::Unpacked(box (prefix, ty, suffix)) => {
-                prefix
-                    .iter()
-                    .chain(std::iter::once(ty))
-                    .chain(suffix.iter())
-                    .for_each(f);
-            }
-        }
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Self::Concrete(elts) => elts.iter_mut().for_each(f),
-            Self::Unbounded(ty) => f(ty),
-            Self::Unpacked(box (prefix, ty, suffix)) => {
-                prefix
-                    .iter_mut()
-                    .chain(std::iter::once(ty))
-                    .chain(suffix.iter_mut())
-                    .for_each(f);
-            }
-        }
     }
 }

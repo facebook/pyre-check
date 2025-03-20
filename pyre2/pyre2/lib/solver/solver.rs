@@ -34,6 +34,7 @@ use crate::types::types::Var;
 use crate::util::lock::RwLock;
 use crate::util::recurser::Recurser;
 use crate::util::uniques::UniqueFactory;
+use crate::util::visit::VisitMut;
 
 /// Error message when a variable has leaked from one module to another.
 ///
