@@ -48,6 +48,7 @@ use crate::types::types::BoundMethodType;
 use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
 use crate::types::types::Forallable;
+use crate::types::types::SuperObj;
 use crate::types::types::Type;
 use crate::util::visit::VisitMut;
 
@@ -906,11 +907,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn get_super_attribute(
         &self,
         lookup_cls: &ClassType,
-        super_obj: &ClassType,
+        super_obj: &SuperObj,
         name: &Name,
     ) -> Option<Attribute> {
-        self.get_class_member(lookup_cls.class_object(), name)
-            .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), super_obj))
+        match super_obj {
+            SuperObj::Instance(obj) => self
+                .get_class_member(lookup_cls.class_object(), name)
+                .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), obj)),
+            // TODO(rechen): support this
+            SuperObj::Class(_) => None,
+        }
     }
 
     /// Gets an attribute from a class definition.

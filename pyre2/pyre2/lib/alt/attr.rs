@@ -39,6 +39,7 @@ use crate::types::quantified::Quantified;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
 use crate::types::types::AnyStyle;
+use crate::types::types::SuperObj;
 use crate::types::types::Type;
 
 #[derive(Debug)]
@@ -290,8 +291,8 @@ enum AttributeBase {
     /// Properties are handled via a special case so that we can understand
     /// setter decorators.
     Property(Type),
-    /// Result of a super() call. See Type::SuperInstance for details on what these ClassTypes are.
-    SuperInstance(ClassType, ClassType),
+    /// Result of a super() call. See Type::SuperInstance for details on what these fields are.
+    SuperInstance(ClassType, SuperObj),
 }
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -830,7 +831,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeBase::SuperInstance(cls, obj) => {
                 match self.get_super_attribute(&cls, &obj, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
-                    None if self.extends_any(&obj) => {
+                    // TODO(rechen): handle SuperObj::Class here.
+                    None if let SuperObj::Instance(cls) = obj
+                        && self.extends_any(&cls) =>
+                    {
                         LookupResult::found_type(Type::Any(AnyStyle::Implicit))
                     }
                     None => LookupResult::NotFound(NotFound::Attribute(cls)),
@@ -1073,7 +1077,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None
                 }
             }
-            Type::SuperInstance(cls, obj) => Some(AttributeBase::SuperInstance(*cls, *obj)),
+            Type::SuperInstance(box (cls, obj)) => Some(AttributeBase::SuperInstance(cls, obj)),
             // TODO: check to see which ones should have class representations
             Type::Union(_)
             | Type::SpecialForm(_)

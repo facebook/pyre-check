@@ -497,6 +497,16 @@ impl Forallable {
     }
 }
 
+/// The second argument (implicit or explicit) to a super() call.
+/// Either an instance of a class (inside an instance method) or a
+/// class object (inside a classmethod or staticmethod)
+#[derive(Debug, Clone, PartialEq, Eq, TypeEq, PartialOrd, Ord, Hash)]
+pub enum SuperObj {
+    Instance(ClassType),
+    #[expect(dead_code)]
+    Class(Class),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, TypeEq, PartialOrd, Ord, Hash)]
 pub enum Type {
     Literal(Lit),
@@ -567,7 +577,7 @@ pub enum Type {
     /// attribute lookup should be done on the class above `B` in the MRO of the type of `self` -
     /// that is, attribute lookup should be done on class `A`. And the type of `self` is class `C`.
     /// So the super instance is represented as `SuperInstance[ClassType(A), ClassType(C)]`.
-    SuperInstance(Box<ClassType>, Box<ClassType>),
+    SuperInstance(Box<(ClassType, SuperObj)>),
     None,
 }
 
@@ -595,9 +605,12 @@ impl Visit for Type {
             | Type::TypeIs(x)
             | Type::Unpack(x)
             | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
-            Type::SuperInstance(cls1, cls2) => {
+            Type::SuperInstance(box (cls1, obj)) => {
                 cls1.visit(f);
-                cls2.visit(f)
+                match obj {
+                    SuperObj::Instance(cls2) => cls2.visit(f),
+                    SuperObj::Class(_) => {}
+                }
             }
             Type::Literal(_)
             | Type::Never(_)
@@ -643,9 +656,12 @@ impl VisitMut for Type {
             | Type::TypeIs(x)
             | Type::Unpack(x)
             | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
-            Type::SuperInstance(cls1, cls2) => {
+            Type::SuperInstance(box (cls1, obj)) => {
                 cls1.visit_mut(f);
-                cls2.visit_mut(f);
+                match obj {
+                    SuperObj::Instance(cls2) => cls2.visit_mut(f),
+                    SuperObj::Class(_) => {}
+                }
             }
             Type::Literal(_)
             | Type::Never(_)

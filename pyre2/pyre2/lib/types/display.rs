@@ -25,6 +25,7 @@ use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
 use crate::types::types::NeverStyle;
+use crate::types::types::SuperObj;
 use crate::types::types::Type;
 use crate::util::display::append;
 use crate::util::display::commas_iter;
@@ -299,12 +300,19 @@ impl<'a> TypeDisplayContext<'a> {
                     self.display(&ta.as_type())
                 )
             }
-            Type::SuperInstance(cls, obj) => {
+            Type::SuperInstance(box (cls, obj)) => {
                 write!(f, "super[")?;
                 self.fmt_qname(cls.qname(), f)?;
                 write!(f, ", ")?;
-                self.fmt_qname(obj.qname(), f)?;
-                self.fmt_targs(obj.targs(), f)?;
+                match obj {
+                    SuperObj::Instance(obj) => {
+                        self.fmt_qname(obj.qname(), f)?;
+                        self.fmt_targs(obj.targs(), f)?;
+                    }
+                    SuperObj::Class(obj) => {
+                        self.fmt_qname(obj.qname(), f)?;
+                    }
+                }
                 write!(f, "]")
             }
             Type::None => write!(f, "None"),

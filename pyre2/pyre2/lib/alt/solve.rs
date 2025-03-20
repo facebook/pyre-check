@@ -85,6 +85,7 @@ use crate::types::type_var::Variance;
 use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::Forallable;
+use crate::types::types::SuperObj;
 use crate::types::types::TParamInfo;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -2006,7 +2007,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                                 )
                                             },
                                             |lookup_cls| {
-                                                Type::SuperInstance(Box::new(lookup_cls), Box::new(obj_cls.clone()))
+                                                Type::SuperInstance(Box::new((lookup_cls, SuperObj::Instance(obj_cls.clone()))))
                                             },
                                         )
                                     }
@@ -2043,7 +2044,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 );
                                 let lookup_cls =
                                     self.get_super_lookup_class(obj_cls, &obj_type).unwrap();
-                                Type::SuperInstance(Box::new(lookup_cls), Box::new(obj_type))
+                                Type::SuperInstance(Box::new((
+                                    lookup_cls,
+                                    SuperObj::Instance(obj_type),
+                                )))
                             }
                             None => Type::any_implicit(),
                         }
