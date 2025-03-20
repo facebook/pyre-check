@@ -53,19 +53,13 @@ pub struct StaticInfo {
     pub annot: Option<Idx<KeyAnnotation>>,
     /// How many times this will be redefined
     pub count: usize,
-    /// True if this is going to appear as a `Key::Import``.
-    /// A little fiddly to keep synchronised with the other field.
-    pub uses_key_import: bool,
-    /// True if this was created from a `nonlocal` statement.
-    pub is_nonlocal: bool,
-    /// True if this was created from a `global` statement.
-    pub is_global: bool,
+    pub style: DefinitionStyle,
 }
 
 impl StaticInfo {
     pub fn as_key(&self, name: &Name) -> Key {
         if self.count == 1 {
-            if self.uses_key_import {
+            if self.style == DefinitionStyle::ImportModule {
                 Key::Import(name.clone(), self.loc)
             } else {
                 // We are constructing an identifier, but it must have been one that we saw earlier
@@ -78,6 +72,14 @@ impl StaticInfo {
         } else {
             Key::Anywhere(name.clone(), self.loc)
         }
+    }
+
+    pub fn is_global(&self) -> bool {
+        self.style == DefinitionStyle::Global
+    }
+
+    pub fn is_nonlocal(&self) -> bool {
+        self.style == DefinitionStyle::Nonlocal
     }
 }
 
@@ -94,9 +96,7 @@ impl Static {
             loc,
             annot,
             count: 0,
-            uses_key_import: false,
-            is_nonlocal: false,
-            is_global: false,
+            style: DefinitionStyle::Local,
         });
         res.count += count;
         res
@@ -122,16 +122,14 @@ impl Static {
         for (name, def) in d.definitions {
             let annot = def.annot.map(&mut get_annotation_idx);
             let info = self.add_with_count(name, def.range, annot, def.count);
-            info.uses_key_import = def.style == DefinitionStyle::ImportModule;
-            info.is_nonlocal = def.style == DefinitionStyle::Nonlocal;
-            info.is_global = def.style == DefinitionStyle::Global;
+            info.style = def.style;
         }
         for (m, range) in d.import_all {
             if let Ok(exports) = lookup.get(m) {
                 for name in exports.wildcard(lookup).iter() {
                     // TODO: semantics of import * and global var with same name
-                    self.add_with_count(name.clone(), range, None, 1)
-                        .uses_key_import = true;
+                    self.add_with_count(name.clone(), range, None, 1).style =
+                        DefinitionStyle::ImportModule;
                 }
             }
         }

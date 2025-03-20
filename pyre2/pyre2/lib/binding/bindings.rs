@@ -326,7 +326,7 @@ impl Bindings {
         let scope_trace = builder.scopes.finish();
         let last_scope = scope_trace.toplevel_scope();
         for (k, static_info) in &last_scope.stat.0 {
-            if static_info.is_nonlocal || static_info.is_global {
+            if static_info.is_nonlocal() || static_info.is_global() {
                 // Nonlocal and global don't do anything outside a function
                 continue;
             }
@@ -572,7 +572,7 @@ impl<'a> BindingsBuilder<'a> {
             if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(info) = scope.stat.0.get(name)
             {
-                if !info.is_nonlocal && !info.is_global {
+                if !info.is_nonlocal() && !info.is_global() {
                     match kind {
                         LookupKind::Regular => {
                             let key = info.as_key(name);
@@ -609,10 +609,10 @@ impl<'a> BindingsBuilder<'a> {
                         }
                     }
                 }
-                if !barrier && info.is_nonlocal {
+                if !barrier && info.is_nonlocal() {
                     allow_nonlocal_reference = true;
                 }
-                if !barrier && info.is_global {
+                if !barrier && info.is_global() {
                     allow_global_reference = true;
                 }
             }
