@@ -148,7 +148,7 @@ class B(A):
 );
 
 testcase!(
-    test_dunder_new_explicit,
+    test_dunder_new_explicit_with_annotated_cls,
     r#"
 from typing import Self
 
@@ -163,5 +163,36 @@ class B(A):
         return super(B, cls).__new__(cls, x)
     def __init__(self, x):
         super().__init__(x)
+    "#,
+);
+
+testcase_with_bug!(
+    "There should be no errors",
+    test_dunder_new_explicit_with_unannotated_cls,
+    r#"
+from typing import Self
+
+class A:
+    def __new__(cls, x):
+        return super(A, cls).__new__(cls)  # E: Expected second argument to `super` to be a class object or instance, got `@_`
+    def __init__(self, x):
+        self.x = x
+
+class B(A):
+    def __new__(cls, x):
+        return super(B, cls).__new__(cls, x)  # E: Expected second argument to `super` to be a class object or instance, got `@_`
+    def __init__(self, x):
+        super().__init__(x)
+    "#,
+);
+
+testcase_with_bug!(
+    "There should be no errors",
+    test_super_new_return,
+    r#"
+from typing import Self
+class A:
+    def __new__(cls) -> Self:
+        return super().__new__(cls)  # E: Returned type `object` is not assignable to declared return type `A`
     "#,
 );

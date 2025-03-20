@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_class_init,
@@ -239,12 +240,23 @@ assert_type(C(), C)
 );
 
 testcase!(
-    test_cls_type_in_new,
+    test_cls_type_in_new_annotated,
     r#"
 from typing import Self
 class A:
     def __new__(cls: type[Self]): ...
 A.__new__(A)  # OK
 A.__new__(int)  # E: `type[int]` is not assignable to parameter `cls`
+    "#,
+);
+
+testcase_with_bug!(
+    "We should give the first parameter of `__new__` a type of `type[Self]` even when unannotated",
+    test_cls_type_in_new_unannotated,
+    r#"
+class A:
+    def __new__(cls): ...
+A.__new__(A)  # OK
+A.__new__(int)  # Should be an error
     "#,
 );
