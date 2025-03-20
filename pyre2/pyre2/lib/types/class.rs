@@ -33,6 +33,7 @@ use crate::types::quantified::QuantifiedKind;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
+use crate::util::visit::Visit;
 use crate::util::visit::VisitMut;
 
 /// The name of a nominal type, e.g. `str`
@@ -258,6 +259,18 @@ impl Class {
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct TArgs(Box<[Type]>);
 
+impl Visit<Type> for TArgs {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        self.0.visit0(f);
+    }
+}
+
+impl VisitMut<Type> for TArgs {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.0.visit0_mut(f);
+    }
+}
+
 impl TArgs {
     pub fn new(targs: Vec<Type>) -> Self {
         Self(targs.into_boxed_slice())
@@ -273,14 +286,6 @@ impl TArgs {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
-    }
-
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.0.iter().for_each(f)
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.0.iter_mut().for_each(f)
     }
 
     /// Apply a substitution to type arguments.
@@ -319,6 +324,18 @@ pub struct ClassType(Class, TArgs);
 impl Display for ClassType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Type::ClassType(self.clone()))
+    }
+}
+
+impl Visit<Type> for ClassType {
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
+        self.1.visit0(f)
+    }
+}
+
+impl VisitMut<Type> for ClassType {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.1.visit0_mut(f)
     }
 }
 
@@ -403,14 +420,6 @@ impl ClassType {
 
     pub fn to_type(self) -> Type {
         Type::ClassType(self)
-    }
-
-    pub fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.1.visit(f)
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.1.visit_mut(f)
     }
 
     pub fn self_type(&self) -> Type {

@@ -85,7 +85,7 @@ pub struct ClassField(ClassFieldInner);
 
 impl VisitMut<Type> for ClassField {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.visit_mut(f);
+        self.0.visit0_mut(f);
     }
 }
 
@@ -104,6 +104,26 @@ enum ClassFieldInner {
         // Descriptor setter method, if there is one. `None` indicates no setter.
         descriptor_setter: Option<Type>,
     },
+}
+
+impl VisitMut<Type> for ClassFieldInner {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        match self {
+            ClassFieldInner::Simple {
+                ty,
+                annotation,
+                descriptor_getter,
+                descriptor_setter,
+                initialization: _,
+                readonly: _,
+            } => {
+                ty.visit0_mut(f);
+                annotation.visit0_mut(f);
+                descriptor_getter.visit0_mut(f);
+                descriptor_setter.visit0_mut(f);
+            }
+        }
+    }
 }
 
 impl Display for ClassField {
@@ -155,26 +175,6 @@ impl ClassField {
             descriptor_getter: None,
             descriptor_setter: None,
         })
-    }
-
-    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        match &mut self.0 {
-            ClassFieldInner::Simple {
-                ty,
-                annotation,
-                descriptor_getter,
-                descriptor_setter,
-                initialization: _,
-                readonly: _,
-            } => {
-                f(ty);
-                for a in annotation.iter_mut() {
-                    a.visit_mut(f);
-                }
-                descriptor_getter.iter_mut().for_each(&mut f);
-                descriptor_setter.iter_mut().for_each(f);
-            }
-        }
     }
 
     fn initialization(&self) -> ClassFieldInitialization {

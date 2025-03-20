@@ -17,11 +17,18 @@ use pyrefly_derive::TypeEq;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::util::display::intersperse_iter;
+use crate::util::visit::VisitMut;
 
 #[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq)]
 pub struct Annotation {
     pub qualifiers: Vec<Qualifier>,
     pub ty: Option<Type>,
+}
+
+impl VisitMut<Type> for Annotation {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        self.ty.visit0_mut(f);
+    }
 }
 
 impl Display for Annotation {
@@ -51,12 +58,6 @@ impl Annotation {
 
     pub fn get_type(&self) -> &Type {
         self.ty.as_ref().unwrap_or(&Type::Any(AnyStyle::Implicit))
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        if let Some(ty) = &mut self.ty {
-            f(ty);
-        }
     }
 
     pub fn is_class_var(&self) -> bool {

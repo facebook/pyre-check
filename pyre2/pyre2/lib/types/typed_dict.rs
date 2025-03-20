@@ -19,6 +19,8 @@ use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::types::Type;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 #[derive(Clone, Debug, TypeEq, PartialEq, Eq, Hash)]
 pub struct TypedDictField {
@@ -42,6 +44,30 @@ pub struct TypedDict {
     class: Class,
     args: TArgs,
     fields: OrderedMap<Name, TypedDictField>,
+}
+
+impl Visit<Type> for TypedDict {
+    fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+        let Self {
+            class: _,
+            args,
+            fields,
+        } = self;
+        args.visit(&mut f);
+        fields.values().for_each(|x| f(&x.ty));
+    }
+}
+
+impl VisitMut<Type> for TypedDict {
+    fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
+        let Self {
+            class: _,
+            args,
+            fields,
+        } = self;
+        args.visit_mut(&mut f);
+        fields.values_mut().for_each(|x| f(&mut x.ty));
+    }
 }
 
 impl PartialOrd for TypedDict {
@@ -92,26 +118,6 @@ impl TypedDict {
         // share a bit of behavior, so we occasionally convert a TypedDict to a ClassType in order
         // to reuse code.
         ClassType::new(self.class.dupe(), self.args.clone())
-    }
-
-    pub fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
-        let Self {
-            class: _,
-            args,
-            fields,
-        } = self;
-        args.visit(&mut f);
-        fields.values().for_each(|x| f(&x.ty));
-    }
-
-    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        let Self {
-            class: _,
-            args,
-            fields,
-        } = self;
-        args.visit_mut(&mut f);
-        fields.values_mut().for_each(|x| f(&mut x.ty));
     }
 
     pub fn kw_param_info(&self) -> Vec<(Name, Type, Required)> {
