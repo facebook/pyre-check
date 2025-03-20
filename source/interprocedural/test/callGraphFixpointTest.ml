@@ -1175,6 +1175,82 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     from typing import TypeVar, Generic, Callable
+     T = TypeVar("T")
+     R = TypeVar("R")
+     class classproperty(Generic[T, R]):
+       def __init__(self, fget: Callable[[type[T]], R]) -> None:
+         self.fget = fget
+       # pyre-fixme[14]:
+       def __get__(self, obj: object, obj_cls_type: type[T]) -> R:
+         # pyre-fixme[16]:
+         return self.fget.__get__(None, obj_cls_type)()
+     def foo():
+       return
+     class MyClass:
+       @classproperty
+       def bar():
+         return foo
+     def main(o: MyClass):
+       return o.bar()  # TODO(T218500651): Test storing decorated functions into object attributes
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "19:9-19:16",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call (CallCallees.create ())) );
+                   ];
+                 returned_callables = [];
+               };
+               {
+                 Expected.callable =
+                   Target.Regular.Method
+                     { class_name = "test.MyClass"; method_name = "bar"; kind = Decorated }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "15:3-15:16",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~init_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.classproperty";
+                                          method_name = "__init__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ~new_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~is_static_method:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "object";
+                                          method_name = "__new__";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
