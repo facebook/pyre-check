@@ -12,10 +12,10 @@ use std::path::PathBuf;
 
 use serde::Deserialize;
 
+use crate::globs::Globs;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::metadata::DEFAULT_PYTHON_PLATFORM;
-use crate::Globs;
 
 static PYPROJECT_FILE_NAME: &str = "pyproject.toml";
 

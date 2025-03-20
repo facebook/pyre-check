@@ -16,6 +16,7 @@ use clap::Parser;
 use clap::Subcommand;
 use pyre2::clap_env;
 use pyre2::get_args_expanded;
+use pyre2::globs::Globs;
 use pyre2::init_thread_pool;
 use pyre2::init_tracing;
 use pyre2::run::BuckCheckArgs;
@@ -23,7 +24,6 @@ use pyre2::run::CheckArgs;
 use pyre2::run::CommandExitStatus;
 use pyre2::run::LspArgs;
 use pyre2::ConfigFile;
-use pyre2::Globs;
 use pyre2::NotifyWatcher;
 
 #[derive(Debug, Parser)]

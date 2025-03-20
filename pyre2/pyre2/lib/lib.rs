@@ -55,7 +55,7 @@ pub use crate::config::ConfigFile;
 pub use crate::metadata::PythonVersion;
 pub use crate::util::args::clap_env;
 pub use crate::util::args::get_args_expanded;
-pub use crate::util::globs::Globs;
+pub use crate::util::globs;
 pub use crate::util::listing::FileList;
 pub use crate::util::notify_watcher::NotifyWatcher;
 pub use crate::util::thread_pool::init_thread_pool;
