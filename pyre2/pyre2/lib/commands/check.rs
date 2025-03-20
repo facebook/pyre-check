@@ -178,6 +178,54 @@ fn create_loader(loader_inputs: LoaderInputs) -> LoaderId {
     LoaderId::new(CheckLoader { loader_inputs })
 }
 
+fn get_handles(
+    expanded_file_list: Vec<PathBuf>,
+    config_finder: &impl Fn(&Path) -> ConfigFile,
+    specified_require: Require,
+) -> Vec<(Handle, Require)> {
+    let files_and_configs = expanded_file_list.into_map(|path| {
+        let config = config_finder(&path);
+        (path, config)
+    });
+    // We want to partition the files to check by their associated search roots, so we can
+    // create a separate loader for each partition.
+    let mut partition_by_loader_inputs: SmallMap<LoaderInputs, Vec<(PathBuf, ConfigFile)>> =
+        SmallMap::new();
+    for (path, config) in files_and_configs {
+        let key = LoaderInputs {
+            search_path: config.search_path.clone(),
+            site_package_path: config.site_package_path.clone(),
+        };
+        partition_by_loader_inputs
+            .entry(key)
+            .or_default()
+            .push((path, config));
+    }
+
+    partition_by_loader_inputs
+        .into_iter()
+        .flat_map(|(loader_inputs, files_and_configs)| {
+            let files_with_module_name_and_metadata =
+                files_and_configs.into_map(|(path, config)| {
+                    let module_name = module_from_path(&path, &loader_inputs.search_path);
+                    (path, module_name, config.get_runtime_metadata())
+                });
+            let loader = create_loader(loader_inputs);
+            files_with_module_name_and_metadata.into_map(|(path, module_name, runtime_metadata)| {
+                (
+                    Handle::new(
+                        module_name,
+                        ModulePath::filesystem(path),
+                        runtime_metadata,
+                        loader.dupe(),
+                    ),
+                    specified_require,
+                )
+            })
+        })
+        .collect()
+}
+
 struct RequireLevels {
     specified: Require,
     default: Require,
@@ -212,7 +260,7 @@ impl Args {
 
         let mut holder = Forgetter::new(State::new(), allow_forget);
         let require_levels = self.get_required_levels();
-        let handles = self.get_handles(
+        let handles = get_handles(
             expanded_file_list,
             &self.overriding_config_finder(config_finder),
             require_levels.specified,
@@ -232,8 +280,7 @@ impl Args {
         let expanded_file_list = files_to_check.files()?;
         let require_levels = self.get_required_levels();
         let config_finder = self.overriding_config_finder(config_finder);
-        let handles =
-            self.get_handles(expanded_file_list, &config_finder, require_levels.specified);
+        let handles = get_handles(expanded_file_list, &config_finder, require_levels.specified);
         let mut state = State::new();
         loop {
             let res = self.run_inner(&mut state, &handles, require_levels.default);
@@ -285,57 +332,6 @@ impl Args {
                 Require::Exports
             },
         }
-    }
-
-    fn get_handles(
-        &self,
-        expanded_file_list: Vec<PathBuf>,
-        config_finder: &impl Fn(&Path) -> ConfigFile,
-        specified_require: Require,
-    ) -> Vec<(Handle, Require)> {
-        let files_and_configs = expanded_file_list.into_map(|path| {
-            let config = config_finder(&path);
-            (path, config)
-        });
-        // We want to partition the files to check by their associated search roots, so we can
-        // create a separate loader for each partition.
-        let mut partition_by_loader_inputs: SmallMap<LoaderInputs, Vec<(PathBuf, ConfigFile)>> =
-            SmallMap::new();
-        for (path, config) in files_and_configs {
-            let key = LoaderInputs {
-                search_path: config.search_path.clone(),
-                site_package_path: config.site_package_path.clone(),
-            };
-            partition_by_loader_inputs
-                .entry(key)
-                .or_default()
-                .push((path, config));
-        }
-
-        partition_by_loader_inputs
-            .into_iter()
-            .flat_map(|(loader_inputs, files_and_configs)| {
-                let files_with_module_name_and_metadata =
-                    files_and_configs.into_map(|(path, config)| {
-                        let module_name = module_from_path(&path, &loader_inputs.search_path);
-                        (path, module_name, config.get_runtime_metadata())
-                    });
-                let loader = create_loader(loader_inputs);
-                files_with_module_name_and_metadata.into_map(
-                    |(path, module_name, runtime_metadata)| {
-                        (
-                            Handle::new(
-                                module_name,
-                                ModulePath::filesystem(path),
-                                runtime_metadata,
-                                loader.dupe(),
-                            ),
-                            specified_require,
-                        )
-                    },
-                )
-            })
-            .collect()
     }
 
     fn run_inner(
