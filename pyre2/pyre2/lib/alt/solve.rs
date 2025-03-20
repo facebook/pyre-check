@@ -1989,36 +1989,45 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         match &*self.get_idx(*cls_binding) {
                             Type::Any(style) => style.propagate(),
                             cls_type @ Type::ClassDef(cls) => {
+                                let error = |obj_cls| {
+                                    self.error(
+                                        errors,
+                                        *range,
+                                        ErrorKind::InvalidSuperCall,
+                                        None,
+                                        format!(
+                                            "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
+                                            cls_type, obj_cls, obj_cls, cls_type
+                                        ),
+                                    )
+                                };
                                 match &*self.get_idx(*obj_binding) {
                                     Type::Any(style) => style.propagate(),
                                     Type::ClassType(obj_cls) => {
                                         let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
                                         lookup_cls.map_or_else(
-                                            || {
-                                                self.error(
-                                                    errors,
-                                                    *range,
-                                                    ErrorKind::InvalidSuperCall,
-                                                    None,
-                                                    format!(
-                                                        "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
-                                                        cls_type, obj_cls, obj_cls, cls_type
-                                                    ),
-                                                )
-                                            },
+                                            || error(obj_cls),
                                             |lookup_cls| {
                                                 Type::SuperInstance(Box::new((lookup_cls, SuperObj::Instance(obj_cls.clone()))))
                                             },
                                         )
                                     }
+                                    Type::Type(box Type::ClassType(obj_cls)) => {
+                                        let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
+                                        lookup_cls.map_or_else(
+                                            || error(obj_cls),
+                                            |lookup_cls| {
+                                                Type::SuperInstance(Box::new((lookup_cls, SuperObj::Class(obj_cls.class_object().dupe()))))
+                                            },
+                                        )
+                                    }
                                     t => {
-                                        // TODO: handle the case when the second argument is a class
                                         self.error(
                                             errors,
                                             *range,
                                             ErrorKind::InvalidArgument,
                                             None,
-                                            format!("Expected second argument to `super` to be a class instance, got `{}`", self.for_display(t.clone())),
+                                            format!("Expected second argument to `super` to be a class object or instance, got `{}`", self.for_display(t.clone())),
                                         )
                                     }
                                 }
