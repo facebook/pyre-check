@@ -24,6 +24,7 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
+use ruff_python_ast::StmtWith;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -569,6 +570,10 @@ pub enum ContextManagerKind {
 }
 
 impl ContextManagerKind {
+    pub fn new(x: &StmtWith) -> Self {
+        if x.is_async { Self::Async } else { Self::Sync }
+    }
+
     pub fn as_exit_dunder(self) -> Name {
         match self {
             Self::Sync => dunder::EXIT,

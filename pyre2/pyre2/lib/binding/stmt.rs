@@ -541,11 +541,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.current_mut().flow = self.merge_flow(branches, range);
             }
             Stmt::With(x) => {
-                let kind = if x.is_async {
-                    ContextManagerKind::Async
-                } else {
-                    ContextManagerKind::Sync
-                };
+                let kind = ContextManagerKind::new(&x);
                 for mut item in x.items {
                     self.ensure_expr(&mut item.context_expr);
                     let item_range = item.range();
