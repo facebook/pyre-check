@@ -163,7 +163,6 @@ impl Globs {
     /// Returns true if the given file matches any of the contained globs.
     /// NOTE: whole directories will not be matched without a trailing `**`.
     /// See tests for example.
-    #[allow(unused)]
     fn matches(&self, file: &Path) -> anyhow::Result<bool> {
         for pattern_str in &self.0 {
             let pattern = glob::Pattern::new(pattern_str)
