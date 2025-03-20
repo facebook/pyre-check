@@ -35,7 +35,10 @@ use crate::util::visit::Visit;
 pub enum DefinitionStyle {
     /// Defined in this module, e.g. `x = 1` or `def x(): ...`
     Local,
+    /// Defined in this scope from `nonlocal x`
     Nonlocal,
+    /// Defined in this scope from `global x`
+    Global,
     /// Imported with an alias, e.g. `from x import y as z`
     ImportAs,
     /// Imported with an alias, where the alias is identical, e.g. `from x import y as y`
@@ -274,6 +277,11 @@ impl<'a> DefinitionsBuilder<'a> {
             Stmt::Nonlocal(x) => {
                 for name in &x.names {
                     self.add_name(&name.id, name.range, DefinitionStyle::Nonlocal, None)
+                }
+            }
+            Stmt::Global(x) => {
+                for name in &x.names {
+                    self.add_name(&name.id, name.range, DefinitionStyle::Global, None)
                 }
             }
             Stmt::Assign(x) => {

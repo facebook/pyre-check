@@ -32,6 +32,36 @@ class C:
 );
 
 testcase!(
+    test_global,
+    r#"
+def f1():
+  global x
+x: str = ""
+global x  # E: `x` was assigned in the current scope before the global declaration
+global a  # E: Could not find name `a`
+def f2() -> None:
+  del x  # E: `x` is not mutable from the current scope
+def f3() -> None:
+  global x
+  del x  # OK
+def f4() -> None:
+  global x
+  x = 1  # E: `Literal[1]` is not assignable to variable `x` with type `str`
+def f5() -> None:
+  x = 1  # OK, this is a new x
+def f6() -> None:
+  global x
+  def f7() -> None:
+    del x   # E: `x` is not mutable from the current scope
+def f8() -> None:
+  y: int = 1
+  global y  # E: `y` was assigned in the current scope before the global declaration
+  def f9():
+    global y  # E: Found `y`, but it was not the global scope
+"#,
+);
+
+testcase!(
     test_nonlocal,
     r#"
 a: str = ""

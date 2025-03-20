@@ -231,6 +231,23 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    fn ensure_global_name(&mut self, name: &Identifier) {
+        let value = self
+            .lookup_name(&name.id, LookupKind::Global)
+            .map(Binding::Forward);
+        let key = Key::Definition(ShortIdentifier::new(name));
+        match value {
+            Ok(value) => {
+                self.table.insert(key, value);
+            }
+            Err(error) => {
+                // Record a type error and fall back to `Any`.
+                self.error(name.range, error.message(name), ErrorKind::UnknownName);
+                self.table.insert(key, Binding::AnyType(AnyStyle::Error));
+            }
+        }
+    }
+
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
     pub fn stmt(&mut self, x: Stmt) {
@@ -791,7 +808,11 @@ impl<'a> BindingsBuilder<'a> {
                     self.bind_unimportable_names(&x);
                 }
             }
-            Stmt::Global(x) => self.todo("Bindings::stmt", &x),
+            Stmt::Global(x) => {
+                for name in x.names {
+                    self.ensure_global_name(&name);
+                }
+            }
             Stmt::Nonlocal(x) => {
                 for name in x.names {
                     self.ensure_nonlocal_name(&name);

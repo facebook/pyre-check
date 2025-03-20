@@ -58,6 +58,8 @@ pub struct StaticInfo {
     pub uses_key_import: bool,
     /// True if this was created from a `nonlocal` statement.
     pub is_nonlocal: bool,
+    /// True if this was created from a `global` statement.
+    pub is_global: bool,
 }
 
 impl StaticInfo {
@@ -94,6 +96,7 @@ impl Static {
             count: 0,
             uses_key_import: false,
             is_nonlocal: false,
+            is_global: false,
         });
         res.count += count;
         res
@@ -121,6 +124,7 @@ impl Static {
             let info = self.add_with_count(name, def.range, annot, def.count);
             info.uses_key_import = def.style == DefinitionStyle::ImportModule;
             info.is_nonlocal = def.style == DefinitionStyle::Nonlocal;
+            info.is_global = def.style == DefinitionStyle::Global;
         }
         for (m, range) in d.import_all {
             if let Ok(exports) = lookup.get(m) {

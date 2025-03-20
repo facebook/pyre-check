@@ -7487,11 +7487,11 @@
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "TODO: StmtGlobal - Bindings::stmt",
-      "description": "TODO: StmtGlobal - Bindings::stmt",
+      "column": 20,
+      "concise_description": "Found `S`, but it was not the global scope",
+      "description": "Found `S`, but it was not the global scope",
       "line": 66,
-      "name": "unsupported",
+      "name": "unknown-name",
       "stop_column": 21,
       "stop_line": 66
     },
@@ -10222,16 +10222,6 @@
       "name": "unexpected-keyword",
       "stop_column": 13,
       "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "TODO: StmtGlobal - Bindings::stmt",
-      "description": "TODO: StmtGlobal - Bindings::stmt",
-      "line": 139,
-      "name": "unsupported",
-      "stop_column": 15,
-      "stop_line": 139
     },
     {
       "code": -2,

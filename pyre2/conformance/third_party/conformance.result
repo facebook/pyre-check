@@ -454,7 +454,7 @@
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
-    "Line 66: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']",
+    "Line 66: Unexpected errors ['Found `S`, but it was not the global scope']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
     "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"
   ],
@@ -643,8 +643,7 @@
     "Line 152: Expected 1 errors",
     "Line 155: Expected 1 errors",
     "Line 131: Unexpected errors ['Expected first item to be a string literal', 'Expected first item to be a string literal']",
-    "Line 133: Unexpected errors ['Unexpected keyword argument `x` in function `N.__new__`', 'Unexpected keyword argument `y` in function `N.__new__`']",
-    "Line 139: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']"
+    "Line 133: Unexpected errors ['Unexpected keyword argument `x` in function `N.__new__`', 'Unexpected keyword argument `y` in function `N.__new__`']"
   ],
   "qualifiers_final_decorator.py": [
     "Lines 67, 75: Expected error (tag 'method4')",
