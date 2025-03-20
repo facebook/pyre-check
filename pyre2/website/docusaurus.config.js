@@ -10,6 +10,7 @@
 const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 const webpack = require('webpack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const StylexPlugin = require('@stylexjs/webpack-plugin');
 
 function getNavBarItems() {
   return [
@@ -97,6 +98,43 @@ module.exports = {
           return {
             // https://stackoverflow.com/questions/69265357/monaco-editor-worker
             plugins: [new MonacoWebpackPlugin()],
+          };
+        },
+      };
+    },
+    function enableStyleX(context, options) {
+      return {
+        name: 'stylex-docusaurus',
+        injectHtmlTags() {
+          return {
+            headTags: [
+              {
+                tagName: 'link',
+                attributes: {
+                  rel: 'stylesheet',
+                  href: context.baseUrl + 'stylex.css',
+                },
+              },
+            ],
+          };
+        },
+
+        configureWebpack(config, isServer, utils) {
+          const dev = config.mode === 'development';
+
+          return {
+            plugins: [
+              new StylexPlugin({
+                dev,
+                genConditionalClasses: true,
+                treeshakeCompensation: true,
+                unstable_moduleResolution: {
+                  type: 'commonJS',
+                  rootDir: context.siteDir,
+                },
+                filename: 'stylex.css',
+              }),
+            ],
           };
         },
       };
