@@ -109,6 +109,8 @@ pub enum TypeCheckKind {
     AnnAssign,
     /// Class used in an `except C` clause.
     ExceptionClass,
+    /// Yielding a value that conflicts with the return annotation.
+    YieldValue,
     // TODO: categorize all type checks and remove Unknown and Test designations
     Unknown,
     #[allow(dead_code)]

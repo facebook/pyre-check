@@ -95,7 +95,7 @@ class Return: pass
 class Yield2: pass
 
 def my_generator_nested() -> Generator[Yield2, Send, Return]:
-    yield Yield() # E: EXPECTED Yield <: Yield2
+    yield Yield() # E: Type of yielded value `Yield` is not assignable to declared return type `Yield2`
     return Return()
 
 def my_generator() -> Generator[Yield, Send, Return]:

@@ -158,6 +158,11 @@ impl TypeCheckKind {
                 ctx.display(got),
                 ctx.display(want),
             ),
+            Self::YieldValue => format!(
+                "Type of yielded value `{}` is not assignable to declared return type `{}`",
+                ctx.display(got),
+                ctx.display(want),
+            ),
             Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }

@@ -1281,8 +1281,8 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "EXPECTED Literal[3] <: A",
-      "description": "EXPECTED Literal[3] <: A",
+      "concise_description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
+      "description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
       "line": 57,
       "name": "type-mismatch",
       "stop_column": 16,
@@ -1291,8 +1291,8 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "EXPECTED Literal[3] <: A",
-      "description": "EXPECTED Literal[3] <: A",
+      "concise_description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
+      "description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
       "line": 66,
       "name": "type-mismatch",
       "stop_column": 16,
@@ -1311,8 +1311,8 @@
     {
       "code": -2,
       "column": 11,
-      "concise_description": "EXPECTED B <: A",
-      "description": "EXPECTED B <: A",
+      "concise_description": "Type of yielded value `B` is not assignable to declared return type `A`",
+      "description": "Type of yielded value `B` is not assignable to declared return type `A`",
       "line": 75,
       "name": "type-mismatch",
       "stop_column": 14,

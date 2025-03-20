@@ -2015,7 +2015,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let yield_ty = if let Some(expr) = x.value.as_ref() {
                         self.expr(
                             expr,
-                            Some((&yield_hint, &|| TypeCheckContext::unknown())),
+                            Some((&yield_hint, &|| {
+                                TypeCheckContext::of_kind(TypeCheckKind::YieldValue)
+                            })),
                             errors,
                         )
                     } else {
