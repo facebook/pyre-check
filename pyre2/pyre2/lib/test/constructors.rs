@@ -237,3 +237,14 @@ class C:
 assert_type(C(), C)
     "#,
 );
+
+testcase!(
+    test_cls_type_in_new,
+    r#"
+from typing import Self
+class A:
+    def __new__(cls: type[Self]): ...
+A.__new__(A)  # OK
+A.__new__(int)  # E: `type[int]` is not assignable to parameter `cls`
+    "#,
+);

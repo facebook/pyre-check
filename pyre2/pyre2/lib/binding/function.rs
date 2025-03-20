@@ -41,7 +41,6 @@ use crate::binding::bindings::LegacyTParamBuilder;
 use crate::binding::scope::FlowStyle;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
-use crate::dunder;
 use crate::graph::index::Idx;
 use crate::metadata::RuntimeMetadata;
 use crate::module::short_identifier::ShortIdentifier;
@@ -192,16 +191,7 @@ impl<'a> BindingsBuilder<'a> {
             .functions
             .0
             .insert(KeyFunction(ShortIdentifier::new(&func_name)));
-        self.parameters(
-            &mut x.parameters,
-            function_idx,
-            if func_name.id == dunder::NEW {
-                // __new__ is a staticmethod that is special-cased at runtime to not need @staticmethod decoration.
-                None
-            } else {
-                self_type
-            },
-        );
+        self.parameters(&mut x.parameters, function_idx, self_type);
 
         self.init_static_scope(&body, false);
         self.stmts(body);
