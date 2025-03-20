@@ -178,52 +178,61 @@ fn create_loader(loader_inputs: LoaderInputs) -> LoaderId {
     LoaderId::new(CheckLoader { loader_inputs })
 }
 
-fn get_handles(
-    expanded_file_list: Vec<PathBuf>,
-    config_finder: &impl Fn(&Path) -> ConfigFile,
-    specified_require: Require,
-) -> Vec<(Handle, Require)> {
-    let files_and_configs = expanded_file_list.into_map(|path| {
-        let config = config_finder(&path);
-        (path, config)
-    });
-    // We want to partition the files to check by their associated search roots, so we can
-    // create a separate loader for each partition.
-    let mut partition_by_loader_inputs: SmallMap<LoaderInputs, Vec<(PathBuf, ConfigFile)>> =
-        SmallMap::new();
-    for (path, config) in files_and_configs {
-        let key = LoaderInputs {
-            search_path: config.search_path.clone(),
-            site_package_path: config.site_package_path.clone(),
-        };
-        partition_by_loader_inputs
-            .entry(key)
-            .or_default()
-            .push((path, config));
+struct Handles {
+    files_and_configs: Vec<(PathBuf, ConfigFile)>,
+}
+
+impl Handles {
+    pub fn new(files: Vec<PathBuf>, config_finder: &impl Fn(&Path) -> ConfigFile) -> Self {
+        Self {
+            files_and_configs: files.into_map(|path| {
+                let config = config_finder(&path);
+                (path, config)
+            }),
+        }
     }
 
-    partition_by_loader_inputs
-        .into_iter()
-        .flat_map(|(loader_inputs, files_and_configs)| {
-            let files_with_module_name_and_metadata =
-                files_and_configs.into_map(|(path, config)| {
-                    let module_name = module_from_path(&path, &loader_inputs.search_path);
-                    (path, module_name, config.get_runtime_metadata())
-                });
-            let loader = create_loader(loader_inputs);
-            files_with_module_name_and_metadata.into_map(|(path, module_name, runtime_metadata)| {
-                (
-                    Handle::new(
-                        module_name,
-                        ModulePath::filesystem(path),
-                        runtime_metadata,
-                        loader.dupe(),
-                    ),
-                    specified_require,
+    pub fn all(&self, specified_require: Require) -> Vec<(Handle, Require)> {
+        // We want to partition the files to check by their associated search roots, so we can
+        // create a separate loader for each partition.
+        let mut partition_by_loader_inputs: SmallMap<LoaderInputs, Vec<(PathBuf, ConfigFile)>> =
+            SmallMap::new();
+        for (path, config) in self.files_and_configs.iter() {
+            let key = LoaderInputs {
+                search_path: config.search_path.clone(),
+                site_package_path: config.site_package_path.clone(),
+            };
+            partition_by_loader_inputs
+                .entry(key)
+                .or_default()
+                .push((path.clone(), config.clone()));
+        }
+
+        partition_by_loader_inputs
+            .into_iter()
+            .flat_map(|(loader_inputs, files_and_configs)| {
+                let files_with_module_name_and_metadata =
+                    files_and_configs.into_map(|(path, config)| {
+                        let module_name = module_from_path(&path, &loader_inputs.search_path);
+                        (path, module_name, config.get_runtime_metadata())
+                    });
+                let loader = create_loader(loader_inputs);
+                files_with_module_name_and_metadata.into_map(
+                    |(path, module_name, runtime_metadata)| {
+                        (
+                            Handle::new(
+                                module_name,
+                                ModulePath::filesystem(path),
+                                runtime_metadata,
+                                loader.dupe(),
+                            ),
+                            specified_require,
+                        )
+                    },
                 )
             })
-        })
-        .collect()
+            .collect()
+    }
 }
 
 struct RequireLevels {
@@ -259,13 +268,16 @@ impl Args {
         }
 
         let mut holder = Forgetter::new(State::new(), allow_forget);
-        let require_levels = self.get_required_levels();
-        let handles = get_handles(
+        let handles = Handles::new(
             expanded_file_list,
             &self.overriding_config_finder(config_finder),
-            require_levels.specified,
         );
-        self.run_inner(holder.as_mut(), &handles, require_levels.default)
+        let require_levels = self.get_required_levels();
+        self.run_inner(
+            holder.as_mut(),
+            &handles.all(require_levels.specified),
+            require_levels.default,
+        )
     }
 
     pub async fn run_watch(
@@ -280,10 +292,14 @@ impl Args {
         let expanded_file_list = files_to_check.files()?;
         let require_levels = self.get_required_levels();
         let config_finder = self.overriding_config_finder(config_finder);
-        let handles = get_handles(expanded_file_list, &config_finder, require_levels.specified);
+        let handles = Handles::new(expanded_file_list, &config_finder);
         let mut state = State::new();
         loop {
-            let res = self.run_inner(&mut state, &handles, require_levels.default);
+            let res = self.run_inner(
+                &mut state,
+                &handles.all(require_levels.specified),
+                require_levels.default,
+            );
             if let Err(e) = res {
                 eprintln!("{e:#}");
             }
