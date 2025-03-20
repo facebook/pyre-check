@@ -548,16 +548,22 @@ impl<'a> BindingsBuilder<'a> {
                 };
                 for mut item in x.items {
                     self.ensure_expr(&mut item.context_expr);
+                    let item_range = item.range();
+                    let expr_range = item.context_expr.range();
+                    let context_idx = self.table.insert(
+                        Key::ContextExpr(expr_range),
+                        Binding::Expr(None, item.context_expr),
+                    );
                     if let Some(mut opts) = item.optional_vars {
                         let make_binding = |k: Option<Idx<KeyAnnotation>>| {
-                            Binding::ContextValue(k, item.context_expr.clone(), kind)
+                            Binding::ContextValue(k, context_idx, expr_range, kind)
                         };
                         self.bind_target(&opts, &make_binding, None);
                         self.ensure_expr(&mut opts);
                     } else {
                         self.table.insert(
-                            Key::Anon(item.range()),
-                            Binding::ContextValue(None, item.context_expr, kind),
+                            Key::Anon(item_range),
+                            Binding::ContextValue(None, context_idx, expr_range, kind),
                         );
                     }
                 }

@@ -168,6 +168,8 @@ pub enum Key {
     Anon(TextRange),
     /// I am an expression that appears in a statement. The range for this key is the range of the expr itself, which is different than the range of the stmt expr.
     StmtExpr(TextRange),
+    /// I am an expression that appears in a `with` context.
+    ContextExpr(TextRange),
     /// I am the result of joining several branches.
     Phi(Name, TextRange),
     /// I am the result of narrowing a type. The two ranges are the range at which the operation is
@@ -196,6 +198,7 @@ impl Ranged for Key {
             Self::Usage(x) => x.range(),
             Self::Anon(r) => *r,
             Self::StmtExpr(r) => *r,
+            Self::ContextExpr(r) => *r,
             Self::Phi(_, r) => *r,
             Self::Narrow(_, r, _) => *r,
             Self::Anywhere(_, r) => *r,
@@ -212,6 +215,7 @@ impl DisplayWith<ModuleInfo> for Key {
             Self::Usage(x) => write!(f, "use {} {:?}", ctx.display(x), x.range()),
             Self::Anon(r) => write!(f, "anon {r:?}"),
             Self::StmtExpr(r) => write!(f, "stmt expr {r:?}"),
+            Self::ContextExpr(r) => write!(f, "context expr {r:?}"),
             Self::Phi(n, r) => write!(f, "phi {n} {r:?}"),
             Self::Narrow(n, r1, r2) => write!(f, "narrow {n} {r1:?} {r2:?}"),
             Self::Anywhere(n, r) => write!(f, "anywhere {n} {r:?}"),
@@ -677,9 +681,14 @@ pub enum Binding {
     /// The third argument indicates whether iteration is async or not.
     IterableValue(Option<Idx<KeyAnnotation>>, Expr, bool),
     /// A value produced by entering a context manager.
-    /// The second argument is the expression of the context manager. The third argument
-    /// indicates whether the context manager is async or not.
-    ContextValue(Option<Idx<KeyAnnotation>>, Expr, ContextManagerKind),
+    /// The second argument is the expression of the context manager and its range.
+    /// The fourth argument indicates whether the context manager is async or not.
+    ContextValue(
+        Option<Idx<KeyAnnotation>>,
+        Idx<Key>,
+        TextRange,
+        ContextManagerKind,
+    ),
     /// A value at a specific position in an unpacked iterable expression.
     /// Example: UnpackedValue(('a', 'b')), 1) represents 'b'.
     UnpackedValue(Box<Binding>, TextRange, UnpackedPosition),
@@ -805,12 +814,12 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::ExceptionHandler(box x, true) => write!(f, "except* {}", m.display(x)),
             Self::ExceptionHandler(box x, false) => write!(f, "except {}", m.display(x)),
-            Self::ContextValue(_ann, x, kind) => {
+            Self::ContextValue(_ann, x, _, kind) => {
                 let name = match kind {
                     ContextManagerKind::Sync => "context",
                     ContextManagerKind::Async => "async context",
                 };
-                write!(f, "{name} {}", m.display(x))
+                write!(f, "{name} {}", ctx.display(*x))
             }
             Self::SubscriptValue(x, subscript) => {
                 write!(

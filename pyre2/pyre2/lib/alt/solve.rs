@@ -1559,13 +1559,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.unions(values)
             }
-            Binding::ContextValue(ann, e, kind) => {
-                let context_manager = self.expr_infer(e, errors);
-                let context_value = self.context_value(context_manager, *kind, e.range(), errors);
+            Binding::ContextValue(ann, e, range, kind) => {
+                let context_manager = self.get_idx(*e);
+                let context_value =
+                    self.context_value(context_manager.arc_clone(), *kind, *range, errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty().map(|t| (t, &x.target))) {
                     Some((ty, target)) => {
-                        self.check_type(ty, &context_value, e.range(), errors, &|| {
+                        self.check_type(ty, &context_value, *range, errors, &|| {
                             TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
                         })
                     }
