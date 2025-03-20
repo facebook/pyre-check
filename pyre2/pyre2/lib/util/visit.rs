@@ -5,10 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::any;
 use std::any::Any;
+
+use const_str;
 
 /// Visitors based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
 pub trait Visit<To: 'static = Self>: 'static + Sized {
+    /// Whether the type contains `To` elements as children - is `visit` a no-op.
+    const CONTAINS: bool = true;
+
+    /// Whether the `visit0` is a no-op.
+    const CONTAINS0: bool = Self::CONTAINS || type_eq::<To, Self>();
+
     /// Should call the function on all the `To` children of `Self`.
     ///
     /// Note the lifetime guarantee that every element will be contained in the original structure.
@@ -16,9 +25,11 @@ pub trait Visit<To: 'static = Self>: 'static + Sized {
 
     /// Like `visit`, but if `To == Self` then calls the function directly.
     fn visit0<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
-        if let Some(to) = (self as &dyn Any).downcast_ref::<To>() {
+        if Self::CONTAINS0
+            && let Some(to) = (self as &dyn Any).downcast_ref::<To>()
+        {
             f(to);
-        } else {
+        } else if Self::CONTAINS {
             self.visit(f)
         }
     }
@@ -26,6 +37,9 @@ pub trait Visit<To: 'static = Self>: 'static + Sized {
 
 /// Like `Visit`, but mutably.
 pub trait VisitMut<To: 'static = Self>: 'static + Sized {
+    const CONTAINS: bool = true;
+    const CONTAINS0: bool = Self::CONTAINS || type_eq::<To, Self>();
+
     /// In contrast to `visit`, we don't have a guarantee that the results will be in
     /// the original structure. This decision is pragmatic - it's rare to mutate _and_
     /// store the values (since mutating probably means you can't capture them).
@@ -42,13 +56,22 @@ pub trait VisitMut<To: 'static = Self>: 'static + Sized {
     }
 }
 
+/// Type-level equality by types.
+/// Seems to work, as we test it, but this is not ideal.
+/// We'd really like to compare the `TypeId`, but that isn't `const` yet.
+const fn type_eq<T1, T2>() -> bool {
+    const_str::equal!(any::type_name::<T1>(), any::type_name::<T2>())
+}
+
 macro_rules! no_children {
     ($t:ty) => {
         impl<To: 'static> Visit<To> for $t {
+            const CONTAINS: bool = false;
             fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a To)) {}
         }
 
         impl<To: 'static> VisitMut<To> for $t {
+            const CONTAINS: bool = false;
             fn visit_mut(&mut self, _: &mut dyn FnMut(&mut To)) {}
         }
     };
@@ -70,6 +93,8 @@ no_children!(isize);
 no_children!(());
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
+    const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
             item.visit0(f);
@@ -78,6 +103,8 @@ impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec<T> {
+    const CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
             item.visit0_mut(f);
@@ -86,6 +113,8 @@ impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec<T> {
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Box<[T]> {
+    const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
             item.visit0(f);
@@ -94,6 +123,8 @@ impl<To: 'static, T: Visit<To>> Visit<To> for Box<[T]> {
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<[T]> {
+    const CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
             item.visit0_mut(f);
@@ -102,6 +133,8 @@ impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<[T]> {
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Option<T> {
+    const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         if let Some(item) = self {
             item.visit0(f)
@@ -110,6 +143,8 @@ impl<To: 'static, T: Visit<To>> Visit<To> for Option<T> {
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Option<T> {
+    const CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         if let Some(item) = self {
             item.visit0_mut(f);
@@ -118,18 +153,24 @@ impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Option<T> {
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Box<T> {
+    const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         (**self).visit0(f)
     }
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<T> {
+    const CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         (**self).visit0_mut(f)
     }
 }
 
 impl<To: 'static, T0: Visit<To>, T1: Visit<To>> Visit<To> for (T0, T1) {
+    const CONTAINS: bool = <T0 as Visit<To>>::CONTAINS0 || <T1 as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         self.0.visit0(f);
         self.1.visit0(f);
@@ -137,6 +178,8 @@ impl<To: 'static, T0: Visit<To>, T1: Visit<To>> Visit<To> for (T0, T1) {
 }
 
 impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>> VisitMut<To> for (T0, T1) {
+    const CONTAINS: bool = <T0 as VisitMut<To>>::CONTAINS0 || <T1 as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         self.0.visit0_mut(f);
         self.1.visit0_mut(f);
@@ -144,6 +187,10 @@ impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>> VisitMut<To> for (T0, T1) 
 }
 
 impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>> Visit<To> for (T0, T1, T2) {
+    const CONTAINS: bool = <T0 as Visit<To>>::CONTAINS0
+        || <T1 as Visit<To>>::CONTAINS0
+        || <T2 as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         self.0.visit0(f);
         self.1.visit0(f);
@@ -154,6 +201,10 @@ impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>> Visit<To> for (T0
 impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>> VisitMut<To>
     for (T0, T1, T2)
 {
+    const CONTAINS: bool = <T0 as VisitMut<To>>::CONTAINS0
+        || <T1 as VisitMut<To>>::CONTAINS0
+        || <T2 as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         self.0.visit0_mut(f);
         self.1.visit0_mut(f);
@@ -164,6 +215,11 @@ impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>> VisitMut
 impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>> Visit<To>
     for (T0, T1, T2, T3)
 {
+    const CONTAINS: bool = <T0 as Visit<To>>::CONTAINS0
+        || <T1 as Visit<To>>::CONTAINS0
+        || <T2 as Visit<To>>::CONTAINS0
+        || <T3 as Visit<To>>::CONTAINS0;
+
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         self.0.visit0(f);
         self.1.visit0(f);
@@ -175,6 +231,11 @@ impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>> Vi
 impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>, T3: VisitMut<To>>
     VisitMut<To> for (T0, T1, T2, T3)
 {
+    const CONTAINS: bool = <T0 as VisitMut<To>>::CONTAINS0
+        || <T1 as VisitMut<To>>::CONTAINS0
+        || <T2 as VisitMut<To>>::CONTAINS0
+        || <T3 as VisitMut<To>>::CONTAINS0;
+
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         self.0.visit0_mut(f);
         self.1.visit0_mut(f);
@@ -185,6 +246,8 @@ impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>, T3: Visi
 
 #[cfg(test)]
 mod tests {
+    use static_assertions::const_assert;
+
     use super::*;
 
     #[test]
@@ -198,5 +261,36 @@ mod tests {
         collect.clear();
         info.visit(&mut |x: &i32| collect.push(*x));
         assert_eq!(&collect, &[2i32, 4, 6, 8, 10]);
+    }
+
+    #[test]
+    fn test_visit_contains() {
+        let xs = vec![1i32, 2, 3];
+        let mut count = 0;
+        xs.visit(&mut |_: &i32| count += 1);
+        assert_eq!(count, 3);
+        count = 0;
+        xs.visit(&mut |_: &bool| count += 1);
+        assert_eq!(count, 0);
+
+        struct Foo;
+        impl Visit<i32> for Foo {
+            const CONTAINS: bool = false;
+            fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a i32)) {
+                unreachable!("Should not be reaching here")
+            }
+            fn visit0<'a>(&'a self, _: &mut dyn FnMut(&'a i32)) {
+                // Deliberately implement visit0 so the optimisation on this doesn't kick in,
+                // only the optimisation on Vec itself.
+                unreachable!("Should not be reaching here")
+            }
+        }
+
+        const_assert!(!<Foo as Visit<i32>>::CONTAINS0);
+        const_assert!(!type_eq::<Foo, i32>());
+        const_assert!(!<Foo as Visit<i32>>::CONTAINS);
+        const_assert!(!<Vec<Foo> as Visit<i32>>::CONTAINS);
+        const_assert!(!<Vec<Foo> as Visit<i32>>::CONTAINS0);
+        vec![Foo].visit0(&mut |_: &i32| ());
     }
 }

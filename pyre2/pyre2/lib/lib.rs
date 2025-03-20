@@ -25,6 +25,7 @@
 #![feature(associated_const_equality)]
 #![feature(associated_type_defaults)]
 #![feature(box_patterns)]
+#![feature(const_type_name)]
 #![feature(if_let_guard)]
 #![feature(let_chains)]
 #![feature(once_wait)]
