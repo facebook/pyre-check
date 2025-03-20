@@ -503,7 +503,6 @@ impl Forallable {
 #[derive(Debug, Clone, PartialEq, Eq, TypeEq, PartialOrd, Ord, Hash)]
 pub enum SuperObj {
     Instance(ClassType),
-    #[expect(dead_code)]
     Class(Class),
 }
 

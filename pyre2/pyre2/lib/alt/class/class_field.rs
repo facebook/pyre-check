@@ -910,12 +910,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         super_obj: &SuperObj,
         name: &Name,
     ) -> Option<Attribute> {
+        let member = self.get_class_member(lookup_cls.class_object(), name);
         match super_obj {
-            SuperObj::Instance(obj) => self
-                .get_class_member(lookup_cls.class_object(), name)
+            SuperObj::Instance(obj) => member
                 .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), obj)),
-            // TODO(rechen): support this
-            SuperObj::Class(_) => None,
+            SuperObj::Class(obj) => member
+                .map(|member| self.as_class_attribute(Arc::unwrap_or_clone(member.value), obj)),
         }
     }
 

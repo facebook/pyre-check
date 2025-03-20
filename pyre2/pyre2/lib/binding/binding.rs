@@ -663,7 +663,6 @@ pub enum SuperStyle {
     ExplicitArgs(Idx<Key>, Idx<Key>),
     /// A no-argument `super()` call. The key is the `Self` type of the class we are in.
     /// The name is the method we are in.
-    #[expect(dead_code)]
     ImplicitArgs(Idx<KeyClass>, Name),
     /// `super(Any, Any)`. Useful when we encounter an error.
     Any,

@@ -129,3 +129,20 @@ class B:
     super()  # E: `super` call with no arguments is valid only inside a method
     "#,
 );
+
+testcase!(
+    test_dunder_new_implicit,
+    r#"
+class A:
+    def __new__(cls, x):
+        return super().__new__(cls)
+    def __init__(self, x):
+        self.x = x
+
+class B(A):
+    def __new__(cls, x):
+        return super().__new__(cls, x)
+    def __init__(self, x):
+        super().__init__(x)
+    "#,
+);

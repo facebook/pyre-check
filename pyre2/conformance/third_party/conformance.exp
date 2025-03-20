@@ -2830,16 +2830,6 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 20,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class1, NoReturn) failed",
       "description": "assert_type(Class1, NoReturn) failed",
@@ -2870,32 +2860,12 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 33,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
       "column": 16,
       "concise_description": "Returned type `object` is not assignable to declared return type `Class3`",
       "description": "Returned type `object` is not assignable to declared return type `Class3`",
       "line": 48,
       "name": "type-mismatch",
       "stop_column": 36,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 48,
-      "name": "bad-argument-type",
-      "stop_column": 35,
       "stop_line": 48
     },
     {
@@ -2916,16 +2886,6 @@
       "line": 62,
       "name": "type-mismatch",
       "stop_column": 36,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 62,
-      "name": "bad-argument-type",
-      "stop_column": 35,
       "stop_line": 62
     },
     {
@@ -2952,16 +2912,6 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 16,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__new__`",
       "description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__new__`",
@@ -2978,16 +2928,6 @@
       "line": 29,
       "name": "type-mismatch",
       "stop_column": 36,
-      "stop_line": 29
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 29,
-      "name": "bad-argument-type",
-      "stop_column": 35,
       "stop_line": 29
     },
     {
@@ -3029,16 +2969,6 @@
       "name": "missing-argument",
       "stop_column": 23,
       "stop_line": 76
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 98,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 98
     },
     {
       "code": -2,
@@ -3100,16 +3030,6 @@
       "line": 35,
       "name": "type-mismatch",
       "stop_column": 36,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 35,
-      "name": "bad-argument-type",
-      "stop_column": 35,
       "stop_line": 35
     },
     {
@@ -3496,16 +3416,6 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 93,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
@@ -3613,16 +3523,6 @@
       "name": "invalid-param-spec",
       "stop_column": 3,
       "stop_line": 127
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 134,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 134
     },
     {
       "code": -2,
@@ -3736,16 +3636,6 @@
     },
     {
       "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 178,
-      "name": "bad-argument-type",
-      "stop_column": 35,
-      "stop_line": 178
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
@@ -3854,16 +3744,6 @@
       "line": 22,
       "name": "type-mismatch",
       "stop_column": 36,
-      "stop_line": 22
-    },
-    {
-      "code": -2,
-      "column": 32,
-      "concise_description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "description": "Expected 0 positional arguments, got 1 in function `object.__new__`",
-      "line": 22,
-      "name": "bad-argument-type",
-      "stop_column": 35,
       "stop_line": 22
     }
   ],

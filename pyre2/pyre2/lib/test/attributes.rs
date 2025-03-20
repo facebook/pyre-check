@@ -648,9 +648,7 @@ class C:
         self.prev = False
     def __new__(cls, orig_func=None):
         if orig_func is None:
-            return super().__new__(
-                cls  # E: Expected 0 positional arguments, got 1 in function `object.__new__` 
-            ) 
+            return super().__new__(cls) 
 def f():
     with C():  # E: TODO: Expr::call_method attribute base undefined # E: Cannot use `object | None` as a context manager
         pass

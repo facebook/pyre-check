@@ -133,23 +133,22 @@
     "Line 75: Unexpected errors ['assert_type(Class5[list[int]], Class5[float]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', 'Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`']"
   ],
   "constructors_call_metaclass.py": [
-    "Line 20: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
+    "Line 20: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`']",
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', 'Missing argument `x` in function `Class1.__new__`']",
-    "Line 33: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
-    "Line 48: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class3`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
-    "Line 62: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class4`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']"
+    "Line 33: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2`']",
+    "Line 48: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class3`']",
+    "Line 62: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class4`']"
   ],
   "constructors_call_new.py": [
-    "Line 16: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
-    "Line 29: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
+    "Line 16: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`']",
+    "Line 29: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x` in function `Class4.__init__`']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x` in function `Class5.__init__`']",
-    "Line 98: Unexpected errors ['Expected 0 positional arguments, got 1 in function `object.__new__`']",
     "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
   ],
   "constructors_call_type.py": [
     "Line 25: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`']",
-    "Line 35: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
+    "Line 35: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2`']",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 79: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
@@ -164,26 +163,25 @@
     "Line 64: Unexpected errors ['assert_type(Any, Class3) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 76: Unexpected errors ['Argument `type[Class4]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Unexpected ParamSpec type: `Unknown`']",
-    "Line 93: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class5`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
+    "Line 93: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class5`']",
     "Line 96: Unexpected errors ['Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 100: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 105: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 124: Unexpected errors ['Argument `type[Class6]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 126: Unexpected errors ['assert_type(Any, Class6Proxy) failed', 'Unexpected ParamSpec type: `Unknown`']",
-    "Line 134: Unexpected errors ['Expected 0 positional arguments, got 1 in function `object.__new__`']",
     "Line 141: Unexpected errors ['Argument `type[Class6Any]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 143: Unexpected errors ['Unexpected ParamSpec type: `Unknown`']",
     "Line 160: Unexpected errors ['Argument `type[Class7]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 164: Unexpected errors ['assert_type(Any, Class7[int]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 165: Unexpected errors ['assert_type(Any, Class7[str]) failed', 'Unexpected ParamSpec type: `Unknown`']",
-    "Line 178: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']",
+    "Line 178: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`']",
     "Line 181: Unexpected errors ['Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 183: Unexpected errors ['assert_type(Any, Class8[str]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 192: Unexpected errors ['Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 194: Unexpected errors ['assert_type(Any, Class9) failed', 'Unexpected ParamSpec type: `Unknown`']"
   ],
   "constructors_consistency.py": [
-    "Line 22: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`', 'Expected 0 positional arguments, got 1 in function `object.__new__`']"
+    "Line 22: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`']"
   ],
   "dataclasses_descriptors.py": [
     "Line 35: Unexpected errors ['Argument `Literal[3]` is not assignable to parameter `y` with type `Desc1` in function `DC1.__init__`']"

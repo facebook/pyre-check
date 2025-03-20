@@ -2035,7 +2035,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ),
                         }
                     }
-                    SuperStyle::ImplicitArgs(self_binding, _) => {
+                    SuperStyle::ImplicitArgs(self_binding, method) => {
                         match &self.get_idx(*self_binding).0 {
                             Some(obj_cls) => {
                                 let obj_type = ClassType::new(
@@ -2044,10 +2044,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 );
                                 let lookup_cls =
                                     self.get_super_lookup_class(obj_cls, &obj_type).unwrap();
-                                Type::SuperInstance(Box::new((
-                                    lookup_cls,
-                                    SuperObj::Instance(obj_type),
-                                )))
+                                let obj = if *method == dunder::NEW {
+                                    // __new__ is special: it's the only static method in which the
+                                    // no-argument form of super is allowed.
+                                    SuperObj::Class(obj_cls.dupe())
+                                } else {
+                                    SuperObj::Instance(obj_type)
+                                };
+                                Type::SuperInstance(Box::new((lookup_cls, obj)))
                             }
                             None => Type::any_implicit(),
                         }
