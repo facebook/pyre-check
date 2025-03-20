@@ -191,6 +191,35 @@ impl FileList for Globs {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
+pub struct FilteredGlobs {
+    includes: Globs,
+    excludes: Globs,
+}
+
+impl FilteredGlobs {
+    pub fn new(includes: Globs, excludes: Globs) -> Self {
+        Self { includes, excludes }
+    }
+
+    /// Given a glob pattern, return the directories that can contain files that match the pattern.
+    pub fn roots(&self) -> Vec<PathBuf> {
+        self.includes.roots()
+    }
+}
+
+impl FileList for FilteredGlobs {
+    fn files(&self) -> anyhow::Result<Vec<PathBuf>> {
+        let mut result = Vec::new();
+        for file in self.includes.files()? {
+            if !self.excludes.matches(&file)? {
+                result.push(file);
+            }
+        }
+        Ok(result)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
