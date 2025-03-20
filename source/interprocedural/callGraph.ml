@@ -283,10 +283,15 @@ module CallableToDecoratorsMap = struct
         | decorator :: _ as decorators ->
             Some { DecoratorCount.count = List.length decorators; decorator }
       in
+      let show_decorator decorator =
+        match decorator.Node.value with
+        | Expression.Call { Call.callee; _ } -> (* Decorator factory. *) Expression.show callee
+        | _ -> Expression.show decorator
+      in
       let decorator_counts =
         shared_memory
         |> T.to_alist
-        |> List.map ~f:(fun (_, { decorators; _ }) -> List.map ~f:Expression.show decorators)
+        |> List.map ~f:(fun (_, { decorators; _ }) -> List.map ~f:show_decorator decorators)
         |> List.concat
         |> List.sort_and_group ~compare:String.compare
         |> List.filter_map ~f:create_decorator_count
