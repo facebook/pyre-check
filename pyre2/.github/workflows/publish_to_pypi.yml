@@ -38,7 +38,7 @@ jobs:
         with:
           fetch-depth: 0  # Get all history for all branches and tags
       - name: Get version
-        run: echo "PYREFLY_VERSION=$(grep -oP "\d+\.\d+\.\d+" pyre2/version.bzl)" >> $GITHUB_ENV
+        run: echo "PYREFLY_VERSION=$(sed -n -e 's/^VERSION = "\(.*\)"/\1/p' pyre2/version.bzl)" >> $GITHUB_ENV
       - name: Tag commit
         run: git tag ${{ env.PYREFLY_VERSION }}
       - name: Push tag
