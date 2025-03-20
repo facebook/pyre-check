@@ -10,9 +10,15 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Display;
+use std::fs::File;
+use std::io::BufWriter;
+use std::io::Write;
 use std::mem;
+use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 
 use dupe::Dupe;
 use enum_iterator::Sequence;
@@ -21,6 +27,7 @@ use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use tracing::debug;
+use tracing::error;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
@@ -957,6 +964,77 @@ impl State {
                 dirty_set.insert(module_data.dupe());
             }
         }
+    }
+
+    pub fn report_timings(
+        &mut self,
+        path: &Path,
+        subscriber: Option<Box<dyn Subscriber>>,
+    ) -> anyhow::Result<()> {
+        let ms = self.modules.values().cloned().collect::<Vec<_>>();
+        let mut file = BufWriter::new(File::create(path)?);
+        writeln!(file, "Module,Step,Seconds")?;
+        file.flush()?;
+        if let Some(subscriber) = &subscriber {
+            for m in &ms {
+                subscriber.start_work(m.handle.dupe());
+            }
+        }
+        for m in ms {
+            let mut write = |step: &dyn Display, start: Instant| -> anyhow::Result<()> {
+                writeln!(
+                    file,
+                    "{},{},{}",
+                    m.handle.module(),
+                    step,
+                    start.elapsed().as_secs_f32()
+                )?;
+                // Always flush, so if a user aborts we get the timings thus-far
+                file.flush()?;
+                Ok(())
+            };
+
+            let mut alt = Steps::default();
+            let lock = m.state.read();
+            let stdlib = self.get_stdlib(&m.handle);
+            let loader = self.get_cached_loader(m.handle.loader());
+            let ctx = Context {
+                require: Require::Exports,
+                module: m.handle.module(),
+                path: m.handle.path(),
+                config: m.handle.config(),
+                loader: &*loader,
+                uniques: &self.uniques,
+                stdlib: &stdlib,
+                lookup: &self.lookup(m.dupe()),
+            };
+            let mut step = Step::Load; // Start at AST (Load.next)
+            alt.load = lock.steps.load.dupe();
+            while let Some(s) = step.next() {
+                step = s;
+                let start = Instant::now();
+                step.compute().0(&alt)(&ctx)(&mut alt);
+                write(&step, start)?;
+            }
+            let start = Instant::now();
+            let diff = lock
+                .steps
+                .solutions
+                .as_ref()
+                .unwrap()
+                .first_difference(alt.solutions.as_deref().unwrap());
+            write(&"Diff", start)?;
+            if false {
+                // Disabled code, but super useful for debugging differences
+                if let Some(diff) = diff {
+                    error!("Not deterministic {}: {}", m.handle.module(), diff)
+                }
+            }
+            if let Some(subscriber) = &subscriber {
+                subscriber.finish_work(m.handle.dupe(), alt.load.unwrap().dupe());
+            }
+        }
+        Ok(())
     }
 }
 

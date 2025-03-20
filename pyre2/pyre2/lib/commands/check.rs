@@ -86,6 +86,9 @@ pub struct Args {
     report_binding_memory: Option<PathBuf>,
     #[clap(long, env = clap_env("REPORT_TRACE"))]
     report_trace: Option<PathBuf>,
+    /// Process each module individually to figure out how long each step takes.
+    #[clap(long, env = clap_env("REPORT_TIMINGS"))]
+    report_timings: Option<PathBuf>,
     /// Count the number of each error kind. Prints the top N errors, sorted by count, or all errors if N is not specified.
     #[clap(
         long,
@@ -353,6 +356,10 @@ impl Args {
             number_thousands(state.line_count()),
             memory_trace.peak()
         );
+        if let Some(timings) = &self.report_timings {
+            eprintln!("Computing timing information");
+            state.report_timings(timings, Some(Box::new(ProgressBarSubscriber::new())))?;
+        }
         if let Some(debug_info) = &self.debug_info {
             let mut output =
                 serde_json::to_string_pretty(&state.debug_info(&handles.map(|x| x.0.dupe())))?;
