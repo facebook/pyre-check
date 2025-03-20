@@ -201,7 +201,7 @@ async fn get_watcher_events(watcher: &mut impl Watcher) -> anyhow::Result<Catego
 impl Args {
     pub fn run_once(
         self,
-        files_to_check: impl FileList + Clone,
+        files_to_check: impl FileList,
         config_finder: &impl Fn(&Path) -> ConfigFile,
         allow_forget: bool,
     ) -> anyhow::Result<CommandExitStatus> {
@@ -219,7 +219,7 @@ impl Args {
     pub async fn run_watch(
         self,
         mut watcher: impl Watcher,
-        files_to_check: impl FileList + Clone,
+        files_to_check: impl FileList,
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
         // TODO: We currently make 2 unrealistic assumptions, which should be fixed in the future:

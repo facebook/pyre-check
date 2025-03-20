@@ -8,7 +8,7 @@
 use std::path::PathBuf;
 
 /// Represents a list of files that need to be type checked.
-pub trait FileList {
+pub trait FileList: Clone {
     /// Returns a list of files to type check.
     fn files(&self) -> anyhow::Result<Vec<PathBuf>>;
 }
