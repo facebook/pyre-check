@@ -563,7 +563,7 @@ pub enum RaisedException {
     WithCause(Box<(Expr, Expr)>),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Dupe, Copy, Debug)]
 pub enum ContextManagerKind {
     Sync,
     Async,
