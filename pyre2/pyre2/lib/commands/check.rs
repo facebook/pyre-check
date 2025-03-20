@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufWriter;
@@ -29,6 +30,7 @@ use crate::config::ConfigFile;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::metadata::PythonVersion;
+use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
 use crate::module::module_name::ModuleName;
@@ -50,7 +52,6 @@ use crate::util::fs_anyhow;
 use crate::util::listing::FileList;
 use crate::util::memory::MemoryUsageTrace;
 use crate::util::prelude::SliceExt;
-use crate::util::prelude::VecExt;
 use crate::util::watcher::CategorizedEvents;
 use crate::util::watcher::Watcher;
 
@@ -178,57 +179,62 @@ fn create_loader(loader_inputs: LoaderInputs) -> LoaderId {
     LoaderId::new(CheckLoader { loader_inputs })
 }
 
+/// A data structure to facilitate the creation of handles for all the files we want to check.
 struct Handles {
-    files_and_configs: Vec<(PathBuf, ConfigFile)>,
+    /// We want to have different handles to share the same loader if the corresponding files share the same search path.
+    /// This field keeps track of the loaders we've created so far and what search paths they correspond to.
+    loader_factory: SmallMap<LoaderInputs, LoaderId>,
+    /// A mapping from a file to all other information needed to create a `Handle`.
+    /// The value type is basically everything else in `Handle` except for the file path.
+    path_data: HashMap<PathBuf, (ModuleName, RuntimeMetadata, LoaderId)>,
 }
 
 impl Handles {
     pub fn new(files: Vec<PathBuf>, config_finder: &impl Fn(&Path) -> ConfigFile) -> Self {
-        Self {
-            files_and_configs: files.into_map(|path| {
-                let config = config_finder(&path);
-                (path, config)
-            }),
+        let mut handles = Self {
+            loader_factory: SmallMap::new(),
+            path_data: HashMap::new(),
+        };
+        for file in files {
+            handles.register_file(file, config_finder);
+        }
+        handles
+    }
+
+    fn register_file(&mut self, path: PathBuf, config_finder: &impl Fn(&Path) -> ConfigFile) {
+        let config = config_finder(&path);
+        let loader = self.get_or_register_loader(&config);
+        let module_name = module_from_path(&path, &config.search_path);
+        self.path_data
+            .insert(path, (module_name, config.get_runtime_metadata(), loader));
+    }
+
+    fn get_or_register_loader(&mut self, config: &ConfigFile) -> LoaderId {
+        let key = LoaderInputs {
+            search_path: config.search_path.clone(),
+            site_package_path: config.site_package_path.clone(),
+        };
+        if let Some(loader) = self.loader_factory.get_mut(&key) {
+            loader.dupe()
+        } else {
+            let loader = create_loader(key.clone());
+            self.loader_factory.insert(key, loader.dupe());
+            loader
         }
     }
 
     pub fn all(&self, specified_require: Require) -> Vec<(Handle, Require)> {
-        // We want to partition the files to check by their associated search roots, so we can
-        // create a separate loader for each partition.
-        let mut partition_by_loader_inputs: SmallMap<LoaderInputs, Vec<(PathBuf, ConfigFile)>> =
-            SmallMap::new();
-        for (path, config) in self.files_and_configs.iter() {
-            let key = LoaderInputs {
-                search_path: config.search_path.clone(),
-                site_package_path: config.site_package_path.clone(),
-            };
-            partition_by_loader_inputs
-                .entry(key)
-                .or_default()
-                .push((path.clone(), config.clone()));
-        }
-
-        partition_by_loader_inputs
-            .into_iter()
-            .flat_map(|(loader_inputs, files_and_configs)| {
-                let files_with_module_name_and_metadata =
-                    files_and_configs.into_map(|(path, config)| {
-                        let module_name = module_from_path(&path, &loader_inputs.search_path);
-                        (path, module_name, config.get_runtime_metadata())
-                    });
-                let loader = create_loader(loader_inputs);
-                files_with_module_name_and_metadata.into_map(
-                    |(path, module_name, runtime_metadata)| {
-                        (
-                            Handle::new(
-                                module_name,
-                                ModulePath::filesystem(path),
-                                runtime_metadata,
-                                loader.dupe(),
-                            ),
-                            specified_require,
-                        )
-                    },
+        self.path_data
+            .iter()
+            .map(|(path, (module_name, runtime_metadata, loader))| {
+                (
+                    Handle::new(
+                        module_name.dupe(),
+                        ModulePath::filesystem(path.to_path_buf()),
+                        runtime_metadata.dupe(),
+                        loader.dupe(),
+                    ),
+                    specified_require,
                 )
             })
             .collect()
