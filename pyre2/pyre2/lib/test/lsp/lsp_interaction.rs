@@ -22,6 +22,7 @@ use pretty_assertions::assert_eq;
 
 use crate::commands::lsp::run_lsp;
 use crate::commands::lsp::Args;
+use crate::test::util::init_test;
 
 // Fake python root directory (not necessary to exist on the filesystem)
 // since we simply send the file contents on file open
@@ -32,6 +33,7 @@ struct TestCase {
     expected_responses: Vec<Response>,
 }
 fn run_test_lsp(test_case: TestCase) {
+    init_test();
     let timeout = Duration::from_secs(25);
     let args = Args {
         search_path: vec![PathBuf::from_str(TEST_PYTHON_PATH).unwrap()],
