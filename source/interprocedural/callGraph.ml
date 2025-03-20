@@ -169,7 +169,6 @@ module CallableToDecoratorsMap = struct
     [
       "property";
       "dataclass";
-      "partial";
       "functools.cache";
       "functools.cached_property";
       "functools.lru_cache";
@@ -181,7 +180,9 @@ module CallableToDecoratorsMap = struct
       "typing.final";
       "atexit.register";
       "contextlib.contextmanager";
+      "contextlib.asynccontextmanager";
       "abc.abstractmethod";
+      "abc.abstractproperty";
     ]
     @ class_method_decorators
     @ static_method_decorators
