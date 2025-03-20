@@ -2088,7 +2088,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     YieldFromResult::any_error()
                 };
                 if let Some(want) = want {
-                    self.check_type(want, &ty, x.range, errors, &|| TypeCheckContext::unknown());
+                    self.check_type(want, &ty, x.range, errors, &|| {
+                        TypeCheckContext::of_kind(TypeCheckKind::YieldFrom)
+                    });
                 }
                 Arc::new(res)
             }

@@ -1341,8 +1341,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED Generator[A, None, None] <: Iterator[B]",
-      "description": "EXPECTED Generator[A, None, None] <: Iterator[B]",
+      "concise_description": "Cannot yield from a generator of type `Generator[A, None, None]` because it does not match the declared return type `Iterator[B]`",
+      "description": "Cannot yield from a generator of type `Generator[A, None, None]` because it does not match the declared return type `Iterator[B]`",
       "line": 118,
       "name": "type-mismatch",
       "stop_column": 29,
@@ -1351,8 +1351,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED Generator[int, None, None] <: Iterator[B]",
-      "description": "EXPECTED Generator[int, None, None] <: Iterator[B]",
+      "concise_description": "Cannot yield from a generator of type `Generator[int, None, None]` because it does not match the declared return type `Iterator[B]`",
+      "description": "Cannot yield from a generator of type `Generator[int, None, None]` because it does not match the declared return type `Iterator[B]`",
       "line": 119,
       "name": "type-mismatch",
       "stop_column": 19,
@@ -1361,8 +1361,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "EXPECTED Generator[None, int, None] <: Generator[None, str, None]",
-      "description": "EXPECTED Generator[None, int, None] <: Generator[None, str, None]",
+      "concise_description": "Cannot yield from a generator of type `Generator[None, int, None]` because it does not match the declared return type `Generator[None, str, None]`",
+      "description": "Cannot yield from a generator of type `Generator[None, int, None]` because it does not match the declared return type `Generator[None, str, None]`",
       "line": 135,
       "name": "type-mismatch",
       "stop_column": 29,

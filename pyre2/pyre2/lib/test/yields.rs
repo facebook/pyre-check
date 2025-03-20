@@ -100,7 +100,7 @@ def my_generator_nested() -> Generator[Yield2, Send, Return]:
 
 def my_generator() -> Generator[Yield, Send, Return]:
     s = yield Yield()
-    y = yield from  my_generator_nested() # E: EXPECTED Generator[Yield2, Send, Return] <: Generator[Yield, Send, Return]
+    y = yield from  my_generator_nested() # E: Cannot yield from a generator of type `Generator[Yield2, Send, Return]`
 
     assert_type(s, Send)
     assert_type(y, Return)

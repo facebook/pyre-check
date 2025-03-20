@@ -163,6 +163,11 @@ impl TypeCheckKind {
                 ctx.display(got),
                 ctx.display(want),
             ),
+            Self::YieldFrom => format!(
+                "Cannot yield from a generator of type `{}` because it does not match the declared return type `{}`",
+                ctx.display(got),
+                ctx.display(want),
+            ),
             Self::UnexpectedBareYield => format!(
                 "Expected to yield a value of type `{}`, but a bare `yield` gives `None` instead",
                 ctx.display(want),
