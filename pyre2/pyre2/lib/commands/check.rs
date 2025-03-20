@@ -20,6 +20,7 @@ use clap::Parser;
 use clap::ValueEnum;
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
+use starlark_map::small_set::SmallSet;
 use tracing::info;
 
 use crate::clap_env;
@@ -201,12 +202,17 @@ impl Handles {
         handles
     }
 
-    fn register_file(&mut self, path: PathBuf, config_finder: &impl Fn(&Path) -> ConfigFile) {
+    fn register_file(
+        &mut self,
+        path: PathBuf,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
+    ) -> &(ModuleName, RuntimeMetadata, LoaderId) {
         let config = config_finder(&path);
         let loader = self.get_or_register_loader(&config);
         let module_name = module_from_path(&path, &config.search_path);
         self.path_data
-            .insert(path, (module_name, config.get_runtime_metadata(), loader));
+            .entry(path)
+            .or_insert((module_name, config.get_runtime_metadata(), loader))
     }
 
     fn get_or_register_loader(&mut self, config: &ConfigFile) -> LoaderId {
@@ -238,6 +244,26 @@ impl Handles {
                 )
             })
             .collect()
+    }
+
+    pub fn update(
+        &mut self,
+        created_files: &Vec<PathBuf>,
+        removed_files: &Vec<PathBuf>,
+        config_finder: &impl Fn(&Path) -> ConfigFile,
+    ) -> Vec<LoaderId> {
+        let mut result: SmallSet<LoaderId> = SmallSet::new();
+        for file in created_files {
+            let (_, _, loader) = self.register_file(file.to_path_buf(), config_finder);
+            result.insert(loader.dupe());
+        }
+        for file in removed_files {
+            if let Some((_, _, loader)) = self.path_data.remove(file) {
+                result.insert(loader);
+            }
+            // NOTE: Need to garbage-collect unreachable Loaders at some point
+        }
+        result.into_iter().collect()
     }
 }
 
@@ -298,7 +324,7 @@ impl Args {
         let expanded_file_list = files_to_check.files()?;
         let require_levels = self.get_required_levels();
         let config_finder = self.overriding_config_finder(config_finder);
-        let handles = Handles::new(expanded_file_list, &config_finder);
+        let mut handles = Handles::new(expanded_file_list, &config_finder);
         let mut state = State::new();
         loop {
             let res = self.run_inner(
@@ -310,8 +336,16 @@ impl Args {
                 eprintln!("{e:#}");
             }
             let events = get_watcher_events(&mut watcher).await?;
-            // TODO: Handle add/remove events.
             state.invalidate_disk(&events.modified);
+
+            // TODO: We should filter create/remove events with `files_to_check`
+            state.invalidate_disk(&events.created);
+            state.invalidate_disk(&events.removed);
+            let invalidated_loaders =
+                handles.update(&events.created, &events.removed, &config_finder);
+            for loader in invalidated_loaders {
+                state.invalidate_find(&loader);
+            }
         }
     }
 

@@ -917,7 +917,6 @@ impl State {
 
     /// Called if the `find` portion of loading might have changed.
     /// E.g. you have include paths, and a new file appeared earlier on the path.
-    #[expect(dead_code)]
     pub fn invalidate_find(&mut self, loader: &LoaderId) {
         if let Some(cache) = self.loaders.get_mut(loader) {
             *cache = Arc::new(LoaderFindCache::new(loader.dupe()));
