@@ -212,7 +212,11 @@ impl Args {
 
         let mut holder = Forgetter::new(State::new(), allow_forget);
         let require_levels = self.get_required_levels();
-        let handles = self.get_handles(expanded_file_list, config_finder, require_levels.specified);
+        let handles = self.get_handles(
+            expanded_file_list,
+            &self.overriding_config_finder(config_finder),
+            require_levels.specified,
+        );
         self.run_inner(holder.as_mut(), &handles, require_levels.default)
     }
 
@@ -227,7 +231,9 @@ impl Args {
         // - Config search is stable across incremental runs.
         let expanded_file_list = files_to_check.files()?;
         let require_levels = self.get_required_levels();
-        let handles = self.get_handles(expanded_file_list, config_finder, require_levels.specified);
+        let config_finder = self.overriding_config_finder(config_finder);
+        let handles =
+            self.get_handles(expanded_file_list, &config_finder, require_levels.specified);
         let mut state = State::new();
         loop {
             let res = self.run_inner(&mut state, &handles, require_levels.default);
@@ -248,6 +254,17 @@ impl Args {
             &mut config.site_package_path,
             self.site_package_path.as_ref(),
         );
+    }
+
+    fn overriding_config_finder<'a>(
+        &'a self,
+        config_finder: &'a impl Fn(&Path) -> ConfigFile,
+    ) -> impl Fn(&Path) -> ConfigFile + 'a {
+        move |path| {
+            let mut config = config_finder(path);
+            self.override_config(&mut config);
+            config
+        }
     }
 
     fn get_required_levels(&self) -> RequireLevels {
@@ -277,8 +294,7 @@ impl Args {
         specified_require: Require,
     ) -> Vec<(Handle, Require)> {
         let files_and_configs = expanded_file_list.into_map(|path| {
-            let mut config = config_finder(&path);
-            self.override_config(&mut config);
+            let config = config_finder(&path);
             (path, config)
         });
         // We want to partition the files to check by their associated search roots, so we can
