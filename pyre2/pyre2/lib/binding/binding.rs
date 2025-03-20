@@ -635,6 +635,15 @@ pub struct ReturnType {
     pub is_async: bool,
 }
 
+#[derive(Clone, Dupe, Copy, Debug)]
+pub enum LastStmt {
+    /// The last statement is a expression
+    Expr,
+    /// The last statement is a `with`, with the following context,
+    /// which might (if exit is true) catch an exception
+    With(ContextManagerKind),
+}
+
 #[derive(Clone, Debug)]
 pub struct ReturnImplicit {
     /// Terminal statements in the function control flow, used to determine whether the
@@ -642,7 +651,7 @@ pub struct ReturnImplicit {
     /// When `None`, the function always has an implicit `None` return. When `Some(xs)`,
     /// the function has an implicit `None` return if there exists a non-`Never` in this
     /// list.
-    pub last_exprs: Option<Box<[Idx<Key>]>>,
+    pub last_exprs: Option<Box<[(LastStmt, Idx<Key>)]>>,
     /// Ignore the implicit return type for stub functions (returning `...`). This is
     /// unsafe, but is convenient and matches Pyright's behavior.
     pub function_source: FunctionSource,

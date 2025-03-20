@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_simple_with,
@@ -235,8 +234,7 @@ def f() -> int:  # E: missing an explicit `return`
 "#,
 );
 
-testcase_with_bug!(
-    "Should realise we can't capture an exception and not have an error",
+testcase!(
     test_with_return_false,
     r#"
 # From https://github.com/facebook/pyrefly/issues/24
@@ -251,21 +249,20 @@ class CM:
     return False
 
 
-def f() -> int:  # E: missing an explicit `return`
+def f() -> int:
   with CM():
     return 1
 "#,
 );
 
-testcase_with_bug!(
-    "With Any should assume the context-manager doesn't capture",
+testcase!(
     test_with_return_any,
     r#"
 # From https://github.com/facebook/pyrefly/issues/24
 
 from typing import Any
 
-def f(x: Any) -> int:  # E: missing an explicit `return`
+def f(x: Any) -> int:
   with x:
     return 1
 "#,

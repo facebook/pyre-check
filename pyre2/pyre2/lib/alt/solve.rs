@@ -49,6 +49,7 @@ use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionSource;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
+use crate::binding::binding::LastStmt;
 use crate::binding::binding::NoneIfRecursive;
 use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
@@ -61,6 +62,7 @@ use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
+use crate::error::style::ErrorStyle;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
 use crate::types::annotation::Annotation;
@@ -1415,15 +1417,44 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::ReturnImplicit(x) => {
+                // Would context have caught something.
+                fn context_catch(x: &Type) -> bool {
+                    match x {
+                        Type::Union(xs) => xs.iter().any(context_catch),
+                        Type::Any(_) => false, // This is what Pyright does
+                        Type::Literal(Lit::Bool(b)) => *b,
+                        Type::None => false,
+                        _ => true, // Most types have something truthy within them
+                    }
+                }
+
                 // TODO: This is a bit of a hack. We want to implement Pyright's behavior where
                 // stub functions allow any annotation, but we also infer a `Never` return type
                 // instead of `None`. Instead, we should just ignore the implicit return for stub
                 // functions when solving Binding::ReturnType. Unfortunately, this leads to
                 // another issue (see comment on Binding::ReturnType).
                 if x.function_source == FunctionSource::Stub
-                    || x.last_exprs
-                        .as_ref()
-                        .is_some_and(|xs| xs.iter().all(|k| self.get_idx(*k).is_never()))
+                    || x.last_exprs.as_ref().is_some_and(|xs| {
+                        xs.iter().all(|(last, k)| {
+                            let e = self.get_idx(*k);
+                            match last {
+                                LastStmt::Expr => e.is_never(),
+                                LastStmt::With(kind) => {
+                                    let res = self.context_value_exit(
+                                        &e,
+                                        *kind,
+                                        TextRange::default(),
+                                        &ErrorCollector::new(
+                                            self.module_info().dupe(),
+                                            ErrorStyle::Never,
+                                        ),
+                                        None,
+                                    );
+                                    !context_catch(&res)
+                                }
+                            }
+                        })
+                    })
                 {
                     Type::never()
                 } else {

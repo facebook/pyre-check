@@ -23,6 +23,7 @@ use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
+use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::FunctionSource;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
@@ -30,6 +31,7 @@ use crate::binding::binding::KeyClass;
 use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
+use crate::binding::binding::LastStmt;
 use crate::binding::binding::ReturnExplicit;
 use crate::binding::binding::ReturnImplicit;
 use crate::binding::binding::ReturnType;
@@ -44,7 +46,6 @@ use crate::graph::index::Idx;
 use crate::metadata::RuntimeMetadata;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
-use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
 
 impl<'a> BindingsBuilder<'a> {
@@ -163,8 +164,16 @@ impl<'a> BindingsBuilder<'a> {
         // Collect the keys of terminal expressions. Used to determine the implicit return type.
         let last_exprs = function_last_expressions(&body, self.config);
         let last_expr_keys = last_exprs.map(|x| {
-            x.map(|x| self.table.types.0.insert(Key::StmtExpr(x.range())))
-                .into_boxed_slice()
+            x.into_map(|(last, x)| {
+                (
+                    last,
+                    self.table.types.0.insert(match last {
+                        LastStmt::Expr => Key::StmtExpr(x.range()),
+                        LastStmt::With(_) => Key::ContextExpr(x.range()),
+                    }),
+                )
+            })
+            .into_boxed_slice()
         });
 
         let legacy_tparam_builder = legacy.unwrap();
@@ -298,11 +307,25 @@ impl<'a> BindingsBuilder<'a> {
 /// * Return None to say there are branches that fall off the end always.
 /// * Return Some([]) to say that we can never reach the end (e.g. always return, raise)
 /// * Return Some(xs) to say this set might be the last expression.
-fn function_last_expressions<'a>(x: &'a [Stmt], config: &RuntimeMetadata) -> Option<Vec<&'a Expr>> {
-    fn f<'a>(config: &RuntimeMetadata, x: &'a [Stmt], res: &mut Vec<&'a Expr>) -> Option<()> {
+fn function_last_expressions<'a>(
+    x: &'a [Stmt],
+    config: &RuntimeMetadata,
+) -> Option<Vec<(LastStmt, &'a Expr)>> {
+    fn f<'a>(
+        config: &RuntimeMetadata,
+        x: &'a [Stmt],
+        res: &mut Vec<(LastStmt, &'a Expr)>,
+    ) -> Option<()> {
         match x.last()? {
-            Stmt::Expr(x) => res.push(&x.value),
+            Stmt::Expr(x) => res.push((LastStmt::Expr, &x.value)),
             Stmt::Return(_) | Stmt::Raise(_) => {}
+            Stmt::With(x) => {
+                let kind = ContextManagerKind::new(x);
+                for y in &x.items {
+                    res.push((LastStmt::With(kind), &y.context_expr));
+                }
+                f(config, &x.body, res)?;
+            }
             Stmt::If(x) => {
                 let mut last_test = None;
                 for (test, body) in config.pruned_if_branches(x) {
