@@ -112,25 +112,14 @@ pub struct State {
     require: RequireDefault,
 }
 
-impl Drop for State {
-    fn drop(&mut self) {
-        // ModuleData points at ModuleData via the deps/rdeps, we need to clear these links
-        // or we leak memory.
-        for x in self.modules.values() {
-            x.deps.write().clear();
-            x.rdeps.lock().clear();
-        }
-    }
-}
-
 struct ModuleData {
     handle: Handle,
     state: UpgradeLock<Step, ModuleState>,
-    deps: RwLock<HashMap<ModuleName, ArcId<ModuleData>, BuildNoHash>>,
+    deps: RwLock<HashMap<ModuleName, Handle, BuildNoHash>>,
     /// The reverse dependencies of this module. This is used to invalidate on change.
     /// Note that if we are only running once, e.g. on the command line, this isn't valuable.
     /// But we create it anyway for simplicity, since it doesn't seem to add much overhead.
-    rdeps: Mutex<HashMap<Handle, ArcId<ModuleData>>>,
+    rdeps: Mutex<HashSet<Handle>>,
 }
 
 struct ModuleState {
@@ -224,9 +213,15 @@ impl State {
                 // Downgrade to exclusive, so other people can read from us, or we lock up.
                 // But don't give up the lock entirely, so we don't recompute anything
                 let _exclusive = w.exclusive();
-                for d in deps.values() {
-                    let removed = d.rdeps.lock().remove(&module_data.handle);
-                    assert!(removed.is_some());
+                for dep_handle in deps.values() {
+                    let removed = self
+                        .modules
+                        .get(dep_handle)
+                        .unwrap()
+                        .rdeps
+                        .lock()
+                        .remove(&module_data.handle);
+                    assert!(removed);
                 }
             }
         };
@@ -272,9 +267,9 @@ impl State {
         if exclusive.dirty.find {
             let loader = self.get_cached_loader(module_data.handle.loader());
             let mut is_dirty = false;
-            for x in module_data.deps.read().values() {
-                match loader.find_import(x.handle.module()) {
-                    Ok(path) if &path == x.handle.path() => {}
+            for dependency_handle in module_data.deps.read().values() {
+                match loader.find_import(dependency_handle.module()) {
+                    Ok(path) if &path == dependency_handle.path() => {}
                     _ => {
                         is_dirty = true;
                         break;
@@ -382,7 +377,12 @@ impl State {
                 if changed {
                     self.changed.lock().push(module_data.dupe());
                     let mut dirtied = Vec::new();
-                    for x in module_data.rdeps.lock().values() {
+                    for x in module_data
+                        .rdeps
+                        .lock()
+                        .iter()
+                        .map(|handle| self.modules.get(handle).unwrap())
+                    {
                         loop {
                             let reader = x.state.read();
                             if reader.epochs.computed == self.now || reader.dirty.deps {
@@ -734,6 +734,7 @@ impl State {
     fn invalidate_rdeps(&mut self, changed: &[ArcId<ModuleData>]) {
         // We need to invalidate all modules that depend on anything in changed, including transitively.
         fn f(
+            state: &State,
             dirty_handles: &mut SmallMap<ArcId<ModuleData>, bool>,
             stack: &mut HashSet<ArcId<ModuleData>>,
             x: &ArcId<ModuleData>,
@@ -746,7 +747,9 @@ impl State {
             } else {
                 stack.insert(x.dupe());
                 let reader = x.deps.read();
-                let res = reader.values().any(|y| f(dirty_handles, stack, y));
+                let res = reader
+                    .values()
+                    .any(|y| f(state, dirty_handles, stack, state.modules.get(y).unwrap()));
                 stack.remove(x);
                 dirty_handles.insert(x.dupe(), res);
                 res
@@ -759,7 +762,7 @@ impl State {
             .collect::<SmallMap<_, _>>();
         let mut stack = HashSet::new();
         for x in self.modules.values() {
-            f(&mut dirty_handles, &mut stack, x);
+            f(self, &mut dirty_handles, &mut stack, x);
         }
 
         let mut dirty_set = self.dirty.lock();
@@ -1045,7 +1048,7 @@ pub struct StateHandle<'a> {
 impl<'a> StateHandle<'a> {
     fn get_module(&self, module: ModuleName) -> Result<ArcId<ModuleData>, FindError> {
         if let Some(res) = self.module_data.deps.read().get(&module) {
-            return Ok(res.dupe());
+            return Ok(self.state.modules.get(res).unwrap().dupe());
         }
 
         let handle = self.state.import_handle(&self.module_data.handle, module)?;
@@ -1054,12 +1057,10 @@ impl<'a> StateHandle<'a> {
             .module_data
             .deps
             .write()
-            .insert(module, res.dupe())
+            .insert(module, res.handle.dupe())
             .is_none()
         {
-            res.rdeps
-                .lock()
-                .insert(self.module_data.handle.dupe(), self.module_data.dupe());
+            res.rdeps.lock().insert(self.module_data.handle.dupe());
         }
         Ok(res)
     }
