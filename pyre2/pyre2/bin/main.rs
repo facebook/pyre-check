@@ -54,7 +54,12 @@ enum Command {
         /// Files to check (glob supported).
         /// If no file is specified, switch to project-checking mode where the files to
         /// check are determined from the closest configuration file.
+        /// When supplied, `project_excludes` in any config files loaded for these files to check
+        /// are ignored, and we use the default excludes unless overridden with the `--project-excludes` flag.
         files: Vec<String>,
+        /// Files to exclude when type checking.
+        #[clap(long, env = clap_env("PROJECT_EXCLUDES"))]
+        project_excludes: Option<Vec<String>>,
         /// Watch for file changes and re-check them.
         #[clap(long, env = clap_env("WATCH"))]
         watch: bool,
@@ -164,6 +169,7 @@ async fn run_command(command: Command, allow_forget: bool) -> anyhow::Result<Com
     match command {
         Command::Check {
             files,
+            project_excludes: _,
             watch,
             config,
             args,

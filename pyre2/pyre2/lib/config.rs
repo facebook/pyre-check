@@ -28,8 +28,15 @@ pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
 #[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
 pub struct ConfigFile {
     /// Files that should be counted as sources (e.g. user-space code).
+    /// NOTE: this is never replaced with CLI args in this config, but may be overridden by CLI args where used.
     #[serde(default = "ConfigFile::default_project_includes")]
     pub project_includes: Globs,
+
+    /// Files that should be excluded as sources (e.g. user-space code). These take
+    /// precedence over `project_includes`.
+    /// NOTE: this is never replaced with CLI args in this config, but may be overridden by CLI args where used.
+    #[serde(default = "ConfigFile::default_project_excludes")]
+    pub project_excludes: Globs,
 
     /// corresponds to --search-path in Args, the list of directories where imports are
     /// found (including type checked files).
@@ -60,6 +67,7 @@ impl Default for ConfigFile {
             python_version: PythonVersion::default(),
             site_package_path: Vec::new(),
             project_includes: Self::default_project_includes(),
+            project_excludes: Self::default_project_excludes(),
         }
     }
 }
@@ -67,6 +75,10 @@ impl Default for ConfigFile {
 impl ConfigFile {
     pub fn default_project_includes() -> Globs {
         Globs::new(vec!["".to_owned()])
+    }
+
+    pub fn default_project_excludes() -> Globs {
+        Globs::new(vec!["**/__pycache__/**".to_owned(), "**/.*".to_owned()])
     }
 
     pub fn default_python_platform() -> String {
@@ -97,6 +109,7 @@ impl ConfigFile {
                 base.push(site_package_path.as_path());
                 *site_package_path = base;
             });
+        self.project_excludes = self.project_excludes.clone().from_root(config_root);
     }
 
     pub fn from_file(config_path: &Path) -> anyhow::Result<ConfigFile> {
@@ -262,7 +275,11 @@ mod tests {
         config.rewrite_with_path_to_config(&test_path);
 
         let expected_config = ConfigFile {
-            project_includes: Globs::new(vec![path_str]),
+            project_includes: Globs::new(vec![path_str.clone()]),
+            project_excludes: Globs::new(vec![
+                path_str.clone() + "/**/__pycache__/**",
+                path_str.clone() + "/**/.*",
+            ]),
             search_path: vec![test_path.clone(), test_path.clone()],
             ..ConfigFile::default()
         };
