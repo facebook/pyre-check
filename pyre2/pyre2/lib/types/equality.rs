@@ -16,6 +16,7 @@ use starlark_map::ordered_set::OrderedSet;
 use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use starlark_map::Hashed;
 use vec1::Vec1;
 
 use crate::module::module_name::ModuleName;
@@ -31,6 +32,11 @@ use crate::util::uniques::Unique;
 pub struct TypeEqCtx {
     /// These Var's on the LHS are equal to those on the RHS
     unique: SmallMap<Unique, Unique>,
+    /// These are Arc values we have previously declared to be equal.
+    /// Important we cache them as otherwise on an enum with N field,
+    /// we have N class equalities, and the cost of a class equality includes
+    /// comparing the field names stored inside the class. That makes it O(N^2).
+    arcs: SmallSet<(*const (), *const ())>,
     // Things that have identity
     param_spec: SmallMap<ParamSpec, ParamSpec>,
     type_var: SmallMap<TypeVar, TypeVar>,
@@ -187,7 +193,18 @@ impl<T: TypeEq + ?Sized> TypeEq for Arc<T> {
         if Arc::ptr_eq(self, other) {
             return true;
         }
-        self.as_ref().type_eq(other.as_ref(), ctx)
+        let key = Hashed::new((
+            Arc::as_ptr(self) as *const (),
+            Arc::as_ptr(other) as *const (),
+        ));
+        if ctx.arcs.contains_hashed(key.as_ref()) {
+            return true;
+        }
+        let res = self.as_ref().type_eq(other.as_ref(), ctx);
+        if res {
+            ctx.arcs.insert_hashed(key);
+        }
+        res
     }
 }
 
