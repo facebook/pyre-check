@@ -29,6 +29,8 @@ pub enum ErrorContext {
     BinaryOp(String, Type, Type),
     /// for x in y: ...
     Iteration(Type),
+    /// async for x in y: ...
+    AsyncIteration(Type),
     /// await x
     Await(Type),
     /// x[y]

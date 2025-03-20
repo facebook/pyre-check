@@ -103,7 +103,7 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.push(Scope::comprehension(range));
         for comp in comprehensions.iter_mut() {
             self.scopes.current_mut().stat.expr_lvalue(&comp.target);
-            let make_binding = |k| Binding::IterableValue(k, comp.iter.clone());
+            let make_binding = |k| Binding::IterableValue(k, comp.iter.clone(), comp.is_async);
             self.bind_target(&comp.target, &make_binding, None);
             self.ensure_expr(&mut comp.target);
             for x in comp.ifs.iter() {

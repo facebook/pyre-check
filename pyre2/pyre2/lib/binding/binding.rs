@@ -673,7 +673,9 @@ pub enum Binding {
     /// The return type of a function.
     ReturnType(ReturnType),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
-    IterableValue(Option<Idx<KeyAnnotation>>, Expr),
+    /// The second argument is the expression being iterated.
+    /// The third argument indicates whether iteration is async or not.
+    IterableValue(Option<Idx<KeyAnnotation>>, Expr, bool),
     /// A value produced by entering a context manager.
     /// The second argument is the expression of the context manager. The third argument
     /// indicates whether the context manager is async or not.
@@ -793,8 +795,12 @@ impl DisplayWith<Bindings> for Binding {
             }
             Self::ReturnImplicit(_) => write!(f, "implicit return"),
             Self::ReturnType(_) => write!(f, "return type"),
-            Self::IterableValue(None, x) => write!(f, "iter {}", m.display(x)),
-            Self::IterableValue(Some(k), x) => {
+            Self::IterableValue(None, x, true) => write!(f, "async iter {}", m.display(x)),
+            Self::IterableValue(Some(k), x, true) => {
+                write!(f, "async iter {}: {}", ctx.display(*k), m.display(x))
+            }
+            Self::IterableValue(None, x, false) => write!(f, "iter {}", m.display(x)),
+            Self::IterableValue(Some(k), x, false) => {
                 write!(f, "iter {}: {}", ctx.display(*k), m.display(x))
             }
             Self::ExceptionHandler(box x, true) => write!(f, "except* {}", m.display(x)),

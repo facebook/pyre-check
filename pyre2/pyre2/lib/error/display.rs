@@ -31,6 +31,7 @@ impl ErrorContext {
                 )
             }
             Self::Iteration(ty) => format!("Type `{ty}` is not iterable"),
+            Self::AsyncIteration(ty) => format!("Type `{ty}` is not an async iterable"),
             Self::Await(ty) => format!("Type `{ty}` is not awaitable"),
             Self::Index(ty) => format!("Cannot index into `{ty}`"),
             Self::SetItem(ty) => format!("Item assignment is not supported on `{ty}`"),

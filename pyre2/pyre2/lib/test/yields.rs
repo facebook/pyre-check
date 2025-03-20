@@ -310,3 +310,19 @@ def f() -> Generator[None, None, int]:
     return "oops"  # E: Returned type `Literal['oops']` is not assignable to declared return type `int`
     "#,
 );
+
+testcase!(
+    test_async_iterate,
+    r#"
+from typing import AsyncGenerator, assert_type
+async def gen() -> AsyncGenerator[int, None]:
+    yield 2
+async def test() -> None:
+    async for x in gen():
+        assert_type(x, int)
+    async for y in [1, 2, 3]:  # E: Type `list[int]` is not an async iterable
+        pass
+    for z in gen():  # E: Type `AsyncGenerator[int, None]` is not iterable
+        pass
+"#,
+);

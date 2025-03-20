@@ -476,6 +476,34 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    /// Given a type, determine the async iteration type; this is the type
+    /// of `x` if we were to loop using `async for x in iterable`.
+    pub fn async_iterate(
+        &self,
+        iterable: &Type,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Vec<Iterable> {
+        match iterable {
+            Type::Var(v) if let Some(_guard) = self.recurser.recurse(*v) => {
+                self.async_iterate(&self.solver().force_var(*v), range, errors)
+            }
+            _ => {
+                let context = || ErrorContext::AsyncIteration(iterable.clone());
+                let ty = self.unwrap_async_iterable(iterable).unwrap_or_else(|| {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::NotIterable,
+                        None,
+                        context().format(),
+                    )
+                });
+                vec![Iterable::OfType(ty)]
+            }
+        }
+    }
+
     fn check_is_exception(
         &self,
         x: &Expr,
@@ -1487,7 +1515,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     None,
                 )
             }
-            Binding::IterableValue(ann, e) => {
+            Binding::IterableValue(ann, e, is_async) => {
                 let ty = ann.map(|k| self.get_idx(k));
                 let tcc: &dyn Fn() -> TypeCheckContext = &|| {
                     let (name, annot_type) =
@@ -1502,14 +1530,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         name, annot_type,
                     ))
                 };
-                let hint = ty
-                    .clone()
-                    .and_then(|x| x.ty().map(|ty| self.stdlib.iterable(ty.clone()).to_type()));
-                let iterables = self.iterate(
-                    &self.expr(e, hint.as_ref().map(|t| (t, tcc)), errors),
-                    e.range(),
-                    errors,
-                );
+                let iterables = if *is_async {
+                    let hint = ty.clone().and_then(|x| {
+                        x.ty()
+                            .map(|ty| self.stdlib.async_iterable(ty.clone()).to_type())
+                    });
+                    self.async_iterate(
+                        &self.expr(e, hint.as_ref().map(|t| (t, tcc)), errors),
+                        e.range(),
+                        errors,
+                    )
+                } else {
+                    let hint = ty
+                        .clone()
+                        .and_then(|x| x.ty().map(|ty| self.stdlib.iterable(ty.clone()).to_type()));
+                    self.iterate(
+                        &self.expr(e, hint.as_ref().map(|t| (t, tcc)), errors),
+                        e.range(),
+                        errors,
+                    )
+                };
                 let mut values = Vec::new();
                 for iterable in iterables {
                     match iterable {

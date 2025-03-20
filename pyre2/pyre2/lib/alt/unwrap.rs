@@ -102,6 +102,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn unwrap_async_iterable(&self, ty: &Type) -> Option<Type> {
+        let iter_ty = self.fresh_var();
+        let iterable_ty = self.stdlib.async_iterable(iter_ty.to_type()).to_type();
+        if self.is_subset_eq(ty, &iterable_ty) {
+            Some(self.expand_var(iter_ty))
+        } else {
+            None
+        }
+    }
+
     pub fn decompose_dict(&self, ty: &Type) -> (Option<Type>, Option<Type>) {
         let key = self.fresh_var();
         let value = self.fresh_var();
