@@ -47,7 +47,7 @@ pub struct ClassMetadata {
 
 impl VisitMut<Type> for ClassMetadata {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.visit_mut(f);
+        self.mro.visit_mut(f);
     }
 }
 
@@ -175,15 +175,19 @@ impl ClassMetadata {
     pub fn ancestors_no_object(&self) -> &[ClassType] {
         self.mro.ancestors_no_object()
     }
-
-    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        self.mro.visit_mut(&mut f)
-    }
 }
 
 #[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
 pub struct ClassSynthesizedField {
     pub inner: Arc<ClassField>,
+}
+
+impl VisitMut<Type> for ClassSynthesizedField {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        let mut v = (*self.inner).clone();
+        v.visit_mut(f);
+        self.inner = Arc::new(v);
+    }
 }
 
 impl Display for ClassSynthesizedField {
@@ -198,12 +202,6 @@ impl ClassSynthesizedField {
             inner: Arc::new(ClassField::new_synthesized(ty)),
         }
     }
-
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let mut v = (*self.inner).clone();
-        v.visit_mut(f);
-        self.inner = Arc::new(v);
-    }
 }
 
 /// A class's synthesized fields, such as a dataclass's `__init__` method.
@@ -212,7 +210,9 @@ pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
 
 impl VisitMut<Type> for ClassSynthesizedFields {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.visit_mut(f);
+        for field in self.0.values_mut() {
+            field.visit0_mut(f);
+        }
     }
 }
 
@@ -223,12 +223,6 @@ impl ClassSynthesizedFields {
 
     pub fn get(&self, name: &Name) -> Option<&ClassSynthesizedField> {
         self.0.get(name)
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        for field in self.0.values_mut() {
-            field.visit_mut(f);
-        }
     }
 }
 
@@ -344,6 +338,17 @@ enum Mro {
     Cyclic,
 }
 
+impl VisitMut<Type> for Mro {
+    fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
+        match self {
+            Mro::Resolved(ref mut ancestors) => {
+                ancestors.iter_mut().for_each(|c| c.visit_mut(&mut f))
+            }
+            Mro::Cyclic => {}
+        }
+    }
+}
+
 impl Display for Mro {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
@@ -397,15 +402,6 @@ impl Mro {
         match self {
             Mro::Resolved(ancestors) => ancestors,
             Mro::Cyclic => &[],
-        }
-    }
-
-    pub fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Mro::Resolved(ref mut ancestors) => {
-                ancestors.iter_mut().for_each(|c| c.visit_mut(&mut f))
-            }
-            Mro::Cyclic => {}
         }
     }
 }

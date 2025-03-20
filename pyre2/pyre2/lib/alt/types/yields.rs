@@ -21,7 +21,9 @@ pub struct YieldResult {
 
 impl VisitMut<Type> for YieldResult {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.visit_mut(f);
+        let YieldResult { yield_ty, send_ty } = self;
+        yield_ty.visit0_mut(f);
+        send_ty.visit0_mut(f);
     }
 }
 
@@ -34,7 +36,14 @@ pub struct YieldFromResult {
 
 impl VisitMut<Type> for YieldFromResult {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.visit_mut(f);
+        let YieldFromResult {
+            yield_ty,
+            send_ty,
+            return_ty,
+        } = self;
+        yield_ty.visit0_mut(f);
+        send_ty.visit0_mut(f);
+        return_ty.visit0_mut(f);
     }
 }
 
@@ -51,12 +60,6 @@ impl YieldResult {
             yield_ty: Type::any_error(),
             send_ty: Type::any_error(),
         }
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let Self { yield_ty, send_ty } = self;
-        yield_ty.visit_mut(f);
-        send_ty.visit_mut(f);
     }
 }
 
@@ -92,17 +95,6 @@ impl YieldFromResult {
             send_ty,
             return_ty,
         }
-    }
-
-    pub fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let Self {
-            yield_ty,
-            send_ty,
-            return_ty,
-        } = self;
-        yield_ty.visit_mut(f);
-        send_ty.visit_mut(f);
-        return_ty.visit_mut(f);
     }
 }
 
