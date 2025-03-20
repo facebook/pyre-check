@@ -815,16 +815,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn context_value(
         &self,
-        context_manager_type: Type,
+        context_manager_type: &Type,
         kind: ContextManagerKind,
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
         let context = || ErrorContext::BadContextManager(context_manager_type.clone());
         let enter_type =
-            self.context_value_enter(&context_manager_type, kind, range, errors, Some(&context));
+            self.context_value_enter(context_manager_type, kind, range, errors, Some(&context));
         let exit_type =
-            self.context_value_exit(&context_manager_type, kind, range, errors, Some(&context));
+            self.context_value_exit(context_manager_type, kind, range, errors, Some(&context));
         self.check_type(
             &Type::Union(vec![self.stdlib.bool().to_type(), Type::None]),
             &exit_type,
@@ -1561,8 +1561,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::ContextValue(ann, e, range, kind) => {
                 let context_manager = self.get_idx(*e);
-                let context_value =
-                    self.context_value(context_manager.arc_clone(), *kind, *range, errors);
+                let context_value = self.context_value(&context_manager, *kind, *range, errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty().map(|t| (t, &x.target))) {
                     Some((ty, target)) => {
