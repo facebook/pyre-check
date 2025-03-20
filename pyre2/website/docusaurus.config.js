@@ -30,7 +30,11 @@ function getNavBarItems() {
     },
     // Hide sandbox for internal users since wasm is not supported internally
     process.env.INTERNAL_STATIC_DOCS
-      ? null
+      ? {
+          href: 'https://pyrefly.org/try',
+          label: 'Try',
+          position: 'left',
+        }
       : {
           to: 'try/',
           activeBasePath: 'try',
