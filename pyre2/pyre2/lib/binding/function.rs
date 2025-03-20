@@ -24,7 +24,6 @@ use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::FunctionSource;
-use crate::binding::binding::ImplicitReturn;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
@@ -32,6 +31,7 @@ use crate::binding::binding::KeyFunction;
 use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::ReturnExplicit;
+use crate::binding::binding::ReturnImplicit;
 use crate::binding::binding::ReturnType;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::FuncInfo;
@@ -213,7 +213,7 @@ impl<'a> BindingsBuilder<'a> {
         // Implicit return
         let implicit_return = self.table.insert(
             Key::ReturnImplicit(ShortIdentifier::new(&func_name)),
-            Binding::ReturnImplicit(ImplicitReturn {
+            Binding::ReturnImplicit(ReturnImplicit {
                 last_exprs: last_expr_keys,
                 function_source: source,
             }),

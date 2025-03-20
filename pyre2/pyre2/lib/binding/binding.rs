@@ -627,7 +627,7 @@ pub struct ReturnType {
 }
 
 #[derive(Clone, Debug)]
-pub struct ImplicitReturn {
+pub struct ReturnImplicit {
     /// Terminal statements in the function control flow, used to determine whether the
     /// function has an implicit `None` return.
     /// When `None`, the function always has an implicit `None` return. When `Some(xs)`,
@@ -669,7 +669,7 @@ pub enum Binding {
     /// An expression returned from a function.
     ReturnExplicit(ReturnExplicit),
     /// The implicit return from a function.
-    ReturnImplicit(ImplicitReturn),
+    ReturnImplicit(ReturnImplicit),
     /// The return type of a function.
     ReturnType(ReturnType),
     /// A value in an iterable expression, e.g. IterableValue(\[1\]) represents 1.
