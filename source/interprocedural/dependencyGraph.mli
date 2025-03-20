@@ -73,11 +73,12 @@ type whole_program_dependency_graph = {
 (** Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
     the callables we are actually analyzing. Then reverse the graph, which maps dependers to
     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
-    maps dependees to dependers. *)
+    maps dependees to dependers. Always include the decorated targets from `decorator_resolution`. *)
 val build_whole_program_dependency_graph
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   prune:PruneMethod.t ->
   initial_callables:FetchCallables.t ->
   call_graph:CallGraph.WholeProgramCallGraph.t ->
   overrides:OverrideGraph.Heap.t ->
+  decorator_resolution:CallGraph.DecoratorResolution.Results.t ->
   whole_program_dependency_graph

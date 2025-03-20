@@ -882,10 +882,16 @@ let run_taint_analysis
           ~decorators:
             (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
                callables_to_decorators_map)
+          ~decorator_resolution
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~definitions
           ~callables_to_definitions_map:
-            (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map))
+            (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+          ~create_dependency_for:
+            (if higher_order_call_graph then
+               Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
+            else
+              Interprocedural.CallGraph.AllTargetsUseCase.TaintAnalysisDependency))
   in
   let () = StepLogger.finish step_logger in
 
@@ -912,6 +918,7 @@ let run_taint_analysis
       ~initial_callables
       ~call_graph:original_whole_program_call_graph
       ~overrides:override_graph_heap
+      ~decorator_resolution
   in
   let () = StepLogger.finish step_logger in
 
@@ -971,6 +978,7 @@ let run_taint_analysis
           ~initial_callables
           ~call_graph:whole_program_call_graph
           ~overrides:override_graph_heap
+          ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
       in
       let () = StepLogger.finish step_logger in
       let () =

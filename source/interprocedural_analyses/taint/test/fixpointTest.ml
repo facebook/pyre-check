@@ -48,6 +48,7 @@ let assert_fixpoint
       ~initial_callables
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
+      ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
   in
   let state =
     TaintFixpoint.record_initial_models

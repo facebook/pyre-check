@@ -5003,199 +5003,6 @@ let call_graph_of_callable
         ~define:(Node.value define)
 
 
-(** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
-    callees. *)
-module WholeProgramCallGraph = struct
-  type t = Target.t list Target.Map.Tree.t
-
-  let empty = Target.Map.Tree.empty
-
-  let is_empty = Target.Map.Tree.is_empty
-
-  let of_alist_exn = Target.Map.Tree.of_alist_exn
-
-  let add_or_exn ~callable ~callees call_graph =
-    Target.Map.Tree.update call_graph callable ~f:(function
-        | None -> callees
-        | Some _ ->
-            Format.asprintf "Program call graph already has callees for `%a`" Target.pp callable
-            |> failwith)
-
-
-  let fold graph ~init ~f =
-    Target.Map.Tree.fold graph ~init ~f:(fun ~key:target ~data:callees -> f ~target ~callees)
-
-
-  let merge_disjoint left right =
-    Target.Map.Tree.merge_skewed
-      ~combine:(fun ~key:_ _ _ -> failwith "call graphs are not disjoint")
-      left
-      right
-
-
-  let to_target_graph graph = graph
-end
-
-(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
-    `DefineCallGraph.t`. *)
-module SharedMemory = struct
-  module T =
-    SaveLoadSharedMemory.MakeKeyValue
-      (Target.SharedMemoryKey)
-      (struct
-        type t = DefineCallGraph.t
-
-        let prefix = Hack_parallel.Std.Prefix.make ()
-
-        let handle_prefix = Hack_parallel.Std.Prefix.make ()
-
-        let description = "call graphs of defines"
-      end)
-
-  include T
-
-  type call_graphs = {
-    whole_program_call_graph: WholeProgramCallGraph.t;
-    define_call_graphs: T.t;
-  }
-
-  module ReadOnly = struct
-    type t = T.ReadOnly.t
-
-    let get handle ~cache ~callable = T.ReadOnly.get handle ~cache callable
-  end
-
-  let callables = T.keys
-
-  let read_only = T.read_only
-
-  let cleanup = T.cleanup
-
-  let save_to_cache = T.save_to_cache
-
-  let load_from_cache = T.load_from_cache
-
-  let default_scheduler_policy =
-    Scheduler.Policy.fixed_chunk_size
-      ~minimum_chunks_per_worker:1
-      ~minimum_chunk_size:2
-      ~preferred_chunk_size:5000
-      ()
-
-
-  (** Build the whole call graph of the program.
-
-      The overrides must be computed first because we depend on a global shared memory graph to
-      include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
-      fixpoint. *)
-  let build_whole_program_call_graph
-      ~scheduler
-      ~static_analysis_configuration:
-        ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
-      ~pyre_api
-      ~resolve_module_path
-      ~override_graph
-      ~store_shared_memory
-      ~attribute_targets
-      ~decorators
-      ~method_kinds
-      ~skip_analysis_targets
-      ~definitions
-      ~callables_to_definitions_map
-    =
-    let attribute_targets = attribute_targets |> Target.Set.elements |> Target.HashSet.of_list in
-    let define_call_graphs, whole_program_call_graph =
-      let build_call_graph ((define_call_graphs, whole_program_call_graph) as so_far) callable =
-        if Target.Set.mem callable skip_analysis_targets then
-          so_far
-        else
-          let callable_call_graph =
-            Alarm.with_alarm
-              ~max_time_in_seconds:60
-              ~event_name:"call graph building"
-              ~callable:(Target.show_pretty callable)
-              (fun () ->
-                call_graph_of_callable
-                  ~static_analysis_configuration
-                  ~pyre_api
-                  ~override_graph
-                  ~callables_to_definitions_map
-                  ~attribute_targets
-                  ~decorators
-                  ~method_kinds
-                  ~callable)
-              ()
-          in
-          let define_call_graphs =
-            if store_shared_memory then
-              T.AddOnly.add define_call_graphs callable callable_call_graph
-            else
-              define_call_graphs
-          in
-          let whole_program_call_graph =
-            WholeProgramCallGraph.add_or_exn
-              whole_program_call_graph
-              ~callable
-              ~callees:
-                (DefineCallGraph.all_targets
-                   ~use_case:AllTargetsUseCase.TaintAnalysisDependency
-                   callable_call_graph)
-          in
-          define_call_graphs, whole_program_call_graph
-      in
-      let reduce
-          (left_define_call_graphs, left_whole_program_call_graph)
-          (right_define_call_graphs, right_whole_program_call_graph)
-        =
-        (* We should check the keys in two define call graphs are disjoint. If not disjoint, we should
-         * fail the analysis. But we don't perform such check due to performance reasons.
-         * Additionally, since this `reduce` is used in `Scheduler.map_reduce`, the right parameter
-         * is accumulated, so we must select left as smaller and right as larger for O(n) merging. *)
-        ( T.AddOnly.merge_same_handle_disjoint_keys
-            ~smaller:left_define_call_graphs
-            ~larger:right_define_call_graphs,
-          WholeProgramCallGraph.merge_disjoint
-            left_whole_program_call_graph
-            right_whole_program_call_graph )
-      in
-      let define_call_graphs = T.create () |> T.add_only in
-      let empty_define_call_graphs = T.AddOnly.create_empty define_call_graphs in
-      let scheduler_policy =
-        Scheduler.Policy.from_configuration_or_default
-          scheduler_policies
-          Configuration.ScheduleIdentifier.CallGraph
-          ~default:default_scheduler_policy
-      in
-      Scheduler.map_reduce
-        scheduler
-        ~policy:scheduler_policy
-        ~initial:(define_call_graphs, WholeProgramCallGraph.empty)
-        ~map:(fun definitions ->
-          List.fold
-            definitions
-            ~init:(empty_define_call_graphs, WholeProgramCallGraph.empty)
-            ~f:build_call_graph)
-        ~reduce
-        ~inputs:definitions
-        ()
-    in
-    let define_call_graphs = T.from_add_only define_call_graphs in
-    let define_call_graphs_read_only = T.read_only define_call_graphs in
-    let () =
-      DefineCallGraph.save_to_directory
-        ~scheduler
-        ~static_analysis_configuration
-        ~callables_to_definitions_map
-        ~resolve_module_path
-        ~get_call_graph:(fun callable ->
-          ReadOnly.get define_call_graphs_read_only ~cache:false ~callable)
-        ~json_kind:NewlineDelimitedJson.Kind.CallGraph
-        ~filename_prefix:"call-graph"
-        ~callables:definitions
-    in
-    { whole_program_call_graph; define_call_graphs }
-end
-
 module DecoratorDefine = struct
   type t = {
     define: Define.t;
@@ -5397,17 +5204,224 @@ module DecoratorResolution = struct
       |> Target.DefinesSharedMemory.add_alist_sequential callables_to_definitions_map
 
 
-    let register_decorator_call_graphs
-        ~decorator_resolution
-        ({ SharedMemory.define_call_graphs; _ } as call_graphs)
-      =
-      {
-        call_graphs with
-        define_call_graphs =
-          decorator_resolution
-          |> Target.Map.to_alist
-          |> List.map ~f:(fun (callable, { DecoratorDefine.call_graph; _ }) -> callable, call_graph)
-          |> SharedMemory.add_alist_sequential define_call_graphs;
-      }
+    let decorated_targets = Target.Map.keys
   end
+end
+
+(** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
+    callees. *)
+module WholeProgramCallGraph = struct
+  type t = Target.t list Target.Map.Tree.t
+
+  let empty = Target.Map.Tree.empty
+
+  let is_empty = Target.Map.Tree.is_empty
+
+  let of_alist_exn = Target.Map.Tree.of_alist_exn
+
+  let add_or_exn ~callable ~callees call_graph =
+    Target.Map.Tree.update call_graph callable ~f:(function
+        | None -> callees
+        | Some _ ->
+            Format.asprintf "Program call graph already has callees for `%a`" Target.pp callable
+            |> failwith)
+
+
+  let fold graph ~init ~f =
+    Target.Map.Tree.fold graph ~init ~f:(fun ~key:target ~data:callees -> f ~target ~callees)
+
+
+  let merge_disjoint left right =
+    Target.Map.Tree.merge_skewed
+      ~combine:(fun ~key:_ _ _ -> failwith "call graphs are not disjoint")
+      left
+      right
+
+
+  let to_target_graph graph = graph
+end
+
+(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
+    `DefineCallGraph.t`. *)
+module SharedMemory = struct
+  module T =
+    SaveLoadSharedMemory.MakeKeyValue
+      (Target.SharedMemoryKey)
+      (struct
+        type t = DefineCallGraph.t
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let handle_prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "call graphs of defines"
+      end)
+
+  include T
+
+  type call_graphs = {
+    whole_program_call_graph: WholeProgramCallGraph.t;
+    define_call_graphs: T.t;
+  }
+
+  module ReadOnly = struct
+    type t = T.ReadOnly.t
+
+    let get handle ~cache ~callable = T.ReadOnly.get handle ~cache callable
+  end
+
+  let callables = T.keys
+
+  let read_only = T.read_only
+
+  let cleanup = T.cleanup
+
+  let save_to_cache = T.save_to_cache
+
+  let load_from_cache = T.load_from_cache
+
+  let default_scheduler_policy =
+    Scheduler.Policy.fixed_chunk_size
+      ~minimum_chunks_per_worker:1
+      ~minimum_chunk_size:2
+      ~preferred_chunk_size:5000
+      ()
+
+
+  let register_decorator_call_graphs
+      ~decorator_resolution
+      ~use_case
+      { whole_program_call_graph; define_call_graphs }
+    =
+    let call_graphs =
+      decorator_resolution
+      |> Target.Map.to_alist
+      |> List.map ~f:(fun (callable, { DecoratorDefine.call_graph; _ }) -> callable, call_graph)
+    in
+    {
+      whole_program_call_graph =
+        List.fold
+          call_graphs
+          ~f:(fun whole_program_call_graph (callable, call_graph) ->
+            WholeProgramCallGraph.add_or_exn
+              whole_program_call_graph
+              ~callable
+              ~callees:(DefineCallGraph.all_targets ~use_case call_graph))
+          ~init:whole_program_call_graph;
+      define_call_graphs = add_alist_sequential define_call_graphs call_graphs;
+    }
+
+
+  (** Build the whole call graph of the program.
+
+      The overrides must be computed first because we depend on a global shared memory graph to
+      include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
+      fixpoint. *)
+  let build_whole_program_call_graph
+      ~scheduler
+      ~static_analysis_configuration:
+        ({ Configuration.StaticAnalysis.scheduler_policies; _ } as static_analysis_configuration)
+      ~pyre_api
+      ~resolve_module_path
+      ~override_graph
+      ~store_shared_memory
+      ~attribute_targets
+      ~decorators
+      ~decorator_resolution
+      ~method_kinds
+      ~skip_analysis_targets
+      ~definitions
+      ~callables_to_definitions_map
+      ~create_dependency_for
+    =
+    let attribute_targets = attribute_targets |> Target.Set.elements |> Target.HashSet.of_list in
+    let define_call_graphs, whole_program_call_graph =
+      let build_call_graph ((define_call_graphs, whole_program_call_graph) as so_far) callable =
+        if Target.Set.mem callable skip_analysis_targets then
+          so_far
+        else
+          let callable_call_graph =
+            Alarm.with_alarm
+              ~max_time_in_seconds:60
+              ~event_name:"call graph building"
+              ~callable:(Target.show_pretty callable)
+              (fun () ->
+                call_graph_of_callable
+                  ~static_analysis_configuration
+                  ~pyre_api
+                  ~override_graph
+                  ~attribute_targets
+                  ~decorators
+                  ~method_kinds
+                  ~callables_to_definitions_map
+                  ~callable)
+              ()
+          in
+          let define_call_graphs =
+            if store_shared_memory then
+              T.AddOnly.add define_call_graphs callable callable_call_graph
+            else
+              define_call_graphs
+          in
+          let whole_program_call_graph =
+            WholeProgramCallGraph.add_or_exn
+              whole_program_call_graph
+              ~callable
+              ~callees:
+                (DefineCallGraph.all_targets ~use_case:create_dependency_for callable_call_graph)
+          in
+          define_call_graphs, whole_program_call_graph
+      in
+      let reduce
+          (left_define_call_graphs, left_whole_program_call_graph)
+          (right_define_call_graphs, right_whole_program_call_graph)
+        =
+        (* We should check the keys in two define call graphs are disjoint. If not disjoint, we should
+         * fail the analysis. But we don't perform such check due to performance reasons.
+         * Additionally, since this `reduce` is used in `Scheduler.map_reduce`, the right parameter
+         * is accumulated, so we must select left as smaller and right as larger for O(n) merging. *)
+        ( T.AddOnly.merge_same_handle_disjoint_keys
+            ~smaller:left_define_call_graphs
+            ~larger:right_define_call_graphs,
+          WholeProgramCallGraph.merge_disjoint
+            left_whole_program_call_graph
+            right_whole_program_call_graph )
+      in
+      let define_call_graphs = T.create () |> T.add_only in
+      let empty_define_call_graphs = T.AddOnly.create_empty define_call_graphs in
+      let scheduler_policy =
+        Scheduler.Policy.from_configuration_or_default
+          scheduler_policies
+          Configuration.ScheduleIdentifier.CallGraph
+          ~default:default_scheduler_policy
+      in
+      Scheduler.map_reduce
+        scheduler
+        ~policy:scheduler_policy
+        ~initial:(define_call_graphs, WholeProgramCallGraph.empty)
+        ~map:(fun definitions ->
+          List.fold
+            definitions
+            ~init:(empty_define_call_graphs, WholeProgramCallGraph.empty)
+            ~f:build_call_graph)
+        ~reduce
+        ~inputs:definitions
+        ()
+    in
+    let define_call_graphs = T.from_add_only define_call_graphs in
+    let define_call_graphs_read_only = T.read_only define_call_graphs in
+    let () =
+      DefineCallGraph.save_to_directory
+        ~scheduler
+        ~static_analysis_configuration
+        ~callables_to_definitions_map
+        ~resolve_module_path
+        ~get_call_graph:(fun callable ->
+          ReadOnly.get define_call_graphs_read_only ~cache:false ~callable)
+        ~json_kind:NewlineDelimitedJson.Kind.CallGraph
+        ~filename_prefix:"call-graph"
+        ~callables:definitions
+    in
+    { whole_program_call_graph; define_call_graphs }
+    |> register_decorator_call_graphs ~use_case:create_dependency_for ~decorator_resolution
 end

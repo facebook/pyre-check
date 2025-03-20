@@ -91,11 +91,13 @@ let assert_higher_order_call_graph_fixpoint
       ~store_shared_memory:true
       ~attribute_targets:Target.Set.empty
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
+      ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
   let dependency_graph =
     DependencyGraph.build_whole_program_dependency_graph
@@ -104,6 +106,7 @@ let assert_higher_order_call_graph_fixpoint
       ~initial_callables
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
+      ~decorator_resolution
   in
   let fixpoint_state =
     CallGraphFixpoint.compute
@@ -1115,6 +1118,18 @@ let test_higher_order_call_graph_fixpoint =
                                                 method_name = "__call__";
                                                 kind = Normal;
                                               });
+                                         CallTarget.create
+                                           (create_parameterized_target
+                                              ~regular:
+                                                (Target.Regular.Function
+                                                   { name = "test.log.inner"; kind = Normal })
+                                              ~parameters:
+                                                [
+                                                  ( create_positional_parameter 0 "func",
+                                                    Target.Regular.Function
+                                                      { name = "test.foo"; kind = Normal }
+                                                    |> Target.from_regular );
+                                                ]);
                                        ]
                                      ~higher_order_parameters:
                                        (HigherOrderParameterMap.from_list
@@ -1143,7 +1158,20 @@ let test_higher_order_call_graph_fixpoint =
                                  ]
                                ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create
+                       (create_parameterized_target
+                          ~regular:
+                            (Target.Regular.Function
+                               { name = "test.log.inner.wrapper"; kind = Normal })
+                          ~parameters:
+                            [
+                              ( AccessPath.Root.Variable "$parameter$func",
+                                Target.Regular.Function { name = "test.foo"; kind = Normal }
+                                |> Target.from_regular );
+                            ]);
+                   ];
                };
              ]
            ();

@@ -191,13 +191,14 @@ type whole_program_dependency_graph = {
 (** Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
     the callables we are actually analyzing. Then reverse the graph, which maps dependers to
     dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
-    maps dependees to dependers. *)
+    maps dependees to dependers. Always include the decorated targets from `decorator_resolution`. *)
 let build_whole_program_dependency_graph
     ~static_analysis_configuration
     ~prune
     ~initial_callables
     ~call_graph
     ~overrides
+    ~decorator_resolution
   =
   let reverse_dependency_graph = Reversed.from_overrides overrides in
   let override_targets = Target.Map.Tree.keys reverse_dependency_graph in
@@ -231,6 +232,14 @@ let build_whole_program_dependency_graph
         initial_callables |> FetchCallables.get_definitions |> List.rev_append override_targets
     | PruneMethod.Internals -> FetchCallables.get_internal_definitions initial_callables
     | PruneMethod.Entrypoints entrypoints -> entrypoints
+  in
+  (* Always add the `kind=Decorated` targets from `decorator_resolution` in the dependency graph,
+     since this is also used to compute dependencies for the call graph fixpoint. For the taint
+     fixpoint, dependencies are computed with an empty `decorator_resolution`. *)
+  let callables_to_analyze =
+    List.rev_append
+      (CallGraph.DecoratorResolution.Results.decorated_targets decorator_resolution)
+      callables_to_analyze
   in
   let ({ dependency_graph; _ } as whole_program_dependency_graph) =
     reverse_dependency_graph

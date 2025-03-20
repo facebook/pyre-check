@@ -737,11 +737,13 @@ let initialize
       ~store_shared_memory:true
       ~attribute_targets:(SharedModels.object_targets initial_models)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
+      ~decorator_resolution
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets:Target.Set.empty
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
   let dependency_graph =
     DependencyGraph.build_whole_program_dependency_graph
@@ -750,6 +752,7 @@ let initialize
       ~initial_callables:initial_callables_in_source
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
+      ~decorator_resolution
   in
   let ({ CallGraphFixpoint.whole_program_call_graph; get_define_call_graph; _ } as
       call_graph_fixpoint_state)
@@ -969,6 +972,7 @@ let end_to_end_integration_test path context =
         ~initial_callables
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
+        ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
     in
     let initial_models =
       SharedModels.initialize_for_parameterized_callables

@@ -235,7 +235,7 @@ let compute
     ~static_analysis_configuration
     ~resolve_module_path
     ~pyre_api
-    ~call_graph
+    ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
     ~dependency_graph:{ DependencyGraph.dependency_graph; override_targets; _ }
     ~override_graph_shared_memory
     ~skip_analysis_targets
@@ -245,11 +245,6 @@ let compute
     ~max_iterations
     ~maximum_target_depth
   =
-  let { CallGraph.SharedMemory.define_call_graphs; _ } =
-    CallGraph.DecoratorResolution.Results.register_decorator_call_graphs
-      ~decorator_resolution
-      call_graph
-  in
   let callables_to_definitions_map =
     CallGraph.DecoratorResolution.Results.register_decorator_defines
       ~decorator_resolution

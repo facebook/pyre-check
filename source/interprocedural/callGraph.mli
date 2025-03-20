@@ -550,6 +550,62 @@ val higher_order_call_graph_of_define
   maximum_target_depth:int ->
   HigherOrderCallGraph.t
 
+module DecoratorResolution : sig
+  type t =
+    | Decorators of DecoratorDefine.t
+    | PropertySetterUnsupported
+    | Undecorated
+      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
+         ignored. *)
+  [@@deriving show, eq]
+
+  (**
+   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
+   *
+   * For instance:
+   * ```
+   * @decorator
+   * @decorator_factory(1, 2)
+   * def foo(): pass
+   * ```
+   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
+   *)
+  val resolve_exn
+    :  ?debug:bool ->
+    pyre_in_context:PyrePysaEnvironment.InContext.t ->
+    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
+    method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+    decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
+    Target.t ->
+    t
+
+  module Results : sig
+    type t
+
+    val empty : t
+
+    val resolve_batch_exn
+      :  debug:bool ->
+      pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+      scheduler:Scheduler.t ->
+      scheduler_policy:Scheduler.Policy.t ->
+      override_graph:OverrideGraph.SharedMemory.t ->
+      method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+      callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+      decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
+      Target.t list ->
+      t
+
+    val register_decorator_defines
+      :  decorator_resolution:t ->
+      Target.DefinesSharedMemory.t ->
+      Target.DefinesSharedMemory.t
+
+    val decorated_targets : t -> Target.t list
+  end
+end
+
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
     callees. *)
 module WholeProgramCallGraph : sig
@@ -612,68 +668,11 @@ module SharedMemory : sig
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
+    decorator_resolution:DecoratorResolution.Results.t ->
     method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
     skip_analysis_targets:Target.Set.t ->
     definitions:Target.t list ->
     callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+    create_dependency_for:AllTargetsUseCase.t ->
     call_graphs
-end
-
-module DecoratorResolution : sig
-  type t =
-    | Decorators of DecoratorDefine.t
-    | PropertySetterUnsupported
-    | Undecorated
-      (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
-         ignored. *)
-  [@@deriving show, eq]
-
-  (**
-   * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.
-   *
-   * For instance:
-   * ```
-   * @decorator
-   * @decorator_factory(1, 2)
-   * def foo(): pass
-   * ```
-   * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
-   *)
-  val resolve_exn
-    :  ?debug:bool ->
-    pyre_in_context:PyrePysaEnvironment.InContext.t ->
-    override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
-    decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-    Target.t ->
-    t
-
-  module Results : sig
-    type t
-
-    val empty : t
-
-    val resolve_batch_exn
-      :  debug:bool ->
-      pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-      scheduler:Scheduler.t ->
-      scheduler_policy:Scheduler.Policy.t ->
-      override_graph:OverrideGraph.SharedMemory.t ->
-      method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-      callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
-      decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-      Target.t list ->
-      t
-
-    val register_decorator_defines
-      :  decorator_resolution:t ->
-      Target.DefinesSharedMemory.t ->
-      Target.DefinesSharedMemory.t
-
-    val register_decorator_call_graphs
-      :  decorator_resolution:t ->
-      SharedMemory.call_graphs ->
-      SharedMemory.call_graphs
-  end
 end
