@@ -1521,8 +1521,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::ContextValue(ann, e, kind) => {
                 let context_manager = self.expr_infer(e, errors);
-                let context_value =
-                    self.context_value(context_manager.clone(), *kind, e.range(), errors);
+                let context_value = self.context_value(context_manager, *kind, e.range(), errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty().map(|t| (t, &x.target))) {
                     Some((ty, target)) => {
