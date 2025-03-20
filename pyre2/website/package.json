@@ -17,6 +17,8 @@
     "@docusaurus/theme-mermaid": "^2.4.1",
     "@mdx-js/react": "^1.6.22",
     "@monaco-editor/react": "^4.4.5",
+    "@stylexjs/stylex": "^0.11.1",
+    "@stylexjs/webpack-plugin": "^0.11.1",
     "@svgr/webpack": "^5.5.0",
     "clsx": "^1.2.1",
     "docusaurus-plugin-internaldocs-fb": "1.4.0",
