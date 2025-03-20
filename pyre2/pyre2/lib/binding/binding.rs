@@ -662,7 +662,9 @@ pub enum SuperStyle {
     /// A `super(cls, obj)` call. The keys are the arguments.
     ExplicitArgs(Idx<Key>, Idx<Key>),
     /// A no-argument `super()` call. The key is the `Self` type of the class we are in.
-    ImplicitArgs(Idx<KeyClass>),
+    /// The name is the method we are in.
+    #[expect(dead_code)]
+    ImplicitArgs(Idx<KeyClass>, Name),
     /// `super(Any, Any)`. Useful when we encounter an error.
     Any,
 }
@@ -959,7 +961,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::SuperInstance(SuperStyle::ExplicitArgs(cls, obj), _range) => {
                 write!(f, "super({}, {})", ctx.display(*cls), ctx.display(*obj))
             }
-            Self::SuperInstance(SuperStyle::ImplicitArgs(_), _range) => write!(f, "super()"),
+            Self::SuperInstance(SuperStyle::ImplicitArgs(_, _), _range) => write!(f, "super()"),
             Self::SuperInstance(SuperStyle::Any, _range) => write!(f, "super(Any, Any)"),
         }
     }

@@ -234,23 +234,25 @@ impl<'a> BindingsBuilder<'a> {
                 }
                 let nargs = posargs.len();
                 let style = if nargs == 0 {
-                    let mut in_method = false;
+                    let mut method_name = None;
                     let mut self_type = None;
                     for scope in self.scopes.iter_rev() {
                         match &scope.kind {
-                            ScopeKind::Method(_) => {
-                                in_method = true;
+                            ScopeKind::Method(method) => {
+                                method_name = Some(method.name.id.clone());
                             }
-                            ScopeKind::ClassBody(class_body) if in_method => {
+                            ScopeKind::ClassBody(class_body) if method_name.is_some() => {
                                 self_type = Some(class_body.as_self_type_key());
                                 break;
                             }
                             _ => {}
                         }
                     }
-                    match self_type {
-                        Some(key) => SuperStyle::ImplicitArgs(self.table.classes.0.insert(key)),
-                        None => {
+                    match (self_type, method_name) {
+                        (Some(key), Some(method)) => {
+                            SuperStyle::ImplicitArgs(self.table.classes.0.insert(key), method)
+                        }
+                        _ => {
                             self.error(
                                 *range,
                                 "`super` call with no arguments is valid only inside a method"

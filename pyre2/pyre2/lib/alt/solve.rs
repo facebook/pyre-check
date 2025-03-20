@@ -2035,7 +2035,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ),
                         }
                     }
-                    SuperStyle::ImplicitArgs(self_binding) => {
+                    SuperStyle::ImplicitArgs(self_binding, _) => {
                         match &self.get_idx(*self_binding).0 {
                             Some(obj_cls) => {
                                 let obj_type = ClassType::new(
