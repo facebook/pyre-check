@@ -454,7 +454,6 @@
     "Line 92: Expected 1 errors",
     "Line 95: Expected 1 errors",
     "Line 98: Expected 1 errors",
-    "Line 61: Unexpected errors ['TODO: StmtNonlocal - Bindings::stmt']",
     "Line 66: Unexpected errors ['TODO: StmtGlobal - Bindings::stmt']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
     "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"

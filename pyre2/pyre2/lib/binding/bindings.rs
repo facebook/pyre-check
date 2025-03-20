@@ -326,6 +326,10 @@ impl Bindings {
         let scope_trace = builder.scopes.finish();
         let last_scope = scope_trace.toplevel_scope();
         for (k, static_info) in &last_scope.stat.0 {
+            if static_info.is_nonlocal {
+                // TODO: nonlocal is not allowed outside of a function
+                continue;
+            }
             let info = last_scope.flow.info.get(k);
             let val = match info {
                 Some(FlowInfo { key, .. }) => {
@@ -413,6 +417,10 @@ pub enum LookupError {
     NotFound,
     /// We expected the name to be mutable from the current scope, but it's not
     NotMutable,
+    /// We expected the name to be in an enclosing, non-global scope, but it's not
+    NonlocalScope,
+    /// This variable was assigned before the nonlocal declaration
+    AssignedBeforeNonlocal,
 }
 
 impl LookupError {
@@ -420,6 +428,14 @@ impl LookupError {
         match self {
             Self::NotFound => format!("Could not find name `{name}`"),
             Self::NotMutable => format!("`{name}` is not mutable from the current scope"),
+            Self::NonlocalScope => {
+                format!("Found `{name}`, but it was not in a valid enclosing scope")
+            }
+            Self::AssignedBeforeNonlocal => {
+                format!(
+                    "`{name}` was assigned in the current scope before the nonlocal declaration"
+                )
+            }
         }
     }
 }
@@ -499,21 +515,83 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn lookup_name(&mut self, name: &Name, kind: LookupKind) -> Result<Idx<Key>, LookupError> {
         let mut barrier = false;
-        for scope in self.scopes.iter_rev() {
-            if !barrier && let Some(flow) = scope.flow.info.get(name) {
-                return Ok(flow.key);
-            } else if !matches!(scope.kind, ScopeKind::ClassBody(_))
+        let mut allow_nonlocal_reference = kind == LookupKind::Nonlocal;
+        let mut result = Err(LookupError::NotFound);
+        // If there is static info for the name in the current scope and this value is not None
+        // set the `annot` field to this value
+        let mut static_annot_override = None;
+        for (idx, scope) in self.scopes.iter_rev().enumerate() {
+            let in_current_scope = idx == 0;
+            let valid_nonlocal_reference = allow_nonlocal_reference
+                && !in_current_scope
+                && !matches!(scope.kind, ScopeKind::Module | ScopeKind::ClassBody(_));
+            if let Some(flow) = scope.flow.info.get(name) {
+                match kind {
+                    LookupKind::Regular => {
+                        if !barrier || valid_nonlocal_reference {
+                            return Ok(flow.key);
+                        }
+                    }
+                    LookupKind::Mutable => {
+                        if !barrier || valid_nonlocal_reference {
+                            return Ok(flow.key);
+                        } else {
+                            return Err(LookupError::NotMutable);
+                        }
+                    }
+                    LookupKind::Nonlocal => {
+                        if in_current_scope {
+                            // If there's a flow type for the name in the current scope
+                            // it must have been assigned before
+                            return Err(LookupError::AssignedBeforeNonlocal);
+                        }
+                    }
+                    LookupKind::Global => {
+                        // TODO: unused
+                    }
+                }
+            }
+            if !matches!(scope.kind, ScopeKind::ClassBody(_))
                 && let Some(info) = scope.stat.0.get(name)
             {
-                if kind == LookupKind::Mutable && barrier {
-                    return Err(LookupError::NotMutable);
+                if !info.is_nonlocal {
+                    match kind {
+                        LookupKind::Regular => {
+                            let key = info.as_key(name);
+                            return Ok(self.table.types.0.insert(key));
+                        }
+                        LookupKind::Mutable => {
+                            if barrier && !valid_nonlocal_reference {
+                                return Err(LookupError::NotMutable);
+                            }
+                        }
+                        LookupKind::Nonlocal => {
+                            if valid_nonlocal_reference {
+                                let key = info.as_key(name);
+                                result = Ok(self.table.types.0.insert(key));
+                                // We can't return immediately, because we need to override
+                                // the static annotation in the current scope with the one we found
+                                static_annot_override = info.annot;
+                                break;
+                            } else if !in_current_scope {
+                                return Err(LookupError::NonlocalScope);
+                            }
+                        }
+                        LookupKind::Global => {}
+                    }
                 }
-                let key = info.as_key(name);
-                return Ok(self.table.types.0.insert(key));
+                if !barrier && info.is_nonlocal {
+                    allow_nonlocal_reference = true;
+                }
             }
             barrier = barrier || scope.barrier;
         }
-        Err(LookupError::NotFound)
+        if let Some(annot) = static_annot_override
+            && let Some(current_scope_info) = self.scopes.current_mut().stat.0.get_mut(name)
+        {
+            current_scope_info.annot = Some(annot);
+        }
+        result
     }
 
     pub fn forward_lookup(&mut self, name: &Identifier) -> Result<Binding, LookupError> {

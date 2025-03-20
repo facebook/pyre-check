@@ -56,6 +56,8 @@ pub struct StaticInfo {
     /// True if this is going to appear as a `Key::Import``.
     /// A little fiddly to keep synchronised with the other field.
     pub uses_key_import: bool,
+    /// True if this was created from a `nonlocal` statement.
+    pub is_nonlocal: bool,
 }
 
 impl StaticInfo {
@@ -91,6 +93,7 @@ impl Static {
             annot,
             count: 0,
             uses_key_import: false,
+            is_nonlocal: false,
         });
         res.count += count;
         res
@@ -115,8 +118,9 @@ impl Static {
         }
         for (name, def) in d.definitions {
             let annot = def.annot.map(&mut get_annotation_idx);
-            self.add_with_count(name, def.range, annot, def.count)
-                .uses_key_import = def.style == DefinitionStyle::ImportModule;
+            let info = self.add_with_count(name, def.range, annot, def.count);
+            info.uses_key_import = def.style == DefinitionStyle::ImportModule;
+            info.is_nonlocal = def.style == DefinitionStyle::Nonlocal;
         }
         for (m, range) in d.import_all {
             if let Ok(exports) = lookup.get(m) {

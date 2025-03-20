@@ -7488,16 +7488,6 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "TODO: StmtNonlocal - Bindings::stmt",
-      "description": "TODO: StmtNonlocal - Bindings::stmt",
-      "line": 61,
-      "name": "unsupported",
-      "stop_column": 23,
-      "stop_line": 61
-    },
-    {
-      "code": -2,
-      "column": 13,
       "concise_description": "TODO: StmtGlobal - Bindings::stmt",
       "description": "TODO: StmtGlobal - Bindings::stmt",
       "line": 66,

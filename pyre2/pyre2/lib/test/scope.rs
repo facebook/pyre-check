@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_method_cannot_see_class_scope,
@@ -32,22 +31,45 @@ class C:
 "#,
 );
 
-testcase_with_bug!(
-    "Need scoping changes to handle nonlocal",
+testcase!(
     test_nonlocal,
     r#"
+a: str = ""
+nonlocal a  # E: `a` was assigned in the current scope before the nonlocal declaration
+nonlocal b  # E: Could not find name `b`
 def f1() -> None:
+  nonlocal b  # E: Could not find name `b`
+  def f9():
+    nonlocal x
   x: str = "John"
   def f2() -> None:
     del x  # E: `x` is not mutable from the current scope
   def f3() -> None:
-    nonlocal x  # E: TODO: StmtNonlocal
-    del x  # OK  # E: `x` is not mutable from the current scope
+    nonlocal x
+    del x  # OK
   def f4() -> None:
-    nonlocal x  # E: TODO: StmtNonlocal
-    x = 1  # Not OK
+    nonlocal x
+    x = 1  # E: `Literal[1]` is not assignable to variable `x` with type `str`
   def f5() -> None:
     x = 1  # OK, this is a new x
+  def f6() -> None:
+    nonlocal x
+    def f7() -> None:
+      del x   # E: `x` is not mutable from the current scope
+  def f8() -> None:
+    y: int = 1
+    nonlocal y  # E: `y` was assigned in the current scope before the nonlocal declaration
+  def f10(c: str) -> None:
+    def f11() -> None:
+      nonlocal c
+      c = 1  # E: `Literal[1]` is not assignable to variable `c` with type `str`
+  def f12(c: str) -> None:
+    def f13() -> None:
+      c = 1  # OK, this is a new c
+  def f14() -> None:
+    nonlocal x
+    x: int = 1  # E: Inconsistent type annotations for x: int, str
+  nonlocal a  # E: Found `a`, but it was not in a valid enclosing scope
 "#,
 );
 

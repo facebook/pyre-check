@@ -29,6 +29,7 @@ use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyExpect;
 use crate::binding::binding::RaisedException;
 use crate::binding::bindings::BindingsBuilder;
+use crate::binding::bindings::LookupKind;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::FlowStyle;
 use crate::binding::scope::LoopExit;
@@ -203,6 +204,31 @@ impl<'a> BindingsBuilder<'a> {
             Identifier::new(name.id.clone(), name.range()),
             base.clone(),
         );
+    }
+
+    fn ensure_mutable_name(&mut self, x: &ExprName) {
+        let name = Ast::expr_name_identifier(x.clone());
+        let binding = self
+            .lookup_name(&name.id, LookupKind::Mutable)
+            .map(Binding::Forward);
+        self.ensure_name(&name, binding, LookupKind::Mutable);
+    }
+
+    fn ensure_nonlocal_name(&mut self, name: &Identifier) {
+        let value = self
+            .lookup_name(&name.id, LookupKind::Nonlocal)
+            .map(Binding::Forward);
+        let key = Key::Definition(ShortIdentifier::new(name));
+        match value {
+            Ok(value) => {
+                self.table.insert(key, value);
+            }
+            Err(error) => {
+                // Record a type error and fall back to `Any`.
+                self.error(name.range, error.message(name), ErrorKind::UnknownName);
+                self.table.insert(key, Binding::AnyType(AnyStyle::Error));
+            }
+        }
     }
 
     /// Evaluate the statements and update the bindings.
@@ -766,7 +792,11 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             Stmt::Global(x) => self.todo("Bindings::stmt", &x),
-            Stmt::Nonlocal(x) => self.todo("Bindings::stmt", &x),
+            Stmt::Nonlocal(x) => {
+                for name in x.names {
+                    self.ensure_nonlocal_name(&name);
+                }
+            }
             Stmt::Expr(mut x) => {
                 self.ensure_expr(&mut x.value);
                 self.table.insert(

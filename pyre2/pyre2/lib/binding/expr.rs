@@ -16,7 +16,6 @@ use ruff_python_ast::Expr;
 use ruff_python_ast::ExprBoolOp;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprLambda;
-use ruff_python_ast::ExprName;
 use ruff_python_ast::ExprSubscript;
 use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
@@ -50,7 +49,7 @@ impl<'a> BindingsBuilder<'a> {
     /// record an error and fall back to `Any`.
     ///
     /// This function is the the core scope lookup logic for binding creation.
-    fn ensure_name(
+    pub fn ensure_name(
         &mut self,
         name: &Identifier,
         value: Result<Binding, LookupError>,
@@ -89,14 +88,6 @@ impl<'a> BindingsBuilder<'a> {
                 self.table.insert(key, Binding::AnyType(AnyStyle::Error));
             }
         }
-    }
-
-    pub fn ensure_mutable_name(&mut self, x: &ExprName) {
-        let name = Ast::expr_name_identifier(x.clone());
-        let binding = self
-            .lookup_name(&name.id, LookupKind::Mutable)
-            .map(Binding::Forward);
-        self.ensure_name(&name, binding, LookupKind::Mutable);
     }
 
     fn bind_comprehensions(&mut self, range: TextRange, comprehensions: &mut [Comprehension]) {
