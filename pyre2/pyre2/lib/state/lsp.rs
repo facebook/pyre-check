@@ -51,7 +51,7 @@ impl State {
             }
         }
         let mut res = None;
-        mod_module.visit(&mut |x| f(x, position, &mut res));
+        mod_module.visit0(&mut |x| f(x, position, &mut res));
         res
     }
 
@@ -73,7 +73,7 @@ impl State {
             }
         }
         let mut res = None;
-        mod_module.visit(&mut |x| f(x, position, &mut res));
+        mod_module.visit0(&mut |x| f(x, position, &mut res));
         res
     }
 
