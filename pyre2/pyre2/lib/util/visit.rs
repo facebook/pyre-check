@@ -9,6 +9,7 @@ use std::any;
 use std::any::Any;
 
 use const_str;
+use ruff_python_ast::name::Name;
 
 /// Visitors based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
 pub trait Visit<To: 'static = Self>: 'static + Sized {
@@ -90,6 +91,7 @@ no_children!(i32);
 no_children!(i64);
 no_children!(i128);
 no_children!(isize);
+no_children!(Name);
 no_children!(());
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {

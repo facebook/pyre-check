@@ -13,6 +13,7 @@ use std::hash::Hash;
 use dupe::Dupe;
 use itertools::Either;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -324,12 +325,8 @@ impl DisplayWith<Bindings> for BindingExpect {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, VisitMut, PartialEq, Eq)]
 pub struct EmptyAnswer;
-
-impl VisitMut<Type> for EmptyAnswer {
-    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
-}
 
 impl Display for EmptyAnswer {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
