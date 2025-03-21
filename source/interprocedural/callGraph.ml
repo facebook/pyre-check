@@ -243,6 +243,10 @@ module CallableToDecoratorsMap = struct
 
       let get = T.ReadOnly.get ~cache:true
 
+      let get_decorators readonly callable =
+        callable |> get readonly >>| fun { decorators; _ } -> decorators
+
+
       let mem = T.ReadOnly.mem
     end
 

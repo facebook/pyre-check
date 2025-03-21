@@ -188,25 +188,27 @@ type t = {
   get_define_call_graph: Target.t -> CallGraph.DefineCallGraph.t option;
 }
 
-let get_model_from_readonly_state ~state callable = Fixpoint.State.ReadOnly.get_model state callable
+let get_model_from_readonly_state ~readonly_state callable =
+  Fixpoint.State.ReadOnly.get_model readonly_state callable
+
 
 let get_model { fixpoint = { state; _ }; _ } =
-  get_model_from_readonly_state ~state:(Fixpoint.State.read_only state)
+  get_model_from_readonly_state ~readonly_state:(Fixpoint.State.read_only state)
 
 
 let cleanup ~keep_models { Fixpoint.state; _ } = Fixpoint.State.cleanup ~keep_models state
 
-let get_define_call_graph ~state callable =
+let get_define_call_graph ~readonly_state callable =
   let open Option in
   callable
-  |> get_model_from_readonly_state ~state
+  |> get_model_from_readonly_state ~readonly_state
   >>| fun { CallGraph.HigherOrderCallGraph.call_graph; _ } -> call_graph
 
 
 let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
-  let build_whole_program_call_graph ~state =
+  let build_whole_program_call_graph ~readonly_state =
     List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:(fun so_far callable ->
-        match get_define_call_graph ~state callable with
+        match get_define_call_graph ~readonly_state callable with
         | None -> so_far
         | Some call_graph ->
             CallGraph.WholeProgramCallGraph.add_or_exn
@@ -217,17 +219,48 @@ let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
                    call_graph)
               so_far)
   in
+  let readonly_state = Fixpoint.State.read_only state in
   Scheduler.map_reduce
     scheduler
     ~policy:scheduler_policy
     ~initial:CallGraph.WholeProgramCallGraph.empty
-    ~map:(build_whole_program_call_graph ~state:(Fixpoint.State.read_only state))
+    ~map:(build_whole_program_call_graph ~readonly_state)
     ~reduce:CallGraph.WholeProgramCallGraph.merge_disjoint
     ~inputs:(Fixpoint.State.targets state)
     ()
 
 
 let analyzed_callables { Fixpoint.state; _ } = Fixpoint.State.targets state
+
+let log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy ~decorators state =
+  let log_if_no_returned_callables ~readonly_state callable =
+    let open Option in
+    callable
+    |> get_model_from_readonly_state ~readonly_state
+    >>| (fun { CallGraph.HigherOrderCallGraph.returned_callables; _ } ->
+          if CallGraph.CallTarget.Set.is_bottom returned_callables then
+            Log.info
+              "Failed to apply decorators for `%a`, which may lead to false negatives. Consider \
+               skipping one of these decorators: [%s]"
+              Target.pp_pretty
+              callable
+              (Target.set_kind Target.Normal callable
+              |> CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators decorators
+              |> Option.value ~default:[]
+              |> List.map ~f:Ast.Expression.show
+              |> String.concat ~sep:"; "))
+    |> Option.value ~default:()
+  in
+  let readonly_state = Fixpoint.State.read_only state in
+  Scheduler.map_reduce
+    scheduler
+    ~policy:scheduler_policy
+    ~initial:()
+    ~map:(List.iter ~f:(log_if_no_returned_callables ~readonly_state))
+    ~reduce:(fun () () -> ())
+    ~inputs:(state |> Fixpoint.State.targets |> List.filter ~f:Target.is_decorated)
+    ()
+
 
 let compute
     ~scheduler
@@ -240,6 +273,7 @@ let compute
     ~override_graph_shared_memory
     ~skip_analysis_targets
     ~decorator_resolution
+    ~decorators
     ~method_kinds
     ~callables_to_definitions_map
     ~max_iterations
@@ -334,6 +368,7 @@ let compute
   let state = Fixpoint.State.update_models state ~scheduler ~update_model:drop_decorated_targets in
   Log.info "Dropping decorated targets in models took %.2fs" (Timer.stop_in_sec timer);
   let fixpoint = { fixpoint with state } in
+  let readonly_state = Fixpoint.State.read_only state in
   let () =
     CallGraph.HigherOrderCallGraph.save_to_directory
       ~scheduler
@@ -341,16 +376,17 @@ let compute
       ~callables_to_definitions_map:
         (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~resolve_module_path
-      ~get_call_graph:(get_model_from_readonly_state ~state:(Fixpoint.State.read_only state))
+      ~get_call_graph:(get_model_from_readonly_state ~readonly_state)
       ~json_kind:NewlineDelimitedJson.Kind.HigherOrderCallGraph
       ~filename_prefix:"higher-order-call-graph"
       ~callables:callables_with_call_graphs
   in
+  log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy ~decorators state;
   {
     fixpoint;
     whole_program_call_graph = build_whole_program_call_graph ~scheduler ~scheduler_policy state;
     get_define_call_graph =
       (* Use a lightweight handle, to avoid copying a large handle for each worker, when used in map
          reduce. *)
-      get_define_call_graph ~state:(Fixpoint.State.read_only state);
+      get_define_call_graph ~readonly_state;
   }

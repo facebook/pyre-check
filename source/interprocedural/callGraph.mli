@@ -88,6 +88,8 @@ module CallTarget : sig
     val join : t -> t -> t
 
     val bottom : t
+
+    val is_bottom : t -> bool
   end
 
   val target : t -> Target.t
@@ -441,6 +443,8 @@ module CallableToDecoratorsMap : sig
 
     module ReadOnly : sig
       type t
+
+      val get_decorators : t -> Target.t -> Expression.t list option
     end
 
     val read_only : t -> ReadOnly.t

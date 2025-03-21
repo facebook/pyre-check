@@ -768,6 +768,8 @@ let initialize
       ~override_graph_shared_memory
       ~skip_analysis_targets:Target.Set.empty
       ~decorator_resolution
+      ~decorators:
+        (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~callables_to_definitions_map
       ~max_iterations:higher_order_call_graph_max_iterations

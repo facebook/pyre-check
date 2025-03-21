@@ -959,6 +959,9 @@ let run_taint_analysis
           ~override_graph_shared_memory
           ~skip_analysis_targets
           ~decorator_resolution
+          ~decorators:
+            (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+               callables_to_decorators_map)
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~callables_to_definitions_map
           ~max_iterations:(Option.value higher_order_call_graph_max_iterations ~default:50)
