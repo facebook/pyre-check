@@ -48,8 +48,9 @@ pub enum ErrorContext {
 ///   class C:
 ///     def __lt__(self, other: C) -> bool:
 ///   C() < 0  # ERROR: expected C, got 0
-/// The TypeCheckContext contains a TypeCheckKind, recording that the mismatch is in the `other` parameter of `C.__lt__`,
-/// and an ErrorContext, recording that the type mismatch occurs in the context of a `<` comparison.
+/// The TypeCheckContext contains a TypeCheckKind::CallArgument, recording that
+/// the mismatch is in the `other` parameter of `C.__lt__`, and an
+/// ErrorContext::BinaryOp, recording that the type mismatch occurs in the context of a `<` comparison.
 #[derive(Debug)]
 pub struct TypeCheckContext {
     pub kind: TypeCheckKind,
