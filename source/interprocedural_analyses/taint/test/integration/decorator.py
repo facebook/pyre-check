@@ -328,7 +328,7 @@ def sink_via_no_op_decorator_factory(x: str) -> None:
 
 
 def issue_via_no_op_decorator_factory() -> None:
-    sink_via_no_op_decorator_factory(_test_source())  # TODO: False negative
+    sink_via_no_op_decorator_factory(_test_source())
 
 
 # pyre-ignore

@@ -195,6 +195,69 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "decorator.issue_via_no_op_decorator_factory",
+    "callable_line": 330,
+    "code": 5002,
+    "line": 331,
+    "start": 37,
+    "end": 51,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 331, "start": 37, "end": 51 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 331, "start": 37, "end": 51 },
+              "resolves_to": [ "decorator.sink_via_no_op_decorator_factory" ],
+              "port": "formal(x, position=0)",
+              "call_site": "331:4-331:52"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.sink_via_no_op_decorator_factory",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "decorator.issue_via_no_op_decorator_factory:5002:0:Call|decorator.sink_via_no_op_decorator_factory|0|formal(x):5285e74135724f07d61756954716778f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "decorator.issue_via_trivial_decorator",
     "callable_line": 278,
     "code": 5002,

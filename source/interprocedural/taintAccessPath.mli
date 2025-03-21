@@ -69,6 +69,8 @@ module Path : sig
 
   val empty : t
 
+  val is_empty : t -> bool
+
   val is_prefix : prefix:t -> t -> bool
 end
 

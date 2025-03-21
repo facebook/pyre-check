@@ -95,7 +95,7 @@ Call dependencies
     "_test_source (fun)", "decorator.sink_via_no_op_decorator (fun)"
   ],
   "decorator.issue_via_no_op_decorator_factory (fun)": [
-    "_test_source (fun)"
+    "_test_source (fun)", "decorator.sink_via_no_op_decorator_factory (fun)"
   ],
   "decorator.issue_via_trivial_decorator (fun)": [
     "_test_source (fun)",

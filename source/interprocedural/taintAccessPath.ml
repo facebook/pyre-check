@@ -227,6 +227,8 @@ module Path = struct
 
   let empty = []
 
+  let is_empty = List.is_empty
+
   let is_prefix = Abstract.TreeDomain.Label.is_prefix
 end
 

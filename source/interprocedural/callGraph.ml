@@ -4803,16 +4803,22 @@ module HigherOrderCallGraph = struct
           | Statement.Assign { Assign.target; value = Some value; _ } -> (
               match TaintAccessPath.of_expression ~self_variable target with
               | None -> state
-              | Some { root; path = _ } ->
+              | Some { root; path } ->
                   let callees, state =
                     analyze_expression ~pyre_in_context ~state ~expression:value
                   in
-                  store_callees ~weak:false ~root ~callees state)
+                  (* For now, we ignore the path entirely. Thus, we should only perform strong
+                     updates when writing to an empty path. E.g, `x = foo` should be strong update,
+                     `x.foo = bar` should be a weak update. *)
+                  let strong_update = TaintAccessPath.Path.is_empty path in
+                  store_callees ~weak:(not strong_update) ~root ~callees state)
           | Assign { Assign.target; value = None; _ } -> (
               match TaintAccessPath.of_expression ~self_variable target with
               | None -> state
-              | Some { root; path = _ } ->
-                  store_callees ~weak:false ~root ~callees:CallTarget.Set.bottom state)
+              | Some { root; path } ->
+                  let strong_update = TaintAccessPath.Path.is_empty path in
+                  store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state
+              )
           | AugmentedAssign _ -> state
           | Assert _ -> state
           | Break
