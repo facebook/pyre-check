@@ -9,11 +9,11 @@ use std::fmt;
 use std::fmt::Display;
 
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
+use pyrefly_derive::VisitMut;
 
 use crate::types::types::Type;
 use crate::util::display::commas_iter;
-use crate::util::visit::Visit;
-use crate::util::visit::VisitMut;
 
 /*
 Eventually this will have to be generalized enough to handle at least four cases:
@@ -24,7 +24,9 @@ Eventually this will have to be generalized enough to handle at least four cases
 4. indefinite-length tuples tuple[int, ...] (whose length is supposed to be treated soundly, not gradually, IIRC)
 */
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum Tuple {
     // tuple[t1, t2]
     Concrete(Vec<Type>),
@@ -32,26 +34,6 @@ pub enum Tuple {
     Unbounded(Box<Type>),
     // tuple[t1, t2, *t3, t4, t5], where t3 must be a type var tuple or unbounded tuple
     Unpacked(Box<(Vec<Type>, Type, Vec<Type>)>),
-}
-
-impl Visit<Type> for Tuple {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match self {
-            Self::Concrete(x) => x.visit0(f),
-            Self::Unbounded(x) => x.visit0(f),
-            Self::Unpacked(x) => x.visit0(f),
-        }
-    }
-}
-
-impl VisitMut<Type> for Tuple {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Self::Concrete(x) => x.visit0_mut(f),
-            Self::Unbounded(x) => x.visit0_mut(f),
-            Self::Unpacked(x) => x.visit0_mut(f),
-        }
-    }
 }
 
 impl Default for Tuple {

@@ -10,6 +10,7 @@ use std::any::Any;
 
 use const_str;
 use ruff_python_ast::name::Name;
+use ruff_text_size::TextRange;
 
 use crate::module::module_name::ModuleName;
 use crate::util::uniques::Unique;
@@ -100,6 +101,7 @@ visit_nothing!(());
 visit_nothing!(Name);
 visit_nothing!(Unique);
 visit_nothing!(ModuleName);
+visit_nothing!(TextRange);
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
     const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;

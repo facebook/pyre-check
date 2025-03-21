@@ -10,6 +10,8 @@ use std::fmt::Debug;
 use std::fmt::Display;
 
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 
@@ -19,22 +21,15 @@ use crate::types::callable::FuncId;
 use crate::types::callable::FuncMetadata;
 use crate::types::callable::FunctionKind;
 use crate::types::types::Type;
-use crate::util::visit::VisitMut;
 
 /// The type of a function definition after decorators are applied. Metadata arising from the
 /// decorators can be stored here. Note that the type might not be a function at all, since
 /// decorators can produce any type.
-#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
+#[derive(Clone, Debug, Visit, VisitMut, TypeEq, PartialEq, Eq)]
 pub struct DecoratedFunction {
     pub id_range: TextRange,
     pub ty: Type,
     pub metadata: FuncMetadata,
-}
-
-impl VisitMut<Type> for DecoratedFunction {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.ty.visit_mut(f);
-    }
 }
 
 impl Display for DecoratedFunction {

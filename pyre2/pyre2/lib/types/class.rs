@@ -17,6 +17,8 @@ use std::sync::Arc;
 use dupe::Dupe;
 use parse_display::Display;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use ruff_text_size::TextRange;
@@ -260,20 +262,10 @@ impl Class {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default
+)]
 pub struct TArgs(Box<[Type]>);
-
-impl Visit<Type> for TArgs {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.0.visit0(f);
-    }
-}
-
-impl VisitMut<Type> for TArgs {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.0.visit0_mut(f);
-    }
-}
 
 impl TArgs {
     pub fn new(targs: Vec<Type>) -> Self {
@@ -322,24 +314,14 @@ impl Substitution {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct ClassType(Class, TArgs);
 
 impl Display for ClassType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Type::ClassType(self.clone()))
-    }
-}
-
-impl Visit<Type> for ClassType {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.1.visit0(f)
-    }
-}
-
-impl VisitMut<Type> for ClassType {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.1.visit0_mut(f)
     }
 }
 
