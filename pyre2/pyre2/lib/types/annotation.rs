@@ -13,22 +13,16 @@ use std::fmt::Display;
 
 use parse_display::Display;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::util::display::intersperse_iter;
-use crate::util::visit::VisitMut;
 
-#[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, VisitMut, TypeEq, PartialEq, Eq)]
 pub struct Annotation {
     pub qualifiers: Vec<Qualifier>,
     pub ty: Option<Type>,
-}
-
-impl VisitMut<Type> for Annotation {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.ty.visit0_mut(f);
-    }
 }
 
 impl Display for Annotation {
@@ -73,7 +67,7 @@ impl Annotation {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq, Display)]
 pub enum Qualifier {
     Required,
     NotRequired,
