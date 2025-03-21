@@ -1,5 +1,7 @@
 # Pyre2 VS Code LSP extension
 
+:warning: **Extension is very work in progress**, please use at your own risk!
+
 A VSCode LSP extension that talks over stdin/stdout to a binary.
 
 If using another binary, the settings to be aware of are `pyre2.lspPath` (the
