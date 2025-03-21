@@ -186,6 +186,8 @@ impl ConfigFile {
 
 #[cfg(test)]
 mod tests {
+    use std::path;
+
     use toml::Value;
 
     use super::*;
@@ -323,17 +325,22 @@ mod tests {
 
     #[test]
     fn test_rewrite_with_path_to_config() {
+        fn with_sep(s: &str) -> String {
+            s.replace("/", path::MAIN_SEPARATOR_STR)
+        }
         let mut config = ConfigFile::default();
-        let path_str = "path/to/my/config".to_owned();
+        let path_str = with_sep("path/to/my/config");
+        let project_excludes_vec = vec![
+            path_str.clone() + &with_sep("/**/__pycache__/**"),
+            path_str.clone() + &with_sep("/**/.*"),
+        ];
+
         let test_path = PathBuf::from(path_str.clone());
         config.rewrite_with_path_to_config(&test_path);
 
         let expected_config = ConfigFile {
             project_includes: Globs::new(vec![path_str.clone()]),
-            project_excludes: Globs::new(vec![
-                path_str.clone() + "/**/__pycache__/**",
-                path_str.clone() + "/**/.*",
-            ]),
+            project_excludes: Globs::new(project_excludes_vec),
             search_path: vec![test_path.clone(), test_path.clone()],
             ..ConfigFile::default()
         };
