@@ -11,6 +11,7 @@ use std::hash::Hash;
 
 use dupe::Dupe;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::Identifier;
 
 use crate::module::module_info::ModuleInfo;
@@ -30,14 +31,16 @@ impl Display for TypeVar {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub enum Restriction {
     Constraints(Vec<Type>),
     Bound(Type),
     Unrestricted,
 }
 
-#[derive(Debug, Clone, Copy, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(
+    Debug, Clone, Copy, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash
+)]
 pub enum Variance {
     Covariant,
     Contravariant,

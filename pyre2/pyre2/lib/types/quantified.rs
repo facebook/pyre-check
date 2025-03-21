@@ -10,6 +10,7 @@ use std::fmt::Display;
 
 use parse_display::Display;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 
 use crate::types::callable::ParamList;
 use crate::types::class::ClassType;
@@ -18,7 +19,9 @@ use crate::types::types::Type;
 use crate::util::uniques::Unique;
 use crate::util::uniques::UniqueFactory;
 
-#[derive(Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Quantified {
     /// Unique identifier
     unique: Unique,
@@ -26,7 +29,7 @@ pub struct Quantified {
 }
 
 #[derive(
-    Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
+    Debug, Clone, Copy, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
 )]
 pub enum QuantifiedKind {
     TypeVar,

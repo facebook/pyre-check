@@ -12,6 +12,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use parse_display::Display;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
@@ -70,7 +71,7 @@ impl Var {
 }
 
 /// Bundles together type param info for passing around while building TParams.
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParamInfo {
     pub name: Name,
     pub quantified: Quantified,

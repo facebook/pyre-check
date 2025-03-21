@@ -11,6 +11,8 @@ use std::any::Any;
 use const_str;
 use ruff_python_ast::name::Name;
 
+use crate::util::uniques::Unique;
+
 /// Visitors based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
 pub trait Visit<To: 'static = Self>: 'static + Sized {
     /// Whether the type contains `To` elements as children - is `visit` a no-op.
@@ -91,8 +93,11 @@ visit_nothing!(i32);
 visit_nothing!(i64);
 visit_nothing!(i128);
 visit_nothing!(isize);
-visit_nothing!(Name);
 visit_nothing!(());
+
+// Pyrefly types that have nothing inside
+visit_nothing!(Name);
+visit_nothing!(Unique);
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
     const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
