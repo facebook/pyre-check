@@ -23,7 +23,7 @@ pub(crate) fn derive_visit(input: proc_macro::TokenStream) -> proc_macro::TokenS
         input,
         quote! { & },
         quote! { crate::util::visit::Visit },
-        quote! { visit0 },
+        quote! { visit },
         quote! { fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) },
     )
 }
@@ -33,7 +33,7 @@ pub(crate) fn derive_visit_mut(input: proc_macro::TokenStream) -> proc_macro::To
         input,
         quote! { &mut },
         quote! { crate::util::visit::VisitMut },
-        quote! { visit0_mut },
+        quote! { visit_mut },
         quote! { fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) },
     )
 }
@@ -165,7 +165,7 @@ fn derive_visit_impl(
             ));
         }
     };
-    let contains = quote! { #(<#types as #trait_name<To>>::CONTAINS0 || )* false };
+    let contains = quote! { #(<#types as #trait_name<To>>::VISIT_CONTAINS || )* false };
 
     Ok(quote! {
         impl <To: 'static, #generics_before > #trait_name<To> for #name < #generics_after > where

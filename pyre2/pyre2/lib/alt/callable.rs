@@ -440,7 +440,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     context,
                                     format!("Multiple values for argument `{}`", name),
                                 );
-                                params.items()[p_idx].visit0(&mut |ty| hint = Some(ty));
+                                params.items()[p_idx].visit(&mut |ty| hint = Some(ty));
                             } else if let Some(&(p_idx, ty, required)) = kwparams.get(name) {
                                 seen_names.insert(name.clone(), p_idx);
                                 if required && !field.required {
@@ -538,7 +538,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             context,
                             format!("Multiple values for argument `{}`", id.id),
                         );
-                        params.items()[p_idx].visit0(&mut |ty| {
+                        params.items()[p_idx].visit(&mut |ty| {
                             hint = Some(ty);
                         });
                         has_matching_param = true;

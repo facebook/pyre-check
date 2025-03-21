@@ -383,7 +383,7 @@ impl Answers {
         fn post_solve<K: Keyed>(items: &mut SolutionsEntry<K>, solver: &Solver) {
             for v in items.values_mut() {
                 let mut vv = (**v).clone();
-                vv.visit0_mut(&mut |x| solver.deep_force_mut(x));
+                vv.visit_mut(&mut |x| solver.deep_force_mut(x));
                 *v = Arc::new(vv);
             }
         }
@@ -417,7 +417,7 @@ impl Answers {
         };
         let v = solver.get(key);
         let mut vv = (*v).clone();
-        vv.visit0_mut(&mut |x| self.solver.deep_force_mut(x));
+        vv.visit_mut(&mut |x| self.solver.deep_force_mut(x));
         Arc::new(vv)
     }
 

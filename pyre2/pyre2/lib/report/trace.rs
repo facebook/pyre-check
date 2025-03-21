@@ -36,7 +36,7 @@ fn trace_module(state: &State, handle: &Handle) -> Option<ModuleOutput> {
 
     let mut types = SmallMap::new();
     let mut definitions = SmallMap::new();
-    ast.visit0(&mut |x| {
+    ast.visit(&mut |x| {
         let loc = match x {
             Expr::Name(x) => x.range,
             Expr::Attribute(x) => x.attr.range,

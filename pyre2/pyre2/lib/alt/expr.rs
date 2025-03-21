@@ -1204,7 +1204,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
                 let mut all_literal_strings = true;
-                x.visit0(&mut |x| {
+                x.visit(&mut |x| {
                     let fstring_expr_ty = self.expr_infer(x, errors);
                     if !fstring_expr_ty.is_literal_string() {
                         all_literal_strings = false;

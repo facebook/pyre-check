@@ -22,7 +22,7 @@ pub trait Visit<To: 'static = Self>: 'static + Sized {
     const RECURSE_CONTAINS: bool = true;
 
     /// Whether the `visit0` is a no-op.
-    const CONTAINS0: bool = Self::RECURSE_CONTAINS || type_eq::<To, Self>();
+    const VISIT_CONTAINS: bool = Self::RECURSE_CONTAINS || type_eq::<To, Self>();
 
     /// Should call the function on all the `To` children of `Self`.
     ///
@@ -30,8 +30,8 @@ pub trait Visit<To: 'static = Self>: 'static + Sized {
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To));
 
     /// Like `visit`, but if `To == Self` then calls the function directly.
-    fn visit0<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
-        if Self::CONTAINS0
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
+        if Self::VISIT_CONTAINS
             && let Some(to) = (self as &dyn Any).downcast_ref::<To>()
         {
             f(to);
@@ -44,7 +44,7 @@ pub trait Visit<To: 'static = Self>: 'static + Sized {
 /// Like `Visit`, but mutably.
 pub trait VisitMut<To: 'static = Self>: 'static + Sized {
     const RECURSE_CONTAINS: bool = true;
-    const CONTAINS0: bool = Self::RECURSE_CONTAINS || type_eq::<To, Self>();
+    const VISIT_CONTAINS: bool = Self::RECURSE_CONTAINS || type_eq::<To, Self>();
 
     /// In contrast to `visit`, we don't have a guarantee that the results will be in
     /// the original structure. This decision is pragmatic - it's rare to mutate _and_
@@ -53,7 +53,7 @@ pub trait VisitMut<To: 'static = Self>: 'static + Sized {
     /// a `clone()` first.
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To));
 
-    fn visit0_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         if let Some(to) = (self as &mut dyn Any).downcast_mut::<To>() {
             f(to);
         } else {
@@ -108,175 +108,176 @@ visit_nothing!(ModuleName);
 visit_nothing!(TextRange);
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
-    const RECURSE_CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
-            item.visit0(f);
+            item.visit(f);
         }
     }
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec<T> {
-    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
-            item.visit0_mut(f);
+            item.visit_mut(f);
         }
     }
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec1<T> {
-    const RECURSE_CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
-            item.visit0(f);
+            item.visit(f);
         }
     }
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec1<T> {
-    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
-            item.visit0_mut(f);
+            item.visit_mut(f);
         }
     }
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Box<[T]> {
-    const RECURSE_CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         for item in self {
-            item.visit0(f);
+            item.visit(f);
         }
     }
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<[T]> {
-    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         for item in self {
-            item.visit0_mut(f);
+            item.visit_mut(f);
         }
     }
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Option<T> {
-    const RECURSE_CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
         if let Some(item) = self {
-            item.visit0(f)
+            item.visit(f)
         }
     }
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Option<T> {
-    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
         if let Some(item) = self {
-            item.visit0_mut(f);
+            item.visit_mut(f);
         }
     }
 }
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Box<T> {
-    const RECURSE_CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
-        (**self).visit0(f)
+        (**self).visit(f)
     }
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Box<T> {
-    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
-        (**self).visit0_mut(f)
+        (**self).visit_mut(f)
     }
 }
 
 impl<To: 'static, T0: Visit<To>, T1: Visit<To>> Visit<To> for (T0, T1) {
-    const RECURSE_CONTAINS: bool = <T0 as Visit<To>>::CONTAINS0 || <T1 as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool =
+        <T0 as Visit<To>>::VISIT_CONTAINS || <T1 as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
-        self.0.visit0(f);
-        self.1.visit0(f);
+        self.0.visit(f);
+        self.1.visit(f);
     }
 }
 
 impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>> VisitMut<To> for (T0, T1) {
     const RECURSE_CONTAINS: bool =
-        <T0 as VisitMut<To>>::CONTAINS0 || <T1 as VisitMut<To>>::CONTAINS0;
+        <T0 as VisitMut<To>>::VISIT_CONTAINS || <T1 as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
-        self.0.visit0_mut(f);
-        self.1.visit0_mut(f);
+        self.0.visit_mut(f);
+        self.1.visit_mut(f);
     }
 }
 
 impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>> Visit<To> for (T0, T1, T2) {
-    const RECURSE_CONTAINS: bool = <T0 as Visit<To>>::CONTAINS0
-        || <T1 as Visit<To>>::CONTAINS0
-        || <T2 as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T0 as Visit<To>>::VISIT_CONTAINS
+        || <T1 as Visit<To>>::VISIT_CONTAINS
+        || <T2 as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
-        self.0.visit0(f);
-        self.1.visit0(f);
-        self.2.visit0(f);
+        self.0.visit(f);
+        self.1.visit(f);
+        self.2.visit(f);
     }
 }
 
 impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>> VisitMut<To>
     for (T0, T1, T2)
 {
-    const RECURSE_CONTAINS: bool = <T0 as VisitMut<To>>::CONTAINS0
-        || <T1 as VisitMut<To>>::CONTAINS0
-        || <T2 as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T0 as VisitMut<To>>::VISIT_CONTAINS
+        || <T1 as VisitMut<To>>::VISIT_CONTAINS
+        || <T2 as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
-        self.0.visit0_mut(f);
-        self.1.visit0_mut(f);
-        self.2.visit0_mut(f);
+        self.0.visit_mut(f);
+        self.1.visit_mut(f);
+        self.2.visit_mut(f);
     }
 }
 
 impl<To: 'static, T0: Visit<To>, T1: Visit<To>, T2: Visit<To>, T3: Visit<To>> Visit<To>
     for (T0, T1, T2, T3)
 {
-    const RECURSE_CONTAINS: bool = <T0 as Visit<To>>::CONTAINS0
-        || <T1 as Visit<To>>::CONTAINS0
-        || <T2 as Visit<To>>::CONTAINS0
-        || <T3 as Visit<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T0 as Visit<To>>::VISIT_CONTAINS
+        || <T1 as Visit<To>>::VISIT_CONTAINS
+        || <T2 as Visit<To>>::VISIT_CONTAINS
+        || <T3 as Visit<To>>::VISIT_CONTAINS;
 
     fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
-        self.0.visit0(f);
-        self.1.visit0(f);
-        self.2.visit0(f);
-        self.3.visit0(f);
+        self.0.visit(f);
+        self.1.visit(f);
+        self.2.visit(f);
+        self.3.visit(f);
     }
 }
 
 impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>, T3: VisitMut<To>>
     VisitMut<To> for (T0, T1, T2, T3)
 {
-    const RECURSE_CONTAINS: bool = <T0 as VisitMut<To>>::CONTAINS0
-        || <T1 as VisitMut<To>>::CONTAINS0
-        || <T2 as VisitMut<To>>::CONTAINS0
-        || <T3 as VisitMut<To>>::CONTAINS0;
+    const RECURSE_CONTAINS: bool = <T0 as VisitMut<To>>::VISIT_CONTAINS
+        || <T1 as VisitMut<To>>::VISIT_CONTAINS
+        || <T2 as VisitMut<To>>::VISIT_CONTAINS
+        || <T3 as VisitMut<To>>::VISIT_CONTAINS;
 
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
-        self.0.visit0_mut(f);
-        self.1.visit0_mut(f);
-        self.2.visit0_mut(f);
-        self.3.visit0_mut(f);
+        self.0.visit_mut(f);
+        self.1.visit_mut(f);
+        self.2.visit_mut(f);
+        self.3.visit_mut(f);
     }
 }
 
@@ -317,19 +318,19 @@ mod tests {
             fn recurse<'a>(&'a self, _: &mut dyn FnMut(&'a i32)) {
                 unreachable!("Should not be reaching here")
             }
-            fn visit0<'a>(&'a self, _: &mut dyn FnMut(&'a i32)) {
+            fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a i32)) {
                 // Deliberately implement visit0 so the optimisation on this doesn't kick in,
                 // only the optimisation on Vec itself.
                 unreachable!("Should not be reaching here")
             }
         }
 
-        const_assert!(!<Foo as Visit<i32>>::CONTAINS0);
+        const_assert!(!<Foo as Visit<i32>>::VISIT_CONTAINS);
         const_assert!(!type_eq::<Foo, i32>());
         const_assert!(!<Foo as Visit<i32>>::RECURSE_CONTAINS);
         const_assert!(!<Vec<Foo> as Visit<i32>>::RECURSE_CONTAINS);
-        const_assert!(!<Vec<Foo> as Visit<i32>>::CONTAINS0);
-        vec![Foo].visit0(&mut |_: &i32| ());
+        const_assert!(!<Vec<Foo> as Visit<i32>>::VISIT_CONTAINS);
+        vec![Foo].visit(&mut |_: &i32| ());
     }
 
     #[derive(Visit, VisitMut, PartialEq, Eq, Debug)]
@@ -362,19 +363,19 @@ mod tests {
             Baz::C { x: 4, y: 5 },
         );
         let mut collect = Vec::new();
-        info.visit0(&mut |x: &i32| collect.push(*x));
+        info.visit(&mut |x: &i32| collect.push(*x));
         assert_eq!(&collect, &[1i32, 2, 3, 4, 5]);
         let mut collect = Vec::new();
-        info.visit0_mut(&mut |x: &mut bool| collect.push(*x));
+        info.visit_mut(&mut |x: &mut bool| collect.push(*x));
         assert_eq!(&collect, &[true, false]);
         let mut collect = Vec::new();
-        info.visit0(&mut |x: &Bar| collect.push(x));
+        info.visit(&mut |x: &Bar| collect.push(x));
         assert_eq!(&collect, &[&Bar(2, 3)]);
 
-        const_assert!(<Foo as Visit<i32>>::CONTAINS0);
-        const_assert!(!<Foo as Visit<u8>>::CONTAINS0);
-        const_assert!(<Generic<i32> as Visit<i32>>::CONTAINS0);
-        const_assert!(!<Generic<i32> as Visit<u8>>::CONTAINS0);
+        const_assert!(<Foo as Visit<i32>>::VISIT_CONTAINS);
+        const_assert!(!<Foo as Visit<u8>>::VISIT_CONTAINS);
+        const_assert!(<Generic<i32> as Visit<i32>>::VISIT_CONTAINS);
+        const_assert!(!<Generic<i32> as Visit<u8>>::VISIT_CONTAINS);
     }
 
     #[test]
@@ -399,9 +400,9 @@ mod tests {
         struct Bar(Foo);
 
         let mut info = Bar(Foo(1));
-        info.visit0_mut(&mut |x: &mut i32| *x += 2);
+        info.visit_mut(&mut |x: &mut i32| *x += 2);
         let mut collect = Vec::new();
-        info.visit0(&mut |x: &i32| collect.push(*x));
+        info.visit(&mut |x: &i32| collect.push(*x));
         assert_eq!(&collect, &[3i32]);
     }
 }

@@ -214,7 +214,7 @@ pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
 impl VisitMut<Type> for ClassSynthesizedFields {
     fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         for field in self.0.values_mut() {
-            field.visit0_mut(f);
+            field.visit_mut(f);
         }
     }
 }
