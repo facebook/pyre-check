@@ -48,7 +48,9 @@ use crate::util::visit::Visit;
 use crate::util::visit::VisitMut;
 
 /// An introduced synthetic variable to range over as yet unknown types.
-#[derive(Debug, Copy, Clone, Dupe, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Copy, Clone, Dupe, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Var(Unique);
 
 impl Display for Var {
@@ -162,7 +164,7 @@ impl TParams {
 }
 
 #[derive(
-    Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
+    Debug, Clone, Copy, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
 )]
 pub enum NeverStyle {
     Never,
@@ -170,7 +172,7 @@ pub enum NeverStyle {
 }
 
 #[derive(
-    Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
+    Debug, Clone, Copy, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
 )]
 pub enum AnyStyle {
     /// The user wrote `Any` literally.
@@ -420,7 +422,9 @@ impl Forallable {
 /// The second argument (implicit or explicit) to a super() call.
 /// Either an instance of a class (inside an instance method) or a
 /// class object (inside a classmethod or staticmethod)
-#[derive(Debug, Clone, PartialEq, Eq, TypeEq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Visit, VisitMut, TypeEq, PartialOrd, Ord, Hash
+)]
 pub enum SuperObj {
     Instance(ClassType),
     Class(Class),

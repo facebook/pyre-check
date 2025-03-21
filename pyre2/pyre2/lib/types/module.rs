@@ -16,6 +16,8 @@ use starlark_map::ordered_set::OrderedSet;
 
 use crate::module::module_name::ModuleName;
 use crate::types::types::Type;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 /// In Python if you do `import foo.bar` and `import foo.baz` then what you are really
 /// doing is importing a single symbol `foo` that contains the two modules accessible from it.
@@ -29,6 +31,16 @@ pub struct Module {
     path: Box<[Name]>,
     /// Use an OrderedMap so we have a table Hash/Ord instance.
     modules: Arc<OrderedSet<ModuleName>>,
+}
+
+impl Visit<Type> for Module {
+    const CONTAINS: bool = false;
+    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+}
+
+impl VisitMut<Type> for Module {
+    const CONTAINS: bool = false;
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
 }
 
 impl Display for Module {

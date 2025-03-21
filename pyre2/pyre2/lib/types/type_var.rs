@@ -21,10 +21,23 @@ use crate::types::equality::TypeEqCtx;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 /// Used to represent TypeVar calls. Each TypeVar is unique, so use the ArcId to separate them.
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct TypeVar(ArcId<TypeVarInner>);
+
+// This is a lie, we do have types in the bound position
+impl Visit<Type> for TypeVar {
+    const CONTAINS: bool = false;
+    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+}
+
+impl VisitMut<Type> for TypeVar {
+    const CONTAINS: bool = false;
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+}
 
 impl Display for TypeVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

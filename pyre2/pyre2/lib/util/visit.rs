@@ -98,6 +98,9 @@ visit_nothing!(i128);
 visit_nothing!(isize);
 visit_nothing!(());
 
+// We can't visit `str` on its own, so this is atomic.
+visit_nothing!(Box<str>);
+
 // Pyrefly types that have nothing inside
 visit_nothing!(Name);
 visit_nothing!(Unique);

@@ -10,6 +10,8 @@ use std::fmt;
 use std::fmt::Display;
 
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
@@ -37,7 +39,9 @@ use crate::types::types::Type;
 assert_words!(Lit, 3);
 
 /// A literal value.
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum Lit {
     String(Box<str>),
     Int(i64),

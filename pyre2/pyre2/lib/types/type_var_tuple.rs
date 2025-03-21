@@ -18,10 +18,22 @@ use crate::types::equality::TypeEqCtx;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 /// Used to represent TypeVarTuple calls. Each TypeVarTuple is unique, so use the ArcId to separate them.
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct TypeVarTuple(ArcId<TypeVarTupleInner>);
+
+impl Visit<Type> for TypeVarTuple {
+    const CONTAINS: bool = false;
+    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+}
+
+impl VisitMut<Type> for TypeVarTuple {
+    const CONTAINS: bool = false;
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+}
 
 impl Display for TypeVarTuple {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -18,10 +18,22 @@ use crate::types::equality::TypeEqCtx;
 use crate::types::qname::QName;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
+use crate::util::visit::Visit;
+use crate::util::visit::VisitMut;
 
 /// Used to represent ParamSpec calls. Each ParamSpec is unique, so use the ArcId to separate them.
 #[derive(Clone, Dupe, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct ParamSpec(ArcId<ParamSpecInner>);
+
+impl Visit<Type> for ParamSpec {
+    const CONTAINS: bool = false;
+    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+}
+
+impl VisitMut<Type> for ParamSpec {
+    const CONTAINS: bool = false;
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+}
 
 impl Display for ParamSpec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
