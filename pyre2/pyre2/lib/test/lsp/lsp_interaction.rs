@@ -182,6 +182,27 @@ fn get_initialize_responses() -> std::vec::Vec<lsp_server::Response> {
     }]
 }
 
+fn build_did_open_notification(path: PathBuf) -> lsp_server::Notification {
+    Notification {
+        method: "textDocument/didOpen".to_owned(),
+        params: serde_json::json!({
+            "textDocument": {
+                "uri": format!("file://{}", path.to_str().unwrap()),
+                "languageId": "python",
+                "version": 1,
+                "text": std::fs::read_to_string(path).unwrap()
+            }
+        }),
+    }
+}
+
+fn get_test_files_root() -> PathBuf {
+    let current_dir = std::env::current_dir().expect("std:env::current_dir() unavailable for test");
+    let test_files_path = std::env::var("TEST_FILES_PATH")
+        .expect("TEST_FILES_PATH env var not set: cargo or buck should set this automatically");
+    current_dir.join(test_files_path)
+}
+
 #[test]
 fn test_initialize() {
     run_test_lsp(TestCase {
@@ -199,46 +220,37 @@ fn test_go_to_def() {
 
     let mut test_messages = get_initialize_messages();
     let mut expected_responses = get_initialize_responses();
+    let root = get_test_files_root();
 
-    test_messages.push(Message::from(Notification {
-        method: "textDocument/didOpen".to_owned(),
-        params: serde_json::json!({
-            "textDocument": {
-                "uri": format!("file://{}/foo.py", TEST_PYTHON_PATH),
-                "languageId": "python",
-                "version": 1,
-                "text": "class Foo: ...\n\n\nFoo\n"
-            }
-        }),
-    }));
+    test_messages.push(Message::from(build_did_open_notification(
+        root.join("foo.py"),
+    )));
 
-    // Add a go-to-definition request
     test_messages.push(Message::from(Request {
         id: RequestId::from(2),
         method: "textDocument/definition".to_owned(),
         params: serde_json::json!({
             "textDocument": {
-                "uri": format!("file://{}/foo.py", TEST_PYTHON_PATH)
+                "uri": format!("file://{}/foo.py", root.to_str().unwrap())
             },
             "position": {
-                "line": 3,
+                "line": 9,
                 "character": 0
             }
         }),
     }));
 
-    // Add the expected response for the go-to-definition request
     expected_responses.push(Response {
         id: RequestId::from(2),
         result: Some(serde_json::json!({
-            "uri": format!("file://{}/foo.py", TEST_PYTHON_PATH),
+            "uri": format!("file://{}/foo.py", root.to_str().unwrap()),
             "range": {
                 "start": {
-                    "line": 0,
+                    "line": 6,
                     "character": 6
                 },
                 "end": {
-                    "line": 0,
+                    "line": 6,
                     "character": 9
                 }
             }

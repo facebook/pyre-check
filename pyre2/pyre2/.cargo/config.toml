@@ -1,0 +1,2 @@
+[env]
+TEST_FILES_PATH = "lib/test/lsp/test_files"
