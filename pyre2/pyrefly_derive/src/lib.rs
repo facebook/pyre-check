@@ -27,3 +27,9 @@ pub fn derive_type_eq(input: TokenStream) -> TokenStream {
 pub fn derive_visit(input: TokenStream) -> TokenStream {
     visit::derive_visit(input)
 }
+
+/// Generate `VisitMut` traits.
+#[proc_macro_derive(VisitMut)]
+pub fn derive_visit_mut(input: TokenStream) -> TokenStream {
+    visit::derive_visit_mut(input)
+}
