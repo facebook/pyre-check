@@ -1989,47 +1989,33 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         match &*self.get_idx(*cls_binding) {
                             Type::Any(style) => style.propagate(),
                             cls_type @ Type::ClassDef(cls) => {
-                                let error = |obj_cls| {
-                                    self.error(
-                                        errors,
-                                        *range,
-                                        ErrorKind::InvalidSuperCall,
-                                        None,
-                                        format!(
-                                            "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
-                                            cls_type, obj_cls, obj_cls, cls_type
-                                        ),
+                                let make_super_instance = |obj_cls, super_obj: &dyn Fn() -> SuperObj| {
+                                    let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
+                                    lookup_cls.map_or_else (
+                                        || {
+                                            self.error(
+                                                errors,
+                                                *range,
+                                                ErrorKind::InvalidSuperCall,
+                                                None,
+                                                format!(
+                                                    "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
+                                                    cls_type, obj_cls, obj_cls, cls_type
+                                                ),
+                                            )
+                                        },
+                                        |lookup_cls| {
+                                            Type::SuperInstance(Box::new((lookup_cls, super_obj())))
+                                        }
                                     )
                                 };
                                 match &*self.get_idx(*obj_binding) {
                                     Type::Any(style) => style.propagate(),
-                                    Type::ClassType(obj_cls) => {
-                                        let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
-                                        lookup_cls.map_or_else(
-                                            || error(obj_cls),
-                                            |lookup_cls| {
-                                                Type::SuperInstance(Box::new((lookup_cls, SuperObj::Instance(obj_cls.clone()))))
-                                            },
-                                        )
-                                    }
-                                    Type::Type(box Type::ClassType(obj_cls)) => {
-                                        let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
-                                        lookup_cls.map_or_else(
-                                            || error(obj_cls),
-                                            |lookup_cls| {
-                                                Type::SuperInstance(Box::new((lookup_cls, SuperObj::Class(obj_cls.class_object().dupe()))))
-                                            },
-                                        )
-                                    }
+                                    Type::ClassType(obj_cls) => make_super_instance(obj_cls, &|| SuperObj::Instance(obj_cls.clone())),
+                                    Type::Type(box Type::ClassType(obj_cls)) => make_super_instance(obj_cls, &|| SuperObj::Class(obj_cls.class_object().dupe())),
                                     Type::ClassDef(obj_cls) => {
                                         let obj_type = ClassType::new(obj_cls.dupe(), self.create_default_targs(obj_cls, None));
-                                        let lookup_cls = self.get_super_lookup_class(cls, &obj_type);
-                                        lookup_cls.map_or_else(
-                                            || error(&obj_type),
-                                            |lookup_cls| {
-                                                Type::SuperInstance(Box::new((lookup_cls, SuperObj::Class(obj_cls.dupe()))))
-                                            }
-                                        )
+                                        make_super_instance(&obj_type, &|| SuperObj::Class(obj_cls.dupe()))
                                     }
                                     t => {
                                         self.error(
