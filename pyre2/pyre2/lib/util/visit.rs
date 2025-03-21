@@ -246,6 +246,7 @@ impl<To: 'static, T0: VisitMut<To>, T1: VisitMut<To>, T2: VisitMut<To>, T3: Visi
 
 #[cfg(test)]
 mod tests {
+    use pyrefly_derive::Visit;
     use static_assertions::const_assert;
 
     use super::*;
@@ -292,5 +293,42 @@ mod tests {
         const_assert!(!<Vec<Foo> as Visit<i32>>::CONTAINS);
         const_assert!(!<Vec<Foo> as Visit<i32>>::CONTAINS0);
         vec![Foo].visit0(&mut |_: &i32| ());
+    }
+
+    #[derive(Visit, PartialEq, Eq, Debug)]
+    struct Foo {
+        x: i32,
+        f: (Bar, Baz),
+    }
+
+    #[derive(Visit, PartialEq, Eq, Debug)]
+    struct Bar(i32, i32);
+
+    #[derive(Visit, PartialEq, Eq, Debug)]
+    enum Baz {
+        A,
+        B(bool, bool),
+        C { x: i32, y: i32 },
+    }
+
+    #[test]
+    fn test_visit_derive() {
+        let info = (
+            Foo {
+                x: 1,
+                f: (Bar(2, 3), Baz::B(true, false)),
+            },
+            Baz::A,
+            Baz::C { x: 4, y: 5 },
+        );
+        let mut collect = Vec::new();
+        info.visit0(&mut |x: &i32| collect.push(*x));
+        assert_eq!(&collect, &[1i32, 2, 3, 4, 5]);
+        let mut collect = Vec::new();
+        info.visit0(&mut |x: &bool| collect.push(*x));
+        assert_eq!(&collect, &[true, false]);
+        let mut collect = Vec::new();
+        info.visit0(&mut |x: &Bar| collect.push(x));
+        assert_eq!(&collect, &[&Bar(2, 3)]);
     }
 }
