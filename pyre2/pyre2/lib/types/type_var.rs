@@ -11,6 +11,7 @@ use std::hash::Hash;
 
 use dupe::Dupe;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
 use pyrefly_derive::VisitMut;
 use ruff_python_ast::Identifier;
 
@@ -31,7 +32,9 @@ impl Display for TypeVar {
     }
 }
 
-#[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash
+)]
 pub enum Restriction {
     Constraints(Vec<Type>),
     Bound(Type),
@@ -39,7 +42,7 @@ pub enum Restriction {
 }
 
 #[derive(
-    Debug, Clone, Copy, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash
+    Debug, Clone, Copy, Visit, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash
 )]
 pub enum Variance {
     Covariant,

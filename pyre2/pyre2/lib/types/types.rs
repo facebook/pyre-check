@@ -82,7 +82,9 @@ pub struct TParamInfo {
     pub variance: Option<Variance>,
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct TParam {
     /// Display name
     pub name: Name,
@@ -100,7 +102,9 @@ impl Display for TParam {
 
 /// Wraps a vector of type parameters. The constructor ensures that
 /// type parameters without defaults never follow ones with defaults.
-#[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Default, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct TParams(Vec<TParam>);
 
 impl Display for TParams {
@@ -267,31 +271,13 @@ impl BoundMethod {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum BoundMethodType {
     Function(Function),
     Forall(Forall<Function>),
     Overload(Overload),
-}
-
-impl Visit<Type> for BoundMethodType {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match self {
-            Self::Function(x) => x.visit(f),
-            Self::Forall(x) => x.body.visit(f),
-            Self::Overload(x) => x.visit(f),
-        }
-    }
-}
-
-impl VisitMut<Type> for BoundMethodType {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Self::Function(x) => x.visit_mut(f),
-            Self::Forall(x) => x.body.visit_mut(f),
-            Self::Overload(x) => x.visit_mut(f),
-        }
-    }
 }
 
 impl BoundMethodType {
@@ -322,28 +308,12 @@ impl BoundMethodType {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Overload {
     pub signatures: Vec1<OverloadType>,
     pub metadata: Box<FuncMetadata>,
-}
-
-impl Visit<Type> for Overload {
-    fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
-        for t in self.signatures.iter() {
-            t.visit(&mut f);
-        }
-        self.metadata.visit(f);
-    }
-}
-
-impl VisitMut<Type> for Overload {
-    fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        for t in self.signatures.iter_mut() {
-            t.visit_mut(&mut f);
-        }
-        self.metadata.visit_mut(f);
-    }
 }
 
 impl Overload {
@@ -362,24 +332,6 @@ impl Overload {
 pub enum OverloadType {
     Callable(Callable),
     Forall(Forall<Function>),
-}
-
-impl Visit<Type> for OverloadType {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match self {
-            Self::Callable(c) => c.visit(f),
-            Self::Forall(forall) => forall.body.signature.visit(f),
-        }
-    }
-}
-
-impl VisitMut<Type> for OverloadType {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Self::Callable(c) => c.visit_mut(f),
-            Self::Forall(forall) => forall.body.signature.visit_mut(f),
-        }
-    }
 }
 
 impl OverloadType {

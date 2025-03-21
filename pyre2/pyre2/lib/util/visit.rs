@@ -11,6 +11,7 @@ use std::any::Any;
 use const_str;
 use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
+use vec1::Vec1;
 
 use crate::module::module_name::ModuleName;
 use crate::util::uniques::Unique;
@@ -114,6 +115,26 @@ impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
 }
 
 impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec<T> {
+    const CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
+
+    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
+        for item in self {
+            item.visit0_mut(f);
+        }
+    }
+}
+
+impl<To: 'static, T: Visit<To>> Visit<To> for Vec1<T> {
+    const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
+
+    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
+        for item in self {
+            item.visit0(f);
+        }
+    }
+}
+
+impl<To: 'static, T: VisitMut<To>> VisitMut<To> for Vec1<T> {
     const CONTAINS: bool = <T as VisitMut<To>>::CONTAINS0;
 
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut To)) {
