@@ -245,3 +245,12 @@ testcase!(
 *a, b, c = (1,) # E: Cannot unpack tuple[Literal[1]] (of size 1) into 2+ values
 "#,
 );
+
+testcase!(
+    test_unpacked_tuple_subtype,
+    r#"
+from typing import Sequence
+def test(x: tuple[int, *tuple[str, ...]]) -> None:
+    y: Sequence[int | str] = x
+"#,
+);

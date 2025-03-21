@@ -731,7 +731,6 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 self.is_subset_eq(&Type::Tuple(Tuple::Concrete(elts)), want)
             }
             (Type::Tuple(l), Type::Tuple(u)) => self.is_subset_tuple(l, u),
-
             (Type::Tuple(Tuple::Concrete(left_elts)), _) => {
                 let tuple_type = self
                     .type_order
@@ -744,12 +743,25 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 let tuple_type = self.type_order.stdlib().tuple(left_elt.clone()).to_type();
                 self.is_subset_eq(&tuple_type, want)
             }
-            (Type::Tuple(Tuple::Unpacked(box (prefix, middle, suffix))), _) => {
+            (
+                Type::Tuple(Tuple::Unpacked(box (
+                    prefix,
+                    Type::Tuple(Tuple::Unbounded(box middle)),
+                    suffix,
+                ))),
+                _,
+            ) => {
                 let mut elts = prefix.clone();
                 elts.push(middle.clone());
                 elts.extend(suffix.clone());
                 let tuple_type = self.type_order.stdlib().tuple(unions(elts)).to_type();
                 self.is_subset_eq(&tuple_type, want)
+            }
+            (Type::Tuple(Tuple::Unpacked(box (prefix, middle, suffix))), _) => {
+                let mut elts = prefix.clone();
+                elts.extend(suffix.clone());
+                let tuple_type = self.type_order.stdlib().tuple(unions(elts)).to_type();
+                self.is_subset_eq(&tuple_type, want) && self.is_subset_eq(middle, want)
             }
             (Type::Literal(lit), Type::LiteralString) => lit.is_string(),
             (Type::Literal(lit), t @ Type::ClassType(_)) => self.is_subset_eq(

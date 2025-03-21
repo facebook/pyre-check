@@ -10778,16 +10778,6 @@
     },
     {
       "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed",
-      "description": "assert_type(Sequence[int | tuple[str, ...]], Sequence[int | str]) failed",
-      "line": 139,
-      "name": "assert-type",
-      "stop_column": 51,
-      "stop_line": 139
-    },
-    {
-      "code": -2,
       "column": 6,
       "concise_description": "`tuple[Literal[1], Literal[''], Literal['']]` is not assignable to variable `t1` with type `tuple[int, str]`",
       "description": "`tuple[Literal[1], Literal[''], Literal['']]` is not assignable to variable `t1` with type `tuple[int, str]`",
