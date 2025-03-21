@@ -11,6 +11,7 @@ use std::any::Any;
 use const_str;
 use ruff_python_ast::name::Name;
 
+use crate::module::module_name::ModuleName;
 use crate::util::uniques::Unique;
 
 /// Visitors based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
@@ -98,6 +99,7 @@ visit_nothing!(());
 // Pyrefly types that have nothing inside
 visit_nothing!(Name);
 visit_nothing!(Unique);
+visit_nothing!(ModuleName);
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
     const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;

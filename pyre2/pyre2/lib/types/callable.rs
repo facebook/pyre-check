@@ -10,6 +10,8 @@ use std::fmt;
 use std::fmt::Display;
 
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
@@ -23,7 +25,9 @@ use crate::util::prelude::SliceExt;
 use crate::util::visit::Visit;
 use crate::util::visit::VisitMut;
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Callable {
     pub params: Params,
     pub ret: Type,
@@ -35,20 +39,10 @@ impl Display for Callable {
     }
 }
 
-#[derive(Debug, Clone, Default, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Default, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct ParamList(Vec<Param>);
-
-impl Visit<Type> for ParamList {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.0.visit(f);
-    }
-}
-
-impl VisitMut<Type> for ParamList {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.0.visit_mut(f);
-    }
-}
 
 impl ParamList {
     pub fn new(xs: Vec<Param>) -> Self {
@@ -118,7 +112,9 @@ impl ParamList {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum Params {
     List(ParamList),
     Ellipsis,
@@ -128,7 +124,9 @@ pub enum Params {
     ParamSpec(Box<[Type]>, Type),
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum Param {
     PosOnly(Type, Required),
     Pos(Name, Type, Required),
@@ -137,41 +135,25 @@ pub enum Param {
     Kwargs(Type),
 }
 
-#[derive(Debug, Clone, Copy, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Copy, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum Required {
     Required,
     Optional,
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Function {
     pub signature: Callable,
     pub metadata: FuncMetadata,
 }
 
-impl Visit<Type> for Function {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        let Self {
-            signature,
-            metadata,
-        } = self;
-        signature.visit(f);
-        metadata.visit(f);
-    }
-}
-
-impl VisitMut<Type> for Function {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let Self {
-            signature,
-            metadata,
-        } = self;
-        signature.visit_mut(f);
-        metadata.visit_mut(f);
-    }
-}
-
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct FuncMetadata {
     pub kind: FunctionKind,
     pub flags: FuncFlags,
@@ -190,19 +172,9 @@ impl FuncMetadata {
     }
 }
 
-impl Visit<Type> for FuncMetadata {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.flags.visit(f);
-    }
-}
-
-impl VisitMut<Type> for FuncMetadata {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.flags.visit_mut(f);
-    }
-}
-
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Default
+)]
 pub struct FuncFlags {
     pub is_overload: bool,
     pub is_staticmethod: bool,
@@ -217,19 +189,9 @@ pub struct FuncFlags {
     pub has_final_decoration: bool,
 }
 
-impl Visit<Type> for FuncFlags {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        self.is_property_setter_with_getter.visit(f);
-    }
-}
-
-impl VisitMut<Type> for FuncFlags {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.is_property_setter_with_getter.visit_mut(f);
-    }
-}
-
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct FuncId {
     pub module: ModuleName,
     pub cls: Option<Name>,
@@ -254,7 +216,9 @@ impl FuncId {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, TypeEq, Visit, VisitMut, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum FunctionKind {
     IsInstance,
     IsSubclass,
@@ -275,6 +239,11 @@ pub enum FunctionKind {
 /// dataclass functions.
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoolKeywords(OrderedMap<Name, bool>);
+
+impl Visit<Type> for BoolKeywords {
+    const CONTAINS: bool = false;
+    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+}
 
 impl VisitMut<Type> for BoolKeywords {
     const CONTAINS: bool = false;
@@ -423,48 +392,6 @@ impl Callable {
     }
 }
 
-impl Visit<Type> for Callable {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        let Self { params, ret } = self;
-        params.visit(f);
-        f(ret)
-    }
-}
-
-impl VisitMut<Type> for Callable {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let Self { params, ret } = self;
-        params.visit_mut(f);
-        f(ret)
-    }
-}
-
-impl Visit<Type> for Params {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match &self {
-            Params::List(params) => params.visit(f),
-            Params::Ellipsis => {}
-            Params::ParamSpec(args, pspec) => {
-                args.visit(f);
-                f(pspec);
-            }
-        }
-    }
-}
-
-impl VisitMut<Type> for Params {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Params::List(params) => params.visit_mut(f),
-            Params::Ellipsis => {}
-            Params::ParamSpec(args, pspec) => {
-                args.visit_mut(f);
-                f(pspec);
-            }
-        }
-    }
-}
-
 impl Param {
     pub fn fmt_with_type<'a, D: Display + 'a>(
         &'a self,
@@ -487,30 +414,6 @@ impl Param {
             | Param::Pos(_, _, Required::Required)
             | Param::KwOnly(_, _, Required::Required) => true,
             _ => false,
-        }
-    }
-}
-
-impl Visit<Type> for Param {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match &self {
-            Param::PosOnly(ty, _required) => f(ty),
-            Param::Pos(_, ty, _required) => f(ty),
-            Param::VarArg(ty) => f(ty),
-            Param::KwOnly(_, ty, _required) => f(ty),
-            Param::Kwargs(ty) => f(ty),
-        }
-    }
-}
-
-impl VisitMut<Type> for Param {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Param::PosOnly(ty, _required) => f(ty),
-            Param::Pos(_, ty, _required) => f(ty),
-            Param::VarArg(ty) => f(ty),
-            Param::KwOnly(_, ty, _required) => f(ty),
-            Param::Kwargs(ty) => f(ty),
         }
     }
 }
