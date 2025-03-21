@@ -2021,6 +2021,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                             },
                                         )
                                     }
+                                    Type::ClassDef(obj_cls) => {
+                                        let obj_type = ClassType::new(obj_cls.dupe(), self.create_default_targs(obj_cls, None));
+                                        let lookup_cls = self.get_super_lookup_class(cls, &obj_type);
+                                        lookup_cls.map_or_else(
+                                            || error(&obj_type),
+                                            |lookup_cls| {
+                                                Type::SuperInstance(Box::new((lookup_cls, SuperObj::Class(obj_cls.dupe()))))
+                                            }
+                                        )
+                                    }
                                     t => {
                                         self.error(
                                             errors,
