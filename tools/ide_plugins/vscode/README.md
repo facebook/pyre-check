@@ -4,7 +4,11 @@ This extension allows you to view pyre errors for any workspace containing a .py
 
 ## Requirements
 
-pyre must be installed for the extension to work. You can do so by running `pip install pyre-check`.
+`pyre` and `watchman` must be installed and configured for the extension to work:
+
+- Install pyre e.g. running `pip install pyre-check`.
+- Install [watchman (https://facebook.github.io/watchman/docs/install) e.g. on Debian/Ubuntu `apt-get install -y watchman`.
+- Create configuration for pyre and watchman by running `pyre init` 
 
 ## Issues
 
