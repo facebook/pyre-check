@@ -342,4 +342,32 @@ mod tests {
         const_assert!(<Generic<i32> as Visit<i32>>::CONTAINS0);
         const_assert!(!<Generic<i32> as Visit<u8>>::CONTAINS0);
     }
+
+    #[test]
+    fn test_visit_subset() {
+        #[derive(PartialEq, Eq, Debug)]
+        struct Foo(i32);
+
+        impl Visit<i32> for Foo {
+            fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a i32)) {
+                f(&self.0);
+            }
+        }
+
+        impl VisitMut<i32> for Foo {
+            fn visit_mut(&mut self, f: &mut dyn FnMut(&mut i32)) {
+                f(&mut self.0);
+            }
+        }
+
+        /// We derive Visit/VisitMut for `Foo`, but know it will only work for i32
+        #[derive(Visit, VisitMut, PartialEq, Eq, Debug)]
+        struct Bar(Foo);
+
+        let mut info = Bar(Foo(1));
+        info.visit0_mut(&mut |x: &mut i32| *x += 2);
+        let mut collect = Vec::new();
+        info.visit0(&mut |x: &i32| collect.push(*x));
+        assert_eq!(&collect, &[3i32]);
+    }
 }

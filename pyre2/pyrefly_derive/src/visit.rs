@@ -168,7 +168,9 @@ fn derive_visit_impl(
     let contains = quote! { #(<#types as #trait_name<To>>::CONTAINS0 || )* false };
 
     Ok(quote! {
-        impl <To: 'static, #generics_before > #trait_name<To> for #name < #generics_after > {
+        impl <To: 'static, #generics_before > #trait_name<To> for #name < #generics_after > where
+            #(#types : #trait_name<To>,)*
+         {
             const CONTAINS: bool = #contains;
 
             #signature {
