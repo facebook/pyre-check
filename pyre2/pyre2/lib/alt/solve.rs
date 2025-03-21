@@ -1221,6 +1221,102 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         lookup_cls.cloned()
     }
 
+    fn solve_super_binding(
+        &self,
+        style: &SuperStyle,
+        range: TextRange,
+        errors: &ErrorCollector,
+    ) -> Type {
+        match style {
+            SuperStyle::ExplicitArgs(cls_binding, obj_binding) => {
+                match &*self.get_idx(*cls_binding) {
+                    Type::Any(style) => style.propagate(),
+                    cls_type @ Type::ClassDef(cls) => {
+                        let make_super_instance = |obj_cls, super_obj: &dyn Fn() -> SuperObj| {
+                            let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
+                            lookup_cls.map_or_else (
+                                || {
+                                    self.error(
+                                        errors,
+                                        range,
+                                        ErrorKind::InvalidSuperCall,
+                                        None,
+                                        format!(
+                                            "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
+                                            cls_type, obj_cls, obj_cls, cls_type
+                                        ),
+                                    )
+                                },
+                                |lookup_cls| {
+                                    Type::SuperInstance(Box::new((lookup_cls, super_obj())))
+                                }
+                            )
+                        };
+                        match &*self.get_idx(*obj_binding) {
+                            Type::Any(style) => style.propagate(),
+                            Type::ClassType(obj_cls) => make_super_instance(obj_cls, &|| SuperObj::Instance(obj_cls.clone())),
+                            Type::Type(box Type::ClassType(obj_cls)) => make_super_instance(obj_cls, &|| SuperObj::Class(obj_cls.class_object().dupe())),
+                            Type::ClassDef(obj_cls) => {
+                                let obj_type = ClassType::new(obj_cls.dupe(), self.create_default_targs(obj_cls, None));
+                                make_super_instance(&obj_type, &|| SuperObj::Class(obj_cls.dupe()))
+                            }
+                            t => {
+                                self.error(
+                                    errors,
+                                    range,
+                                    ErrorKind::InvalidArgument,
+                                    None,
+                                    format!("Expected second argument to `super` to be a class object or instance, got `{}`", self.for_display(t.clone())),
+                                )
+                            }
+                        }
+                    }
+                    t => self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidArgument,
+                        None,
+                        format!(
+                            "Expected first argument to `super` to be a class object, got `{}`",
+                            self.for_display(t.clone())
+                        ),
+                    ),
+                }
+            }
+            SuperStyle::ImplicitArgs(self_binding, method) => {
+                match &self.get_idx(*self_binding).0 {
+                    Some(obj_cls) => {
+                        let obj_type = ClassType::new(
+                            obj_cls.dupe(),
+                            self.create_default_targs(obj_cls, None),
+                        );
+                        let lookup_cls = self.get_super_lookup_class(obj_cls, &obj_type).unwrap();
+                        let obj = if method.id == dunder::NEW {
+                            // __new__ is special: it's the only static method in which the
+                            // no-argument form of super is allowed.
+                            SuperObj::Class(obj_cls.dupe())
+                        } else {
+                            let method_ty = self.get(&KeyFunction(ShortIdentifier::new(method)));
+                            if method_ty.metadata.flags.is_staticmethod {
+                                return self.error(
+                                    errors,
+                                    range,
+                                    ErrorKind::InvalidSuperCall,
+                                    None,
+                                    "`super` call with no arguments is not valid inside a staticmethod".to_owned(),
+                                );
+                            }
+                            SuperObj::Instance(obj_type)
+                        };
+                        Type::SuperInstance(Box::new((lookup_cls, obj)))
+                    }
+                    None => Type::any_implicit(),
+                }
+            }
+            SuperStyle::Any => Type::any_implicit(),
+        }
+    }
+
     fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
         match binding {
             Binding::Expr(ann, e) => match ann {
@@ -1984,98 +2080,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 annotated_ty
             }
-            Binding::SuperInstance(style, range) => {
-                match style {
-                    SuperStyle::ExplicitArgs(cls_binding, obj_binding) => {
-                        match &*self.get_idx(*cls_binding) {
-                            Type::Any(style) => style.propagate(),
-                            cls_type @ Type::ClassDef(cls) => {
-                                let make_super_instance = |obj_cls, super_obj: &dyn Fn() -> SuperObj| {
-                                    let lookup_cls = self.get_super_lookup_class(cls, obj_cls);
-                                    lookup_cls.map_or_else (
-                                        || {
-                                            self.error(
-                                                errors,
-                                                *range,
-                                                ErrorKind::InvalidSuperCall,
-                                                None,
-                                                format!(
-                                                    "Illegal `super({}, {})` call: `{}` is not an instance or subclass of `{}`",
-                                                    cls_type, obj_cls, obj_cls, cls_type
-                                                ),
-                                            )
-                                        },
-                                        |lookup_cls| {
-                                            Type::SuperInstance(Box::new((lookup_cls, super_obj())))
-                                        }
-                                    )
-                                };
-                                match &*self.get_idx(*obj_binding) {
-                                    Type::Any(style) => style.propagate(),
-                                    Type::ClassType(obj_cls) => make_super_instance(obj_cls, &|| SuperObj::Instance(obj_cls.clone())),
-                                    Type::Type(box Type::ClassType(obj_cls)) => make_super_instance(obj_cls, &|| SuperObj::Class(obj_cls.class_object().dupe())),
-                                    Type::ClassDef(obj_cls) => {
-                                        let obj_type = ClassType::new(obj_cls.dupe(), self.create_default_targs(obj_cls, None));
-                                        make_super_instance(&obj_type, &|| SuperObj::Class(obj_cls.dupe()))
-                                    }
-                                    t => {
-                                        self.error(
-                                            errors,
-                                            *range,
-                                            ErrorKind::InvalidArgument,
-                                            None,
-                                            format!("Expected second argument to `super` to be a class object or instance, got `{}`", self.for_display(t.clone())),
-                                        )
-                                    }
-                                }
-                            }
-                            t => self.error(
-                                errors,
-                                *range,
-                                ErrorKind::InvalidArgument,
-                                None,
-                                format!(
-                                    "Expected first argument to `super` to be a class object, got `{}`",
-                                    self.for_display(t.clone())
-                                ),
-                            ),
-                        }
-                    }
-                    SuperStyle::ImplicitArgs(self_binding, method) => {
-                        match &self.get_idx(*self_binding).0 {
-                            Some(obj_cls) => {
-                                let obj_type = ClassType::new(
-                                    obj_cls.dupe(),
-                                    self.create_default_targs(obj_cls, None),
-                                );
-                                let lookup_cls =
-                                    self.get_super_lookup_class(obj_cls, &obj_type).unwrap();
-                                let obj = if method.id == dunder::NEW {
-                                    // __new__ is special: it's the only static method in which the
-                                    // no-argument form of super is allowed.
-                                    SuperObj::Class(obj_cls.dupe())
-                                } else {
-                                    let method_ty =
-                                        self.get(&KeyFunction(ShortIdentifier::new(method)));
-                                    if method_ty.metadata.flags.is_staticmethod {
-                                        return self.error(
-                                            errors,
-                                            *range,
-                                            ErrorKind::InvalidSuperCall,
-                                            None,
-                                            "`super` call with no arguments is not valid inside a staticmethod".to_owned(),
-                                        );
-                                    }
-                                    SuperObj::Instance(obj_type)
-                                };
-                                Type::SuperInstance(Box::new((lookup_cls, obj)))
-                            }
-                            None => Type::any_implicit(),
-                        }
-                    }
-                    SuperStyle::Any => Type::any_implicit(),
-                }
-            }
+            Binding::SuperInstance(style, range) => self.solve_super_binding(style, *range, errors),
         }
     }
 
