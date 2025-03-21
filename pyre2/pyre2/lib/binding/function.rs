@@ -23,8 +23,8 @@ use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
-use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::FunctionSource;
+use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
@@ -310,7 +310,7 @@ fn function_last_expressions<'a>(
             Stmt::Expr(x) => res.push((LastStmt::Expr, &x.value)),
             Stmt::Return(_) | Stmt::Raise(_) => {}
             Stmt::With(x) => {
-                let kind = ContextManagerKind::new(x);
+                let kind = IsAsync::new(x.is_async);
                 for y in &x.items {
                     res.push((LastStmt::With(kind), &y.context_expr));
                 }

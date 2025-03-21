@@ -44,9 +44,9 @@ use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
-use crate::binding::binding::ContextManagerKind;
 use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionSource;
+use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
 use crate::binding::binding::LastStmt;
@@ -732,13 +732,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn context_value_enter(
         &self,
         context_manager_type: &Type,
-        kind: ContextManagerKind,
+        kind: IsAsync,
         range: TextRange,
         errors: &ErrorCollector,
         context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
         match kind {
-            ContextManagerKind::Sync => self.call_method_or_error(
+            IsAsync::Sync => self.call_method_or_error(
                 context_manager_type,
                 &dunder::ENTER,
                 range,
@@ -747,7 +747,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors,
                 context,
             ),
-            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
+            IsAsync::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
                 &dunder::AENTER,
                 range,
@@ -771,7 +771,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn context_value_exit(
         &self,
         context_manager_type: &Type,
-        kind: ContextManagerKind,
+        kind: IsAsync,
         range: TextRange,
         errors: &ErrorCollector,
         context: Option<&dyn Fn() -> ErrorContext>,
@@ -786,18 +786,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             CallArg::Type(&arg3, range),
         ];
         match kind {
-            ContextManagerKind::Sync => self.call_method_or_error(
+            IsAsync::Sync => self.call_method_or_error(
                 context_manager_type,
-                &kind.as_exit_dunder(),
+                &kind.context_exit_dunder(),
                 range,
                 &exit_arg_types,
                 &[],
                 errors,
                 context,
             ),
-            ContextManagerKind::Async => match self.unwrap_awaitable(&self.call_method_or_error(
+            IsAsync::Async => match self.unwrap_awaitable(&self.call_method_or_error(
                 context_manager_type,
-                &kind.as_exit_dunder(),
+                &kind.context_exit_dunder(),
                 range,
                 &exit_arg_types,
                 &[],
@@ -819,7 +819,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn context_value(
         &self,
         context_manager_type: &Type,
-        kind: ContextManagerKind,
+        kind: IsAsync,
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
@@ -836,7 +836,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             &|| TypeCheckContext {
                 kind: TypeCheckKind::MagicMethodReturn(
                     context_manager_type.clone(),
-                    kind.as_exit_dunder(),
+                    kind.context_exit_dunder(),
                 ),
                 context: Some(context()),
             },

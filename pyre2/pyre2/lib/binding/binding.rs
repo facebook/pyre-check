@@ -24,7 +24,6 @@ use ruff_python_ast::Identifier;
 use ruff_python_ast::StmtAugAssign;
 use ruff_python_ast::StmtClassDef;
 use ruff_python_ast::StmtFunctionDef;
-use ruff_python_ast::StmtWith;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -564,17 +563,17 @@ pub enum RaisedException {
 }
 
 #[derive(Clone, Dupe, Copy, Debug)]
-pub enum ContextManagerKind {
+pub enum IsAsync {
     Sync,
     Async,
 }
 
-impl ContextManagerKind {
-    pub fn new(x: &StmtWith) -> Self {
-        if x.is_async { Self::Async } else { Self::Sync }
+impl IsAsync {
+    pub fn new(is_async: bool) -> Self {
+        if is_async { Self::Async } else { Self::Sync }
     }
 
-    pub fn as_exit_dunder(self) -> Name {
+    pub fn context_exit_dunder(self) -> Name {
         match self {
             Self::Sync => dunder::EXIT,
             Self::Async => dunder::AEXIT,
@@ -641,7 +640,7 @@ pub enum LastStmt {
     Expr,
     /// The last statement is a `with`, with the following context,
     /// which might (if exit is true) catch an exception
-    With(ContextManagerKind),
+    With(IsAsync),
 }
 
 #[derive(Clone, Debug)]
@@ -698,12 +697,7 @@ pub enum Binding {
     /// A value produced by entering a context manager.
     /// The second argument is the expression of the context manager and its range.
     /// The fourth argument indicates whether the context manager is async or not.
-    ContextValue(
-        Option<Idx<KeyAnnotation>>,
-        Idx<Key>,
-        TextRange,
-        ContextManagerKind,
-    ),
+    ContextValue(Option<Idx<KeyAnnotation>>, Idx<Key>, TextRange, IsAsync),
     /// A value at a specific position in an unpacked iterable expression.
     /// Example: UnpackedValue(('a', 'b')), 1) represents 'b'.
     UnpackedValue(Box<Binding>, TextRange, UnpackedPosition),
@@ -831,8 +825,8 @@ impl DisplayWith<Bindings> for Binding {
             Self::ExceptionHandler(box x, false) => write!(f, "except {}", m.display(x)),
             Self::ContextValue(_ann, x, _, kind) => {
                 let name = match kind {
-                    ContextManagerKind::Sync => "context",
-                    ContextManagerKind::Async => "async context",
+                    IsAsync::Sync => "context",
+                    IsAsync::Async => "async context",
                 };
                 write!(f, "{name} {}", ctx.display(*x))
             }

@@ -23,7 +23,7 @@ use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingExpect;
-use crate::binding::binding::ContextManagerKind;
+use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyExpect;
@@ -584,7 +584,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.scopes.current_mut().flow = self.merge_flow(branches, range);
             }
             Stmt::With(x) => {
-                let kind = ContextManagerKind::new(&x);
+                let kind = IsAsync::new(x.is_async);
                 for mut item in x.items {
                     self.ensure_expr(&mut item.context_expr);
                     let item_range = item.range();
