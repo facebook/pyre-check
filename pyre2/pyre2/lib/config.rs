@@ -172,13 +172,13 @@ impl ConfigFile {
         #[derive(Debug, Deserialize)]
         struct Tool {
             #[serde(default)]
-            pub pyre: Option<ConfigFile>,
+            pub pyrefly: Option<ConfigFile>,
         }
 
         let maybe_config = toml::from_str::<PyProject>(config_str)
             .map_err(|err| anyhow::Error::msg(err.to_string()))?
             .tool
-            .and_then(|c| c.pyre);
+            .and_then(|c| c.pyrefly);
         // TODO(connernilsen): we don't want to return a default config here, we should keep searching
         Ok(maybe_config.unwrap_or_else(ConfigFile::default))
     }
@@ -191,7 +191,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn deserialize_pyre_config() {
+    fn deserialize_pyrefly_config() {
         let config_str = "
             project_includes = [\"./tests\", \"./implementation\"]
             python_platform = \"darwin\"
@@ -213,14 +213,14 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_pyre_config_defaults() {
+    fn deserialize_pyrefly_config_defaults() {
         let config_str = "";
         let config = ConfigFile::parse_config(config_str).unwrap();
         assert_eq!(config, ConfigFile::default());
     }
 
     #[test]
-    fn deserialize_pyre_config_with_unknown() {
+    fn deserialize_pyrefly_config_with_unknown() {
         let config_str = "
             laszewo = \"good kids\"
             python_platform = \"windows\"
@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn deserialize_pyproject_toml() {
         let config_str = "
-            [tool.pyre]
+            [tool.pyrefly]
             project_includes = [\"./tests\", \"./implementation\"]
             python_platform = \"darwin\"
             python_version = \"1.2.3\"
@@ -270,7 +270,7 @@ mod tests {
             table1_value = 2
             [tool.pysa]
             pysa_value = 2
-            [tool.pyre]
+            [tool.pyrefly]
             python_version = \"1.2.3\"
         ";
         let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
@@ -284,7 +284,7 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_pyproject_toml_without_pyre() {
+    fn deserialize_pyproject_toml_without_pyrefly() {
         let config_str = "
             top_level = 1
             [table1]
@@ -297,14 +297,14 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_pyproject_toml_with_unknown_in_pyre() {
+    fn deserialize_pyproject_toml_with_unknown_in_pyrefly() {
         let config_str = "
             top_level = 1
             [table1]
             table1_value = 2
             [tool.pysa]
             pysa_value = 2
-            [tool.pyre]
+            [tool.pyrefly]
             python_version = \"1.2.3\"
             inzo = \"overthinker\"
         ";
