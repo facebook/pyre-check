@@ -131,7 +131,7 @@ impl Ast {
                 }
                 _ => {}
             }
-            x.visit(&mut |xs| stmt(xs, module_name, is_init, imports));
+            x.recurse(&mut |xs| stmt(xs, module_name, is_init, imports));
         }
         let mut imports = SmallMap::new();
         stmts(&module.body, module_name, is_init, &mut imports);
@@ -239,7 +239,7 @@ impl Ast {
             }
             _ => {}
         }
-        x.visit(&mut |x| Ast::pattern_lvalue(x, f));
+        x.recurse(&mut |x| Ast::pattern_lvalue(x, f));
     }
 
     /// Pull all dictionary items up to the top level, so `{a: 1, **{b: 2}}`

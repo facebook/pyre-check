@@ -20,17 +20,17 @@ use crate::util::visit::Visit;
 use crate::util::visit::VisitMut;
 
 impl Visit<Expr> for ModModule {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
         for x in &self.body {
-            x.visit(f);
+            x.recurse(f);
         }
     }
 }
 
 impl VisitMut for Expr {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
+    fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
         match self {
-            Expr::BoolOp(x) => x.values.visit_mut(f),
+            Expr::BoolOp(x) => x.values.recurse_mut(f),
             Expr::Named(x) => {
                 f(&mut x.target);
                 f(&mut x.value);
@@ -48,23 +48,23 @@ impl VisitMut for Expr {
             }
             Expr::Dict(x) => {
                 x.items.iter_mut().for_each(|x| {
-                    x.key.visit_mut(f);
+                    x.key.recurse_mut(f);
                     f(&mut x.value);
                 });
             }
-            Expr::Set(x) => x.elts.visit_mut(f),
+            Expr::Set(x) => x.elts.recurse_mut(f),
             Expr::ListComp(x) => {
                 f(&mut x.elt);
                 for x in &mut x.generators {
                     f(&mut x.iter);
-                    x.ifs.visit_mut(f);
+                    x.ifs.recurse_mut(f);
                 }
             }
             Expr::SetComp(x) => {
                 f(&mut x.elt);
                 for x in &mut x.generators {
                     f(&mut x.iter);
-                    x.ifs.visit_mut(f);
+                    x.ifs.recurse_mut(f);
                 }
             }
             Expr::DictComp(x) => {
@@ -72,26 +72,26 @@ impl VisitMut for Expr {
                 f(&mut x.value);
                 for x in &mut x.generators {
                     f(&mut x.iter);
-                    x.ifs.visit_mut(f);
+                    x.ifs.recurse_mut(f);
                 }
             }
             Expr::Generator(x) => {
                 f(&mut x.elt);
                 for x in &mut x.generators {
                     f(&mut x.iter);
-                    x.ifs.visit_mut(f);
+                    x.ifs.recurse_mut(f);
                 }
             }
             Expr::Await(x) => f(&mut x.value),
-            Expr::Yield(x) => x.value.visit_mut(f),
+            Expr::Yield(x) => x.value.recurse_mut(f),
             Expr::YieldFrom(x) => f(&mut x.value),
             Expr::Compare(x) => {
                 f(&mut x.left);
-                x.comparators.visit_mut(f);
+                x.comparators.recurse_mut(f);
             }
             Expr::Call(x) => {
                 f(&mut x.func);
-                x.arguments.args.visit_mut(f);
+                x.arguments.args.recurse_mut(f);
                 x.arguments
                     .keywords
                     .iter_mut()
@@ -125,12 +125,12 @@ impl VisitMut for Expr {
             }
             Expr::Starred(x) => f(&mut x.value),
             Expr::Name(_) => {}
-            Expr::List(x) => x.elts.visit_mut(f),
-            Expr::Tuple(x) => x.elts.visit_mut(f),
+            Expr::List(x) => x.elts.recurse_mut(f),
+            Expr::Tuple(x) => x.elts.recurse_mut(f),
             Expr::Slice(x) => {
-                x.lower.visit_mut(f);
-                x.upper.visit_mut(f);
-                x.step.visit_mut(f);
+                x.lower.recurse_mut(f);
+                x.upper.recurse_mut(f);
+                x.step.recurse_mut(f);
             }
             Expr::IpyEscapeCommand(_) => {}
         }
@@ -138,37 +138,37 @@ impl VisitMut for Expr {
 }
 
 impl Visit for Stmt {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
         match self {
-            Stmt::FunctionDef(x) => x.body.visit(f),
-            Stmt::ClassDef(x) => x.body.visit(f),
+            Stmt::FunctionDef(x) => x.body.recurse(f),
+            Stmt::ClassDef(x) => x.body.recurse(f),
             Stmt::For(x) => {
-                x.body.visit(f);
-                x.orelse.visit(f);
+                x.body.recurse(f);
+                x.orelse.recurse(f);
             }
             Stmt::While(x) => {
-                x.body.visit(f);
-                x.orelse.visit(f);
+                x.body.recurse(f);
+                x.orelse.recurse(f);
             }
             Stmt::If(x) => {
-                x.body.visit(f);
+                x.body.recurse(f);
                 for x in x.elif_else_clauses.iter() {
-                    x.body.visit(f);
+                    x.body.recurse(f);
                 }
             }
-            Stmt::With(x) => x.body.visit(f),
+            Stmt::With(x) => x.body.recurse(f),
             Stmt::Match(x) => {
                 for x in x.cases.iter() {
-                    x.body.visit(f);
+                    x.body.recurse(f);
                 }
             }
             Stmt::Try(x) => {
-                x.body.visit(f);
+                x.body.recurse(f);
                 x.handlers.iter().for_each(|x| match x {
-                    ExceptHandler::ExceptHandler(x) => x.body.visit(f),
+                    ExceptHandler::ExceptHandler(x) => x.body.recurse(f),
                 });
-                x.orelse.visit(f);
-                x.finalbody.visit(f);
+                x.orelse.recurse(f);
+                x.finalbody.recurse(f);
             }
             _ => {}
         }
@@ -176,7 +176,7 @@ impl Visit for Stmt {
 }
 
 impl Visit<Expr> for Stmt {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
         struct X<T>(T);
         impl<'a, T: FnMut(&'a Expr)> SourceOrderVisitor<'a> for X<T> {
             fn visit_expr(&mut self, x: &'a Expr) {
@@ -188,7 +188,7 @@ impl Visit<Expr> for Stmt {
 }
 
 impl Visit<Expr> for ExprFString {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Expr)) {
         self.value.iter().for_each(|x| match x {
             FStringPart::FString(x) => x.elements.iter().for_each(|x| match x {
                 FStringElement::Literal(_) => {}
@@ -200,9 +200,9 @@ impl Visit<Expr> for ExprFString {
 }
 
 impl Visit for Expr {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
         match self {
-            Expr::BoolOp(x) => x.values.visit(f),
+            Expr::BoolOp(x) => x.values.recurse(f),
             Expr::Named(x) => {
                 f(&x.target);
                 f(&x.value);
@@ -220,23 +220,23 @@ impl Visit for Expr {
             }
             Expr::Dict(x) => {
                 x.items.iter().for_each(|x| {
-                    x.key.visit(f);
+                    x.key.recurse(f);
                     f(&x.value);
                 });
             }
-            Expr::Set(x) => x.elts.visit(f),
+            Expr::Set(x) => x.elts.recurse(f),
             Expr::ListComp(x) => {
                 f(&x.elt);
                 for x in &x.generators {
                     f(&x.iter);
-                    x.ifs.visit(f);
+                    x.ifs.recurse(f);
                 }
             }
             Expr::SetComp(x) => {
                 f(&x.elt);
                 for x in &x.generators {
                     f(&x.iter);
-                    x.ifs.visit(f);
+                    x.ifs.recurse(f);
                 }
             }
             Expr::DictComp(x) => {
@@ -244,30 +244,30 @@ impl Visit for Expr {
                 f(&x.value);
                 for x in &x.generators {
                     f(&x.iter);
-                    x.ifs.visit(f);
+                    x.ifs.recurse(f);
                 }
             }
             Expr::Generator(x) => {
                 f(&x.elt);
                 for x in &x.generators {
                     f(&x.iter);
-                    x.ifs.visit(f);
+                    x.ifs.recurse(f);
                 }
             }
             Expr::Await(x) => f(&x.value),
-            Expr::Yield(x) => x.value.visit(f),
+            Expr::Yield(x) => x.value.recurse(f),
             Expr::YieldFrom(x) => f(&x.value),
             Expr::Compare(x) => {
                 f(&x.left);
-                x.comparators.visit(f);
+                x.comparators.recurse(f);
             }
             Expr::Call(x) => {
                 f(&x.func);
-                x.arguments.args.visit(f);
+                x.arguments.args.recurse(f);
                 x.arguments.keywords.iter().for_each(|x| f(&x.value));
             }
             Expr::FString(x) => {
-                x.visit(f);
+                x.recurse(f);
             }
             Expr::StringLiteral(_)
             | Expr::BytesLiteral(_)
@@ -282,12 +282,12 @@ impl Visit for Expr {
             }
             Expr::Starred(x) => f(&x.value),
             Expr::Name(_) => {}
-            Expr::List(x) => x.elts.visit(f),
-            Expr::Tuple(x) => x.elts.visit(f),
+            Expr::List(x) => x.elts.recurse(f),
+            Expr::Tuple(x) => x.elts.recurse(f),
             Expr::Slice(x) => {
-                x.lower.visit(f);
-                x.upper.visit(f);
-                x.step.visit(f);
+                x.lower.recurse(f);
+                x.upper.recurse(f);
+                x.step.recurse(f);
             }
             Expr::IpyEscapeCommand(_) => {}
         }
@@ -295,7 +295,7 @@ impl Visit for Expr {
 }
 
 impl Visit for Pattern {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
         match self {
             Pattern::MatchValue(_) => {}
             Pattern::MatchSingleton(_) => {}

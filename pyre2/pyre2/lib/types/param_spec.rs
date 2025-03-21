@@ -26,13 +26,13 @@ use crate::util::visit::VisitMut;
 pub struct ParamSpec(ArcId<ParamSpecInner>);
 
 impl Visit<Type> for ParamSpec {
-    const CONTAINS: bool = false;
-    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
 }
 
 impl VisitMut<Type> for ParamSpec {
-    const CONTAINS: bool = false;
-    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
 }
 
 impl Display for ParamSpec {

@@ -142,7 +142,7 @@ impl Solver {
                 *t = Type::any_implicit();
             }
         } else {
-            t.visit_mut(&mut |t| self.expand_with_limit(t, limit - 1, recurser));
+            t.recurse_mut(&mut |t| self.expand_with_limit(t, limit - 1, recurser));
         }
     }
 
@@ -182,7 +182,7 @@ impl Solver {
                 *t = Type::any_implicit();
             }
         } else {
-            t.visit_mut(&mut |t| self.deep_force_mut_with_limit(t, limit - 1, recurser));
+            t.recurse_mut(&mut |t| self.deep_force_mut_with_limit(t, limit - 1, recurser));
         }
     }
 

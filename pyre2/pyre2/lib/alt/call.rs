@@ -581,7 +581,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .unwrap_or(closest_overload),
             None => closest_overload,
         };
-        signature.visit_mut(&mut |x| *x = self.solver().for_display((*x).clone()));
+        signature.recurse_mut(&mut |x| *x = self.solver().for_display((*x).clone()));
         self.error(
             errors,
             range,

@@ -34,13 +34,13 @@ pub struct Module {
 }
 
 impl Visit<Type> for Module {
-    const CONTAINS: bool = false;
-    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
 }
 
 impl VisitMut<Type> for Module {
-    const CONTAINS: bool = false;
-    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
 }
 
 impl Display for Module {

@@ -342,7 +342,7 @@ impl<'a> BindingsBuilder<'a> {
             }
             _ => false,
         };
-        x.visit_mut(&mut |x| self.ensure_expr(x));
+        x.recurse_mut(&mut |x| self.ensure_expr(x));
         if new_scope {
             self.scopes.pop();
         }
@@ -408,7 +408,7 @@ impl<'a> BindingsBuilder<'a> {
             },
             // Bind the lambda so we don't crash on undefined parameter names.
             Expr::Lambda(_) => self.ensure_expr(x),
-            _ => x.visit_mut(&mut |x| self.ensure_type(x, tparams_builder)),
+            _ => x.recurse_mut(&mut |x| self.ensure_type(x, tparams_builder)),
         }
     }
 

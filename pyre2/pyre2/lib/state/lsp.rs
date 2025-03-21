@@ -47,7 +47,7 @@ impl State {
             {
                 *res = Some(Ast::expr_name_identifier(x.clone()));
             } else {
-                x.visit(&mut |x| f(x, find, res));
+                x.recurse(&mut |x| f(x, find, res));
             }
         }
         let mut res = None;
@@ -69,7 +69,7 @@ impl State {
             {
                 *res = Some(x.clone());
             } else {
-                x.visit(&mut |x| f(x, find, res));
+                x.recurse(&mut |x| f(x, find, res));
             }
         }
         let mut res = None;

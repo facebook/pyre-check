@@ -47,10 +47,10 @@ pub struct ClassMetadata {
 }
 
 impl VisitMut<Type> for ClassMetadata {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+    fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         // FIXME: This is definitely wrong. We have types in lots of these places.
         // Doesn't seem to have gone wrong yet, but it will.
-        self.mro.visit_mut(f);
+        self.mro.recurse_mut(f);
     }
 }
 
@@ -186,9 +186,9 @@ pub struct ClassSynthesizedField {
 }
 
 impl VisitMut<Type> for ClassSynthesizedField {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+    fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         let mut v = (*self.inner).clone();
-        v.visit_mut(f);
+        v.recurse_mut(f);
         self.inner = Arc::new(v);
     }
 }
@@ -212,7 +212,7 @@ impl ClassSynthesizedField {
 pub struct ClassSynthesizedFields(SmallMap<Name, ClassSynthesizedField>);
 
 impl VisitMut<Type> for ClassSynthesizedFields {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+    fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         for field in self.0.values_mut() {
             field.visit0_mut(f);
         }

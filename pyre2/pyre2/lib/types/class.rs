@@ -85,10 +85,10 @@ impl PartialOrd for Class {
 // There are types stored inside Class, in the TParams, but we don't want to visit them.
 // We typically visit types to get rid of Var, and promise these are not interesting in that sense.
 impl VisitMut<Type> for Class {
-    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+    fn recurse_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
 }
 impl Visit<Type> for Class {
-    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+    fn recurse<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
 }
 
 /// Simple properties of class fields that can be attached to the class definition. Note that this

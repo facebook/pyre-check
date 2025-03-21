@@ -385,7 +385,7 @@ impl<'a> DefinitionsBuilder<'a> {
             }
             _ => {}
         }
-        x.visit(&mut |xs| self.stmt(xs))
+        x.recurse(&mut |xs| self.stmt(xs))
     }
 }
 

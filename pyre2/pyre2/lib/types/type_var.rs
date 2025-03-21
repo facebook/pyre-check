@@ -30,13 +30,13 @@ pub struct TypeVar(ArcId<TypeVarInner>);
 
 // This is a lie, we do have types in the bound position
 impl Visit<Type> for TypeVar {
-    const CONTAINS: bool = false;
-    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
 }
 
 impl VisitMut<Type> for TypeVar {
-    const CONTAINS: bool = false;
-    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
 }
 
 impl Display for TypeVar {

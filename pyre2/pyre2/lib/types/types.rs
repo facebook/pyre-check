@@ -505,7 +505,7 @@ pub enum Type {
 }
 
 impl Visit for Type {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
+    fn recurse<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
         match self {
             Type::Literal(x) => x.visit0(f),
             Type::LiteralString => {}
@@ -546,7 +546,7 @@ impl Visit for Type {
 }
 
 impl VisitMut for Type {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
+    fn recurse_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
         match self {
             Type::Literal(x) => x.visit0_mut(f),
             Type::LiteralString => {}
@@ -794,7 +794,7 @@ impl Type {
             if *seen || predicate(ty) {
                 *seen = true;
             } else {
-                ty.visit(&mut |ty| f(ty, predicate, seen));
+                ty.recurse(&mut |ty| f(ty, predicate, seen));
             }
         }
         let mut seen = false;
@@ -909,7 +909,7 @@ impl Type {
     /// Visit every type, with the guarantee you will have seen included types before the parent.
     pub fn universe<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
         fn g<'a>(ty: &'a Type, f: &mut dyn FnMut(&'a Type)) {
-            ty.visit(&mut |ty| g(ty, f));
+            ty.recurse(&mut |ty| g(ty, f));
             f(ty);
         }
         g(self, f);
@@ -918,7 +918,7 @@ impl Type {
     /// Visit every type, with the guarantee you will have seen included types before the parent.
     pub fn transform_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
         fn g(ty: &mut Type, f: &mut dyn FnMut(&mut Type)) {
-            ty.visit_mut(&mut |ty| g(ty, f));
+            ty.recurse_mut(&mut |ty| g(ty, f));
             f(ty);
         }
         g(self, f);

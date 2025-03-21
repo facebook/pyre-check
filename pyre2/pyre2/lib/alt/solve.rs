@@ -586,7 +586,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         tparams,
                     )
                 };
-                callable.visit_mut(&mut visit);
+                callable.recurse_mut(&mut visit);
             }
             Type::Concatenate(box prefix, box pspec) => {
                 for t in prefix {
@@ -616,7 +616,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         tparams,
                     )
                 };
-                tuple.visit_mut(&mut visit);
+                tuple.recurse_mut(&mut visit);
             }
             Type::TypeVar(ty_var) => {
                 let q = match seen_type_vars.entry(ty_var.dupe()) {

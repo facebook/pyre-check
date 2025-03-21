@@ -241,13 +241,13 @@ pub enum FunctionKind {
 pub struct BoolKeywords(OrderedMap<Name, bool>);
 
 impl Visit<Type> for BoolKeywords {
-    const CONTAINS: bool = false;
-    fn visit<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse<'a>(&'a self, _: &mut dyn FnMut(&'a Type)) {}
 }
 
 impl VisitMut<Type> for BoolKeywords {
-    const CONTAINS: bool = false;
-    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+    const RECURSE_CONTAINS: bool = false;
+    fn recurse_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
 }
 
 impl BoolKeywords {

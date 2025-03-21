@@ -47,25 +47,25 @@ pub struct TypedDict {
 }
 
 impl Visit<Type> for TypedDict {
-    fn visit<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
+    fn recurse<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
         let Self {
             class: _,
             args,
             fields,
         } = self;
-        args.visit(&mut f);
+        args.recurse(&mut f);
         fields.values().for_each(|x| f(&x.ty));
     }
 }
 
 impl VisitMut<Type> for TypedDict {
-    fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
+    fn recurse_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
         let Self {
             class: _,
             args,
             fields,
         } = self;
-        args.visit_mut(&mut f);
+        args.recurse_mut(&mut f);
         fields.values_mut().for_each(|x| f(&mut x.ty));
     }
 }
