@@ -1319,6 +1319,39 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def decorator(f):
+       def inner(*args, **kwargs):
+         f(*args, **kwargs)
+       return inner
+     def foo():
+       return
+     @unknown_decorator
+     @decorator
+     def bar():
+       return foo  # Cannot resolve callees on the decorator
+     def main():
+       return bar()
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "13:9-13:14",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call (CallCallees.create ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
