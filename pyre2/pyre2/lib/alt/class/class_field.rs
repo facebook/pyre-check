@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
@@ -50,12 +51,11 @@ use crate::types::types::Forall;
 use crate::types::types::Forallable;
 use crate::types::types::SuperObj;
 use crate::types::types::Type;
-use crate::util::visit::VisitMut;
 
 /// Correctly analyzing which attributes are visible on class objects, as well
 /// as handling method binding correctly, requires distinguishing which fields
 /// are assigned values in the class body.
-#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
+#[derive(Clone, Debug, TypeEq, VisitMut, PartialEq, Eq)]
 pub enum ClassFieldInitialization {
     /// If this is a dataclass field, BoolKeywords stores the field's dataclass
     /// flags (which are boolean options that control how fields behave).
@@ -81,16 +81,10 @@ impl ClassFieldInitialization {
 /// Raw information about an attribute declared somewhere in a class. We need to
 /// know whether it is initialized in the class body in order to determine
 /// both visibility rules and whether method binding should be performed.
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, VisitMut)]
 pub struct ClassField(ClassFieldInner);
 
-impl VisitMut<Type> for ClassField {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.0.visit0_mut(f);
-    }
-}
-
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, PartialEq, Eq, VisitMut)]
 enum ClassFieldInner {
     // TODO(stroxler): We should refactor `ClassFieldInner` into enum cases; currently
     // the semantics are encoded ad-hoc into the fields of a large product which
@@ -105,26 +99,6 @@ enum ClassFieldInner {
         // Descriptor setter method, if there is one. `None` indicates no setter.
         descriptor_setter: Option<Type>,
     },
-}
-
-impl VisitMut<Type> for ClassFieldInner {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            ClassFieldInner::Simple {
-                ty,
-                annotation,
-                descriptor_getter,
-                descriptor_setter,
-                initialization: _,
-                readonly: _,
-            } => {
-                ty.visit0_mut(f);
-                annotation.visit0_mut(f);
-                descriptor_getter.visit0_mut(f);
-                descriptor_setter.visit0_mut(f);
-            }
-        }
-    }
 }
 
 impl Display for ClassField {

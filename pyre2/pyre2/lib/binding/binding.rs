@@ -334,14 +334,8 @@ impl Display for EmptyAnswer {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, TypeEq, VisitMut, PartialEq, Eq)]
 pub struct NoneIfRecursive<T>(pub Option<T>);
-
-impl<T: VisitMut<Type>> VisitMut<Type> for NoneIfRecursive<T> {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.0.visit_mut(f);
-    }
-}
 
 impl<T> Display for NoneIfRecursive<T>
 where

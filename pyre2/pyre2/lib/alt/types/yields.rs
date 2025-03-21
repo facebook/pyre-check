@@ -9,42 +9,21 @@ use std::fmt;
 use std::fmt::Display;
 
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 
 use crate::types::types::Type;
-use crate::util::visit::VisitMut;
 
-#[derive(Clone, Debug, TypeEq, Eq, PartialEq)]
+#[derive(Clone, Debug, VisitMut, TypeEq, Eq, PartialEq)]
 pub struct YieldResult {
     pub yield_ty: Type,
     pub send_ty: Type,
 }
 
-impl VisitMut<Type> for YieldResult {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let YieldResult { yield_ty, send_ty } = self;
-        yield_ty.visit0_mut(f);
-        send_ty.visit0_mut(f);
-    }
-}
-
-#[derive(Clone, Debug, TypeEq, Eq, PartialEq)]
+#[derive(Clone, Debug, VisitMut, TypeEq, Eq, PartialEq)]
 pub struct YieldFromResult {
     pub yield_ty: Type,
     pub send_ty: Type,
     pub return_ty: Type,
-}
-
-impl VisitMut<Type> for YieldFromResult {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let YieldFromResult {
-            yield_ty,
-            send_ty,
-            return_ty,
-        } = self;
-        yield_ty.visit0_mut(f);
-        send_ty.visit0_mut(f);
-        return_ty.visit0_mut(f);
-    }
 }
 
 impl YieldResult {

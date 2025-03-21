@@ -276,6 +276,11 @@ pub enum FunctionKind {
 #[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoolKeywords(OrderedMap<Name, bool>);
 
+impl VisitMut<Type> for BoolKeywords {
+    const CONTAINS: bool = false;
+    fn visit_mut(&mut self, _: &mut dyn FnMut(&mut Type)) {}
+}
+
 impl BoolKeywords {
     pub fn new() -> Self {
         Self(OrderedMap::new())
