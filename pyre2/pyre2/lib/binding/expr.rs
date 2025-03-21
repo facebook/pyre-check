@@ -22,6 +22,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
 use crate::binding::binding::Binding;
+use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::SuperStyle;
 use crate::binding::bindings::BindingsBuilder;
@@ -94,7 +95,8 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.push(Scope::comprehension(range));
         for comp in comprehensions.iter_mut() {
             self.scopes.current_mut().stat.expr_lvalue(&comp.target);
-            let make_binding = |k| Binding::IterableValue(k, comp.iter.clone(), comp.is_async);
+            let make_binding =
+                |k| Binding::IterableValue(k, comp.iter.clone(), IsAsync::new(comp.is_async));
             self.bind_target(&comp.target, &make_binding, None);
             self.ensure_expr(&mut comp.target);
             for x in comp.ifs.iter() {

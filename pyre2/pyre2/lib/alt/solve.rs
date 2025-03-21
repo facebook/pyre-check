@@ -1562,7 +1562,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         name, annot_type,
                     ))
                 };
-                let iterables = if *is_async {
+                let iterables = if is_async.is_async() {
                     let hint = ty.clone().and_then(|x| {
                         x.ty()
                             .map(|ty| self.stdlib.async_iterable(ty.clone()).to_type())
