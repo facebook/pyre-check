@@ -10,7 +10,10 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+use anyhow::bail;
+use itertools::Itertools;
 use serde::Deserialize;
+use toml::Table;
 
 use crate::globs::Globs;
 use crate::metadata::PythonVersion;
@@ -25,7 +28,20 @@ pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
+#[serde(transparent)]
+pub struct ExtraConfigs(Table);
+
+// `Value` types in `Table` might not be `Eq`, but we don't actually care about that w.r.t. `ConfigFile`
+impl Eq for ExtraConfigs {}
+
+impl PartialEq for ExtraConfigs {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
 pub struct ConfigFile {
     /// Files that should be counted as sources (e.g. user-space code).
     /// NOTE: this is never replaced with CLI args in this config, but may be overridden by CLI args where used.
@@ -57,6 +73,10 @@ pub struct ConfigFile {
     // TODO(connernilsen): use python_executable if not set
     #[serde(default)]
     pub site_package_path: Vec<PathBuf>,
+
+    /// Any unknown config items
+    #[serde(default, flatten)]
+    pub extras: ExtraConfigs,
 }
 
 impl Default for ConfigFile {
@@ -68,6 +88,7 @@ impl Default for ConfigFile {
             site_package_path: Vec::new(),
             project_includes: Self::default_project_includes(),
             project_excludes: Self::default_project_excludes(),
+            extras: Self::default_extras(),
         }
     }
 }
@@ -87,6 +108,10 @@ impl ConfigFile {
 
     pub fn default_search_path() -> Vec<PathBuf> {
         vec![PathBuf::from("")]
+    }
+
+    pub fn default_extras() -> ExtraConfigs {
+        ExtraConfigs(Table::new())
     }
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
@@ -112,7 +137,7 @@ impl ConfigFile {
         self.project_excludes = self.project_excludes.clone().from_root(config_root);
     }
 
-    pub fn from_file(config_path: &Path) -> anyhow::Result<ConfigFile> {
+    pub fn from_file(config_path: &Path, error_on_extras: bool) -> anyhow::Result<ConfigFile> {
         // TODO(connernilsen): fix return type and handle config searching
         let config_str = fs::read_to_string(config_path)?;
         let mut config = if config_path.file_name() == Some(OsStr::new(&PYPROJECT_FILE_NAME)) {
@@ -120,6 +145,11 @@ impl ConfigFile {
         } else {
             Self::parse_config(&config_str)
         }?;
+
+        if error_on_extras && !config.extras.0.is_empty() {
+            let extra_keys = config.extras.0.keys().join(", ");
+            bail!("Extra keys found in config: {extra_keys}");
+        }
 
         if let Some(config_root) = config_path.parent() {
             config.rewrite_with_path_to_config(config_root);
@@ -156,6 +186,8 @@ impl ConfigFile {
 
 #[cfg(test)]
 mod tests {
+    use toml::Value;
+
     use super::*;
 
     #[test]
@@ -190,17 +222,14 @@ mod tests {
     #[test]
     fn deserialize_pyre_config_with_unknown() {
         let config_str = "
-            unknown = \"value\"
+            laszewo = \"good kids\"
             python_platform = \"windows\"
         ";
         let config = ConfigFile::parse_config(config_str).unwrap();
         assert_eq!(
-            config,
-            ConfigFile {
-                python_platform: "windows".to_owned(),
-                ..ConfigFile::default()
-            }
-        )
+            config.extras.0,
+            Table::from_iter([("laszewo".to_owned(), Value::String("good kids".to_owned()))])
+        );
     }
 
     #[test]
@@ -265,6 +294,25 @@ mod tests {
         ";
         let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
         assert_eq!(config, ConfigFile::default(),);
+    }
+
+    #[test]
+    fn deserialize_pyproject_toml_with_unknown_in_pyre() {
+        let config_str = "
+            top_level = 1
+            [table1]
+            table1_value = 2
+            [tool.pysa]
+            pysa_value = 2
+            [tool.pyre]
+            python_version = \"1.2.3\"
+            inzo = \"overthinker\"
+        ";
+        let config = ConfigFile::parse_pyproject_toml(config_str).unwrap();
+        assert_eq!(
+            config.extras.0,
+            Table::from_iter([("inzo".to_owned(), Value::String("overthinker".to_owned()))])
+        );
     }
 
     #[test]

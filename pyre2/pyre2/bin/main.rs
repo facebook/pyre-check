@@ -94,7 +94,7 @@ fn exit_on_panic() {
 
 fn get_open_source_config(file: &Path) -> anyhow::Result<ConfigFile> {
     // TODO: Implement upward-searching for open source config.
-    ConfigFile::from_file(file).map_err(|err| {
+    ConfigFile::from_file(file, true).map_err(|err| {
         let file_str = file.display();
         anyhow!("Failed to parse configuration at {file_str}: {err}")
     })
