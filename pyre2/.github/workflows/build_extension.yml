@@ -1,10 +1,25 @@
 name: build_extension
 on:
   workflow_dispatch:
+  workflow_call:
   push:
 
 jobs:
+  get_version:
+    runs-on: ubuntu-latest
+    outputs:
+      pyrefly_version: ${{ steps.pyrefly-version.outputs.PYREFLY_VERSION }}
+    steps:
+      - name: Checkout repo (to see version.bzl in nex step)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get all history for all branches and tags
+      - name: Get version
+        id: pyrefly-version
+        run: echo "PYREFLY_VERSION=$(sed -n -e 's/^VERSION = "\(.*\)"/\1/p' pyre2/version.bzl)" >> $GITHUB_OUTPUT
   build_extension:
+    needs: get_version
+    if: success()
     strategy:
       fail-fast: false
       matrix:
@@ -61,11 +76,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-        working-directory: lsp/
       - name: save platform name
         run: echo "platform=${{ matrix.platform }}-${{ matrix.arch }}" >> ${{ matrix.github_env }}
-      - run: npx vsce package --target ${{ env.platform }}
+      - run: npm ci
+        working-directory: lsp/
+      - run: npx vsce package --target ${{ env.platform }} ${{needs.get_version.outputs.pyrefly_version}}
         working-directory: lsp/
       - uses: actions/upload-artifact@v4
         with:
