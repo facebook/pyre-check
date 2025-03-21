@@ -218,3 +218,21 @@ class B(A):
         super().f()  # E: `super` call with no arguments is not valid inside a staticmethod
     "#,
 );
+
+testcase!(
+    test_classmethod,
+    r#"
+from typing import assert_type
+
+class A:
+    @classmethod
+    def f(cls) -> int:
+        return 0
+
+class B(A):
+    @classmethod
+    def g(cls):
+        assert_type(super().f(), int)
+        assert_type(super(B, cls).f(), int)
+    "#,
+);
