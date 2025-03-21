@@ -507,50 +507,40 @@ pub enum Type {
 impl Visit for Type {
     fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Self)) {
         match self {
-            Type::Callable(box c) => c.visit(f),
-            Type::Function(box x) => x.visit(f),
-            Type::BoundMethod(box b) => b.visit(f),
-            Type::Union(xs) | Type::Intersect(xs) => xs.iter().for_each(f),
-            Type::Overload(overload) => overload.visit(f),
-            Type::ClassType(x) => x.visit(f),
-            Type::TypedDict(x) => x.visit(f),
-            Type::Tuple(t) => t.visit(f),
-            Type::Forall(forall) => forall.body.visit(f),
-            Type::Concatenate(args, pspec) => {
-                for a in args {
-                    f(a)
-                }
-                f(pspec);
-            }
-            Type::ParamSpecValue(x) => x.visit(f),
-            Type::Type(x)
-            | Type::TypeGuard(x)
-            | Type::TypeIs(x)
-            | Type::Unpack(x)
-            | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
-            Type::SuperInstance(box (cls1, obj)) => {
-                cls1.visit(f);
-                match obj {
-                    SuperObj::Instance(cls2) => cls2.visit(f),
-                    SuperObj::Class(_) => {}
-                }
-            }
-            Type::Literal(_)
-            | Type::Never(_)
-            | Type::LiteralString
-            | Type::Any(_)
-            | Type::ClassDef(_)
-            | Type::Var(_)
-            | Type::None
-            | Type::Module(_)
-            | Type::SpecialForm(_)
-            | Type::Quantified(_)
-            | Type::TypeVar(_)
-            | Type::ParamSpec(_)
-            | Type::Args(_)
-            | Type::Kwargs(_)
-            | Type::TypeVarTuple(_)
-            | Type::Ellipsis => {}
+            Type::Literal(x) => x.visit0(f),
+            Type::LiteralString => {}
+            Type::Callable(x) => x.visit0(f),
+            Type::Function(x) => x.visit0(f),
+            Type::BoundMethod(x) => x.visit0(f),
+            Type::Overload(x) => x.visit0(f),
+            Type::Union(x) => x.visit0(f),
+            Type::Intersect(x) => x.visit0(f),
+            Type::ClassDef(x) => x.visit0(f),
+            Type::ClassType(x) => x.visit0(f),
+            Type::TypedDict(x) => x.visit0(f),
+            Type::Tuple(x) => x.visit0(f),
+            Type::Module(x) => x.visit0(f),
+            Type::Forall(x) => x.visit0(f),
+            Type::Var(x) => x.visit0(f),
+            Type::Quantified(x) => x.visit0(f),
+            Type::TypeGuard(x) => x.visit0(f),
+            Type::TypeIs(x) => x.visit0(f),
+            Type::Unpack(x) => x.visit0(f),
+            Type::TypeVar(x) => x.visit0(f),
+            Type::ParamSpec(x) => x.visit0(f),
+            Type::TypeVarTuple(x) => x.visit0(f),
+            Type::SpecialForm(x) => x.visit0(f),
+            Type::Concatenate(x, _) => x.visit0(f),
+            Type::ParamSpecValue(x) => x.visit0(f),
+            Type::Args(x) => x.visit0(f),
+            Type::Kwargs(x) => x.visit0(f),
+            Type::Type(x) => x.visit0(f),
+            Type::Ellipsis => {}
+            Type::Any(x) => x.visit0(f),
+            Type::Never(x) => x.visit0(f),
+            Type::TypeAlias(x) => x.visit0(f),
+            Type::SuperInstance(x) => x.visit0(f),
+            Type::None => {}
         }
     }
 }
@@ -558,50 +548,40 @@ impl Visit for Type {
 impl VisitMut for Type {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Self)) {
         match self {
-            Type::Callable(box c) => c.visit_mut(f),
-            Type::Function(box x) => x.visit_mut(f),
-            Type::BoundMethod(box b) => b.visit_mut(f),
-            Type::Union(xs) | Type::Intersect(xs) => xs.iter_mut().for_each(f),
-            Type::Overload(overload) => overload.visit_mut(f),
-            Type::ClassType(x) => x.visit_mut(f),
-            Type::TypedDict(x) => x.visit_mut(f),
-            Type::Tuple(t) => t.visit_mut(f),
-            Type::Forall(forall) => forall.body.visit_mut(f),
-            Type::Concatenate(args, pspec) => {
-                for a in args {
-                    f(a)
-                }
-                f(pspec);
-            }
-            Type::ParamSpecValue(x) => x.visit_mut(f),
-            Type::Type(x)
-            | Type::TypeGuard(x)
-            | Type::TypeIs(x)
-            | Type::Unpack(x)
-            | Type::TypeAlias(TypeAlias { ty: x, .. }) => f(x),
-            Type::SuperInstance(box (cls1, obj)) => {
-                cls1.visit_mut(f);
-                match obj {
-                    SuperObj::Instance(cls2) => cls2.visit_mut(f),
-                    SuperObj::Class(_) => {}
-                }
-            }
-            Type::Literal(_)
-            | Type::Never(_)
-            | Type::LiteralString
-            | Type::Any(_)
-            | Type::ClassDef(_)
-            | Type::None
-            | Type::Var(_)
-            | Type::Module(_)
-            | Type::SpecialForm(_)
-            | Type::Quantified(_)
-            | Type::TypeVar(_)
-            | Type::ParamSpec(_)
-            | Type::Args(_)
-            | Type::Kwargs(_)
-            | Type::TypeVarTuple(_)
-            | Type::Ellipsis => {}
+            Type::Literal(x) => x.visit0_mut(f),
+            Type::LiteralString => {}
+            Type::Callable(x) => x.visit0_mut(f),
+            Type::Function(x) => x.visit0_mut(f),
+            Type::BoundMethod(x) => x.visit0_mut(f),
+            Type::Overload(x) => x.visit0_mut(f),
+            Type::Union(x) => x.visit0_mut(f),
+            Type::Intersect(x) => x.visit0_mut(f),
+            Type::ClassDef(x) => x.visit0_mut(f),
+            Type::ClassType(x) => x.visit0_mut(f),
+            Type::TypedDict(x) => x.visit0_mut(f),
+            Type::Tuple(x) => x.visit0_mut(f),
+            Type::Module(x) => x.visit0_mut(f),
+            Type::Forall(x) => x.visit0_mut(f),
+            Type::Var(x) => x.visit0_mut(f),
+            Type::Quantified(x) => x.visit0_mut(f),
+            Type::TypeGuard(x) => x.visit0_mut(f),
+            Type::TypeIs(x) => x.visit0_mut(f),
+            Type::Unpack(x) => x.visit0_mut(f),
+            Type::TypeVar(x) => x.visit0_mut(f),
+            Type::ParamSpec(x) => x.visit0_mut(f),
+            Type::TypeVarTuple(x) => x.visit0_mut(f),
+            Type::SpecialForm(x) => x.visit0_mut(f),
+            Type::Concatenate(x, _) => x.visit0_mut(f),
+            Type::ParamSpecValue(x) => x.visit0_mut(f),
+            Type::Args(x) => x.visit0_mut(f),
+            Type::Kwargs(x) => x.visit0_mut(f),
+            Type::Type(x) => x.visit0_mut(f),
+            Type::Ellipsis => {}
+            Type::Any(x) => x.visit0_mut(f),
+            Type::Never(x) => x.visit0_mut(f),
+            Type::TypeAlias(x) => x.visit0_mut(f),
+            Type::SuperInstance(x) => x.visit0_mut(f),
+            Type::None => {}
         }
     }
 }
