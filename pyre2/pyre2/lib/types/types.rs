@@ -12,6 +12,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use parse_display::Display;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
 use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
@@ -186,7 +187,9 @@ impl AnyStyle {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash, Display
+)]
 pub enum TypeAliasStyle {
     /// A type alias declared with the `type` keyword
     #[display("ScopedTypeAlias")]
@@ -199,23 +202,13 @@ pub enum TypeAliasStyle {
     LegacyImplicit,
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct TypeAlias {
     pub name: Box<Name>,
     ty: Box<Type>,
     pub style: TypeAliasStyle,
-}
-
-impl Visit<Type> for TypeAlias {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        f(&self.ty);
-    }
-}
-
-impl VisitMut<Type> for TypeAlias {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        f(&mut self.ty);
-    }
 }
 
 impl TypeAlias {
@@ -256,26 +249,12 @@ pub enum CalleeKind {
     Class(ClassKind),
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct BoundMethod {
     pub obj: Type,
     pub func: BoundMethodType,
-}
-
-impl Visit<Type> for BoundMethod {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        let Self { obj, func } = self;
-        f(obj);
-        func.visit(f);
-    }
-}
-
-impl VisitMut<Type> for BoundMethod {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        let Self { obj, func } = self;
-        f(obj);
-        func.visit_mut(f);
-    }
 }
 
 impl BoundMethod {
@@ -377,7 +356,9 @@ impl Overload {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum OverloadType {
     Callable(Callable),
     Forall(Forall<Function>),
@@ -426,35 +407,21 @@ impl OverloadType {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub struct Forall<T> {
     pub tparams: TParams,
     pub body: T,
 }
 
 /// These are things that can have Forall around them, so often you see `Forall<Forallable>`
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+)]
 pub enum Forallable {
     TypeAlias(TypeAlias),
     Function(Function),
-}
-
-impl Visit<Type> for Forallable {
-    fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a Type)) {
-        match self {
-            Self::Function(func) => func.visit0(f),
-            Self::TypeAlias(ta) => ta.visit0(f),
-        }
-    }
-}
-
-impl VisitMut<Type> for Forallable {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Self::Function(x) => x.visit0_mut(f),
-            Self::TypeAlias(x) => x.visit0_mut(f),
-        }
-    }
 }
 
 impl Forallable {
