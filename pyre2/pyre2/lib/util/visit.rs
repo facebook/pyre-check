@@ -5,6 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+//! Traits for visiting contained data types. See [`Visit`] (the immutable version)
+//! for full documentation, where [`VisitMut`] works similarly.
+
 use std::any;
 use std::any::Any;
 
@@ -17,11 +20,51 @@ use crate::module::module_name::ModuleName;
 use crate::util::uniques::Unique;
 
 /// Visitors based on <https://ndmitchell.com/#uniplate_30_sep_2007>.
+///
+/// Given a from type (`Self`) you want to visit all the `To` values contained within it.
+/// It does not visit any of the `To` values contained within those `To` values
+/// (i.e. it is not recursive), but you can build a recursive traversal using `recurse`.
+///
+/// The `recurse` and `visit` methods do the same thing, unless `To == Self`, in which case
+/// `recurse` will ignore the outer element, while `visit` will call the argument function
+/// with `self`.
+///
+/// The `RECURSE_CONTAINS` and `VISIT_CONTAINS` are `false` if there is a guarantee that when
+/// called they will _never_ call the argument function E.g. they are a no-op.
+/// Can be used for optimisation.
+///
+/// When making the choice of using either `recurse` or `visit`:
+///
+/// * If you are defining an instance, define `recurse` (and potentially `RECURSE_CONTAINS`)
+///   and `visit` will be inferred automatically.
+/// * If you are starting at a type and want to operate on values within it, use `visit`.
+/// * If you are in a recursive traversal, e.g. a argument to `visit`, use `recurse`.
+///
+/// For example, given a `enum Expr {Constant(i32), Negate(Box<Expr>) ...}` you could write
+/// a traversal to collect all the constants with:
+///
+/// ```ignore
+/// fn f(x: &Expr, res: &mut Vec<i32>) {
+///     if let Expr::Constant(x) = x {
+///         res.push(*x)
+///     }
+///     x.recurse(|x| f(x, res));
+/// }
+/// let mut res = Vec::new();
+/// value.visit(|x| f(x, &mut res));
+/// ```
+///
+/// Here we make the first call using `visit`, which will work regardless of whether
+/// we are at an `Expr`, or a `Vec<Expr>`. But within the recursive call, we use `recurse`.
+///
+/// * If you use `recurse` instead of `visit`, you will miss the outer element if
+///   `value = Expr::Constant(1)`.
+/// * If you use `visit` instead of `recurse`, you will infinite loop and stack overflow.
 pub trait Visit<To: 'static = Self>: 'static + Sized {
-    /// Whether the type contains `To` elements as children - is `visit` a no-op.
+    /// Is `recurse` a no-op.
     const RECURSE_CONTAINS: bool = true;
 
-    /// Whether the `visit0` is a no-op.
+    /// Is `visit` a no-op.
     const VISIT_CONTAINS: bool = Self::RECURSE_CONTAINS || type_eq::<To, Self>();
 
     /// Should call the function on all the `To` children of `Self`.
