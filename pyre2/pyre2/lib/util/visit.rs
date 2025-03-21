@@ -333,5 +333,10 @@ mod tests {
         let mut collect = Vec::new();
         info.visit0(&mut |x: &Bar| collect.push(x));
         assert_eq!(&collect, &[&Bar(2, 3)]);
+
+        const_assert!(<Foo as Visit<i32>>::CONTAINS0);
+        const_assert!(!<Foo as Visit<u8>>::CONTAINS0);
+        const_assert!(<Generic<i32> as Visit<i32>>::CONTAINS0);
+        const_assert!(!<Generic<i32> as Visit<u8>>::CONTAINS0);
     }
 }

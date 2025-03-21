@@ -51,13 +51,16 @@ fn derive_visit_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStrea
     let name = &input.ident;
     let (generics_before, generics_after) = generics(&input.generics)?;
     let visit = quote! { crate::util::visit::Visit };
-    let body = match &input.data {
+    let (body, types) = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
             Fields::Named(fields_named) => {
                 let fields = fields_named.named.iter().map(|x| &x.ident);
-                quote_spanned! {fields_named.span() =>
-                    #( #visit::visit0(&self.#fields, f); )*
-                }
+                (
+                    quote_spanned! {fields_named.span() =>
+                        #( #visit::visit0(&self.#fields, f); )*
+                    },
+                    fields_named.named.iter().map(|x| &x.ty).collect(),
+                )
             }
             Fields::Unnamed(fields_unnamed) => {
                 let indicies = fields_unnamed
@@ -65,44 +68,62 @@ fn derive_visit_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStrea
                     .iter()
                     .enumerate()
                     .map(|(i, _)| syn::Index::from(i));
-                quote_spanned! {fields_unnamed.span() =>
-                    #( #visit::visit0(&self.#indicies, f); )*
-                }
+                (
+                    quote_spanned! {fields_unnamed.span() =>
+                        #( #visit::visit0(&self.#indicies, f); )*
+                    },
+                    fields_unnamed.unnamed.iter().map(|x| &x.ty).collect(),
+                )
             }
-            Fields::Unit => quote! {},
+            Fields::Unit => (quote! {}, Vec::new()),
         },
         Data::Enum(data_enum) => {
-            let variants = data_enum.variants.iter().map(|variant| {
-                let variant_name = &variant.ident;
-                match &variant.fields {
-                    Fields::Named(fields_named) => {
-                        let fields: Vec<_> = fields_named.named.iter().map(|x| &x.ident).collect();
-                        quote_spanned! { variant.span() =>
-                            #name::#variant_name { #(#fields),*  } => {
-                                #( #visit::visit0(#fields, f); )*
-                            }
+            let (variants, types): (Vec<_>, Vec<_>) = data_enum
+                .variants
+                .iter()
+                .map(|variant| {
+                    let variant_name = &variant.ident;
+                    match &variant.fields {
+                        Fields::Named(fields_named) => {
+                            let fields: Vec<_> =
+                                fields_named.named.iter().map(|x| &x.ident).collect();
+                            (
+                                quote_spanned! { variant.span() =>
+                                    #name::#variant_name { #(#fields),*  } => {
+                                        #( #visit::visit0(#fields, f); )*
+                                    }
+                                },
+                                fields_named.named.iter().map(|x| &x.ty).collect(),
+                            )
                         }
-                    }
-                    Fields::Unnamed(fields_unnamed) => {
-                        let fields: Vec<_> = (0..fields_unnamed.unnamed.len())
-                            .map(|i| format_ident!("x{i}"))
-                            .collect();
-                        quote_spanned! { variant.span() =>
-                            #name::#variant_name(#(#fields),*) => {
-                                #( #visit::visit0(#fields, f); )*
-                            }
+                        Fields::Unnamed(fields_unnamed) => {
+                            let fields: Vec<_> = (0..fields_unnamed.unnamed.len())
+                                .map(|i| format_ident!("x{i}"))
+                                .collect();
+                            (
+                                quote_spanned! { variant.span() =>
+                                    #name::#variant_name(#(#fields),*) => {
+                                        #( #visit::visit0(#fields, f); )*
+                                    }
+                                },
+                                fields_unnamed.unnamed.iter().map(|x| &x.ty).collect(),
+                            )
                         }
+                        Fields::Unit => (
+                            quote_spanned! { variant.span() => #name::#variant_name => {} },
+                            Vec::new(),
+                        ),
                     }
-                    Fields::Unit => {
-                        quote_spanned! { variant.span() => #name::#variant_name => {} }
+                })
+                .unzip();
+            (
+                quote! {
+                    match self {
+                        #(#variants)*
                     }
-                }
-            });
-            quote! {
-                match self {
-                    #(#variants)*
-                }
-            }
+                },
+                types.into_iter().flatten().collect(),
+            )
         }
         _ => {
             return Err(syn::Error::new_spanned(
@@ -111,8 +132,12 @@ fn derive_visit_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStrea
             ));
         }
     };
+    let contains = quote! { #(<#types as #visit<To>>::CONTAINS0 || )* false };
+
     Ok(quote! {
         impl <To: 'static, #generics_before > #visit<To> for #name < #generics_after > {
+            const CONTAINS: bool = #contains;
+
             fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
                 #body
             }
