@@ -14,7 +14,7 @@ module Analysis = struct
       | FetchReturnedCallables
       | CreateParameterizedTargets
       | ComputeCalleeTargets
-      | HandleHigherOrderParameters
+      | FindNonParameterizedTargets
       | StoreCallCallees
       | PartitionDecoratedTargets
       | ResolveCall
@@ -25,7 +25,7 @@ module Analysis = struct
       | FetchReturnedCallables -> Format.fprintf formatter "fetch-returned-callables"
       | CreateParameterizedTargets -> Format.fprintf formatter "create-parameterized-targets"
       | ComputeCalleeTargets -> Format.fprintf formatter "compute-callee-targets"
-      | HandleHigherOrderParameters -> Format.fprintf formatter "handle-higher-order-parameters"
+      | FindNonParameterizedTargets -> Format.fprintf formatter "find-non-parameterized-targets"
       | StoreCallCallees -> Format.fprintf formatter "store-call-callees"
       | PartitionDecoratedTargets -> Format.fprintf formatter "partition-decorated-targets"
       | ResolveCall -> Format.fprintf formatter "resolve-call"

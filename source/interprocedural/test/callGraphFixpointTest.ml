@@ -1195,10 +1195,10 @@ let test_higher_order_call_graph_fixpoint =
        return
      class MyClass:
        @classproperty
-       def bar():
+       def bar(cls):
          return foo
      def main(o: MyClass):
-       return o.bar()  # TODO(T218500651): Test storing decorated functions into object attributes
+       return o.bar()  # Test storing decorated functions into object attributes
   |}
            ~expected:
              [
@@ -1210,9 +1210,56 @@ let test_higher_order_call_graph_fixpoint =
                    [
                      ( "19:9-19:16",
                        LocationCallees.Singleton
-                         (ExpressionCallees.from_call (CallCallees.create ())) );
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.MyClass";
+                                          method_name = "bar";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     (* TODO: Handle descriptors properly. Since `o.bar` evaluates into `foo`
+                        (because of calling `classproperty.__get__`, which results in calling
+                        `MyClass.bar`), `o.bar()` is `foo()`. Hence nothing should be returned
+                        here. *)
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                   ];
+               };
+               {
+                 Expected.callable =
+                   create_parameterized_target
+                     ~regular:
+                       (Target.Regular.Method
+                          {
+                            class_name = "test.classproperty";
+                            method_name = "__init__";
+                            kind = Normal;
+                          })
+                     ~parameters:
+                       [
+                         ( create_positional_parameter 1 "fget",
+                           Target.Regular.Method
+                             { class_name = "test.MyClass"; method_name = "bar"; kind = Normal }
+                           |> Target.from_regular );
+                       ];
+                 call_graph = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       ~implicit_receiver:true
+                       (Target.Regular.Method
+                          { class_name = "test.MyClass"; method_name = "bar"; kind = Normal });
+                   ];
                };
                {
                  Expected.callable =
@@ -1227,14 +1274,27 @@ let test_higher_order_call_graph_fixpoint =
                             (CallCallees.create
                                ~init_targets:
                                  [
-                                   CallTarget.create_regular
+                                   CallTarget.create
                                      ~implicit_receiver:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.classproperty";
-                                          method_name = "__init__";
-                                          kind = Normal;
-                                        });
+                                     (create_parameterized_target
+                                        ~regular:
+                                          (Target.Regular.Method
+                                             {
+                                               class_name = "test.classproperty";
+                                               method_name = "__init__";
+                                               kind = Normal;
+                                             })
+                                        ~parameters:
+                                          [
+                                            ( create_positional_parameter 1 "fget",
+                                              Target.Regular.Method
+                                                {
+                                                  class_name = "test.MyClass";
+                                                  method_name = "bar";
+                                                  kind = Normal;
+                                                }
+                                              |> Target.from_regular );
+                                          ]);
                                  ]
                                ~new_targets:
                                  [
@@ -1249,7 +1309,13 @@ let test_higher_order_call_graph_fixpoint =
                                  ]
                                ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       ~implicit_receiver:true
+                       (Target.Regular.Method
+                          { class_name = "test.MyClass"; method_name = "bar"; kind = Normal });
+                   ];
                };
              ]
            ();

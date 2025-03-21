@@ -56,6 +56,6 @@ Call dependencies
     "model_query_any_decorator.test5_d1 (fun)"
   ],
   "model_query_any_decorator.test_local_variable_method_decorator@decorated (fun)": [
-    "model_query_any_decorator.Application.decorator (method)[formal(self, position=0)=model_query_any_decorator.test_local_variable_method_decorator (fun)]"
+    "model_query_any_decorator.Application.decorator (method)[formal(f, position=1)=model_query_any_decorator.test_local_variable_method_decorator (fun)]"
   ]
 }

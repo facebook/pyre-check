@@ -3,7 +3,7 @@ Call dependencies
 {
   "partial.NestedDefineConstructor.__init__@decorated (method)": [
     "object.__new__ (method)",
-    "partial.NestedDefineDecorator.__init__ (method)"
+    "partial.NestedDefineDecorator.__init__ (method)[formal(func, position=1)=partial.NestedDefineConstructor.__init__ (method)]"
   ],
   "partial.NestedDefineDecorator.__call__ (method)": [
     "typing.MutableMapping.pop (method)"
@@ -13,7 +13,8 @@ Call dependencies
     "partial.NestedDefineDecorator.__call__ (method)"
   ],
   "partial.PartialConstructor.__init__@decorated (method)": [
-    "object.__new__ (method)", "partial.PartialDecorator.__init__ (method)"
+    "object.__new__ (method)",
+    "partial.PartialDecorator.__init__ (method)[formal(func, position=1)=functools.partial.__call__ (method)]"
   ],
   "partial.PartialDecorator.__call__ (method)": [
     "typing.MutableMapping.pop (method)"

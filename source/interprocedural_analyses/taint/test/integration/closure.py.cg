@@ -24,7 +24,7 @@ Call dependencies
     "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
   ],
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)]": [
-    "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)"
+    "closure.decorator.wrapper (fun)"
   ],
   "closure.closure (fun)": [
     "object.__init__ (method)", "object.__new__ (method)"
