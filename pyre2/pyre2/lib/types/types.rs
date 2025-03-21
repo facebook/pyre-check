@@ -673,19 +673,6 @@ impl Type {
         }
     }
 
-    pub fn has_type_variable(&self) -> bool {
-        if self.is_type_variable() {
-            return true;
-        }
-        let mut has_type_var = false;
-        self.visit(&mut |t| {
-            if t.is_type_variable() {
-                has_type_var = true;
-            }
-        });
-        has_type_var
-    }
-
     pub fn is_kind_param_spec(&self) -> bool {
         match self {
             Type::Ellipsis
@@ -802,17 +789,16 @@ impl Type {
         });
     }
 
-    #[expect(dead_code)] // Not used, but might be in future
-    pub fn contains(&self, x: &Type) -> bool {
-        fn f(ty: &Type, x: &Type, seen: &mut bool) {
-            if *seen || ty == x {
+    pub fn any(&self, mut predicate: impl FnMut(&Type) -> bool) -> bool {
+        fn f(ty: &Type, predicate: &mut dyn FnMut(&Type) -> bool, seen: &mut bool) {
+            if *seen || predicate(ty) {
                 *seen = true;
             } else {
-                ty.visit(&mut |ty| f(ty, x, seen));
+                ty.visit(&mut |ty| f(ty, predicate, seen));
             }
         }
         let mut seen = false;
-        f(self, x, &mut seen);
+        f(self, &mut predicate, &mut seen);
         seen
     }
 
