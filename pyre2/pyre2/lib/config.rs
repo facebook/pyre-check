@@ -193,21 +193,27 @@ mod tests {
     #[test]
     fn deserialize_pyrefly_config() {
         let config_str = "
-            project_includes = [\"./tests\", \"./implementation\"]
+            project_includes = [\"tests\", \"./implementation\"]
+            project_excludes = [\"tests/untyped/**\"]
+            search_path = [\"../..\"]
             python_platform = \"darwin\"
             python_version = \"1.2.3\"
+            site_package_path = [\"venv/lib/python1.2.3/site-packages\"]
         ";
         let config = ConfigFile::parse_config(config_str).unwrap();
         assert_eq!(
             config,
             ConfigFile {
                 project_includes: Globs::new(vec![
-                    "./tests".to_owned(),
+                    "tests".to_owned(),
                     "./implementation".to_owned()
                 ]),
+                project_excludes: Globs::new(vec!["tests/untyped/**".to_owned()]),
+                search_path: vec![PathBuf::from("../..")],
                 python_platform: "darwin".to_owned(),
                 python_version: PythonVersion::new(1, 2, 3),
-                ..ConfigFile::default()
+                site_package_path: vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
+                extras: ConfigFile::default_extras(),
             },
         );
     }
