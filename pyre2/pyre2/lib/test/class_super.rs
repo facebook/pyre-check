@@ -197,8 +197,7 @@ class A:
     "#,
 );
 
-testcase_with_bug!(
-    "Missing error in B.h",
+testcase!(
     test_staticmethod,
     r#"
 from typing import assert_type
@@ -216,6 +215,6 @@ class B(A):
     @staticmethod
     def h():
         # No-argument super() is a runtime error
-        super().f()  # Should be an error: `super` call with no arguments is not valid inside a staticmethod
+        super().f()  # E: `super` call with no arguments is not valid inside a staticmethod
     "#,
 );

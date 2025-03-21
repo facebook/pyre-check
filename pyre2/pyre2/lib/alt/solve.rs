@@ -49,6 +49,7 @@ use crate::binding::binding::FunctionSource;
 use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
+use crate::binding::binding::KeyFunction;
 use crate::binding::binding::LastStmt;
 use crate::binding::binding::NoneIfRecursive;
 use crate::binding::binding::RaisedException;
@@ -2049,11 +2050,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 );
                                 let lookup_cls =
                                     self.get_super_lookup_class(obj_cls, &obj_type).unwrap();
-                                let obj = if *method == dunder::NEW {
+                                let obj = if method.id == dunder::NEW {
                                     // __new__ is special: it's the only static method in which the
                                     // no-argument form of super is allowed.
                                     SuperObj::Class(obj_cls.dupe())
                                 } else {
+                                    let method_ty =
+                                        self.get(&KeyFunction(ShortIdentifier::new(method)));
+                                    if method_ty.metadata.flags.is_staticmethod {
+                                        return self.error(
+                                            errors,
+                                            *range,
+                                            ErrorKind::InvalidSuperCall,
+                                            None,
+                                            "`super` call with no arguments is not valid inside a staticmethod".to_owned(),
+                                        );
+                                    }
                                     SuperObj::Instance(obj_type)
                                 };
                                 Type::SuperInstance(Box::new((lookup_cls, obj)))

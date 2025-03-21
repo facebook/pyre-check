@@ -241,7 +241,7 @@ impl<'a> BindingsBuilder<'a> {
                     for scope in self.scopes.iter_rev() {
                         match &scope.kind {
                             ScopeKind::Method(method) => {
-                                method_name = Some(method.name.id.clone());
+                                method_name = Some(method.name.clone());
                             }
                             ScopeKind::ClassBody(class_body) if method_name.is_some() => {
                                 self_type = Some(class_body.as_self_type_key());
