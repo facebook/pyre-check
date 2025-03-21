@@ -64,7 +64,7 @@ const fn type_eq<T1, T2>() -> bool {
     const_str::equal!(any::type_name::<T1>(), any::type_name::<T2>())
 }
 
-macro_rules! no_children {
+macro_rules! visit_nothing {
     ($t:ty) => {
         impl<To: 'static> Visit<To> for $t {
             const CONTAINS: bool = false;
@@ -78,21 +78,21 @@ macro_rules! no_children {
     };
 }
 
-no_children!(bool);
-no_children!(u8);
-no_children!(u16);
-no_children!(u32);
-no_children!(u64);
-no_children!(u128);
-no_children!(usize);
-no_children!(i8);
-no_children!(i16);
-no_children!(i32);
-no_children!(i64);
-no_children!(i128);
-no_children!(isize);
-no_children!(Name);
-no_children!(());
+visit_nothing!(bool);
+visit_nothing!(u8);
+visit_nothing!(u16);
+visit_nothing!(u32);
+visit_nothing!(u64);
+visit_nothing!(u128);
+visit_nothing!(usize);
+visit_nothing!(i8);
+visit_nothing!(i16);
+visit_nothing!(i32);
+visit_nothing!(i64);
+visit_nothing!(i128);
+visit_nothing!(isize);
+visit_nothing!(Name);
+visit_nothing!(());
 
 impl<To: 'static, T: Visit<To>> Visit<To> for Vec<T> {
     const CONTAINS: bool = <T as Visit<To>>::CONTAINS0;
