@@ -14,6 +14,8 @@ use syn::spanned::Spanned;
 use syn::Data;
 use syn::DeriveInput;
 use syn::Fields;
+use syn::GenericParam;
+use syn::Generics;
 
 pub(crate) fn derive_visit(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -23,9 +25,31 @@ pub(crate) fn derive_visit(input: proc_macro::TokenStream) -> proc_macro::TokenS
     }
 }
 
+fn generics(
+    generics: &Generics,
+) -> syn::Result<(proc_macro2::TokenStream, proc_macro2::TokenStream)> {
+    let mut ts = Vec::new();
+    for param in &generics.params {
+        match param {
+            GenericParam::Type(t) if t.bounds.is_empty() => {
+                ts.push(&t.ident);
+            }
+            _ => {
+                return Err(syn::Error::new_spanned(
+                    param,
+                    "Unsupported generic parameter",
+                ));
+            }
+        }
+    }
+    let before = quote_spanned! { generics.span() => #(#ts: crate::util::visit::Visit<To>),* };
+    let after = quote_spanned! { generics.span() => #(#ts),* };
+    Ok((before, after))
+}
+
 fn derive_visit_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
     let name = &input.ident;
-
+    let (generics_before, generics_after) = generics(&input.generics)?;
     let visit = quote! { crate::util::visit::Visit };
     let body = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
@@ -88,7 +112,7 @@ fn derive_visit_impl(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStrea
         }
     };
     Ok(quote! {
-        impl <To: 'static> #visit<To> for #name {
+        impl <To: 'static, #generics_before > #visit<To> for #name < #generics_after > {
             fn visit<'a>(&'a self, f: &mut dyn FnMut(&'a To)) {
                 #body
             }

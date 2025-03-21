@@ -311,6 +311,9 @@ mod tests {
         C { x: i32, y: i32 },
     }
 
+    #[derive(Visit, PartialEq, Eq, Debug)]
+    struct Generic<T>(T);
+
     #[test]
     fn test_visit_derive() {
         let info = (
@@ -318,7 +321,7 @@ mod tests {
                 x: 1,
                 f: (Bar(2, 3), Baz::B(true, false)),
             },
-            Baz::A,
+            Generic(Baz::A),
             Baz::C { x: 4, y: 5 },
         );
         let mut collect = Vec::new();
