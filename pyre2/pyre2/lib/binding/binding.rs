@@ -957,16 +957,10 @@ impl DisplayWith<Bindings> for Binding {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq)]
 pub struct AnnotationWithTarget {
     pub target: AnnotationTarget,
     pub annotation: Annotation,
-}
-
-impl VisitMut<Type> for AnnotationWithTarget {
-    fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
-        self.annotation.visit_mut(f);
-    }
 }
 
 impl AnnotationWithTarget {
@@ -981,7 +975,7 @@ impl Display for AnnotationWithTarget {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, PartialEq, Eq)]
+#[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq)]
 pub enum AnnotationTarget {
     /// A function parameter with a type annotation
     Param(Name),

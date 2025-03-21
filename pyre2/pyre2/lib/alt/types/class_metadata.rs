@@ -12,6 +12,7 @@ use std::iter;
 use std::sync::Arc;
 
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
@@ -334,21 +335,10 @@ pub struct ProtocolMetadata {
 /// linearizable using C3 linearization), it is possible it appears with
 /// different type arguments. The type arguments computed here will always be
 /// those coming from the instance that was selected during lineariation.
-#[derive(Clone, Debug, TypeEq, PartialEq, Eq)]
+#[derive(Clone, Debug, VisitMut, TypeEq, PartialEq, Eq)]
 enum Mro {
     Resolved(Vec<ClassType>),
     Cyclic,
-}
-
-impl VisitMut<Type> for Mro {
-    fn visit_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        match self {
-            Mro::Resolved(ref mut ancestors) => {
-                ancestors.iter_mut().for_each(|c| c.visit_mut(&mut f))
-            }
-            Mro::Cyclic => {}
-        }
-    }
 }
 
 impl Display for Mro {
