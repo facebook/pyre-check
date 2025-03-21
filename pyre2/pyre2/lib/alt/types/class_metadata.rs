@@ -47,6 +47,8 @@ pub struct ClassMetadata {
 
 impl VisitMut<Type> for ClassMetadata {
     fn visit_mut(&mut self, f: &mut dyn FnMut(&mut Type)) {
+        // FIXME: This is definitely wrong. We have types in lots of these places.
+        // Doesn't seem to have gone wrong yet, but it will.
         self.mro.visit_mut(f);
     }
 }
