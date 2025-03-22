@@ -20,7 +20,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn expand_var_opt(&self, var: Var) -> Option<Type> {
-        // FIXME: Really want to check if the Var is constrained in any way.
+        // TODO: Really want to check if the Var is constrained in any way.
         // No way to do that currently, but this is close.
         let res = self.expand_var(var);
         if matches!(res, Type::Var(..)) {

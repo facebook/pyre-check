@@ -898,7 +898,7 @@ impl Type {
         self.transform(&mut |ty| {
             match ty {
                 Type::Var(v) => {
-                    // FIXME: Should mostly be forcing these before printing
+                    // TODO: Should mostly be forcing these before printing
                     v.zero();
                 }
                 _ => {}

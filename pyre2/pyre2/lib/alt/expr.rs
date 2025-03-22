@@ -1243,7 +1243,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Subscript(x) => {
                 let xs = Ast::unpack_slice(&x.slice);
-                // FIXME: We don't deal properly with hint here, we should.
+                // TODO: We don't deal properly with hint here, we should.
                 let fun = self.expr_infer(&x.value, errors);
                 self.distribute_over_union(&fun, |fun| {
                     let mut fun = fun.clone();

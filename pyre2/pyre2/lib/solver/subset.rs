@@ -806,7 +806,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 self.is_subset_eq(&self.type_order.stdlib().none_type().to_type(), want)
             }
             (Type::Forall(_), _) => {
-                // FIXME: Probably need to do some kind of substitution here
+                // TODO: Probably need to do some kind of substitution here
                 false
             }
             (Type::TypeAlias(ta), _) => {
