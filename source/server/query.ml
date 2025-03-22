@@ -625,6 +625,13 @@ let rec process_request_exn
         ~filter_query
         ~model_paths
       =
+      let step_logger =
+        Taint.StepLogger.start
+          ~command:"query"
+          ~start_message:"Parsing taint models"
+          ~end_message:"Parsed taint models"
+          ()
+      in
       let sources = Taint.ModelParser.get_model_sources ~paths:model_paths in
       let parse_model_source (path, source) =
         Taint.ModelParser.parse
@@ -653,41 +660,67 @@ let rec process_request_exn
           ~f:(fun sofar source -> parse_model_source source |> Taint.ModelParseResult.join sofar)
           sources
       in
-      Scheduler.map_reduce
-        scheduler
-        ~policy:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:1
-             ~preferred_chunks_per_worker:1
-             ())
-        ~initial:Taint.ModelParseResult.empty
-        ~map
-        ~reduce:Taint.ModelParseResult.join
-        ~inputs:sources
-        ()
-    in
-    let setup_and_execute_model_queries ~pyre_api model_queries =
-      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
-      let initial_callables =
-        Interprocedural.FetchCallables.from_qualifiers
-          ~scheduler
-          ~scheduler_policy:
+      let result =
+        Scheduler.map_reduce
+          scheduler
+          ~policy:
             (Scheduler.Policy.fixed_chunk_count
                ~minimum_chunks_per_worker:1
                ~minimum_chunk_size:1
                ~preferred_chunks_per_worker:1
                ())
-          ~configuration
-          ~pyre_api
-          ~qualifiers
+          ~initial:Taint.ModelParseResult.empty
+          ~map
+          ~reduce:Taint.ModelParseResult.join
+          ~inputs:sources
+          ()
+      in
+      Taint.StepLogger.finish step_logger;
+      result
+    in
+    let setup_and_execute_model_queries ~pyre_api model_queries =
+      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
+      let initial_callables =
+        let step_logger =
+          Taint.StepLogger.start
+            ~command:"query"
+            ~start_message:"Fetching initial callables to analyze"
+            ~end_message:"Fetched initial callables to analyze"
+            ()
+        in
+        let initial_callables =
+          Interprocedural.FetchCallables.from_qualifiers
+            ~scheduler
+            ~scheduler_policy:
+              (Scheduler.Policy.fixed_chunk_count
+                 ~minimum_chunks_per_worker:1
+                 ~minimum_chunk_size:1
+                 ~preferred_chunks_per_worker:1
+                 ())
+            ~configuration
+            ~pyre_api
+            ~qualifiers
+        in
+        Taint.StepLogger.finish step_logger;
+        initial_callables
       in
       let class_hierarchy_graph =
-        Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
-          ~scheduler
-          ~scheduler_policies:Configuration.SchedulerPolicies.empty
-          ~pyre_api
-          ~qualifiers
+        let step_logger =
+          Taint.StepLogger.start
+            ~command:"query"
+            ~start_message:"Computing class hierarchy graph"
+            ~end_message:"Computed class hierarchy graph"
+            ()
+        in
+        let class_hierarchy_graph =
+          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
+            ~scheduler
+            ~scheduler_policies:Configuration.SchedulerPolicies.empty
+            ~pyre_api
+            ~qualifiers
+        in
+        Taint.StepLogger.finish step_logger;
+        class_hierarchy_graph
       in
       let stubs_shared_memory_handle =
         Interprocedural.Target.HashsetSharedMemory.from_heap
@@ -697,24 +730,46 @@ let rec process_request_exn
         Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
       in
       let callables_to_definitions_map =
-        Interprocedural.Target.DefinesSharedMemory.from_callables
-          ~scheduler
-          ~scheduler_policy:
-            (Scheduler.Policy.fixed_chunk_count
-               ~minimum_chunks_per_worker:1
-               ~minimum_chunk_size:1
-               ~preferred_chunks_per_worker:1
-               ())
-          ~pyre_api
-          definitions_and_stubs
+        let step_logger =
+          Taint.StepLogger.start
+            ~command:"query"
+            ~start_message:"Building a map from callable names to definitions"
+            ~end_message:"Map from callable names to definitions built"
+            ()
+        in
+        let callables_to_definitions_map =
+          Interprocedural.Target.DefinesSharedMemory.from_callables
+            ~scheduler
+            ~scheduler_policy:
+              (Scheduler.Policy.fixed_chunk_count
+                 ~minimum_chunks_per_worker:1
+                 ~minimum_chunk_size:1
+                 ~preferred_chunks_per_worker:1
+                 ())
+            ~pyre_api
+            definitions_and_stubs
+        in
+        Taint.StepLogger.finish step_logger;
+        callables_to_definitions_map
       in
       let method_kinds =
-        Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
-          ~scheduler
-          ~scheduler_policy:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy
-          ~callables_to_definitions_map:
-            (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-          (Interprocedural.FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+        let step_logger =
+          Taint.StepLogger.start
+            ~command:"query"
+            ~start_message:"Computing method kinds"
+            ~end_message:"Method kinds computed"
+            ()
+        in
+        let method_kinds =
+          Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
+            ~scheduler
+            ~scheduler_policy:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy
+            ~callables_to_definitions_map:
+              (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+            (Interprocedural.FetchCallables.get ~definitions:true ~stubs:true initial_callables)
+        in
+        Taint.StepLogger.finish step_logger;
+        method_kinds
       in
       Taint.ModelQueryExecution.generate_models_from_queries
         ~pyre_api
@@ -1027,7 +1082,20 @@ let rec process_request_exn
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
         else
-          let taint_configuration_result = Taint.TaintConfiguration.from_taint_model_paths [path] in
+          let taint_configuration_result =
+            let step_logger =
+              Taint.StepLogger.start
+                ~command:"query"
+                ~start_message:"Initializing and verifying taint configuration"
+                ~end_message:"Initialized and verified taint configuration"
+                ()
+            in
+            let taint_configuration_result =
+              Taint.TaintConfiguration.from_taint_model_paths [path]
+            in
+            Taint.StepLogger.finish step_logger;
+            taint_configuration_result
+          in
           match taint_configuration_result with
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
@@ -1267,8 +1335,19 @@ let rec process_request_exn
           | None -> configuration.Configuration.Analysis.taint_model_paths
         in
         let taint_configuration =
-          Taint.TaintConfiguration.from_taint_model_paths paths
-          |> Taint.TaintConfiguration.exception_on_error
+          let step_logger =
+            Taint.StepLogger.start
+              ~command:"query"
+              ~start_message:"Initializing and verifying taint configuration"
+              ~end_message:"Initialized and verified taint configuration"
+              ()
+          in
+          let taint_configuration =
+            Taint.TaintConfiguration.from_taint_model_paths paths
+            |> Taint.TaintConfiguration.exception_on_error
+          in
+          Taint.StepLogger.finish step_logger;
+          taint_configuration
         in
         let { Taint.ModelParseResult.queries = model_queries; errors = model_parse_errors; _ } =
           let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in

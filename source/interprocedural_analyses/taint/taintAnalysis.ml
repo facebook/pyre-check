@@ -44,6 +44,7 @@ let initialize_and_verify_configuration
     StepLogger.start
       ~start_message:"Initializing and verifying taint configuration"
       ~end_message:"Initialized and verified taint configuration"
+      ()
   in
   let open Core.Result in
   let taint_configuration =
@@ -76,7 +77,7 @@ let initialize_and_verify_configuration
 
 let verify_model_syntax ~static_analysis_configuration =
   let step_logger =
-    StepLogger.start ~start_message:"Verifying model syntax" ~end_message:"Verified model syntax"
+    StepLogger.start ~start_message:"Verifying model syntax" ~end_message:"Verified model syntax" ()
   in
   let () =
     ModelParser.get_model_sources
@@ -100,6 +101,7 @@ let parse_model_modes
     StepLogger.start
       ~start_message:"Parsing taint models modes"
       ~end_message:"Parsed taint models modes"
+      ()
   in
   let model_modes =
     ModelParser.get_model_sources ~paths:taint_model_paths
@@ -161,6 +163,7 @@ let write_modules_to_file
     StepLogger.start
       ~start_message:(Format.sprintf "Writing modules to `%s`" (PyrePath.absolute path))
       ~end_message:"Wrote modules"
+      ()
   in
   let to_json_lines qualifier =
     let path =
@@ -199,6 +202,7 @@ let write_functions_to_file
     StepLogger.start
       ~start_message:(Format.sprintf "Writing functions to `%s`" (PyrePath.absolute path))
       ~end_message:"Wrote functions"
+      ()
   in
   let to_json_lines definition =
     [
@@ -338,7 +342,7 @@ let initialize_models
   =
   let open TaintConfiguration.Heap in
   let step_logger =
-    StepLogger.start ~start_message:"Parsing taint models" ~end_message:"Parsed taint models"
+    StepLogger.start ~start_message:"Parsing taint models" ~end_message:"Parsed taint models" ()
   in
   let definitions_hashset =
     initial_callables |> Interprocedural.FetchCallables.get_definitions |> Target.HashSet.of_list
@@ -370,6 +374,7 @@ let initialize_models
           StepLogger.start
             ~start_message:"Generating models from model queries"
             ~end_message:"Generated models from model queries"
+            ()
         in
         let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
         let model_query_results =
@@ -443,6 +448,7 @@ let compact_ocaml_heap ~name =
     StepLogger.start
       ~start_message:(Format.sprintf "Compacting OCaml heap: %s" name)
       ~end_message:(Format.sprintf "Compacted OCaml heap: %s" name)
+      ()
   in
   let original = Gc.get () in
   Gc.set { original with space_overhead = 25; max_overhead = 25 };
@@ -466,6 +472,7 @@ let compute_coverage
     StepLogger.start
       ~start_message:"Computing file coverage"
       ~end_message:"Finished computing file coverage"
+      ()
   in
   let file_coverage =
     FileCoverage.from_callables
@@ -481,6 +488,7 @@ let compute_coverage
     StepLogger.start
       ~start_message:"Computing kind coverage"
       ~end_message:"Finished computing kind coverage"
+      ()
   in
   let compute_kind_coverage callables =
     callables
@@ -517,6 +525,7 @@ let compute_coverage
     StepLogger.start
       ~start_message:"Computing rule coverage"
       ~end_message:"Finished computing rule coverage"
+      ()
   in
   let rule_coverage = RuleCoverage.from_rules ~kind_coverage_from_models rules in
   let () = StepLogger.finish step_logger in
@@ -610,6 +619,7 @@ let run_taint_analysis
           StepLogger.start
             ~start_message:"Computing class hierarchy graph"
             ~end_message:"Computed class hierarchy graph"
+            ()
         in
         let class_hierarchy_graph =
           Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
@@ -628,6 +638,7 @@ let run_taint_analysis
           StepLogger.start
             ~start_message:"Computing class intervals"
             ~end_message:"Computed class intervals"
+            ()
         in
         let class_interval_graph =
           Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
@@ -646,6 +657,7 @@ let run_taint_analysis
           StepLogger.start
             ~start_message:"Fetching initial callables to analyze"
             ~end_message:"Fetched initial callables to analyze"
+            ()
         in
         let initial_callables =
           Interprocedural.FetchCallables.from_qualifiers
@@ -679,6 +691,7 @@ let run_taint_analysis
     StepLogger.start
       ~start_message:"Building a map from callable names to definitions"
       ~end_message:"Map from callable names to definitions built"
+      ()
   in
   let callables_to_definitions_map =
     Interprocedural.Target.DefinesSharedMemory.from_callables
@@ -700,7 +713,7 @@ let run_taint_analysis
 
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
   let step_logger =
-    StepLogger.start ~start_message:"Computing method kinds" ~end_message:"Method kinds computed"
+    StepLogger.start ~start_message:"Computing method kinds" ~end_message:"Method kinds computed" ()
   in
   let method_kinds =
     (* TODO(T215258952): Cache this step. *)
@@ -731,7 +744,7 @@ let run_taint_analysis
   in
 
   let step_logger =
-    StepLogger.start ~start_message:"Computing overrides" ~end_message:"Overrides computed"
+    StepLogger.start ~start_message:"Computing overrides" ~end_message:"Overrides computed" ()
   in
   let maximum_overrides = TaintConfiguration.maximum_overrides_to_analyze taint_configuration in
   let skip_overrides_targets = SharedModels.skip_overrides ~scheduler initial_models in
@@ -769,6 +782,7 @@ let run_taint_analysis
     StepLogger.start
       ~start_message:"Indexing global constants"
       ~end_message:"Finished constant propagation analysis"
+      ()
   in
   let global_constants, cache =
     Cache.global_constants cache (fun () ->
@@ -794,6 +808,7 @@ let run_taint_analysis
         StepLogger.start
           ~start_message:"Building map from callables to decorators"
           ~end_message:"Map from callables to decorators built"
+          ()
       in
       let callables_to_decorators_map =
         Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.create
@@ -826,6 +841,7 @@ let run_taint_analysis
         StepLogger.start
           ~start_message:"Building defines and call graphs of decorated targets"
           ~end_message:"Defines and call graphs of decorated targets built"
+          ()
       in
       let decorator_resolution =
         Interprocedural.CallGraph.DecoratorResolution.Results.resolve_batch_exn
@@ -853,7 +869,7 @@ let run_taint_analysis
   in
 
   let step_logger =
-    StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built"
+    StepLogger.start ~start_message:"Building call graph" ~end_message:"Call graph built" ()
   in
   let attribute_targets = SharedModels.object_targets initial_models in
   let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
@@ -909,7 +925,7 @@ let run_taint_analysis
   in
 
   let step_logger =
-    StepLogger.start ~start_message:"Computing dependencies" ~end_message:"Computed dependencies"
+    StepLogger.start ~start_message:"Computing dependencies" ~end_message:"Computed dependencies" ()
   in
   let original_dependency_graph =
     Interprocedural.DependencyGraph.build_whole_program_dependency_graph
@@ -936,6 +952,7 @@ let run_taint_analysis
         StepLogger.start
           ~start_message:"Computing higher order call graphs"
           ~end_message:"Computed higher order call graphs"
+          ()
       in
       let {
         Interprocedural.CallGraphFixpoint.whole_program_call_graph;
@@ -973,6 +990,7 @@ let run_taint_analysis
         StepLogger.start
           ~start_message:"Computing dependencies from higher order call graphs"
           ~end_message:"Computed dependencies from higher order call graphs"
+          ()
       in
       let dependency_graph =
         Interprocedural.DependencyGraph.build_whole_program_dependency_graph
@@ -1042,6 +1060,7 @@ let run_taint_analysis
     StepLogger.start
       ~start_message:"Initializing taint models for parameterized callables"
       ~end_message:"Initialized taint models for parameterized callables"
+      ()
   in
   let initial_models =
     SharedModels.initialize_for_parameterized_callables
@@ -1061,6 +1080,7 @@ let run_taint_analysis
            (List.length override_targets)
            (List.length callables_kept))
       ~end_message:"Analysis fixpoint complete"
+      ()
   in
   (* This should always be called immediately before `TaintFixpoint.compute`, because it initializes
      `TaintFixpoint.State`. *)

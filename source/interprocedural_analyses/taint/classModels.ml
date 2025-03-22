@@ -49,6 +49,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
     StepLogger.start
       ~start_message:"Computing inferred models"
       ~end_message:"Computed inferred models"
+      ()
   in
   (* Translate ViaXXX features on attributes to ViaXX features on callables. *)
   let translate_via_features_on_attribute attribute root tree =

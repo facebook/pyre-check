@@ -197,6 +197,7 @@ let performance
     ~name
     ~timer
     ?phase_name
+    ?command
     ?(integers = [])
     ?(normals = [])
     ()
@@ -231,10 +232,13 @@ let performance
   match should_log randomly_log_every with
   | false -> ()
   | true ->
-      sample
-        ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers)
-        ~normals:(("name", name) :: normals)
-        ()
+      let normals = ("name", name) :: normals in
+      let normals =
+        match command with
+        | Some command -> ("command", command) :: normals
+        | None -> normals
+      in
+      sample ~integers:(("elapsed_time", integer_time_in_microseconds) :: integers) ~normals ()
       |> log ~flush "perfpipe_pyre_performance"
 
 

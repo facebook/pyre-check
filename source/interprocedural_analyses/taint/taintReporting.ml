@@ -184,6 +184,7 @@ let save_results_to_directory
       ~start_message:
         (Format.sprintf "Writing analysis results to `%s`" (PyrePath.absolute result_directory))
       ~end_message:"Wrote analysis results"
+      ()
   in
   let root = local_root |> PyrePath.absolute in
   let open_file ~filename =
