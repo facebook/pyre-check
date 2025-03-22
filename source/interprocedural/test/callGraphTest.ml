@@ -74,8 +74,7 @@ let compute_define_call_graph
       ~define
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
-  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
-  call_graph, callables_to_definitions_map
+  call_graph, callables_to_definitions_map, method_kinds
 
 
 let find_define_exn ~define_name ~module_name source =
@@ -107,7 +106,7 @@ let assert_call_graph_of_define
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let define = find_define_exn ~define_name ~module_name source in
-  let actual, _ =
+  let actual, callables_to_definitions_map, method_kinds =
     compute_define_call_graph
       ~maximum_target_depth
       ~define
@@ -117,6 +116,8 @@ let assert_call_graph_of_define
       ~configuration
       ~object_targets
   in
+  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
+  Target.DefinesSharedMemory.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp
     ~printer:DefineCallGraphForTest.show
@@ -153,7 +154,7 @@ let assert_higher_order_call_graph_of_define
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
   let maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth in
-  let define_call_graph, callables_to_definitions_map =
+  let define_call_graph, callables_to_definitions_map, method_kinds =
     compute_define_call_graph
       ~maximum_target_depth
       ~define
@@ -165,10 +166,12 @@ let assert_higher_order_call_graph_of_define
   in
   let actual =
     CallGraph.higher_order_call_graph_of_define
+      ~define_call_graph
       ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-      ~define_call_graph
+      ~method_kinds:(MethodKind.SharedMemory.read_only method_kinds)
+      ~callable:None
       ~qualifier:module_name
       ~define
       ~initial_state
@@ -177,6 +180,8 @@ let assert_higher_order_call_graph_of_define
       ~maximum_target_depth
     |> HigherOrderCallGraphForTest.from_actual
   in
+  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
+  Target.DefinesSharedMemory.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp
     ~printer:HigherOrderCallGraphForTest.show
