@@ -29,19 +29,12 @@ function getNavBarItems() {
       label: 'Learn Python Typing',
       position: 'left',
     },
-    // Hide sandbox for internal users since wasm is not supported internally
-    process.env.INTERNAL_STATIC_DOCS
-      ? {
-          href: 'https://pyrefly.org/try',
-          label: 'Try',
-          position: 'left',
-        }
-      : {
-          to: 'try/',
-          activeBasePath: 'try',
-          label: 'Try',
-          position: 'left',
-        },
+    {
+      to: 'try/',
+      activeBasePath: 'try',
+      label: 'Try',
+      position: 'left',
+    },
     // Please keep GitHub link to the right for consistency.
     {
       href: 'https://github.com/facebook/pyrefly',
