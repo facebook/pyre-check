@@ -14,7 +14,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import * as stylex from '@stylexjs/stylex';
 import NewLandingPage from './newLandingPage';
-import cssStyles from './styles.module.css';
+import Firefly from '../components/firefly';
 
 // This import serves no runtime purposes, but we import it to force webpack to run babel on it,
 // so we can test whether babel can handle newer syntax.
@@ -48,10 +48,10 @@ export default component Home() {
             </span>
           </p>
           <section>
-            <li className={cssStyles.firefly}></li>
-            <li className={cssStyles.firefly}></li>
-            <li className={cssStyles.firefly}></li>
-            <li className={cssStyles.firefly}></li>
+            <Firefly />
+            <Firefly />
+            <Firefly />
+            <Firefly />
           </section>
         </div>
       </header>
