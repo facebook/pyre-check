@@ -59,93 +59,6 @@
   color: var(--off-white);
 }
 
-@media screen and (min-width: 346px) {
-  .title {
-    font-size: 3.5rem;
-  }
-  .subtitle {
-    font-size: 1.5rem;
-  }
-}
-@media screen and (min-width: 404px) {
-  .title {
-    font-size: 3.8rem;
-  }
-  .subtitle {
-    font-size: 1.8rem;
-  }
-}
-@media screen and (min-width: 460px) {
-  .title {
-    font-size: 4rem;
-  }
-  .subtitle {
-    font-size: 1.9rem;
-  }
-
-}
-@media screen and (min-width: 518px) {
-  .title {
-    font-size: 4.5rem;
-  }
-  .subtitle {
-    font-size: 2rem;
-  }
-}
-@media screen and (min-width: 548px) {
-  .title {
-    font-size: 5.5rem;
-  }
-  .subtitle {
-    font-size: 2.5rem;
-  }
-
-}
-@media screen and (min-width: 576px) {
-  .title {
-    font-size: calc(6rem);
-  }
-  .subtitle {
-    font-size: calc(3rem);
-  }
-  .title, .subtitle {
-    max-width: 100%;
-  }
-}
-@media screen and (min-width: 768px) {
-  .title, .subtitle {
-    max-width: 100%;
-  }
-  .title {
-    font-size: var(--title-font-size);
-  }
-  .subtitle {
-    font-size: var(--subtitle-font-size);
-  }
-}
-@media screen and (min-width: 992px) {
-  .title, .subtitle {
-    max-width: 100%;
-  }
-  .title {
-    font-size: var(--title-font-size);
-  }
-  .subtitle {
-    font-size: var(--subtitle-font-size);
-  }
-}
-@media screen and (min-width: 1200px) {
-  .title, .subtitle {
-    max-width: 100%;
-  }
-  .title {
-    font-size: var(--title-font-size);
-  }
-  .subtitle {
-    font-size: var(--subtitle-font-size);
-  }
-}
-
 .featureHero .featureHeading {
   color: var(--flow-yellow);
   margin-bottom: 2rem;
@@ -321,17 +234,6 @@
 
 .featureText {
   font-size: 3.5rem;
-}
-
-.yellowLink {
-  color: var(--flow-yellow);
-  text-decoration: underline;
-  transition: color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
-}
-
-.yellowLink:hover {
-  color: #BA8E23;
-  text-decoration: var(--ifm-link-decoration);
 }
 
 .featuretteText {
