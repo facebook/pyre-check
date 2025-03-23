@@ -104,7 +104,7 @@ const styles = stylex.create({
     backgroundColor: 'rgb(232, 189, 54)',
     height: '10px',
     width: '10px',
-    opacity: 0.1,
+    opacity: 0,
     position: 'absolute',
     ':nth-of-type(1)': {
       animation: `
