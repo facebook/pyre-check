@@ -124,6 +124,7 @@ export default component TryPyre2(
   }
 
   function onEditorMount(editor: any) {
+    console.log('onEditorMount: ', sampleFilename);
     const model = fetchCurMonacoModelAndTriggerUpdate(sampleFilename);
     setModel(model);
 
@@ -233,6 +234,7 @@ function getPyre2Editor(
         theme="vs-light"
         onChange={forceRecheck}
         onMount={onEditorMount}
+        keepCurrentModel={true}
         height={editorHeightforCodeSnippet}
         options={{
           readOnly: isMobile(),
@@ -261,6 +263,7 @@ function getPyre2Editor(
           updateURL(value);
         }}
         onMount={onEditorMount}
+        keepCurrentModel={true}
         height={sandboxHeight}
         options={{
           minimap: {enabled: false},

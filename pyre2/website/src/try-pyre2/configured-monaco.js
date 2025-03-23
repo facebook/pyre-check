@@ -13,31 +13,55 @@ import flowLanguageConfiguration from './flow-configuration.json';
 
 type Position = {lineNumber: number, column: number};
 
-const defaultAutoCompleteFunctionForMonaco = (line: number, column: number): any => {
+const defaultAutoCompleteFunctionForMonaco = (
+  line: number,
+  column: number,
+): any => {
   throw 'not implemented';
 };
-const autoCompleteFunctionsForMonaco = new Map<any, typeof defaultAutoCompleteFunctionForMonaco>();
+const autoCompleteFunctionsForMonaco = new Map<
+  any,
+  typeof defaultAutoCompleteFunctionForMonaco,
+>();
 
-function setAutoCompleteFunction(model: any, f: (_l: number, _c: number) => any): void {
+function setAutoCompleteFunction(
+  model: any,
+  f: (_l: number, _c: number) => any,
+): void {
   autoCompleteFunctionsForMonaco.set(model, f);
 }
 
 const defaultGetDefFunctionForMonaco = (_l: number, _c: number): any => null;
-const getDefFunctionsForMonaco = new Map<any, typeof defaultGetDefFunctionForMonaco>();
+const getDefFunctionsForMonaco = new Map<
+  any,
+  typeof defaultGetDefFunctionForMonaco,
+>();
 
-function setGetDefFunction(model: any, f: (_l: number, _c: number) => any): void {
+function setGetDefFunction(
+  model: any,
+  f: (_l: number, _c: number) => any,
+): void {
   getDefFunctionsForMonaco.set(model, f);
 }
 
 let defaultHoverFunctionForMonaco = (_l: number, _c: number): any => null;
-const hoverFunctionsForMonaco = new Map<any, typeof defaultHoverFunctionForMonaco>();
+const hoverFunctionsForMonaco = new Map<
+  any,
+  typeof defaultHoverFunctionForMonaco,
+>();
 
-function setHoverFunctionForMonaco(model: any, f: (_l: number, _c: number) => any): void {
+function setHoverFunctionForMonaco(
+  model: any,
+  f: (_l: number, _c: number) => any,
+): void {
   hoverFunctionsForMonaco.set(model, f);
 }
 
 const defaultInlayHintFunctionForMonaco = (): any => [];
-const inlayHintFunctionsForMonaco = new Map<any, typeof defaultInlayHintFunctionForMonaco>();
+const inlayHintFunctionsForMonaco = new Map<
+  any,
+  typeof defaultInlayHintFunctionForMonaco,
+>();
 
 function setInlayHintFunctionForMonaco(model: any, f: () => any): void {
   inlayHintFunctionsForMonaco.set(model, f);
@@ -123,11 +147,10 @@ monaco.languages.registerCompletionItemProvider('python', {
 
   provideCompletionItems(model, position) {
     try {
-      const f = autoCompleteFunctionsForMonaco.get(model) ?? defaultAutoCompleteFunctionForMonaco;
-      const result = f(
-        position.lineNumber,
-        position.column,
-      );
+      const f =
+        autoCompleteFunctionsForMonaco.get(model) ??
+        defaultAutoCompleteFunctionForMonaco;
+      const result = f(position.lineNumber, position.column);
       console.log('completion', position, result);
       return {suggestions: result.map(r => ({...r, insertText: r.label}))};
     } catch (e) {
@@ -139,11 +162,9 @@ monaco.languages.registerCompletionItemProvider('python', {
 monaco.languages.registerDefinitionProvider('python', {
   provideDefinition(model, position) {
     try {
-      const f = getDefFunctionsForMonaco.get(model) ?? defaultGetDefFunctionForMonaco;
-      const range = f(
-        position.lineNumber,
-        position.column,
-      );
+      const f =
+        getDefFunctionsForMonaco.get(model) ?? defaultGetDefFunctionForMonaco;
+      const range = f(position.lineNumber, position.column);
       return range != null ? {uri: model.uri, range} : null;
     } catch (e) {
       console.error(e);
@@ -153,16 +174,19 @@ monaco.languages.registerDefinitionProvider('python', {
 });
 monaco.languages.registerHoverProvider('python', {
   provideHover(model, position) {
-    const f = hoverFunctionsForMonaco.get(model) ?? defaultHoverFunctionForMonaco;
+    const f =
+      hoverFunctionsForMonaco.get(model) ?? defaultHoverFunctionForMonaco;
     const result = f(position.lineNumber, position.column);
     return result;
   },
 });
 monaco.languages.registerInlayHintsProvider('python', {
   provideInlayHints(model) {
-    const f = inlayHintFunctionsForMonaco.get(model) ?? defaultInlayHintFunctionForMonaco;
+    const f =
+      inlayHintFunctionsForMonaco.get(model) ??
+      defaultInlayHintFunctionForMonaco;
     const hints = f();
-    return {hints};
+    return {hints, dispose: () => {}};
   },
 });
 loader.config({monaco});
