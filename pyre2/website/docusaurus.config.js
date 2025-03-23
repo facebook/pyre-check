@@ -61,6 +61,10 @@ module.exports = {
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
+  // TODO (T218604911): enable faster docusaurus build
+  // future: {
+  //   experimental_faster: true,
+  // },
   plugins: [
     function polyfillNodeBuiltinsForFlowJS(context, options) {
       return {
