@@ -59,7 +59,7 @@ export default component TryPyre2Results(
   const [activeToolbarTab, setActiveToolbarTab] = useState('errors');
 
   return (
-    <div>
+    <div className={styles.resultsContainer}>
       <div className={styles.resultsToolbar}>
         <ul className={styles.tabs}>
           <li

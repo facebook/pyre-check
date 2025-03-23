@@ -70,7 +70,7 @@
 
 .codeEditorContainer {
     position: relative;
-    flex: 3;
+    display: flex;
     overflow: auto;
     border-bottom: 10;
     background: #fff;
@@ -148,8 +148,8 @@
 
 
 .results {
-    height: 25vh; /* 25% of initial height */
     overflow: auto;
+    height: 80%;
 }
 
 .resultsToolbar {
@@ -160,7 +160,7 @@
 }
 
 .resultsContainer {
-    flex: 1;
+    height: calc(25vh -  var(--ifm-navbar-height)/4); /* 25% of screen height - nav bar*/
     position: relative;
     font-size: 12px;
     background: #f7f7f7;
@@ -168,6 +168,8 @@
 }
 
 .resultBody {
+    padding: 7px 10px;
+    margin-bottom: 0;
     display: flex;
 }
 
@@ -233,11 +235,6 @@
 
 .loader > .bounce2 {
     animation-delay: -160ms;
-}
-
-.resultBody {
-    padding: 7px 10px;
-    margin-bottom: 0;
 }
 
 .errors ul {
