@@ -282,3 +282,14 @@ x = 3 + 3.0
 reveal_type(x) # E: revealed type: float
 "#,
 );
+
+testcase!(
+    test_inplace_operator_rhs_union,
+    r#"
+class A:
+    def __radd__(self, other: int) -> int:
+        return other
+def f(x: int, y: int | A) -> None:
+    x += y
+    "#,
+);

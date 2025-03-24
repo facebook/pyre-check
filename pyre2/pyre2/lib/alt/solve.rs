@@ -1636,7 +1636,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::AugAssign(ann, x) => {
-                let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
+                let binop_call = |op: Operator, lhs: &Type, rhs: &Type, range: TextRange| -> Type {
                     let context = || {
                         ErrorContext::InplaceBinaryOp(
                             op.as_str().to_owned(),
@@ -1661,7 +1661,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         "Binding::AugAssign",
                     );
                     let reflected_dunder = self.type_of_attr_get_if_found(
-                        &rhs,
+                        rhs,
                         &Name::new(op.reflected_dunder()),
                         range,
                         errors,
@@ -1679,15 +1679,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &inplace_errors,
                                 &context,
                                 op,
-                                &rhs,
+                                rhs,
                             );
                             if inplace_errors.is_empty() {
                                 return ret;
                             }
                         } else {
-                            return self.callable_dunder_helper(
-                                inplace, range, errors, &context, op, &rhs,
-                            );
+                            return self
+                                .callable_dunder_helper(inplace, range, errors, &context, op, rhs);
                         }
                     }
                     // next, try the regular method like `__add__`
@@ -1701,15 +1700,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 &regular_errors,
                                 &context,
                                 op,
-                                &rhs,
+                                rhs,
                             );
                             if regular_errors.is_empty() {
                                 return ret;
                             }
                         } else {
-                            return self.callable_dunder_helper(
-                                regular, range, errors, &context, op, &rhs,
-                            );
+                            return self
+                                .callable_dunder_helper(regular, range, errors, &context, op, rhs);
                         }
                     }
                     // finally, try the reflected method on the rhs, like `__radd__`
@@ -1743,7 +1741,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let tcc: &dyn Fn() -> TypeCheckContext =
                     &|| TypeCheckContext::of_kind(TypeCheckKind::AugmentedAssignment);
                 let result = self.distribute_over_union(&base, |lhs| {
-                    binop_call(x.op, lhs, rhs.clone(), x.range)
+                    self.distribute_over_union(&rhs, |rhs| binop_call(x.op, lhs, rhs, x.range))
                 });
                 // If we're assigning to something with an annotation, make sure the produced value is assignable to it
                 if let Some(ann) = ann.map(|k| self.get_idx(k)) {
