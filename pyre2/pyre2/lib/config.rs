@@ -13,8 +13,10 @@ use std::path::PathBuf;
 use anyhow::bail;
 use itertools::Itertools;
 use serde::Deserialize;
+use starlark_map::small_map::SmallMap;
 use toml::Table;
 
+use crate::error::kind::ErrorKind;
 use crate::globs::Globs;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
@@ -74,6 +76,9 @@ pub struct ConfigFile {
     #[serde(default)]
     pub site_package_path: Vec<PathBuf>,
 
+    #[serde(default)]
+    pub errors: SmallMap<ErrorKind, bool>,
+
     /// Any unknown config items
     #[serde(default, flatten)]
     pub extras: ExtraConfigs,
@@ -88,6 +93,7 @@ impl Default for ConfigFile {
             site_package_path: Vec::new(),
             project_includes: Self::default_project_includes(),
             project_excludes: Self::default_project_excludes(),
+            errors: SmallMap::default(),
             extras: Self::default_extras(),
         }
     }
@@ -203,6 +209,9 @@ mod tests {
             python_platform = \"darwin\"
             python_version = \"1.2.3\"
             site_package_path = [\"venv/lib/python1.2.3/site-packages\"]
+            [errors]
+            assert_type = true
+            bad_return = false
         ";
         let config = ConfigFile::parse_config(config_str).unwrap();
         assert_eq!(
@@ -218,6 +227,9 @@ mod tests {
                 python_version: PythonVersion::new(1, 2, 3),
                 site_package_path: vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
                 extras: ConfigFile::default_extras(),
+                errors: SmallMap::from_iter(
+                    [(ErrorKind::AssertType, true), (ErrorKind::BadReturn, false)].into_iter()
+                ),
             },
         );
     }
@@ -337,6 +349,7 @@ mod tests {
             site_package_path: vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
             python_platform: ConfigFile::default_python_platform(),
             python_version: PythonVersion::default(),
+            errors: SmallMap::default(),
             extras: ConfigFile::default_extras(),
         };
 
@@ -361,5 +374,17 @@ mod tests {
             ..ConfigFile::default()
         };
         assert_eq!(config, expected_config);
+    }
+
+    #[test]
+    fn test_deserializing_unknown_error_errors() {
+        let config_str = "
+            [errors]
+            subtronics = true
+            zeds_dead = false
+            GRiZ = true
+        ";
+        let err = ConfigFile::parse_config(config_str).unwrap_err();
+        assert!(err.to_string().contains("unknown variant"));
     }
 }

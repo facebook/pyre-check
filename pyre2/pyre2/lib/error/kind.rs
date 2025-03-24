@@ -12,6 +12,7 @@ use convert_case::Casing;
 use dupe::Dupe;
 use enum_iterator::Sequence;
 use parse_display::Display;
+use serde::Deserialize;
 
 /// ErrorKind categorizes an error by the part of the spec the error is related to.
 /// They are used in suppressions to identify which error should be suppressed.
@@ -27,8 +28,20 @@ use parse_display::Display;
 // These categories are flexible; use them for guidance when naming new ErrorKinds, but
 // go with what feels right.
 #[derive(
-    Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash, Copy, Dupe, Display, Sequence
+    Debug,
+    Clone,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Eq,
+    Hash,
+    Copy,
+    Dupe,
+    Display,
+    Sequence,
+    Deserialize
 )]
+#[serde(rename_all = "snake_case")]
 pub enum ErrorKind {
     /// Attempting to annotate a name with incompatible annotations.
     /// e.g. when a name is annotated in multiple branches of an if statement
