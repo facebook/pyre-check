@@ -1327,6 +1327,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             &annot.target,
                         ))
                     };
+                    if annot.annotation.is_final() {
+                        self.error(
+                            errors,
+                            e.range(),
+                            ErrorKind::BadAssignment,
+                            None,
+                            "Assignment target is marked final".to_owned(),
+                        );
+                    }
                     self.expr(e, annot.ty().map(|t| (t, tcc)), errors)
                 }
                 None => self.expr(e, None, errors),
@@ -2018,6 +2027,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 }
                             })
                         };
+                        if annot.annotation.is_final() && *style == AnnotationStyle::Forwarded {
+                            self.error(
+                                errors,
+                                expr.range(),
+                                ErrorKind::BadAssignment,
+                                None,
+                                format!("`{}` is marked final", name),
+                            );
+                        }
                         let hint = annot.ty().map(|t| (t, tcc));
                         (
                             Some(annot.annotation.qualifiers.contains(&Qualifier::TypeAlias)),

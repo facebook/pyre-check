@@ -416,17 +416,16 @@ assert_type(z, str)
 "#,
 );
 
-testcase_with_bug!(
-    "final annotations don't prevent writes on locals",
+testcase!(
     test_final_annotated_local,
     r#"
 from typing import Final
 
 x: Final[int] = 0
-x = 1 # TODO: x can not be assigned
+x = 1  # E: `x` is marked final
 
 y: Final = "foo"
-y = "bar" # TODO: y can not be assigned
+y = "bar"  # E: `y` is marked final
 "#,
 );
 

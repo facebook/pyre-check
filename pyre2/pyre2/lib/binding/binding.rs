@@ -662,7 +662,7 @@ pub enum SuperStyle {
     Any,
 }
 
-#[derive(Clone, Debug, Copy, Dupe)]
+#[derive(Clone, Debug, Copy, Dupe, PartialEq, Eq)]
 pub enum AnnotationStyle {
     /// Annotated assignment, x: MyType = my_value
     Direct,

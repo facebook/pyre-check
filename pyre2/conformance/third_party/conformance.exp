@@ -9974,6 +9974,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "`RATE` is marked final",
+      "description": "`RATE` is marked final",
+      "line": 71,
+      "name": "bad-assignment",
+      "stop_column": 11,
+      "stop_line": 71
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "`BORDER_WIDTH` is declared as final in parent class `ClassC`",
       "description": "`BORDER_WIDTH` is declared as final in parent class `ClassC`",
@@ -10084,6 +10094,16 @@
     },
     {
       "code": -2,
+      "column": 11,
+      "concise_description": "`ID1` is marked final",
+      "description": "`ID1` is marked final",
+      "line": 141,
+      "name": "bad-assignment",
+      "stop_column": 12,
+      "stop_line": 141
+    },
+    {
+      "code": -2,
       "column": 5,
       "concise_description": "Cannot assign to var x because it is marked final",
       "description": "Cannot assign to var x because it is marked final",
@@ -10091,6 +10111,16 @@
       "name": "bad-assignment",
       "stop_column": 11,
       "stop_line": 145
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "Assignment target is marked final",
+      "description": "Assignment target is marked final",
+      "line": 147,
+      "name": "bad-assignment",
+      "stop_column": 16,
+      "stop_line": 147
     }
   ],
   "qualifiers_final_decorator.py": [
