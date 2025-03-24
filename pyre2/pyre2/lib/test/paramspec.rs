@@ -331,3 +331,24 @@ twice(a_int_b_str, b="A", a=1) # Accepted # E: Argument `(a: int, b: str) -> int
 twice(a_int_b_str, "A", 1)     # Rejected # E: Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int`
 "#,
 );
+
+testcase_with_bug!(
+    "PyTorch TODO: testcase should not emit an error.",
+    test_functools_wraps_paramspec,
+    r#"
+from functools import wraps
+
+def f(fn):
+    @wraps(fn)
+    def wrapped_fn(x):
+        return fn(x) # E: Unexpected ParamSpec type: `Unknown`
+
+    return wrapped_fn
+
+def g(f):
+    @wraps(f)
+    def wrapper(): ...
+
+    return wrapper
+"#,
+);
