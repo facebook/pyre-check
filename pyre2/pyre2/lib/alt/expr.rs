@@ -11,14 +11,12 @@ use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Comprehension;
 use ruff_python_ast::Expr;
-use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprSlice;
 use ruff_python_ast::ExprStarred;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Number;
-use ruff_python_ast::Operator;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
@@ -37,7 +35,6 @@ use crate::error::collector::ErrorCollector;
 use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
 use crate::error::kind::ErrorKind;
-use crate::error::style::ErrorStyle;
 use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
@@ -142,133 +139,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         self.distribute_over_union(obj, |obj| {
             self.type_of_attr_get(obj, attr_name, range, errors, context, "Expr::attr_infer")
-        })
-    }
-
-    pub fn callable_dunder_helper(
-        &self,
-        method_type: Type,
-        range: TextRange,
-        errors: &ErrorCollector,
-        context: &dyn Fn() -> ErrorContext,
-        op: Operator,
-        call_arg_type: &Type,
-    ) -> Type {
-        let callable = self.as_call_target_or_error(
-            method_type,
-            CallStyle::BinaryOp(op),
-            range,
-            errors,
-            Some(context),
-        );
-        self.call_infer(
-            callable,
-            &[CallArg::Type(call_arg_type, range)],
-            &[],
-            range,
-            errors,
-            Some(context),
-        )
-    }
-
-    fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
-        let binop_call = |op: Operator, lhs: &Type, rhs: &Type, range: TextRange| -> Type {
-            let context =
-                || ErrorContext::BinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
-
-            let method_type_dunder = self.type_of_attr_get_if_found(
-                lhs,
-                &Name::new(op.dunder()),
-                range,
-                errors,
-                Some(&context),
-                "Expr::binop_infer",
-            );
-
-            let method_type_reflected = self.type_of_attr_get_if_found(
-                rhs,
-                &Name::new(op.reflected_dunder()),
-                range,
-                errors,
-                Some(&context),
-                "Expr::binop_infer",
-            );
-
-            // Reflected operator implementation: This deviates from the runtime semantics by calling the reflected dunder if the regular dunder call errors.
-            // At runtime, the reflected dunder is called only if the regular dunder method doesn't exist or if it returns NotImplemented.
-            // This deviation is necessary, given that the typeshed stubs don't record when NotImplemented is returned
-            match (method_type_dunder, method_type_reflected) {
-                (Some(method_type_dunder), Some(method_type_reflected)) => {
-                    let bin_op_new_errors_dunder =
-                        ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
-
-                    let ret = self.callable_dunder_helper(
-                        method_type_dunder,
-                        range,
-                        &bin_op_new_errors_dunder,
-                        &context,
-                        op,
-                        rhs,
-                    );
-                    if bin_op_new_errors_dunder.is_empty() {
-                        ret
-                    } else {
-                        self.callable_dunder_helper(
-                            method_type_reflected,
-                            range,
-                            errors,
-                            &context,
-                            op,
-                            lhs,
-                        )
-                    }
-                }
-                (Some(method_type_dunder), None) => self.callable_dunder_helper(
-                    method_type_dunder,
-                    range,
-                    errors,
-                    &context,
-                    op,
-                    rhs,
-                ),
-                (None, Some(method_type_reflected)) => self.callable_dunder_helper(
-                    method_type_reflected,
-                    range,
-                    errors,
-                    &context,
-                    op,
-                    lhs,
-                ),
-                (None, None) => self.error(
-                    errors,
-                    x.range(),
-                    ErrorKind::MissingAttribute,
-                    Some(&context),
-                    format!(
-                        "Missing attribute {} or {}",
-                        op.dunder(),
-                        op.reflected_dunder()
-                    ),
-                ),
-            }
-        };
-        let lhs = self.expr_infer(&x.left, errors);
-        let rhs = self.expr_infer(&x.right, errors);
-        if let Type::Any(style) = &lhs {
-            return style.propagate();
-        } else if x.op == Operator::BitOr
-            && let Some(l) = self.untype_opt(lhs.clone(), x.left.range())
-            && let Some(r) = self.untype_opt(rhs.clone(), x.right.range())
-        {
-            return Type::type_form(self.union(l, r));
-        } else if x.op == Operator::Add
-            && ((lhs == Type::LiteralString && rhs.is_literal_string())
-                || (rhs == Type::LiteralString && lhs.is_literal_string()))
-        {
-            return Type::LiteralString;
-        }
-        self.distribute_over_union(&lhs, |lhs| {
-            self.distribute_over_union(&rhs, |rhs| binop_call(x.op, lhs, rhs, x.range))
         })
     }
 

@@ -11,7 +11,6 @@ use dupe::Dupe;
 use itertools::Either;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
-use ruff_python_ast::Operator;
 use ruff_python_ast::TypeParam;
 use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
@@ -1635,131 +1634,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.unions(exceptions)
                 }
             }
-            Binding::AugAssign(ann, x) => {
-                let binop_call = |op: Operator, lhs: &Type, rhs: &Type, range: TextRange| -> Type {
-                    let context = || {
-                        ErrorContext::InplaceBinaryOp(
-                            op.as_str().to_owned(),
-                            lhs.clone(),
-                            rhs.clone(),
-                        )
-                    };
-                    let inplace_dunder = self.type_of_attr_get_if_found(
-                        lhs,
-                        &Name::new(op.in_place_dunder()),
-                        range,
-                        errors,
-                        Some(&context),
-                        "Binding::AugAssign",
-                    );
-                    let regular_dunder = self.type_of_attr_get_if_found(
-                        lhs,
-                        &Name::new(op.dunder()),
-                        range,
-                        errors,
-                        Some(&context),
-                        "Binding::AugAssign",
-                    );
-                    let reflected_dunder = self.type_of_attr_get_if_found(
-                        rhs,
-                        &Name::new(op.reflected_dunder()),
-                        range,
-                        errors,
-                        Some(&context),
-                        "Binding::AugAssign",
-                    );
-                    // first, try the in-place method like `__iadd__`
-                    if let Some(inplace) = inplace_dunder {
-                        if regular_dunder.is_some() || reflected_dunder.is_some() {
-                            let inplace_errors =
-                                ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
-                            let ret = self.callable_dunder_helper(
-                                inplace,
-                                range,
-                                &inplace_errors,
-                                &context,
-                                op,
-                                rhs,
-                            );
-                            if inplace_errors.is_empty() {
-                                return ret;
-                            }
-                        } else {
-                            return self
-                                .callable_dunder_helper(inplace, range, errors, &context, op, rhs);
-                        }
-                    }
-                    // next, try the regular method like `__add__`
-                    if let Some(regular) = regular_dunder {
-                        if reflected_dunder.is_some() {
-                            let regular_errors =
-                                ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
-                            let ret = self.callable_dunder_helper(
-                                regular,
-                                range,
-                                &regular_errors,
-                                &context,
-                                op,
-                                rhs,
-                            );
-                            if regular_errors.is_empty() {
-                                return ret;
-                            }
-                        } else {
-                            return self
-                                .callable_dunder_helper(regular, range, errors, &context, op, rhs);
-                        }
-                    }
-                    // finally, try the reflected method on the rhs, like `__radd__`
-                    if let Some(reflected) = reflected_dunder {
-                        self.callable_dunder_helper(reflected, range, errors, &context, op, lhs)
-                    } else {
-                        self.error(
-                            errors,
-                            range,
-                            ErrorKind::MissingAttribute,
-                            Some(&context),
-                            format!(
-                                "Missing attribute {}, {}, or {}",
-                                op.in_place_dunder(),
-                                op.dunder(),
-                                op.reflected_dunder()
-                            ),
-                        )
-                    }
-                };
-                let base = self.expr_infer(&x.target, errors);
-                let rhs = self.expr_infer(&x.value, errors);
-                if let Type::Any(style) = &base {
-                    return style.propagate();
-                } else if x.op == Operator::Add
-                    && base.is_literal_string()
-                    && rhs.is_literal_string()
-                {
-                    return Type::LiteralString;
-                }
-                let tcc: &dyn Fn() -> TypeCheckContext =
-                    &|| TypeCheckContext::of_kind(TypeCheckKind::AugmentedAssignment);
-                let result = self.distribute_over_union(&base, |lhs| {
-                    self.distribute_over_union(&rhs, |rhs| binop_call(x.op, lhs, rhs, x.range))
-                });
-                // If we're assigning to something with an annotation, make sure the produced value is assignable to it
-                if let Some(ann) = ann.map(|k| self.get_idx(k)) {
-                    if ann.annotation.is_final() {
-                        self.error(
-                            errors,
-                            x.range(),
-                            ErrorKind::BadAssignment,
-                            None,
-                            format!("Cannot assign to {} because it is marked final", ann.target),
-                        );
-                    }
-                    if let Some(ann_ty) = ann.ty() {
-                        return self.check_type(ann_ty, &result, x.range(), errors, tcc);
-                    }
-                }
-                result
-            }
+            Binding::AugAssign(ann, x) => self.augassign_infer(*ann, x, errors),
             Binding::IterableValue(ann, e, is_async) => {
                 let ty = ann.map(|k| self.get_idx(k));
                 let tcc: &dyn Fn() -> TypeCheckContext = &|| {
