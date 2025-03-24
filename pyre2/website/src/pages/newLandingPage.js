@@ -22,7 +22,6 @@ import Firefly from '../components/firefly';
 import '../js/parser-playground';
 
 const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
-console.log('shouldShowNewLandingPage', shouldShowNewLandingPage);
 export default component NewLandingPage() {
   const context = useDocusaurusContext();
   const {siteConfig} = context;
