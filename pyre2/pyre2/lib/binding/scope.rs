@@ -418,8 +418,9 @@ impl Scopes {
 
     /// There is only one scope remaining, return it.
     pub fn finish(self) -> ScopeTrace {
-        assert_eq!(self.scopes.len(), 1);
-        ScopeTrace(self.scopes.to_vec().pop().unwrap())
+        let (a, b) = self.scopes.split_off_last();
+        assert_eq!(a.len(), 0);
+        ScopeTrace(b)
     }
 
     pub fn push(&mut self, scope: Scope) {
