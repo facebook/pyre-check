@@ -126,6 +126,8 @@ impl ConfigFile {
             base.push(search_root.as_path());
             *search_root = base;
         });
+        // push config to search path to make sure we can fall back to the config directory as an import path
+        // if users forget to add it
         self.search_path.push(config_root.to_path_buf());
         self.site_package_path
             .iter_mut()
@@ -328,20 +330,34 @@ mod tests {
         fn with_sep(s: &str) -> String {
             s.replace("/", path::MAIN_SEPARATOR_STR)
         }
-        let mut config = ConfigFile::default();
-        let path_str = with_sep("path/to/my/config");
-        let project_excludes_vec = vec![
-            path_str.clone() + &with_sep("/**/__pycache__/**"),
-            path_str.clone() + &with_sep("/**/.*"),
-        ];
+        let mut config = ConfigFile {
+            project_includes: Globs::new(vec!["path1/**".to_owned(), "path2/path3".to_owned()]),
+            project_excludes: Globs::new(vec!["tests/untyped/**".to_owned()]),
+            search_path: vec![PathBuf::from("../..")],
+            site_package_path: vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
+            python_platform: ConfigFile::default_python_platform(),
+            python_version: PythonVersion::default(),
+            extras: ConfigFile::default_extras(),
+        };
 
+        let path_str = with_sep("path/to/my/config");
         let test_path = PathBuf::from(path_str.clone());
+
+        let project_includes_vec = vec![
+            path_str.clone() + &with_sep("/path1/**"),
+            path_str.clone() + &with_sep("/path2/path3"),
+        ];
+        let project_excludes_vec = vec![path_str.clone() + &with_sep("/tests/untyped/**")];
+        let search_path = vec![test_path.join("../.."), test_path.clone()];
+        let site_package_path = vec![test_path.join("venv/lib/python1.2.3/site-packages")];
+
         config.rewrite_with_path_to_config(&test_path);
 
         let expected_config = ConfigFile {
-            project_includes: Globs::new(vec![path_str.clone()]),
+            project_includes: Globs::new(project_includes_vec),
             project_excludes: Globs::new(project_excludes_vec),
-            search_path: vec![test_path.clone(), test_path.clone()],
+            search_path,
+            site_package_path,
             ..ConfigFile::default()
         };
         assert_eq!(config, expected_config);
