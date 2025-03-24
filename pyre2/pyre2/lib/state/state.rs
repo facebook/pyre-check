@@ -1001,7 +1001,7 @@ impl State {
             let stdlib = self.get_stdlib(&m.handle);
             let loader = self.get_cached_loader(m.handle.loader());
             let ctx = Context {
-                require: Require::Exports,
+                require: lock.require.get(self.require),
                 module: m.handle.module(),
                 path: m.handle.path(),
                 config: m.handle.config(),
