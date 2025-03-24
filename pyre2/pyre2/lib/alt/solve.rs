@@ -1737,11 +1737,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     binop_call(x.op, lhs, rhs.clone(), x.range)
                 });
                 // If we're assigning to something with an annotation, make sure the produced value is assignable to it
-                if let Some(ann_ty) = ann
-                    .map(|k| self.get_idx(k))
-                    .and_then(|ann| ann.ty().cloned())
-                {
-                    return self.check_type(&ann_ty, &result, x.range(), errors, tcc);
+                if let Some(ann) = ann.map(|k| self.get_idx(k)) {
+                    if ann.annotation.is_final() {
+                        self.error(
+                            errors,
+                            x.range(),
+                            ErrorKind::BadAssignment,
+                            None,
+                            format!("Cannot assign to {} because it is marked final", ann.target),
+                        );
+                    }
+                    if let Some(ann_ty) = ann.ty() {
+                        return self.check_type(ann_ty, &result, x.range(), errors, tcc);
+                    }
                 }
                 result
             }

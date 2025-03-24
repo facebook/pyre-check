@@ -10081,6 +10081,16 @@
       "name": "unexpected-keyword",
       "stop_column": 13,
       "stop_line": 135
+    },
+    {
+      "code": -2,
+      "column": 5,
+      "concise_description": "Cannot assign to var x because it is marked final",
+      "description": "Cannot assign to var x because it is marked final",
+      "line": 145,
+      "name": "bad-assignment",
+      "stop_column": 11,
+      "stop_line": 145
     }
   ],
   "qualifiers_final_decorator.py": [

@@ -378,6 +378,16 @@ assert_type(x, list[int | str])
 );
 
 testcase!(
+    test_aug_assign_final,
+    r#"
+from typing import Final
+x: Final = [""]
+x += [""]  # E: Cannot assign to var x because it is marked final
+x[0] += ""
+"#,
+);
+
+testcase!(
     test_aug_assign_fallback,
     r#"
 class A:
