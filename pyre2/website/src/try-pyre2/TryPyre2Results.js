@@ -24,7 +24,14 @@ export type PyreflyErrorMessage = {
   severity: number,
 };
 
-component ErrorMessage(error: PyreflyErrorMessage) {
+export type GoToDefFromError = (
+  startLineNumber: number,
+  startColumn: number,
+  endLineNumber: number,
+  endColumn: number,
+) => void;
+
+component ErrorMessage(error: PyreflyErrorMessage, goToDef: GoToDefFromError) {
   // This logic is meant to be an exact match of how we output errors in the cli defined here:
   // - https://fburl.com/code/e9lqk0h2
   // - https://fburl.com/code/hwhe60zt
@@ -44,7 +51,11 @@ component ErrorMessage(error: PyreflyErrorMessage) {
 
   const message = `${rangeStr}: ${error.message}`;
   return (
-    <span className={styles.msgType}>
+    <span
+      className={styles.msgType}
+      onClick={() =>
+        goToDef(startLineNumber, startColumn, endLineNumber, endColumn)
+      }>
       <span className={styles.errorMessageError}>ERROR </span>
       {message}
     </span>
@@ -53,6 +64,7 @@ component ErrorMessage(error: PyreflyErrorMessage) {
 
 export default component TryPyre2Results(
   loading: boolean,
+  goToDef: GoToDefFromError,
   errors: ?$ReadOnlyArray<PyreflyErrorMessage>,
   internalError: string,
 ) {
@@ -94,7 +106,7 @@ export default component TryPyre2Results(
               ) : (
                 errors.map((error, i) => (
                   <li key={i}>
-                    <ErrorMessage key={i} error={error} />
+                    <ErrorMessage key={i} error={error} goToDef={goToDef} />
                   </li>
                 ))
               )}

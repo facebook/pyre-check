@@ -124,7 +124,6 @@ export default component TryPyre2(
   }
 
   function onEditorMount(editor: any) {
-    console.log('onEditorMount: ', sampleFilename);
     const model = fetchCurMonacoModelAndTriggerUpdate(sampleFilename);
     setModel(model);
 
@@ -133,6 +132,22 @@ export default component TryPyre2(
     }
     editorRef.current = editor;
   }
+
+  const handleGoToDefFromErrors = (
+    startLineNumber: number,
+    startColumn: number,
+    endLineNumber: number,
+    endColumn: number,
+  ) => {
+    const editor = editorRef.current;
+    if (editor === null) {
+      return;
+    }
+    const range = {startLineNumber, startColumn, endLineNumber, endColumn};
+
+    editor.revealRange(range);
+    editor.setSelection(range);
+  };
 
   return (
     <div className={styles.tryEditor}>
@@ -162,6 +177,7 @@ export default component TryPyre2(
       {showErrorPanel && (
         <TryPyre2Results
           loading={loading}
+          goToDef={handleGoToDefFromErrors}
           errors={errors}
           internalError={internalError}
         />
