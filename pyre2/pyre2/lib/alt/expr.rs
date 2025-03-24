@@ -939,56 +939,76 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 for (op, comparator) in comparisons {
                     let right = self.expr_infer(comparator, errors);
                     let right_range = comparator.range();
-                    let context = || {
-                        ErrorContext::BinaryOp(op.as_str().to_owned(), left.clone(), right.clone())
-                    };
-                    let compare_by_method = |ty, method, arg| {
-                        self.call_method(ty, &method, x.range, &[arg], &[], errors, Some(&context))
-                    };
-                    let comparison_error = || {
-                        self.error(
-                            errors,
-                            x.range,
-                            ErrorKind::UnsupportedOperand,
-                            None,
-                            context().format(),
-                        );
-                    };
-                    match op {
-                        CmpOp::Eq | CmpOp::NotEq | CmpOp::Is | CmpOp::IsNot => {
-                            // We assume these comparisons never error. Technically, `__eq__` and
-                            // `__ne__` can be overridden, but we generally bake in the assumption
-                            // that `==` and `!=` check equality as typically defined in Python.
-                        }
-                        CmpOp::In | CmpOp::NotIn => {
-                            // `x in y` desugars to `y.__contains__(x)`
-                            if compare_by_method(
-                                &right,
-                                dunder::CONTAINS,
-                                CallArg::Type(&left, x.left.range()),
-                            )
-                            .is_some()
-                            {
-                                // Comparison method called. We ignore the return type and assume `bool`.
-                            } else {
-                                comparison_error();
-                            }
-                        }
-                        _ => {
-                            if let Some(magic_method) = dunder::rich_comparison_dunder(*op)
-                                && compare_by_method(
-                                    &left,
-                                    magic_method,
-                                    CallArg::Type(&right, right_range),
+                    // We ignore the type produced here and return `bool` from the comparison.
+                    self.distribute_over_union(&left, |left| {
+                        self.distribute_over_union(&right, |right| {
+                            let context = || {
+                                ErrorContext::BinaryOp(
+                                    op.as_str().to_owned(),
+                                    left.clone(),
+                                    right.clone(),
                                 )
-                                .is_some()
-                            {
-                                // Comparison method called. We ignore the return type and assume `bool`.
-                            } else {
-                                comparison_error();
+                            };
+                            let compare_by_method = |ty, method, arg| {
+                                self.call_method(
+                                    ty,
+                                    &method,
+                                    x.range,
+                                    &[arg],
+                                    &[],
+                                    errors,
+                                    Some(&context),
+                                )
+                            };
+                            let comparison_error = || {
+                                self.error(
+                                    errors,
+                                    x.range,
+                                    ErrorKind::UnsupportedOperand,
+                                    None,
+                                    context().format(),
+                                )
+                            };
+                            match op {
+                                CmpOp::Eq | CmpOp::NotEq | CmpOp::Is | CmpOp::IsNot => {
+                                    // We assume these comparisons never error. Technically, `__eq__` and
+                                    // `__ne__` can be overridden, but we generally bake in the assumption
+                                    // that `==` and `!=` check equality as typically defined in Python.
+                                    Type::any_implicit()
+                                }
+                                CmpOp::In | CmpOp::NotIn => {
+                                    // `x in y` desugars to `y.__contains__(x)`
+                                    if compare_by_method(
+                                        right,
+                                        dunder::CONTAINS,
+                                        CallArg::Type(left, x.left.range()),
+                                    )
+                                    .is_some()
+                                    {
+                                        // Comparison method called. We ignore the return type.
+                                        Type::any_implicit()
+                                    } else {
+                                        comparison_error()
+                                    }
+                                }
+                                _ => {
+                                    if let Some(magic_method) = dunder::rich_comparison_dunder(*op)
+                                        && compare_by_method(
+                                            left,
+                                            magic_method,
+                                            CallArg::Type(right, right_range),
+                                        )
+                                        .is_some()
+                                    {
+                                        // Comparison method called. We ignore the return type.
+                                        Type::any_implicit()
+                                    } else {
+                                        comparison_error()
+                                    }
+                                }
                             }
-                        }
-                    }
+                        })
+                    });
                 }
                 self.stdlib.bool().to_type()
             }

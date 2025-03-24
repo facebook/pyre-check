@@ -655,13 +655,12 @@ def f():
     "#,
 );
 
-testcase_with_bug!(
-    "PyTorch TODO: There should be no error here",
+testcase!(
     test_attr_base,
     r#"
 def f(x, key, dict):
     for param in x:
-        if key in dict:  # E: TODO: Expr::call_method attribute base undefined 
+        if key in dict:
             pass
     "#,
 );
