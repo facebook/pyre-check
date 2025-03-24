@@ -160,6 +160,13 @@ impl ModuleName {
         Self::from_string(format!("{}.{}", self.as_str(), name))
     }
 
+    /// Create a new ModuleName instance based off the current instance, with:
+    /// - specified number of dots removed
+    /// - specified suffix appended
+    ///
+    /// * `is_init` - Whether the current module is an __init__.py file
+    /// * `dots` - The number of dots to remove
+    /// * `suffix` - The suffix to append to the current module
     pub fn new_maybe_relative(
         self,
         is_init: bool,
