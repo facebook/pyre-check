@@ -431,7 +431,7 @@
       "concise_description": "Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__new__`",
       "description": "Argument `Literal['user']` is not assignable to parameter `_x` with type `int` in function `UserId.__new__`",
       "line": 11,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 14,
       "stop_line": 11
     },
@@ -441,7 +441,7 @@
       "concise_description": "`Literal[42]` is not assignable to `UserId`",
       "description": "`Literal[42]` is not assignable to `UserId`",
       "line": 12,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 16,
       "stop_line": 12
     },
@@ -725,7 +725,7 @@
       "concise_description": "Argument `ScopedTypeAlias[GoodAlias1, type[int]]` is not assignable to parameter with type `UnionType | type | tuple[Unknown, ...]` in function `isinstance`",
       "description": "Argument `ScopedTypeAlias[GoodAlias1, type[int]]` is not assignable to parameter with type `UnionType | type | tuple[Unknown, ...]` in function `isinstance`",
       "line": 31,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 32,
       "stop_line": 31
     },
@@ -907,7 +907,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 17,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 67,
       "stop_line": 17
     },
@@ -917,7 +917,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[S]], type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[S]], type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 18,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 79,
       "stop_line": 18
     },
@@ -927,7 +927,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 19,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 83,
       "stop_line": 19
     },
@@ -937,7 +937,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[S]], type[TypeVar[TStr]], type[ParamSpec[P]], type[TypeVarTuple[Ts]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 23,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 33,
       "stop_line": 23
     },
@@ -1027,7 +1027,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 43,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 65,
       "stop_line": 43
     },
@@ -1037,7 +1037,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[S]], type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[S]], type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 45,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 65,
       "stop_line": 45
     },
@@ -1047,7 +1047,7 @@
       "concise_description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "description": "Argument `tuple[type[TypeVar[T]]]` is not assignable to parameter `type_params` with type `tuple[ParamSpec | TypeVar | TypeVarTuple, ...]` in function `typing.TypeAliasType.__new__`",
       "line": 47,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 76,
       "stop_line": 47
     }
@@ -1264,7 +1264,7 @@
       "concise_description": "Function declared to return `C`, but one or more paths are missing an explicit `return`",
       "description": "Function declared to return `C`, but one or more paths are missing an explicit `return`",
       "line": 51,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 39,
       "stop_line": 51
     },
@@ -1274,7 +1274,7 @@
       "concise_description": "Returned type `Literal[False]` is not assignable to declared return type `C`",
       "description": "Returned type `Literal[False]` is not assignable to declared return type `C`",
       "line": 54,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 21,
       "stop_line": 54
     },
@@ -1284,7 +1284,7 @@
       "concise_description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
       "description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
       "line": 57,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 16,
       "stop_line": 57
     },
@@ -1294,7 +1294,7 @@
       "concise_description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
       "description": "Type of yielded value `Literal[3]` is not assignable to declared return type `A`",
       "line": 66,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 16,
       "stop_line": 66
     },
@@ -1304,7 +1304,7 @@
       "concise_description": "Returned type `Literal[True]` is not assignable to declared return type `None`",
       "description": "Returned type `Literal[True]` is not assignable to declared return type `None`",
       "line": 71,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 16,
       "stop_line": 71
     },
@@ -1314,7 +1314,7 @@
       "concise_description": "Type of yielded value `B` is not assignable to declared return type `A`",
       "description": "Type of yielded value `B` is not assignable to declared return type `A`",
       "line": 75,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 14,
       "stop_line": 75
     },
@@ -1344,7 +1344,7 @@
       "concise_description": "Cannot yield from a generator of type `Generator[A, None, None]` because it does not match the declared return type `Iterator[B]`",
       "description": "Cannot yield from a generator of type `Generator[A, None, None]` because it does not match the declared return type `Iterator[B]`",
       "line": 118,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 29,
       "stop_line": 118
     },
@@ -1354,7 +1354,7 @@
       "concise_description": "Cannot yield from a generator of type `Generator[int, None, None]` because it does not match the declared return type `Iterator[B]`",
       "description": "Cannot yield from a generator of type `Generator[int, None, None]` because it does not match the declared return type `Iterator[B]`",
       "line": 119,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 19,
       "stop_line": 119
     },
@@ -1364,7 +1364,7 @@
       "concise_description": "Cannot yield from a generator of type `Generator[None, int, None]` because it does not match the declared return type `Generator[None, str, None]`",
       "description": "Cannot yield from a generator of type `Generator[None, int, None]` because it does not match the declared return type `Generator[None, str, None]`",
       "line": 135,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 29,
       "stop_line": 135
     },
@@ -1384,7 +1384,7 @@
       "concise_description": "Expected to yield a value of type `int`, but a bare `yield` gives `None` instead",
       "description": "Expected to yield a value of type `int`, but a bare `yield` gives `None` instead",
       "line": 187,
-      "name": "type-mismatch",
+      "name": "invalid-yield",
       "stop_column": 10,
       "stop_line": 187
     }
@@ -1590,7 +1590,7 @@
       "concise_description": "Argument `Literal[2]` is not assignable to parameter with type `str`",
       "description": "Argument `Literal[2]` is not assignable to parameter with type `str`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 26
     },
@@ -1690,7 +1690,7 @@
       "concise_description": "`() -> str` is not assignable to variable `cb3` with type `(int, ...) -> str`",
       "description": "`() -> str` is not assignable to variable `cb3` with type `(int, ...) -> str`",
       "line": 91,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 91
     },
@@ -1700,7 +1700,7 @@
       "concise_description": "`(*, a: int) -> str` is not assignable to variable `cb3` with type `(int, ...) -> str`",
       "description": "`(*, a: int) -> str` is not assignable to variable `cb3` with type `(int, ...) -> str`",
       "line": 93,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 93
     },
@@ -1710,7 +1710,7 @@
       "concise_description": "`Proto3` is not assignable to `Proto4[Ellipsis]`",
       "description": "`Proto3` is not assignable to `Proto4[Ellipsis]`",
       "line": 155,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 26,
       "stop_line": 155
     },
@@ -1720,7 +1720,7 @@
       "concise_description": "`Proto4[Ellipsis]` is not assignable to `Proto3`",
       "description": "`Proto4[Ellipsis]` is not assignable to `Proto3`",
       "line": 156,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 156
     },
@@ -1730,7 +1730,7 @@
       "concise_description": "`Proto7` is not assignable to `Proto6`",
       "description": "`Proto7` is not assignable to `Proto6`",
       "line": 157,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 157
     },
@@ -1740,7 +1740,7 @@
       "concise_description": "`Proto8` is not assignable to `Proto5[Any]`",
       "description": "`Proto8` is not assignable to `Proto5[Any]`",
       "line": 159,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 159
     },
@@ -1750,7 +1750,7 @@
       "concise_description": "`() -> str` is not assignable to `(int, ...) -> str`",
       "description": "`() -> str` is not assignable to `(int, ...) -> str`",
       "line": 172,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 172
     },
@@ -1760,7 +1760,7 @@
       "concise_description": "`(int, str) -> str` is not assignable to `(str, ...) -> str`",
       "description": "`(int, str) -> str` is not assignable to `(str, ...) -> str`",
       "line": 187,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 50,
       "stop_line": 187
     },
@@ -1770,7 +1770,7 @@
       "concise_description": "`(int, str) -> str` is not assignable to `(str, ...) -> str`",
       "description": "`(int, str) -> str` is not assignable to `(str, ...) -> str`",
       "line": 189,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 34,
       "stop_line": 189
     }
@@ -1842,7 +1842,7 @@
       "concise_description": "Unpacked keyword argument `str` is not assignable to parameter `v1` with type `int` in function `func1`",
       "description": "Unpacked keyword argument `str` is not assignable to parameter `v1` with type `int` in function `func1`",
       "line": 58,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 20,
       "stop_line": 58
     },
@@ -1852,7 +1852,7 @@
       "concise_description": "Unpacked keyword argument `int | str` is not assignable to parameter `v1` with type `int` in function `func1`",
       "description": "Unpacked keyword argument `int | str` is not assignable to parameter `v1` with type `int` in function `func1`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 61
     },
@@ -1862,7 +1862,7 @@
       "concise_description": "Unpacked keyword argument `int | str` is not assignable to parameter `v2` with type `str` in function `func1`",
       "description": "Unpacked keyword argument `int | str` is not assignable to parameter `v2` with type `str` in function `func1`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 61
     },
@@ -1872,9 +1872,19 @@
       "concise_description": "Unpacked keyword argument `int | str` is not assignable to parameter `v3` with type `str` in function `func1`",
       "description": "Unpacked keyword argument `int | str` is not assignable to parameter `v3` with type `str` in function `func1`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 61
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD2]]` in function `func1`",
+      "description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD2]]` in function `func1`",
+      "line": 63,
+      "name": "bad-argument-type",
+      "stop_column": 22,
+      "stop_line": 63
     },
     {
       "code": -2,
@@ -1888,21 +1898,11 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD2]]` in function `func1`",
-      "description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD2]]` in function `func1`",
-      "line": 63,
-      "name": "type-mismatch",
-      "stop_column": 22,
-      "stop_line": 63
-    },
-    {
-      "code": -2,
       "column": 11,
       "concise_description": "Argument `Literal[1]` is not assignable to parameter `v3` with type `str` in function `func2`",
       "description": "Argument `Literal[1]` is not assignable to parameter `v3` with type `str` in function `func2`",
       "line": 64,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 64
     },
@@ -1919,6 +1919,16 @@
     {
       "code": -2,
       "column": 17,
+      "concise_description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD1]]` in function `func2`",
+      "description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD1]]` in function `func2`",
+      "line": 65,
+      "name": "bad-argument-type",
+      "stop_column": 22,
+      "stop_line": 65
+    },
+    {
+      "code": -2,
+      "column": 17,
       "concise_description": "Multiple values for argument `v1` in function `func2`",
       "description": "Multiple values for argument `v1` in function `func2`",
       "line": 65,
@@ -1928,21 +1938,11 @@
     },
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD1]]` in function `func2`",
-      "description": "Argument `int` is not assignable to parameter `v1` with type `Unpack[TypedDict[TD1]]` in function `func2`",
-      "line": 65,
-      "name": "type-mismatch",
-      "stop_column": 22,
-      "stop_line": 65
-    },
-    {
-      "code": -2,
       "column": 19,
       "concise_description": "`(**Unpack[TypedDict[TD2]]) -> None` is not assignable to `TDProtocol3`",
       "description": "`(**Unpack[TypedDict[TD2]]) -> None` is not assignable to `TDProtocol3`",
       "line": 101,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 101
     },
@@ -1952,7 +1952,7 @@
       "concise_description": "`(**Unpack[TypedDict[TD2]]) -> None` is not assignable to `TDProtocol4`",
       "description": "`(**Unpack[TypedDict[TD2]]) -> None` is not assignable to `TDProtocol4`",
       "line": 102,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 102
     },
@@ -1962,7 +1962,7 @@
       "concise_description": "`(**Unpack[TypedDict[TD2]]) -> None` is not assignable to `TDProtocol5`",
       "description": "`(**Unpack[TypedDict[TD2]]) -> None` is not assignable to `TDProtocol5`",
       "line": 103,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 103
     }
@@ -1974,7 +1974,7 @@
       "concise_description": "`(*bytes, *, max_items: int | None) -> list[bytes]` is not assignable to variable `cb1` with type `Proto1`",
       "description": "`(*bytes, *, max_items: int | None) -> list[bytes]` is not assignable to variable `cb1` with type `Proto1`",
       "line": 35,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 35
     },
@@ -1984,7 +1984,7 @@
       "concise_description": "`(*bytes) -> list[bytes]` is not assignable to variable `cb1` with type `Proto1`",
       "description": "`(*bytes) -> list[bytes]` is not assignable to variable `cb1` with type `Proto1`",
       "line": 36,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 36
     },
@@ -1994,7 +1994,7 @@
       "concise_description": "`(*bytes, *, max_len: str | None) -> list[bytes]` is not assignable to variable `cb1` with type `Proto1`",
       "description": "`(*bytes, *, max_len: str | None) -> list[bytes]` is not assignable to variable `cb1` with type `Proto1`",
       "line": 37,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 37
     },
@@ -2004,7 +2004,7 @@
       "concise_description": "`(*bytes) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "description": "`(*bytes) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "line": 67,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 67
     },
@@ -2014,7 +2014,7 @@
       "concise_description": "`(*str, **str) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "description": "`(*str, **str) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "line": 68,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 68
     },
@@ -2024,7 +2024,7 @@
       "concise_description": "`(*bytes, **bytes) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "description": "`(*bytes, **bytes) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "line": 69,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 69
     },
@@ -2034,7 +2034,7 @@
       "concise_description": "`(**str) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "description": "`(**str) -> None` is not assignable to variable `cb2` with type `Proto2`",
       "line": 70,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 70
     },
@@ -2044,7 +2044,7 @@
       "concise_description": "`(x: int) -> None` is not assignable to `Proto4`",
       "description": "`(x: int) -> None` is not assignable to `Proto4`",
       "line": 97,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 97
     },
@@ -2054,7 +2054,7 @@
       "concise_description": "`(*bytes, *, max_len: int | None) -> list[bytes]` is not assignable to `NotProto6`",
       "description": "`(*bytes, *, max_len: int | None) -> list[bytes]` is not assignable to `NotProto6`",
       "line": 121,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 26,
       "stop_line": 121
     },
@@ -2064,7 +2064,7 @@
       "concise_description": "`(x: int) -> Any` is not assignable to variable `cb8` with type `Proto8`",
       "description": "`(x: int) -> Any` is not assignable to variable `cb8` with type `Proto8`",
       "line": 169,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 169
     },
@@ -2074,7 +2074,7 @@
       "concise_description": "`Literal['str']` is not assignable to attribute `other_attribute` with type `int`",
       "description": "`Literal['str']` is not assignable to attribute `other_attribute` with type `int`",
       "line": 186,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 186
     },
@@ -2104,7 +2104,7 @@
       "concise_description": "`(int, str) -> Any` is not assignable to variable `cb11` with type `Proto11`",
       "description": "`(int, str) -> Any` is not assignable to variable `cb11` with type `Proto11`",
       "line": 238,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 17,
       "stop_line": 238
     },
@@ -2114,7 +2114,7 @@
       "concise_description": "`(*Any, *, kwarg0: Any) -> None` is not assignable to variable `cb12` with type `Proto12`",
       "description": "`(*Any, *, kwarg0: Any) -> None` is not assignable to variable `cb12` with type `Proto12`",
       "line": 260,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 17,
       "stop_line": 260
     },
@@ -2124,7 +2124,7 @@
       "concise_description": "`(path: str) -> str` is not assignable to `Proto13_Default`",
       "description": "`(path: str) -> str` is not assignable to `Proto13_Default`",
       "line": 284,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 42,
       "stop_line": 284
     },
@@ -2134,7 +2134,7 @@
       "concise_description": "`(*, path: str) -> str` is not assignable to `Proto14_Default`",
       "description": "`(*, path: str) -> str` is not assignable to `Proto14_Default`",
       "line": 311,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 42,
       "stop_line": 311
     }
@@ -2146,7 +2146,7 @@
       "concise_description": "`(int) -> int` is not assignable to `(float) -> float`",
       "description": "`(int) -> int` is not assignable to `(float) -> float`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 39,
       "stop_line": 26
     },
@@ -2156,7 +2156,7 @@
       "concise_description": "`(float) -> float` is not assignable to `(int) -> int`",
       "description": "`(float) -> float` is not assignable to `(int) -> int`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 29
     },
@@ -2166,7 +2166,7 @@
       "concise_description": "`PosOnly2` is not assignable to `Standard2`",
       "description": "`PosOnly2` is not assignable to `Standard2`",
       "line": 51,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 51
     },
@@ -2176,7 +2176,7 @@
       "concise_description": "`KwOnly2` is not assignable to `Standard2`",
       "description": "`KwOnly2` is not assignable to `Standard2`",
       "line": 52,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 28,
       "stop_line": 52
     },
@@ -2186,7 +2186,7 @@
       "concise_description": "`KwOnly2` is not assignable to `PosOnly2`",
       "description": "`KwOnly2` is not assignable to `PosOnly2`",
       "line": 55,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 55
     },
@@ -2196,7 +2196,7 @@
       "concise_description": "`PosOnly2` is not assignable to `KwOnly2`",
       "description": "`PosOnly2` is not assignable to `KwOnly2`",
       "line": 58,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 58
     },
@@ -2206,7 +2206,7 @@
       "concise_description": "`NoArgs3` is not assignable to `IntArgs3`",
       "description": "`NoArgs3` is not assignable to `IntArgs3`",
       "line": 82,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 82
     },
@@ -2216,7 +2216,7 @@
       "concise_description": "`NoArgs3` is not assignable to `FloatArgs3`",
       "description": "`NoArgs3` is not assignable to `FloatArgs3`",
       "line": 85,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 85
     },
@@ -2226,7 +2226,7 @@
       "concise_description": "`IntArgs3` is not assignable to `FloatArgs3`",
       "description": "`IntArgs3` is not assignable to `FloatArgs3`",
       "line": 86,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 30,
       "stop_line": 86
     },
@@ -2236,7 +2236,7 @@
       "concise_description": "`IntArgs4` is not assignable to `PosOnly4`",
       "description": "`IntArgs4` is not assignable to `PosOnly4`",
       "line": 116,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 28,
       "stop_line": 116
     },
@@ -2246,7 +2246,7 @@
       "concise_description": "`StrArgs4` is not assignable to `IntStrArgs4`",
       "description": "`StrArgs4` is not assignable to `IntStrArgs4`",
       "line": 119,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 119
     },
@@ -2256,7 +2256,7 @@
       "concise_description": "`IntArgs4` is not assignable to `IntStrArgs4`",
       "description": "`IntArgs4` is not assignable to `IntStrArgs4`",
       "line": 120,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 120
     },
@@ -2266,7 +2266,7 @@
       "concise_description": "`IntArgs4` is not assignable to `StrArgs4`",
       "description": "`IntArgs4` is not assignable to `StrArgs4`",
       "line": 122,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 28,
       "stop_line": 122
     },
@@ -2276,7 +2276,7 @@
       "concise_description": "`StrArgs4` is not assignable to `IntArgs4`",
       "description": "`StrArgs4` is not assignable to `IntArgs4`",
       "line": 124,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 28,
       "stop_line": 124
     },
@@ -2286,7 +2286,7 @@
       "concise_description": "`IntStrArgs4` is not assignable to `Standard4`",
       "description": "`IntStrArgs4` is not assignable to `Standard4`",
       "line": 125,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 34,
       "stop_line": 125
     },
@@ -2296,7 +2296,7 @@
       "concise_description": "`StrArgs4` is not assignable to `Standard4`",
       "description": "`StrArgs4` is not assignable to `Standard4`",
       "line": 126,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 30,
       "stop_line": 126
     },
@@ -2306,7 +2306,7 @@
       "concise_description": "`NoKwargs5` is not assignable to `IntKwargs5`",
       "description": "`NoKwargs5` is not assignable to `IntKwargs5`",
       "line": 151,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 151
     },
@@ -2316,7 +2316,7 @@
       "concise_description": "`NoKwargs5` is not assignable to `FloatKwargs5`",
       "description": "`NoKwargs5` is not assignable to `FloatKwargs5`",
       "line": 154,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 33,
       "stop_line": 154
     },
@@ -2326,7 +2326,7 @@
       "concise_description": "`IntKwargs5` is not assignable to `FloatKwargs5`",
       "description": "`IntKwargs5` is not assignable to `FloatKwargs5`",
       "line": 155,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 34,
       "stop_line": 155
     },
@@ -2336,7 +2336,7 @@
       "concise_description": "`IntKwargs6` is not assignable to `KwOnly6`",
       "description": "`IntKwargs6` is not assignable to `KwOnly6`",
       "line": 187,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 187
     },
@@ -2346,7 +2346,7 @@
       "concise_description": "`StrKwargs6` is not assignable to `IntStrKwargs6`",
       "description": "`StrKwargs6` is not assignable to `IntStrKwargs6`",
       "line": 190,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 190
     },
@@ -2356,7 +2356,7 @@
       "concise_description": "`IntKwargs6` is not assignable to `IntStrKwargs6`",
       "description": "`IntKwargs6` is not assignable to `IntStrKwargs6`",
       "line": 191,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 191
     },
@@ -2366,7 +2366,7 @@
       "concise_description": "`IntKwargs6` is not assignable to `StrKwargs6`",
       "description": "`IntKwargs6` is not assignable to `StrKwargs6`",
       "line": 193,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 32,
       "stop_line": 193
     },
@@ -2376,7 +2376,7 @@
       "concise_description": "`StrKwargs6` is not assignable to `IntKwargs6`",
       "description": "`StrKwargs6` is not assignable to `IntKwargs6`",
       "line": 195,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 32,
       "stop_line": 195
     },
@@ -2386,7 +2386,7 @@
       "concise_description": "`IntStrKwargs6` is not assignable to `Standard6`",
       "description": "`IntStrKwargs6` is not assignable to `Standard6`",
       "line": 196,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 36,
       "stop_line": 196
     },
@@ -2396,7 +2396,7 @@
       "concise_description": "`StrKwargs6` is not assignable to `Standard6`",
       "description": "`StrKwargs6` is not assignable to `Standard6`",
       "line": 197,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 32,
       "stop_line": 197
     },
@@ -2406,7 +2406,7 @@
       "concise_description": "`ProtocolWithP[?_ParamSpec]` is not assignable to `(ParamSpec(?_ParamSpec)) -> None`",
       "description": "`ProtocolWithP[?_ParamSpec]` is not assignable to `(ParamSpec(?_ParamSpec)) -> None`",
       "line": 213,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 34,
       "stop_line": 213
     },
@@ -2416,7 +2416,7 @@
       "concise_description": "`(ParamSpec(?_ParamSpec)) -> None` is not assignable to `ProtocolWithP[?_ParamSpec]`",
       "description": "`(ParamSpec(?_ParamSpec)) -> None` is not assignable to `ProtocolWithP[?_ParamSpec]`",
       "line": 214,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 30,
       "stop_line": 214
     },
@@ -2426,7 +2426,7 @@
       "concise_description": "`NoDefaultArg8` is not assignable to `DefaultArg8`",
       "description": "`NoDefaultArg8` is not assignable to `DefaultArg8`",
       "line": 236,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 37,
       "stop_line": 236
     },
@@ -2436,7 +2436,7 @@
       "concise_description": "`NoX8` is not assignable to `DefaultArg8`",
       "description": "`NoX8` is not assignable to `DefaultArg8`",
       "line": 237,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 237
     },
@@ -2446,7 +2446,7 @@
       "concise_description": "`NoX8` is not assignable to `NoDefaultArg8`",
       "description": "`NoX8` is not assignable to `NoDefaultArg8`",
       "line": 240,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 240
     },
@@ -2456,7 +2456,7 @@
       "concise_description": "`NoDefaultArg8` is not assignable to `NoX8`",
       "description": "`NoDefaultArg8` is not assignable to `NoX8`",
       "line": 243,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 30,
       "stop_line": 243
     },
@@ -2466,7 +2466,7 @@
       "concise_description": "`Overloaded9` is not assignable to `FloatArg9`",
       "description": "`Overloaded9` is not assignable to `FloatArg9`",
       "line": 273,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 273
     },
@@ -2476,7 +2476,7 @@
       "concise_description": "`StrArg10` is not assignable to `Overloaded10`",
       "description": "`StrArg10` is not assignable to `Overloaded10`",
       "line": 297,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 297
     }
@@ -2548,7 +2548,7 @@
       "concise_description": "`dict[@_, @_]` is not assignable to `list[str]`",
       "description": "`dict[@_, @_]` is not assignable to `list[str]`",
       "line": 52,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 52
     },
@@ -2678,7 +2678,7 @@
       "concise_description": "`ProtoAImpl` is not assignable to `ProtoA`",
       "description": "`ProtoAImpl` is not assignable to `ProtoA`",
       "line": 134,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 25,
       "stop_line": 134
     }
@@ -2732,7 +2732,7 @@
       "concise_description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__init__`",
       "description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__init__`",
       "line": 21,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 16,
       "stop_line": 21
     },
@@ -2742,7 +2742,7 @@
       "concise_description": "Argument `Class4[str]` is not assignable to parameter `self` with type `Class4[int]` in function `Class4.__init__`",
       "description": "Argument `Class4[str]` is not assignable to parameter `self` with type `Class4[int]` in function `Class4.__init__`",
       "line": 56,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 56
     },
@@ -2772,7 +2772,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
       "description": "Argument `Literal['']` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
       "line": 74,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 74
     },
@@ -2802,7 +2802,7 @@
       "concise_description": "Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
       "description": "Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`",
       "line": 75,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 23,
       "stop_line": 75
     },
@@ -2824,7 +2824,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class1`",
       "description": "Returned type `object` is not assignable to declared return type `Class1`",
       "line": 20,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 20
     },
@@ -2854,7 +2854,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class2`",
       "description": "Returned type `object` is not assignable to declared return type `Class2`",
       "line": 33,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 33
     },
@@ -2864,7 +2864,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class3`",
       "description": "Returned type `object` is not assignable to declared return type `Class3`",
       "line": 48,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 48
     },
@@ -2884,7 +2884,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class4`",
       "description": "Returned type `object` is not assignable to declared return type `Class4`",
       "line": 62,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 62
     },
@@ -2906,7 +2906,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`",
       "description": "Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`",
       "line": 16,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 16
     },
@@ -2916,7 +2916,7 @@
       "concise_description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__new__`",
       "description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__new__`",
       "line": 21,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 16,
       "stop_line": 21
     },
@@ -2926,7 +2926,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`",
       "description": "Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 29
     },
@@ -2986,7 +2986,7 @@
       "concise_description": "Argument `type[Class11[str]]` is not assignable to parameter `cls` with type `type[Class11[int]]` in function `Class11.__new__`",
       "description": "Argument `type[Class11[str]]` is not assignable to parameter `cls` with type `type[Class11[int]]` in function `Class11.__new__`",
       "line": 145,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 13,
       "stop_line": 145
     }
@@ -2998,7 +2998,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class1`",
       "description": "Returned type `object` is not assignable to declared return type `Class1`",
       "line": 25,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 48,
       "stop_line": 25
     },
@@ -3028,7 +3028,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class2`",
       "description": "Returned type `object` is not assignable to declared return type `Class2`",
       "line": 35,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 35
     },
@@ -3170,7 +3170,7 @@
       "concise_description": "Argument `type[Class1]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class1]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 35,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 35
     },
@@ -3230,7 +3230,7 @@
       "concise_description": "Argument `type[Class2]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class2]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 48,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 48
     },
@@ -3280,7 +3280,7 @@
       "concise_description": "Argument `type[Class3]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class3]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 62,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 62
     },
@@ -3350,7 +3350,7 @@
       "concise_description": "Argument `type[Class4]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class4]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 76,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 76
     },
@@ -3410,7 +3410,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class5`",
       "description": "Returned type `object` is not assignable to declared return type `Class5`",
       "line": 93,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 93
     },
@@ -3420,7 +3420,7 @@
       "concise_description": "Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 96,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 96
     },
@@ -3480,7 +3480,7 @@
       "concise_description": "Argument `type[Class6]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class6]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 124,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 124
     },
@@ -3530,7 +3530,7 @@
       "concise_description": "Argument `type[Class6Any]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class6Any]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 141,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 36,
       "stop_line": 141
     },
@@ -3570,7 +3570,7 @@
       "concise_description": "Argument `type[Class7]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class7]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 160,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 160
     },
@@ -3630,7 +3630,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`",
       "description": "Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`",
       "line": 178,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 178
     },
@@ -3640,7 +3640,7 @@
       "concise_description": "Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 181,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 181
     },
@@ -3690,7 +3690,7 @@
       "concise_description": "Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "line": 192,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 192
     },
@@ -3742,7 +3742,7 @@
       "concise_description": "Returned type `object` is not assignable to declared return type `Class1`",
       "description": "Returned type `object` is not assignable to declared return type `Class1`",
       "line": 22,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 36,
       "stop_line": 22
     }
@@ -3754,7 +3754,7 @@
       "concise_description": "Argument `Literal[3]` is not assignable to parameter `y` with type `Desc1` in function `DC1.__init__`",
       "description": "Argument `Literal[3]` is not assignable to parameter `y` with type `Desc1` in function `DC1.__init__`",
       "line": 35,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 35
     }
@@ -3800,7 +3800,7 @@
       "concise_description": "`DC1` is not assignable to `Hashable`",
       "description": "`DC1` is not assignable to `Hashable`",
       "line": 15,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 15
     },
@@ -3810,7 +3810,7 @@
       "concise_description": "`DC3` is not assignable to `Hashable`",
       "description": "`DC3` is not assignable to `Hashable`",
       "line": 32,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 32
     }
@@ -3984,7 +3984,7 @@
       "concise_description": "Argument `float` is not assignable to parameter `b` with type `int` in function `DC4.__init__`",
       "description": "Argument `float` is not assignable to parameter `b` with type `int` in function `DC4.__init__`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 61
     },
@@ -4006,7 +4006,7 @@
       "concise_description": "`<` is not supported between `DC1` and `DC2`\n  Argument `DC2` is not assignable to parameter `other` with type `DC1` in function `DC1.__lt__`",
       "description": "`<` is not supported between `DC1` and `DC2`\n  Argument `DC2` is not assignable to parameter `other` with type `DC1` in function `DC1.__lt__`",
       "line": 50,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 50
     }
@@ -4018,7 +4018,7 @@
       "concise_description": "Argument `Literal[3]` is not assignable to parameter `x` with type `InitVar[int]` in function `DC1.__init__`",
       "description": "Argument `Literal[3]` is not assignable to parameter `x` with type `InitVar[int]` in function `DC1.__init__`",
       "line": 23,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 23
     },
@@ -4028,7 +4028,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `y` with type `InitVar[str]` in function `DC1.__init__`",
       "description": "Argument `Literal['']` is not assignable to parameter `y` with type `InitVar[str]` in function `DC1.__init__`",
       "line": 23,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 25,
       "stop_line": 23
     }
@@ -4122,7 +4122,7 @@
       "concise_description": "Argument `Literal[3]` is not assignable to parameter `not_a_field` with type `str` in function `ModelBase.__init__`",
       "description": "Argument `Literal[3]` is not assignable to parameter `not_a_field` with type `str` in function `ModelBase.__init__`",
       "line": 66,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 66
     },
@@ -4242,7 +4242,7 @@
       "concise_description": "Argument `Literal[0]` is not assignable to parameter `not_a_field` with type `str` in function `ModelBase.__init__`",
       "description": "Argument `Literal[0]` is not assignable to parameter `not_a_field` with type `str` in function `ModelBase.__init__`",
       "line": 82,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 82
     },
@@ -4294,7 +4294,7 @@
       "concise_description": "Argument `tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: (() -> S) | None) -> T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`",
       "description": "Argument `tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: (() -> S) | None) -> T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 53,
       "stop_line": 29
     },
@@ -4304,7 +4304,7 @@
       "concise_description": "Argument `() -> int` is not assignable to parameter `converter` with type `(@_) -> int` in function `model_field`",
       "description": "Argument `() -> int` is not assignable to parameter `converter` with type `(@_) -> int` in function `model_field`",
       "line": 48,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 55,
       "stop_line": 48
     },
@@ -4314,7 +4314,7 @@
       "concise_description": "Argument `(*, x: int) -> int` is not assignable to parameter `converter` with type `(@_) -> int` in function `model_field`",
       "description": "Argument `(*, x: int) -> int` is not assignable to parameter `converter` with type `(@_) -> int` in function `model_field`",
       "line": 49,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 55,
       "stop_line": 49
     },
@@ -4324,7 +4324,7 @@
       "concise_description": "Argument `type[ConverterClass]` is not assignable to parameter `converter` with type `(@_) -> @_` in function `model_field`",
       "description": "Argument `type[ConverterClass]` is not assignable to parameter `converter` with type `(@_) -> @_` in function `model_field`",
       "line": 102,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 66,
       "stop_line": 102
     },
@@ -4334,7 +4334,7 @@
       "concise_description": "Argument `type[dict]` is not assignable to parameter `converter` with type `(@_) -> @_` in function `model_field`",
       "description": "Argument `type[dict]` is not assignable to parameter `converter` with type `(@_) -> @_` in function `model_field`",
       "line": 104,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 56,
       "stop_line": 104
     },
@@ -4384,7 +4384,7 @@
       "concise_description": "`Literal['f1']` is not assignable to attribute `field0` with type `int`",
       "description": "`Literal['f1']` is not assignable to attribute `field0` with type `int`",
       "line": 114,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 18,
       "stop_line": 114
     },
@@ -4394,7 +4394,7 @@
       "concise_description": "`Literal['f6']` is not assignable to attribute `field3` with type `ConverterClass`",
       "description": "`Literal['f6']` is not assignable to attribute `field3` with type `ConverterClass`",
       "line": 115,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 18,
       "stop_line": 115
     },
@@ -4404,7 +4404,7 @@
       "concise_description": "`Literal[b'f6']` is not assignable to attribute `field3` with type `ConverterClass`",
       "description": "`Literal[b'f6']` is not assignable to attribute `field3` with type `ConverterClass`",
       "line": 116,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 19,
       "stop_line": 116
     },
@@ -4414,7 +4414,7 @@
       "concise_description": "`Literal[1]` is not assignable to attribute `field3` with type `ConverterClass`",
       "description": "`Literal[1]` is not assignable to attribute `field3` with type `ConverterClass`",
       "line": 119,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 119
     },
@@ -4434,7 +4434,7 @@
       "concise_description": "Argument `Literal[1]` is not assignable to parameter `default` with type `str | None` in function `model_field`",
       "description": "Argument `Literal[1]` is not assignable to parameter `default` with type `str | None` in function `model_field`",
       "line": 130,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 68,
       "stop_line": 130
     },
@@ -4444,7 +4444,7 @@
       "concise_description": "Argument `type[str]` is not assignable to parameter `default_factory` with type `(() -> str) | None` in function `model_field`",
       "description": "Argument `type[str]` is not assignable to parameter `default_factory` with type `(() -> str) | None` in function `model_field`",
       "line": 132,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 78,
       "stop_line": 132
     },
@@ -4454,7 +4454,7 @@
       "concise_description": "Argument `type[int]` is not assignable to parameter `default_factory` with type `(() -> str) | None` in function `model_field`",
       "description": "Argument `type[int]` is not assignable to parameter `default_factory` with type `(() -> str) | None` in function `model_field`",
       "line": 133,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 78,
       "stop_line": 133
     }
@@ -4548,7 +4548,7 @@
       "concise_description": "`Literal[3]` is not assignable to attribute `name` with type `str`",
       "description": "`Literal[3]` is not assignable to attribute `name` with type `str`",
       "line": 57,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 14,
       "stop_line": 57
     },
@@ -4812,7 +4812,7 @@
       "concise_description": "Argument `Literal['price']` is not assignable to parameter `unit_price` with type `float` in function `InventoryItem.__init__`",
       "description": "Argument `Literal['price']` is not assignable to parameter `unit_price` with type `float` in function `InventoryItem.__init__`",
       "line": 51,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 51
     },
@@ -4832,7 +4832,7 @@
       "concise_description": "`Literal[0]` is not assignable to `InitVar[int]`",
       "description": "`Literal[0]` is not assignable to `InitVar[int]`",
       "line": 72,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 72
     },
@@ -4862,7 +4862,7 @@
       "concise_description": "Argument `type[str]` is not assignable to parameter `default_factory` with type `() -> @_` in function `dataclasses.field`",
       "description": "Argument `type[str]` is not assignable to parameter `default_factory` with type `() -> @_` in function `dataclasses.field`",
       "line": 88,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 39,
       "stop_line": 88
     },
@@ -4902,7 +4902,7 @@
       "concise_description": "`DC15` is not assignable to `DataclassProto`",
       "description": "`DC15` is not assignable to `DataclassProto`",
       "line": 205,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 26,
       "stop_line": 205
     }
@@ -5019,7 +5019,7 @@
       "concise_description": "`Literal['']` is not assignable to `int`",
       "description": "`Literal['']` is not assignable to `int`",
       "line": 15,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 16,
       "stop_line": 15
     },
@@ -5029,7 +5029,7 @@
       "concise_description": "`+` is not supported between `int` and `str`\n  Argument `str` is not assignable to parameter with type `int` in function `int.__add__`",
       "description": "`+` is not supported between `int` and `str`\n  Argument `str` is not assignable to parameter with type `int` in function `int.__add__`",
       "line": 25,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 14,
       "stop_line": 25
     },
@@ -5039,7 +5039,7 @@
       "concise_description": "Returned type `Literal[1]` is not assignable to declared return type `None`",
       "description": "Returned type `Literal[1]` is not assignable to declared return type `None`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 13,
       "stop_line": 26
     },
@@ -5049,7 +5049,7 @@
       "concise_description": "Argument `Literal[b'invalid']` is not assignable to parameter `a` with type `int` in function `func1`",
       "description": "Argument `Literal[b'invalid']` is not assignable to parameter `a` with type `int` in function `func1`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 29
     },
@@ -5059,7 +5059,7 @@
       "concise_description": "Argument `Literal[b'arguments']` is not assignable to parameter `b` with type `str` in function `func1`",
       "description": "Argument `Literal[b'arguments']` is not assignable to parameter `b` with type `str` in function `func1`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 31,
       "stop_line": 29
     },
@@ -5155,7 +5155,7 @@
       "concise_description": "`Literal['']` is not assignable to `int`",
       "description": "`Literal['']` is not assignable to `int`",
       "line": 16,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 16
     }
@@ -5167,7 +5167,7 @@
       "concise_description": "`Literal['']` is not assignable to `int`",
       "description": "`Literal['']` is not assignable to `int`",
       "line": 14,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 14
     }
@@ -5179,7 +5179,7 @@
       "concise_description": "`Literal['']` is not assignable to `int`",
       "description": "`Literal['']` is not assignable to `int`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 19,
       "stop_line": 40
     },
@@ -5189,7 +5189,7 @@
       "concise_description": "`Literal['']` is not assignable to `int`",
       "description": "`Literal['']` is not assignable to `int`",
       "line": 45,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 19,
       "stop_line": 45
     }
@@ -5201,7 +5201,7 @@
       "concise_description": "Type `type[Color]` is not iterable\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`",
       "description": "Type `type[Color]` is not iterable\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`",
       "line": 19,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 19
     },
@@ -5211,7 +5211,7 @@
       "concise_description": "Type `type[Color]` is not iterable\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`",
       "description": "Type `type[Color]` is not iterable\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`",
       "line": 19,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 19
     },
@@ -5378,7 +5378,7 @@
       "concise_description": "`int` is not assignable to attribute `_value_` with type `str`",
       "description": "`int` is not assignable to attribute `_value_` with type `str`",
       "line": 85,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 85
     },
@@ -5507,20 +5507,20 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "No matching overload found for function `staticmethod.__get__`, reporting errors for closest overload: `(None, type) -> (x: int) -> int`",
-      "description": "No matching overload found for function `staticmethod.__get__`, reporting errors for closest overload: `(None, type) -> (x: int) -> int`",
+      "concise_description": "Argument `type[Pet4]` is not assignable to parameter with type `type` in function `staticmethod.__get__`",
+      "description": "Argument `type[Pet4]` is not assignable to parameter with type `type` in function `staticmethod.__get__`",
       "line": 83,
-      "name": "no-matching-overload",
+      "name": "bad-argument-type",
       "stop_column": 27,
       "stop_line": 83
     },
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Argument `type[Pet4]` is not assignable to parameter with type `type` in function `staticmethod.__get__`",
-      "description": "Argument `type[Pet4]` is not assignable to parameter with type `type` in function `staticmethod.__get__`",
+      "concise_description": "No matching overload found for function `staticmethod.__get__`, reporting errors for closest overload: `(None, type) -> (x: int) -> int`",
+      "description": "No matching overload found for function `staticmethod.__get__`, reporting errors for closest overload: `(None, type) -> (x: int) -> int`",
       "line": 83,
-      "name": "type-mismatch",
+      "name": "no-matching-overload",
       "stop_column": 27,
       "stop_line": 83
     },
@@ -5694,7 +5694,7 @@
       "concise_description": "Argument `SymbolTable` is not assignable to parameter `x` with type `dict[str, list[object]]` in function `takes_dict_incorrect`",
       "description": "Argument `SymbolTable` is not assignable to parameter `x` with type `dict[str, list[object]]` in function `takes_dict_incorrect`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 27,
       "stop_line": 26
     },
@@ -5756,7 +5756,7 @@
       "concise_description": "Argument `bytes` is not assignable to parameter `y` with type `str` in function `concat`",
       "description": "Argument `bytes` is not assignable to parameter `y` with type `str` in function `concat`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 16,
       "stop_line": 40
     },
@@ -5766,7 +5766,7 @@
       "concise_description": "Argument `str` is not assignable to parameter `y` with type `bytes` in function `concat`",
       "description": "Argument `str` is not assignable to parameter `y` with type `bytes` in function `concat`",
       "line": 41,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 16,
       "stop_line": 41
     },
@@ -5796,7 +5796,7 @@
       "concise_description": "Argument `str` is not assignable to parameter `y` with type `MyStr` in function `concat`",
       "description": "Argument `str` is not assignable to parameter `y` with type `MyStr` in function `concat`",
       "line": 68,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 28,
       "stop_line": 68
     },
@@ -5806,7 +5806,7 @@
       "concise_description": "Argument `bytes` is not assignable to parameter `y` with type `MyStr` in function `concat`",
       "description": "Argument `bytes` is not assignable to parameter `y` with type `MyStr` in function `concat`",
       "line": 69,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 16,
       "stop_line": 69
     },
@@ -5816,7 +5816,7 @@
       "concise_description": "Cannot index into `MyMap1[str, int]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
       "description": "Cannot index into `MyMap1[str, int]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
       "line": 157,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 157
     },
@@ -5826,7 +5826,7 @@
       "concise_description": "Cannot index into `MyMap2[int, str]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
       "description": "Cannot index into `MyMap2[int, str]`\n  Argument `Literal[0]` is not assignable to parameter with type `str` in function `typing.Mapping.__getitem__`",
       "line": 158,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 9,
       "stop_line": 158
     }
@@ -6090,7 +6090,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `b` with type `TypeVar[DefaultStrT]` in function `Foo.__init__`",
       "description": "Argument `Literal['']` is not assignable to parameter `b` with type `TypeVar[DefaultStrT]` in function `Foo.__init__`",
       "line": 36,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 36
     },
@@ -6100,7 +6100,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `a` with type `int` in function `Foo.__init__`",
       "description": "Argument `Literal['']` is not assignable to parameter `a` with type `int` in function `Foo.__init__`",
       "line": 37,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 37
     },
@@ -6110,7 +6110,7 @@
       "concise_description": "Argument `Literal[1]` is not assignable to parameter `b` with type `TypeVar[DefaultStrT]` in function `Foo.__init__`",
       "description": "Argument `Literal[1]` is not assignable to parameter `b` with type `TypeVar[DefaultStrT]` in function `Foo.__init__`",
       "line": 37,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 37
     },
@@ -6426,7 +6426,7 @@
       "concise_description": "Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`",
       "description": "Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`",
       "line": 96,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 96
     },
@@ -6436,7 +6436,7 @@
       "concise_description": "Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`",
       "description": "Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`",
       "line": 97,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 97
     },
@@ -6446,7 +6446,7 @@
       "concise_description": "Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`",
       "description": "Argument `(a: int, b: str) -> int` is not assignable to parameter with type `(*Unknown, **Unknown) -> int` in function `twice`",
       "line": 98,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 98
     }
@@ -6488,7 +6488,7 @@
       "concise_description": "Argument `Literal['A']` is not assignable to parameter with type `bool`",
       "description": "Argument `Literal['A']` is not assignable to parameter with type `bool`",
       "line": 27,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 12,
       "stop_line": 27
     },
@@ -6498,7 +6498,7 @@
       "concise_description": "Argument `(y: int, x: str) -> int` is not assignable to parameter `y` with type `(x: int, y: str) -> int` in function `func1`",
       "description": "Argument `(y: int, x: str) -> int` is not assignable to parameter `y` with type `(x: int, y: str) -> int` in function `func1`",
       "line": 46,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 20,
       "stop_line": 46
     },
@@ -6508,7 +6508,7 @@
       "concise_description": "Argument `(*, y: int) -> int` is not assignable to parameter `y` with type `(*, x: int) -> int` in function `func1`",
       "description": "Argument `(*, y: int) -> int` is not assignable to parameter `y` with type `(*, x: int) -> int` in function `func1`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 37,
       "stop_line": 61
     },
@@ -6518,7 +6518,7 @@
       "concise_description": "Argument `Literal[1]` is not assignable to parameter with type `str`",
       "description": "Argument `Literal[1]` is not assignable to parameter with type `str`",
       "line": 98,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 5,
       "stop_line": 98
     },
@@ -6528,7 +6528,7 @@
       "concise_description": "Argument `Literal[1]` is not assignable to parameter with type `bool`",
       "description": "Argument `Literal[1]` is not assignable to parameter with type `bool`",
       "line": 108,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 5,
       "stop_line": 108
     },
@@ -6538,7 +6538,7 @@
       "concise_description": "Argument `Literal[1]` is not assignable to parameter with type `str`",
       "description": "Argument `Literal[1]` is not assignable to parameter with type `str`",
       "line": 120,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 5,
       "stop_line": 120
     },
@@ -6548,7 +6548,7 @@
       "concise_description": "Argument `(x: str) -> int` is not assignable to parameter `x` with type `(int, ParamSpec(@_)) -> int` in function `expects_int_first`",
       "description": "Argument `(x: str) -> int` is not assignable to parameter `x` with type `(int, ParamSpec(@_)) -> int` in function `expects_int_first`",
       "line": 127,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 127
     },
@@ -6558,7 +6558,7 @@
       "concise_description": "Argument `(*, x: int) -> int` is not assignable to parameter `x` with type `(int, ParamSpec(@_)) -> int` in function `expects_int_first`",
       "description": "Argument `(*, x: int) -> int` is not assignable to parameter `x` with type `(int, ParamSpec(@_)) -> int` in function `expects_int_first`",
       "line": 132,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 132
     },
@@ -6568,7 +6568,7 @@
       "concise_description": "Argument `(**int) -> int` is not assignable to parameter `x` with type `(int, ParamSpec(@_)) -> int` in function `expects_int_first`",
       "description": "Argument `(**int) -> int` is not assignable to parameter `x` with type `(int, ParamSpec(@_)) -> int` in function `expects_int_first`",
       "line": 137,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 137
     }
@@ -6590,7 +6590,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter with type `int`",
       "description": "Argument `Literal['']` is not assignable to parameter with type `int`",
       "line": 54,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 11,
       "stop_line": 54
     },
@@ -6600,7 +6600,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "line": 55,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 55
     },
@@ -6610,7 +6610,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter with type `int`",
       "description": "Argument `Literal['']` is not assignable to parameter with type `int`",
       "line": 60,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 11,
       "stop_line": 60
     },
@@ -6620,7 +6620,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "description": "Argument `Literal['']` is not assignable to parameter with type `bool`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 61
     }
@@ -6632,7 +6632,7 @@
       "concise_description": "Argument `Literal['a']` is not assignable to parameter `x` with type `int` in function `MyClass.meth_2`",
       "description": "Argument `Literal['a']` is not assignable to parameter `x` with type `int` in function `MyClass.meth_2`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 13,
       "stop_line": 29
     },
@@ -6662,7 +6662,7 @@
       "concise_description": "`type[list[?_TypeVar]]` is not assignable to `TypeAlias`",
       "description": "`type[list[?_TypeVar]]` is not assignable to `TypeAlias`",
       "line": 87,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 87
     }
@@ -6766,7 +6766,7 @@
       "concise_description": "Argument `LinkedList[int]` is not assignable to parameter `next` with type `Self | None` in function `OrdinalLinkedList.__init__`",
       "description": "Argument `LinkedList[int]` is not assignable to parameter `next` with type `Self | None` in function `OrdinalLinkedList.__init__`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 62,
       "stop_line": 26
     },
@@ -6776,7 +6776,7 @@
       "concise_description": "`OrdinalLinkedList` is not assignable to attribute `next` with type `Self | None`",
       "description": "`OrdinalLinkedList` is not assignable to attribute `next` with type `Self | None`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 52,
       "stop_line": 29
     },
@@ -6786,7 +6786,7 @@
       "concise_description": "`LinkedList[int]` is not assignable to attribute `next` with type `Self | None`",
       "description": "`LinkedList[int]` is not assignable to attribute `next` with type `Self | None`",
       "line": 32,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 50,
       "stop_line": 32
     }
@@ -6870,7 +6870,7 @@
       "concise_description": "Argument `BadReturnType` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
       "description": "Argument `BadReturnType` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
       "line": 61,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 34,
       "stop_line": 61
     }
@@ -6882,7 +6882,7 @@
       "concise_description": "`(self: CallableAttribute) -> int` is not assignable to `(Self) -> int`",
       "description": "`(self: CallableAttribute) -> int` is not assignable to `(Self) -> int`",
       "line": 50,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 37,
       "stop_line": 50
     },
@@ -6902,7 +6902,7 @@
       "concise_description": "Argument `HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`",
       "description": "Argument `HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`",
       "line": 63,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 24,
       "stop_line": 63
     },
@@ -7098,7 +7098,7 @@
       "concise_description": "`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`",
       "description": "`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`",
       "line": 28,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 28
     },
@@ -7108,7 +7108,7 @@
       "concise_description": "`ShouldBeCovariant1[float]` is not assignable to `ShouldBeCovariant1[int]`",
       "description": "`ShouldBeCovariant1[float]` is not assignable to `ShouldBeCovariant1[int]`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 29
     },
@@ -7118,7 +7118,7 @@
       "concise_description": "`ShouldBeCovariant2[int]` is not assignable to `ShouldBeCovariant2[float]`",
       "description": "`ShouldBeCovariant2[int]` is not assignable to `ShouldBeCovariant2[float]`",
       "line": 36,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 36
     },
@@ -7128,7 +7128,7 @@
       "concise_description": "`ShouldBeCovariant2[float]` is not assignable to `ShouldBeCovariant2[int]`",
       "description": "`ShouldBeCovariant2[float]` is not assignable to `ShouldBeCovariant2[int]`",
       "line": 37,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 37
     },
@@ -7138,7 +7138,7 @@
       "concise_description": "`ShouldBeCovariant3[int]` is not assignable to `ShouldBeCovariant3[float]`",
       "description": "`ShouldBeCovariant3[int]` is not assignable to `ShouldBeCovariant3[float]`",
       "line": 45,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 45
     },
@@ -7148,7 +7148,7 @@
       "concise_description": "`ShouldBeCovariant3[float]` is not assignable to `ShouldBeCovariant3[int]`",
       "description": "`ShouldBeCovariant3[float]` is not assignable to `ShouldBeCovariant3[int]`",
       "line": 46,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 46
     },
@@ -7158,7 +7158,7 @@
       "concise_description": "`ShouldBeCovariant4[int]` is not assignable to `ShouldBeCovariant4[float]`",
       "description": "`ShouldBeCovariant4[int]` is not assignable to `ShouldBeCovariant4[float]`",
       "line": 54,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 54
     },
@@ -7168,7 +7168,7 @@
       "concise_description": "`ShouldBeCovariant4[float]` is not assignable to `ShouldBeCovariant4[int]`",
       "description": "`ShouldBeCovariant4[float]` is not assignable to `ShouldBeCovariant4[int]`",
       "line": 55,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 55
     },
@@ -7178,7 +7178,7 @@
       "concise_description": "`ShouldBeCovariant5[int]` is not assignable to `ShouldBeCovariant5[float]`",
       "description": "`ShouldBeCovariant5[int]` is not assignable to `ShouldBeCovariant5[float]`",
       "line": 67,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 67
     },
@@ -7188,7 +7188,7 @@
       "concise_description": "`ShouldBeCovariant5[float]` is not assignable to `ShouldBeCovariant5[int]`",
       "description": "`ShouldBeCovariant5[float]` is not assignable to `ShouldBeCovariant5[int]`",
       "line": 68,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 68
     },
@@ -7198,7 +7198,7 @@
       "concise_description": "`ShouldBeCovariant6[int]` is not assignable to `ShouldBeCovariant6[float]`",
       "description": "`ShouldBeCovariant6[int]` is not assignable to `ShouldBeCovariant6[float]`",
       "line": 78,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 78
     },
@@ -7208,7 +7208,7 @@
       "concise_description": "`ShouldBeCovariant6[float]` is not assignable to `ShouldBeCovariant6[int]`",
       "description": "`ShouldBeCovariant6[float]` is not assignable to `ShouldBeCovariant6[int]`",
       "line": 79,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 79
     },
@@ -7218,7 +7218,7 @@
       "concise_description": "`ShouldBeInvariant1[int]` is not assignable to `ShouldBeInvariant1[float]`",
       "description": "`ShouldBeInvariant1[int]` is not assignable to `ShouldBeInvariant1[float]`",
       "line": 95,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 95
     },
@@ -7228,7 +7228,7 @@
       "concise_description": "`ShouldBeInvariant1[float]` is not assignable to `ShouldBeInvariant1[int]`",
       "description": "`ShouldBeInvariant1[float]` is not assignable to `ShouldBeInvariant1[int]`",
       "line": 96,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 66,
       "stop_line": 96
     },
@@ -7238,7 +7238,7 @@
       "concise_description": "`ShouldBeInvariant2[int]` is not assignable to `ShouldBeInvariant2[float]`",
       "description": "`ShouldBeInvariant2[int]` is not assignable to `ShouldBeInvariant2[float]`",
       "line": 110,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 110
     },
@@ -7248,7 +7248,7 @@
       "concise_description": "`ShouldBeInvariant2[float]` is not assignable to `ShouldBeInvariant2[int]`",
       "description": "`ShouldBeInvariant2[float]` is not assignable to `ShouldBeInvariant2[int]`",
       "line": 111,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 66,
       "stop_line": 111
     },
@@ -7258,7 +7258,7 @@
       "concise_description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
       "description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
       "line": 118,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 118
     },
@@ -7268,7 +7268,7 @@
       "concise_description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
       "description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
       "line": 119,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 119
     },
@@ -7278,7 +7278,7 @@
       "concise_description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
       "description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
       "line": 120,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 120
     },
@@ -7288,7 +7288,7 @@
       "concise_description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
       "description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
       "line": 121,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 121
     },
@@ -7298,7 +7298,7 @@
       "concise_description": "`ShouldBeInvariant4[int]` is not assignable to `ShouldBeInvariant4[float]`",
       "description": "`ShouldBeInvariant4[int]` is not assignable to `ShouldBeInvariant4[float]`",
       "line": 129,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 129
     },
@@ -7308,7 +7308,7 @@
       "concise_description": "`ShouldBeInvariant5[int]` is not assignable to `ShouldBeInvariant5[float]`",
       "description": "`ShouldBeInvariant5[int]` is not assignable to `ShouldBeInvariant5[float]`",
       "line": 137,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 137
     },
@@ -7318,7 +7318,7 @@
       "concise_description": "`ShouldBeContravariant1[int]` is not assignable to `ShouldBeContravariant1[float]`",
       "description": "`ShouldBeContravariant1[int]` is not assignable to `ShouldBeContravariant1[float]`",
       "line": 148,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 75,
       "stop_line": 148
     },
@@ -7328,7 +7328,7 @@
       "concise_description": "`ShouldBeContravariant1[float]` is not assignable to `ShouldBeContravariant1[int]`",
       "description": "`ShouldBeContravariant1[float]` is not assignable to `ShouldBeContravariant1[int]`",
       "line": 149,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 77,
       "stop_line": 149
     }
@@ -7392,7 +7392,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `label` with type `int | None` in function `Node.__init__`",
       "description": "Argument `Literal['']` is not assignable to parameter `label` with type `int | None` in function `Node.__init__`",
       "line": 38,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 38
     },
@@ -7402,7 +7402,7 @@
       "concise_description": "Argument `Literal[0]` is not assignable to parameter `label` with type `str | None` in function `Node.__init__`",
       "description": "Argument `Literal[0]` is not assignable to parameter `label` with type `str | None` in function `Node.__init__`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 40
     },
@@ -7464,7 +7464,7 @@
       "concise_description": "Unpacked argument `tuple[Literal[0], Literal['']]` is not assignable to varargs type `tuple[*@_, Env]` in function `exec_le`",
       "description": "Unpacked argument `tuple[Literal[0], Literal['']]` is not assignable to varargs type `tuple[*@_, Env]` in function `exec_le`",
       "line": 33,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 8,
       "stop_line": 33
     },
@@ -7474,7 +7474,7 @@
       "concise_description": "Unpacked argument `tuple[Literal[0], Literal['']]` is not assignable to varargs type `tuple[*@_, Env]` in function `exec_le`",
       "description": "Unpacked argument `tuple[Literal[0], Literal['']]` is not assignable to varargs type `tuple[*@_, Env]` in function `exec_le`",
       "line": 34,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 8,
       "stop_line": 34
     },
@@ -7484,7 +7484,7 @@
       "concise_description": "Unpacked argument `tuple[Literal[1], Literal['2'], Literal[3]]` is not assignable to varargs type `tuple[int, ...]` in function `func1`",
       "description": "Unpacked argument `tuple[Literal[1], Literal['2'], Literal[3]]` is not assignable to varargs type `tuple[int, ...]` in function `func1`",
       "line": 48,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 6,
       "stop_line": 48
     },
@@ -7494,7 +7494,7 @@
       "concise_description": "Unpacked argument `tuple[Literal[1], Literal[1], Literal['']]` is not assignable to varargs type `tuple[int, *tuple[str, ...], str]` in function `func2`",
       "description": "Unpacked argument `tuple[Literal[1], Literal[1], Literal['']]` is not assignable to varargs type `tuple[int, *tuple[str, ...], str]` in function `func2`",
       "line": 57,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 6,
       "stop_line": 57
     },
@@ -7504,7 +7504,7 @@
       "concise_description": "Unpacked argument `tuple[Literal[1]]` is not assignable to varargs type `tuple[int, *tuple[str, ...], str]` in function `func2`",
       "description": "Unpacked argument `tuple[Literal[1]]` is not assignable to varargs type `tuple[int, *tuple[str, ...], str]` in function `func2`",
       "line": 58,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 6,
       "stop_line": 58
     },
@@ -7514,7 +7514,7 @@
       "concise_description": "Unpacked argument `tuple[Literal['']]` is not assignable to varargs type `tuple[int, *tuple[str, ...], str]` in function `func2`",
       "description": "Unpacked argument `tuple[Literal['']]` is not assignable to varargs type `tuple[int, *tuple[str, ...], str]` in function `func2`",
       "line": 59,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 6,
       "stop_line": 59
     },
@@ -7524,7 +7524,7 @@
       "concise_description": "Unpacked argument `tuple[Literal[1]]` is not assignable to varargs type `tuple[int, str]` in function `func3`",
       "description": "Unpacked argument `tuple[Literal[1]]` is not assignable to varargs type `tuple[int, str]` in function `func3`",
       "line": 67,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 6,
       "stop_line": 67
     },
@@ -7534,7 +7534,7 @@
       "concise_description": "Argument `tuple[Literal[1], Literal[2]]` is not assignable to parameter with type `tuple[int]` in function `func4`",
       "description": "Argument `tuple[Literal[1], Literal[2]]` is not assignable to parameter with type `tuple[int]` in function `func4`",
       "line": 75,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 75
     },
@@ -7544,7 +7544,7 @@
       "concise_description": "Argument `tuple[Literal['1']]` is not assignable to parameter with type `tuple[int]` in function `func4`",
       "description": "Argument `tuple[Literal['1']]` is not assignable to parameter with type `tuple[int]` in function `func4`",
       "line": 76,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 76
     }
@@ -7556,7 +7556,7 @@
       "concise_description": "Argument `Height` is not assignable to parameter `shape` with type `@_` in function `Array.__init__`",
       "description": "Argument `Height` is not assignable to parameter `shape` with type `@_` in function `Array.__init__`",
       "line": 42,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 43,
       "stop_line": 42
     },
@@ -7566,7 +7566,7 @@
       "concise_description": "`Array[tuple[Batch, Width]]` is not assignable to `Array[tuple[Batch, Height, Width]]`",
       "description": "`Array[tuple[Batch, Width]]` is not assignable to `Array[tuple[Batch, Height, Width]]`",
       "line": 43,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 43
     },
@@ -7576,7 +7576,7 @@
       "concise_description": "`Array[tuple[Time, Batch, Width, Height]]` is not assignable to `Array[tuple[Time, Batch, Height, Width]]`",
       "description": "`Array[tuple[Time, Batch, Width, Height]]` is not assignable to `Array[tuple[Time, Batch, Height, Width]]`",
       "line": 44,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 2,
       "stop_line": 46
     },
@@ -7656,7 +7656,7 @@
       "concise_description": "Argument `tuple[float]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`",
       "description": "Argument `tuple[float]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`",
       "line": 85,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 85
     },
@@ -7666,7 +7666,7 @@
       "concise_description": "Argument `tuple[Literal['0']]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`",
       "description": "Argument `tuple[Literal['0']]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`",
       "line": 89,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 89
     },
@@ -7676,7 +7676,7 @@
       "concise_description": "Argument `tuple[Literal[0]]` is not assignable to parameter `arg2` with type `tuple[int, int]` in function `func2`",
       "description": "Argument `tuple[Literal[0]]` is not assignable to parameter `arg2` with type `tuple[int, int]` in function `func2`",
       "line": 90,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 90
     },
@@ -7686,7 +7686,7 @@
       "concise_description": "Argument `Array[tuple[Width]]` is not assignable to parameter `y` with type `Array[tuple[Height]]` in function `multiply`",
       "description": "Argument `Array[tuple[Width]]` is not assignable to parameter `y` with type `Array[tuple[Height]]` in function `multiply`",
       "line": 99,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 99
     },
@@ -7696,7 +7696,7 @@
       "concise_description": "Argument `Array[tuple[Height, Width]]` is not assignable to parameter `y` with type `Array[tuple[Height]]` in function `multiply`",
       "description": "Argument `Array[tuple[Height, Width]]` is not assignable to parameter `y` with type `Array[tuple[Height]]` in function `multiply`",
       "line": 100,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 18,
       "stop_line": 100
     },
@@ -7718,7 +7718,7 @@
       "concise_description": "Argument `tuple[Literal[''], Literal[0]]` is not assignable to parameter `args` with type `tuple[int, str]` in function `Process.__init__`",
       "description": "Argument `tuple[Literal[''], Literal[0]]` is not assignable to parameter `args` with type `tuple[int, str]` in function `Process.__init__`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 35,
       "stop_line": 26
     }
@@ -7730,7 +7730,7 @@
       "concise_description": "Returned type `tuple[*tuple[Unknown, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`",
       "description": "Returned type `tuple[*tuple[Unknown, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`",
       "line": 56,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 30,
       "stop_line": 56
     }
@@ -7875,7 +7875,7 @@
       "concise_description": "Argument `Array[tuple[Batch]]` is not assignable to parameter `x` with type `Array[tuple[Batch, *tuple[Any, ...], Channels]]` in function `process_batch_channels`",
       "description": "Argument `Array[tuple[Batch]]` is not assignable to parameter `x` with type `Array[tuple[Batch, *tuple[Any, ...], Channels]]` in function `process_batch_channels`",
       "line": 30,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 30
     }
@@ -7887,7 +7887,7 @@
       "concise_description": "Argument `?_TypeVar` is not assignable to parameter with type `Sized` in function `len`",
       "description": "Argument `?_TypeVar` is not assignable to parameter with type `Sized` in function `len`",
       "line": 31,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 13,
       "stop_line": 31
     },
@@ -7897,7 +7897,7 @@
       "concise_description": "Argument `?_TypeVar` is not assignable to parameter with type `Sized` in function `len`",
       "description": "Argument `?_TypeVar` is not assignable to parameter with type `Sized` in function `len`",
       "line": 31,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 31
     },
@@ -7917,7 +7917,7 @@
       "concise_description": "Argument `set[int]` is not assignable to parameter `y` with type `list[int]` in function `longer`",
       "description": "Argument `set[int]` is not assignable to parameter `y` with type `list[int]` in function `longer`",
       "line": 43,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 31,
       "stop_line": 43
     },
@@ -7951,7 +7951,7 @@
       "concise_description": "`ClassA[float, int, int]` is not assignable to `ClassA[int, int, int]`",
       "description": "`ClassA[float, int, int]` is not assignable to `ClassA[int, int, int]`",
       "line": 24,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 24
     },
@@ -7961,7 +7961,7 @@
       "concise_description": "`ClassA[float, int, int]` is not assignable to `ClassA[float, float, int]`",
       "description": "`ClassA[float, int, int]` is not assignable to `ClassA[float, float, int]`",
       "line": 25,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 39,
       "stop_line": 25
     },
@@ -7971,7 +7971,7 @@
       "concise_description": "`ClassA[float, int, int]` is not assignable to `ClassA[float, int, float]`",
       "description": "`ClassA[float, int, int]` is not assignable to `ClassA[float, int, float]`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 39,
       "stop_line": 26
     },
@@ -7981,7 +7981,7 @@
       "concise_description": "`ClassA[int, float, float]` is not assignable to `ClassA[int, int, int]`",
       "description": "`ClassA[int, float, float]` is not assignable to `ClassA[int, int, int]`",
       "line": 28,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 28
     },
@@ -7991,7 +7991,7 @@
       "concise_description": "`ClassA[int, float, float]` is not assignable to `ClassA[int, int, float]`",
       "description": "`ClassA[int, float, float]` is not assignable to `ClassA[int, int, float]`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 37,
       "stop_line": 29
     },
@@ -8001,7 +8001,7 @@
       "concise_description": "`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`",
       "description": "`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 40
     },
@@ -8011,7 +8011,7 @@
       "concise_description": "`ShouldBeCovariant1[float]` is not assignable to `ShouldBeCovariant1[int]`",
       "description": "`ShouldBeCovariant1[float]` is not assignable to `ShouldBeCovariant1[int]`",
       "line": 41,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 41
     },
@@ -8021,7 +8021,7 @@
       "concise_description": "`ShouldBeCovariant2[int]` is not assignable to `ShouldBeCovariant2[float]`",
       "description": "`ShouldBeCovariant2[int]` is not assignable to `ShouldBeCovariant2[float]`",
       "line": 48,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 48
     },
@@ -8031,7 +8031,7 @@
       "concise_description": "`ShouldBeCovariant2[float]` is not assignable to `ShouldBeCovariant2[int]`",
       "description": "`ShouldBeCovariant2[float]` is not assignable to `ShouldBeCovariant2[int]`",
       "line": 49,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 49
     },
@@ -8041,7 +8041,7 @@
       "concise_description": "`ShouldBeCovariant3[int]` is not assignable to `ShouldBeCovariant3[float]`",
       "description": "`ShouldBeCovariant3[int]` is not assignable to `ShouldBeCovariant3[float]`",
       "line": 57,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 57
     },
@@ -8051,7 +8051,7 @@
       "concise_description": "`ShouldBeCovariant3[float]` is not assignable to `ShouldBeCovariant3[int]`",
       "description": "`ShouldBeCovariant3[float]` is not assignable to `ShouldBeCovariant3[int]`",
       "line": 58,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 58
     },
@@ -8061,7 +8061,7 @@
       "concise_description": "`ShouldBeCovariant4[int]` is not assignable to `ShouldBeCovariant4[float]`",
       "description": "`ShouldBeCovariant4[int]` is not assignable to `ShouldBeCovariant4[float]`",
       "line": 66,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 66
     },
@@ -8071,7 +8071,7 @@
       "concise_description": "`ShouldBeCovariant4[float]` is not assignable to `ShouldBeCovariant4[int]`",
       "description": "`ShouldBeCovariant4[float]` is not assignable to `ShouldBeCovariant4[int]`",
       "line": 67,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 67
     },
@@ -8081,7 +8081,7 @@
       "concise_description": "`ShouldBeCovariant5[int]` is not assignable to `ShouldBeCovariant5[float]`",
       "description": "`ShouldBeCovariant5[int]` is not assignable to `ShouldBeCovariant5[float]`",
       "line": 79,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 79
     },
@@ -8091,7 +8091,7 @@
       "concise_description": "`ShouldBeCovariant5[float]` is not assignable to `ShouldBeCovariant5[int]`",
       "description": "`ShouldBeCovariant5[float]` is not assignable to `ShouldBeCovariant5[int]`",
       "line": 80,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 62,
       "stop_line": 80
     },
@@ -8101,7 +8101,7 @@
       "concise_description": "`ShouldBeInvariant1[int]` is not assignable to `ShouldBeInvariant1[float]`",
       "description": "`ShouldBeInvariant1[int]` is not assignable to `ShouldBeInvariant1[float]`",
       "line": 96,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 96
     },
@@ -8111,7 +8111,7 @@
       "concise_description": "`ShouldBeInvariant1[float]` is not assignable to `ShouldBeInvariant1[int]`",
       "description": "`ShouldBeInvariant1[float]` is not assignable to `ShouldBeInvariant1[int]`",
       "line": 97,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 66,
       "stop_line": 97
     },
@@ -8121,7 +8121,7 @@
       "concise_description": "`ShouldBeInvariant2[int]` is not assignable to `ShouldBeInvariant2[float]`",
       "description": "`ShouldBeInvariant2[int]` is not assignable to `ShouldBeInvariant2[float]`",
       "line": 111,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 111
     },
@@ -8131,7 +8131,7 @@
       "concise_description": "`ShouldBeInvariant2[float]` is not assignable to `ShouldBeInvariant2[int]`",
       "description": "`ShouldBeInvariant2[float]` is not assignable to `ShouldBeInvariant2[int]`",
       "line": 112,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 66,
       "stop_line": 112
     },
@@ -8141,7 +8141,7 @@
       "concise_description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
       "description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
       "line": 119,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 119
     },
@@ -8151,7 +8151,7 @@
       "concise_description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
       "description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
       "line": 120,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 120
     },
@@ -8161,7 +8161,7 @@
       "concise_description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
       "description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
       "line": 121,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 121
     },
@@ -8171,7 +8171,7 @@
       "concise_description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
       "description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
       "line": 122,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 73,
       "stop_line": 122
     },
@@ -8181,7 +8181,7 @@
       "concise_description": "`ShouldBeInvariant4[int]` is not assignable to `ShouldBeInvariant4[float]`",
       "description": "`ShouldBeInvariant4[int]` is not assignable to `ShouldBeInvariant4[float]`",
       "line": 130,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 130
     },
@@ -8191,7 +8191,7 @@
       "concise_description": "`ShouldBeInvariant5[int]` is not assignable to `ShouldBeInvariant5[float]`",
       "description": "`ShouldBeInvariant5[int]` is not assignable to `ShouldBeInvariant5[float]`",
       "line": 138,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 64,
       "stop_line": 138
     },
@@ -8201,7 +8201,7 @@
       "concise_description": "`ShouldBeContravariant1[int]` is not assignable to `ShouldBeContravariant1[float]`",
       "description": "`ShouldBeContravariant1[int]` is not assignable to `ShouldBeContravariant1[float]`",
       "line": 149,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 75,
       "stop_line": 149
     },
@@ -8211,7 +8211,7 @@
       "concise_description": "`ShouldBeContravariant1[float]` is not assignable to `ShouldBeContravariant1[int]`",
       "description": "`ShouldBeContravariant1[float]` is not assignable to `ShouldBeContravariant1[int]`",
       "line": 150,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 77,
       "stop_line": 150
     },
@@ -8221,7 +8221,7 @@
       "concise_description": "`ShouldBeInvariant6[float]` is not assignable to `ShouldBeInvariant6[int]`",
       "description": "`ShouldBeInvariant6[float]` is not assignable to `ShouldBeInvariant6[int]`",
       "line": 169,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 58,
       "stop_line": 169
     },
@@ -8231,7 +8231,7 @@
       "concise_description": "`ShouldBeInvariant6[int]` is not assignable to `ShouldBeInvariant6[float]`",
       "description": "`ShouldBeInvariant6[int]` is not assignable to `ShouldBeInvariant6[float]`",
       "line": 170,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 58,
       "stop_line": 170
     },
@@ -8241,7 +8241,7 @@
       "concise_description": "`ShouldBeCovariant6[float]` is not assignable to `ShouldBeCovariant6[int]`",
       "description": "`ShouldBeCovariant6[float]` is not assignable to `ShouldBeCovariant6[int]`",
       "line": 181,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 58,
       "stop_line": 181
     },
@@ -8251,7 +8251,7 @@
       "concise_description": "`ShouldBeCovariant6[int]` is not assignable to `ShouldBeCovariant6[float]`",
       "description": "`ShouldBeCovariant6[int]` is not assignable to `ShouldBeCovariant6[float]`",
       "line": 182,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 58,
       "stop_line": 182
     },
@@ -8261,7 +8261,7 @@
       "concise_description": "`ShouldBeContravariant2[float]` is not assignable to `ShouldBeContravariant2[int]`",
       "description": "`ShouldBeContravariant2[float]` is not assignable to `ShouldBeContravariant2[int]`",
       "line": 193,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 66,
       "stop_line": 193
     },
@@ -8271,7 +8271,7 @@
       "concise_description": "`ShouldBeContravariant2[int]` is not assignable to `ShouldBeContravariant2[float]`",
       "description": "`ShouldBeContravariant2[int]` is not assignable to `ShouldBeContravariant2[float]`",
       "line": 194,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 66,
       "stop_line": 194
     }
@@ -8324,7 +8324,7 @@
       "concise_description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`",
       "description": "`@` is not supported between `Matrix[Literal[2], Literal[3]]` and `Matrix[Literal[3], Literal[7]]`\n  Argument `Matrix[Literal[3], Literal[7]]` is not assignable to parameter `other` with type `Matrix[Literal[3], int]` in function `Matrix.__matmul__`",
       "line": 71,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 14,
       "stop_line": 71
     },
@@ -8344,7 +8344,7 @@
       "concise_description": "Argument `str` is not assignable to parameter `status` with type `Literal['ABORTED', 'MALFORMED']` in function `expects_bad_status`",
       "description": "Argument `str` is not assignable to parameter `status` with type `Literal['ABORTED', 'MALFORMED']` in function `expects_bad_status`",
       "line": 106,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 41,
       "stop_line": 106
     }
@@ -8376,7 +8376,7 @@
       "concise_description": "`Literal['two']` is not assignable to `Literal['']`",
       "description": "`Literal['two']` is not assignable to `Literal['']`",
       "line": 43,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 43
     },
@@ -8396,7 +8396,7 @@
       "concise_description": "`str` is not assignable to `LiteralString`",
       "description": "`str` is not assignable to `LiteralString`",
       "line": 66,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 47,
       "stop_line": 66
     },
@@ -8406,7 +8406,7 @@
       "concise_description": "`Literal[3]` is not assignable to `LiteralString`",
       "description": "`Literal[3]` is not assignable to `LiteralString`",
       "line": 74,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 26,
       "stop_line": 74
     },
@@ -8416,7 +8416,7 @@
       "concise_description": "`Literal[b'test']` is not assignable to `LiteralString`",
       "description": "`Literal[b'test']` is not assignable to `LiteralString`",
       "line": 75,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 32,
       "stop_line": 75
     },
@@ -8436,7 +8436,7 @@
       "concise_description": "`Container[str]` is not assignable to `Container[LiteralString]`",
       "description": "`Container[str]` is not assignable to `Container[LiteralString]`",
       "line": 134,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 53,
       "stop_line": 134
     },
@@ -8446,7 +8446,7 @@
       "concise_description": "`list[LiteralString]` is not assignable to `list[str]`",
       "description": "`list[LiteralString]` is not assignable to `list[str]`",
       "line": 171,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 171
     }
@@ -8648,7 +8648,7 @@
       "concise_description": "`Literal[Color.RED]` is not assignable to `Literal['Color.RED']`",
       "description": "`Literal[Color.RED]` is not assignable to `Literal['Color.RED']`",
       "line": 65,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 33,
       "stop_line": 65
     }
@@ -8660,7 +8660,7 @@
       "concise_description": "`Literal[4]` is not assignable to `Literal[3]`",
       "description": "`Literal[4]` is not assignable to `Literal[3]`",
       "line": 10,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 19,
       "stop_line": 10
     },
@@ -8670,7 +8670,7 @@
       "concise_description": "`Literal[0]` is not assignable to `Literal[False]`",
       "description": "`Literal[0]` is not assignable to `Literal[False]`",
       "line": 24,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 24
     },
@@ -8680,7 +8680,7 @@
       "concise_description": "`Literal[False]` is not assignable to `Literal[0]`",
       "description": "`Literal[False]` is not assignable to `Literal[0]`",
       "line": 25,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 23,
       "stop_line": 25
     },
@@ -8690,7 +8690,7 @@
       "concise_description": "Augmented assignment produces a value of type `int`, which is not assignable to `Literal[3, 4, 5]`",
       "description": "Augmented assignment produces a value of type `int`, which is not assignable to `Literal[3, 4, 5]`",
       "line": 33,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 11,
       "stop_line": 33
     }
@@ -8742,7 +8742,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `y` with type `int` in function `Point.__new__`",
       "description": "Argument `Literal['']` is not assignable to parameter `y` with type `int` in function `Point.__new__`",
       "line": 46,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 46
     },
@@ -8752,7 +8752,7 @@
       "concise_description": "Argument `Literal[3]` is not assignable to parameter `units` with type `str` in function `Point.__new__`",
       "description": "Argument `Literal[3]` is not assignable to parameter `units` with type `str` in function `Point.__new__`",
       "line": 47,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 25,
       "stop_line": 47
     },
@@ -8782,7 +8782,7 @@
       "concise_description": "Argument `float` is not assignable to parameter `value` with type `str` in function `Property.__new__`",
       "description": "Argument `float` is not assignable to parameter `value` with type `str` in function `Property.__new__`",
       "line": 98,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 22,
       "stop_line": 98
     },
@@ -8864,7 +8864,7 @@
       "concise_description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point5.__new__`",
       "description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point5.__new__`",
       "line": 36,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 21,
       "stop_line": 36
     },
@@ -8884,7 +8884,7 @@
       "concise_description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point6.__new__`",
       "description": "Argument `Literal['1']` is not assignable to parameter `y` with type `int` in function `Point6.__new__`",
       "line": 42,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 21,
       "stop_line": 42
     },
@@ -8894,7 +8894,7 @@
       "concise_description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Point6.__new__`",
       "description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Point6.__new__`",
       "line": 43,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 20,
       "stop_line": 43
     },
@@ -8946,7 +8946,7 @@
       "concise_description": "`Point` is not assignable to `tuple[int, int]`",
       "description": "`Point` is not assignable to `tuple[int, int]`",
       "line": 22,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 22
     },
@@ -8956,7 +8956,7 @@
       "concise_description": "`Point` is not assignable to `tuple[int, str, str]`",
       "description": "`Point` is not assignable to `tuple[int, str, str]`",
       "line": 23,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 23
     }
@@ -9070,7 +9070,7 @@
       "concise_description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `(object) -> str` in function `takes_callable_str`",
       "description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `(object) -> str` in function `takes_callable_str`",
       "line": 128,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 36,
       "stop_line": 128
     },
@@ -9080,7 +9080,7 @@
       "concise_description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `CallableStrProto` in function `takes_callable_str_proto`",
       "description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `CallableStrProto` in function `takes_callable_str_proto`",
       "line": 148,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 42,
       "stop_line": 148
     }
@@ -9112,7 +9112,7 @@
       "concise_description": "Argument `(val: object) -> TypeIs[int]` is not assignable to parameter `f` with type `(object) -> str` in function `takes_callable_str`",
       "description": "Argument `(val: object) -> TypeIs[int]` is not assignable to parameter `f` with type `(object) -> str` in function `takes_callable_str`",
       "line": 132,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 36,
       "stop_line": 132
     },
@@ -9122,7 +9122,7 @@
       "concise_description": "Argument `(val: object) -> TypeIs[int]` is not assignable to parameter `f` with type `CallableStrProto` in function `takes_callable_str_proto`",
       "description": "Argument `(val: object) -> TypeIs[int]` is not assignable to parameter `f` with type `CallableStrProto` in function `takes_callable_str_proto`",
       "line": 152,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 42,
       "stop_line": 152
     },
@@ -9132,7 +9132,7 @@
       "concise_description": "Argument `(val: object) -> TypeIs[int]` is not assignable to parameter `f` with type `(object) -> TypeGuard[int]` in function `takes_typeguard`",
       "description": "Argument `(val: object) -> TypeIs[int]` is not assignable to parameter `f` with type `(object) -> TypeGuard[int]` in function `takes_typeguard`",
       "line": 169,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 30,
       "stop_line": 169
     },
@@ -9142,7 +9142,7 @@
       "concise_description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `(object) -> TypeIs[int]` in function `takes_typeis`",
       "description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `(object) -> TypeIs[int]` in function `takes_typeis`",
       "line": 170,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 30,
       "stop_line": 170
     },
@@ -9152,7 +9152,7 @@
       "concise_description": "Argument `(val: object) -> TypeIs[bool]` is not assignable to parameter `f` with type `(object) -> TypeIs[int]` in function `takes_int_typeis`",
       "description": "Argument `(val: object) -> TypeIs[bool]` is not assignable to parameter `f` with type `(object) -> TypeIs[int]` in function `takes_int_typeis`",
       "line": 191,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 29,
       "stop_line": 191
     }
@@ -9174,7 +9174,7 @@
       "concise_description": "Argument `Literal['']` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`",
       "description": "Argument `Literal['']` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`",
       "line": 37,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 5,
       "stop_line": 37
     },
@@ -9206,7 +9206,7 @@
       "concise_description": "`type[ConcreteA]` is not assignable to `ProtoA1`",
       "description": "`type[ConcreteA]` is not assignable to `ProtoA1`",
       "line": 58,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 25,
       "stop_line": 58
     },
@@ -9216,7 +9216,7 @@
       "concise_description": "`type[ConcreteB]` is not assignable to `ProtoB1`",
       "description": "`type[ConcreteB]` is not assignable to `ProtoB1`",
       "line": 74,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 25,
       "stop_line": 74
     }
@@ -9228,7 +9228,7 @@
       "concise_description": "Argument `list[int]` is not assignable to parameter `things` with type `Iterable[SupportsClose]` in function `close_all`",
       "description": "Argument `list[int]` is not assignable to parameter `things` with type `Iterable[SupportsClose]` in function `close_all`",
       "line": 30,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 14,
       "stop_line": 30
     },
@@ -9248,7 +9248,7 @@
       "concise_description": "`Concrete2_Bad1` is not assignable to `Template2`",
       "description": "`Concrete2_Bad1` is not assignable to `Template2`",
       "line": 114,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 114
     },
@@ -9258,7 +9258,7 @@
       "concise_description": "`Concrete2_Bad2` is not assignable to `Template2`",
       "description": "`Concrete2_Bad2` is not assignable to `Template2`",
       "line": 115,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 115
     },
@@ -9268,7 +9268,7 @@
       "concise_description": "`Concrete3_Bad1` is not assignable to `Template3`",
       "description": "`Concrete3_Bad1` is not assignable to `Template3`",
       "line": 156,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 156
     },
@@ -9278,7 +9278,7 @@
       "concise_description": "`Concrete3_Bad2` is not assignable to `Template3`",
       "description": "`Concrete3_Bad2` is not assignable to `Template3`",
       "line": 157,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 157
     },
@@ -9288,7 +9288,7 @@
       "concise_description": "`Concrete3_Bad3` is not assignable to `Template3`",
       "description": "`Concrete3_Bad3` is not assignable to `Template3`",
       "line": 158,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 158
     },
@@ -9298,7 +9298,7 @@
       "concise_description": "`Concrete3_Bad4` is not assignable to `Template3`",
       "description": "`Concrete3_Bad4` is not assignable to `Template3`",
       "line": 159,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 159
     },
@@ -9308,7 +9308,7 @@
       "concise_description": "`Concrete3_Bad5` is not assignable to `Template3`",
       "description": "`Concrete3_Bad5` is not assignable to `Template3`",
       "line": 160,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 160
     },
@@ -9318,7 +9318,7 @@
       "concise_description": "`Concrete4_Bad1` is not assignable to `Template4`",
       "description": "`Concrete4_Bad1` is not assignable to `Template4`",
       "line": 218,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 218
     },
@@ -9328,7 +9328,7 @@
       "concise_description": "`Concrete4_Bad2` is not assignable to `Template4`",
       "description": "`Concrete4_Bad2` is not assignable to `Template4`",
       "line": 219,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 219
     },
@@ -9338,7 +9338,7 @@
       "concise_description": "`Concrete5_Good2` is not assignable to `Template5`",
       "description": "`Concrete5_Good2` is not assignable to `Template5`",
       "line": 281,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 40,
       "stop_line": 281
     },
@@ -9348,7 +9348,7 @@
       "concise_description": "`Concrete5_Bad1` is not assignable to `Template5`",
       "description": "`Concrete5_Bad1` is not assignable to `Template5`",
       "line": 285,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 285
     },
@@ -9358,7 +9358,7 @@
       "concise_description": "`Concrete5_Bad2` is not assignable to `Template5`",
       "description": "`Concrete5_Bad2` is not assignable to `Template5`",
       "line": 286,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 286
     },
@@ -9368,7 +9368,7 @@
       "concise_description": "`Concrete5_Bad3` is not assignable to `Template5`",
       "description": "`Concrete5_Bad3` is not assignable to `Template5`",
       "line": 287,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 287
     },
@@ -9378,7 +9378,7 @@
       "concise_description": "`Concrete5_Bad4` is not assignable to `Template5`",
       "description": "`Concrete5_Bad4` is not assignable to `Template5`",
       "line": 288,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 288
     },
@@ -9388,7 +9388,7 @@
       "concise_description": "`Concrete5_Bad5` is not assignable to `Template5`",
       "description": "`Concrete5_Bad5` is not assignable to `Template5`",
       "line": 289,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 289
     },
@@ -9398,7 +9398,7 @@
       "concise_description": "`Concrete6_Bad1` is not assignable to `Template6`",
       "description": "`Concrete6_Bad1` is not assignable to `Template6`",
       "line": 339,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 339
     },
@@ -9408,7 +9408,7 @@
       "concise_description": "`Concrete6_Bad2` is not assignable to `Template6`",
       "description": "`Concrete6_Bad2` is not assignable to `Template6`",
       "line": 340,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 340
     },
@@ -9418,7 +9418,7 @@
       "concise_description": "`Concrete6_Bad3` is not assignable to `Template6`",
       "description": "`Concrete6_Bad3` is not assignable to `Template6`",
       "line": 341,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 341
     }
@@ -9452,7 +9452,7 @@
       "concise_description": "`Concrete1` is not assignable to `Proto1[int, str]`",
       "description": "`Concrete1` is not assignable to `Proto1[int, str]`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 40
     },
@@ -9472,7 +9472,7 @@
       "concise_description": "`Box[float]` is not assignable to `Box[int]`",
       "description": "`Box[float]` is not assignable to `Box[int]`",
       "line": 56,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 56
     },
@@ -9482,7 +9482,7 @@
       "concise_description": "`Sender[int]` is not assignable to `Sender[float]`",
       "description": "`Sender[int]` is not assignable to `Sender[float]`",
       "line": 66,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 66
     },
@@ -9492,7 +9492,7 @@
       "concise_description": "`AttrProto[int]` is not assignable to `AttrProto[float]`",
       "description": "`AttrProto[int]` is not assignable to `AttrProto[float]`",
       "line": 74,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 36,
       "stop_line": 74
     },
@@ -9502,7 +9502,7 @@
       "concise_description": "`AttrProto[float]` is not assignable to `AttrProto[int]`",
       "description": "`AttrProto[float]` is not assignable to `AttrProto[int]`",
       "line": 75,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 36,
       "stop_line": 75
     },
@@ -9522,7 +9522,7 @@
       "concise_description": "`ConcreteHasProperty1` is not assignable to `HasPropertyProto`",
       "description": "`ConcreteHasProperty1` is not assignable to `HasPropertyProto`",
       "line": 144,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 47,
       "stop_line": 144
     },
@@ -9532,7 +9532,7 @@
       "concise_description": "`ConcreteHasProperty2` is not assignable to `HasPropertyProto`",
       "description": "`ConcreteHasProperty2` is not assignable to `HasPropertyProto`",
       "line": 145,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 47,
       "stop_line": 145
     },
@@ -9542,7 +9542,7 @@
       "concise_description": "`ConcreteHasProperty3` is not assignable to `HasPropertyProto`",
       "description": "`ConcreteHasProperty3` is not assignable to `HasPropertyProto`",
       "line": 146,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 47,
       "stop_line": 146
     },
@@ -9552,7 +9552,7 @@
       "concise_description": "`ConcreteHasProperty4` is not assignable to `HasPropertyProto`",
       "description": "`ConcreteHasProperty4` is not assignable to `HasPropertyProto`",
       "line": 147,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 47,
       "stop_line": 147
     }
@@ -9564,7 +9564,7 @@
       "concise_description": "`SCConcrete2` is not assignable to `SizedAndClosable1`",
       "description": "`SCConcrete2` is not assignable to `SizedAndClosable1`",
       "line": 52,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 52
     },
@@ -9574,7 +9574,7 @@
       "concise_description": "`SCConcrete2` is not assignable to `SizedAndClosable2`",
       "description": "`SCConcrete2` is not assignable to `SizedAndClosable2`",
       "line": 53,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 53
     },
@@ -9584,7 +9584,7 @@
       "concise_description": "`SCConcrete2` is not assignable to `SizedAndClosable3`",
       "description": "`SCConcrete2` is not assignable to `SizedAndClosable3`",
       "line": 54,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 54
     },
@@ -9604,7 +9604,7 @@
       "concise_description": "`SCConcrete1` is not assignable to `SizedAndClosable4`",
       "description": "`SCConcrete1` is not assignable to `SizedAndClosable4`",
       "line": 83,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 37,
       "stop_line": 83
     }
@@ -9616,7 +9616,7 @@
       "concise_description": "`Module[_protocols_modules1]` is not assignable to `Options1`",
       "description": "`Module[_protocols_modules1]` is not assignable to `Options1`",
       "line": 25,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 36,
       "stop_line": 25
     },
@@ -9626,7 +9626,7 @@
       "concise_description": "`Module[_protocols_modules1]` is not assignable to `Options2`",
       "description": "`Module[_protocols_modules1]` is not assignable to `Options2`",
       "line": 26,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 36,
       "stop_line": 26
     },
@@ -9636,7 +9636,7 @@
       "concise_description": "`Module[_protocols_modules2]` is not assignable to `Reporter2`",
       "description": "`Module[_protocols_modules2]` is not assignable to `Reporter2`",
       "line": 48,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 37,
       "stop_line": 48
     },
@@ -9646,7 +9646,7 @@
       "concise_description": "`Module[_protocols_modules2]` is not assignable to `Reporter3`",
       "description": "`Module[_protocols_modules2]` is not assignable to `Reporter3`",
       "line": 49,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 37,
       "stop_line": 49
     }
@@ -9658,7 +9658,7 @@
       "concise_description": "Argument `ImplB` is not assignable to parameter `x` with type `ProtoA[Never, @_]` in function `func1`",
       "description": "Argument `ImplB` is not assignable to parameter `x` with type `ProtoA[Never, @_]` in function `func1`",
       "line": 80,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 19,
       "stop_line": 80
     },
@@ -9681,7 +9681,7 @@
       "concise_description": "`One` is not assignable to variable `c` with type `Copyable`",
       "description": "`One` is not assignable to variable `c` with type `Copyable`",
       "line": 32,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 10,
       "stop_line": 32
     },
@@ -9691,7 +9691,7 @@
       "concise_description": "`Other` is not assignable to variable `c` with type `Copyable`",
       "description": "`Other` is not assignable to variable `c` with type `Copyable`",
       "line": 33,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 33
     },
@@ -9701,7 +9701,7 @@
       "concise_description": "`C2[str]` is not assignable to `P2Parent[str]`",
       "description": "`C2[str]` is not assignable to `P2Parent[str]`",
       "line": 72,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 30,
       "stop_line": 72
     },
@@ -9711,7 +9711,7 @@
       "concise_description": "`C2[str]` is not assignable to `P2Child[str]`",
       "description": "`C2[str]` is not assignable to `P2Child[str]`",
       "line": 73,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 73
     }
@@ -9723,7 +9723,7 @@
       "concise_description": "`Proto2` is not assignable to `Concrete2`",
       "description": "`Proto2` is not assignable to `Concrete2`",
       "line": 38,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 23,
       "stop_line": 38
     },
@@ -9733,7 +9733,7 @@
       "concise_description": "`Proto2` is not assignable to `Proto3`",
       "description": "`Proto2` is not assignable to `Proto3`",
       "line": 55,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 20,
       "stop_line": 55
     },
@@ -9743,7 +9743,7 @@
       "concise_description": "`Proto5[int]` is not assignable to `Proto4[int, float]`",
       "description": "`Proto5[int]` is not assignable to `Proto4[int, float]`",
       "line": 79,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 36,
       "stop_line": 79
     },
@@ -9753,7 +9753,7 @@
       "concise_description": "`Proto4[int, int]` is not assignable to `Proto5[float]`",
       "description": "`Proto4[int, int]` is not assignable to `Proto5[float]`",
       "line": 80,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 80
     },
@@ -9763,7 +9763,7 @@
       "concise_description": "`Proto6[float, float]` is not assignable to `Proto7[int, float]`",
       "description": "`Proto6[float, float]` is not assignable to `Proto7[int, float]`",
       "line": 102,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 32,
       "stop_line": 102
     },
@@ -9773,7 +9773,7 @@
       "concise_description": "`Proto6[float, float]` is not assignable to `Proto7[float, object]`",
       "description": "`Proto6[float, float]` is not assignable to `Proto7[float, object]`",
       "line": 103,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 103
     }
@@ -10203,7 +10203,7 @@
       "concise_description": "Function declared to return `NoReturn` but is missing an explicit `return`",
       "description": "Function declared to return `NoReturn` but is missing an explicit `return`",
       "line": 19,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 30,
       "stop_line": 19
     },
@@ -10213,7 +10213,7 @@
       "concise_description": "Returned type `Literal['whatever works']` is not assignable to declared return type `int`",
       "description": "Returned type `Literal['whatever works']` is not assignable to declared return type `int`",
       "line": 32,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 28,
       "stop_line": 32
     },
@@ -10223,7 +10223,7 @@
       "concise_description": "`list[Never]` is not assignable to `list[int]`",
       "description": "`list[Never]` is not assignable to `list[int]`",
       "line": 86,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 86
     },
@@ -10233,7 +10233,7 @@
       "concise_description": "Returned type `ClassC[Never]` is not assignable to declared return type `ClassC[?_TypeVar]`",
       "description": "Returned type `ClassC[Never]` is not assignable to declared return type `ClassC[?_TypeVar]`",
       "line": 105,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 27,
       "stop_line": 105
     }
@@ -10245,7 +10245,7 @@
       "concise_description": "Argument `type` is not assignable to parameter `val1` with type `None` in function `func1`",
       "description": "Argument `type` is not assignable to parameter `val1` with type `None` in function `func1`",
       "line": 21,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 21
     },
@@ -10255,7 +10255,7 @@
       "concise_description": "`None` is not assignable to `Iterable[Error]`",
       "description": "`None` is not assignable to `Iterable[Error]`",
       "line": 27,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 23,
       "stop_line": 27
     },
@@ -10265,7 +10265,7 @@
       "concise_description": "Argument `type[object]` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "description": "Argument `type[object]` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "line": 39,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 21,
       "stop_line": 39
     },
@@ -10275,7 +10275,7 @@
       "concise_description": "Argument `type` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "description": "Argument `type` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 17,
       "stop_line": 40
     },
@@ -10285,7 +10285,7 @@
       "concise_description": "Argument `None` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "description": "Argument `None` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "line": 41,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 11,
       "stop_line": 41
     }
@@ -10319,7 +10319,7 @@
       "concise_description": "Argument `type[TeamUser]` is not assignable to parameter `user_class` with type `type[BasicUser | ProUser]` in function `func4`",
       "description": "Argument `type[TeamUser]` is not assignable to parameter `user_class` with type `type[BasicUser | ProUser]` in function `func4`",
       "line": 56,
-      "name": "type-mismatch",
+      "name": "bad-argument-type",
       "stop_column": 15,
       "stop_line": 56
     },
@@ -10549,7 +10549,7 @@
       "concise_description": "`type` is not assignable to `(...) -> Any`",
       "description": "`type` is not assignable to `(...) -> Any`",
       "line": 165,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 165
     },
@@ -10559,7 +10559,7 @@
       "concise_description": "`type` is not assignable to `(int, int) -> int`",
       "description": "`type` is not assignable to `(int, int) -> int`",
       "line": 166,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 166
     },
@@ -10569,7 +10569,7 @@
       "concise_description": "`type` is not assignable to `type[int]`",
       "description": "`type` is not assignable to `type[int]`",
       "line": 169,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 169
     },
@@ -10579,7 +10579,7 @@
       "concise_description": "`type` is not assignable to `type[Any]`",
       "description": "`type` is not assignable to `type[Any]`",
       "line": 170,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 170
     },
@@ -10589,7 +10589,7 @@
       "concise_description": "Returned type `type` is not assignable to declared return type `type[?_TypeVar]`",
       "description": "Returned type `type` is not assignable to declared return type `type[?_TypeVar]`",
       "line": 175,
-      "name": "type-mismatch",
+      "name": "bad-return",
       "stop_column": 17,
       "stop_line": 175
     }
@@ -10601,7 +10601,7 @@
       "concise_description": "`tuple[float, complex]` is not assignable to `tuple[int, int]`",
       "description": "`tuple[float, complex]` is not assignable to `tuple[int, int]`",
       "line": 15,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 29,
       "stop_line": 15
     },
@@ -10611,7 +10611,7 @@
       "concise_description": "`tuple[int, ...]` is not assignable to variable `v2` with type `tuple[int, *tuple[int, ...]]`",
       "description": "`tuple[int, ...]` is not assignable to variable `v2` with type `tuple[int, *tuple[int, ...]]`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 29
     },
@@ -10621,7 +10621,7 @@
       "concise_description": "`tuple[int, *tuple[int, ...]]` is not assignable to variable `v3` with type `tuple[int]`",
       "description": "`tuple[int, *tuple[int, ...]]` is not assignable to variable `v3` with type `tuple[int]`",
       "line": 32,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 32
     },
@@ -10631,7 +10631,7 @@
       "concise_description": "`tuple[int, ...]` is not assignable to variable `v3` with type `tuple[int]`",
       "description": "`tuple[int, ...]` is not assignable to variable `v3` with type `tuple[int]`",
       "line": 33,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 33
     },
@@ -10641,7 +10641,7 @@
       "concise_description": "`tuple[int, ...]` is not assignable to `tuple[int]`",
       "description": "`tuple[int, ...]` is not assignable to `tuple[int]`",
       "line": 43,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 43
     },
@@ -10651,7 +10651,7 @@
       "concise_description": "`tuple[int, ...]` is not assignable to `tuple[int, int]`",
       "description": "`tuple[int, ...]` is not assignable to `tuple[int, int]`",
       "line": 62,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 62
     },
@@ -10781,7 +10781,7 @@
       "concise_description": "`tuple[Literal[1], Literal[''], Literal['']]` is not assignable to variable `t1` with type `tuple[int, str]`",
       "description": "`tuple[Literal[1], Literal[''], Literal['']]` is not assignable to variable `t1` with type `tuple[int, str]`",
       "line": 144,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 17,
       "stop_line": 144
     },
@@ -10791,7 +10791,7 @@
       "concise_description": "`tuple[Literal[1], Literal[1], Literal['']]` is not assignable to variable `t2` with type `tuple[int, *tuple[str, ...]]`",
       "description": "`tuple[Literal[1], Literal[1], Literal['']]` is not assignable to variable `t2` with type `tuple[int, *tuple[str, ...]]`",
       "line": 149,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 16,
       "stop_line": 149
     },
@@ -10801,7 +10801,7 @@
       "concise_description": "`tuple[Literal[1], Literal[''], Literal[1]]` is not assignable to variable `t2` with type `tuple[int, *tuple[str, ...]]`",
       "description": "`tuple[Literal[1], Literal[''], Literal[1]]` is not assignable to variable `t2` with type `tuple[int, *tuple[str, ...]]`",
       "line": 150,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 16,
       "stop_line": 150
     },
@@ -10811,7 +10811,7 @@
       "concise_description": "`tuple[Literal[1], Literal[''], Literal['']]` is not assignable to variable `t3` with type `tuple[int, *tuple[str, ...], int]`",
       "description": "`tuple[Literal[1], Literal[''], Literal['']]` is not assignable to variable `t3` with type `tuple[int, *tuple[str, ...], int]`",
       "line": 156,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 17,
       "stop_line": 156
     },
@@ -10821,7 +10821,7 @@
       "concise_description": "`tuple[Literal[1], Literal[''], Literal[''], float]` is not assignable to variable `t3` with type `tuple[int, *tuple[str, ...], int]`",
       "description": "`tuple[Literal[1], Literal[''], Literal[''], float]` is not assignable to variable `t3` with type `tuple[int, *tuple[str, ...], int]`",
       "line": 157,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 22,
       "stop_line": 157
     },
@@ -10831,7 +10831,7 @@
       "concise_description": "`tuple[Literal[1], Literal[''], Literal[1]]` is not assignable to variable `t4` with type `tuple[*tuple[str, ...], int]`",
       "description": "`tuple[Literal[1], Literal[''], Literal[1]]` is not assignable to variable `t4` with type `tuple[*tuple[str, ...], int]`",
       "line": 162,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 16,
       "stop_line": 162
     },
@@ -10841,7 +10841,7 @@
       "concise_description": "`tuple[Literal[''], Literal[''], float]` is not assignable to variable `t4` with type `tuple[*tuple[str, ...], int]`",
       "description": "`tuple[Literal[''], Literal[''], float]` is not assignable to variable `t4` with type `tuple[*tuple[str, ...], int]`",
       "line": 163,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 19,
       "stop_line": 163
     },
@@ -10851,7 +10851,7 @@
       "concise_description": "`tuple[str, str]` is not assignable to `tuple[str, str, int]`",
       "description": "`tuple[str, str]` is not assignable to `tuple[str, str, int]`",
       "line": 168,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 41,
       "stop_line": 168
     },
@@ -10861,7 +10861,7 @@
       "concise_description": "`tuple[str, str]` is not assignable to `tuple[str, str, str, *tuple[str, ...]]`",
       "description": "`tuple[str, str]` is not assignable to `tuple[str, str, str, *tuple[str, ...]]`",
       "line": 171,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 51,
       "stop_line": 171
     },
@@ -10871,7 +10871,7 @@
       "concise_description": "`tuple[str, str]` is not assignable to `tuple[*tuple[str, ...], str, str, str]`",
       "description": "`tuple[str, str]` is not assignable to `tuple[*tuple[str, ...], str, str, str]`",
       "line": 175,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 51,
       "stop_line": 175
     }
@@ -10883,7 +10883,7 @@
       "concise_description": "`tuple[Literal[1], Literal[2]]` is not assignable to variable `t1` with type `tuple[int]`",
       "description": "`tuple[Literal[1], Literal[2]]` is not assignable to variable `t1` with type `tuple[int]`",
       "line": 12,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 12
     },
@@ -10893,7 +10893,7 @@
       "concise_description": "`tuple[Literal[1]]` is not assignable to variable `t2` with type `tuple[int, int]`",
       "description": "`tuple[Literal[1]]` is not assignable to variable `t2` with type `tuple[int, int]`",
       "line": 14,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 10,
       "stop_line": 14
     },
@@ -10903,7 +10903,7 @@
       "concise_description": "`tuple[Literal[1], Literal['']]` is not assignable to variable `t2` with type `tuple[int, int]`",
       "description": "`tuple[Literal[1], Literal['']]` is not assignable to variable `t2` with type `tuple[int, int]`",
       "line": 15,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 13,
       "stop_line": 15
     },
@@ -10913,7 +10913,7 @@
       "concise_description": "`tuple[Literal[1]]` is not assignable to variable `t10` with type `tuple[()]`",
       "description": "`tuple[Literal[1]]` is not assignable to variable `t10` with type `tuple[()]`",
       "line": 25,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 11,
       "stop_line": 25
     },
@@ -10923,7 +10923,7 @@
       "concise_description": "`tuple[Literal[1], Literal[2], Literal[3], Literal['']]` is not assignable to variable `t20` with type `tuple[int, ...]`",
       "description": "`tuple[Literal[1], Literal[2], Literal[3], Literal['']]` is not assignable to variable `t20` with type `tuple[int, ...]`",
       "line": 36,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 20,
       "stop_line": 36
     },
@@ -11274,7 +11274,7 @@
       "concise_description": "`float` is not assignable to TypedDict key `year` with type `int`",
       "description": "`float` is not assignable to TypedDict key `year` with type `int`",
       "line": 29,
-      "name": "type-mismatch",
+      "name": "typed-dict-key-error",
       "stop_column": 48,
       "stop_line": 29
     },
@@ -11418,7 +11418,7 @@
       "concise_description": "`TypedDict[A1]` is not assignable to `TypedDict[B1]`",
       "description": "`TypedDict[A1]` is not assignable to `TypedDict[B1]`",
       "line": 37,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 37
     },
@@ -11428,7 +11428,7 @@
       "concise_description": "`TypedDict[A1]` is not assignable to `TypedDict[C1]`",
       "description": "`TypedDict[A1]` is not assignable to `TypedDict[C1]`",
       "line": 40,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 40
     },
@@ -11438,7 +11438,7 @@
       "concise_description": "`TypedDict[C2]` is not assignable to `TypedDict[A2]`",
       "description": "`TypedDict[C2]` is not assignable to `TypedDict[A2]`",
       "line": 79,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 79
     },
@@ -11448,7 +11448,7 @@
       "concise_description": "`TypedDict[C2]` is not assignable to `TypedDict[B2]`",
       "description": "`TypedDict[C2]` is not assignable to `TypedDict[B2]`",
       "line": 82,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 82
     },
@@ -11458,7 +11458,7 @@
       "concise_description": "`TypedDict[A2]` is not assignable to `TypedDict[C2]`",
       "description": "`TypedDict[A2]` is not assignable to `TypedDict[C2]`",
       "line": 84,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 84
     },
@@ -11468,7 +11468,7 @@
       "concise_description": "`TypedDict[B2]` is not assignable to `TypedDict[C2]`",
       "description": "`TypedDict[B2]` is not assignable to `TypedDict[C2]`",
       "line": 85,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 15,
       "stop_line": 85
     }
@@ -11540,7 +11540,7 @@
       "concise_description": "`Literal[3]` is not assignable to TypedDict key `ident` with type `str`",
       "description": "`Literal[3]` is not assignable to TypedDict key `ident` with type `str`",
       "line": 83,
-      "name": "type-mismatch",
+      "name": "typed-dict-key-error",
       "stop_column": 16,
       "stop_line": 83
     },
@@ -11638,7 +11638,7 @@
       "concise_description": "`TypedDict[B2]` is not assignable to `TypedDict[A2]`",
       "description": "`TypedDict[B2]` is not assignable to `TypedDict[A2]`",
       "line": 38,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 38
     },
@@ -11648,7 +11648,7 @@
       "concise_description": "`TypedDict[A3]` is not assignable to variable `b3` with type `TypedDict[B3]`",
       "description": "`TypedDict[A3]` is not assignable to variable `b3` with type `TypedDict[B3]`",
       "line": 65,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 8,
       "stop_line": 65
     },
@@ -11668,7 +11668,7 @@
       "concise_description": "`TypedDict[B3]` is not assignable to `dict[str, int]`",
       "description": "`TypedDict[B3]` is not assignable to `dict[str, int]`",
       "line": 76,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 76
     },
@@ -11678,7 +11678,7 @@
       "concise_description": "`TypedDict[B3]` is not assignable to `dict[str, object]`",
       "description": "`TypedDict[B3]` is not assignable to `dict[str, object]`",
       "line": 77,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 77
     },
@@ -11688,7 +11688,7 @@
       "concise_description": "`TypedDict[B3]` is not assignable to `dict[Any, Any]`",
       "description": "`TypedDict[B3]` is not assignable to `dict[Any, Any]`",
       "line": 78,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 24,
       "stop_line": 78
     },
@@ -11698,7 +11698,7 @@
       "concise_description": "`TypedDict[B3]` is not assignable to `Mapping[str, int]`",
       "description": "`TypedDict[B3]` is not assignable to `Mapping[str, int]`",
       "line": 82,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 27,
       "stop_line": 82
     },
@@ -11708,7 +11708,7 @@
       "concise_description": "`object | @_` is not assignable to `str`",
       "description": "`object | @_` is not assignable to `str`",
       "line": 91,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 91
     },
@@ -11718,7 +11718,7 @@
       "concise_description": "`object | @_` is not assignable to `int`",
       "description": "`object | @_` is not assignable to `int`",
       "line": 92,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 33,
       "stop_line": 92
     },
@@ -11728,7 +11728,7 @@
       "concise_description": "`object | None` is not assignable to `str | None`",
       "description": "`object | None` is not assignable to `str | None`",
       "line": 97,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 38,
       "stop_line": 97
     },
@@ -11738,7 +11738,7 @@
       "concise_description": "`object | None` is not assignable to `str`",
       "description": "`object | None` is not assignable to `str`",
       "line": 101,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 31,
       "stop_line": 101
     },
@@ -11748,7 +11748,7 @@
       "concise_description": "`object | @_` is not assignable to `int`",
       "description": "`object | @_` is not assignable to `int`",
       "line": 103,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 33,
       "stop_line": 103
     },
@@ -11758,7 +11758,7 @@
       "concise_description": "`object | @_` is not assignable to `int | str`",
       "description": "`object | @_` is not assignable to `int | str`",
       "line": 105,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 41,
       "stop_line": 105
     },
@@ -11768,7 +11768,7 @@
       "concise_description": "`object | @_` is not assignable to `int`",
       "description": "`object | @_` is not assignable to `int`",
       "line": 107,
-      "name": "type-mismatch",
+      "name": "bad-assignment",
       "stop_column": 35,
       "stop_line": 107
     },
@@ -11778,7 +11778,7 @@
       "concise_description": "`Literal[1]` is not assignable to TypedDict key `inner_key` with type `str`",
       "description": "`Literal[1]` is not assignable to TypedDict key `inner_key` with type `str`",
       "line": 126,
-      "name": "type-mismatch",
+      "name": "typed-dict-key-error",
       "stop_column": 57,
       "stop_line": 126
     },
@@ -11788,7 +11788,7 @@
       "concise_description": "`dict[str, int]` is not assignable to TypedDict key `z` with type `Literal[''] | TypedDict[Inner3]`",
       "description": "`dict[str, int]` is not assignable to TypedDict key `z` with type `Literal[''] | TypedDict[Inner3]`",
       "line": 151,
-      "name": "type-mismatch",
+      "name": "typed-dict-key-error",
       "stop_column": 37,
       "stop_line": 151
     }

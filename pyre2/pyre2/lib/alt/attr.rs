@@ -405,6 +405,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             got,
                             Some((&want, &|| TypeCheckContext {
                                 kind: TypeCheckKind::Attribute(attr_name.clone()),
+                                error_kind: ErrorKind::BadAssignment,
                                 context: context.map(|ctx| ctx()),
                             })),
                             errors,
@@ -413,6 +414,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Either::Right(got) => {
                         self.check_type(&want, got, range, errors, &|| TypeCheckContext {
                             kind: TypeCheckKind::Attribute(attr_name.clone()),
+                            error_kind: ErrorKind::BadAssignment,
                             context: context.map(|ctx| ctx()),
                         });
                     }

@@ -8,6 +8,7 @@
 use ruff_python_ast::name::Name;
 
 use crate::binding::binding::AnnotationTarget;
+use crate::error::kind::ErrorKind;
 use crate::types::callable::FuncId;
 use crate::types::types::Type;
 
@@ -56,13 +57,42 @@ pub enum ErrorContext {
 #[derive(Debug)]
 pub struct TypeCheckContext {
     pub kind: TypeCheckKind,
+    pub error_kind: ErrorKind,
     pub context: Option<ErrorContext>,
+}
+
+fn error_kind_from_type_check_kind(kind: &TypeCheckKind) -> ErrorKind {
+    use TypeCheckKind::*;
+    match kind {
+        MagicMethodReturn(..) => ErrorKind::BadReturn,
+        AugmentedAssignment => ErrorKind::BadAssignment,
+        ImplicitFunctionReturn(..) => ErrorKind::BadReturn,
+        ExplicitFunctionReturn => ErrorKind::BadReturn,
+        TypeGuardReturn => ErrorKind::BadReturn,
+        CallArgument(..) => ErrorKind::BadArgumentType,
+        CallVarArgs(..) => ErrorKind::BadArgumentType,
+        CallKwArgs(..) => ErrorKind::BadArgumentType,
+        FunctionParameterDefault(..) => ErrorKind::BadFunctionDefinition,
+        TypedDictKey(..) => ErrorKind::TypedDictKeyError,
+        Attribute(..) => ErrorKind::BadAssignment,
+        AnnotatedName(..) => ErrorKind::BadAssignment,
+        IterationVariableMismatch(..) => ErrorKind::BadAssignment,
+        AnnAssign => ErrorKind::BadAssignment,
+        ExceptionClass => ErrorKind::Unknown,
+        YieldValue => ErrorKind::InvalidYield,
+        YieldFrom => ErrorKind::InvalidYield,
+        UnexpectedBareYield => ErrorKind::InvalidYield,
+        Unknown => ErrorKind::Unknown,
+        Test => ErrorKind::Unknown,
+    }
 }
 
 impl TypeCheckContext {
     pub fn of_kind(kind: TypeCheckKind) -> Self {
+        let error_kind = error_kind_from_type_check_kind(&kind);
         Self {
             kind,
+            error_kind,
             context: None,
         }
     }

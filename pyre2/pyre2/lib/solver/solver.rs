@@ -19,7 +19,6 @@ use starlark_map::small_set::SmallSet;
 use crate::alt::answers::LookupAnswer;
 use crate::error::collector::ErrorCollector;
 use crate::error::context::TypeCheckContext;
-use crate::error::kind::ErrorKind;
 use crate::solver::type_order::TypeOrder;
 use crate::types::callable::Callable;
 use crate::types::callable::Function;
@@ -341,7 +340,6 @@ impl Solver {
         want: &Type,
         got: &Type,
         errors: &ErrorCollector,
-        error_kind: ErrorKind,
         loc: TextRange,
         tcc: &dyn Fn() -> TypeCheckContext,
     ) {
@@ -353,10 +351,10 @@ impl Solver {
         );
         match tcc.context {
             Some(ctx) => {
-                errors.add(loc, msg, error_kind, Some(&|| ctx.clone()));
+                errors.add(loc, msg, tcc.error_kind, Some(&|| ctx.clone()));
             }
             None => {
-                errors.add(loc, msg, error_kind, None);
+                errors.add(loc, msg, tcc.error_kind, None);
             }
         }
     }
@@ -450,9 +448,7 @@ impl Solver {
                 drop(lock);
                 // We got forced into choosing a type to satisfy a subset constraint, so check we are OK with that.
                 if !self.is_subset_eq(&got, &t, type_order) {
-                    self.error(&t, &got, errors, ErrorKind::TypeMismatch, loc, &|| {
-                        TypeCheckContext::unknown()
-                    });
+                    self.error(&t, &got, errors, loc, &|| TypeCheckContext::unknown());
                 }
             }
             _ => {

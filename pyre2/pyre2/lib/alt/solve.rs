@@ -839,6 +839,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         context_manager_type.clone(),
                         kind.context_exit_dunder(),
                     ),
+                    error_kind: ErrorKind::BadReturn,
                     context: Some(context()),
                 },
             );
