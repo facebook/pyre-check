@@ -1016,6 +1016,13 @@ impl State {
                 let start = Instant::now();
                 step.compute().0(&alt)(&ctx)(&mut alt);
                 write(&step, start)?;
+                if step == Step::Exports {
+                    let start = Instant::now();
+                    let exports = alt.exports.as_ref().unwrap();
+                    exports.wildcard(ctx.lookup);
+                    exports.exports(ctx.lookup);
+                    write(&"Exports-force", start)?;
+                }
             }
             let start = Instant::now();
             let diff = lock

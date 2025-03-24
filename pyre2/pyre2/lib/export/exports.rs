@@ -95,7 +95,7 @@ impl Exports {
         self.0.wildcard.calculate(f).unwrap_or_default()
     }
 
-    fn exports(&self, lookup: &dyn LookupExport) -> Arc<SmallSet<Name>> {
+    pub fn exports(&self, lookup: &dyn LookupExport) -> Arc<SmallSet<Name>> {
         let f = || {
             let mut result = SmallSet::new();
             result.extend(self.0.definitions.definitions.keys().cloned());
