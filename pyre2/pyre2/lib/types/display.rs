@@ -160,6 +160,18 @@ impl<'a> TypeDisplayContext<'a> {
                 self.fmt_qname(cls.qname(), f)?;
                 write!(f, "]")
             }
+            Type::ClassType(class_type)
+                if class_type.qname().module_name().as_str() == "builtins"
+                    && class_type.qname().id().as_str() == "tuple"
+                    && class_type.targs().as_slice().len() == 1 =>
+            {
+                self.fmt_qname(class_type.qname(), f)?;
+                write!(
+                    f,
+                    "[{}, ...]",
+                    self.display(&class_type.targs().as_slice()[0])
+                )
+            }
             Type::ClassType(class_type) => {
                 self.fmt_qname(class_type.qname(), f)?;
                 self.fmt_targs(class_type.targs(), f)
