@@ -10639,16 +10639,6 @@
     {
       "code": -2,
       "column": 26,
-      "concise_description": "`tuple[Any]` is not assignable to `tuple[int, int]`",
-      "description": "`tuple[Any]` is not assignable to `tuple[int, int]`",
-      "line": 59,
-      "name": "type-mismatch",
-      "stop_column": 45,
-      "stop_line": 59
-    },
-    {
-      "code": -2,
-      "column": 26,
       "concise_description": "`tuple[int, ...]` is not assignable to `tuple[int, int]`",
       "description": "`tuple[int, ...]` is not assignable to `tuple[int, int]`",
       "line": 62,

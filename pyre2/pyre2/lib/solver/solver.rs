@@ -501,6 +501,10 @@ pub struct Subset<'a, Ans: LookupAnswer> {
 }
 
 impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
+    pub fn force_var(&self, v: Var) -> Type {
+        self.solver.force_var(v)
+    }
+
     pub fn is_equal(&mut self, got: &Type, want: &Type) -> bool {
         self.is_subset_eq(got, want) && self.is_subset_eq(want, got)
     }

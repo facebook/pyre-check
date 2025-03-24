@@ -685,7 +685,6 @@
     "Line 175: Unexpected errors ['Returned type `type` is not assignable to declared return type `type[?_TypeVar]`']"
   ],
   "tuples_type_compat.py": [
-    "Line 59: Unexpected errors ['`tuple[Any]` is not assignable to `tuple[int, int]`']",
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed']",
     "Line 78: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, int] | tuple[str, str]) failed']",
     "Line 82: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int, str, int]) failed']",

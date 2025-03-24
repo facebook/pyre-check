@@ -254,3 +254,13 @@ def test(x: tuple[int, *tuple[str, ...]]) -> None:
     y: Sequence[int | str] = x
 "#,
 );
+
+testcase!(
+    test_tuple_constructor,
+    r#"
+from typing import Any, Iterable
+def test(y: Iterable[Any], z: Iterable[int]):
+    x: tuple[int, int] = tuple(y)
+    x = tuple(z)  # E: `tuple[int]` is not assignable to variable `x` with type `tuple[int, int]`
+"#,
+);

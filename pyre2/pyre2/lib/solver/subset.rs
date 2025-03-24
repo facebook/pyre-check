@@ -701,13 +701,14 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 self.is_subset_eq(&call_ty, want)
             }
             (Type::ClassType(got), Type::Tuple(_))
-                if *got.class_object() == self.type_order.stdlib().tuple_class_object() =>
+                if *got.class_object() == self.type_order.stdlib().tuple_class_object()
+                    && got.targs().as_slice().len() == 1 =>
             {
-                let tuple_targs = got.targs().as_slice().to_vec();
-                self.is_subset_eq(
-                    &Type::Tuple(Tuple::Unbounded(Box::new(unions(tuple_targs)))),
-                    want,
-                )
+                let mut tuple_targ = got.targs().as_slice()[0].clone();
+                if let Type::Var(var) = tuple_targ {
+                    tuple_targ = self.force_var(var);
+                }
+                self.is_subset_eq(&Type::Tuple(Tuple::Unbounded(Box::new(tuple_targ))), want)
             }
             (Type::ClassDef(got), Type::ClassDef(want)) => {
                 self.type_order.has_superclass(got, want)
