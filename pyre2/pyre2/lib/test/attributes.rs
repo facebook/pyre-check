@@ -636,7 +636,7 @@ class Test(B):
 );
 
 testcase_with_bug!(
-    "PyTorch TODO: support `with` expression and raise the right error at the C() call site",
+    "PyTorch TODO: the errors about `object` are false positives caused by buggy typing.Self support",
     test_with,
     r#"
 class C:
@@ -650,7 +650,7 @@ class C:
         if orig_func is None:
             return super().__new__(cls) 
 def f():
-    with C():  # E: TODO: Expr::call_method attribute base undefined # E: Cannot use `object | None` as a context manager
+    with C():  # E: `NoneType` has no attribute `__enter__`  # E: `NoneType` has no attribute `__exit__`  # E: `object` has no attribute `__enter__`  # E: `object` has no attribute `__exit__`
         pass
     "#,
 );

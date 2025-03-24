@@ -823,27 +823,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
-        let context = || ErrorContext::BadContextManager(context_manager_type.clone());
-        let enter_type =
-            self.context_value_enter(context_manager_type, kind, range, errors, Some(&context));
-        let exit_type =
-            self.context_value_exit(context_manager_type, kind, range, errors, Some(&context));
-        self.check_type(
-            &Type::Union(vec![self.stdlib.bool().to_type(), Type::None]),
-            &exit_type,
-            range,
-            errors,
-            &|| TypeCheckContext {
-                kind: TypeCheckKind::MagicMethodReturn(
-                    context_manager_type.clone(),
-                    kind.context_exit_dunder(),
-                ),
-                context: Some(context()),
-            },
-        );
-        // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
-        // https://typing.readthedocs.io/en/latest/spec/exceptions.html#context-managers
-        enter_type
+        self.distribute_over_union(context_manager_type, |context_manager_type| {
+            let context = || ErrorContext::BadContextManager(context_manager_type.clone());
+            let enter_type =
+                self.context_value_enter(context_manager_type, kind, range, errors, Some(&context));
+            let exit_type =
+                self.context_value_exit(context_manager_type, kind, range, errors, Some(&context));
+            self.check_type(
+                &Type::Union(vec![self.stdlib.bool().to_type(), Type::None]),
+                &exit_type,
+                range,
+                errors,
+                &|| TypeCheckContext {
+                    kind: TypeCheckKind::MagicMethodReturn(
+                        context_manager_type.clone(),
+                        kind.context_exit_dunder(),
+                    ),
+                    context: Some(context()),
+                },
+            );
+            // TODO: `exit_type` may also affect exceptional control flow, which is yet to be supported:
+            // https://typing.readthedocs.io/en/latest/spec/exceptions.html#context-managers
+            enter_type
+        })
     }
 
     pub fn scoped_type_params(
