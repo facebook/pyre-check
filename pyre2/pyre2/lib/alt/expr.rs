@@ -145,7 +145,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn callable_dunder_helper(
+    pub fn callable_dunder_helper(
         &self,
         method_type: Type,
         range: TextRange,

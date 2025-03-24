@@ -1355,15 +1355,6 @@ def A(x: int | Literal[0], y: int | Literal[255]):
 );
 
 testcase_with_bug!(
-    "PyTorch TODO: This testcase shouldn't have errors. iadd not supported.",
-    test_incremental_add,
-    r#"
-def f(x: int):
-    x += 1 # E: Object of class `int` has no attribute `__iadd__` 
-    "#,
-);
-
-testcase_with_bug!(
     "Should probably error when setting the field",
     test_generic_init_field,
     r#"

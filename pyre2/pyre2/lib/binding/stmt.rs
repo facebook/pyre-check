@@ -393,7 +393,7 @@ impl<'a> BindingsBuilder<'a> {
                     self.ensure_expr(&mut x.target);
                 }
                 self.ensure_expr(&mut x.value);
-                let make_binding = |_: Option<Idx<KeyAnnotation>>| Binding::AugAssign(x.clone());
+                let make_binding = |k: Option<Idx<KeyAnnotation>>| Binding::AugAssign(k, x.clone());
                 self.bind_target(&x.target, &make_binding, None);
             }
             Stmt::AnnAssign(mut x) => match *x.target {

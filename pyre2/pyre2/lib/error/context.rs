@@ -27,6 +27,8 @@ pub enum ErrorContext {
     UnaryOp(String, Type),
     /// Binary operation like `x + y`
     BinaryOp(String, Type, Type),
+    /// In-place binary operation like `x += y`
+    InplaceBinaryOp(String, Type, Type),
     /// for x in y: ...
     Iteration(Type),
     /// async for x in y: ...
@@ -82,6 +84,8 @@ pub enum TypeCheckKind {
     /// Check on a magic method that is expected to return a particular type; e.g., a context
     /// manager's `__exit__` method must return `bool | None`.
     MagicMethodReturn(Type, Name),
+    /// Check that the return of an augmented assignment method call is still assignable to the original value
+    AugmentedAssignment,
     /// Implicit return via a path with no explicit return statement. The bool indicates whether
     /// the function has *any* explicit return.
     ImplicitFunctionReturn(bool),

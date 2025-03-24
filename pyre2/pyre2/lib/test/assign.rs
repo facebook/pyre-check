@@ -351,12 +351,57 @@ def f(x: X[int]):
 );
 
 testcase!(
+    test_aug_assign_integer,
+    r#"
+def f(x: int):
+    x += 1
+    "#,
+);
+
+testcase!(
     test_aug_assign_simple,
     r#"
 x: list[int] = []
 x += [1]
-x += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
+x += ["foo"]  # E: Augmented assignment produces a value of type `list[int | str]`, which is not assignable to `list[int]`
 "#,
+);
+
+testcase!(
+    test_aug_assign_unannotated,
+    r#"
+from typing import assert_type
+x = [1]
+x += ["foo"]
+assert_type(x, list[int | str])
+"#,
+);
+
+testcase!(
+    test_aug_assign_fallback,
+    r#"
+class A:
+    def __iadd__(self, other):
+        return self
+    def __add__(self, other):
+        return self 
+class B:
+    def __add__(self, other):
+        return self
+class C:
+    def __radd__(self, other):
+        return self
+class D: pass
+        
+a = A()
+b = B()
+c = C()
+d = D()
+
+a += 1
+b += 1
+d += c
+    "#,
 );
 
 testcase!(
@@ -364,10 +409,10 @@ testcase!(
     r#"
 def foo(y: list[int]) -> None:
     y += [1]
-    y += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
+    y += ["foo"]  # E: Augmented assignment produces a value of type `list[int | str]`, which is not assignable to `list[int]`
     z: list[int] = []
     z += [1]
-    z += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
+    z += ["foo"]  # E: Augmented assignment produces a value of type `list[int | str]`, which is not assignable to `list[int]`
 "#,
 );
 
@@ -382,7 +427,7 @@ class C:
 
 c: C = C()
 c.foo += [1]
-c.foo += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
+c.foo += ["foo"]  # E: `list[int | str]` is not assignable to attribute `foo` with type `list[int]`
 "#,
 );
 
@@ -395,7 +440,7 @@ class C:
     def __init__(self) -> None:
         self.foo = []
         self.foo += [1]
-        self.foo += ["foo"]  # E: Argument `list[str]` is not assignable to parameter with type `Iterable[int]`
+        self.foo += ["foo"]  # E: `list[int | str]` is not assignable to attribute `foo` with type `list[int]`
 "#,
 );
 
@@ -405,7 +450,7 @@ testcase!(
 x: list[list[int]] = []
 x += [[1]]
 x[0] += [1]
-x += [1]  # E: Argument `list[int]` is not assignable to parameter with type `Iterable[list[int]]`
+x += [1]  # E: Augmented assignment produces a value of type `list[int | list[int]]`, which is not assignable to `list[list[int]]`
 "#,
 );
 
@@ -450,7 +495,7 @@ testcase!(
     r#"
 def expect_str(x: str): ...
 def test(x: None):
-    x += expect_str(0) # E: `NoneType` has no attribute `__iadd__` # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
+    x += expect_str(0) # E: `+=` is not supported between `None` and `Never` # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
@@ -461,7 +506,7 @@ def expect_str(x: str): ...
 class C:
     __iadd__: None = None
 def test(x: C):
-    x += expect_str(0) # E: Expected `__iadd__` to be a callable, got None # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
+    x += expect_str(0) # E: `+=` is not supported between `C` and `Never` # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 

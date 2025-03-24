@@ -30,6 +30,15 @@ impl ErrorContext {
                     ctx.display(right)
                 )
             }
+            Self::InplaceBinaryOp(op, left, right) => {
+                let ctx = TypeDisplayContext::new(&[left, right]);
+                format!(
+                    "`{}=` is not supported between `{}` and `{}`",
+                    op,
+                    ctx.display(left),
+                    ctx.display(right)
+                )
+            }
             Self::Iteration(ty) => format!("Type `{ty}` is not iterable"),
             Self::AsyncIteration(ty) => format!("Type `{ty}` is not an async iterable"),
             Self::Await(ty) => format!("Type `{ty}` is not awaitable"),
@@ -54,6 +63,13 @@ impl TypeCheckKind {
                     ctx.display(got),
                     ctx.display(cls),
                     func,
+                    ctx.display(want),
+                )
+            }
+            Self::AugmentedAssignment => {
+                format!(
+                    "Augmented assignment produces a value of type `{}`, which is not assignable to `{}`",
+                    ctx.display(got),
                     ctx.display(want),
                 )
             }

@@ -5011,18 +5011,7 @@
       "stop_line": 17
     }
   ],
-  "directives_deprecated.py": [
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "Object of class `Spam` has no attribute `__iadd__`",
-      "description": "Object of class `Spam` has no attribute `__iadd__`",
-      "line": 42,
-      "name": "missing-attribute",
-      "stop_column": 10,
-      "stop_line": 42
-    }
-  ],
+  "directives_deprecated.py": [],
   "directives_no_type_check.py": [
     {
       "code": -2,
@@ -8698,10 +8687,10 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "TODO: Expr::call_method attribute base undefined for type: Literal[3, 4, 5] (trying to access __iadd__)",
-      "description": "TODO: Expr::call_method attribute base undefined for type: Literal[3, 4, 5] (trying to access __iadd__)",
+      "concise_description": "Augmented assignment produces a value of type `int`, which is not assignable to `Literal[3, 4, 5]`",
+      "description": "Augmented assignment produces a value of type `int`, which is not assignable to `Literal[3, 4, 5]`",
       "line": 33,
-      "name": "missing-attribute",
+      "name": "type-mismatch",
       "stop_column": 11,
       "stop_line": 33
     }
@@ -9985,16 +9974,6 @@
     },
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "Object of class `int` has no attribute `__iadd__`",
-      "description": "Object of class `int` has no attribute `__iadd__`",
-      "line": 67,
-      "name": "missing-attribute",
-      "stop_column": 22,
-      "stop_line": 67
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "`BORDER_WIDTH` is declared as final in parent class `ClassC`",
       "description": "`BORDER_WIDTH` is declared as final in parent class `ClassC`",
@@ -10102,16 +10081,6 @@
       "name": "unexpected-keyword",
       "stop_column": 13,
       "stop_line": 135
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "Object of class `int` has no attribute `__iadd__`",
-      "description": "Object of class `int` has no attribute `__iadd__`",
-      "line": 145,
-      "name": "missing-attribute",
-      "stop_column": 11,
-      "stop_line": 145
     }
   ],
   "qualifiers_final_decorator.py": [

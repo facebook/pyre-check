@@ -704,7 +704,7 @@ pub enum Binding {
     AnnotatedType(Idx<KeyAnnotation>, Box<Binding>),
     /// A record of an "augmented assignment" statement like `x -= _`
     /// or `a.b *= _`. These desugar to special method calls.
-    AugAssign(StmtAugAssign),
+    AugAssign(Option<Idx<KeyAnnotation>>, StmtAugAssign),
     /// The Any type.
     AnyType(AnyStyle),
     /// The str type.
@@ -854,7 +854,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::Import(m, n) => write!(f, "import {m}.{n}"),
             Self::ClassDef(x, _) => write!(f, "{}", ctx.display(*x)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
-            Self::AugAssign(s) => write!(f, "augmented_assign {:?}", s),
+            Self::AugAssign(_, s) => write!(f, "augmented_assign {:?}", s),
             Self::AnyType(s) => write!(f, "anytype {s}"),
             Self::StrType => write!(f, "strtype"),
             Self::TypeParameter(q) => write!(f, "type_parameter {q}"),
