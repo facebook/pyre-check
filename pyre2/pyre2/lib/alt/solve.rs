@@ -57,7 +57,6 @@ use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::SuperStyle;
 use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
-use crate::dunder::inplace_dunder;
 use crate::error::collector::ErrorCollector;
 use crate::error::context::ErrorContext;
 use crate::error::context::TypeCheckContext;
@@ -1637,7 +1636,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 self.call_method_or_error(
                     &base,
-                    &inplace_dunder(x.op),
+                    &Name::new(x.op.in_place_dunder()),
                     x.range,
                     &[CallArg::Expr(&x.value)],
                     &[],
