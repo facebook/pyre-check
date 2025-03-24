@@ -306,6 +306,19 @@ assert_type(x, Literal[42] | str)
     "#,
 );
 
+testcase_with_bug!(
+    "At narrowing-time it's still a Var instead of a bool",
+    test_while_narrow,
+    r#"
+from typing import assert_type, Literal, reveal_type
+def test(x: bool, z: bool):
+    while x:
+        assert_type(x, bool)  # should be Literal[True]
+    while y := z:
+        assert_type(y, bool)  # should be Literal[True]
+        assert_type(z, bool)  # should be Literal[True]
+    "#,
+);
 testcase!(
     test_nested_function,
     r#"
