@@ -172,7 +172,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn binop_infer(&self, x: &ExprBinOp, errors: &ErrorCollector) -> Type {
-        let binop_call = |op: Operator, lhs: &Type, rhs: Type, range: TextRange| -> Type {
+        let binop_call = |op: Operator, lhs: &Type, rhs: &Type, range: TextRange| -> Type {
             let context =
                 || ErrorContext::BinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
 
@@ -186,7 +186,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
 
             let method_type_reflected = self.type_of_attr_get_if_found(
-                &rhs,
+                rhs,
                 &Name::new(op.reflected_dunder()),
                 range,
                 errors,
@@ -208,7 +208,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &bin_op_new_errors_dunder,
                         &context,
                         op,
-                        &rhs,
+                        rhs,
                     );
                     if bin_op_new_errors_dunder.is_empty() {
                         ret
@@ -229,7 +229,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     errors,
                     &context,
                     op,
-                    &rhs,
+                    rhs,
                 ),
                 (None, Some(method_type_reflected)) => self.callable_dunder_helper(
                     method_type_reflected,
@@ -267,7 +267,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         {
             return Type::LiteralString;
         }
-        self.distribute_over_union(&lhs, |lhs| binop_call(x.op, lhs, rhs.clone(), x.range))
+        self.distribute_over_union(&lhs, |lhs| {
+            self.distribute_over_union(&rhs, |rhs| binop_call(x.op, lhs, rhs, x.range))
+        })
     }
 
     /// When interpreted as static types (as opposed to when accounting for runtime
