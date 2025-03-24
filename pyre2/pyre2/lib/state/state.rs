@@ -28,6 +28,7 @@ use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use tracing::debug;
 use tracing::error;
+use tracing::info;
 
 use crate::alt::answers::AnswerEntry;
 use crate::alt::answers::AnswerTable;
@@ -982,17 +983,15 @@ impl State {
                 subscriber.start_work(m.handle.dupe());
             }
         }
+        let mut timings: SmallMap<String, f32> = SmallMap::new();
         for m in ms {
             let mut write = |step: &dyn Display, start: Instant| -> anyhow::Result<()> {
-                writeln!(
-                    file,
-                    "{},{},{}",
-                    m.handle.module(),
-                    step,
-                    start.elapsed().as_secs_f32()
-                )?;
+                let duration = start.elapsed().as_secs_f32();
+                let step = step.to_string();
+                writeln!(file, "{},{step},{duration}", m.handle.module())?;
                 // Always flush, so if a user aborts we get the timings thus-far
                 file.flush()?;
+                *timings.entry(step).or_default() += duration;
                 Ok(())
             };
 
@@ -1035,6 +1034,10 @@ impl State {
             if let Some(subscriber) = &subscriber {
                 subscriber.finish_work(m.handle.dupe(), alt.load.unwrap().dupe());
             }
+        }
+        drop(subscriber);
+        for (step, duration) in timings {
+            info!("Step {step} took {duration:.3} seconds");
         }
         Ok(())
     }
