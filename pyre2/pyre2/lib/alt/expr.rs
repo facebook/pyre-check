@@ -1506,7 +1506,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             elts[lower as usize..upper as usize].to_vec(),
                         ))
                     }
-                    _ => self.todo(errors, "tuple slice", range),
+                    _ => self.call_method_or_error(
+                        &Type::Tuple(Tuple::Concrete(elts)),
+                        &dunder::GETITEM,
+                        range,
+                        &[CallArg::Expr(slice)],
+                        &[],
+                        errors,
+                        context,
+                    ),
                 }
             }
             _ => {

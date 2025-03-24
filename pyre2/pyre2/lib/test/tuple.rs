@@ -256,6 +256,16 @@ def test(x: tuple[int, *tuple[str, ...]]) -> None:
 );
 
 testcase!(
+    test_tuple_slice_non_literal,
+    r#"
+from typing import assert_type
+def test(x: tuple[int, str, bool], y: tuple[int, ...], start: int, stop: int, step: int):
+    assert_type(x[start:stop:step], tuple[int | str | bool, ...])
+    assert_type(y[start:stop:step], tuple[int, ...])
+"#,
+);
+
+testcase!(
     test_tuple_constructor,
     r#"
 from typing import Any, Iterable
