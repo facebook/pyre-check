@@ -469,8 +469,9 @@ impl Scopes {
     }
 
     fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {
+        let name = Hashed::new(name);
         for scope in self.iter_rev() {
-            if let Some(flow) = scope.flow.info.get(name) {
+            if let Some(flow) = scope.flow.info.get_hashed(name) {
                 return Some(flow);
             }
         }

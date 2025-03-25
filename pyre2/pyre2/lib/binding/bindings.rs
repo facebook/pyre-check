@@ -31,6 +31,7 @@ use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use starlark_map::Hashed;
 use vec1::Vec1;
 
 use crate::binding::binding::AnnotationTarget;
@@ -528,6 +529,14 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn lookup_name(&mut self, name: &Name, kind: LookupKind) -> Result<Idx<Key>, LookupError> {
+        self.lookup_name_hashed(Hashed::new(name), kind)
+    }
+
+    pub fn lookup_name_hashed(
+        &mut self,
+        name: Hashed<&Name>,
+        kind: LookupKind,
+    ) -> Result<Idx<Key>, LookupError> {
         let mut barrier = false;
         let mut allow_nonlocal_reference = kind == LookupKind::Nonlocal;
         let mut allow_global_reference = kind == LookupKind::Global;
@@ -543,7 +552,7 @@ impl<'a> BindingsBuilder<'a> {
             let valid_global_reference = allow_global_reference
                 && !in_current_scope
                 && matches!(scope.kind, ScopeKind::Module);
-            if let Some(flow) = scope.flow.info.get(name) {
+            if let Some(flow) = scope.flow.info.get_hashed(name) {
                 match kind {
                     LookupKind::Regular => {
                         if !barrier || valid_nonlocal_reference || valid_global_reference {
@@ -574,12 +583,12 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
             if !matches!(scope.kind, ScopeKind::ClassBody(_))
-                && let Some(info) = scope.stat.0.get(name)
+                && let Some(info) = scope.stat.0.get_hashed(name)
             {
                 if !info.is_nonlocal() && !info.is_global() {
                     match kind {
                         LookupKind::Regular => {
-                            let key = info.as_key(name);
+                            let key = info.as_key(name.into_key());
                             return Ok(self.table.types.0.insert(key));
                         }
                         LookupKind::Mutable => {
@@ -589,7 +598,7 @@ impl<'a> BindingsBuilder<'a> {
                         }
                         LookupKind::Nonlocal => {
                             if valid_nonlocal_reference {
-                                let key = info.as_key(name);
+                                let key = info.as_key(name.into_key());
                                 result = Ok(self.table.types.0.insert(key));
                                 // We can't return immediately, because we need to override
                                 // the static annotation in the current scope with the one we found
@@ -601,7 +610,7 @@ impl<'a> BindingsBuilder<'a> {
                         }
                         LookupKind::Global => {
                             if valid_global_reference {
-                                let key = info.as_key(name);
+                                let key = info.as_key(name.into_key());
                                 result = Ok(self.table.types.0.insert(key));
                                 // We can't return immediately, because we need to override
                                 // the static annotation in the current scope with the one we found
@@ -623,7 +632,7 @@ impl<'a> BindingsBuilder<'a> {
             barrier = barrier || scope.barrier;
         }
         if let Some(annot) = static_annot_override
-            && let Some(current_scope_info) = self.scopes.current_mut().stat.0.get_mut(name)
+            && let Some(current_scope_info) = self.scopes.current_mut().stat.0.get_mut_hashed(name)
         {
             current_scope_info.annot = Some(annot);
         }
@@ -793,13 +802,14 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn bind_narrow_ops(&mut self, narrow_ops: &NarrowOps, use_range: TextRange) {
-        for (name, (op, op_range)) in narrow_ops.0.iter() {
-            if let Ok(name_key) = self.lookup_name(name, LookupKind::Regular) {
+        for (name, (op, op_range)) in narrow_ops.0.iter_hashed() {
+            if let Ok(name_key) = self.lookup_name_hashed(name, LookupKind::Regular) {
                 let binding_key = self.table.insert(
-                    Key::Narrow(name.clone(), *op_range, use_range),
+                    Key::Narrow(name.into_key().clone(), *op_range, use_range),
                     Binding::Narrow(name_key, Box::new(op.clone()), use_range),
                 );
-                self.scopes.update_flow_info(name, binding_key, None);
+                self.scopes
+                    .update_flow_info(name.into_key(), binding_key, None);
             }
         }
     }
