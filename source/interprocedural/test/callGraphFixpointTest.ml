@@ -1484,6 +1484,174 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def foo():
+       return
+     class A:
+       @__classproperty__  # Test property targets in `__classproperty__(test.A.name)`
+       def name(cls):
+         return foo
+     def main(a: A):
+       return A.name  # Test accessing a property
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Method
+                     { class_name = "test.A"; method_name = "name"; kind = Decorated }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "5:3-5:20",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~unresolved:
+                                 (Unresolved.True (BypassingDecorators CannotResolveExports))
+                               ())) );
+                     ( "6:2-7:14",
+                       LocationCallees.Compound
+                         (SerializableStringMap.of_alist_exn
+                            [
+                              ( "A",
+                                ExpressionCallees.from_attribute_access
+                                  (AttributeAccessCallees.create ~is_attribute:true ()) );
+                              ( "name",
+                                ExpressionCallees.from_attribute_access
+                                  (AttributeAccessCallees.create
+                                     ~property_targets:
+                                       [
+                                         CallTarget.create_regular
+                                           ~implicit_receiver:true
+                                           (Target.Regular.Method
+                                              {
+                                                class_name = "test.A";
+                                                method_name = "name";
+                                                kind = Normal;
+                                              });
+                                       ]
+                                     ~is_attribute:false
+                                     ()) );
+                            ]) );
+                   ];
+                 returned_callables = [];
+               };
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "9:9-9:15",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~property_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.A";
+                                          method_name = "name";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ~is_attribute:false
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def foo():
+       return
+     class A:
+       @__property__  # Test property targets in `__property__(test.A.name)`
+       def name(self):
+         return foo
+     def main(a: A):
+       return a.name  # Test accessing a property
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Method
+                     { class_name = "test.A"; method_name = "name"; kind = Decorated }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "5:3-5:15",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~unresolved:
+                                 (Unresolved.True (BypassingDecorators CannotResolveExports))
+                               ())) );
+                     ( "6:2-7:14",
+                       LocationCallees.Compound
+                         (SerializableStringMap.of_alist_exn
+                            [
+                              ( "A",
+                                ExpressionCallees.from_attribute_access
+                                  (AttributeAccessCallees.create ~is_attribute:true ()) );
+                              ( "name",
+                                ExpressionCallees.from_attribute_access
+                                  (AttributeAccessCallees.create
+                                     ~property_targets:
+                                       [
+                                         CallTarget.create_regular
+                                           ~implicit_receiver:true
+                                           (Target.Regular.Method
+                                              {
+                                                class_name = "test.A";
+                                                method_name = "name";
+                                                kind = Normal;
+                                              });
+                                       ]
+                                     ~is_attribute:false
+                                     ()) );
+                            ]) );
+                   ];
+                 returned_callables = [];
+               };
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "9:9-9:15",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~property_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.A";
+                                          method_name = "name";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ~is_attribute:false
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
