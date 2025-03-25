@@ -419,9 +419,11 @@ impl Args {
             state.print_error_summary(path_index);
         }
         let error_count = state.count_errors();
+        let suppressed_count = state.count_suppressed_errors();
         info!(
-            "{} errors, {} modules, {} lines, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
+            "{} errors ({} suppressed), {} modules, {} lines, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
             number_thousands(error_count),
+            number_thousands(suppressed_count),
             number_thousands(state.module_count()),
             number_thousands(state.line_count()),
             memory_trace.peak()
@@ -462,7 +464,7 @@ impl Args {
         if self.expectations {
             state.check_against_expectations()?;
             Ok(CommandExitStatus::Success)
-        } else if error_count > 0 {
+        } else if error_count > suppressed_count {
             Ok(CommandExitStatus::UserError)
         } else {
             Ok(CommandExitStatus::Success)

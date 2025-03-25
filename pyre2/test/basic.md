@@ -4,7 +4,7 @@
 
 ```scrut
 $ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a  2>&1 | grep -v "overrides"
-* INFO * errors, * (glob)
+* INFO * errors* (glob)
 [0]
 ```
 
@@ -24,7 +24,7 @@ $ echo "x: str = 12" > $TMPDIR/same_name.py && \
 > $PYRE2 check $TMPDIR/same_name.py $TMPDIR/same_name.pyi
 ERROR */same_name.py*:1:10-* (glob)
 ERROR */same_name.py*:1:10-* (glob)
- INFO 2 errors, * (glob)
+ INFO 2 errors* (glob)
 [1]
 ```
 
@@ -35,7 +35,7 @@ $ echo "x: str = 12" > $TMPDIR/hidden1.py && \
 > echo "import hidden1; y: int = hidden1.x" > $TMPDIR/hidden2.py && \
 > $PYRE2 check $TMPDIR/hidden2.py --search-path=$TMPDIR
 ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` [bad-assignment] (glob)
- INFO 1 errors, * (glob)
+ INFO 1 errors* (glob)
 [1]
 ```
 
@@ -47,7 +47,7 @@ $ echo "x: str = 12" > $TMPDIR/shown1.py && \
 > $PYRE2 check $TMPDIR/shown2.py --search-path=$TMPDIR --check-all 2>&1 | grep -v "overrides"
 ERROR */shown*.py:1:* (glob)
 ERROR */shown*.py:1:* (glob)
-* INFO * errors, * (glob)
+* INFO * errors* (glob)
 [0]
 ```
 
@@ -59,6 +59,6 @@ $ echo "x: str = 12" > $TMPDIR/glob1.py && \
 > $PYRE2 check "$TMPDIR/glob*.py"
 ERROR */glob*.py:1:* (glob)
 ERROR */glob*.py:1:* (glob)
- INFO 2 errors, * (glob)
+ INFO 2 errors* (glob)
 [1]
 ```

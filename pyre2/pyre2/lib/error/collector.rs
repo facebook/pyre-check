@@ -61,11 +61,13 @@ impl ModuleErrors {
         self.items.len()
     }
 
+    /// Iterates over all errors, including ignored ones.
     fn iter_all(&mut self) -> impl Iterator<Item = &Error> {
         self.cleanup();
         self.items.iter()
     }
 
+    /// Iterates over errors that are not ignored.
     fn iter(&mut self) -> impl Iterator<Item = &Error> {
         self.iter_all().filter(|x| !x.is_ignored())
     }
@@ -143,6 +145,14 @@ impl ErrorCollector {
 
     pub fn len(&self) -> usize {
         self.errors.lock().len()
+    }
+
+    pub fn count_suppressed(&self) -> usize {
+        self.errors
+            .lock()
+            .iter_all()
+            .filter(|x| x.is_ignored())
+            .count()
     }
 
     pub fn collect(&self) -> Vec<Error> {
