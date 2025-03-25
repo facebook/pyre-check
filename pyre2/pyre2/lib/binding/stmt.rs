@@ -289,9 +289,7 @@ impl<'a> BindingsBuilder<'a> {
                 self.bind_assign(name, |_| Binding::Import(module, forward))
             }
             Stmt::Assign(mut x) => {
-                let name = if x.targets.len() == 1
-                    && let Expr::Name(name) = &x.targets[0]
-                {
+                let name = if let [Expr::Name(name)] = x.targets.as_slice() {
                     Some(name)
                 } else {
                     None
