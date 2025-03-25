@@ -172,7 +172,6 @@ class B(A): pass
 class C(B): pass
 "#,
     );
-    state.print_errors();
     assert_has_error(
         &state,
         "Class `main.A` inheriting from `main.C` creates a cycle",
