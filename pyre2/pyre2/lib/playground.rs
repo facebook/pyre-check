@@ -19,6 +19,8 @@ use serde::Serialize;
 use starlark_map::small_map::SmallMap;
 
 use crate::metadata::RuntimeMetadata;
+use crate::module::bundled::typeshed;
+use crate::module::bundled::BundledTypeshed;
 use crate::module::module_info::SourceRange;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
@@ -29,7 +31,6 @@ use crate::state::loader::LoaderId;
 use crate::state::require::Require;
 use crate::state::state::State;
 use crate::util::prelude::VecExt;
-use crate::util::reduced_stdlib::lookup_stdlib;
 
 #[derive(Serialize)]
 pub struct Position {
@@ -111,12 +112,15 @@ pub struct InlayHint {
     position: Position,
 }
 
-#[derive(Debug, Default, Clone)]
-struct DemoEnv(SmallMap<ModuleName, (ModulePath, Option<String>)>);
+#[derive(Debug, Clone)]
+struct DemoEnv(
+    SmallMap<ModuleName, (ModulePath, Option<String>)>,
+    BundledTypeshed,
+);
 
 impl DemoEnv {
     pub fn new() -> Self {
-        Self::default()
+        Self(SmallMap::new(), typeshed().unwrap().clone())
     }
 
     pub fn add(&mut self, name: &str, code: String) {
@@ -128,13 +132,17 @@ impl DemoEnv {
     pub fn config() -> RuntimeMetadata {
         RuntimeMetadata::default()
     }
+
+    pub fn typeshed(&self) -> &BundledTypeshed {
+        &self.1
+    }
 }
 
 impl Loader for DemoEnv {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         if let Some((path, _)) = self.0.get(&module) {
             Ok(path.dupe())
-        } else if lookup_stdlib(module).is_some() {
+        } else if self.typeshed().find(module).is_some() {
             Ok(ModulePath::memory(PathBuf::from(format!(
                 "{}.pyi",
                 module.as_str().replace('.', "/")
@@ -157,8 +165,12 @@ impl Loader for DemoEnv {
                 }
             }
         }
+        let module_name = ModuleName::from_str(path.file_stem()?.to_str()?);
         Some(Arc::new(
-            lookup_stdlib(ModuleName::from_str(path.file_stem()?.to_str()?))?.to_owned(),
+            self.typeshed()
+                .find_and_load(module_name)?
+                .to_string()
+                .to_owned(),
         ))
     }
 }

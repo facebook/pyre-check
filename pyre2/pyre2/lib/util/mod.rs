@@ -25,7 +25,6 @@ pub mod no_hash;
 pub mod notify_watcher;
 pub mod prelude;
 pub mod recurser;
-pub mod reduced_stdlib;
 pub mod thread_pool;
 pub mod trace;
 pub mod uniques;

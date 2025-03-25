@@ -14,6 +14,7 @@ use anyhow::anyhow;
 use anyhow::Context as _;
 use starlark_map::small_map::SmallMap;
 use tar::Archive;
+use zstd::stream::read::Decoder;
 
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
@@ -27,14 +28,8 @@ pub struct BundledTypeshed {
 }
 
 impl BundledTypeshed {
-    #[cfg(target_arch = "wasm32")]
     fn unpack() -> anyhow::Result<SmallMap<PathBuf, String>> {
-        Ok(SmallMap::new())
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn unpack() -> anyhow::Result<SmallMap<PathBuf, String>> {
-        let decoder = zstd::stream::read::Decoder::new(BUNDLED_TYPESHED_BYTES)?;
+        let decoder = Decoder::new(BUNDLED_TYPESHED_BYTES)?;
         let mut archive = Archive::new(decoder);
         let entries = archive
             .entries()
@@ -85,6 +80,12 @@ impl BundledTypeshed {
 
     pub fn load(&self, path: &PathBuf) -> Option<Arc<String>> {
         self.load.get(path).cloned()
+    }
+
+    pub fn find_and_load(&self, module: ModuleName) -> Option<Arc<String>> {
+        self.find
+            .get(&module)
+            .and_then(|path| self.load.get(path).cloned())
     }
 }
 

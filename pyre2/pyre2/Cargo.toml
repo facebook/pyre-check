@@ -74,5 +74,11 @@ zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 [target.'cfg(not(target_arch = "wasm32"))'.build-dependencies]
 zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+zstd = "0.13"
+
+[target.'cfg(target_arch = "wasm32")'.build-dependencies]
+zstd = "0.13"
+
 [lints]
 rust = { unexpected_cfgs = { check-cfg = ["cfg(fbcode_build)"], level = "warn" } }
