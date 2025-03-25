@@ -23,6 +23,7 @@ import QuoteCard from '../components/quoteCard';
 import '../js/parser-playground';
 import PerformanceComparisonChart from '../components/PerformanceComparisonChart';
 import QuotesGrid from '../components/quotesGrid';
+import WhyPyrefly from '../components/whyPyrefly';
 
 const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
 export default component NewLandingPage() {
@@ -61,51 +62,7 @@ export default component NewLandingPage() {
       <section {...stylex.props(styles.section)}>
         <div className="container">
           <h2 {...stylex.props(styles.sectionTitle)}>Why Pyrefly</h2>
-          <div {...stylex.props(styles.whyPyreflyGrid)}>
-            {/* Short-term benefits */}
-            <div {...stylex.props(styles.gridItem)}>
-              <h3>Scale with Confident</h3>
-              <p>Lightning fast, even on millions of lines of code.</p>
-            </div>
-            <div {...stylex.props(styles.gridItem)}>
-              <h3>Developer Delight</h3>
-              <p>
-                Write better code, faster, and with confidence using your
-                favorite editor supported by the Pyrefly IDE.
-              </p>
-            </div>
-            <div {...stylex.props(styles.gridItem)}>
-              <h3>Easy Onboarding</h3>
-              <p>
-                Seamless transition from existing typechecker configurations to
-                Pyrefly to get started!
-              </p>
-            </div>
-
-            {/* Long-term benefits */}
-            <div {...stylex.props(styles.gridItem)}>
-              <h3>Codebase clarity</h3>
-              <p>
-                Improve code readability and maintainability with precise type
-                annotations.
-              </p>
-            </div>
-            <div {...stylex.props(styles.gridItem)}>
-              <h3>Tooling for Improving Types</h3>
-              <p>
-                Use the tools packaged with Pyrefly to elevate your typing
-                coverage from 0 to 100.
-              </p>
-            </div>
-            <div {...stylex.props(styles.gridItem)}>
-              <h3>Fully featured</h3>
-              <p>
-                Follows the typing standards introduced in PEPs 484, 526, 612,
-                along with being a typechecker that is being actively developed
-                on and constantly improving.
-              </p>
-            </div>
-          </div>
+          <WhyPyrefly />
         </div>
       </section>
       <section {...stylex.props(styles.section)}>
@@ -136,10 +93,5 @@ const styles = stylex.create({
   },
   sectionTitle: {
     fontSize: '3rem',
-  },
-  whyPyreflyGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '2rem',
   },
 });
