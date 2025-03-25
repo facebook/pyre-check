@@ -165,6 +165,10 @@ module CallableToDecoratorsMap = struct
     define_location: Location.t;
   }
 
+  let ignored_decorator_prefixes_for_higher_order =
+    ["sqlalchemy.testing"] |> SerializableStringSet.of_list
+
+
   let ignored_decorators_for_higher_order =
     [
       "property";
@@ -177,12 +181,24 @@ module CallableToDecoratorsMap = struct
       "functools.wraps";
       "enum.verify";
       "enum.unique";
+      "enum.property";
+      "enum.member";
+      "enum.nonmember";
+      "enum.global_enum";
       "typing.final";
+      "typing.runtime_checkable";
+      "typing.dataclass_transform";
+      "typing.overload";
+      "typing.no_type_check";
+      "typing.no_type_check_decorator";
+      "typing.override";
+      "typing.type_check_only";
       "atexit.register";
       "contextlib.contextmanager";
       "contextlib.asynccontextmanager";
       "abc.abstractmethod";
       "abc.abstractproperty";
+      "pyre_extensions.override";
     ]
     @ class_method_decorators
     @ static_method_decorators
@@ -203,7 +219,11 @@ module CallableToDecoratorsMap = struct
         | _ -> decorator, None
       in
       let decorator_name = decorator |> callee_and_parameters |> Core.fst |> Expression.show in
-      not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order)
+      (not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order))
+      && not
+           (SerializableStringSet.exists
+              (fun prefix -> String.is_prefix ~prefix decorator_name)
+              ignored_decorator_prefixes_for_higher_order)
 
 
   let collect_decorators ~callables_to_definitions_map callable =
