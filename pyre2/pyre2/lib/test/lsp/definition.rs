@@ -144,7 +144,7 @@ Definition Result:
                                  ^
 
 
-# import_provider.py    
+# import_provider.py
 "#
         .trim(),
         report.trim()
@@ -181,7 +181,7 @@ Definition Result:
         ^
 
 
-# import_provider.py    
+# import_provider.py
 "#
         .trim(),
         report.trim()

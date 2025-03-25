@@ -192,7 +192,10 @@ pub fn code_frame_of_source_at_range(source: &str, range: TextRange) -> String {
             full_line,
             " ".repeat(start_loc.row.to_string().len()),
             " ".repeat(start_loc.column.to_zero_indexed()),
-            "^".repeat(end_loc.column.to_zero_indexed() - start_loc.column.to_zero_indexed())
+            "^".repeat(std::cmp::max(
+                end_loc.column.to_zero_indexed() - start_loc.column.to_zero_indexed(),
+                1
+            ))
         )
     } else {
         panic!("Computing multi-line code frame is unsupported for now.")
