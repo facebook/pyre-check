@@ -870,29 +870,12 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     /// Helper for loops, inserts a phi key for every name in the given flow.
-    fn insert_phi_keys(&mut self, x: Flow, range: TextRange) -> Flow {
-        let items = x
-            .info
-            .iter_hashed()
-            .map(|x| x.0.cloned())
-            .collect::<SmallSet<_>>();
-        let mut res = SmallMap::with_capacity(items.len());
-        for name in items.into_iter() {
-            let key = self
-                .table
-                .types
-                .0
-                .insert(Key::Phi(name.key().clone(), range));
-            let style = x
-                .info
-                .get_hashed(name.as_ref())
-                .and_then(|old_info| old_info.style.clone());
-            res.insert_hashed(name, FlowInfo { key, style });
+    fn insert_phi_keys(&mut self, mut flow: Flow, range: TextRange) -> Flow {
+        for (name, info) in flow.info.iter_mut() {
+            info.key = self.table.types.0.insert(Key::Phi(name.clone(), range));
         }
-        Flow {
-            info: res,
-            no_next: false,
-        }
+        flow.no_next = false;
+        flow
     }
 
     pub fn setup_loop(&mut self, range: TextRange, narrow_ops: &NarrowOps) {
