@@ -12,9 +12,12 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::anyhow;
+use anyhow::Context as _;
 use clap::Parser;
 use clap::Subcommand;
+use path_absolutize::Absolutize;
 use pyre2::clap_env;
+use pyre2::fs_upward_search::first_match;
 use pyre2::get_args_expanded;
 use pyre2::globs::FilteredGlobs;
 use pyre2::globs::Globs;
@@ -93,11 +96,21 @@ fn exit_on_panic() {
 }
 
 fn get_open_source_config(file: &Path) -> anyhow::Result<ConfigFile> {
-    // TODO: Implement upward-searching for open source config.
     ConfigFile::from_file(file, true).map_err(|err| {
         let file_str = file.display();
         anyhow!("Failed to parse configuration at {file_str}: {err}")
     })
+}
+
+fn get_implicit_config_path_from(path: &Path) -> anyhow::Result<PathBuf> {
+    if let Some(search_result) = first_match(path, &["pyrefly.toml", "pyproject.toml"]) {
+        Ok(search_result.to_path_buf())
+    } else {
+        Err(anyhow!(
+            "Cannot locate a config file using upward-searching heuristics from `{}`",
+            path.display()
+        ))
+    }
 }
 
 fn to_exit_code(status: CommandExitStatus) -> ExitCode {
@@ -129,6 +142,18 @@ async fn run_check(
     }
 }
 
+fn get_implicit_config_for_project() -> ConfigFile {
+    fn get_config_path() -> anyhow::Result<ConfigFile> {
+        let current_dir = std::env::current_dir().context("cannot identify current dir")?;
+        let config_path = get_implicit_config_path_from(&current_dir)?;
+        get_open_source_config(&config_path)
+    }
+    get_config_path().unwrap_or_else(|err| {
+        tracing::debug!("{err}. Default configuration will be used as fallback.");
+        ConfigFile::default()
+    })
+}
+
 async fn run_check_on_project(
     watch: bool,
     config: Option<PathBuf>,
@@ -136,10 +161,15 @@ async fn run_check_on_project(
     args: pyre2::run::CheckArgs,
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
-    let config = config
-        .map(|c| get_open_source_config(c.as_path()))
-        .transpose()?
-        .unwrap_or_default();
+    let config = if let Some(explicit_config_path) = config {
+        tracing::info!(
+            "Using config file explicitly provided at `{}`",
+            explicit_config_path.display()
+        );
+        get_open_source_config(&explicit_config_path)?
+    } else {
+        get_implicit_config_for_project()
+    };
     let project_excludes =
         project_excludes.map_or_else(|| config.project_excludes.clone(), Globs::new);
     run_check(
@@ -150,6 +180,22 @@ async fn run_check_on_project(
         allow_forget,
     )
     .await
+}
+
+fn get_implicit_config_for_file(path: &Path) -> ConfigFile {
+    fn get_implicit_config_path(path: &Path) -> anyhow::Result<ConfigFile> {
+        let parent_dir = path
+            .parent()
+            .with_context(|| format!("Path `{}` has no parent directory", path.display()))?
+            .absolutize()
+            .with_context(|| format!("Path `{}` cannot be absolutized", path.display()))?;
+        let config_path = get_implicit_config_path_from(parent_dir.as_ref())?;
+        get_open_source_config(&config_path)
+    }
+    get_implicit_config_path(path).unwrap_or_else(|err| {
+        tracing::debug!("{err}. Default configuration will be used as fallback.");
+        ConfigFile::default()
+    })
 }
 
 async fn run_check_on_files(
@@ -165,8 +211,7 @@ async fn run_check_on_files(
         args,
         watch,
         FilteredGlobs::new(files_to_check, project_excludes),
-        // TODO(connernilsen): replace this when we have search paths working
-        &|_| ConfigFile::default(),
+        &|path| get_implicit_config_for_file(path),
         allow_forget,
     )
     .await
