@@ -119,18 +119,29 @@ impl Static {
         if top_level && module_info.name() != ModuleName::builtins() {
             d.inject_builtins();
         }
+
+        let mut wildcards = Vec::with_capacity(d.import_all.len());
+        for (m, range) in d.import_all {
+            if let Ok(exports) = lookup.get(m) {
+                wildcards.push((range, exports.wildcard(lookup)));
+            }
+        }
+
+        // Try and avoid rehashing while we insert, with a little bit of spare space
+        let capacity_guess =
+            d.definitions.len() + wildcards.iter().map(|x| x.1.len()).sum::<usize>();
+        self.0.reserve(((capacity_guess * 5) / 4) + 25);
+
         for (name, def) in d.definitions {
             let annot = def.annot.map(&mut get_annotation_idx);
             let info = self.add_with_count(name, def.range, annot, def.count);
             info.style = def.style;
         }
-        for (m, range) in d.import_all {
-            if let Ok(exports) = lookup.get(m) {
-                for name in exports.wildcard(lookup).iter() {
-                    // TODO: semantics of import * and global var with same name
-                    self.add_with_count(name.clone(), range, None, 1).style =
-                        DefinitionStyle::ImportModule;
-                }
+        for (range, wildcard) in wildcards {
+            for name in wildcard.iter() {
+                // TODO: semantics of import * and global var with same name
+                self.add_with_count(name.clone(), range, None, 1).style =
+                    DefinitionStyle::ImportModule;
             }
         }
     }
