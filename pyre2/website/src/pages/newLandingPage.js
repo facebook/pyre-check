@@ -8,7 +8,6 @@
  */
 
 import * as React from 'react';
-import {useState} from 'react';
 import clsx from 'clsx';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
@@ -22,13 +21,13 @@ import QuoteCard from '../components/quoteCard';
 // This import serves no runtime purposes, but we import it to force webpack to run babel on it,
 // so we can test whether babel can handle newer syntax.
 import '../js/parser-playground';
+import PerformanceComparisonChart from '../components/PerformanceComparisonChart';
 import QuotesGrid from '../components/quotesGrid';
 
 const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
 export default component NewLandingPage() {
   const context = useDocusaurusContext();
   const {siteConfig} = context;
-  const [selectedSource, setSelectedSource] = useState('instagram');
 
   // TODO: update content and improve css
   return (
@@ -112,38 +111,7 @@ export default component NewLandingPage() {
       <section {...stylex.props(styles.section)}>
         <div className="container">
           <h2 {...stylex.props(styles.sectionTitle)}>Performance Comparison</h2>
-          <div {...stylex.props(styles.buttonRow)}>
-            <button
-              {...stylex.props(
-                styles.button,
-                selectedSource === 'instagram' && styles.buttonActive,
-              )}
-              onClick={() => setSelectedSource('instagram')}>
-              Instagram
-            </button>
-            <button
-              {...stylex.props(
-                styles.button,
-                selectedSource === 'pytorch' && styles.buttonActive,
-              )}
-              onClick={() => setSelectedSource('pytorch')}>
-              PyTorch
-            </button>
-            <button
-              {...stylex.props(
-                styles.button,
-                selectedSource === 'example' && styles.buttonActive,
-              )}
-              onClick={() => setSelectedSource('example')}>
-              Example
-            </button>
-          </div>
-          <div {...stylex.props(styles.chartContainer)}>
-            {/* Chart placeholder */}
-            <div {...stylex.props(styles.chartPlaceholder)}>
-              Performance chart for {selectedSource} will be displayed here
-            </div>
-          </div>
+          <PerformanceComparisonChart />
         </div>
       </section>
       <section {...stylex.props(styles.section, styles.lastSection)}>
@@ -159,38 +127,6 @@ export default component NewLandingPage() {
 }
 
 const styles = stylex.create({
-  buttonRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '1rem',
-    marginBottom: '2rem',
-  },
-  button: {
-    padding: '0.75rem 1.5rem',
-    borderRadius: '4px',
-    border: '1px solid var(--ifm-color-primary)',
-    backgroundColor: 'transparent',
-    color: 'var(--ifm-color-primary)',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  buttonActive: {
-    backgroundColor: 'var(--ifm-color-primary)',
-    color: 'white',
-  },
-  chartContainer: {
-    minHeight: '400px',
-    border: '1px solid var(--ifm-color-emphasis-300)',
-    borderRadius: '8px',
-    padding: '2rem',
-  },
-  chartPlaceholder: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
-    color: 'var(--ifm-color-emphasis-600)',
-  },
   section: {
     flex: 1,
     marginTop: 20,
