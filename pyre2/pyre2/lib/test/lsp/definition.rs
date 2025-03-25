@@ -107,7 +107,7 @@ def f(x: list[int], y: str, z: Literal[42]):
     let code_test: &str = r#"
 from typing import Literal
 from .import_provider import f
-#                            ^
+#           ^                ^
 
 foo: Literal[1] = 1 # todo: ideally should jump through the import
 #        ^  
@@ -125,6 +125,12 @@ bar = f([1], "", 42) # todo: ideally should jump through the import
     assert_eq!(
         r#"
 # main.py
+3 | from .import_provider import f
+                ^
+Definition Result:
+1 | 
+    ^
+
 3 | from .import_provider import f
                                  ^
 Definition Result:
@@ -179,6 +185,40 @@ bar = f() # should jump to definition in import_provider
 Definition Result:
 2 | def f():
         ^
+
+
+# import_provider.py
+"#
+        .trim(),
+        report.trim()
+    );
+}
+
+#[test]
+fn inline_import_test() {
+    let code_import_provider: &str = r#"
+def f():
+        pass"#;
+    let code_test: &str = r#"
+def foo() -> None:
+    from .import_provider import f
+    #     ^
+    "#;
+    let report = get_batched_lsp_operations_report(
+        &[
+            ("main", code_test),
+            ("import_provider", code_import_provider),
+        ],
+        get_test_report,
+    );
+    assert_eq!(
+        r#"
+# main.py
+3 |     from .import_provider import f
+              ^
+Definition Result:
+1 | 
+    ^
 
 
 # import_provider.py

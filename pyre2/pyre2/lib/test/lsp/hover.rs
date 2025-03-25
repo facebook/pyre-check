@@ -22,8 +22,9 @@ fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String
 
 #[test]
 fn basic_test() {
-    let code = r#"from typing import Literal
- 
+    let code = r#"
+from typing import Literal
+#        ^
 def f(x: list[int], y: str, z: Literal[42]):
 #   ^               ^       ^
     return x
@@ -35,25 +36,47 @@ yyy = f([1, 2, 3], "test", 42)
     assert_eq!(
         r#"
 # main.py
-3 | def f(x: list[int], y: str, z: Literal[42]):
+2 | from typing import Literal
+             ^
+Hover Result: `Module[typing]`
+
+4 | def f(x: list[int], y: str, z: Literal[42]):
         ^
 Hover Result: `(x: list[int], y: str, z: Literal[42]) -> list[int]`
 
-3 | def f(x: list[int], y: str, z: Literal[42]):
+4 | def f(x: list[int], y: str, z: Literal[42]):
                         ^
 Hover Result: `str`
 
-3 | def f(x: list[int], y: str, z: Literal[42]):
+4 | def f(x: list[int], y: str, z: Literal[42]):
                                 ^
 Hover Result: `Literal[42]`
 
-5 |     return x
+6 |     return x
                ^
 Hover Result: `list[int]`
 
-7 | yyy = f([1, 2, 3], "test", 42)
+8 | yyy = f([1, 2, 3], "test", 42)
           ^
 Hover Result: `(x: list[int], y: str, z: Literal[42]) -> list[int]`
+"#
+        .trim(),
+        report.trim(),
+    );
+}
+#[test]
+fn import_test() {
+    let code = r#"
+import typing
+#        ^
+"#;
+    let report = get_batched_lsp_operations_report(&[("main", code)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+2 | import typing
+             ^
+Hover Result: `Module[typing]`
 "#
         .trim(),
         report.trim(),

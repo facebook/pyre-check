@@ -90,8 +90,7 @@ impl Ast {
     }
 
     /// All the imports in this module, pointing to the first place that defines them.
-    #[expect(dead_code)] // Useful primitive to have
-    fn imports(
+    pub fn imports(
         module: &ModModule,
         module_name: ModuleName,
         is_init: bool,

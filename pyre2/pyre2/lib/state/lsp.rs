@@ -14,15 +14,18 @@ use ruff_python_ast::Identifier;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
+use starlark_map::ordered_set::OrderedSet;
 
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
 use crate::module::module_info::TextRangeWithModuleInfo;
+use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
 use crate::state::handle::Handle;
 use crate::state::state::State;
+use crate::types::module::Module;
 use crate::types::types::Type;
 use crate::util::prelude::VecExt;
 use crate::util::visit::Visit;
@@ -53,6 +56,17 @@ impl State {
         let mut res = None;
         mod_module.visit(&mut |x| f(x, position, &mut res));
         res
+    }
+
+    fn import_at(&self, handle: &Handle, position: TextSize) -> Option<ModuleName> {
+        let module = self.get_ast(handle)?;
+        for (module, text_range) in Ast::imports(&module, handle.module(), handle.path().is_init())
+        {
+            if text_range.contains_inclusive(position) {
+                return Some(module);
+            }
+        }
+        None
     }
 
     fn definition_at(&self, handle: &Handle, position: TextSize) -> Option<Key> {
@@ -87,6 +101,12 @@ impl State {
             } else {
                 return None;
             }
+        }
+        if let Some(m) = self.import_at(handle, position) {
+            return Some(Type::Module(Module::new(
+                m.components().first().unwrap().clone(),
+                OrderedSet::from_iter([(m)]),
+            )));
         }
         let attribute = self.attribute_at(handle, position)?;
         self.get_type_trace(handle, attribute.range)
@@ -168,6 +188,13 @@ impl State {
             return Some(TextRangeWithModuleInfo::new(
                 self.get_module_info(&handle)?,
                 range,
+            ));
+        }
+        if let Some(m) = self.import_at(handle, position) {
+            let handle = self.import_handle(handle, m).ok()?;
+            return Some(TextRangeWithModuleInfo::new(
+                self.get_module_info(&handle)?,
+                TextRange::default(),
             ));
         }
         let attribute = self.attribute_at(handle, position)?;
