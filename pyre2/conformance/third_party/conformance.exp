@@ -6525,8 +6525,8 @@
     {
       "code": -2,
       "column": 4,
-      "concise_description": "Argument `Literal[1]` is not assignable to parameter `args` with type `bool`",
-      "description": "Argument `Literal[1]` is not assignable to parameter `args` with type `bool`",
+      "concise_description": "Argument `Literal[1]` is not assignable to varargs parameter `*args` with type `bool`",
+      "description": "Argument `Literal[1]` is not assignable to varargs parameter `*args` with type `bool`",
       "line": 108,
       "name": "bad-argument-type",
       "stop_column": 5,
@@ -7531,8 +7531,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Argument `tuple[Literal[1], Literal[2]]` is not assignable to parameter `args` with type `tuple[int]` in function `func4`",
-      "description": "Argument `tuple[Literal[1], Literal[2]]` is not assignable to parameter `args` with type `tuple[int]` in function `func4`",
+      "concise_description": "Argument `tuple[Literal[1], Literal[2]]` is not assignable to varargs parameter `*args` with type `tuple[int]` in function `func4`",
+      "description": "Argument `tuple[Literal[1], Literal[2]]` is not assignable to varargs parameter `*args` with type `tuple[int]` in function `func4`",
       "line": 75,
       "name": "bad-argument-type",
       "stop_column": 19,
@@ -7541,8 +7541,8 @@
     {
       "code": -2,
       "column": 13,
-      "concise_description": "Argument `tuple[Literal['1']]` is not assignable to parameter `args` with type `tuple[int]` in function `func4`",
-      "description": "Argument `tuple[Literal['1']]` is not assignable to parameter `args` with type `tuple[int]` in function `func4`",
+      "concise_description": "Argument `tuple[Literal['1']]` is not assignable to varargs parameter `*args` with type `tuple[int]` in function `func4`",
+      "description": "Argument `tuple[Literal['1']]` is not assignable to varargs parameter `*args` with type `tuple[int]` in function `func4`",
       "line": 76,
       "name": "bad-argument-type",
       "stop_column": 19,

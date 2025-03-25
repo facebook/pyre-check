@@ -224,7 +224,7 @@ testcase!(
     test_varargs,
     r#"
 def test(*args: int): ...
-test(1, 2, "foo", 4) # E: Argument `Literal['foo']` is not assignable to parameter `args` with type `int`
+test(1, 2, "foo", 4) # E: Argument `Literal['foo']` is not assignable to varargs parameter `*args` with type `int`
 "#,
 );
 

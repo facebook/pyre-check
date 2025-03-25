@@ -108,6 +108,19 @@ impl TypeCheckKind {
                     function_suffix(func_id.as_ref(), current_module),
                 )
             }
+            Self::CallVarArgs(param, func_id) => {
+                let param_desc = match param {
+                    Some(name) => format!(" `*{name}`"),
+                    None => "".to_owned(),
+                };
+                format!(
+                    "Argument `{}` is not assignable to varargs parameter{} with type `{}`{}",
+                    ctx.display(got),
+                    param_desc,
+                    ctx.display(want),
+                    function_suffix(func_id.as_ref(), current_module),
+                )
+            }
             Self::CallUnpackVarArgs(name, func_id) => {
                 let name = if let Some(name) = name {
                     format!(" `*{name}`")

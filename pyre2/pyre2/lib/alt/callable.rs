@@ -142,7 +142,11 @@ impl CallArgPreEval<'_> {
         context: Option<&dyn Fn() -> ErrorContext>,
     ) {
         let tcc = &|| TypeCheckContext {
-            kind: TypeCheckKind::CallArgument(param_name.cloned(), callable_name.cloned()),
+            kind: if vararg {
+                TypeCheckKind::CallVarArgs(param_name.cloned(), callable_name.cloned())
+            } else {
+                TypeCheckKind::CallArgument(param_name.cloned(), callable_name.cloned())
+            },
             error_kind: ErrorKind::BadArgumentType,
             context: context.map(|ctx| ctx()),
         };
