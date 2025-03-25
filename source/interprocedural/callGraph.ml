@@ -4537,6 +4537,7 @@ module HigherOrderCallGraph = struct
                        Some right)
                      closure
               in
+              log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
               let implicit_receiver =
                 match unresolved with
                 | Unresolved.True _ ->
@@ -4631,10 +4632,18 @@ module HigherOrderCallGraph = struct
             | Some { HigherOrderParameter.call_targets; _ } -> call_targets
             | None -> []
           in
-          ( new_state,
+          let callees =
             call_targets_from_higher_order_parameters
             |> CallTarget.Set.of_list
-            |> CallTarget.Set.join callees )
+            |> CallTarget.Set.join callees
+          in
+          log
+            "Finished analyzing argument `%a`: %a"
+            Expression.pp
+            argument
+            CallTarget.Set.pp
+            callees;
+          new_state, callees
         in
         let ({
                CallCallees.call_targets = original_call_targets;
@@ -4777,9 +4786,11 @@ module HigherOrderCallGraph = struct
           ~expression:({ Node.value; location } as expression)
         =
         log
-          "Analyzing expression `%a` with state `%a`"
+          "Analyzing expression `%a` at `%a` with state `%a`"
           Expression.pp_expression
           expression.Node.value
+          Location.pp
+          location
           State.pp
           state;
         let analyze_expression_inner () =
@@ -5084,11 +5095,13 @@ let higher_order_call_graph_of_define
   in
   log
     ~debug:Context.debug
-    "Building higher order call graph of `%a` with initial state `%a`"
+    "Building higher order call graph of `%a` with initial state `%a`. Define call graph: `%a`"
     Reference.pp
     (PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define)
     HigherOrderCallGraph.State.pp
-    initial_state;
+    initial_state
+    DefineCallGraph.pp
+    define_call_graph;
   let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (Context) in
   let returned_callables =
     Fixpoint.Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:initial_state
