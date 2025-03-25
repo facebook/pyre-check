@@ -80,7 +80,7 @@ impl Exports {
                         result.insert(x.clone());
                     }
                     DunderAllEntry::Module(_, x) => {
-                        // They did `__all__.extend(foo.__all__)``, but didn't import `foo`.
+                        // They did `__all__.extend(foo.__all__)`, but didn't import `foo`.
                         if let Ok(import) = lookup.get(*x) {
                             result.extend(import.wildcard(lookup).iter().cloned());
                         }
