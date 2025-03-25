@@ -170,7 +170,6 @@ let assert_higher_order_call_graph_of_define
       ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-      ~method_kinds:(MethodKind.SharedMemory.read_only method_kinds)
       ~callable:None
       ~qualifier:module_name
       ~define

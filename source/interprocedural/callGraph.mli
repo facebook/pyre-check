@@ -546,7 +546,6 @@ val higher_order_call_graph_of_define
   :  define_call_graph:DefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
-  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
   callable:Target.t option ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->

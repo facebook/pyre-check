@@ -1769,12 +1769,6 @@ module ExpressionCallees = struct
       identifier = identifier >>| IdentifierCallees.regenerate_call_indices ~indexer;
       string_format = string_format >>| StringFormatCallees.regenerate_call_indices ~indexer;
     }
-
-
-  let exist_unresolved_call { call; _ } =
-    match call with
-    | Some { CallCallees.unresolved; _ } -> Unresolved.is_unresolved unresolved
-    | None -> false
 end
 
 (** An aggregate of all possible callees for an arbitrary location.
@@ -2140,13 +2134,6 @@ module DefineCallGraph = struct
        location x have smaller indices than calls on location y. Hence here we rely on the
        assumption that the map is keyed on the locations. *)
     update_expression_callees ~f:(ExpressionCallees.regenerate_call_indices ~indexer)
-
-
-  let exist_unresolved_call =
-    Location.SerializableMap.exists (fun _ map ->
-        LocationCallees.Map.exists
-          (fun _ expression_callees -> ExpressionCallees.exist_unresolved_call expression_callees)
-          map)
 
 
   (** Return all callees of the call graph, depending on the use case. *)
@@ -4298,6 +4285,8 @@ module HigherOrderCallGraph = struct
 
     val define_name : Reference.t
 
+    val callable : Target.t option
+
     val callables_to_definitions_map : Target.DefinesSharedMemory.ReadOnly.t
 
     val profiler : CallGraphProfiler.t
@@ -4688,8 +4677,25 @@ module HigherOrderCallGraph = struct
                   }
                 !Context.output_define_call_graph);
         track_apply_call_step FetchReturnedCallables (fun () ->
-            ( returned_callables
-                (List.rev_append parameterized_init_targets parameterized_call_targets),
+            (* To avoid false negatives, sometimes we allow all function-typed arguments to be
+               passed directly to the return values, especially for targets with `kind=Decorated`.
+               One example is some calls might be unresolved. *)
+            let pass_through_arguments =
+              let is_decorated_target =
+                Context.callable >>| Target.is_decorated |> Option.value ~default:false
+              in
+              if is_decorated_target && Unresolved.is_unresolved unresolved then
+                Algorithms.fold_balanced
+                  ~f:CallTarget.Set.join
+                  ~init:CallTarget.Set.bottom
+                  argument_callees
+              else
+                CallTarget.Set.bottom
+            in
+            ( parameterized_call_targets
+              |> List.rev_append parameterized_init_targets
+              |> returned_callables
+              |> CallTarget.Set.join pass_through_arguments,
               state ))
 
 
@@ -4971,7 +4977,6 @@ let higher_order_call_graph_of_define
     ~define_call_graph
     ~pyre_api
     ~callables_to_definitions_map
-    ~method_kinds
     ~callable
     ~qualifier
     ~define
@@ -4997,6 +5002,8 @@ let higher_order_call_graph_of_define
 
     let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define
 
+    let callable = callable
+
     let callables_to_definitions_map = callables_to_definitions_map
 
     let profiler = profiler
@@ -5017,23 +5024,6 @@ let higher_order_call_graph_of_define
     |> Fixpoint.Fixpoint.exit
     >>| Fixpoint.get_returned_callables
     |> Option.value ~default:CallTarget.Set.bottom
-  in
-  (* To reduce false negatives, if a decorated target's call graph contains any unresolved call,
-     then consider it as returning the target that is being decorated. *)
-  let returned_callables =
-    match callable with
-    | Some callable
-      when Target.is_decorated callable
-           && CallTarget.Set.is_bottom returned_callables
-           && DefineCallGraph.exist_unresolved_call define_call_graph ->
-        let is_class_method, is_static_method =
-          MethodKind.SharedMemory.get_method_kind method_kinds callable
-        in
-        callable
-        |> Target.set_kind Target.Normal
-        |> CallTarget.create ~is_class_method ~is_static_method
-        |> CallTarget.Set.singleton
-    | _ -> returned_callables
   in
   let call_indexer = CallTarget.Indexer.create () in
   {

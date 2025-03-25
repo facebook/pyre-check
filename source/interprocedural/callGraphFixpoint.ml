@@ -136,7 +136,6 @@ module CallGraphAnalysis = struct
               ~define_call_graph
               ~pyre_api
               ~callables_to_definitions_map
-              ~method_kinds
               ~callable:(Some callable)
               ~qualifier
               ~define

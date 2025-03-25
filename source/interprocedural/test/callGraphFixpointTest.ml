@@ -1350,16 +1350,22 @@ let test_higher_order_call_graph_fixpoint =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                                   CallTarget.create
+                                     (create_parameterized_target
+                                        ~regular:
+                                          (Target.Regular.Function
+                                             { name = "test.decorator.inner"; kind = Normal })
+                                        ~parameters:
+                                          [
+                                            ( AccessPath.Root.Variable "$parameter$f",
+                                              Target.Regular.Function
+                                                { name = "test.bar"; kind = Normal }
+                                              |> Target.from_regular );
+                                          ]);
                                  ]
                                ())) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
              ]
            ();
