@@ -744,14 +744,21 @@ impl<'a> BindingsBuilder<'a> {
         key: Idx<Key>,
         style: Option<FlowStyle>,
     ) -> Option<Idx<KeyAnnotation>> {
-        self.scopes.update_flow_info(name, key, style);
-        let info = self.scopes.current().stat.0.get(name).unwrap_or_else(|| {
-            let module = self.module_info.name();
-            panic!("Name `{name}` not found in static scope of module `{module}`")
-        });
+        let name = Hashed::new(name);
+        self.scopes.update_flow_info_hashed(name, key, style);
+        let info = self
+            .scopes
+            .current()
+            .stat
+            .0
+            .get_hashed(name)
+            .unwrap_or_else(|| {
+                let module = self.module_info.name();
+                panic!("Name `{name}` not found in static scope of module `{module}`")
+            });
         if info.count > 1 {
             self.table
-                .insert_anywhere(name.clone(), info.loc)
+                .insert_anywhere(name.into_key().clone(), info.loc)
                 .1
                 .insert(key);
         }
@@ -808,8 +815,7 @@ impl<'a> BindingsBuilder<'a> {
                     Key::Narrow(name.into_key().clone(), *op_range, use_range),
                     Binding::Narrow(name_key, Box::new(op.clone()), use_range),
                 );
-                self.scopes
-                    .update_flow_info(name.into_key(), binding_key, None);
+                self.scopes.update_flow_info_hashed(name, binding_key, None);
             }
         }
     }

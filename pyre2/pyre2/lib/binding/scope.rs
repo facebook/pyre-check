@@ -462,10 +462,19 @@ impl Scopes {
     }
 
     pub fn update_flow_info(&mut self, name: &Name, key: Idx<Key>, style: Option<FlowStyle>) {
+        self.update_flow_info_hashed(Hashed::new(name), key, style);
+    }
+
+    pub fn update_flow_info_hashed(
+        &mut self,
+        name: Hashed<&Name>,
+        key: Idx<Key>,
+        style: Option<FlowStyle>,
+    ) {
         self.current_mut()
             .flow
             .info
-            .insert(name.clone(), FlowInfo { key, style });
+            .insert_hashed(name.cloned(), FlowInfo { key, style });
     }
 
     fn get_flow_info(&self, name: &Name) -> Option<&FlowInfo> {
