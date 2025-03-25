@@ -326,12 +326,12 @@ impl Bindings {
         let scope_trace = builder.scopes.finish();
         let last_scope = scope_trace.toplevel_scope();
         let exported = exports.exports(lookup);
-        for (k, static_info) in &last_scope.stat.0 {
+        for (k, static_info) in last_scope.stat.0.iter_hashed() {
             if static_info.is_nonlocal() || static_info.is_global() {
                 // Nonlocal and global don't do anything outside a function
                 continue;
             }
-            let info = last_scope.flow.info.get(k);
+            let info = last_scope.flow.info.get_hashed(k);
             let val = match info {
                 Some(FlowInfo { key, .. }) => {
                     if let Some(ann) = static_info.annot {
@@ -352,8 +352,8 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            if exported.contains(k) {
-                builder.table.insert(KeyExport(k.clone()), val);
+            if exported.contains_hashed(k) {
+                builder.table.insert(KeyExport(k.into_key().clone()), val);
             }
         }
         Self(Arc::new(BindingsInner {

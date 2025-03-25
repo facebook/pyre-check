@@ -732,10 +732,10 @@ impl<'a> BindingsBuilder<'a> {
                             let exported = module_exports.exports(self.lookup);
                             for x in x.names {
                                 if &x.name == "*" {
-                                    for name in module_exports.wildcard(self.lookup).iter() {
-                                        let key = Key::Import(name.clone(), x.range);
-                                        let val = if exported.contains(name) {
-                                            Binding::Import(m, name.clone())
+                                    for name in module_exports.wildcard(self.lookup).iter_hashed() {
+                                        let key = Key::Import(name.into_key().clone(), x.range);
+                                        let val = if exported.contains_hashed(name) {
+                                            Binding::Import(m, name.into_key().clone())
                                         } else {
                                             self.error(
                                                 x.range,
@@ -746,9 +746,9 @@ impl<'a> BindingsBuilder<'a> {
                                         };
                                         let key = self.table.insert(key, val);
                                         self.bind_key(
-                                            name,
+                                            name.key(),
                                             key,
-                                            Some(FlowStyle::Import(m, name.clone())),
+                                            Some(FlowStyle::Import(m, name.into_key().clone())),
                                         );
                                     }
                                 } else {
