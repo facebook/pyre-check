@@ -19,8 +19,8 @@ use anyhow::Context as _;
 use clap::Parser;
 use clap::ValueEnum;
 use dupe::Dupe;
+use dupe::IterDupedExt;
 use starlark_map::small_map::SmallMap;
-use starlark_map::small_set::SmallSet;
 use tracing::info;
 
 use crate::clap_env;
@@ -246,24 +246,23 @@ impl Handles {
             .collect()
     }
 
+    pub fn loaders(&self) -> Vec<LoaderId> {
+        self.loader_factory.values().duped().collect()
+    }
+
     pub fn update(
         &mut self,
         created_files: &Vec<PathBuf>,
         removed_files: &Vec<PathBuf>,
         config_finder: &impl Fn(&Path) -> ConfigFile,
-    ) -> Vec<LoaderId> {
-        let mut result: SmallSet<LoaderId> = SmallSet::new();
+    ) {
         for file in created_files {
-            let (_, _, loader) = self.register_file(file.to_path_buf(), config_finder);
-            result.insert(loader.dupe());
+            self.register_file(file.to_path_buf(), config_finder);
         }
         for file in removed_files {
-            if let Some((_, _, loader)) = self.path_data.remove(file) {
-                result.insert(loader);
-            }
+            self.path_data.remove(file);
             // NOTE: Need to garbage-collect unreachable Loaders at some point
         }
-        result.into_iter().collect()
     }
 }
 
@@ -341,9 +340,8 @@ impl Args {
             // TODO: We should filter create/remove events with `files_to_check`
             state.invalidate_disk(&events.created);
             state.invalidate_disk(&events.removed);
-            let invalidated_loaders =
-                handles.update(&events.created, &events.removed, &config_finder);
-            for loader in invalidated_loaders {
+            handles.update(&events.created, &events.removed, &config_finder);
+            for loader in handles.loaders() {
                 state.invalidate_find(&loader);
             }
         }
