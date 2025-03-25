@@ -958,7 +958,7 @@ impl<'a> BindingsBuilder<'a> {
             xs.into_iter().partition(|x| x.no_next);
 
         // We normally go through the visible branches, but if nothing is visible no one is going to
-        // fill in the Phi keys we promised. So just given up and use the hidden branches instead.
+        // fill in the Phi keys we promised. So just give up and use the hidden branches instead.
         if visible_branches.is_empty() {
             visible_branches = hidden_branches;
         }
