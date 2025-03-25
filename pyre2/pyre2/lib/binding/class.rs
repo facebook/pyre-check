@@ -144,41 +144,43 @@ impl<'a> BindingsBuilder<'a> {
 
         let last_scope = self.scopes.pop();
         self.scopes.pop(); // annotation scope
-        let mut fields = SmallMap::new();
-        for (name, info) in last_scope.flow.info.iter() {
+        let mut fields = SmallMap::with_capacity(last_scope.stat.0.len());
+        for (name, info) in last_scope.flow.info.iter_hashed() {
             // A name with flow in the last_scope, but whose static is in a parent scope, is a reference to something that isn't a class field.
             // Can occur when we narrow a parent scopes variable, thus producing a fresh flow for it, but no static.
-            if let Some(stat_info) = last_scope.stat.0.get(name) {
+            if let Some(stat_info) = last_scope.stat.0.get_hashed(name) {
                 let binding = BindingClassField {
                     class: definition_key,
-                    name: name.clone(),
+                    name: name.into_key().clone(),
                     value: Binding::Forward(info.key),
                     annotation: stat_info.annot,
                     range: stat_info.loc,
                     initial_value: info.as_initial_value(),
                 };
-                fields.insert(
-                    name.clone(),
+                fields.insert_hashed(
+                    name.cloned(),
                     ClassFieldProperties::new(stat_info.annot.is_some(), stat_info.loc),
                 );
                 self.table
-                    .insert(KeyClassField(class_index, name.clone()), binding);
+                    .insert(KeyClassField(class_index, name.into_key().clone()), binding);
             }
         }
         if let ScopeKind::ClassBody(body) = last_scope.kind {
             for (method_name, instance_attributes) in body.instance_attributes_by_method {
                 if is_attribute_defining_method(&method_name, &x.name.id) {
-                    for (name, InstanceAttribute(value, annotation, range)) in instance_attributes {
-                        if !fields.contains_key(&name) {
-                            fields.insert(
+                    for (name, InstanceAttribute(value, annotation, range)) in
+                        instance_attributes.into_iter_hashed()
+                    {
+                        if !fields.contains_key_hashed(name.as_ref()) {
+                            fields.insert_hashed(
                                 name.clone(),
                                 ClassFieldProperties::new(annotation.is_some(), range),
                             );
                             self.table.insert(
-                                KeyClassField(class_index, name.clone()),
+                                KeyClassField(class_index, name.key().clone()),
                                 BindingClassField {
                                     class: definition_key,
-                                    name,
+                                    name: name.into_key(),
                                     value,
                                     annotation,
                                     range,
@@ -202,6 +204,7 @@ impl<'a> BindingsBuilder<'a> {
             Binding::ClassDef(definition_key, decorators.into_boxed_slice()),
             None,
         );
+        fields.reserve(0); // Attempt to shrink to capacity
         self.table.insert_idx(
             definition_key,
             BindingClass::ClassDef(ClassBinding {
