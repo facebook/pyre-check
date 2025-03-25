@@ -729,11 +729,12 @@ impl<'a> BindingsBuilder<'a> {
                 ) {
                     match self.lookup.get(m) {
                         Ok(module_exports) => {
+                            let exported = module_exports.exports(self.lookup);
                             for x in x.names {
                                 if &x.name == "*" {
                                     for name in module_exports.wildcard(self.lookup).iter() {
                                         let key = Key::Import(name.clone(), x.range);
-                                        let val = if module_exports.contains(name, self.lookup) {
+                                        let val = if exported.contains(name) {
                                             Binding::Import(m, name.clone())
                                         } else {
                                             self.error(
@@ -761,7 +762,7 @@ impl<'a> BindingsBuilder<'a> {
                                     // but there is an exception: if we are already looking at the
                                     // `__init__` module of `x`, we always prefer the submodule.
                                     let val = if (self.module_info.name() != m)
-                                        && module_exports.contains(&x.name.id, self.lookup)
+                                        && exported.contains(&x.name.id)
                                     {
                                         Binding::Import(m, x.name.id.clone())
                                     } else {

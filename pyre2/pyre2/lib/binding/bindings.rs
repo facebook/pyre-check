@@ -325,6 +325,7 @@ impl Bindings {
         }
         let scope_trace = builder.scopes.finish();
         let last_scope = scope_trace.toplevel_scope();
+        let exported = exports.exports(lookup);
         for (k, static_info) in &last_scope.stat.0 {
             if static_info.is_nonlocal() || static_info.is_global() {
                 // Nonlocal and global don't do anything outside a function
@@ -351,7 +352,7 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            if exports.contains(k, lookup) {
+            if exported.contains(k) {
                 builder.table.insert(KeyExport(k.clone()), val);
             }
         }

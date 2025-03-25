@@ -108,10 +108,6 @@ impl Exports {
         };
         self.0.exports.calculate(f).unwrap_or_default()
     }
-
-    pub fn contains(&self, name: &Name, lookup: &dyn LookupExport) -> bool {
-        self.exports(lookup).contains(name)
-    }
 }
 
 #[cfg(test)]
@@ -164,7 +160,7 @@ mod tests {
 
     #[must_use]
     fn contains(exports: &Exports, lookup: &dyn LookupExport, name: &str) -> bool {
-        exports.contains(&Name::new(name), lookup)
+        exports.exports(lookup).contains(&Name::new(name))
     }
 
     #[test]

@@ -470,7 +470,8 @@ impl State {
         let module_data = self.get_module(handle);
         if !self
             .lookup_export(&module_data)
-            .contains(name, &self.lookup(module_data.dupe()))
+            .exports(&self.lookup(module_data.dupe()))
+            .contains(name)
         {
             self.add_error(
                 &module_data,
