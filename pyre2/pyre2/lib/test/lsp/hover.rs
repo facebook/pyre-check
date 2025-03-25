@@ -84,6 +84,27 @@ Hover Result: `Module[typing]`
 }
 
 #[test]
+fn duplicate_import_test() {
+    let code = r#"
+from typing import List
+import typing
+#        ^
+"#;
+    let report = get_batched_lsp_operations_report(&[("main", code)], get_test_report);
+    // todo(kylei): The result should be `Module[typing]`
+    assert_eq!(
+        r#"
+# main.py
+3 | import typing
+             ^
+Hover Result: None
+"#
+        .trim(),
+        report.trim(),
+    );
+}
+
+#[test]
 fn dead_code_tests() {
     let code = r#"
 if 1 == 0:
