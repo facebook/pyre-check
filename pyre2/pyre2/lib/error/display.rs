@@ -165,6 +165,11 @@ impl TypeCheckKind {
                 key,
                 ctx.display(want),
             ),
+            Self::TypedDictUnpacking => format!(
+                "Unpacked `{}` is not assignable to `{}`",
+                ctx.display(got),
+                ctx.display(want)
+            ),
             Self::Attribute(attr) => format!(
                 "`{}` is not assignable to attribute `{}` with type `{}`",
                 ctx.display(got),

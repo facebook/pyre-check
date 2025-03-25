@@ -75,6 +75,7 @@ fn error_kind_from_type_check_kind(kind: &TypeCheckKind) -> ErrorKind {
         CallKwArgs(..) => ErrorKind::BadArgumentType,
         FunctionParameterDefault(..) => ErrorKind::BadFunctionDefinition,
         TypedDictKey(..) => ErrorKind::TypedDictKeyError,
+        TypedDictUnpacking => ErrorKind::BadUnpacking,
         Attribute(..) => ErrorKind::BadAssignment,
         AnnotatedName(..) => ErrorKind::BadAssignment,
         IterationVariableMismatch(..) => ErrorKind::BadAssignment,
@@ -136,6 +137,8 @@ pub enum TypeCheckKind {
     FunctionParameterDefault(Name),
     /// Check against type of a TypedDict key.
     TypedDictKey(Name),
+    /// Check an unpacked dict against a TypedDict, e.g., `x: MyTypedDict = {**unpacked_dict}`.
+    TypedDictUnpacking,
     /// Check of an attribute assignment against its type.
     Attribute(Name),
     /// A check against a user-declared type annotation on a variable name.
