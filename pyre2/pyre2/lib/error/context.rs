@@ -57,44 +57,13 @@ pub enum ErrorContext {
 #[derive(Debug)]
 pub struct TypeCheckContext {
     pub kind: TypeCheckKind,
-    pub error_kind: ErrorKind,
     pub context: Option<ErrorContext>,
-}
-
-fn error_kind_from_type_check_kind(kind: &TypeCheckKind) -> ErrorKind {
-    use TypeCheckKind::*;
-    match kind {
-        MagicMethodReturn(..) => ErrorKind::BadReturn,
-        AugmentedAssignment => ErrorKind::BadAssignment,
-        ImplicitFunctionReturn(..) => ErrorKind::BadReturn,
-        ExplicitFunctionReturn => ErrorKind::BadReturn,
-        TypeGuardReturn => ErrorKind::BadReturn,
-        CallArgument(..) => ErrorKind::BadArgumentType,
-        CallVarArgs(..) => ErrorKind::BadArgumentType,
-        CallUnpackVarArgs(..) => ErrorKind::BadArgumentType,
-        CallKwArgs(..) => ErrorKind::BadArgumentType,
-        FunctionParameterDefault(..) => ErrorKind::BadFunctionDefinition,
-        TypedDictKey(..) => ErrorKind::TypedDictKeyError,
-        TypedDictUnpacking => ErrorKind::BadUnpacking,
-        Attribute(..) => ErrorKind::BadAssignment,
-        AnnotatedName(..) => ErrorKind::BadAssignment,
-        IterationVariableMismatch(..) => ErrorKind::BadAssignment,
-        AnnAssign => ErrorKind::BadAssignment,
-        ExceptionClass => ErrorKind::Unknown,
-        YieldValue => ErrorKind::InvalidYield,
-        YieldFrom => ErrorKind::InvalidYield,
-        UnexpectedBareYield => ErrorKind::InvalidYield,
-        Unknown => ErrorKind::Unknown,
-        Test => ErrorKind::Unknown,
-    }
 }
 
 impl TypeCheckContext {
     pub fn of_kind(kind: TypeCheckKind) -> Self {
-        let error_kind = error_kind_from_type_check_kind(&kind);
         Self {
             kind,
-            error_kind,
             context: None,
         }
     }
@@ -173,6 +142,33 @@ impl TypeCheckKind {
             AnnotationTarget::Return(_func) => Self::ExplicitFunctionReturn,
             AnnotationTarget::Assign(name) => Self::AnnotatedName(name.clone()),
             AnnotationTarget::ClassMember(member) => Self::Attribute(member.clone()),
+        }
+    }
+
+    pub fn as_error_kind(&self) -> ErrorKind {
+        match self {
+            Self::MagicMethodReturn(..) => ErrorKind::BadReturn,
+            Self::AugmentedAssignment => ErrorKind::BadAssignment,
+            Self::ImplicitFunctionReturn(..) => ErrorKind::BadReturn,
+            Self::ExplicitFunctionReturn => ErrorKind::BadReturn,
+            Self::TypeGuardReturn => ErrorKind::BadReturn,
+            Self::CallArgument(..) => ErrorKind::BadArgumentType,
+            Self::CallVarArgs(..) => ErrorKind::BadArgumentType,
+            Self::CallUnpackVarArgs(..) => ErrorKind::BadArgumentType,
+            Self::CallKwArgs(..) => ErrorKind::BadArgumentType,
+            Self::FunctionParameterDefault(..) => ErrorKind::BadFunctionDefinition,
+            Self::TypedDictKey(..) => ErrorKind::TypedDictKeyError,
+            Self::TypedDictUnpacking => ErrorKind::BadUnpacking,
+            Self::Attribute(..) => ErrorKind::BadAssignment,
+            Self::AnnotatedName(..) => ErrorKind::BadAssignment,
+            Self::IterationVariableMismatch(..) => ErrorKind::BadAssignment,
+            Self::AnnAssign => ErrorKind::BadAssignment,
+            Self::ExceptionClass => ErrorKind::Unknown,
+            Self::YieldValue => ErrorKind::InvalidYield,
+            Self::YieldFrom => ErrorKind::InvalidYield,
+            Self::UnexpectedBareYield => ErrorKind::InvalidYield,
+            Self::Unknown => ErrorKind::Unknown,
+            Self::Test => ErrorKind::Unknown,
         }
     }
 }

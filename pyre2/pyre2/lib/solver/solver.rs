@@ -348,12 +348,13 @@ impl Solver {
             &self.for_display(want.clone()),
             errors.module_info().name(),
         );
+        let kind = tcc.kind.as_error_kind();
         match tcc.context {
             Some(ctx) => {
-                errors.add(loc, msg, tcc.error_kind, Some(&|| ctx.clone()));
+                errors.add(loc, msg, kind, Some(&|| ctx.clone()));
             }
             None => {
-                errors.add(loc, msg, tcc.error_kind, None);
+                errors.add(loc, msg, kind, None);
             }
         }
     }

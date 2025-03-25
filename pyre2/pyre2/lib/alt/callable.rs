@@ -147,7 +147,6 @@ impl CallArgPreEval<'_> {
             } else {
                 TypeCheckKind::CallArgument(param_name.cloned(), callable_name.cloned())
             },
-            error_kind: ErrorKind::BadArgumentType,
             context: context.map(|ctx| ctx()),
         };
         match self {
@@ -364,7 +363,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         unpacked_name.clone(),
                         callable_name.clone(),
                     ),
-                    error_kind: ErrorKind::BadArgumentType,
                     context: context.map(|ctx| ctx()),
                 },
             );
@@ -478,7 +476,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                             Some(name.clone()),
                                             callable_name.clone(),
                                         ),
-                                        error_kind: ErrorKind::BadArgumentType,
                                         context: context.map(|ctx| ctx()),
                                     }
                                 });
@@ -504,7 +501,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                                     None,
                                                     callable_name.clone(),
                                                 ),
-                                                error_kind: ErrorKind::BadArgumentType,
                                                 context: context.map(|ctx| ctx()),
                                             },
                                         );
@@ -576,7 +572,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 callable_name.clone(),
                             )
                         },
-                        error_kind: ErrorKind::BadArgumentType,
                         context: context.map(|ctx| ctx()),
                     };
                     self.expr_with_separate_check_errors(
@@ -605,7 +600,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Some(name.clone()),
                             callable_name.clone(),
                         ),
-                        error_kind: ErrorKind::BadArgumentType,
                         context: context.map(|ctx| ctx()),
                     });
                 }
