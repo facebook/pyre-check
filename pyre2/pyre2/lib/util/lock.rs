@@ -47,4 +47,9 @@ impl<T> RwLock<T> {
     pub(crate) fn write(&self) -> sync::RwLockWriteGuard<'_, T> {
         self.0.write().unwrap()
     }
+
+    #[allow(dead_code)] // Part of the API
+    pub fn into_inner(self) -> T {
+        self.0.into_inner().unwrap()
+    }
 }
