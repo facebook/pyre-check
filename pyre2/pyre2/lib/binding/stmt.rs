@@ -374,7 +374,6 @@ impl<'a> BindingsBuilder<'a> {
                             x.value,
                         )
                     });
-                    self.ensure_expr(&mut x.targets[0]);
                 } else {
                     let mut value = *x.value;
                     self.ensure_expr(&mut value);
