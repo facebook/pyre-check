@@ -162,7 +162,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let params = param_vars
             .iter()
             .map(|(name, var)| Param::Pos((*name).clone(), var.to_type(), Required::Optional))
-            .chain(std::iter::once(Param::VarArg(Type::any_implicit())))
+            .chain(std::iter::once(Param::VarArg(None, Type::any_implicit())))
             .collect::<Vec<_>>();
         let callable_ty = Type::callable(params, return_ty.to_type());
 

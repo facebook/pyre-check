@@ -106,7 +106,7 @@ impl ParamList {
     /// Type signature that permits everything, namely `*args, **kwargs`.
     pub fn everything() -> ParamList {
         ParamList(vec![
-            Param::VarArg(Type::any_implicit()),
+            Param::VarArg(None, Type::any_implicit()),
             Param::Kwargs(Type::any_implicit()),
         ])
     }
@@ -130,7 +130,7 @@ pub enum Params {
 pub enum Param {
     PosOnly(Type, Required),
     Pos(Name, Type, Required),
-    VarArg(Type),
+    VarArg(Option<Name>, Type),
     KwOnly(Name, Type, Required),
     Kwargs(Type),
 }
@@ -401,7 +401,8 @@ impl Param {
         match self {
             Param::PosOnly(ty, _required) => write!(f, "{}", wrap(ty)),
             Param::Pos(name, ty, _required) => write!(f, "{}: {}", name, wrap(ty)),
-            Param::VarArg(ty) => write!(f, "*{}", wrap(ty)),
+            Param::VarArg(Some(name), ty) => write!(f, "*{}: {}", name, wrap(ty)),
+            Param::VarArg(None, ty) => write!(f, "*{}", wrap(ty)),
             Param::KwOnly(name, ty, _required) => write!(f, "{}: {}", name, wrap(ty)),
             Param::Kwargs(ty) => write!(f, "**{}", wrap(ty)),
         }

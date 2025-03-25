@@ -199,17 +199,17 @@ def bar(x: int, *args: bool) -> int: ...
 
 def add(x: Callable[P, int]) -> Callable[Concatenate[str, P], bool]: ...
 
-reveal_type(add(bar))       # Should return (a: str, /, x: int, *args: bool) -> bool # E: revealed type: (str, x: int, *bool) -> bool
+reveal_type(add(bar))       # Should return (a: str, /, x: int, *args: bool) -> bool # E: revealed type: (str, x: int, *args: bool) -> bool
 
 def remove(x: Callable[Concatenate[int, P], int]) -> Callable[P, bool]: ...
 
-reveal_type(remove(bar))    # Should return (*args: bool) -> bool # E: revealed type: (*bool) -> bool
+reveal_type(remove(bar))    # E: revealed type: (*args: bool) -> bool
 
 def transform(
   x: Callable[Concatenate[int, P], int]
 ) -> Callable[Concatenate[str, P], bool]: ...
 
-reveal_type(transform(bar)) # Should return (a: str, /, *args: bool) -> bool # E: revealed type: (str, *bool) -> bool
+reveal_type(transform(bar)) # Should return (a: str, /, *args: bool) -> bool # E: revealed type: (str, *args: bool) -> bool
 "#,
 );
 

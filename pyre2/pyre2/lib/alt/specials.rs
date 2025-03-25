@@ -252,7 +252,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Expr::List(ExprList { elts, .. }) => {
                         match self.check_args_and_construct_tuple(elts, errors) {
                             Some((tuple, true)) => Type::type_form(Type::callable(
-                                vec![Param::VarArg(Type::Unpack(Box::new(Type::Tuple(tuple))))],
+                                vec![Param::VarArg(
+                                    None,
+                                    Type::Unpack(Box::new(Type::Tuple(tuple))),
+                                )],
                                 ret,
                             )),
                             Some((Tuple::Concrete(elts), false)) => {

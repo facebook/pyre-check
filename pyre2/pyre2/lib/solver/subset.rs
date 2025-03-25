@@ -63,7 +63,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
-                (Some(Param::VarArg(Type::Unpack(l))), None) => {
+                (Some(Param::VarArg(_, Type::Unpack(l))), None) => {
                     if self.is_subset_eq(&Type::tuple(Vec::new()), l) {
                         l_arg = l_args.iter().next();
                     } else {
@@ -75,13 +75,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         Param::PosOnly(_, Required::Optional)
                         | Param::Pos(_, _, Required::Optional)
                         | Param::KwOnly(_, _, Required::Optional)
-                        | Param::VarArg(_)
+                        | Param::VarArg(_, _)
                         | Param::Kwargs(_),
                     ),
                     None,
                 ) => return true,
                 (
-                    Some(Param::VarArg(Type::Unpack(box l))),
+                    Some(Param::VarArg(_, Type::Unpack(box l))),
                     Some(Param::PosOnly(_, Required::Required)),
                 ) => {
                     let mut u_types = Vec::new();
@@ -89,7 +89,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         if let Some(Param::PosOnly(u, Required::Required)) = u_arg {
                             u_types.push(u.clone());
                             u_arg = u_args_iter.next();
-                        } else if let Some(Param::VarArg(Type::Unpack(box u))) = u_arg {
+                        } else if let Some(Param::VarArg(_, Type::Unpack(box u))) = u_arg {
                             if self.is_subset_eq(
                                 &Type::Tuple(Tuple::unpacked(u_types, u.clone(), Vec::new())),
                                 l,
@@ -100,7 +100,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                             } else {
                                 return false;
                             }
-                        } else if let Some(Param::VarArg(u)) = u_arg {
+                        } else if let Some(Param::VarArg(_, u)) = u_arg {
                             if self.is_subset_eq(
                                 &Type::Tuple(Tuple::unpacked(
                                     u_types,
@@ -125,14 +125,14 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 }
                 (
                     Some(Param::PosOnly(_, _) | Param::Pos(_, _, _)),
-                    Some(Param::VarArg(Type::Unpack(box u))),
+                    Some(Param::VarArg(_, Type::Unpack(box u))),
                 ) => {
                     let mut l_types = Vec::new();
                     loop {
                         if let Some(Param::PosOnly(l, _) | Param::Pos(_, l, _)) = l_arg {
                             l_types.push(l.clone());
                             l_arg = l_args_iter.next();
-                        } else if let Some(Param::VarArg(Type::Unpack(box l))) = l_arg {
+                        } else if let Some(Param::VarArg(_, Type::Unpack(box l))) = l_arg {
                             if self.is_subset_eq(
                                 u,
                                 &Type::Tuple(Tuple::unpacked(l_types, l.clone(), Vec::new())),
@@ -143,7 +143,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                             } else {
                                 return false;
                             }
-                        } else if let Some(Param::VarArg(l)) = l_arg {
+                        } else if let Some(Param::VarArg(_, l)) = l_arg {
                             if self.is_subset_eq(
                                 u,
                                 &Type::Tuple(Tuple::unpacked(
@@ -166,7 +166,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         }
                     }
                 }
-                (Some(Param::VarArg(l)), Some(Param::PosOnly(u, Required::Required))) => {
+                (Some(Param::VarArg(_, l)), Some(Param::PosOnly(u, Required::Required))) => {
                     if self.is_subset_eq(u, l) {
                         u_arg = u_args_iter.next();
                     } else {
@@ -174,8 +174,8 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     }
                 }
                 (
-                    Some(Param::VarArg(Type::Unpack(box l))),
-                    Some(Param::VarArg(Type::Unpack(box u))),
+                    Some(Param::VarArg(_, Type::Unpack(box l))),
+                    Some(Param::VarArg(_, Type::Unpack(box u))),
                 ) => {
                     if self.is_subset_eq(u, l) {
                         l_arg = l_args_iter.next();
@@ -184,7 +184,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
-                (Some(Param::VarArg(l)), Some(Param::VarArg(Type::Unpack(box u)))) => {
+                (Some(Param::VarArg(_, l)), Some(Param::VarArg(_, Type::Unpack(box u)))) => {
                     if self.is_subset_eq(u, &Type::Tuple(Tuple::unbounded(l.clone()))) {
                         l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();
@@ -192,7 +192,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
-                (Some(Param::VarArg(Type::Unpack(box l))), Some(Param::VarArg(u))) => {
+                (Some(Param::VarArg(_, Type::Unpack(box l))), Some(Param::VarArg(_, u))) => {
                     if self.is_subset_eq(&Type::Tuple(Tuple::unbounded(u.clone())), l) {
                         l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();
@@ -200,7 +200,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         return false;
                     }
                 }
-                (Some(Param::VarArg(l)), Some(Param::VarArg(u))) => {
+                (Some(Param::VarArg(_, l)), Some(Param::VarArg(_, u))) => {
                     if self.is_subset_eq(u, l) {
                         l_arg = l_args_iter.next();
                         u_arg = u_args_iter.next();

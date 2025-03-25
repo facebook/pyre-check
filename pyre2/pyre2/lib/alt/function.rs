@@ -279,7 +279,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             if let Type::Args(q) = ty {
                 paramspec_args = Some(q);
             }
-            Param::VarArg(ty)
+            Param::VarArg(Some(x.name.id.clone()), ty)
         }));
         if paramspec_args.is_some()
             && let Some(param) = def.parameters.kwonlyargs.first()
@@ -357,7 +357,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .into_iter()
                 .map(|p| match p {
                     Param::Kwargs(Type::Kwargs(_)) => Param::Kwargs(Type::any_error()),
-                    Param::VarArg(Type::Args(_)) => Param::VarArg(Type::any_error()),
+                    Param::VarArg(name, Type::Args(_)) => Param::VarArg(name, Type::any_error()),
                     _ => p,
                 })
                 .collect();
@@ -365,7 +365,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             params = params
                 .into_iter()
                 .filter_map(|p| match p {
-                    Param::Kwargs(Type::Kwargs(_)) | Param::VarArg(Type::Args(_)) => None,
+                    Param::Kwargs(Type::Kwargs(_)) | Param::VarArg(_, Type::Args(_)) => None,
                     _ => Some(p),
                 })
                 .collect();

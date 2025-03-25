@@ -172,7 +172,7 @@ test(f5) # OK
 
 # Lower bound has variadic args of incompatible type
 def f6(*args: str) -> None: ...
-test(f6) # E: Argument `(*str) -> None` is not assignable to parameter `f` with type `(int, int) -> None`
+test(f6) # E: Argument `(*args: str) -> None` is not assignable to parameter `f` with type `(int, int) -> None`
 
 # Lower bound has extra kwargs of arbitrary type
 class Arbitrary: pass
@@ -224,7 +224,7 @@ testcase!(
     test_varargs,
     r#"
 def test(*args: int): ...
-test(1, 2, "foo", 4) # E: Argument `Literal['foo']` is not assignable to parameter with type `int`
+test(1, 2, "foo", 4) # E: Argument `Literal['foo']` is not assignable to parameter `args` with type `int`
 "#,
 );
 

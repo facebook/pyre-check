@@ -261,7 +261,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             iparams.next();
                             Some((ty, Some(name), false))
                         }
-                        Param::VarArg(Type::Unpack(box ty)) => {
+                        Param::VarArg(_, Type::Unpack(box ty)) => {
                             // Store args that get matched to an unpacked *args param
                             // Matched args are typechecked separately later
                             unpacked_vararg = Some(ty);
@@ -269,7 +269,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             matched_unpacked_vararg = true;
                             None
                         }
-                        Param::VarArg(ty) => Some((ty, None, true)),
+                        Param::VarArg(name, ty) => Some((ty, name.as_ref(), true)),
                         Param::KwOnly(..) | Param::Kwargs(..) => None,
                     }
                 } else {
