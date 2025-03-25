@@ -250,10 +250,10 @@ impl Handles {
         self.loader_factory.values().duped().collect()
     }
 
-    pub fn update(
+    pub fn update<'a>(
         &mut self,
-        created_files: &Vec<PathBuf>,
-        removed_files: &Vec<PathBuf>,
+        created_files: impl Iterator<Item = &'a PathBuf>,
+        removed_files: impl Iterator<Item = &'a PathBuf>,
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) {
         for file in created_files {
@@ -317,8 +317,7 @@ impl Args {
         files_to_check: impl FileList,
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> anyhow::Result<()> {
-        // TODO: We currently make 2 unrealistic assumptions, which should be fixed in the future:
-        // - Glob expansion is stable across incremental runs.
+        // TODO: We currently make 1 unrealistic assumptions, which should be fixed in the future:
         // - Config search is stable across incremental runs.
         let expanded_file_list = files_to_check.files()?;
         let require_levels = self.get_required_levels();
@@ -337,10 +336,15 @@ impl Args {
             let events = get_watcher_events(&mut watcher).await?;
             state.invalidate_disk(&events.modified);
 
-            // TODO: We should filter create/remove events with `files_to_check`
             state.invalidate_disk(&events.created);
             state.invalidate_disk(&events.removed);
-            handles.update(&events.created, &events.removed, &config_finder);
+            // File addition and removal may affect the list of files/handles to check. Update
+            // the handles accordingly.
+            handles.update(
+                events.created.iter().filter(|p| files_to_check.covers(p)),
+                events.removed.iter().filter(|p| files_to_check.covers(p)),
+                &config_finder,
+            );
             for loader in handles.loaders() {
                 state.invalidate_find(&loader);
             }
