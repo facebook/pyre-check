@@ -24,6 +24,8 @@ import '../js/parser-playground';
 import PerformanceComparisonChart from '../components/PerformanceComparisonChart';
 import QuotesGrid from '../components/quotesGrid';
 import WhyPyrefly from '../components/whyPyrefly';
+import LandingPageSection from '../components/landingPageSection';
+import LandingPageHeader from '../components/landingPageHeader';
 
 const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
 export default component NewLandingPage() {
@@ -35,63 +37,17 @@ export default component NewLandingPage() {
     <Layout
       title="Pyrefly: A Static Type Checker for Python"
       description={siteConfig.description}>
-      <header {...stylex.props(landingPageStyles.featureHero)}>
-        <div className="container">
-          <h1 {...stylex.props(landingPageStyles.title)}>
-            pyrefly<span>.</span>
-          </h1>
-          <p {...stylex.props(landingPageStyles.subtitle)}>
-            <span>
-              {' '}
-              <a
-                href="https://github.com/facebook/pyrefly/milestone/1"
-                {...stylex.props(landingPageStyles.yellowLink)}>
-                Coming soon
-              </a>
-              : A faster Python type checker written in Rust
-            </span>
-          </p>
-          <section>
-            <Firefly />
-            <Firefly />
-            <Firefly />
-            <Firefly />
-          </section>
-        </div>
-      </header>
-      <section {...stylex.props(styles.section)}>
-        <div className="container">
-          <h2 {...stylex.props(styles.sectionTitle)}>Why Pyrefly</h2>
-          <WhyPyrefly />
-        </div>
-      </section>
-      <section {...stylex.props(styles.section)}>
-        <div className="container">
-          <h2 {...stylex.props(styles.sectionTitle)}>Performance Comparison</h2>
-          <PerformanceComparisonChart />
-        </div>
-      </section>
-      <section {...stylex.props(styles.section, styles.lastSection)}>
-        <div className="container">
-          <h2 {...stylex.props(styles.sectionTitle)}>
-            What People Say About Pyrefly
-          </h2>
-          <QuotesGrid />
-        </div>
-      </section>
+      <LandingPageHeader />
+      <LandingPageSection title="Why Pyrefly" child={<WhyPyrefly />} />
+      <LandingPageSection
+        title="Performance Comparison"
+        child={<PerformanceComparisonChart />}
+      />
+      <LandingPageSection
+        title="What People Say About Pyrefly"
+        child={<QuotesGrid />}
+        isLastSection={true}
+      />
     </Layout>
   );
 }
-
-const styles = stylex.create({
-  section: {
-    flex: 1,
-    marginTop: 20,
-  },
-  lastSection: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: '3rem',
-  },
-});
