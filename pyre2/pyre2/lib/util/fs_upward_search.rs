@@ -29,7 +29,7 @@ fn first_match_inner(
     loop {
         for name in names {
             let candidate = current_dir.join(name);
-            if candidate.exists() {
+            if candidate.is_file() {
                 return Some(SearchResult {
                     parent_directory: current_dir.to_path_buf(),
                     file_name: name.as_ref().to_owned(),
@@ -99,6 +99,7 @@ mod tests {
         assert_first_match(&["b"], "", &["a", "b"], Some("b"));
 
         assert_first_match(&["a", "b/c"], "b", &["a"], Some("a"));
+        assert_first_match(&["a", "b/c"], "b", &["b"], None);
         assert_first_match(&["a", "b/c"], "b", &["c"], Some("b/c"));
         assert_first_match(&["a", "b/c"], "b/c", &["c"], Some("b/c"));
         assert_first_match(&["a", "b/c"], "b", &["a", "c"], Some("b/c"));
