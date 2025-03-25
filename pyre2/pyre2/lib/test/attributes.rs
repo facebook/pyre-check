@@ -96,6 +96,20 @@ y.foo()  # result is "hi"
     "#,
 );
 
+testcase_with_bug!(
+    "Attribute lookups can't handle unions",
+    test_attribute_union,
+    r#"
+from typing import assert_type
+class A:
+    x: int
+class B:
+    x: str
+def test(x: A | B):
+    del x.x  # E: TODO: Answers::solve_expectation::Delete attribute base undefined for type: A | B (trying to access x)
+    "#,
+);
+
 testcase!(
     test_callable_boundmethod_subset,
     r#"
