@@ -207,9 +207,10 @@ impl Solver {
                 *x = Type::ParamSpecValue(params);
             }
             if let Type::Concatenate(box ts, box Type::Concatenate(ts2, pspec)) = x {
-                let mut params = ts.to_vec();
-                params.extend(ts2.to_vec());
-                *x = Type::Concatenate(params.into_boxed_slice(), pspec.clone());
+                *x = Type::Concatenate(
+                    ts.iter().chain(ts2.iter()).cloned().collect(),
+                    pspec.clone(),
+                );
             }
             let (callable, kind) = match x {
                 Type::Callable(box c) => (Some(c), None),
@@ -244,10 +245,8 @@ impl Solver {
                         *x = new_callable(Callable::ellipsis(ret.clone()));
                     }
                     Type::Concatenate(box ts2, box pspec) => {
-                        let mut params = ts.to_vec();
-                        params.extend(ts2.to_vec());
                         *x = new_callable(Callable::concatenate(
-                            params.into_boxed_slice(),
+                            ts.iter().chain(ts2.iter()).cloned().collect(),
                             pspec.clone(),
                             ret.clone(),
                         ));
