@@ -58,7 +58,7 @@ module AnalyzeConfiguration : sig
     scheduler_policies: Configuration.SchedulerPolicies.t;
     higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
-    maximum_target_depth: int;
+    maximum_target_depth: int option;
   }
   [@@deriving sexp, compare, hash]
 

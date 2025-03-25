@@ -66,7 +66,7 @@ let test_json_parsing context =
       scheduler_policies = Configuration.SchedulerPolicies.empty;
       higher_order_call_graph = false;
       higher_order_call_graph_max_iterations = None;
-      maximum_target_depth = BaseConfigurationTest.dummy_maximum_target_depth;
+      maximum_target_depth = None;
     }
   in
 
@@ -237,7 +237,7 @@ let test_json_parsing context =
     ~expected:{ dummy_analyze_configuration with higher_order_call_graph_max_iterations = Some 101 };
   assert_parsed
     (`Assoc (("maximum_target_depth", `Int 412) :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with maximum_target_depth = 412 };
+    ~expected:{ dummy_analyze_configuration with maximum_target_depth = Some 412 };
   assert_parsed
     (`Assoc
       (( "scheduler_policies",

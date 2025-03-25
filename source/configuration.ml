@@ -796,11 +796,18 @@ module StaticAnalysis = struct
     compute_coverage: bool;
     scheduler_policies: SchedulerPolicies.t;
     higher_order_call_graph: bool;
-    higher_order_call_graph_max_iterations: int option;
+    higher_order_call_graph_max_iterations: int;
     maximum_target_depth: int;
   }
 
+  (* Maximum depth for parameterized targets, i.e `foo[x: bar[y: baz]]` has depth 2. We limit the
+     depth to prevent infinite recursion. *)
   let default_maximum_target_depth = 10
+
+  (* Default number of iterations of the call graph fixpoint. *)
+  let default_higher_order_call_graph_max_iterations = 50
+
+  let default_higher_order_call_graph_max_iterations_in_tests = 10
 
   let create
       configuration
@@ -841,7 +848,7 @@ module StaticAnalysis = struct
       ?(compute_coverage = false)
       ?(scheduler_policies = SchedulerPolicies.empty)
       ?(higher_order_call_graph = false)
-      ?higher_order_call_graph_max_iterations
+      ?(higher_order_call_graph_max_iterations = default_higher_order_call_graph_max_iterations)
       ()
     =
     {

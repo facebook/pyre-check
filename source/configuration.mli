@@ -330,11 +330,15 @@ module StaticAnalysis : sig
     compute_coverage: bool;
     scheduler_policies: SchedulerPolicies.t;
     higher_order_call_graph: bool;
-    higher_order_call_graph_max_iterations: int option;
+    higher_order_call_graph_max_iterations: int;
     maximum_target_depth: int;
   }
 
   val default_maximum_target_depth : int
+
+  val default_higher_order_call_graph_max_iterations : int
+
+  val default_higher_order_call_graph_max_iterations_in_tests : int
 
   val create
     :  Analysis.t ->

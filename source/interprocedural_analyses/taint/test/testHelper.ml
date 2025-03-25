@@ -557,7 +557,6 @@ let initialize
     ?(taint_configuration = TaintConfiguration.Heap.default)
     ?(verify_empty_model_queries = true)
     ?model_path
-    ?(higher_order_call_graph_max_iterations = 10)
     ?(maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth)
     ~context
     source_content
@@ -772,7 +771,8 @@ let initialize
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~callables_to_definitions_map
-      ~max_iterations:higher_order_call_graph_max_iterations
+      ~max_iterations:
+        Configuration.StaticAnalysis.default_higher_order_call_graph_max_iterations_in_tests
       ~maximum_target_depth
   in
   let initial_models =
