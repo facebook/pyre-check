@@ -63,30 +63,46 @@ export default component NewLandingPage() {
           <div {...stylex.props(styles.whyPyreflyGrid)}>
             {/* Short-term benefits */}
             <div {...stylex.props(styles.gridItem)}>
-              <h3>Faster Performance</h3>
-              <p>Built in Rust for superior type checking speed</p>
+              <h3>Scale with Confident</h3>
+              <p>Lightning fast, even on millions of lines of code.</p>
             </div>
             <div {...stylex.props(styles.gridItem)}>
-              <h3>Better Error Messages</h3>
-              <p>Clear and actionable type error reporting</p>
+              <h3>Developer Delight</h3>
+              <p>
+                Write better code, faster, and with confidence using your
+                favorite editor supported by the Pyrefly IDE.
+              </p>
             </div>
             <div {...stylex.props(styles.gridItem)}>
-              <h3>Easy Migration</h3>
-              <p>Seamless transition from existing type checkers</p>
+              <h3>Easy Onboarding</h3>
+              <p>
+                Seamless transition from existing typechecker configurations to
+                Pyrefly to get started!
+              </p>
             </div>
 
             {/* Long-term benefits */}
             <div {...stylex.props(styles.gridItem)}>
-              <h3>Enhanced Type System</h3>
-              <p>Advanced type checking capabilities</p>
+              <h3>Codebase clarity</h3>
+              <p>
+                Improve code readability and maintainability with precise type
+                annotations.
+              </p>
             </div>
             <div {...stylex.props(styles.gridItem)}>
-              <h3>Extensibility</h3>
-              <p>Plugin system for custom type checking rules</p>
+              <h3>Tooling for Improving Types</h3>
+              <p>
+                Use the tools packaged with Pyrefly to elevate your typing
+                coverage from 0 to 100.
+              </p>
             </div>
             <div {...stylex.props(styles.gridItem)}>
-              <h3>Community Driven</h3>
-              <p>Open source with active development</p>
+              <h3>Fully featured</h3>
+              <p>
+                Follows the typing standards introduced in PEPs 484, 526, 612,
+                along with being a typechecker that is being actively developed
+                on and constantly improving.
+              </p>
             </div>
           </div>
         </div>
@@ -136,13 +152,16 @@ export default component NewLandingPage() {
           <div {...stylex.props(styles.quotesGrid)}>
             <div {...stylex.props(styles.quoteCard)}>
               <p {...stylex.props(styles.quoteText)}>
-                "Pyrefly's performance improvements have significantly reduced
-                our CI times. The migration was seamless and the results are
-                impressive."
+                "Pyre and Lint are hands down the most important investments
+                Instagram has made into engineering productivity for our Python
+                codebase. We could not have maintained our product dev velocity
+                with so many people working in the codebase, all while serving 2
+                billion active users, without the safety and security of static
+                analysis."
               </p>
               <div {...stylex.props(styles.quoteAuthor)}>
-                <strong>Sarah Chen</strong>
-                <span>Engineering Lead, Instagram</span>
+                <strong>{'<TO BE ADDED>'}</strong>
+                <span>Instagram Leadership</span>
               </div>
             </div>
             <div {...stylex.props(styles.quoteCard)}>
@@ -151,7 +170,7 @@ export default component NewLandingPage() {
                 codebase more maintainable and easier to debug."
               </p>
               <div {...stylex.props(styles.quoteAuthor)}>
-                <strong>Michael Rodriguez</strong>
+                <strong>{'<TO BE ADDED>'}</strong>
                 <span>Core Contributor, PyTorch</span>
               </div>
             </div>
@@ -162,8 +181,8 @@ export default component NewLandingPage() {
                 checking."
               </p>
               <div {...stylex.props(styles.quoteAuthor)}>
-                <strong>Emma Thompson</strong>
-                <span>Tech Lead, Open Source Projects</span>
+                <strong>{'<TO BE ADDED>'}</strong>
+                <span>{'<Open Source Project Name - TO BE ADDED>'}</span>
               </div>
             </div>
           </div>
