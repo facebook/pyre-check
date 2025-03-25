@@ -141,15 +141,17 @@ f(x)
 "#,
         )
         .unwrap();
+        // These errors were determined by manually running pyrefly on the snippet above.
+        // As such, they may not be 100% accurate with what pyrefly produces now.
         let errors = {
             let mut e = SmallMap::new();
             e.insert(
                 path.clone(),
                 vec![
-                    error(path.clone(), 1, 10, ErrorKind::TypeMismatch),
-                    error(path.clone(), 6, 7, ErrorKind::TypeMismatch),
-                    error(path.clone(), 7, 10, ErrorKind::TypeMismatch),
-                    error(path.clone(), 10, 3, ErrorKind::TypeMismatch),
+                    error(path.clone(), 1, 10, ErrorKind::BadAssignment),
+                    error(path.clone(), 6, 7, ErrorKind::BadArgumentType),
+                    error(path.clone(), 7, 10, ErrorKind::BadReturn),
+                    error(path.clone(), 10, 3, ErrorKind::BadArgumentType),
                 ],
             );
             e
@@ -159,19 +161,19 @@ f(x)
         assert!(got_failures.is_empty());
         assert_eq!(vec![&path], got_successes);
 
-        let want_file = r#"# type: ignore  # type-mismatch
+        let want_file = r#"# type: ignore  # bad-assignment
 x: str = 1
 
 
 def f(y: int) -> None:
     """Doc comment"""
-    # type: ignore  # type-mismatch
+    # type: ignore  # bad-argument-type
     x = "one" + y
-    # type: ignore  # type-mismatch
+    # type: ignore  # bad-return
     return x
 
 
-# type: ignore  # type-mismatch
+# type: ignore  # bad-argument-type
 f(x)
 
 "#;

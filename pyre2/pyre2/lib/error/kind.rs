@@ -143,8 +143,6 @@ pub enum ErrorKind {
     /// An error related to TypedDict keys.
     /// e.g. attempting to access a TypedDict with a key that does not exist.
     TypedDictKeyError,
-    /// An error raised when one type is expected but another is found instead.
-    TypeMismatch,
     /// An error caused by a keyword argument used in the wrong place.
     UnexpectedKeyword,
     /// Attempting to use a name that may be unbound or uninitialized
