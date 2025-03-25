@@ -1378,12 +1378,13 @@ def foo(x):
 "#,
 );
 
-testcase_with_bug!(
-    "Should not be an error",
+testcase!(
     test_index_literal,
     r#"
+from typing import assert_type
+
 def foo(x):
-    "Magic"[0]  # E: Can't apply arguments to non-class
-    "Magic"[3:4]  # E: Can't apply arguments to non-class
+    assert_type("Magic"[0], str)
+    assert_type("Magic"[3:4], str)
 "#,
 );

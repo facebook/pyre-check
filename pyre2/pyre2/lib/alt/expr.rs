@@ -1156,6 +1156,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Some(&|| ErrorContext::Index(fun.clone())),
                         ),
                         Type::Any(style) => style.propagate(),
+                        Type::LiteralString | Type::Literal(Lit::String(_)) if xs.len() <= 3 => {
+                            // We could have a more precise type here, but this matches Pyright.
+                            self.stdlib.str().to_type()
+                        }
                         Type::ClassType(ref cls)
                             if let Some(elts) = self.named_tuple_element_types(cls) =>
                         {
