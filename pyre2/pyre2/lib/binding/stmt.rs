@@ -289,9 +289,8 @@ impl<'a> BindingsBuilder<'a> {
                 self.bind_assign(name, |_| Binding::Import(module, forward))
             }
             Stmt::Assign(mut x) => {
-                let mut value = *x.value;
                 if let [Expr::Name(name)] = x.targets.as_slice() {
-                    if let Expr::Call(call) = &mut value
+                    if let Expr::Call(call) = &mut *x.value
                         && let Some(special) = self.as_special_export(&call.func)
                     {
                         match special {
@@ -367,16 +366,17 @@ impl<'a> BindingsBuilder<'a> {
                             _ => {}
                         }
                     }
-                    self.ensure_expr(&mut value);
+                    self.ensure_expr(&mut x.value);
                     self.bind_assign(name, |k: Option<Idx<KeyAnnotation>>| {
                         Binding::NameAssign(
                             name.id.clone(),
                             k.map(|k| (AnnotationStyle::Forwarded, k)),
-                            Box::new(value),
+                            x.value,
                         )
                     });
                     self.ensure_expr(&mut x.targets[0]);
                 } else {
+                    let mut value = *x.value;
                     self.ensure_expr(&mut value);
                     for target in &mut x.targets {
                         let make_binding =
