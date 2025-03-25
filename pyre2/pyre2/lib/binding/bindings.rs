@@ -29,6 +29,7 @@ use ruff_python_ast::TypeParams;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use ruff_text_size::TextSize;
+use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use starlark_map::Hashed;
@@ -964,25 +965,38 @@ impl<'a> BindingsBuilder<'a> {
         }
 
         // Collect all the information that we care about from all branches
-        let mut names: SmallMap<Name, (SmallSet<Idx<Key>>, Vec<Option<FlowStyle>>)> =
+        let mut names: SmallMap<Name, (Idx<Key>, SmallSet<Idx<Key>>, Vec<Option<FlowStyle>>)> =
             SmallMap::with_capacity(visible_branches.first().map_or(0, |x| x.info.len()));
         let visible_branches_len = visible_branches.len();
         for flow in visible_branches {
             for (name, info) in flow.info.into_iter_hashed() {
-                let e = names
-                    .entry_hashed(name)
-                    .or_insert_with(|| (SmallSet::new(), Vec::with_capacity(visible_branches_len)));
-                e.0.insert(info.key);
-                e.1.push(info.style);
+                let f = |v: &mut (Idx<Key>, SmallSet<Idx<Key>>, Vec<Option<FlowStyle>>)| {
+                    if info.key != v.0 {
+                        // Optimization: instead of x = phi(x, ...), we can skip the x.
+                        // Avoids a recursive solving step later.
+                        v.1.insert(info.key);
+                    }
+                    v.2.push(info.style);
+                };
+
+                match names.entry_hashed(name) {
+                    Entry::Occupied(mut e) => f(e.get_mut()),
+                    Entry::Vacant(e) => {
+                        let key = self.table.types.0.insert(Key::Phi(e.key().clone(), range));
+                        f(e.insert((
+                            key,
+                            SmallSet::new(),
+                            Vec::with_capacity(visible_branches_len),
+                        )));
+                    }
+                };
             }
         }
 
         let mut res = SmallMap::with_capacity(names.len());
-        for (name, (values, styles)) in names.into_iter_hashed() {
+        for (name, (key, values, styles)) in names.into_iter_hashed() {
             let style = self.merge_flow_style(styles);
-            let key = self
-                .table
-                .insert(Key::Phi(name.key().clone(), range), Binding::phi(values));
+            self.table.insert_idx(key, Binding::phi(values));
             res.insert_hashed(name, FlowInfo { key, style });
         }
         Flow {
