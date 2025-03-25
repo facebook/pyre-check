@@ -82,7 +82,10 @@ impl Exports {
                     DunderAllEntry::Module(_, x) => {
                         // They did `__all__.extend(foo.__all__)`, but didn't import `foo`.
                         if let Ok(import) = lookup.get(*x) {
-                            result.extend(import.wildcard(lookup).iter().cloned());
+                            let wildcard = import.wildcard(lookup);
+                            for y in wildcard.iter_hashed() {
+                                result.insert_hashed(y.cloned());
+                            }
                         }
                     }
                     DunderAllEntry::Remove(_, x) => {
@@ -98,10 +101,14 @@ impl Exports {
     pub fn exports(&self, lookup: &dyn LookupExport) -> Arc<SmallSet<Name>> {
         let f = || {
             let mut result = SmallSet::new();
-            result.extend(self.0.definitions.definitions.keys().cloned());
+            for (x, _) in self.0.definitions.definitions.iter_hashed() {
+                result.insert_hashed(x.cloned());
+            }
             for x in self.0.definitions.import_all.keys() {
                 if let Ok(exports) = lookup.get(*x) {
-                    result.extend(exports.wildcard(lookup).iter().cloned());
+                    for y in exports.wildcard(lookup).iter_hashed() {
+                        result.insert_hashed(y.cloned());
+                    }
                 }
             }
             Arc::new(result)
