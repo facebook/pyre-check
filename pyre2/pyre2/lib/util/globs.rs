@@ -192,6 +192,10 @@ impl FileList for Globs {
         }
         Ok(result.into_iter().collect())
     }
+
+    fn covers(&self, path: &Path) -> bool {
+        self.matches(path).unwrap_or(false)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
@@ -220,6 +224,10 @@ impl FileList for FilteredGlobs {
             }
         }
         Ok(result)
+    }
+
+    fn covers(&self, path: &Path) -> bool {
+        self.includes.covers(path) && !self.excludes.covers(path)
     }
 }
 
