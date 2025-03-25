@@ -915,17 +915,17 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
-    fn merge_flow_style(&mut self, styles: Vec<Option<&FlowStyle>>) -> Option<FlowStyle> {
+    fn merge_flow_style(&mut self, styles: Vec<Option<FlowStyle>>) -> Option<FlowStyle> {
         let mut it = styles.into_iter();
         let mut merged = it.next()?;
         for x in it {
-            match (merged, x) {
+            match (&merged, x) {
                 // If they're identical, keep it
-                (l, r) if l == r => {}
+                (l, r) if l == &r => {}
                 // Uninitialized takes precedence over Unbound
                 (Some(FlowStyle::Uninitialized), Some(FlowStyle::Unbound)) => {}
                 (Some(FlowStyle::Unbound), Some(FlowStyle::Uninitialized)) => {
-                    merged = Some(&FlowStyle::Uninitialized);
+                    merged = Some(FlowStyle::Uninitialized);
                 }
                 // Unbound and bound branches merge into PossiblyUnbound
                 // Uninitialized and bound branches merge into PossiblyUninitialized
@@ -947,7 +947,7 @@ impl<'a> BindingsBuilder<'a> {
                 }
             }
         }
-        merged.cloned()
+        merged
     }
 
     pub fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange) -> Flow {
@@ -963,16 +963,22 @@ impl<'a> BindingsBuilder<'a> {
             visible_branches = hidden_branches;
         }
 
-        let names = visible_branches
-            .iter()
-            .flat_map(|x| x.info.iter_hashed().map(|x| x.0.cloned()))
-            .collect::<SmallSet<_>>();
+        // Collect all the information that we care about from all branches
+        let mut names: SmallMap<Name, (SmallSet<Idx<Key>>, Vec<Option<FlowStyle>>)> =
+            SmallMap::with_capacity(visible_branches.first().map_or(0, |x| x.info.len()));
+        let visible_branches_len = visible_branches.len();
+        for flow in visible_branches {
+            for (name, info) in flow.info.into_iter_hashed() {
+                let e = names
+                    .entry_hashed(name)
+                    .or_insert_with(|| (SmallSet::new(), Vec::with_capacity(visible_branches_len)));
+                e.0.insert(info.key);
+                e.1.push(info.style);
+            }
+        }
+
         let mut res = SmallMap::with_capacity(names.len());
-        for name in names.into_iter() {
-            let (values, styles): (SmallSet<Idx<Key>>, Vec<Option<&FlowStyle>>) = visible_branches
-                .iter()
-                .flat_map(|x| x.info.get(name.key()).map(|x| (x.key, x.style.as_ref())))
-                .unzip();
+        for (name, (values, styles)) in names.into_iter_hashed() {
             let style = self.merge_flow_style(styles);
             let key = self
                 .table
