@@ -261,10 +261,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             iparams.next();
                             Some((ty, Some(name), false))
                         }
-                        Param::VarArg(_, Type::Unpack(box ty)) => {
+                        Param::VarArg(name, Type::Unpack(box ty)) => {
                             // Store args that get matched to an unpacked *args param
                             // Matched args are typechecked separately later
-                            unpacked_vararg = Some(ty);
+                            unpacked_vararg = Some((name, ty));
                             unpacked_vararg_matched_args.push(arg_pre.clone());
                             matched_unpacked_vararg = true;
                             None
@@ -301,7 +301,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
         }
-        if let Some(unpacked_param_ty) = unpacked_vararg {
+        if let Some((unpacked_name, unpacked_param_ty)) = unpacked_vararg {
             let mut prefix = Vec::new();
             let mut middle = Vec::new();
             let mut suffix = Vec::new();
@@ -356,7 +356,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 range,
                 arg_errors,
                 &|| TypeCheckContext {
-                    kind: TypeCheckKind::CallVarArgs(callable_name.clone()),
+                    kind: TypeCheckKind::CallUnpackVarArgs(
+                        unpacked_name.clone(),
+                        callable_name.clone(),
+                    ),
                     error_kind: ErrorKind::BadArgumentType,
                     context: context.map(|ctx| ctx()),
                 },

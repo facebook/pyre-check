@@ -70,7 +70,7 @@ fn error_kind_from_type_check_kind(kind: &TypeCheckKind) -> ErrorKind {
         ExplicitFunctionReturn => ErrorKind::BadReturn,
         TypeGuardReturn => ErrorKind::BadReturn,
         CallArgument(..) => ErrorKind::BadArgumentType,
-        CallVarArgs(..) => ErrorKind::BadArgumentType,
+        CallUnpackVarArgs(..) => ErrorKind::BadArgumentType,
         CallKwArgs(..) => ErrorKind::BadArgumentType,
         FunctionParameterDefault(..) => ErrorKind::BadFunctionDefinition,
         TypedDictKey(..) => ErrorKind::TypedDictKeyError,
@@ -126,7 +126,7 @@ pub enum TypeCheckKind {
     /// Function call argument against parameter type.
     CallArgument(Option<Name>, Option<FuncId>),
     /// Unpacked argument against *args type.
-    CallVarArgs(Option<FuncId>),
+    CallUnpackVarArgs(Option<Name>, Option<FuncId>),
     /// Keyword argument against parameter or **kwargs type, as (argument name, parameter name, function name).
     CallKwArgs(Option<Name>, Option<Name>, Option<FuncId>),
     /// Check of a parameter's default value against its type annotation.
