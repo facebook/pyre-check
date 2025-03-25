@@ -368,18 +368,14 @@ impl<'a> BindingsBuilder<'a> {
                         }
                     }
                     self.ensure_expr(&mut value);
-                    let name = name.clone();
-                    for target in &mut x.targets {
-                        let make_binding = |k: Option<Idx<KeyAnnotation>>| {
-                            Binding::NameAssign(
-                                name.id.clone(),
-                                k.map(|k| (AnnotationStyle::Forwarded, k)),
-                                Box::new(value.clone()),
-                            )
-                        };
-                        self.bind_target(target, &make_binding, Some(&value));
-                        self.ensure_expr(target);
-                    }
+                    self.bind_assign(name, |k: Option<Idx<KeyAnnotation>>| {
+                        Binding::NameAssign(
+                            name.id.clone(),
+                            k.map(|k| (AnnotationStyle::Forwarded, k)),
+                            Box::new(value),
+                        )
+                    });
+                    self.ensure_expr(&mut x.targets[0]);
                 } else {
                     self.ensure_expr(&mut value);
                     for target in &mut x.targets {
