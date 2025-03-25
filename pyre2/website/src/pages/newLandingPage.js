@@ -17,10 +17,12 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import * as stylex from '@stylexjs/stylex';
 import {landingPageStyles} from './index';
 import Firefly from '../components/firefly';
+import QuoteCard from '../components/quoteCard';
 
 // This import serves no runtime purposes, but we import it to force webpack to run babel on it,
 // so we can test whether babel can handle newer syntax.
 import '../js/parser-playground';
+import QuotesGrid from '../components/quotesGrid';
 
 const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
 export default component NewLandingPage() {
@@ -149,43 +151,7 @@ export default component NewLandingPage() {
           <h2 {...stylex.props(styles.sectionTitle)}>
             What People Say About Pyrefly
           </h2>
-          <div {...stylex.props(styles.quotesGrid)}>
-            <div {...stylex.props(styles.quoteCard)}>
-              <p {...stylex.props(styles.quoteText)}>
-                "Pyre and Lint are hands down the most important investments
-                Instagram has made into engineering productivity for our Python
-                codebase. We could not have maintained our product dev velocity
-                with so many people working in the codebase, all while serving 2
-                billion active users, without the safety and security of static
-                analysis."
-              </p>
-              <div {...stylex.props(styles.quoteAuthor)}>
-                <strong>{'<TO BE ADDED>'}</strong>
-                <span>Instagram Leadership</span>
-              </div>
-            </div>
-            <div {...stylex.props(styles.quoteCard)}>
-              <p {...stylex.props(styles.quoteText)}>
-                "The enhanced type system and clear error messages have made our
-                codebase more maintainable and easier to debug."
-              </p>
-              <div {...stylex.props(styles.quoteAuthor)}>
-                <strong>{'<TO BE ADDED>'}</strong>
-                <span>Core Contributor, PyTorch</span>
-              </div>
-            </div>
-            <div {...stylex.props(styles.quoteCard)}>
-              <p {...stylex.props(styles.quoteText)}>
-                "As an early adopter, I'm impressed by Pyrefly's extensibility
-                and the active community support. It's the future of Python type
-                checking."
-              </p>
-              <div {...stylex.props(styles.quoteAuthor)}>
-                <strong>{'<TO BE ADDED>'}</strong>
-                <span>{'<Open Source Project Name - TO BE ADDED>'}</span>
-              </div>
-            </div>
-          </div>
+          <QuotesGrid />
         </div>
       </section>
     </Layout>
@@ -239,27 +205,5 @@ const styles = stylex.create({
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
     gap: '2rem',
-  },
-  quotesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '2rem',
-  },
-  quoteCard: {
-    padding: '2rem',
-    borderRadius: '8px',
-    backgroundColor: 'var(--ifm-background-surface-color)',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  },
-  quoteText: {
-    fontSize: '1.1rem',
-    lineHeight: '1.6',
-    marginBottom: '1.5rem',
-    fontStyle: 'italic',
-  },
-  quoteAuthor: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.25rem',
   },
 });
