@@ -1369,6 +1369,104 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     from typing import Callable, TypeVar
+     _TClass = TypeVar("_TClass")
+     _TReturnType = TypeVar("_TReturnType")
+     class BaseCachedProperty(Generic[_TClass, _TReturnType]):
+       def __init__(
+           self, f: Callable[[_TClass], _TReturnType], doc: str = ...
+       ) -> None: ...
+       def __get__(
+           self, obj: None, cls: Type[_TClass]
+       ) -> BaseCachedProperty[_TClass, _TReturnType]: ...
+     def foo():
+       return
+     class A:
+       @BaseCachedProperty  # Test decorators with stub
+       async def bar(self):
+         return foo
+     def main(a: A):
+       return await a.bar()
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "19:15-19:22",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call (CallCallees.create ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     from typing import Callable, TypeVar
+     _TClass = TypeVar("_TClass")
+     _TReturnType = TypeVar("_TReturnType")
+     _TAwaitableReturnType = TypeVar("_TAwaitableReturnType", bound=Awaitable[object])
+     class BaseCachedProperty(Generic[_TClass, _TReturnType]):
+       def __init__(
+           self, f: Callable[[_TClass], _TReturnType], doc: str = ...
+       ) -> None:
+         self.f = f
+       def __get__(
+           self, obj: None, cls: Type[_TClass]
+       ) -> BaseCachedProperty[_TClass, _TReturnType]: ...
+     class async_cached_property(BaseCachedProperty[_TClass, _TAwaitableReturnType]): ...
+     def foo():
+       return
+     class A:
+       @async_cached_property  # Test overrides
+       async def bar(self):
+         return foo
+     def main(a: A):
+       return await a.bar()
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "22:15-22:22",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.A";
+                                          method_name = "bar";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ())) );
+                   ];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                   ];
+               };
+             ]
+           ();
     ]
 
 
