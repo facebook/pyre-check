@@ -4396,6 +4396,21 @@ module HigherOrderCallGraph = struct
         if Target.contain_recursive_target target || exceed_depth target then None else Some target
 
 
+      (* Results of analyzing a certain kind of call targets (e.g., `call_targets` or
+         `init_targets`) on a callee expression. *)
+      module AnalyzeCalleeResult = struct
+        type t = {
+          (* Transforming the input call targets by providing parameter targets. *)
+          parameterized_targets: CallTarget.t list;
+          (* A subset of the input call targets that are of `kind=Decorated`. *)
+          decorated_targets: CallTarget.t list;
+          (* A subset of the input call targets that are not transformed above. *)
+          non_parameterized_targets: CallTarget.t list;
+          (* Whether one of the input call targets is a stub. *)
+          has_stub_targets: bool;
+        }
+      end
+
       let analyze_callee_targets
           ~location
           ~call
@@ -4418,20 +4433,23 @@ module HigherOrderCallGraph = struct
             ~argument:None
             ~f
         in
-        let formal_arguments_if_non_stub target =
+        let get_define target =
           if Target.is_override target || Target.is_object target then
             (* TODO(T204630385): It is possible for a target to be an `Override`, which we do not
                handle for now, or an `Object`, such as a function-typed variable that cannot be
                resolved by the original call graph building. *)
             None
           else
-            target
-            |> Target.DefinesSharedMemory.ReadOnly.get Context.callables_to_definitions_map
-            >>= fun {
-                      Target.DefinesSharedMemory.Define.qualifier = _;
-                      define = { Node.value = define; _ };
-                    } ->
-            formal_arguments_from_non_stub_define define
+            Target.DefinesSharedMemory.ReadOnly.get Context.callables_to_definitions_map target
+        in
+        let formal_arguments_if_non_stub target =
+          target
+          |> get_define
+          >>= fun {
+                    Target.DefinesSharedMemory.Define.qualifier = _;
+                    define = { Node.value = define; _ };
+                  } ->
+          formal_arguments_from_non_stub_define define
         in
         let create_parameter_target_excluding_args_kwargs (parameter_target, (_, argument_matches)) =
           match argument_matches, parameter_target with
@@ -4570,7 +4588,22 @@ module HigherOrderCallGraph = struct
           track_apply_call_step FindNonParameterizedTargets (fun () ->
               non_parameterized_targets ~parameterized_targets call_targets_from_callee)
         in
-        parameterized_targets, decorated_targets, non_parameterized_targets
+        let has_stub_targets =
+          List.exists call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
+              (* TODO: Improve performance since this loads the body for each callable, although the
+                 body is not used here. *)
+              target
+              |> get_define
+              >>| (fun { Target.DefinesSharedMemory.Define.define = { Node.value = define; _ }; _ } ->
+                    Define.is_stub define)
+              |> Option.value ~default:false)
+        in
+        {
+          AnalyzeCalleeResult.parameterized_targets;
+          decorated_targets;
+          non_parameterized_targets;
+          has_stub_targets;
+        }
 
 
       let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
@@ -4638,7 +4671,13 @@ module HigherOrderCallGraph = struct
           track_apply_call_step AnalyzeArguments (fun () ->
               List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state)
         in
-        let parameterized_call_targets, decorated_call_targets, non_parameterized_call_targets =
+        let {
+          AnalyzeCalleeResult.parameterized_targets = parameterized_call_targets;
+          decorated_targets = decorated_call_targets;
+          non_parameterized_targets = non_parameterized_call_targets;
+          _;
+        }
+          =
           callee_return_values
           |> CallTarget.Set.elements
           |> List.rev_append original_call_targets
@@ -4650,7 +4689,13 @@ module HigherOrderCallGraph = struct
                ~argument_callees
                ~track_apply_call_step_name:"call_targets"
         in
-        let parameterized_init_targets, decorated_init_targets, non_parameterized_init_targets =
+        let {
+          AnalyzeCalleeResult.parameterized_targets = parameterized_init_targets;
+          decorated_targets = decorated_init_targets;
+          non_parameterized_targets = non_parameterized_init_targets;
+          has_stub_targets = has_stub_init_targets;
+        }
+          =
           analyze_callee_targets
             ~location
             ~call
@@ -4699,12 +4744,18 @@ module HigherOrderCallGraph = struct
         track_apply_call_step FetchReturnedCallables (fun () ->
             (* To avoid false negatives, sometimes we allow all function-typed arguments to be
                passed directly to the return values, especially for targets with `kind=Decorated`.
-               One example is some calls might be unresolved. *)
+               One example is some calls might be unresolved. Another example is when `__init__`
+               methods are stubs. *)
             let pass_through_arguments =
               let is_decorated_target =
                 Context.callable >>| Target.is_decorated |> Option.value ~default:false
               in
-              if is_decorated_target && Unresolved.is_unresolved unresolved then
+              if
+                is_decorated_target
+                && (has_stub_init_targets
+                    (* Not handling stub `__init__` methods lead to false negatives. *)
+                   || Unresolved.is_unresolved unresolved)
+              then
                 Algorithms.fold_balanced
                   ~f:CallTarget.Set.join
                   ~init:CallTarget.Set.bottom

@@ -1402,9 +1402,26 @@ let test_higher_order_call_graph_fixpoint =
                    [
                      ( "19:15-19:22",
                        LocationCallees.Singleton
-                         (ExpressionCallees.from_call (CallCallees.create ())) );
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.A";
+                                          method_name = "bar";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                   ];
                };
              ]
            ();
