@@ -1013,17 +1013,6 @@ impl AnnotationTarget {
             Self::ClassMember(_) => TypeFormContext::ClassVarAnnotation,
         }
     }
-
-    pub fn name(&self) -> &Name {
-        match self {
-            Self::Param(name) => name,
-            Self::ArgsParam(name) => name,
-            Self::KwargsParam(name) => name,
-            Self::Return(name) => name,
-            Self::Assign(name) => name,
-            Self::ClassMember(name) => name,
-        }
-    }
 }
 
 /// Values that return an annotation.

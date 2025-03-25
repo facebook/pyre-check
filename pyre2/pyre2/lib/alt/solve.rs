@@ -1640,16 +1640,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::IterableValue(ann, e, is_async) => {
                 let ty = ann.map(|k| self.get_idx(k));
                 let tcc: &dyn Fn() -> TypeCheckContext = &|| {
-                    let (name, annot_type) =
-                        ty.clone()
-                            .map_or((Name::new_static("_"), Type::any_implicit()), |t| {
-                                (
-                                    t.target.name().clone(),
-                                    t.ty().unwrap_or(&Type::any_implicit()).clone(),
-                                )
-                            });
+                    let (name, annot_type) = {
+                        match &ty {
+                            None => (None, None),
+                            Some(t) => (
+                                match &t.target {
+                                    AnnotationTarget::Assign(name)
+                                    | AnnotationTarget::ClassMember(name) => Some(name.clone()),
+                                    _ => None,
+                                },
+                                t.ty().cloned(),
+                            ),
+                        }
+                    };
                     TypeCheckContext::of_kind(TypeCheckKind::IterationVariableMismatch(
-                        name, annot_type,
+                        name.unwrap_or_else(|| Name::new_static("_")),
+                        annot_type.unwrap_or_else(Type::any_implicit),
                     ))
                 };
                 let iterables = if is_async.is_async() {
