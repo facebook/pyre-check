@@ -157,11 +157,14 @@ impl Globs {
     }
 
     /// Returns true if the given file matches any of the contained globs.
-    /// NOTE: whole directories will not be matched without a trailing `**`.
-    /// See tests for example.
+    /// We always attempt to append `**` if a pattern ends in `/` in case
+    /// the pattern is meant to be a directory wildcard.
     fn matches(&self, file: &Path) -> anyhow::Result<bool> {
         for pattern_path in &self.0 {
-            let pattern_str = pattern_path.to_string_lossy().to_string();
+            let mut pattern_str = pattern_path.to_string_lossy().to_string();
+            if pattern_str.ends_with("/") {
+                pattern_str.push_str("**");
+            }
             let pattern = glob::Pattern::new(&pattern_str)
                 .with_context(|| format!("When resolving pattern `{pattern_str}"))?;
             if pattern.matches_path(file) {
@@ -510,15 +513,13 @@ mod tests {
         assert!(patterns.matches(Path::new("path/to/.hidden")).unwrap());
         assert!(!patterns.matches(Path::new("just/a/regular.file")).unwrap());
         assert!(!patterns.matches(Path::new("file/with/a.dot")).unwrap());
-
-        // Note: these pattenrs show how missing `**` and `/` suffixes work on directories
         assert!(
             !Globs::new(vec!["**/__pycache__".to_owned()])
                 .matches(Path::new("__pycache__/some/file.pyc"))
                 .unwrap()
         );
         assert!(
-            !Globs::new(vec!["**/__pycache__/".to_owned()])
+            Globs::new(vec!["**/__pycache__/".to_owned()])
                 .matches(Path::new("__pycache__/some/file.pyc"))
                 .unwrap()
         );
@@ -539,6 +540,11 @@ mod tests {
         );
         assert!(
             !Globs::new(vec!["**/__pycache__/".to_owned()])
+                .matches(Path::new("__pycache__"))
+                .unwrap()
+        );
+        assert!(
+            !Globs::new(vec!["**/__pycache__/**".to_owned()])
                 .matches(Path::new("__pycache__"))
                 .unwrap()
         );

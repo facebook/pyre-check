@@ -58,10 +58,11 @@ The following is the order in which configuration options are selected:
   - Equivalent configs: `exclude` in Pyright and MyPy
   - Notes: we match on these patterns, unlike `project_includes`, where we
     enumerate all (Python) files under the directory. Becaues of this,
-    `project_excludes` does not do directory matching. `**/__pycache__/` and
-    `**/__pycache__` will only match a file path that ends in `__pycache__`, not
-    anything nested under it like `__pycache__/file.pyc`. **For your own sanity,
-    add `/**` when trying to match everything under a directory\*\*.
+    `project_excludes` does not do directory matching unless a `/` is added at
+    the end of your glob pattern. `**/__pycache__/` will only match files under
+    a directory named `__pycache__/`, but not a file named `__pycache__`.
+    Likewise, `**/__pycache__` will only match files named `__pycache__`, but
+    not files under a directory named `__pycache__/`.
 - `search_path`: a file path describing a root from which imports should be
   found and imported from (including modules in `project_includes`). This takes
   the highest precedence in import order, before `typeshed` and
