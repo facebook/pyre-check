@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
-import {landingPageStyles} from '../pages';
+import {landingPageStyles} from '../../pages';
 import Firefly from './firefly';
 
 export default component LandingPageHeader() {

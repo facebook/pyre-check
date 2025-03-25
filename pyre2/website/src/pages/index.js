@@ -14,12 +14,12 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import * as stylex from '@stylexjs/stylex';
 import NewLandingPage from './newLandingPage';
-import Firefly from '../components/firefly';
+import Firefly from '../components/landing-page/firefly';
+import LandingPageHeader from '../components/landing-page/landingPageHeader';
 
 // This import serves no runtime purposes, but we import it to force webpack to run babel on it,
 // so we can test whether babel can handle newer syntax.
 import '../js/parser-playground';
-import LandingPageHeader from '../components/landingPageHeader';
 
 export default component Home() {
   const context = useDocusaurusContext();

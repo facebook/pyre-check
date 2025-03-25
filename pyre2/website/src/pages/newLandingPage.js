@@ -15,17 +15,17 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import * as stylex from '@stylexjs/stylex';
 import {landingPageStyles} from './index';
-import Firefly from '../components/firefly';
-import QuoteCard from '../components/quoteCard';
+import Firefly from '../components/landing-page/firefly';
+import QuoteCard from '../components/landing-page/quoteCard';
+import PerformanceComparisonChart from '../components/landing-page/PerformanceComparisonChart';
+import QuotesGrid from '../components/landing-page/quotesGrid';
+import WhyPyrefly from '../components/landing-page/whyPyrefly';
+import LandingPageSection from '../components/landing-page/landingPageSection';
+import LandingPageHeader from '../components/landing-page/landingPageHeader';
 
 // This import serves no runtime purposes, but we import it to force webpack to run babel on it,
 // so we can test whether babel can handle newer syntax.
 import '../js/parser-playground';
-import PerformanceComparisonChart from '../components/PerformanceComparisonChart';
-import QuotesGrid from '../components/quotesGrid';
-import WhyPyrefly from '../components/whyPyrefly';
-import LandingPageSection from '../components/landingPageSection';
-import LandingPageHeader from '../components/landingPageHeader';
 
 const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
 export default component NewLandingPage() {
