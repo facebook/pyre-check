@@ -1367,3 +1367,23 @@ c = C("test")
 reveal_type(c.field)  # E: revealed type: ?_TypeVar
 "#,
 );
+
+testcase!(
+    test_index_any,
+    r#"
+from typing import Any, assert_type
+
+def foo(x):
+    assert_type(x[0], Any)
+"#,
+);
+
+testcase_with_bug!(
+    "Should not be an error",
+    test_index_literal,
+    r#"
+def foo(x):
+    "Magic"[0]  # E: Can't apply arguments to non-class
+    "Magic"[3:4]  # E: Can't apply arguments to non-class
+"#,
+);
