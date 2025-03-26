@@ -1266,7 +1266,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Some(box expr) => {
                         let lower_type = self.expr_infer(expr, errors);
                         match &lower_type {
-                            Type::Literal(Lit::Int(idx)) => Some(*idx),
+                            Type::Literal(Lit::Int(idx)) => idx.as_i64(),
                             _ => None,
                         }
                     }
@@ -1276,7 +1276,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Some(box expr) => {
                         let upper_type = self.expr_infer(expr, errors);
                         match &upper_type {
-                            Type::Literal(Lit::Int(idx)) => Some(*idx),
+                            Type::Literal(Lit::Int(idx)) => idx.as_i64(),
                             _ => None,
                         }
                     }
@@ -1307,11 +1307,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             _ => {
                 let idx_type = self.expr_infer(&xs[0], errors);
                 match &idx_type {
-                    Type::Literal(Lit::Int(idx)) => {
-                        let elt_idx = if *idx >= 0 {
-                            *idx
+                    Type::Literal(Lit::Int(idx)) if let Some(idx) = idx.as_i64() => {
+                        let elt_idx = if idx >= 0 {
+                            idx
                         } else {
-                            elts.len() as i64 + *idx
+                            elts.len() as i64 + idx
                         } as usize;
                         if let Some(elt) = elts.get(elt_idx) {
                             elt.clone()

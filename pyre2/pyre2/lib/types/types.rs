@@ -964,7 +964,7 @@ impl Type {
     pub fn as_bool(&self) -> Option<bool> {
         match self {
             Type::Literal(Lit::Bool(x)) => Some(*x),
-            Type::Literal(Lit::Int(x)) => Some(*x != 0),
+            Type::Literal(Lit::Int(x)) => Some(x.as_bool()),
             Type::Literal(Lit::Bytes(x)) => Some(!x.is_empty()),
             Type::Literal(Lit::String(x)) => Some(!x.is_empty()),
             Type::None => Some(false),

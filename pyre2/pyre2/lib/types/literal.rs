@@ -33,6 +33,7 @@ use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::ruff::ast::Ast;
 use crate::types::class::ClassType;
+use crate::types::lit_int::LitInt;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::AnyStyle;
 use crate::types::types::Type;
@@ -45,7 +46,7 @@ assert_words!(Lit, 3);
 )]
 pub enum Lit {
     String(Box<str>),
-    Int(i64),
+    Int(LitInt),
     Bool(bool),
     Bytes(Box<[u8]>),
     /// (enum class, member name, raw type assigned to name in class def)
@@ -88,7 +89,7 @@ impl Lit {
         errors: &ErrorCollector,
     ) -> Type {
         let int = |i| match i {
-            Some(i) => Lit::Int(i).to_type(),
+            Some(i) => Lit::Int(LitInt::new(i)).to_type(),
             None => {
                 errors.add(
                     x.range(),
@@ -175,7 +176,7 @@ impl Lit {
     /// Returns the negated type, or None if literal can't be negated.
     pub fn negate(&self, stdlib: &Stdlib) -> Option<Type> {
         match self {
-            Lit::Int(x) => match x.checked_neg() {
+            Lit::Int(x) => match x.negate() {
                 Some(x) => Some(Lit::Int(x).to_type()),
                 None => Some(stdlib.int().to_type()), // Loss of precision
             },
@@ -187,8 +188,8 @@ impl Lit {
     pub fn positive(&self) -> Option<Type> {
         match self {
             Lit::Int(_) => Some(self.clone().to_type()),
-            Lit::Bool(true) => Some(Lit::Int(1).to_type()),
-            Lit::Bool(false) => Some(Lit::Int(0).to_type()),
+            Lit::Bool(true) => Some(Lit::Int(LitInt::new(1)).to_type()),
+            Lit::Bool(false) => Some(Lit::Int(LitInt::new(0)).to_type()),
             _ => None,
         }
     }
@@ -197,7 +198,7 @@ impl Lit {
     pub fn invert(&self) -> Option<Type> {
         match self {
             Lit::Int(x) => {
-                let x = !x;
+                let x = x.invert();
                 Some(Lit::Int(x).to_type())
             }
             _ => None,
@@ -231,7 +232,7 @@ impl Lit {
     }
 
     pub fn from_int(x: &Int) -> Option<Self> {
-        Some(Lit::Int(x.as_i64()?))
+        Some(Lit::Int(LitInt::new(x.as_i64()?)))
     }
 
     pub fn from_boolean_literal(x: &ExprBooleanLiteral) -> Self {
