@@ -151,7 +151,6 @@ monaco.languages.registerCompletionItemProvider('python', {
         autoCompleteFunctionsForMonaco.get(model) ??
         defaultAutoCompleteFunctionForMonaco;
       const result = f(position.lineNumber, position.column);
-      console.log('completion', position, result);
       return {suggestions: result.map(r => ({...r, insertText: r.label}))};
     } catch (e) {
       console.error(e);
