@@ -45,7 +45,6 @@ use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
-use crate::error::collector::ErrorCollector;
 use crate::error::error::Error;
 use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
@@ -604,15 +603,6 @@ impl State {
                     .map_or(0, |x| x.errors.count_suppressed())
             })
             .sum()
-    }
-
-    pub fn print_error_summary(&self, path_index: usize) {
-        let loads = self
-            .modules
-            .values()
-            .filter_map(|x| x.state.read().steps.load.dupe())
-            .collect::<Vec<_>>();
-        ErrorCollector::print_error_summary(loads.iter().map(|x| &x.errors), path_index);
     }
 
     fn get_cached_find_dependency(

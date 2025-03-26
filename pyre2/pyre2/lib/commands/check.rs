@@ -32,6 +32,7 @@ use crate::error::error::print_error_counts;
 use crate::error::error::print_errors;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
+use crate::error::summarise::print_error_summary;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
@@ -418,7 +419,7 @@ impl Args {
             print_error_counts(&errors, limit);
         }
         if let Some(path_index) = self.summarize_errors {
-            state.print_error_summary(path_index);
+            print_error_summary(&errors, path_index);
         }
         let error_count = state.count_errors();
         let suppressed_count = state.count_suppressed_errors();

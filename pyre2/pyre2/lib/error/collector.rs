@@ -12,7 +12,6 @@ use std::fmt::Display;
 use dupe::Dupe;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use starlark_map::small_map::SmallMap;
 use vec1::vec1;
 
 use crate::error::context::ErrorContext;
@@ -20,7 +19,6 @@ use crate::error::error::Error;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::module::module_info::ModuleInfo;
-use crate::module::module_path::ModulePath;
 use crate::util::lock::Mutex;
 
 #[derive(Debug, Default, Clone)]
@@ -156,21 +154,6 @@ impl ErrorCollector {
 
     pub fn collect(&self) -> Vec<Error> {
         self.errors.lock().iter().cloned().collect()
-    }
-
-    pub fn get_errors_per_file<'a>(
-        xs: impl Iterator<Item = &'a ErrorCollector>,
-    ) -> SmallMap<ModulePath, SmallMap<ErrorKind, usize>> {
-        let mut map: SmallMap<ModulePath, SmallMap<ErrorKind, usize>> = SmallMap::new();
-        for x in xs {
-            for err in x.errors.lock().iter() {
-                *map.entry(err.path().dupe())
-                    .or_default()
-                    .entry(err.error_kind())
-                    .or_default() += 1;
-            }
-        }
-        map
     }
 
     pub fn todo(&self, msg: &str, v: impl Ranged + Debug) {

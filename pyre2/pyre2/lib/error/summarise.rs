@@ -7,9 +7,10 @@
 
 use std::path::PathBuf;
 
+use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 
-use crate::error::collector::ErrorCollector;
+use crate::error::error::Error;
 use crate::error::kind::ErrorKind;
 use crate::module::module_path::ModulePath;
 use crate::util::display;
@@ -55,68 +56,74 @@ fn get_top_error_dirs(
     collect_and_sort(dirs)
 }
 
-impl ErrorCollector {
-    /// Prints a summary of errors found in the input.
-    /// The summary shows the top directories by error count, top files by error count,
-    /// and the top errors by count.
-    /// path_index controls how directories are grouped. For example, for the directory /alpha/beta/gamma/...,
-    /// path_index = 0 groups by /alpha, path_index = 1 groups by /alpha/beta,
-    /// and path_index = 2 groups by alpha/beta/gamma.
-    /// If the path_index is larger than the number of components in the path, then the entire path is used.
-    pub fn print_error_summary<'a>(
-        collectors: impl Iterator<Item = &'a ErrorCollector>,
-        path_index: usize,
-    ) {
-        // TODO: Sort errors by count and then name. More consistent and human-readable.
-        // TODO: Consider output formatting.
-        let path_errors = ErrorCollector::get_errors_per_file(collectors);
-        eprintln!("=== Error Summary ===");
-        if path_errors.is_empty() {
-            eprintln!("No errors found!");
-            return;
-        }
-        eprintln!("Top 30 Directories by Error Count:");
-        let top_dirs = get_top_error_dirs(&path_errors, path_index);
-        for (dir, error_kind_counts) in top_dirs.into_iter().take(30) {
-            let total_error_count = error_kind_counts.iter().fold(0, |count, (_, c)| count + *c);
-            eprintln!(
-                "{}: {}",
-                dir.display(),
-                display::count(total_error_count, "error")
-            );
-            for (kind, count) in error_kind_counts {
-                eprintln!("  {}: {}", kind.to_name(), display::number_thousands(count));
-            }
-        }
+fn get_errors_per_file(errors: &[Error]) -> SmallMap<ModulePath, SmallMap<ErrorKind, usize>> {
+    let mut map: SmallMap<ModulePath, SmallMap<ErrorKind, usize>> = SmallMap::new();
+    for err in errors {
+        *map.entry(err.path().dupe())
+            .or_default()
+            .entry(err.error_kind())
+            .or_default() += 1;
+    }
+    map
+}
 
-        eprintln!("\nTop 30 Files by Error Count:");
-        let top_files = collect_and_sort(path_errors.clone());
-        for (path, error_kind_counts) in top_files.into_iter().take(30) {
-            let total_error_count = error_kind_counts.iter().fold(0, |count, (_, c)| count + *c);
-            eprintln!("{path}: {}", display::count(total_error_count, "error"));
-            for (kind, count) in error_kind_counts {
-                eprintln!("  {}: {}", kind.to_name(), display::number_thousands(count));
-            }
+/// Prints a summary of errors found in the input.
+/// The summary shows the top directories by error count, top files by error count,
+/// and the top errors by count.
+/// path_index controls how directories are grouped. For example, for the directory /alpha/beta/gamma/...,
+/// path_index = 0 groups by /alpha, path_index = 1 groups by /alpha/beta,
+/// and path_index = 2 groups by alpha/beta/gamma.
+/// If the path_index is larger than the number of components in the path, then the entire path is used.
+pub fn print_error_summary(errors: &[Error], path_index: usize) {
+    // TODO: Sort errors by count and then name. More consistent and human-readable.
+    // TODO: Consider output formatting.
+    let path_errors = get_errors_per_file(errors);
+    eprintln!("=== Error Summary ===");
+    if path_errors.is_empty() {
+        eprintln!("No errors found!");
+        return;
+    }
+    eprintln!("Top 30 Directories by Error Count:");
+    let top_dirs = get_top_error_dirs(&path_errors, path_index);
+    for (dir, error_kind_counts) in top_dirs.into_iter().take(30) {
+        let total_error_count = error_kind_counts.iter().fold(0, |count, (_, c)| count + *c);
+        eprintln!(
+            "{}: {}",
+            dir.display(),
+            display::count(total_error_count, "error")
+        );
+        for (kind, count) in error_kind_counts {
+            eprintln!("  {}: {}", kind.to_name(), display::number_thousands(count));
         }
+    }
 
-        eprintln!("\nTop Errors by Count:");
-        let error_counts = {
-            let mut ec = path_errors
-                .values()
-                .fold(SmallMap::<ErrorKind, usize>::new(), |mut acc, m| {
-                    for (kind, count) in m {
-                        *acc.entry(*kind).or_default() += count;
-                    }
-                    acc
-                })
-                .into_iter()
-                .collect::<Vec<_>>();
-            ec.sort_by_key(|(_, c)| -(*c as isize));
-            ec
-        };
-        for (kind, count) in error_counts {
-            eprintln!("{}: {}", kind.to_name(), display::count(count, "instance"));
+    eprintln!("\nTop 30 Files by Error Count:");
+    let top_files = collect_and_sort(path_errors.clone());
+    for (path, error_kind_counts) in top_files.into_iter().take(30) {
+        let total_error_count = error_kind_counts.iter().fold(0, |count, (_, c)| count + *c);
+        eprintln!("{path}: {}", display::count(total_error_count, "error"));
+        for (kind, count) in error_kind_counts {
+            eprintln!("  {}: {}", kind.to_name(), display::number_thousands(count));
         }
+    }
+
+    eprintln!("\nTop Errors by Count:");
+    let error_counts = {
+        let mut ec = path_errors
+            .values()
+            .fold(SmallMap::<ErrorKind, usize>::new(), |mut acc, m| {
+                for (kind, count) in m {
+                    *acc.entry(*kind).or_default() += count;
+                }
+                acc
+            })
+            .into_iter()
+            .collect::<Vec<_>>();
+        ec.sort_by_key(|(_, c)| -(*c as isize));
+        ec
+    };
+    for (kind, count) in error_counts {
+        eprintln!("{}: {}", kind.to_name(), display::count(count, "instance"));
     }
 }
 
