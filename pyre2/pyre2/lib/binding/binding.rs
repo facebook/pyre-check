@@ -587,7 +587,7 @@ pub struct BindingFunction {
     /// A function definition, but with the return/body stripped out.
     pub def: StmtFunctionDef,
     pub source: FunctionSource,
-    pub self_type: Option<Idx<KeyClass>>,
+    pub class_key: Option<Idx<KeyClass>>,
     pub decorators: Box<[Idx<Key>]>,
     pub legacy_tparams: Box<[Idx<KeyLegacyTypeParam>]>,
     pub successor: Option<Idx<KeyFunction>>,
@@ -1028,11 +1028,11 @@ pub enum BindingAnnotation {
 impl DisplayWith<Bindings> for BindingAnnotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         match self {
-            Self::AnnotateExpr(_, x, self_type) => write!(
+            Self::AnnotateExpr(_, x, class_key) => write!(
                 f,
                 "_: {}{}",
                 ctx.module_info().display(x),
-                match self_type {
+                match class_key {
                     None => String::new(),
                     Some(t) => format!(" (self {})", ctx.display(*t)),
                 }

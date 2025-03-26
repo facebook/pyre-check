@@ -200,14 +200,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Arc<AnnotationWithTarget> {
         match binding {
-            BindingAnnotation::AnnotateExpr(target, x, self_type) => {
+            BindingAnnotation::AnnotateExpr(target, x, class_key) => {
                 let type_form_context = target.type_form_context();
                 let mut ann = self.expr_annotation(x, type_form_context, errors);
-                if let Some(self_type) = self_type
+                if let Some(class_key) = class_key
                     && let Some(ty) = &mut ann.ty
                 {
-                    let self_type = &*self.get_idx(*self_type);
-                    if let Some(cls) = &self_type.0 {
+                    let class = &*self.get_idx(*class_key);
+                    if let Some(cls) = &class.0 {
                         let cls_type =
                             ClassType::new(cls.dupe(), self.create_default_targs(cls, None));
                         ty.subst_self_special_form_mut(&Type::SelfType(cls_type));
@@ -2108,7 +2108,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.function_definition(
             &x.def,
             x.source,
-            x.self_type.as_ref(),
+            x.class_key.as_ref(),
             &x.decorators,
             &x.legacy_tparams,
             errors,

@@ -52,18 +52,18 @@ impl<'a> BindingsBuilder<'a> {
         &mut self,
         x: &mut Parameters,
         function_idx: Idx<KeyFunction>,
-        self_type: Option<Idx<KeyClass>>,
+        class_key: Option<Idx<KeyClass>>,
     ) {
         let mut self_name = None;
         for x in x.iter_non_variadic_params() {
-            if self_type.is_some() && self_name.is_none() {
+            if class_key.is_some() && self_name.is_none() {
                 self_name = Some(x.parameter.name.clone());
             }
             self.bind_function_param(
                 AnnotationTarget::Param(x.parameter.name.id.clone()),
                 AnyParameterRef::NonVariadic(x),
                 function_idx,
-                self_type,
+                class_key,
             );
         }
         if let Some(box args) = &x.vararg {
@@ -71,7 +71,7 @@ impl<'a> BindingsBuilder<'a> {
                 AnnotationTarget::ArgsParam(args.name.id.clone()),
                 AnyParameterRef::Variadic(args),
                 function_idx,
-                self_type,
+                class_key,
             );
         }
         if let Some(box kwargs) = &x.kwarg {
@@ -79,7 +79,7 @@ impl<'a> BindingsBuilder<'a> {
                 AnnotationTarget::KwargsParam(kwargs.name.id.clone()),
                 AnyParameterRef::Variadic(kwargs),
                 function_idx,
-                self_type,
+                class_key,
             );
         }
         if let Scope {
@@ -113,9 +113,9 @@ impl<'a> BindingsBuilder<'a> {
         self.functions.push(FuncInfo::default());
 
         let func_name = x.name.clone();
-        let (self_type, class_meta) = match &self.scopes.current().kind {
+        let (class_key, class_meta) = match &self.scopes.current().kind {
             ScopeKind::ClassBody(body) => (
-                Some(self.table.classes.0.insert(body.as_self_type_key())),
+                Some(self.table.classes.0.insert(body.as_class_key())),
                 Some(
                     self.table
                         .class_metadata
@@ -153,7 +153,7 @@ impl<'a> BindingsBuilder<'a> {
                     BindingAnnotation::AnnotateExpr(
                         AnnotationTarget::Return(func_name.id.clone()),
                         *x,
-                        self_type,
+                        class_key,
                     ),
                 ),
             )
@@ -178,7 +178,7 @@ impl<'a> BindingsBuilder<'a> {
         let legacy_tparam_builder = legacy.unwrap();
         legacy_tparam_builder.add_name_definitions(self);
 
-        if self_type.is_none() {
+        if class_key.is_none() {
             self.scopes.push(Scope::function(x.range));
         } else {
             self.scopes.push(Scope::method(x.range, func_name.clone()));
@@ -191,7 +191,7 @@ impl<'a> BindingsBuilder<'a> {
             .functions
             .0
             .insert(KeyFunction(ShortIdentifier::new(&func_name)));
-        self.parameters(&mut x.parameters, function_idx, self_type);
+        self.parameters(&mut x.parameters, function_idx, class_key);
 
         self.init_static_scope(&body, false);
         self.stmts(body);
@@ -271,7 +271,7 @@ impl<'a> BindingsBuilder<'a> {
             BindingFunction {
                 def: x,
                 source,
-                self_type,
+                class_key,
                 decorators: decorators.into_boxed_slice(),
                 legacy_tparams: legacy_tparams.into_boxed_slice(),
                 successor: None,

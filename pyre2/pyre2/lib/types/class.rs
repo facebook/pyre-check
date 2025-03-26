@@ -220,14 +220,14 @@ impl Class {
         &self.0.tparams
     }
 
-    pub fn self_type(&self) -> Type {
+    pub fn instance_type(&self) -> Type {
         let tparams_as_targs =
             TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect());
         ClassType::new(self.clone(), tparams_as_targs).to_type()
     }
 
     pub fn self_param(&self) -> Param {
-        Param::Pos(Name::new("self"), self.self_type(), Required::Required)
+        Param::Pos(Name::new("self"), self.instance_type(), Required::Required)
     }
 
     pub fn index(&self) -> ClassIndex {
@@ -408,7 +408,7 @@ impl ClassType {
         Type::ClassType(self)
     }
 
-    pub fn self_type(&self) -> Type {
-        self.instantiate_member(self.class_object().self_type())
+    pub fn instance_type(&self) -> Type {
+        self.instantiate_member(self.class_object().instance_type())
     }
 }

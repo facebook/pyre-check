@@ -404,7 +404,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 errors.extend(dunder_init_errors);
             }
         }
-        cls.self_type()
+        cls.instance_type()
     }
 
     fn construct_typed_dict(

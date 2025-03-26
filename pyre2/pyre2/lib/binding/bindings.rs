@@ -839,13 +839,13 @@ impl<'a> BindingsBuilder<'a> {
         target: AnnotationTarget,
         x: AnyParameterRef,
         function_idx: Idx<KeyFunction>,
-        self_type: Option<Idx<KeyClass>>,
+        class_key: Option<Idx<KeyClass>>,
     ) {
         let name = x.name();
         let annot = x.annotation().map(|x| {
             self.table.insert(
                 KeyAnnotation::Annotation(ShortIdentifier::new(name)),
-                BindingAnnotation::AnnotateExpr(target.clone(), x.clone(), self_type),
+                BindingAnnotation::AnnotateExpr(target.clone(), x.clone(), class_key),
             )
         });
         let (annot, def) = match annot {

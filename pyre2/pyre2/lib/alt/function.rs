@@ -147,7 +147,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         def: &StmtFunctionDef,
         source: FunctionSource,
-        self_type: Option<&Idx<KeyClass>>,
+        class_key: Option<&Idx<KeyClass>>,
         decorators: &[Idx<Key>],
         legacy_tparams: &[Idx<KeyLegacyTypeParam>],
         errors: &ErrorCollector,
@@ -173,7 +173,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             required
         };
 
-        let defining_cls = self_type.and_then(|k| self.get_idx(*k).0.dupe());
+        let defining_cls = class_key.and_then(|k| self.get_idx(*k).0.dupe());
         let mut self_type = if def.name.id == dunder::NEW {
             // __new__ is a staticmethod, and does not take a self parameter.
             None

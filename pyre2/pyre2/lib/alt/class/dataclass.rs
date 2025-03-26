@@ -178,7 +178,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         cls: &Class,
     ) -> SmallMap<Name, ClassSynthesizedField> {
         let self_ = cls.self_param();
-        let other = Param::Pos(Name::new("other"), cls.self_type(), Required::Required);
+        let other = Param::Pos(Name::new("other"), cls.instance_type(), Required::Required);
         let ret = Type::ClassType(self.stdlib.bool());
         let callable = Callable::list(ParamList::new(vec![self_, other]), ret);
         dunder::RICH_CMPS

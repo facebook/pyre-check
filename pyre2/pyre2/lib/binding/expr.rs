@@ -237,20 +237,20 @@ impl<'a> BindingsBuilder<'a> {
                 let nargs = posargs.len();
                 let style = if nargs == 0 {
                     let mut method_name = None;
-                    let mut self_type = None;
+                    let mut class_key = None;
                     for scope in self.scopes.iter_rev() {
                         match &scope.kind {
                             ScopeKind::Method(method) => {
                                 method_name = Some(method.name.clone());
                             }
                             ScopeKind::ClassBody(class_body) if method_name.is_some() => {
-                                self_type = Some(class_body.as_self_type_key());
+                                class_key = Some(class_body.as_class_key());
                                 break;
                             }
                             _ => {}
                         }
                     }
-                    match (self_type, method_name) {
+                    match (class_key, method_name) {
                         (Some(key), Some(method)) => {
                             SuperStyle::ImplicitArgs(self.table.classes.0.insert(key), method)
                         }

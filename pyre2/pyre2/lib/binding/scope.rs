@@ -230,7 +230,7 @@ pub struct ClassBodyInner {
 }
 
 impl ClassBodyInner {
-    pub fn as_self_type_key(&self) -> KeyClass {
+    pub fn as_class_key(&self) -> KeyClass {
         KeyClass(ShortIdentifier::new(&self.name))
     }
 

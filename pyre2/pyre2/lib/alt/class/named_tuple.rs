@@ -67,12 +67,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_named_tuple_new(&self, cls: &Class, elements: &[Name]) -> ClassSynthesizedField {
         let mut params = vec![Param::Pos(
             Name::new("cls"),
-            Type::type_form(cls.self_type()),
+            Type::type_form(cls.instance_type()),
             Required::Required,
         )];
         params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Function(Box::new(Function {
-            signature: Callable::list(ParamList::new(params), cls.self_type()),
+            signature: Callable::list(ParamList::new(params), cls.instance_type()),
             metadata: FuncMetadata::def(self.module_info().name(), cls.name().clone(), dunder::NEW),
         }));
         ClassSynthesizedField::new(ty)
@@ -82,7 +82,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut params = vec![cls.self_param()];
         params.extend(self.get_named_tuple_field_params(cls, elements));
         let ty = Type::Function(Box::new(Function {
-            signature: Callable::list(ParamList::new(params), cls.self_type()),
+            signature: Callable::list(ParamList::new(params), cls.instance_type()),
             metadata: FuncMetadata::def(
                 self.module_info().name(),
                 cls.name().clone(),

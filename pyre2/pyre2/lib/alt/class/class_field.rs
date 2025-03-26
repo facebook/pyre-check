@@ -370,7 +370,7 @@ fn make_bound_classmethod(cls: &Class, attr: &Type) -> Option<Type> {
     make_bound_method_helper(
         Type::ClassDef(cls.dupe()),
         attr,
-        Some(&cls.self_type()),
+        Some(&cls.instance_type()),
         &should_bind,
     )
 }
@@ -378,7 +378,7 @@ fn make_bound_classmethod(cls: &Class, attr: &Type) -> Option<Type> {
 fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
     let should_bind =
         |meta: &FuncMetadata| !meta.flags.is_staticmethod && !meta.flags.is_classmethod;
-    make_bound_method_helper(cls.self_type(), attr, None, &should_bind)
+    make_bound_method_helper(cls.instance_type(), attr, None, &should_bind)
 }
 
 fn bind_instance_attribute(
@@ -726,7 +726,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) {
-        let Type::ClassType(class_type) = class.self_type() else {
+        let Type::ClassType(class_type) = class.instance_type() else {
             return;
         };
         let got_attr = self.as_instance_attribute(class_field.clone(), &class_type);
