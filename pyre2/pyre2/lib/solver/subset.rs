@@ -27,6 +27,8 @@ use crate::types::quantified::QuantifiedKind;
 use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Variance;
+use crate::types::types::Forall;
+use crate::types::types::Forallable;
 use crate::types::types::TParams;
 use crate::types::types::Type;
 
@@ -573,6 +575,25 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 .all(|u| self.is_subset_eq(l, &u.as_type())),
             (l, Type::Union(us)) => us.iter().any(|u| self.is_subset_eq(l, u)),
             (Type::Intersect(ls), u) => ls.iter().any(|l| self.is_subset_eq(l, u)),
+            (Type::Module(_), Type::ClassType(cls))
+                if cls.class_object().has_qname("types", "ModuleType") =>
+            {
+                true
+            }
+            (
+                Type::Function(_)
+                | Type::Overload(_)
+                | Type::Forall(box Forall {
+                    body: Forallable::Function(_),
+                    ..
+                }),
+                Type::ClassType(cls),
+            ) if cls.class_object().has_qname("types", "FunctionType") => true,
+            (Type::BoundMethod(_), Type::ClassType(cls))
+                if cls.class_object().has_qname("types", "MethodType") =>
+            {
+                true
+            }
             (Type::Overload(overload), u) => overload
                 .signatures
                 .iter()

@@ -1405,3 +1405,31 @@ assert_type(B().f(), B)
 assert_type(B().g(), type[B])
     "#,
 );
+
+testcase!(
+    test_module_type,
+    r#"
+import types
+def f(x: types.ModuleType):
+    pass
+f(types)
+    "#,
+);
+
+testcase!(
+    test_function_and_method_types,
+    r#"
+import types
+def is_func(x: types.FunctionType):
+    pass
+def is_method(x: types.MethodType):
+    pass
+class A:
+    def f(self):
+        pass
+is_func(A.f)  # OK
+is_method(A.f)  # E:
+is_func(A().f)  # E:
+is_method(A().f)  # OK
+    "#,
+);
