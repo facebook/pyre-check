@@ -36,6 +36,8 @@ lsp-server = "0.7.2"
 lsp-types = "0.94.1"
 memory-stats = "1.2.0"
 notify = "5"
+num-bigint = { version = "0.4.4", features = ["rand"] }
+num-traits = { version = "0.2.18", default-features = false }
 parse-display = "0.8.2"
 paste = "1.0.14"
 path-absolutize = { version = "3.0", features = ["use_unix_paths_on_wasm"] }

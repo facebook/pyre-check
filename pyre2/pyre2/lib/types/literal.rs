@@ -174,12 +174,9 @@ impl Lit {
     }
 
     /// Returns the negated type, or None if literal can't be negated.
-    pub fn negate(&self, stdlib: &Stdlib) -> Option<Type> {
+    pub fn negate(&self) -> Option<Type> {
         match self {
-            Lit::Int(x) => match x.negate() {
-                Some(x) => Some(Lit::Int(x).to_type()),
-                None => Some(stdlib.int().to_type()), // Loss of precision
-            },
+            Lit::Int(x) => Some(Lit::Int(x.negate()).to_type()),
             _ => None,
         }
     }

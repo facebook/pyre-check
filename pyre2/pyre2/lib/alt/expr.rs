@@ -612,7 +612,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
                 self.distribute_over_union(&t, |t| match x.op {
                     UnaryOp::USub => {
-                        let f = |lit: &Lit| lit.negate(self.stdlib);
+                        let f = |lit: &Lit| lit.negate();
                         unop(t, &f, &dunder::NEG)
                     }
                     UnaryOp::UAdd => {
