@@ -601,6 +601,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn map_over_union(&self, ty: &Type, mut f: impl FnMut(&Type)) {
+        match ty {
+            Type::Union(tys) => tys.iter().for_each(f),
+            Type::Type(box Type::Union(tys)) => {
+                tys.iter().for_each(|ty| f(&Type::type_form(ty.clone())))
+            }
+            _ => f(ty),
+        }
+    }
+
     pub fn unions(&self, xs: Vec<Type>) -> Type {
         self.solver().unions(xs, self.type_order())
     }
