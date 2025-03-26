@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
@@ -13,7 +14,6 @@ use std::path::PathBuf;
 use anyhow::bail;
 use itertools::Itertools;
 use serde::Deserialize;
-use starlark_map::small_map::SmallMap;
 use toml::Table;
 
 use crate::error::kind::ErrorKind;
@@ -21,12 +21,66 @@ use crate::globs::Globs;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
 use crate::metadata::DEFAULT_PYTHON_PLATFORM;
+use crate::module::module_path::ModulePath;
 
 static PYPROJECT_FILE_NAME: &str = "pyproject.toml";
 
 pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
     if let Some(value) = value {
         *config_field = value.clone();
+    }
+}
+
+/// Represents overrides for errors to emit when collecting/printing errors.
+/// The boolean in the map represents whether the error is enabled or disabled
+/// (true = show error, false = don't show error).
+/// Not all error kinds are required to be defined in this map. Any that are missing
+/// will be treated as `<error-kind> = true`.
+#[derive(Debug, PartialEq, Eq, Deserialize, Clone, Default)]
+#[serde(transparent)]
+pub struct ErrorConfig(HashMap<ErrorKind, bool>);
+
+impl ErrorConfig {
+    pub fn new(config: HashMap<ErrorKind, bool>) -> Self {
+        Self(config)
+    }
+
+    /// Gets whether the given `ErrorKind` is enabled. If the value isn't
+    /// found, then assume it should be enabled.
+    pub fn is_enabled(&self, kind: ErrorKind) -> bool {
+        self.0.get(&kind) != Some(&false)
+    }
+}
+
+/// Represents a collection of `ErrorConfig`s keyed on the `ModulePath` of the file.
+/// INternal detail: the `ErrorConfig` in `self.1` is an `ErrorConfig::default()`, which
+/// is used in the `ErrorConfigs::get()` function when no config is found, so that we can
+/// return a reference without dropping the original immediately after.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct ErrorConfigs {
+    overrides: HashMap<ModulePath, ErrorConfig>,
+    default_config: ErrorConfig,
+}
+
+impl Default for ErrorConfigs {
+    fn default() -> Self {
+        Self::new(HashMap::new())
+    }
+}
+
+impl ErrorConfigs {
+    pub fn new(overrides: HashMap<ModulePath, ErrorConfig>) -> Self {
+        Self {
+            overrides,
+            default_config: ErrorConfig::default(),
+        }
+    }
+
+    /// Gets a reference to the `ErrorConfig` for the given path, or returns a reference to
+    /// the 'default' error config if none could be found.
+    #[allow(unused)]
+    pub fn get(&self, path: &ModulePath) -> &ErrorConfig {
+        self.overrides.get(path).unwrap_or(&self.default_config)
     }
 }
 
@@ -77,7 +131,7 @@ pub struct ConfigFile {
     pub site_package_path: Vec<PathBuf>,
 
     #[serde(default)]
-    pub errors: SmallMap<ErrorKind, bool>,
+    pub errors: ErrorConfig,
 
     /// Any unknown config items
     #[serde(default, flatten)]
@@ -93,7 +147,7 @@ impl Default for ConfigFile {
             site_package_path: Vec::new(),
             project_includes: Self::default_project_includes(),
             project_excludes: Self::default_project_excludes(),
-            errors: SmallMap::default(),
+            errors: ErrorConfig::default(),
             extras: Self::default_extras(),
         }
     }
@@ -122,6 +176,10 @@ impl ConfigFile {
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
         RuntimeMetadata::new(self.python_version, self.python_platform.clone())
+    }
+
+    pub fn default_error_config() -> ErrorConfig {
+        ErrorConfig::default()
     }
 
     fn rewrite_with_path_to_config(&mut self, config_root: &Path) {
@@ -194,11 +252,13 @@ impl ConfigFile {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path;
 
     use toml::Value;
 
     use super::*;
+    use crate::error::kind::ErrorKind;
 
     #[test]
     fn deserialize_pyrefly_config() {
@@ -227,9 +287,9 @@ mod tests {
                 python_version: PythonVersion::new(1, 2, 3),
                 site_package_path: vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
                 extras: ConfigFile::default_extras(),
-                errors: SmallMap::from_iter(
+                errors: ErrorConfig::new(HashMap::from_iter(
                     [(ErrorKind::AssertType, true), (ErrorKind::BadReturn, false)].into_iter()
-                ),
+                )),
             },
         );
     }
@@ -349,7 +409,7 @@ mod tests {
             site_package_path: vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
             python_platform: ConfigFile::default_python_platform(),
             python_version: PythonVersion::default(),
-            errors: SmallMap::default(),
+            errors: ErrorConfig::default(),
             extras: ConfigFile::default_extras(),
         };
 
