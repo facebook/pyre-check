@@ -831,15 +831,12 @@ impl State {
             .map(|x| x.1.dupe())
     }
 
+    pub fn get_load(&self, handle: &Handle) -> Option<Arc<Load>> {
+        self.modules.get(handle)?.state.read().steps.load.dupe()
+    }
+
     pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {
-        self.modules
-            .get(handle)?
-            .state
-            .read()
-            .steps
-            .load
-            .as_ref()
-            .map(|x| x.module_info.dupe())
+        self.get_load(handle).map(|x| x.module_info.dupe())
     }
 
     pub fn get_ast(&self, handle: &Handle) -> Option<Arc<ruff_python_ast::ModModule>> {
