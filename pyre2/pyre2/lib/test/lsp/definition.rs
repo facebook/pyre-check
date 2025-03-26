@@ -150,6 +150,65 @@ Definition Result:
         ^
 
 
+# import_provider.py    
+"#
+        .trim(),
+        report.trim()
+    );
+}
+
+#[test]
+fn aliased_import_tests() {
+    let code_import_provider: &str = r#"
+# top of module
+class Foo: pass
+    "#;
+    let code_test: &str = r#"
+from import_provider import Foo as F
+#                                  ^
+import import_provider as ip
+#                         ^
+
+def f(x: ip.Foo, y: F):
+#        ^          ^
+    return x
+"#;
+
+    let report = get_batched_lsp_operations_report(
+        &[
+            ("main", code_test),
+            ("import_provider", code_import_provider),
+        ],
+        get_test_report,
+    );
+    assert_eq!(
+        r#"
+# main.py
+2 | from import_provider import Foo as F
+                                       ^
+Definition Result:
+3 | class Foo: pass
+          ^^^
+
+4 | import import_provider as ip
+                              ^
+Definition Result:
+1 | 
+    ^
+
+7 | def f(x: ip.Foo, y: F):
+             ^
+Definition Result:
+1 | 
+    ^
+
+7 | def f(x: ip.Foo, y: F):
+                        ^
+Definition Result:
+3 | class Foo: pass
+          ^^^
+
+
 # import_provider.py
 "#
         .trim(),
