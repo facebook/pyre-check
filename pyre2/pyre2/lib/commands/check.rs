@@ -260,7 +260,6 @@ impl Handles {
         self.loader_factory.values().duped().collect()
     }
 
-    #[allow(unused)]
     pub fn error_configs(&self) -> ErrorConfigs {
         ErrorConfigs::new(self.module_to_error_config.clone())
     }
@@ -325,6 +324,7 @@ impl Args {
             holder.as_mut(),
             &handles.all(require_levels.specified),
             require_levels.default,
+            &handles.error_configs(),
         )
     }
 
@@ -346,6 +346,7 @@ impl Args {
                 &mut state,
                 &handles.all(require_levels.specified),
                 require_levels.default,
+                &handles.error_configs(),
             );
             if let Err(e) = res {
                 eprintln!("{e:#}");
@@ -414,17 +415,15 @@ impl Args {
         state: &mut State,
         handles: &[(Handle, Require)],
         default_require: Require,
+        error_configs: &ErrorConfigs,
     ) -> anyhow::Result<CommandExitStatus> {
         let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
 
-        // TODO(connernilsen): pass in real error config
-        let error_configs = ErrorConfigs::default();
-
         state.run(handles, default_require, Some(progress));
         let computing = start.elapsed();
-        let errors = state.collect_errors(&error_configs);
+        let errors = state.collect_errors(error_configs);
         if let Some(path) = &self.output {
             self.output_format.write_errors_to_file(path, &errors)?;
         } else {
@@ -454,7 +453,7 @@ impl Args {
         }
         if let Some(debug_info) = &self.debug_info {
             let mut output = serde_json::to_string_pretty(
-                &state.debug_info(&handles.map(|x| x.0.dupe()), &error_configs),
+                &state.debug_info(&handles.map(|x| x.0.dupe()), error_configs),
             )?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
@@ -482,7 +481,7 @@ impl Args {
             suppress::suppress_errors(&errors);
         }
         if self.expectations {
-            state.check_against_expectations(&error_configs)?;
+            state.check_against_expectations(error_configs)?;
             Ok(CommandExitStatus::Success)
         } else if error_count > suppressed_count {
             Ok(CommandExitStatus::UserError)
