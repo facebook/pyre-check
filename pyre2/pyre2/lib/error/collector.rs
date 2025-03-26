@@ -13,7 +13,6 @@ use dupe::Dupe;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
-use tracing::error;
 use vec1::vec1;
 
 use crate::error::context::ErrorContext;
@@ -207,12 +206,6 @@ impl ErrorCollector {
                 ErrorKind::Unsupported,
                 None,
             );
-        }
-    }
-
-    pub fn print(&self) {
-        for err in self.errors.lock().iter() {
-            error!("{err}");
         }
     }
 }

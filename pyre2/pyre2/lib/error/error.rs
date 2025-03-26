@@ -37,6 +37,12 @@ impl Display for Error {
     }
 }
 
+pub fn print_errors(errors: &[Error]) {
+    for err in errors {
+        tracing::error!("{err}");
+    }
+}
+
 impl Error {
     pub fn new(
         path: ModulePath,

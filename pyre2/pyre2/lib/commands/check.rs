@@ -28,6 +28,7 @@ use crate::commands::suppress;
 use crate::commands::util::module_from_path;
 use crate::config::set_if_some;
 use crate::config::ConfigFile;
+use crate::error::error::print_errors;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::metadata::PythonVersion;
@@ -404,11 +405,11 @@ impl Args {
 
         state.run(handles, default_require, Some(progress));
         let computing = start.elapsed();
+        let errors = state.collect_errors();
         if let Some(path) = &self.output {
-            let errors = state.collect_errors();
             self.output_format.write_errors_to_file(path, &errors)?;
         } else {
-            state.print_errors();
+            print_errors(&errors);
         }
         let printing = start.elapsed();
         memory_trace.stop();

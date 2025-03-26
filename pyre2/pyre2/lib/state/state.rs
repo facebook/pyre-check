@@ -607,15 +607,6 @@ impl State {
             .sum()
     }
 
-    pub fn print_errors(&self) {
-        for module in self.modules.values() {
-            let steps = module.state.read();
-            if let Some(load) = &steps.steps.load {
-                load.errors.print();
-            }
-        }
-    }
-
     pub fn print_error_counts(&self, limit: usize) {
         let loads = self
             .modules
