@@ -10,42 +10,44 @@
 import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 import {useState} from 'react';
+import PerformanceComparisonButton from './PerformanceComparisonButton';
+
+// TODO: convert this to enum when we migrate to typescript
+export type ProjectValue = 'Instagram' | 'PyTorch' | 'Example';
+const Project = Object.freeze({
+  INSTAGRAM: 'Instagram',
+  PYTORCH: 'PyTorch',
+  EXAMPLE: 'Example',
+});
 
 export default component PerformanceComparisonChart() {
-  const [selectedSource, setSelectedSource] = useState('instagram');
+  const [selectedProject, setSelectedProject] = useState<ProjectValue>(
+    Project.INSTAGRAM,
+  );
 
   return (
     <div>
       <div {...stylex.props(styles.buttonRow)}>
-        <button
-          {...stylex.props(
-            styles.button,
-            selectedSource === 'instagram' && styles.buttonActive,
-          )}
-          onClick={() => setSelectedSource('instagram')}>
-          Instagram
-        </button>
-        <button
-          {...stylex.props(
-            styles.button,
-            selectedSource === 'pytorch' && styles.buttonActive,
-          )}
-          onClick={() => setSelectedSource('pytorch')}>
-          PyTorch
-        </button>
-        <button
-          {...stylex.props(
-            styles.button,
-            selectedSource === 'example' && styles.buttonActive,
-          )}
-          onClick={() => setSelectedSource('example')}>
-          Example
-        </button>
+        <PerformanceComparisonButton
+          project={Project.INSTAGRAM}
+          selectedProject={selectedProject}
+          setSelectedProject={setSelectedProject}
+        />
+        <PerformanceComparisonButton
+          project={Project.PYTORCH}
+          selectedProject={selectedProject}
+          setSelectedProject={setSelectedProject}
+        />
+        <PerformanceComparisonButton
+          project={Project.EXAMPLE}
+          selectedProject={selectedProject}
+          setSelectedProject={setSelectedProject}
+        />
       </div>
       <div {...stylex.props(styles.chartContainer)}>
         {/* Chart placeholder */}
         <div {...stylex.props(styles.chartPlaceholder)}>
-          Performance chart for {selectedSource} will be displayed here
+          Performance chart for {selectedProject} will be displayed here
         </div>
       </div>
     </div>
@@ -58,20 +60,6 @@ const styles = stylex.create({
     justifyContent: 'center',
     gap: '1rem',
     marginBottom: '2rem',
-  },
-
-  button: {
-    padding: '0.75rem 1.5rem',
-    borderRadius: '4px',
-    border: '1px solid var(--ifm-color-primary)',
-    backgroundColor: 'transparent',
-    color: 'var(--ifm-color-primary)',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  buttonActive: {
-    backgroundColor: 'var(--ifm-color-primary)',
-    color: 'white',
   },
   chartContainer: {
     minHeight: '400px',
