@@ -200,9 +200,9 @@ module.exports = {
         },
       ],
       logo: {
-        alt: 'Facebook Open Source Logo',
-        src: 'img/oss_logo.png',
-        href: 'https://opensource.facebook.com',
+        alt: 'Meta Open Source Logo',
+        src: 'img/meta_open_source_logo.svg',
+        href: 'https://opensource.fb.com/',
       },
       // Please do not remove the credits, help to publicize Docusaurus :)
       copyright: `Copyright © ${new Date().getFullYear()} Meta Platforms, Inc. Built with Docusaurus.`,
