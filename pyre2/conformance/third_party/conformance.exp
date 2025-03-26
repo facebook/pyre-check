@@ -2883,26 +2883,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class2[Any], Class2[int]) failed",
-      "description": "assert_type(Class2[Any], Class2[int]) failed",
-      "line": 35,
-      "name": "assert-type",
-      "stop_column": 36,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class2[Any], Class2[str]) failed",
-      "description": "assert_type(Class2[Any], Class2[str]) failed",
-      "line": 36,
-      "name": "assert-type",
-      "stop_column": 37,
-      "stop_line": 36
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "assert_type(Class4, Class4 | Any) failed",
       "description": "assert_type(Class4, Class4 | Any) failed",
       "line": 64,
@@ -2939,16 +2919,6 @@
       "name": "missing-argument",
       "stop_column": 23,
       "stop_line": 76
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self@object, Class7) failed",
-      "description": "assert_type(Self@object, Class7) failed",
-      "line": 104,
-      "name": "assert-type",
-      "stop_column": 31,
-      "stop_line": 104
     },
     {
       "code": -2,
@@ -5173,16 +5143,6 @@
       "name": "not-a-type",
       "stop_column": 24,
       "stop_line": 26
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self@Enum, Color) failed",
-      "description": "assert_type(Self@Enum, Color) failed",
-      "line": 27,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 27
     }
   ],
   "enums_definition.py": [],
@@ -7164,8 +7124,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "concise_description": "`ShouldBeInvariant3[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "description": "`ShouldBeInvariant3[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
       "line": 118,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7174,8 +7134,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "concise_description": "`ShouldBeInvariant3[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "description": "`ShouldBeInvariant3[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
       "line": 119,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7184,8 +7144,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "concise_description": "`ShouldBeInvariant3[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "description": "`ShouldBeInvariant3[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
       "line": 120,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7194,8 +7154,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "concise_description": "`ShouldBeInvariant3[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "description": "`ShouldBeInvariant3[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
       "line": 121,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7364,26 +7324,6 @@
       "name": "missing-attribute",
       "stop_column": 15,
       "stop_line": 46
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Any, bytes) failed",
-      "description": "assert_type(Any, bytes) failed",
-      "line": 56,
-      "name": "assert-type",
-      "stop_column": 28,
-      "stop_line": 56
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Can't apply arguments to non-class, got Self@dict",
-      "description": "Can't apply arguments to non-class, got Self@dict",
-      "line": 56,
-      "name": "bad-specialization",
-      "stop_column": 20,
-      "stop_line": 56
     }
   ],
   "generics_typevartuple_args.py": [
@@ -8087,8 +8027,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "concise_description": "`ShouldBeInvariant3[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "description": "`ShouldBeInvariant3[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
       "line": 119,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -8097,8 +8037,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "concise_description": "`ShouldBeInvariant3[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "description": "`ShouldBeInvariant3[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
       "line": 120,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -8107,8 +8047,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "concise_description": "`ShouldBeInvariant3[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "description": "`ShouldBeInvariant3[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
       "line": 121,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -8117,8 +8057,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
-      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "concise_description": "`ShouldBeInvariant3[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "description": "`ShouldBeInvariant3[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
       "line": 122,
       "name": "bad-assignment",
       "stop_column": 73,

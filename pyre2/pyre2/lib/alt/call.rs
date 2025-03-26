@@ -478,19 +478,42 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 callable, None, None, args, keywords, range, errors, errors, context,
             ),
             Target::Function(Function {
-                signature: callable,
+                signature: mut callable,
                 metadata,
-            }) => self.callable_infer(
-                callable,
-                Some(metadata.kind.as_func_id()),
-                None,
-                args,
-                keywords,
-                range,
-                errors,
-                errors,
-                context,
-            ),
+            }) => {
+                // Most instances of typing.Self are replaced in as_call_target, but __new__ is a
+                // staticmethod, so we don't have access to the first argument until we get here.
+                let id = metadata.kind.as_func_id();
+                let first_arg_type = if id.func == dunder::NEW
+                    && let Some(first_arg) = args.first()
+                {
+                    match first_arg {
+                        CallArg::Expr(e) => Some(self.expr_infer(e, errors)),
+                        CallArg::Type(t, _) => Some((**t).clone()),
+                        CallArg::Star(..) => None,
+                    }
+                } else {
+                    None
+                };
+                let self_obj = match first_arg_type {
+                    Some(Type::Type(box Type::ClassType(c))) => Some(c.instance_type()),
+                    _ => None,
+                };
+                if let Some(self_obj) = self_obj {
+                    callable.subst_self_type_mut(&self_obj);
+                }
+                self.callable_infer(
+                    callable,
+                    Some(id),
+                    None,
+                    args,
+                    keywords,
+                    range,
+                    errors,
+                    errors,
+                    context,
+                )
+            }
             Target::FunctionOverload(overloads, meta) => self.call_overloads(
                 overloads, meta, None, args, keywords, range, errors, context,
             ),

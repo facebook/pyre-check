@@ -1279,6 +1279,20 @@ def f(a: A, b: B):
 );
 
 testcase!(
+    test_typing_self_new_param,
+    r#"
+from typing import Self
+class A:
+    def __new__(cls, x: type[Self]):
+        return super().__new__(cls)
+class B(A):
+    pass
+B(B)  # OK
+B(A)  # E:
+    "#,
+);
+
+testcase!(
     test_module_type,
     r#"
 import types

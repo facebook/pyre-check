@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_tuple,
@@ -225,8 +224,7 @@ for x in f():
     "#,
 );
 
-testcase_with_bug!(
-    "Wrong asserted types",
+testcase!(
     test_tuple_parent,
     r#"
 from typing import Any, assert_type
@@ -235,9 +233,9 @@ class C1(tuple[int, ...]):
 class C2(tuple[int, int]):
     pass
 for x in C1():
-    assert_type(x, Any)  # Should be int
+    assert_type(x, int)
 for x in C2():
-    assert_type(x, Any)  # Should be int
+    assert_type(x, int)
     "#,
 );
 

@@ -135,11 +135,8 @@
     "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', 'Missing argument `x` in function `Class1.__new__`']"
   ],
   "constructors_call_new.py": [
-    "Line 35: Unexpected errors ['assert_type(Class2[Any], Class2[int]) failed']",
-    "Line 36: Unexpected errors ['assert_type(Class2[Any], Class2[str]) failed']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x` in function `Class4.__init__`']",
-    "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x` in function `Class5.__init__`']",
-    "Line 104: Unexpected errors ['assert_type(Self@object, Class7) failed']"
+    "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x` in function `Class5.__init__`']"
   ],
   "constructors_call_type.py": [
     "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
@@ -293,8 +290,7 @@
     "Line 39: Expected 1 errors",
     "Line 19: Unexpected errors ['Type `type[Color]` is not iterable\\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`', 'Type `type[Color]` is not iterable\\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
-    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for `Color`, got 1', \"Expected a type form, got instance of `Literal['RED']`\"]",
-    "Line 27: Unexpected errors ['assert_type(Self@Enum, Color) failed']"
+    "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for `Color`, got 1', \"Expected a type form, got instance of `Literal['RED']`\"]"
   ],
   "enums_definition.py": [],
   "enums_expansion.py": [],
@@ -445,9 +441,7 @@
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
     "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"
   ],
-  "generics_type_erasure.py": [
-    "Line 56: Unexpected errors ['assert_type(Any, bytes) failed', \"Can't apply arguments to non-class, got Self@dict\"]"
-  ],
+  "generics_type_erasure.py": [],
   "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
     "Line 25: Unexpected errors ['`?_TypeVarTuple` is not assignable to attribute `_shape` with type `Unknown`']",

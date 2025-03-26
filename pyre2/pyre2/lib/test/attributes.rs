@@ -666,8 +666,7 @@ reveal_type(c.field)  # E: revealed type: ?_TypeVar
 "#,
 );
 
-testcase_with_bug!(
-    "PyTorch TODO: the errors about `object` are false positives caused by buggy typing.Self support",
+testcase!(
     test_with,
     r#"
 class C:
@@ -681,7 +680,7 @@ class C:
         if orig_func is None:
             return super().__new__(cls) 
 def f():
-    with C():  # E: `NoneType` has no attribute `__enter__`  # E: `NoneType` has no attribute `__exit__`  # E: `object` has no attribute `__enter__`  # E: `object` has no attribute `__exit__`
+    with C():  # E: `NoneType` has no attribute `__enter__`  # E: `NoneType` has no attribute `__exit__`
         pass
     "#,
 );
