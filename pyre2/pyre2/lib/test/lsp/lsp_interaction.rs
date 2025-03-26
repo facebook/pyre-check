@@ -6,7 +6,6 @@
  */
 
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
@@ -24,10 +23,6 @@ use crate::commands::lsp::run_lsp;
 use crate::commands::lsp::Args;
 use crate::test::util::init_test;
 
-// Fake python root directory (not necessary to exist on the filesystem)
-// since we simply send the file contents on file open
-const TEST_PYTHON_PATH: &str = "/tmp/test_python_root";
-
 struct TestCase {
     test_messages: Vec<Message>,
     expected_responses: Vec<Response>,
@@ -36,7 +31,7 @@ fn run_test_lsp(test_case: TestCase) {
     init_test();
     let timeout = Duration::from_secs(25);
     let args = Args {
-        search_path: vec![PathBuf::from_str(TEST_PYTHON_PATH).unwrap()],
+        search_path: vec![get_test_files_root()],
     };
     let (writer_sender, writer_receiver) = bounded::<Message>(0);
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
@@ -229,8 +224,8 @@ fn test_go_to_def() {
                 "uri": format!("file://{}/foo.py", root.to_str().unwrap())
             },
             "position": {
-                "line": 9,
-                "character": 0
+                "line": 5,
+                "character": 16
             }
         }),
     }));
@@ -238,7 +233,7 @@ fn test_go_to_def() {
     expected_responses.push(Response {
         id: RequestId::from(2),
         result: Some(serde_json::json!({
-            "uri": format!("file://{}/foo.py", root.to_str().unwrap()),
+            "uri": format!("file://{}/bar.py", root.to_str().unwrap()),
             "range": {
                 "start": {
                     "line": 6,
