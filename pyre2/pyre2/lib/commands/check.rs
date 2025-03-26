@@ -28,6 +28,7 @@ use crate::commands::suppress;
 use crate::commands::util::module_from_path;
 use crate::config::set_if_some;
 use crate::config::ConfigFile;
+use crate::config::ErrorConfig;
 use crate::config::ErrorConfigs;
 use crate::error::error::print_error_counts;
 use crate::error::error::print_errors;
@@ -192,6 +193,8 @@ struct Handles {
     /// A mapping from a file to all other information needed to create a `Handle`.
     /// The value type is basically everything else in `Handle` except for the file path.
     path_data: HashMap<PathBuf, (ModuleName, RuntimeMetadata, LoaderId)>,
+    /// A the underlying HashMap that will be used to create an `ErrorConfigs` when requested.
+    module_to_error_config: HashMap<ModulePath, ErrorConfig>,
 }
 
 impl Handles {
@@ -199,6 +202,7 @@ impl Handles {
         let mut handles = Self {
             loader_factory: SmallMap::new(),
             path_data: HashMap::new(),
+            module_to_error_config: HashMap::new(),
         };
         for file in files {
             handles.register_file(file, config_finder);
@@ -212,6 +216,8 @@ impl Handles {
         config_finder: &impl Fn(&Path) -> ConfigFile,
     ) -> &(ModuleName, RuntimeMetadata, LoaderId) {
         let config = config_finder(&path);
+        self.module_to_error_config
+            .insert(ModulePath::filesystem(path.clone()), config.errors.clone());
         let loader = self.get_or_register_loader(&config);
         let module_name = module_from_path(&path, &config.search_path);
         self.path_data
@@ -254,6 +260,11 @@ impl Handles {
         self.loader_factory.values().duped().collect()
     }
 
+    #[allow(unused)]
+    pub fn error_configs(&self) -> ErrorConfigs {
+        ErrorConfigs::new(self.module_to_error_config.clone())
+    }
+
     pub fn update<'a>(
         &mut self,
         created_files: impl Iterator<Item = &'a PathBuf>,
@@ -265,6 +276,8 @@ impl Handles {
         }
         for file in removed_files {
             self.path_data.remove(file);
+            self.module_to_error_config
+                .remove(&ModulePath::filesystem(file.to_path_buf()));
             // NOTE: Need to garbage-collect unreachable Loaders at some point
         }
     }
