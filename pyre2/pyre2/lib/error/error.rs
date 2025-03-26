@@ -9,11 +9,13 @@ use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 
+use starlark_map::small_map::SmallMap;
 use vec1::Vec1;
 
 use crate::error::kind::ErrorKind;
 use crate::module::module_info::SourceRange;
 use crate::module::module_path::ModulePath;
+use crate::util::display::number_thousands;
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Error {
@@ -40,6 +42,28 @@ impl Display for Error {
 pub fn print_errors(errors: &[Error]) {
     for err in errors {
         tracing::error!("{err}");
+    }
+}
+
+fn count_error_kinds(errors: &[Error]) -> Vec<(ErrorKind, usize)> {
+    let mut map = SmallMap::new();
+    for err in errors {
+        let kind = err.error_kind();
+        *map.entry(kind).or_default() += 1;
+    }
+    let mut res = map.into_iter().collect::<Vec<_>>();
+    res.sort_by_key(|x| x.1);
+    res
+}
+
+pub fn print_error_counts(errors: &[Error], limit: usize) {
+    let items = count_error_kinds(errors);
+    for (error, count) in items.iter().rev().take(limit).rev() {
+        eprintln!(
+            "{} instances of {}",
+            number_thousands(*count),
+            error.to_name()
+        );
     }
 }
 

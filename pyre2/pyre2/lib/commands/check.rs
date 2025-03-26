@@ -28,6 +28,7 @@ use crate::commands::suppress;
 use crate::commands::util::module_from_path;
 use crate::config::set_if_some;
 use crate::config::ConfigFile;
+use crate::error::error::print_error_counts;
 use crate::error::error::print_errors;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
@@ -414,7 +415,7 @@ impl Args {
         let printing = start.elapsed();
         memory_trace.stop();
         if let Some(limit) = self.count_errors {
-            state.print_error_counts(limit);
+            print_error_counts(&errors, limit);
         }
         if let Some(path_index) = self.summarize_errors {
             state.print_error_summary(path_index);

@@ -76,7 +76,6 @@ use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
-use crate::util::display::number_thousands;
 use crate::util::enum_heap::EnumHeap;
 use crate::util::lock::Mutex;
 use crate::util::lock::RwLock;
@@ -605,22 +604,6 @@ impl State {
                     .map_or(0, |x| x.errors.count_suppressed())
             })
             .sum()
-    }
-
-    pub fn print_error_counts(&self, limit: usize) {
-        let loads = self
-            .modules
-            .values()
-            .filter_map(|x| x.state.read().steps.load.dupe())
-            .collect::<Vec<_>>();
-        let items = ErrorCollector::count_error_kinds(loads.iter().map(|x| &x.errors));
-        for (error, count) in items.iter().rev().take(limit).rev() {
-            eprintln!(
-                "{} instances of {}",
-                number_thousands(*count),
-                error.to_name()
-            );
-        }
     }
 
     pub fn print_error_summary(&self, path_index: usize) {

@@ -158,21 +158,6 @@ impl ErrorCollector {
         self.errors.lock().iter().cloned().collect()
     }
 
-    pub fn count_error_kinds<'a>(
-        xs: impl Iterator<Item = &'a ErrorCollector>,
-    ) -> Vec<(ErrorKind, usize)> {
-        let mut map = SmallMap::new();
-        for x in xs {
-            for err in x.errors.lock().iter() {
-                let kind = err.error_kind();
-                *map.entry(kind).or_default() += 1;
-            }
-        }
-        let mut res = map.into_iter().collect::<Vec<_>>();
-        res.sort_by_key(|x| x.1);
-        res
-    }
-
     pub fn get_errors_per_file<'a>(
         xs: impl Iterator<Item = &'a ErrorCollector>,
     ) -> SmallMap<ModulePath, SmallMap<ErrorKind, usize>> {
