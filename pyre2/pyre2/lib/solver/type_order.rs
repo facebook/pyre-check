@@ -87,7 +87,7 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.named_tuple_element_types(cls)
     }
 
-    pub fn extends_any(self, cls: &ClassType) -> bool {
+    pub fn extends_any(self, cls: &Class) -> bool {
         self.0.extends_any(cls)
     }
 

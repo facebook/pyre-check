@@ -656,7 +656,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 )
             }
             (Type::ClassType(ty), _) | (_, Type::ClassType(ty))
-                if self.type_order.extends_any(ty) =>
+                if self.type_order.extends_any(ty.class_object()) =>
             {
                 true
             }

@@ -822,7 +822,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeBase::ClassInstance(class) => {
                 match self.get_instance_attribute(&class, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
-                    None if self.extends_any(&class) => {
+                    None if self.extends_any(class.class_object()) => {
                         LookupResult::found_type(Type::Any(AnyStyle::Implicit))
                     }
                     None => LookupResult::NotFound(NotFound::Attribute(class)),
@@ -831,9 +831,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             AttributeBase::SuperInstance(cls, obj) => {
                 match self.get_super_attribute(&cls, &obj, attr_name) {
                     Some(attr) => LookupResult::Found(attr),
-                    // TODO(rechen): handle SuperObj::Class here.
-                    None if let SuperObj::Instance(cls) = obj
-                        && self.extends_any(&cls) =>
+                    None if let SuperObj::Instance(cls) = &obj
+                        && self.extends_any(cls.class_object()) =>
+                    {
+                        LookupResult::found_type(Type::Any(AnyStyle::Implicit))
+                    }
+                    None if let SuperObj::Class(cls) = &obj
+                        && self.extends_any(cls) =>
                     {
                         LookupResult::found_type(Type::Any(AnyStyle::Implicit))
                     }

@@ -646,6 +646,9 @@ def test0(a: A, b: B, ta: type[A]) -> None:
 class Test(B):
     def m(self) -> None:
         assert_type(super().z, Any)
+    @classmethod
+    def m2(cls) -> None:
+        assert_type(super().z, Any)
     "#,
 );
 

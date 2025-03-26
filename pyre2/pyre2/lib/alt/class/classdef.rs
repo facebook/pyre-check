@@ -415,8 +415,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn extends_any(&self, cls: &ClassType) -> bool {
-        self.get_metadata_for_class(cls.class_object())
-            .has_base_any()
+    pub fn extends_any(&self, cls: &Class) -> bool {
+        self.get_metadata_for_class(cls).has_base_any()
     }
 }
