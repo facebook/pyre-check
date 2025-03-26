@@ -26,7 +26,7 @@ export default component Home() {
   const {siteConfig} = context;
 
   // TODO (T218370640): replace current landing page with new landing page
-  return process.env.INTERNAL_STATIC_DOCS ? (
+  return process.env.INTERNAL_STATIC_DOCS === '1' ? (
     <NewLandingPage />
   ) : (
     <Layout

@@ -27,7 +27,6 @@ import LandingPageHeader from '../components/landing-page/landingPageHeader';
 // so we can test whether babel can handle newer syntax.
 import '../js/parser-playground';
 
-const shouldShowNewLandingPage = process.env.INTERNAL_STATIC_DOCS;
 export default component NewLandingPage() {
   const context = useDocusaurusContext();
   const {siteConfig} = context;

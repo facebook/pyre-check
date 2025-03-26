@@ -12,10 +12,14 @@ const webpack = require('webpack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const StylexPlugin = require('@stylexjs/webpack-plugin');
 
+console.log(
+  'process.env.INTERNAL_STATIC_DOCS',
+  process.env.INTERNAL_STATIC_DOCS,
+);
 function getNavBarItems() {
   return [
     // TODO (T217317240) remove this check when we are ready to publish docs to public
-    process.env.INTERNAL_STATIC_DOCS
+    process.env.INTERNAL_STATIC_DOCS === '1'
       ? {
           to: 'en/docs/fb/',
           activeBasePath: 'en/docs/fb',
@@ -81,7 +85,8 @@ module.exports = {
           return {
             plugins: [
               new webpack.EnvironmentPlugin({
-                INTERNAL_STATIC_DOCS: process.env.INTERNAL_STATIC_DOCS || false,
+                INTERNAL_STATIC_DOCS:
+                  process.env.INTERNAL_STATIC_DOCS === '1' || false,
               }),
             ],
           };
@@ -212,9 +217,10 @@ module.exports = {
       {
         docs: {
           routeBasePath: 'en/docs',
-          sidebarPath: process.env.INTERNAL_STATIC_DOCS
-            ? require.resolve('./sidebars.js')
-            : false, // TODO (T217317240): add back sidebar when we are ready to publish docs
+          sidebarPath:
+            process.env.INTERNAL_STATIC_DOCS === '1'
+              ? require.resolve('./sidebars.js')
+              : false, // TODO (T217317240): add back sidebar when we are ready to publish docs
           editUrl: fbContent({
             internal:
               'https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/pyre2/website/',
@@ -226,9 +232,10 @@ module.exports = {
           customCss: require.resolve('./src/css/custom.css'),
         },
         enableEditor: true,
-        gtag: process.env.INTERNAL_STATIC_DOCS
-          ? undefined
-          : {trackingID: 'G-GSX14JC495', anonymizeIP: true},
+        gtag:
+          process.env.INTERNAL_STATIC_DOCS === '1'
+            ? undefined
+            : {trackingID: 'G-GSX14JC495', anonymizeIP: true},
       },
     ],
   ],
