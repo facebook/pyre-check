@@ -46,7 +46,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 .elements
                 .iter()
                 .filter_map(|name| {
-                    let attr = self.try_lookup_attr(&Type::ClassType(cls.clone()), name)?;
+                    let attr =
+                        self.try_lookup_attr_no_union(&Type::ClassType(cls.clone()), name)?;
                     self.resolve_named_tuple_element(attr)
                 })
                 .collect(),

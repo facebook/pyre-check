@@ -308,7 +308,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
     fn get_call_attr(&mut self, protocol: &ClassType) -> Option<Type> {
         let attr = self
             .type_order
-            .try_lookup_attr(&protocol.clone().to_type(), &dunder::CALL);
+            .try_lookup_attr_no_union(&protocol.clone().to_type(), &dunder::CALL);
         attr.and_then(|attr| self.type_order.resolve_as_instance_method(attr))
     }
 
@@ -340,11 +340,17 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 } else if !self.is_subset_eq(&got, &want) {
                     return false;
                 }
-            } else if let Some(got) = to.try_lookup_attr(&got, &name)
-                && let Some(want) = to.try_lookup_attr(&protocol.clone().to_type(), &name)
-                && to.is_attr_subset(&got, &want, &mut |got, want| self.is_subset_eq(got, want))
+            } else if let got_attrs = to.try_lookup_attr(&got, &name)
+                && !got_attrs.is_empty()
+                && let Some(want) = to.try_lookup_attr_no_union(&protocol.clone().to_type(), &name)
             {
-                continue;
+                for got in got_attrs {
+                    if !to
+                        .is_attr_subset(&got, &want, &mut |got, want| self.is_subset_eq(got, want))
+                    {
+                        return false;
+                    }
+                }
             } else {
                 return false;
             }

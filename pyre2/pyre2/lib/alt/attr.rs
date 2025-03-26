@@ -975,12 +975,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn try_lookup_attr(&self, base: &Type, attr_name: &Name) -> Option<Attribute> {
-        // TODO(yangdanny): handle unions
+    pub fn try_lookup_attr_no_union(&self, base: &Type, attr_name: &Name) -> Option<Attribute> {
         match self.lookup_attr_no_union(base, attr_name) {
             LookupResult::Found(attr) => Some(attr),
             _ => None,
         }
+    }
+
+    pub fn try_lookup_attr(&self, base: &Type, attr_name: &Name) -> Vec<Attribute> {
+        let mut result = Vec::new();
+        self.map_over_union(base, |base| {
+            if let Some(attr) = self.try_lookup_attr_no_union(base, attr_name) {
+                result.push(attr);
+            }
+        });
+        result
     }
 
     fn get_module_exports(&self, module_name: ModuleName) -> Option<Exports> {

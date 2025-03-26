@@ -68,7 +68,12 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         }
     }
 
-    pub fn try_lookup_attr(self, base: &Type, attr_name: &Name) -> Option<Attribute> {
+    /// Call this one if you're sure `base` is not a Union, otherwise use `try_lookup_attr`
+    pub fn try_lookup_attr_no_union(self, base: &Type, attr_name: &Name) -> Option<Attribute> {
+        self.0.try_lookup_attr_no_union(base, attr_name)
+    }
+
+    pub fn try_lookup_attr(self, base: &Type, attr_name: &Name) -> Vec<Attribute> {
         self.0.try_lookup_attr(base, attr_name)
     }
 
