@@ -66,8 +66,12 @@ impl ModuleErrors {
     }
 
     /// Iterates over errors that are not ignored.
-    fn iter(&mut self) -> impl Iterator<Item = &Error> {
-        self.iter_all().filter(|x| !x.is_ignored())
+    fn iter<'a>(
+        &mut self,
+        error_config: &'a ErrorConfig,
+    ) -> impl Iterator<Item = &Error> + use<'_, 'a> {
+        self.iter_all()
+            .filter(move |x| !x.is_ignored() && error_config.is_enabled(x.error_kind()))
     }
 }
 
@@ -82,7 +86,7 @@ pub struct ErrorCollector {
 
 impl Display for ErrorCollector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for err in self.errors.lock().iter() {
+        for err in self.errors.lock().iter(&ErrorConfig::default()) {
             writeln!(f, "ERROR: {err}")?;
         }
         Ok(())
@@ -153,8 +157,8 @@ impl ErrorCollector {
             .count()
     }
 
-    pub fn collect(&self, _: &ErrorConfig) -> Vec<Error> {
-        self.errors.lock().iter().cloned().collect()
+    pub fn collect(&self, error_config: &ErrorConfig) -> Vec<Error> {
+        self.errors.lock().iter(error_config).cloned().collect()
     }
 
     pub fn todo(&self, msg: &str, v: impl Ranged + Debug) {
@@ -181,6 +185,7 @@ impl ErrorCollector {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
     use std::path::Path;
     use std::sync::Arc;
 
@@ -233,6 +238,57 @@ mod tests {
         assert_eq!(
             errors.collect(&ErrorConfig::default()).map(|x| x.msg()),
             vec!["a", "b", "a"]
+        );
+    }
+
+    #[test]
+    fn test_error_collector_with_disabled_errors() {
+        let mi = ModuleInfo::new(
+            ModuleName::from_name(&Name::new("main")),
+            ModulePath::filesystem(Path::new("main.py").to_owned()),
+            Arc::new("contents".to_owned()),
+        );
+        let errors = ErrorCollector::new(mi.dupe(), ErrorStyle::Delayed);
+        errors.add(
+            TextRange::new(TextSize::new(1), TextSize::new(3)),
+            "a".to_owned(),
+            ErrorKind::InternalError,
+            None,
+        );
+        errors.add(
+            TextRange::new(TextSize::new(1), TextSize::new(3)),
+            "b".to_owned(),
+            ErrorKind::AsyncError,
+            None,
+        );
+        errors.add(
+            TextRange::new(TextSize::new(1), TextSize::new(3)),
+            "c".to_owned(),
+            ErrorKind::BadAssignment,
+            None,
+        );
+        errors.add(
+            TextRange::new(TextSize::new(2), TextSize::new(3)),
+            "d".to_owned(),
+            ErrorKind::MatchError,
+            None,
+        );
+        errors.add(
+            TextRange::new(TextSize::new(1), TextSize::new(3)),
+            "e".to_owned(),
+            ErrorKind::NotIterable,
+            None,
+        );
+
+        let config = ErrorConfig::new(HashMap::from([
+            (ErrorKind::AsyncError, true),
+            (ErrorKind::BadAssignment, false),
+            (ErrorKind::NotIterable, false),
+        ]));
+
+        assert_eq!(
+            errors.collect(&config).map(|x| x.msg()),
+            vec!["b", "a", "d"]
         );
     }
 }
