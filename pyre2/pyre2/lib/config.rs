@@ -270,8 +270,8 @@ mod tests {
             python_version = \"1.2.3\"
             site_package_path = [\"venv/lib/python1.2.3/site-packages\"]
             [errors]
-            assert_type = true
-            bad_return = false
+            assert-type = true
+            bad-return = false
         ";
         let config = ConfigFile::parse_config(config_str).unwrap();
         assert_eq!(
