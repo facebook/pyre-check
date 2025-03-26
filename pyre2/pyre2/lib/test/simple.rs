@@ -1433,3 +1433,16 @@ is_func(A().f)  # E:
 is_method(A().f)  # OK
     "#,
 );
+
+testcase!(
+    test_class_with_metaclass_is_type,
+    r#"
+class M(type):
+    pass
+class A(metaclass=M):
+    pass
+def f(x: type):
+    pass
+f(A)
+    "#,
+);
