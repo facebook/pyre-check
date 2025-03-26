@@ -929,7 +929,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn lookup_attr(&self, base: &Type, attr_name: &Name) -> LookupResult {
-        match self.as_attribute_base(base.clone(), self.stdlib) {
+        match self.as_attribute_base_no_union(base.clone(), self.stdlib) {
             None => {
                 LookupResult::InternalError(InternalError::AttributeBaseUndefined(base.clone()))
             }
@@ -1010,7 +1010,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn as_attribute_base(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
+    // This function is intended as a low-level building block
+    // Unions or intersections should be handled by callers
+    fn as_attribute_base_no_union(&self, ty: Type, stdlib: &Stdlib) -> Option<AttributeBase> {
         match ty {
             Type::ClassType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
             Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
@@ -1057,7 +1059,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(AttributeBase::ClassInstance(stdlib.bool()))
             }
             Type::Any(style) => Some(AttributeBase::Any(style)),
-            Type::TypeAlias(ta) => self.as_attribute_base(ta.as_value(stdlib), stdlib),
+            Type::TypeAlias(ta) => self.as_attribute_base_no_union(ta.as_value(stdlib), stdlib),
             Type::Type(box Type::ClassType(class)) => {
                 Some(AttributeBase::ClassObject(class.class_object().dupe()))
             }
@@ -1077,10 +1079,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::BoundMethod(_) => Some(AttributeBase::ClassInstance(stdlib.method_type())),
             Type::Ellipsis => Some(AttributeBase::ClassInstance(stdlib.ellipsis_type())),
-            Type::Forall(forall) => self.as_attribute_base(forall.body.as_type(), stdlib),
+            Type::Forall(forall) => self.as_attribute_base_no_union(forall.body.as_type(), stdlib),
             Type::Var(v) => {
                 if let Some(_guard) = self.recurser.recurse(v) {
-                    self.as_attribute_base(self.solver().force_var(v), stdlib)
+                    self.as_attribute_base_no_union(self.solver().force_var(v), stdlib)
                 } else {
                     None
                 }
@@ -1151,8 +1153,8 @@ impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
     /// List all the attributes available from a type. Used to power completion.
     pub fn completions(&self, base: Type, include_types: bool) -> Vec<AttrInfo> {
         let mut res = Vec::new();
-
-        if let Some(base) = self.as_attribute_base(base, self.stdlib) {
+        // TODO: expose attributes shared across all union members
+        if let Some(base) = self.as_attribute_base_no_union(base, self.stdlib) {
             match &base {
                 AttributeBase::ClassInstance(class) => self.completions_class_type(class, &mut res),
                 AttributeBase::SuperInstance(class, _) => {
