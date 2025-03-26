@@ -24,6 +24,7 @@ mod enums;
 mod flow;
 mod imports;
 mod legacy_generic;
+mod literal;
 mod lsp;
 mod mro;
 mod named_tuple;
