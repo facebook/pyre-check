@@ -235,3 +235,17 @@ class B(A):
         assert_type(super(B, cls).f(), int)
     "#,
 );
+
+testcase!(
+    test_call_instance_method_from_classmethod,
+    r#"
+class A:
+    def f(self):
+        pass
+
+class B(A):
+    @classmethod
+    def g(cls):
+        super().f(B())
+    "#,
+);

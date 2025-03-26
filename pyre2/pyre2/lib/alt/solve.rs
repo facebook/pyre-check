@@ -1314,8 +1314,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                     None,
                                     "`super` call with no arguments is not valid inside a staticmethod".to_owned(),
                                 );
+                            } else if method_ty.metadata.flags.is_classmethod {
+                                SuperObj::Class(obj_cls.dupe())
+                            } else {
+                                SuperObj::Instance(obj_type)
                             }
-                            SuperObj::Instance(obj_type)
                         };
                         Type::SuperInstance(Box::new((lookup_cls, obj)))
                     }
