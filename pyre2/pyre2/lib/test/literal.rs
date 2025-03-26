@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_fstring_literal,
@@ -132,5 +133,20 @@ from typing import assert_type
 def foo(x):
     assert_type("Magic"[0], str)
     assert_type("Magic"[3:4], str)
+"#,
+);
+
+testcase_with_bug!(
+    "Should allow nested literals",
+    test_literal_nesting,
+    r#"
+from typing import Literal, assert_type
+
+X = Literal["foo", "bar"]
+Y = Literal["baz", None]
+Z = Literal[X, Y]  # E: Invalid literal expression # E: Invalid literal expression
+
+def f(x: Z) -> None:
+    assert_type(x, Literal["foo", "bar", "baz", None]) # E: assert_type
 "#,
 );
