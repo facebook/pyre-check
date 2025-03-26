@@ -42,7 +42,94 @@ use crate::util::visit::VisitMut;
 #[derive(Debug, Clone, TypeEq, Display, Dupe)]
 pub struct Class(Arc<ClassInner>);
 
+// A note on terminology regarding attribute-related concepts:
+// - "field" refers to something defined in a class body, with a raw type as written.
+// - "member" refers to a name defined on a class, including inherited members whose
+//   types should be expressed in terms of the current classe's type parameters.
+// - "attribute" refers to a value actually accessed from an instance or class object,
+//   which involves substituting type arguments for the class type parameters as
+//   well as descriptor handling (including method binding).
 impl Class {
+    pub fn new(
+        index: ClassIndex,
+        name: Identifier,
+        module_info: ModuleInfo,
+        tparams: TParams,
+        fields: SmallMap<Name, ClassFieldProperties>,
+    ) -> Self {
+        Self(Arc::new(ClassInner {
+            index,
+            qname: QName::new(name, module_info),
+            tparams,
+            fields,
+        }))
+    }
+
+    pub fn contains(&self, name: &Name) -> bool {
+        self.0.fields.contains_key(name)
+    }
+
+    pub fn range(&self) -> TextRange {
+        self.0.qname.range()
+    }
+
+    pub fn name(&self) -> &Name {
+        self.0.qname.id()
+    }
+
+    pub fn qname(&self) -> &QName {
+        &self.0.qname
+    }
+
+    pub fn kind(&self) -> ClassKind {
+        ClassKind::from_qname(self.qname())
+    }
+
+    pub fn tparams(&self) -> &TParams {
+        &self.0.tparams
+    }
+
+    pub fn instance_type(&self) -> Type {
+        let tparams_as_targs =
+            TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect());
+        ClassType::new(self.clone(), tparams_as_targs).to_type()
+    }
+
+    pub fn self_param(&self) -> Param {
+        Param::Pos(Name::new("self"), self.instance_type(), Required::Required)
+    }
+
+    pub fn index(&self) -> ClassIndex {
+        self.0.index
+    }
+
+    pub fn module_name(&self) -> ModuleName {
+        self.0.qname.module_name()
+    }
+
+    pub fn module_info(&self) -> ModuleInfo {
+        self.0.qname.module_info()
+    }
+
+    pub fn fields(&self) -> impl Iterator<Item = &Name> {
+        self.0.fields.keys()
+    }
+
+    pub fn is_field_annotated(&self, name: &Name) -> bool {
+        self.0
+            .fields
+            .get(name)
+            .is_some_and(|prop| prop.is_annotated)
+    }
+
+    pub fn field_decl_range(&self, name: &Name) -> Option<TextRange> {
+        Some(self.0.fields.get(name)?.range)
+    }
+
+    pub fn has_qname(&self, module: &str, name: &str) -> bool {
+        self.0.qname.module_name().as_str() == module && self.0.qname.id() == name
+    }
+
     /// Key to use for equality purposes. If we have the same module and index,
     /// we must point at the same class underneath.
     fn key_eq(&self) -> (ClassIndex, ModuleName) {
@@ -170,95 +257,6 @@ impl Display for ClassInner {
             write!(f, "[{}]", commas_iter(|| self.tparams.iter()))?;
         }
         writeln!(f, ": ...")
-    }
-}
-
-// A note on terminology regarding attribute-related concepts:
-// - "field" refers to something defined in a class body, with a raw type as written.
-// - "member" refers to a name defined on a class, including inherited members whose
-//   types should be expressed in terms of the current classe's type parameters.
-// - "attribute" refers to a value actually accessed from an instance or class object,
-//   which involves substituting type arguments for the class type parameters as
-//   well as descriptor handling (including method binding).
-impl Class {
-    pub fn new(
-        index: ClassIndex,
-        name: Identifier,
-        module_info: ModuleInfo,
-        tparams: TParams,
-        fields: SmallMap<Name, ClassFieldProperties>,
-    ) -> Self {
-        Self(Arc::new(ClassInner {
-            index,
-            qname: QName::new(name, module_info),
-            tparams,
-            fields,
-        }))
-    }
-
-    pub fn contains(&self, name: &Name) -> bool {
-        self.0.fields.contains_key(name)
-    }
-
-    pub fn range(&self) -> TextRange {
-        self.0.qname.range()
-    }
-
-    pub fn name(&self) -> &Name {
-        self.0.qname.id()
-    }
-
-    pub fn qname(&self) -> &QName {
-        &self.0.qname
-    }
-
-    pub fn kind(&self) -> ClassKind {
-        ClassKind::from_qname(self.qname())
-    }
-
-    pub fn tparams(&self) -> &TParams {
-        &self.0.tparams
-    }
-
-    pub fn instance_type(&self) -> Type {
-        let tparams_as_targs =
-            TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect());
-        ClassType::new(self.clone(), tparams_as_targs).to_type()
-    }
-
-    pub fn self_param(&self) -> Param {
-        Param::Pos(Name::new("self"), self.instance_type(), Required::Required)
-    }
-
-    pub fn index(&self) -> ClassIndex {
-        self.0.index
-    }
-
-    pub fn module_name(&self) -> ModuleName {
-        self.0.qname.module_name()
-    }
-
-    pub fn module_info(&self) -> ModuleInfo {
-        self.0.qname.module_info()
-    }
-
-    pub fn fields(&self) -> impl Iterator<Item = &Name> {
-        self.0.fields.keys()
-    }
-
-    pub fn is_field_annotated(&self, name: &Name) -> bool {
-        self.0
-            .fields
-            .get(name)
-            .is_some_and(|prop| prop.is_annotated)
-    }
-
-    pub fn field_decl_range(&self, name: &Name) -> Option<TextRange> {
-        Some(self.0.fields.get(name)?.range)
-    }
-
-    pub fn has_qname(&self, module: &str, name: &str) -> bool {
-        self.0.qname.module_name().as_str() == module && self.0.qname.id() == name
     }
 }
 
