@@ -104,3 +104,17 @@ The following is the order in which configuration options are selected:
   - Flag equivalent: `--python-version`
   - ENV equivalent: `PYRE_PYTHON_VERSION`
   - Equivalent configs: `pythonVersion` in Pyright, `python_version` in MyPy
+- `errors`: configure (enable and disable) the errors Pyrefly shows
+  - Type: Table of error code name to boolean representing enabled status
+  - Default: `errors = {}`
+  - Flag equivalent: none
+  - ENV equivalent: none
+  - Equivalent configs:
+    [type check rule overrides](https://microsoft.github.io/pyright/#/configuration?id=type-check-rule-overrides)
+    and [type evaluation settings](https://microsoft.github.io/pyright/#/configuration?id=type-evaluation-settings)
+    in Pyright,
+    [`enable_error_code`](https://mypy.readthedocs.io/en/stable/config_file.html#confval-enable_error_code) and
+    [`disable_error_code`](https://mypy.readthedocs.io/en/stable/config_file.html#confval-disable_error_code)
+    in MyPy
+  - Notes: setting `<error-code> = true` is the same as having no error code configuration present, which means
+    the error will be shown. Setting `<error-code> = false` will disable the error for type checking.
