@@ -2,7 +2,7 @@
 
 [package]
 name = "pyrefly"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Meta"]
 edition = "2021"
 repository = "https://github.com/facebook/pyre-check/tree/main/pyre2"
