@@ -8272,8 +8272,8 @@
     {
       "code": -2,
       "column": 29,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Invalid type inside literal, `LiteralString`",
+      "description": "Invalid type inside literal, `LiteralString`",
       "line": 36,
       "name": "invalid-literal",
       "stop_column": 42,
@@ -8282,8 +8282,8 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Invalid type inside literal, `LiteralString`",
+      "description": "Invalid type inside literal, `LiteralString`",
       "line": 37,
       "name": "invalid-literal",
       "stop_column": 35,
@@ -8373,46 +8373,6 @@
   "literals_parameterizations.py": [
     {
       "code": -2,
-      "column": 20,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 33,
-      "name": "invalid-literal",
-      "stop_column": 32,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 34,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 33,
-      "name": "invalid-literal",
-      "stop_column": 54,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 56,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 33,
-      "name": "invalid-literal",
-      "stop_column": 75,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 77,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 33,
-      "name": "invalid-literal",
-      "stop_column": 87,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
       "column": 17,
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",
@@ -8484,8 +8444,8 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Invalid type inside literal, `int`",
+      "description": "Invalid type inside literal, `int`",
       "line": 48,
       "name": "invalid-literal",
       "stop_column": 18,
@@ -8494,18 +8454,18 @@
     {
       "code": -2,
       "column": 15,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Expected a type form, got instance of `Literal[3]`",
+      "description": "Expected a type form, got instance of `Literal[3]`",
       "line": 49,
-      "name": "invalid-literal",
+      "name": "not-a-type",
       "stop_column": 23,
       "stop_line": 49
     },
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Invalid type inside literal, `TypeVar[T]`",
+      "description": "Invalid type inside literal, `TypeVar[T]`",
       "line": 50,
       "name": "invalid-literal",
       "stop_column": 17,
@@ -8524,8 +8484,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Invalid type inside literal, `Any`",
+      "description": "Invalid type inside literal, `Any`",
       "line": 52,
       "name": "invalid-literal",
       "stop_column": 19,
@@ -8554,10 +8514,10 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
+      "concise_description": "Expected a type form, got instance of `(x: Error) -> int`",
+      "description": "Expected a type form, got instance of `(x: Error) -> int`",
       "line": 61,
-      "name": "invalid-literal",
+      "name": "not-a-type",
       "stop_column": 23,
       "stop_line": 61
     },

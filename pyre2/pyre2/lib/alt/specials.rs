@@ -189,6 +189,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 for x in arguments.iter() {
                     let lit = Lit::from_expr(
                         x,
+                        &|x| self.expr_untype(x, TypeFormContext::TypeArgument, errors),
                         &|enum_name, member_name| {
                             let ty = self.get(&Key::Usage(ShortIdentifier::new(&enum_name)));
                             let cls = match &*ty {

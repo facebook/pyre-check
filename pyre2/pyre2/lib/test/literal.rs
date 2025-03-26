@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_fstring_literal,
@@ -37,7 +36,7 @@ testcase!(
     r#"
 from typing import Literal
 x = 1
-y: Literal[x]  # E: Invalid literal expression
+y: Literal[x]  # E: Expected a type form
 "#,
 );
 
@@ -136,17 +135,16 @@ def foo(x):
 "#,
 );
 
-testcase_with_bug!(
-    "Should allow nested literals",
+testcase!(
     test_literal_nesting,
     r#"
 from typing import Literal, assert_type
 
 X = Literal["foo", "bar"]
 Y = Literal["baz", None]
-Z = Literal[X, Y]  # E: Invalid literal expression # E: Invalid literal expression
+Z = Literal[X, Y]
 
 def f(x: Z) -> None:
-    assert_type(x, Literal["foo", "bar", "baz", None]) # E: assert_type
+    assert_type(x, Literal["foo", "bar", "baz", None])
 "#,
 );

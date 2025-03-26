@@ -520,7 +520,6 @@
   "literals_parameterizations.py": [
     "Line 46: Expected 1 errors",
     "Line 60: Expected 1 errors",
-    "Line 33: Unexpected errors ['Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression', 'Invalid literal expression']",
     "Line 35: Unexpected errors ['Invalid literal expression']"
   ],
   "literals_semantics.py": [],
