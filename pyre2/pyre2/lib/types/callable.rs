@@ -392,12 +392,21 @@ impl Callable {
     }
 
     pub fn subst_self_type_mut(&mut self, replacement: &Type) {
-        // TODO(rechen): visit parameters as well
-        self.ret.transform_mut(&mut |t| {
-            if matches!(t, Type::SelfType(_)) {
-                *t = replacement.clone();
+        match &mut self.params {
+            Params::List(params) => {
+                for param in params.0.iter_mut() {
+                    param.subst_self_type_mut(replacement);
+                }
             }
-        })
+            Params::Ellipsis => {}
+            Params::ParamSpec(ts, t) => {
+                for t in ts.iter_mut() {
+                    t.subst_self_type_mut(replacement);
+                }
+                t.subst_self_type_mut(replacement);
+            }
+        }
+        self.ret.subst_self_type_mut(replacement);
     }
 }
 
@@ -424,6 +433,16 @@ impl Param {
             | Param::Pos(_, _, Required::Required)
             | Param::KwOnly(_, _, Required::Required) => true,
             _ => false,
+        }
+    }
+
+    fn subst_self_type_mut(&mut self, replacement: &Type) {
+        match self {
+            Param::PosOnly(ty, _)
+            | Param::Pos(_, ty, _)
+            | Param::VarArg(_, ty)
+            | Param::KwOnly(_, ty, _)
+            | Param::Kwargs(ty) => ty.subst_self_type_mut(replacement),
         }
     }
 }

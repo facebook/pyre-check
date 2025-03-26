@@ -131,7 +131,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Target::FunctionOverload(sigs, *overload.metadata),
                 ))
             }
-            Type::BoundMethod(box BoundMethod { obj, func }) => {
+            Type::BoundMethod(box BoundMethod { obj, mut func }) => {
+                let self_replacement = if func.metadata().flags.is_classmethod
+                    && let Type::ClassDef(c) = &obj
+                {
+                    &c.instance_type()
+                } else {
+                    &obj
+                };
+                func.subst_self_type_mut(self_replacement);
                 match self.as_call_target(func.as_type()) {
                     Some(CallTarget {
                         qs,

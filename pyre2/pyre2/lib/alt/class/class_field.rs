@@ -340,7 +340,6 @@ pub fn bind_class_attribute(cls: &Class, attr: Type) -> Attribute {
 fn make_bound_method_helper(
     obj: Type,
     attr: &Type,
-    self_type: Option<&Type>,
     should_bind: &dyn Fn(&FuncMetadata) -> bool,
 ) -> Option<Type> {
     let func = match attr {
@@ -359,26 +358,18 @@ fn make_bound_method_helper(
         }
         _ => None,
     };
-    func.map(|mut func| {
-        func.subst_self_type_mut(self_type.unwrap_or(&obj));
-        Type::BoundMethod(Box::new(BoundMethod { obj, func }))
-    })
+    func.map(|func| Type::BoundMethod(Box::new(BoundMethod { obj, func })))
 }
 
 fn make_bound_classmethod(cls: &Class, attr: &Type) -> Option<Type> {
     let should_bind = |meta: &FuncMetadata| meta.flags.is_classmethod;
-    make_bound_method_helper(
-        Type::ClassDef(cls.dupe()),
-        attr,
-        Some(&cls.instance_type()),
-        &should_bind,
-    )
+    make_bound_method_helper(Type::ClassDef(cls.dupe()), attr, &should_bind)
 }
 
 fn make_bound_method(cls: &ClassType, attr: &Type) -> Option<Type> {
     let should_bind =
         |meta: &FuncMetadata| !meta.flags.is_staticmethod && !meta.flags.is_classmethod;
-    make_bound_method_helper(cls.instance_type(), attr, None, &should_bind)
+    make_bound_method_helper(cls.instance_type(), attr, &should_bind)
 }
 
 fn bind_instance_attribute(

@@ -2738,6 +2738,16 @@
     },
     {
       "code": -2,
+      "column": 8,
+      "concise_description": "Argument `Class2[@_]` is not assignable to parameter `x` with type `Class3 | None` in function `Class2.__init__`",
+      "description": "Argument `Class2[@_]` is not assignable to parameter `x` with type `Class3 | None` in function `Class2.__init__`",
+      "line": 42,
+      "name": "bad-argument-type",
+      "stop_column": 20,
+      "stop_line": 42
+    },
+    {
+      "code": -2,
       "column": 1,
       "concise_description": "Argument `Class4[str]` is not assignable to parameter `self` with type `Class4[int]` in function `Class4.__init__`",
       "description": "Argument `Class4[str]` is not assignable to parameter `self` with type `Class4[int]` in function `Class4.__init__`",
@@ -6746,12 +6756,32 @@
     {
       "code": -2,
       "column": 19,
+      "concise_description": "Argument `ReturnConcreteShape` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
+      "description": "Argument `ReturnConcreteShape` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
+      "line": 58,
+      "name": "bad-argument-type",
+      "stop_column": 40,
+      "stop_line": 58
+    },
+    {
+      "code": -2,
+      "column": 19,
       "concise_description": "Argument `BadReturnType` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
       "description": "Argument `BadReturnType` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
       "line": 61,
       "name": "bad-argument-type",
       "stop_column": 34,
       "stop_line": 61
+    },
+    {
+      "code": -2,
+      "column": 19,
+      "concise_description": "Argument `ReturnDifferentClass` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
+      "description": "Argument `ReturnDifferentClass` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`",
+      "line": 64,
+      "name": "bad-argument-type",
+      "stop_column": 41,
+      "stop_line": 64
     }
   ],
   "generics_self_usage.py": [

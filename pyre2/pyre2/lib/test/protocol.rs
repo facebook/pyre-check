@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_protocol,
@@ -309,5 +310,22 @@ class C:
     def __getattr__(self, name: str) -> int: ...
 
 f(C()) # E: Argument `C` is not assignable to parameter `proto` with type `P`
+    "#,
+);
+
+testcase_with_bug!(
+    "The conformance tests require that we accept this, and mypy and pyright do so, but it is unsound. Consider emitting an error.",
+    test_self_param,
+    r#"
+from typing import Protocol, Self
+class P(Protocol):
+    def f(self, x: Self):
+        pass
+class C:
+    def f(self, x: Self):
+        pass
+def f(x: P):
+    pass
+f(C())
     "#,
 );
