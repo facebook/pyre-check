@@ -652,6 +652,21 @@ class Test(B):
 );
 
 testcase_with_bug!(
+    "TODO(stroxler): Should probably error when setting the field",
+    test_generic_init_field,
+    r#"
+from typing import reveal_type
+
+class C:
+    def __init__[R](self, field: R):
+        self.field = field
+
+c = C("test")
+reveal_type(c.field)  # E: revealed type: ?_TypeVar
+"#,
+);
+
+testcase_with_bug!(
     "PyTorch TODO: the errors about `object` are false positives caused by buggy typing.Self support",
     test_with,
     r#"
