@@ -381,11 +381,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Subscript(x)
-                if !Ast::unpack_slice(&x.slice).is_empty()
+                if let unpacked_slice = Ast::unpack_slice(&x.slice)
+                    && !unpacked_slice.is_empty()
                     && let Some(qualifier) =
                         self.expr_qualifier(&x.value, type_form_context, errors) =>
             {
-                let unpacked_slice = Ast::unpack_slice(&x.slice);
                 if qualifier == Qualifier::Annotated {
                     // TODO: we may want to preserve the extra annotation info for `Annotated` in the future
                     if unpacked_slice.len() < 2 {
