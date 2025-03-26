@@ -30,7 +30,8 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
 use crate::util::visit::Visit;
 
-/// How a name is defined.
+/// How a name is defined. If a name is defined outside of this
+/// module, we additionally store the module we got it from
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum DefinitionStyle {
     /// Defined in this module, e.g. `x = 1` or `def x(): ...`
@@ -40,13 +41,15 @@ pub enum DefinitionStyle {
     /// Defined in this scope from `global x`
     Global,
     /// Imported with an alias, e.g. `from x import y as z`
-    ImportAs,
+    ImportAs(ModuleName),
     /// Imported with an alias, where the alias is identical, e.g. `from x import y as y`
-    ImportAsEq,
+    ImportAsEq(ModuleName),
     /// Imported from another module, e.g. `from x import y`
-    Import,
+    Import(ModuleName),
     /// Imported directly, e.g. `import x` or `import x.y` (both of which add `x`)
-    ImportModule,
+    ImportModule(ModuleName),
+    /// A relative import that does not exist: we do `....` more than we have depth
+    ImportInvalidRelative,
 }
 
 #[derive(Debug, Clone)]
@@ -158,7 +161,7 @@ impl Definitions {
                 && (style == ModuleStyle::Executable
                     || matches!(
                         def.style,
-                        DefinitionStyle::Local | DefinitionStyle::ImportAsEq
+                        DefinitionStyle::Local | DefinitionStyle::ImportAsEq(_)
                     ))
             {
                 self.dunder_all
@@ -224,46 +227,48 @@ impl<'a> DefinitionsBuilder<'a> {
                         None => self.add_name(
                             &module.first_component(),
                             a.name.range,
-                            DefinitionStyle::ImportModule,
+                            DefinitionStyle::ImportModule(module),
                             None,
                         ),
                         Some(alias) => self.add_identifier(
                             alias,
                             if alias.id == a.name.id {
-                                DefinitionStyle::ImportAsEq
+                                DefinitionStyle::ImportAsEq(module)
                             } else {
-                                DefinitionStyle::ImportAs
+                                DefinitionStyle::ImportAs(module)
                             },
                         ),
                     };
                 }
             }
             Stmt::ImportFrom(x) => {
+                let name = self.module_name.new_maybe_relative(
+                    self.is_init,
+                    x.level,
+                    x.module.as_ref().map(|x| &x.id),
+                );
                 for a in &x.names {
                     if &a.name == "*" {
-                        if let Some(module) = self.module_name.new_maybe_relative(
-                            self.is_init,
-                            x.level,
-                            x.module.as_ref().map(|x| &x.id),
-                        ) {
+                        if let Some(module) = name {
                             self.inner.import_all.insert(module, a.name.range);
                         }
                     } else {
-                        let style = if a.asname.as_ref().map(|x| &x.id) == Some(&a.name.id) {
-                            DefinitionStyle::ImportAsEq
-                        } else if a.asname.is_some() {
-                            DefinitionStyle::ImportAs
-                        } else {
-                            DefinitionStyle::Import
+                        let style = match name {
+                            None => DefinitionStyle::ImportInvalidRelative,
+                            Some(name) => {
+                                if a.asname.as_ref().map(|x| &x.id) == Some(&a.name.id) {
+                                    DefinitionStyle::ImportAsEq(name)
+                                } else if a.asname.is_some() {
+                                    DefinitionStyle::ImportAs(name)
+                                } else {
+                                    DefinitionStyle::Import(name)
+                                }
+                            }
                         };
                         self.add_identifier(a.asname.as_ref().unwrap_or(&a.name), style);
-                        if style == DefinitionStyle::ImportAsEq
+                        if matches!(style, DefinitionStyle::ImportAsEq(_))
                             && a.name.id == dunder::ALL
-                            && let Some(module) = self.module_name.new_maybe_relative(
-                                self.is_init,
-                                x.level,
-                                x.module.as_ref().map(|x| &x.id),
-                            )
+                            && let Some(module) = name
                         {
                             self.inner.dunder_all = vec![DunderAllEntry::Module(x.range, module)]
                         }

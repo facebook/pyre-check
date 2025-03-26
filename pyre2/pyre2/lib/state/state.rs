@@ -48,6 +48,7 @@ use crate::binding::table::TableKeyed;
 use crate::error::error::Error;
 use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
+use crate::export::exports::ExportLocation;
 use crate::export::exports::Exports;
 use crate::export::exports::LookupExport;
 use crate::metadata::RuntimeMetadata;
@@ -469,7 +470,7 @@ impl State {
         if !self
             .lookup_export(&module_data)
             .exports(&self.lookup(module_data.dupe()))
-            .contains(name)
+            .contains_key(name)
         {
             self.add_error(
                 &module_data,
@@ -1026,6 +1027,12 @@ impl State {
             info!("Step {step} took {duration:.3} seconds");
         }
         Ok(())
+    }
+
+    pub fn get_exports(&self, handle: &Handle) -> Arc<SmallMap<Name, ExportLocation>> {
+        let module_data = self.get_module(handle);
+        self.lookup_export(&module_data)
+            .exports(&self.lookup(module_data))
     }
 }
 

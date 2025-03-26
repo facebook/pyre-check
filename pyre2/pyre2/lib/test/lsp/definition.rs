@@ -76,8 +76,8 @@ Definition Result:
 4 | def f(x: list[int], y: str, z: Literal[42]):
                                     ^
 Definition Result:
-2 | from typing import Literal
-                       ^^^^^^^
+218 | Literal: _SpecialForm
+      ^^^^^^^
 
 8 | yyy = f([1, 2, 3], "test", 42)
           ^
@@ -109,9 +109,9 @@ from typing import Literal
 from .import_provider import f
 #           ^                ^
 
-foo: Literal[1] = 1 # todo: ideally should jump through the import
+foo: Literal[1] = 1
 #        ^  
-bar = f([1], "", 42) # todo: ideally should jump through the import
+bar = f([1], "", 42)
 #     ^
 "#;
 
@@ -134,20 +134,20 @@ Definition Result:
 3 | from .import_provider import f
                                  ^
 Definition Result:
-3 | from .import_provider import f
-                                 ^
+4 | def f(x: list[int], y: str, z: Literal[42]):
+        ^
 
-6 | foo: Literal[1] = 1 # todo: ideally should jump through the import
+6 | foo: Literal[1] = 1
              ^
 Definition Result:
-2 | from typing import Literal
-                       ^^^^^^^
+218 | Literal: _SpecialForm
+      ^^^^^^^
 
-8 | bar = f([1], "", 42) # todo: ideally should jump through the import
+8 | bar = f([1], "", 42)
           ^
 Definition Result:
-3 | from .import_provider import f
-                                 ^
+4 | def f(x: list[int], y: str, z: Literal[42]):
+        ^
 
 
 # import_provider.py
@@ -155,6 +155,29 @@ Definition Result:
         .trim(),
         report.trim()
     );
+}
+
+#[test]
+fn incorrect_import_tests() {
+    let code_test: &str = r#"
+from .....import_provider import baz
+baz
+# ^
+"#;
+    let report =
+        get_batched_lsp_operations_report_allow_error(&[("main", code_test)], get_test_report);
+    assert_eq!(
+        r#"
+# main.py
+3 | baz
+      ^
+Definition Result:
+2 | from .....import_provider import baz
+                                     ^^^
+"#
+        .trim(),
+        report.trim()
+    )
 }
 
 #[test]
@@ -202,6 +225,7 @@ def f():
     let code_test: &str = r#"
 def foo() -> None:
     from .import_provider import f
+    bar = f()
     #     ^
     "#;
     let report = get_batched_lsp_operations_report(
@@ -214,14 +238,55 @@ def foo() -> None:
     assert_eq!(
         r#"
 # main.py
-3 |     from .import_provider import f
+4 |     bar = f()
               ^
 Definition Result:
-1 | 
-    ^
+2 | def f():
+        ^
 
 
 # import_provider.py
+"#
+        .trim(),
+        report.trim()
+    );
+}
+
+#[test]
+fn import_of_import_test() {
+    let code_import_provider2: &str = r#"
+def f():
+        pass"#;
+    let code_import_provider: &str = r#"
+from .import_provider2 import f
+"#;
+    let code_test: &str = r#"
+from .import_provider import *
+
+bar = f() # should jump to definition in import_provider2
+#     ^
+    "#;
+    let report = get_batched_lsp_operations_report(
+        &[
+            ("main", code_test),
+            ("import_provider", code_import_provider),
+            ("import_provider2", code_import_provider2),
+        ],
+        get_test_report,
+    );
+    assert_eq!(
+        r#"
+# main.py
+4 | bar = f() # should jump to definition in import_provider2
+          ^
+Definition Result:
+2 | def f():
+        ^
+
+
+# import_provider.py
+
+# import_provider2.py
 "#
         .trim(),
         report.trim()

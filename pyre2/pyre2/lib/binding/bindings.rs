@@ -354,7 +354,7 @@ impl Bindings {
                     Binding::AnyType(AnyStyle::Error)
                 }
             };
-            if exported.contains_hashed(k) {
+            if exported.contains_key_hashed(k) {
                 builder.table.insert(KeyExport(k.into_key().clone()), val);
             }
         }

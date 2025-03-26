@@ -60,7 +60,7 @@ pub struct StaticInfo {
 impl StaticInfo {
     pub fn as_key(&self, name: &Name) -> Key {
         if self.count == 1 {
-            if self.style == DefinitionStyle::ImportModule {
+            if matches!(self.style, DefinitionStyle::ImportModule(_)) {
                 Key::Import(name.clone(), self.loc)
             } else {
                 // We are constructing an identifier, but it must have been one that we saw earlier
@@ -142,7 +142,7 @@ impl Static {
             for name in wildcard.iter_hashed() {
                 // TODO: semantics of import * and global var with same name
                 self.add_with_count(name.cloned(), range, None, 1).style =
-                    DefinitionStyle::ImportModule;
+                    DefinitionStyle::ImportModule(module_info.name());
             }
         }
     }

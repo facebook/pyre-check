@@ -13,8 +13,11 @@ use std::sync::Arc;
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::Stmt;
+use ruff_text_size::TextRange;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
+use crate::export::definitions::DefinitionStyle;
 use crate::export::definitions::Definitions;
 use crate::export::definitions::DunderAllEntry;
 use crate::graph::calculation::Calculation;
@@ -29,6 +32,16 @@ pub trait LookupExport {
     fn get(&self, module: ModuleName) -> Result<Exports, FindError>;
 }
 
+/// Where is this export defined?
+#[derive(Debug, Clone, Copy)]
+pub enum ExportLocation {
+    // This export is defined in this module.
+    ThisModule(TextRange),
+    // Exported from another module. Module optional in case
+    // we could not find it.
+    OtherModule(ModuleName),
+}
+
 #[derive(Debug, Default, Clone, Dupe)]
 pub struct Exports(Arc<ExportsInner>);
 
@@ -41,8 +54,8 @@ struct ExportsInner {
     definitions: Definitions,
     /// Names that are available via `from <this_module> import *`
     wildcard: Calculation<Arc<SmallSet<Name>>>,
-    /// Names that are available via `from <this_module> import <name>`.
-    exports: Calculation<Arc<SmallSet<Name>>>,
+    /// Names that are available via `from <this_module> import <name>` along with their locations
+    exports: Calculation<Arc<SmallMap<Name, ExportLocation>>>,
 }
 
 impl Display for Exports {
@@ -98,16 +111,29 @@ impl Exports {
         self.0.wildcard.calculate(f).unwrap_or_default()
     }
 
-    pub fn exports(&self, lookup: &dyn LookupExport) -> Arc<SmallSet<Name>> {
+    pub fn exports(&self, lookup: &dyn LookupExport) -> Arc<SmallMap<Name, ExportLocation>> {
         let f = || {
-            let mut result = SmallSet::new();
-            for (x, _) in self.0.definitions.definitions.iter_hashed() {
-                result.insert_hashed(x.cloned());
+            let mut result: SmallMap<Name, ExportLocation> = SmallMap::new();
+            for (name, definition) in self.0.definitions.definitions.iter_hashed() {
+                let location = match definition.style {
+                    DefinitionStyle::Local
+                    | DefinitionStyle::Nonlocal
+                    | DefinitionStyle::Global
+                    // If the import is invalid, the final location is this module.
+                    | DefinitionStyle::ImportInvalidRelative => {
+                        ExportLocation::ThisModule(definition.range)
+                    }
+                    DefinitionStyle::ImportAs(from)
+                    | DefinitionStyle::ImportAsEq(from)
+                    | DefinitionStyle::Import(from)
+                    | DefinitionStyle::ImportModule(from) => ExportLocation::OtherModule(from),
+                };
+                result.insert_hashed(name.cloned(), location);
             }
-            for x in self.0.definitions.import_all.keys() {
-                if let Ok(exports) = lookup.get(*x) {
-                    for y in exports.wildcard(lookup).iter_hashed() {
-                        result.insert_hashed(y.cloned());
+            for m in self.0.definitions.import_all.keys() {
+                if let Ok(exports) = lookup.get(*m) {
+                    for name in exports.wildcard(lookup).iter_hashed() {
+                        result.insert_hashed(name.cloned(), ExportLocation::OtherModule(*m));
                     }
                 }
             }
@@ -167,7 +193,7 @@ mod tests {
 
     #[must_use]
     fn contains(exports: &Exports, lookup: &dyn LookupExport, name: &str) -> bool {
-        exports.exports(lookup).contains(&Name::new(name))
+        exports.exports(lookup).contains_key(&Name::new(name))
     }
 
     #[test]

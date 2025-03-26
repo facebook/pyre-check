@@ -18,7 +18,7 @@ use starlark_map::ordered_set::OrderedSet;
 
 use crate::binding::binding::Binding;
 use crate::binding::binding::Key;
-use crate::binding::binding::KeyExport;
+use crate::export::exports::ExportLocation;
 use crate::module::module_info::TextRangeWithModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
@@ -118,12 +118,14 @@ impl State {
         key: &Key,
         gas: isize,
     ) -> Option<(Handle, TextRange)> {
-        if let Key::Definition(x) = key {
-            return Some((handle.dupe(), x.range()));
-        }
         let bindings = self.get_bindings(handle)?;
         let idx = bindings.key_to_idx(key);
         let res = self.binding_to_definition(handle, bindings.get(idx), gas);
+        if res.is_none()
+            && let Key::Definition(x) = key
+        {
+            return Some((handle.dupe(), x.range()));
+        }
         if res.is_none()
             && let Key::Anywhere(_, range) = key
         {
@@ -136,7 +138,7 @@ impl State {
         &self,
         handle: &Handle,
         binding: &Binding,
-        gas: isize,
+        mut gas: isize,
     ) -> Option<(Handle, TextRange)> {
         if gas <= 0 {
             return None;
@@ -149,11 +151,19 @@ impl State {
                 bindings.idx_to_key(*ks.iter().next().unwrap()),
                 gas - 1,
             ),
-            Binding::Import(m, name) => {
-                let handle = self.import_handle(handle, *m).ok()?;
-                let bindings = self.get_bindings(&handle)?;
-                let b = bindings.get(bindings.key_to_idx(&KeyExport(name.clone())));
-                self.binding_to_definition(&handle, b, gas - 1)
+            Binding::Import(mut m, name) => {
+                while gas > 0 {
+                    let handle = self.import_handle(handle, m).ok()?;
+                    match self.get_exports(&handle).get(name) {
+                        Some(ExportLocation::ThisModule(range)) => {
+                            return Some((handle.clone(), *range));
+                        }
+                        Some(ExportLocation::OtherModule(module)) => m = *module,
+                        None => return None,
+                    }
+                    gas -= 1;
+                }
+                None
             }
             Binding::Module(name, _, _) => Some((
                 self.import_handle(handle, *name).ok()?,

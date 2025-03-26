@@ -733,7 +733,7 @@ impl<'a> BindingsBuilder<'a> {
                                 if &x.name == "*" {
                                     for name in module_exports.wildcard(self.lookup).iter_hashed() {
                                         let key = Key::Import(name.into_key().clone(), x.range);
-                                        let val = if exported.contains_hashed(name) {
+                                        let val = if exported.contains_key_hashed(name) {
                                             Binding::Import(m, name.into_key().clone())
                                         } else {
                                             self.error(
@@ -761,7 +761,7 @@ impl<'a> BindingsBuilder<'a> {
                                     // but there is an exception: if we are already looking at the
                                     // `__init__` module of `x`, we always prefer the submodule.
                                     let val = if (self.module_info.name() != m)
-                                        && exported.contains(&x.name.id)
+                                        && exported.contains_key(&x.name.id)
                                     {
                                         Binding::Import(m, x.name.id.clone())
                                     } else {
