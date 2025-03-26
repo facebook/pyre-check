@@ -335,29 +335,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         context: Option<&dyn Fn() -> ErrorContext>,
         todo_ctx: &str,
     ) -> Option<Type> {
-        // TODO(yangdanny): handle unions
-        match self.lookup_attr_no_union(base, attr_name) {
-            LookupResult::Found(attr) => {
-                match self.resolve_get_access(attr, range, errors, context) {
-                    Ok(ty) => Some(ty),
-                    Err(e) => Some(self.error(
-                        errors,
-                        range,
-                        ErrorKind::MissingAttribute,
-                        context,
-                        e.to_error_msg(attr_name),
-                    )),
+        let mut not_found = false;
+        let mut attr_tys = Vec::new();
+        self.map_over_union(base, |base| {
+            match self.lookup_attr_no_union(base, attr_name) {
+                LookupResult::Found(attr) => attr_tys.push(
+                    self.resolve_get_access(attr, range, errors, context)
+                        .unwrap_or_else(|e| {
+                            self.error(
+                                errors,
+                                range,
+                                ErrorKind::MissingAttribute,
+                                context,
+                                e.to_error_msg(attr_name),
+                            )
+                        }),
+                ),
+                LookupResult::InternalError(e) => attr_tys.push(self.error(
+                    errors,
+                    range,
+                    ErrorKind::InternalError,
+                    context,
+                    e.to_error_msg(attr_name, todo_ctx),
+                )),
+                LookupResult::NotFound(_) => {
+                    not_found = true;
                 }
             }
-            LookupResult::InternalError(e) => Some(self.error(
-                errors,
-                range,
-                ErrorKind::InternalError,
-                context,
-                e.to_error_msg(attr_name, todo_ctx),
-            )),
-            _ => None,
+        });
+        if not_found {
+            return None;
         }
+        Some(self.unions(attr_tys))
     }
 
     /// Look up the `_value_` attribute of an enum class. This field has to be a plain instance
