@@ -390,6 +390,15 @@ impl Callable {
             }
         )
     }
+
+    pub fn subst_self_type_mut(&mut self, replacement: &Type) {
+        // TODO(rechen): visit parameters as well
+        self.ret.transform_mut(&mut |t| {
+            if matches!(t, Type::SelfType(_)) {
+                *t = replacement.clone();
+            }
+        })
+    }
 }
 
 impl Param {

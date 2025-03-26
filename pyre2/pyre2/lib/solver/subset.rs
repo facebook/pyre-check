@@ -731,6 +731,14 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             {
                 self.is_subset_eq(&Type::Tuple(Tuple::Concrete(elts)), want)
             }
+            (Type::ClassType(got), Type::SelfType(want)) => self
+                .type_order
+                .has_superclass(got.class_object(), want.class_object()),
+            (Type::Type(box Type::ClassType(got)), Type::SelfType(want)) => {
+                self.type_order.has_metaclass(got.class_object(), want)
+            }
+            (Type::SelfType(_), Type::SelfType(_)) => true,
+            (Type::SelfType(got), _) => self.is_subset_eq(&Type::ClassType(got.clone()), want),
             (Type::Tuple(l), Type::Tuple(u)) => self.is_subset_tuple(l, u),
             (Type::Tuple(Tuple::Concrete(left_elts)), _) => {
                 let tuple_type = self

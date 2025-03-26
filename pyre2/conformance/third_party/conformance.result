@@ -89,7 +89,7 @@
     "Line 25: Expected 1 errors",
     "Line 47: Expected 1 errors",
     "Line 66: Expected 1 errors",
-    "Line 87: Unexpected errors ['Expected a type form, got instance of `(self: ClassD) -> None`']",
+    "Line 87: Unexpected errors ['Expected a type form, got instance of `(self: Self@ClassD) -> None`']",
     "Line 96: Unexpected errors ['assert_type(Any, int) failed']"
   ],
   "annotations_generators.py": [
@@ -133,22 +133,16 @@
     "Line 75: Unexpected errors ['assert_type(Class5[list[int]], Class5[float]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', 'Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`']"
   ],
   "constructors_call_metaclass.py": [
-    "Line 20: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`']",
-    "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', 'Missing argument `x` in function `Class1.__new__`']",
-    "Line 33: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2`']",
-    "Line 48: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class3`']",
-    "Line 62: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class4`']"
+    "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', 'Missing argument `x` in function `Class1.__new__`']"
   ],
   "constructors_call_new.py": [
-    "Line 16: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`']",
-    "Line 29: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`']",
+    "Line 35: Unexpected errors ['assert_type(Class2[Any], Class2[int]) failed']",
+    "Line 36: Unexpected errors ['assert_type(Class2[Any], Class2[str]) failed']",
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x` in function `Class4.__init__`']",
     "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x` in function `Class5.__init__`']",
-    "Line 104: Unexpected errors ['assert_type(object, Class7) failed']"
+    "Line 104: Unexpected errors ['assert_type(Self@object, Class7) failed']"
   ],
   "constructors_call_type.py": [
-    "Line 25: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`']",
-    "Line 35: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class2`']",
     "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 71: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
     "Line 79: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
@@ -163,7 +157,6 @@
     "Line 64: Unexpected errors ['assert_type(Any, Class3) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 76: Unexpected errors ['Argument `type[Class4]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 78: Unexpected errors ['assert_type(Any, int) failed', 'Unexpected ParamSpec type: `Unknown`']",
-    "Line 93: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class5`']",
     "Line 96: Unexpected errors ['Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 100: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 105: Unexpected errors ['assert_type(Any, NoReturn) failed', 'Unexpected ParamSpec type: `Unknown`']",
@@ -174,15 +167,12 @@
     "Line 160: Unexpected errors ['Argument `type[Class7]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 164: Unexpected errors ['assert_type(Any, Class7[int]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 165: Unexpected errors ['assert_type(Any, Class7[str]) failed', 'Unexpected ParamSpec type: `Unknown`']",
-    "Line 178: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`']",
     "Line 181: Unexpected errors ['Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 183: Unexpected errors ['assert_type(Any, Class8[str]) failed', 'Unexpected ParamSpec type: `Unknown`']",
     "Line 192: Unexpected errors ['Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
     "Line 194: Unexpected errors ['assert_type(Any, Class9) failed', 'Unexpected ParamSpec type: `Unknown`']"
   ],
-  "constructors_consistency.py": [
-    "Line 22: Unexpected errors ['Returned type `object` is not assignable to declared return type `Class1`']"
-  ],
+  "constructors_consistency.py": [],
   "dataclasses_descriptors.py": [
     "Line 35: Unexpected errors ['Argument `Literal[3]` is not assignable to parameter `y` with type `Desc1` in function `DC1.__init__`']"
   ],
@@ -305,7 +295,7 @@
     "Line 19: Unexpected errors ['Type `type[Color]` is not iterable\\n  Argument `EnumMeta` is not assignable to parameter `self` with type `type[@_]` in function `enum.EnumMeta.__getitem__`', 'Type `type[Color]` is not iterable\\n  Argument `int` is not assignable to parameter `name` with type `str` in function `enum.EnumMeta.__getitem__`']",
     "Line 20: Unexpected errors ['assert_type(Any, Color) failed']",
     "Line 26: Unexpected errors ['assert_type(type[Color], Color) failed', 'Expected 0 type arguments for `Color`, got 1', \"Expected a type form, got instance of `Literal['RED']`\"]",
-    "Line 27: Unexpected errors ['assert_type(Enum, Color) failed']"
+    "Line 27: Unexpected errors ['assert_type(Self@Enum, Color) failed']"
   ],
   "enums_definition.py": [],
   "enums_expansion.py": [],
@@ -350,7 +340,7 @@
     "Line 148: Unexpected errors ['Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
     "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
     "Line 152: Unexpected errors ['Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
-    "Line 166: Unexpected errors ['assert_type(Any, (Foo7[int]) -> Foo7[int]) failed', 'Generic attribute `meth` of class `Foo7` is not visible on the class']",
+    "Line 166: Unexpected errors ['assert_type((Self@Foo7) -> Self@Foo7, (Foo7[int]) -> Foo7[int]) failed']",
     "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],
   "generics_defaults_referential.py": [
@@ -387,13 +377,12 @@
     "Line 96: Expected 1 errors"
   ],
   "generics_self_advanced.py": [
-    "Line 19: Unexpected errors ['assert_type(ParentA, ChildA) failed']",
-    "Line 35: Unexpected errors ['assert_type(ChildB, Self) failed']",
-    "Line 38: Unexpected errors ['assert_type(ParentB, Self) failed']",
-    "Line 42: Unexpected errors ['assert_type(type[ChildB], type[Self]) failed']",
+    "Line 35: Unexpected errors ['assert_type(Self@ChildB, Self) failed']",
+    "Line 38: Unexpected errors ['assert_type(ChildB, Self) failed']",
+    "Line 42: Unexpected errors ['assert_type(type[Self@ChildB], type[Self]) failed']",
     "Line 43: Unexpected errors ['assert_type(Any, list[Self]) failed', 'Instance-only attribute `a` of class `ChildB` is not visible on the class']",
     "Line 44: Unexpected errors ['assert_type(Any, Self) failed', 'Instance-only attribute `a` of class `ChildB` is not visible on the class']",
-    "Line 45: Unexpected errors ['assert_type(ParentB, Self) failed']"
+    "Line 45: Unexpected errors ['assert_type(ChildB, Self) failed']"
   ],
   "generics_self_attributes.py": [
     "Line 29: Unexpected errors ['`OrdinalLinkedList` is not assignable to attribute `next` with type `Self | None`']"
@@ -401,12 +390,12 @@
   "generics_self_basic.py": [
     "Line 20: Expected 1 errors",
     "Line 33: Expected 1 errors",
-    "Line 14: Unexpected errors ['assert_type(Shape, Self) failed']",
+    "Line 14: Unexpected errors ['assert_type(Self@Shape, Self) failed']",
     "Line 15: Unexpected errors ['Object of class `Shape` has no attribute `scale`']",
-    "Line 27: Unexpected errors ['assert_type(type[Shape], type[Self]) failed']",
-    "Line 40: Unexpected errors ['assert_type(Shape, Self) failed']",
-    "Line 52: Unexpected errors ['assert_type(Shape, Circle) failed']",
-    "Line 55: Unexpected errors ['assert_type(Shape, Circle) failed']"
+    "Line 27: Unexpected errors ['assert_type(type[Self@Shape], type[Self]) failed']",
+    "Line 28: Unexpected errors ['Expected a callable, got type[Self@Shape]']",
+    "Line 37: Unexpected errors ['Expected a callable, got type[Self@Shape]']",
+    "Line 40: Unexpected errors ['assert_type(Self@Shape, Self) failed']"
   ],
   "generics_self_protocols.py": [
     "Line 64: Expected 1 errors"
@@ -423,10 +412,10 @@
     "Line 116: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 125: Expected 1 errors",
-    "Line 50: Unexpected errors ['`(self: CallableAttribute) -> int` is not assignable to `(Self) -> int`']",
+    "Line 15: Unexpected errors ['Expected a callable, got type[Self@ReturnsSelf]']",
+    "Line 50: Unexpected errors ['`(self: Self@CallableAttribute) -> int` is not assignable to `(Self) -> int`']",
     "Line 60: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
-    "Line 63: Unexpected errors ['Argument `HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`']",
-    "Line 93: Unexpected errors ['Object of class `Foo3` has no attribute `child_value`']"
+    "Line 63: Unexpected errors ['Argument `Self@HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`']"
   ],
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
@@ -457,9 +446,13 @@
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
     "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"
   ],
-  "generics_type_erasure.py": [],
+  "generics_type_erasure.py": [
+    "Line 56: Unexpected errors ['assert_type(Any, bytes) failed', \"Can't apply arguments to non-class, got Self@dict\"]"
+  ],
   "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
+    "Line 25: Unexpected errors ['`?_TypeVarTuple` is not assignable to attribute `_shape` with type `Unknown`']",
+    "Line 28: Unexpected errors ['Returned type `Unknown` is not assignable to declared return type `?_TypeVarTuple`']",
     "Line 85: Unexpected errors ['Argument `tuple[float]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`']"
   ],
   "generics_typevartuple_callable.py": [],
@@ -540,17 +533,13 @@
   "namedtuples_usage.py": [],
   "narrowing_typeguard.py": [
     "Line 102: Expected 1 errors",
-    "Line 107: Expected 1 errors",
-    "Line 89: Unexpected errors ['assert_type(A, B) failed']",
-    "Line 93: Unexpected errors ['assert_type(A, B) failed']"
+    "Line 107: Expected 1 errors"
   ],
   "narrowing_typeis.py": [
     "Line 105: Expected 1 errors",
     "Line 110: Expected 1 errors",
     "Line 195: Expected 1 errors",
-    "Line 199: Expected 1 errors",
-    "Line 92: Unexpected errors ['assert_type(A, B) failed']",
-    "Line 96: Unexpected errors ['assert_type(A, B) failed']"
+    "Line 199: Expected 1 errors"
   ],
   "overloads_basic.py": [],
   "protocols_class_objects.py": [
@@ -600,9 +589,7 @@
   ],
   "protocols_self.py": [
     "Line 32: Unexpected errors ['`One` is not assignable to variable `c` with type `Copyable`']",
-    "Line 33: Unexpected errors ['`Other` is not assignable to variable `c` with type `Copyable`']",
-    "Line 72: Unexpected errors ['`C2[str]` is not assignable to `P2Parent[str]`']",
-    "Line 73: Unexpected errors ['`C2[str]` is not assignable to `P2Child[str]`']"
+    "Line 33: Unexpected errors ['`Other` is not assignable to variable `c` with type `Copyable`']"
   ],
   "protocols_subtyping.py": [
     "Line 16: Expected 1 errors"
@@ -656,7 +643,7 @@
     "Line 32: Unexpected errors [\"Returned type `Literal['whatever works']` is not assignable to declared return type `int`\"]"
   ],
   "specialtypes_none.py": [
-    "Line 39: Unexpected errors ['Argument `type[object]` is not assignable to parameter `val1` with type `type[None]` in function `func2`']",
+    "Line 39: Unexpected errors ['Argument `type[NoneType]` is not assignable to parameter `val1` with type `type[None]` in function `func2`']",
     "Line 40: Unexpected errors ['Argument `type` is not assignable to parameter `val1` with type `type[None]` in function `func2`']"
   ],
   "specialtypes_promotions.py": [],

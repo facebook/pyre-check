@@ -1229,8 +1229,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a type form, got instance of `(self: ClassD) -> None`",
-      "description": "Expected a type form, got instance of `(self: ClassD) -> None`",
+      "concise_description": "Expected a type form, got instance of `(self: Self@ClassD) -> None`",
+      "description": "Expected a type form, got instance of `(self: Self@ClassD) -> None`",
       "line": 87,
       "name": "not-a-type",
       "stop_column": 11,
@@ -1239,8 +1239,8 @@
     {
       "code": -2,
       "column": 8,
-      "concise_description": "Expected a type form, got instance of `(self: ClassD) -> None`",
-      "description": "Expected a type form, got instance of `(self: ClassD) -> None`",
+      "concise_description": "Expected a type form, got instance of `(self: Self@ClassD) -> None`",
+      "description": "Expected a type form, got instance of `(self: Self@ClassD) -> None`",
       "line": 89,
       "name": "not-a-type",
       "stop_column": 11,
@@ -2820,16 +2820,6 @@
   "constructors_call_metaclass.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class1`",
-      "description": "Returned type `object` is not assignable to declared return type `Class1`",
-      "line": 20,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 20
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(Class1, NoReturn) failed",
       "description": "assert_type(Class1, NoReturn) failed",
@@ -2850,26 +2840,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class2`",
-      "description": "Returned type `object` is not assignable to declared return type `Class2`",
-      "line": 33,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class3`",
-      "description": "Returned type `object` is not assignable to declared return type `Class3`",
-      "line": 48,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 48
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "Missing argument `x` in function `Class3.__new__`",
       "description": "Missing argument `x` in function `Class3.__new__`",
@@ -2877,16 +2847,6 @@
       "name": "missing-argument",
       "stop_column": 7,
       "stop_line": 51
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class4`",
-      "description": "Returned type `object` is not assignable to declared return type `Class4`",
-      "line": 62,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 62
     },
     {
       "code": -2,
@@ -2902,16 +2862,6 @@
   "constructors_call_new.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`",
-      "description": "Returned type `object` is not assignable to declared return type `Class1[?_TypeVar]`",
-      "line": 16,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 16
-    },
-    {
-      "code": -2,
       "column": 13,
       "concise_description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__new__`",
       "description": "Argument `float` is not assignable to parameter `x` with type `int` in function `Class1.__new__`",
@@ -2922,13 +2872,23 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`",
-      "description": "Returned type `object` is not assignable to declared return type `Class2[?_TypeVar]`",
-      "line": 29,
-      "name": "bad-return",
+      "column": 1,
+      "concise_description": "assert_type(Class2[Any], Class2[int]) failed",
+      "description": "assert_type(Class2[Any], Class2[int]) failed",
+      "line": 35,
+      "name": "assert-type",
       "stop_column": 36,
-      "stop_line": 29
+      "stop_line": 35
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Class2[Any], Class2[str]) failed",
+      "description": "assert_type(Class2[Any], Class2[str]) failed",
+      "line": 36,
+      "name": "assert-type",
+      "stop_column": 37,
+      "stop_line": 36
     },
     {
       "code": -2,
@@ -2973,8 +2933,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(object, Class7) failed",
-      "description": "assert_type(object, Class7) failed",
+      "concise_description": "assert_type(Self@object, Class7) failed",
+      "description": "assert_type(Self@object, Class7) failed",
       "line": 104,
       "name": "assert-type",
       "stop_column": 31,
@@ -2994,16 +2954,6 @@
   "constructors_call_type.py": [
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class1`",
-      "description": "Returned type `object` is not assignable to declared return type `Class1`",
-      "line": 25,
-      "name": "bad-return",
-      "stop_column": 48,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
       "column": 5,
       "concise_description": "Missing argument `x` in function `Meta1.__call__`",
       "description": "Missing argument `x` in function `Meta1.__call__`",
@@ -3021,16 +2971,6 @@
       "name": "missing-argument",
       "stop_column": 8,
       "stop_line": 30
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class2`",
-      "description": "Returned type `object` is not assignable to declared return type `Class2`",
-      "line": 35,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 35
     },
     {
       "code": -2,
@@ -3406,16 +3346,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class5`",
-      "description": "Returned type `object` is not assignable to declared return type `Class5`",
-      "line": 93,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class5]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
@@ -3626,16 +3556,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`",
-      "description": "Returned type `object` is not assignable to declared return type `Class8[?_TypeVar]`",
-      "line": 178,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 178
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
       "description": "Argument `type[Class8]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
@@ -3735,18 +3655,7 @@
       "stop_line": 195
     }
   ],
-  "constructors_consistency.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `object` is not assignable to declared return type `Class1`",
-      "description": "Returned type `object` is not assignable to declared return type `Class1`",
-      "line": 22,
-      "name": "bad-return",
-      "stop_column": 36,
-      "stop_line": 22
-    }
-  ],
+  "constructors_consistency.py": [],
   "dataclasses_descriptors.py": [
     {
       "code": -2,
@@ -5258,8 +5167,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Enum, Color) failed",
-      "description": "assert_type(Enum, Color) failed",
+      "concise_description": "assert_type(Self@Enum, Color) failed",
+      "description": "assert_type(Self@Enum, Color) failed",
       "line": 27,
       "name": "assert-type",
       "stop_column": 29,
@@ -5537,8 +5446,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type((self: Pet4) -> str, Any) failed",
-      "description": "assert_type((self: Pet4) -> str, Any) failed",
+      "concise_description": "assert_type((self: Self@Pet4) -> str, Any) failed",
+      "description": "assert_type((self: Self@Pet4) -> str, Any) failed",
       "line": 84,
       "name": "assert-type",
       "stop_column": 49,
@@ -5557,8 +5466,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type((self: Pet4) -> None, Any) failed",
-      "description": "assert_type((self: Pet4) -> None, Any) failed",
+      "concise_description": "assert_type((self: Self@Pet4) -> None, Any) failed",
+      "description": "assert_type((self: Self@Pet4) -> None, Any) failed",
       "line": 85,
       "name": "assert-type",
       "stop_column": 45,
@@ -6015,21 +5924,11 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, (Foo7[int]) -> Foo7[int]) failed",
-      "description": "assert_type(Any, (Foo7[int]) -> Foo7[int]) failed",
+      "concise_description": "assert_type((Self@Foo7) -> Self@Foo7, (Foo7[int]) -> Foo7[int]) failed",
+      "description": "assert_type((Self@Foo7) -> Self@Foo7, (Foo7[int]) -> Foo7[int]) failed",
       "line": 166,
       "name": "assert-type",
       "stop_column": 57,
-      "stop_line": 166
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Generic attribute `meth` of class `Foo7` is not visible on the class",
-      "description": "Generic attribute `meth` of class `Foo7` is not visible on the class",
-      "line": 166,
-      "name": "missing-attribute",
-      "stop_column": 22,
       "stop_line": 166
     },
     {
@@ -6670,19 +6569,9 @@
   "generics_self_advanced.py": [
     {
       "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(ParentA, ChildA) failed",
-      "description": "assert_type(ParentA, ChildA) failed",
-      "line": 19,
-      "name": "assert-type",
-      "stop_column": 36,
-      "stop_line": 19
-    },
-    {
-      "code": -2,
       "column": 9,
-      "concise_description": "assert_type(ChildB, Self) failed",
-      "description": "assert_type(ChildB, Self) failed",
+      "concise_description": "assert_type(Self@ChildB, Self) failed",
+      "description": "assert_type(Self@ChildB, Self) failed",
       "line": 35,
       "name": "assert-type",
       "stop_column": 32,
@@ -6691,8 +6580,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(ParentB, Self) failed",
-      "description": "assert_type(ParentB, Self) failed",
+      "concise_description": "assert_type(ChildB, Self) failed",
+      "description": "assert_type(ChildB, Self) failed",
       "line": 38,
       "name": "assert-type",
       "stop_column": 42,
@@ -6701,8 +6590,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(type[ChildB], type[Self]) failed",
-      "description": "assert_type(type[ChildB], type[Self]) failed",
+      "concise_description": "assert_type(type[Self@ChildB], type[Self]) failed",
+      "description": "assert_type(type[Self@ChildB], type[Self]) failed",
       "line": 42,
       "name": "assert-type",
       "stop_column": 37,
@@ -6751,8 +6640,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(ParentB, Self) failed",
-      "description": "assert_type(ParentB, Self) failed",
+      "concise_description": "assert_type(ChildB, Self) failed",
+      "description": "assert_type(ChildB, Self) failed",
       "line": 45,
       "name": "assert-type",
       "stop_column": 41,
@@ -6795,8 +6684,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Shape, Self) failed",
-      "description": "assert_type(Shape, Self) failed",
+      "concise_description": "assert_type(Self@Shape, Self) failed",
+      "description": "assert_type(Self@Shape, Self) failed",
       "line": 14,
       "name": "assert-type",
       "stop_column": 32,
@@ -6815,8 +6704,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(type[Shape], type[Self]) failed",
-      "description": "assert_type(type[Shape], type[Self]) failed",
+      "concise_description": "assert_type(type[Self@Shape], type[Self]) failed",
+      "description": "assert_type(type[Self@Shape], type[Self]) failed",
       "line": 27,
       "name": "assert-type",
       "stop_column": 37,
@@ -6824,33 +6713,33 @@
     },
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Expected a callable, got type[Self@Shape]",
+      "description": "Expected a callable, got type[Self@Shape]",
+      "line": 28,
+      "name": "not-callable",
+      "stop_column": 19,
+      "stop_line": 28
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "Expected a callable, got type[Self@Shape]",
+      "description": "Expected a callable, got type[Self@Shape]",
+      "line": 37,
+      "name": "not-callable",
+      "stop_column": 19,
+      "stop_line": 37
+    },
+    {
+      "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Shape, Self) failed",
-      "description": "assert_type(Shape, Self) failed",
+      "concise_description": "assert_type(Self@Shape, Self) failed",
+      "description": "assert_type(Self@Shape, Self) failed",
       "line": 40,
       "name": "assert-type",
       "stop_column": 33,
       "stop_line": 40
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Shape, Circle) failed",
-      "description": "assert_type(Shape, Circle) failed",
-      "line": 52,
-      "name": "assert-type",
-      "stop_column": 45,
-      "stop_line": 52
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Shape, Circle) failed",
-      "description": "assert_type(Shape, Circle) failed",
-      "line": 55,
-      "name": "assert-type",
-      "stop_column": 44,
-      "stop_line": 55
     },
     {
       "code": -2,
@@ -6878,9 +6767,19 @@
   "generics_self_usage.py": [
     {
       "code": -2,
+      "column": 16,
+      "concise_description": "Expected a callable, got type[Self@ReturnsSelf]",
+      "description": "Expected a callable, got type[Self@ReturnsSelf]",
+      "line": 15,
+      "name": "not-callable",
+      "stop_column": 19,
+      "stop_line": 15
+    },
+    {
+      "code": -2,
       "column": 34,
-      "concise_description": "`(self: CallableAttribute) -> int` is not assignable to `(Self) -> int`",
-      "description": "`(self: CallableAttribute) -> int` is not assignable to `(Self) -> int`",
+      "concise_description": "`(self: Self@CallableAttribute) -> int` is not assignable to `(Self) -> int`",
+      "description": "`(self: Self@CallableAttribute) -> int` is not assignable to `(Self) -> int`",
       "line": 50,
       "name": "bad-assignment",
       "stop_column": 37,
@@ -6899,22 +6798,12 @@
     {
       "code": -2,
       "column": 20,
-      "concise_description": "Argument `HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`",
-      "description": "Argument `HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`",
+      "concise_description": "Argument `Self@HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`",
+      "description": "Argument `Self@HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`",
       "line": 63,
       "name": "bad-argument-type",
       "stop_column": 24,
       "stop_line": 63
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "Object of class `Foo3` has no attribute `child_value`",
-      "description": "Object of class `Foo3` has no attribute `child_value`",
-      "line": 93,
-      "name": "missing-attribute",
-      "stop_column": 22,
-      "stop_line": 93
     }
   ],
   "generics_syntax_compatibility.py": [
@@ -7255,8 +7144,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
-      "description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
       "line": 118,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7265,8 +7154,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
-      "description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
       "line": 119,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7275,8 +7164,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
-      "description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
       "line": 120,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7285,8 +7174,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
-      "description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
       "line": 121,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -7455,6 +7344,26 @@
       "name": "missing-attribute",
       "stop_column": 15,
       "stop_line": 46
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bytes) failed",
+      "description": "assert_type(Any, bytes) failed",
+      "line": 56,
+      "name": "assert-type",
+      "stop_column": 28,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Can't apply arguments to non-class, got Self@dict",
+      "description": "Can't apply arguments to non-class, got Self@dict",
+      "line": 56,
+      "name": "bad-specialization",
+      "stop_column": 20,
+      "stop_line": 56
     }
   ],
   "generics_typevartuple_args.py": [
@@ -7550,6 +7459,26 @@
     }
   ],
   "generics_typevartuple_basic.py": [
+    {
+      "code": -2,
+      "column": 38,
+      "concise_description": "`?_TypeVarTuple` is not assignable to attribute `_shape` with type `Unknown`",
+      "description": "`?_TypeVarTuple` is not assignable to attribute `_shape` with type `Unknown`",
+      "line": 25,
+      "name": "bad-assignment",
+      "stop_column": 43,
+      "stop_line": 25
+    },
+    {
+      "code": -2,
+      "column": 16,
+      "concise_description": "Returned type `Unknown` is not assignable to declared return type `?_TypeVarTuple`",
+      "description": "Returned type `Unknown` is not assignable to declared return type `?_TypeVarTuple`",
+      "line": 28,
+      "name": "bad-return",
+      "stop_column": 27,
+      "stop_line": 28
+    },
     {
       "code": -2,
       "column": 34,
@@ -8138,8 +8067,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
-      "description": "`dict[int, str]` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[float, str]`",
       "line": 119,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -8148,8 +8077,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
-      "description": "`dict[float, str]` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[int, str]`",
       "line": 120,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -8158,8 +8087,8 @@
     {
       "code": -2,
       "column": 43,
-      "concise_description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
-      "description": "`dict[str, int]` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, float]`",
       "line": 121,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -8168,8 +8097,8 @@
     {
       "code": -2,
       "column": 41,
-      "concise_description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
-      "description": "`dict[str, float]` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "concise_description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
+      "description": "`Self@dict` is not assignable to `ShouldBeInvariant3[str, int]`",
       "line": 122,
       "name": "bad-assignment",
       "stop_column": 73,
@@ -9046,26 +8975,6 @@
   "narrowing_typeguard.py": [
     {
       "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(A, B) failed",
-      "description": "assert_type(A, B) failed",
-      "line": 89,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 89
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(A, B) failed",
-      "description": "assert_type(A, B) failed",
-      "line": 93,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 93
-    },
-    {
-      "code": -2,
       "column": 20,
       "concise_description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `(object) -> str` in function `takes_callable_str`",
       "description": "Argument `(val: object) -> TypeGuard[int]` is not assignable to parameter `f` with type `(object) -> str` in function `takes_callable_str`",
@@ -9086,26 +8995,6 @@
     }
   ],
   "narrowing_typeis.py": [
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(A, B) failed",
-      "description": "assert_type(A, B) failed",
-      "line": 92,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 92
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(A, B) failed",
-      "description": "assert_type(A, B) failed",
-      "line": 96,
-      "name": "assert-type",
-      "stop_column": 29,
-      "stop_line": 96
-    },
     {
       "code": -2,
       "column": 20,
@@ -9694,26 +9583,6 @@
       "name": "bad-assignment",
       "stop_column": 12,
       "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "`C2[str]` is not assignable to `P2Parent[str]`",
-      "description": "`C2[str]` is not assignable to `P2Parent[str]`",
-      "line": 72,
-      "name": "bad-assignment",
-      "stop_column": 30,
-      "stop_line": 72
-    },
-    {
-      "code": -2,
-      "column": 20,
-      "concise_description": "`C2[str]` is not assignable to `P2Child[str]`",
-      "description": "`C2[str]` is not assignable to `P2Child[str]`",
-      "line": 73,
-      "name": "bad-assignment",
-      "stop_column": 29,
-      "stop_line": 73
     }
   ],
   "protocols_subtyping.py": [
@@ -10262,8 +10131,8 @@
     {
       "code": -2,
       "column": 7,
-      "concise_description": "Argument `type[object]` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
-      "description": "Argument `type[object]` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
+      "concise_description": "Argument `type[NoneType]` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
+      "description": "Argument `type[NoneType]` is not assignable to parameter `val1` with type `type[None]` in function `func2`",
       "line": 39,
       "name": "bad-argument-type",
       "stop_column": 21,

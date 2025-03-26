@@ -127,7 +127,7 @@ class C3:
     def f(x: int, /) -> str:
         return ""
 def foo(x: Callable[[int], str], c: C, c2: C2, c3: C3):
-    C.f = x  # E: `(int) -> str` is not assignable to attribute `f` with type `(C, int) -> str`
+    C.f = x  # E: `(int) -> str` is not assignable to attribute `f` with type `(Self@C, int) -> str`
     c.f = x
     C2.f = x
     c2.f = x
@@ -361,10 +361,10 @@ def f1(c: Callable[[int], None]):
     pass
 def f2(c: Callable[[C, int], None]):
     pass
-f1(C.f)  # E: Argument `(self: C, x: int) -> None` is not assignable to parameter `c` with type `(int) -> None`
+f1(C.f)  # E: Argument `(self: Self@C, x: int) -> None` is not assignable to parameter `c` with type `(int) -> None`
 f1(C().f)
 f2(C.f)
-f2(C().f)  # E: Argument `BoundMethod[C, (self: C, x: int) -> None]` is not assignable to parameter `c` with type `(C, int) -> None`
+f2(C().f)  # E: Argument `BoundMethod[C, (self: Self@C, x: int) -> None]` is not assignable to parameter `c` with type `(C, int) -> None`
     "#,
 );
 

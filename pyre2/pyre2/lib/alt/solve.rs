@@ -208,7 +208,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     let self_type = &*self.get_idx(*self_type);
                     if let Some(cls) = &self_type.0 {
-                        ty.subst_self_type_mut(&cls.self_type());
+                        let cls_type =
+                            ClassType::new(cls.dupe(), self.create_default_targs(cls, None));
+                        ty.subst_self_special_form_mut(&Type::SelfType(cls_type));
                     }
                 }
                 Arc::new(AnnotationWithTarget {
@@ -1260,6 +1262,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Type::ClassDef(obj_cls) => {
                                 let obj_type = ClassType::new(obj_cls.dupe(), self.create_default_targs(obj_cls, None));
                                 make_super_instance(&obj_type, &|| SuperObj::Class(obj_cls.dupe()))
+                            }
+                            Type::SelfType(obj_cls) => {
+                                make_super_instance(obj_cls, &|| SuperObj::Instance(obj_cls.clone()))
+                            }
+                            Type::Type(box Type::SelfType(obj_cls)) => {
+                                make_super_instance(obj_cls, &|| SuperObj::Class(obj_cls.class_object().dupe()))
                             }
                             t => {
                                 self.error(

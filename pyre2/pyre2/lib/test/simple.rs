@@ -628,10 +628,10 @@ assert_type(x, list[Any])
 testcase!(
     test_self_param_name,
     r#"
-from typing import assert_type
+from typing import reveal_type
 class C:
     def f(this):
-        assert_type(this, C)
+        reveal_type(this)  # E: Self@C
     "#,
 );
 
@@ -1387,4 +1387,21 @@ def foo(x):
     assert_type("Magic"[0], str)
     assert_type("Magic"[3:4], str)
 "#,
+);
+
+testcase!(
+    test_typing_self_return,
+    r#"
+from typing import Self, assert_type
+class A:
+    def f(self) -> Self:
+        return self
+    @classmethod
+    def g(cls) -> type[Self]:
+        return cls
+class B(A):
+    pass
+assert_type(B().f(), B)
+assert_type(B().g(), type[B])
+    "#,
 );

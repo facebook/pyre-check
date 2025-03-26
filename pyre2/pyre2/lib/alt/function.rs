@@ -45,6 +45,7 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::ClassKind;
+use crate::types::class::ClassType;
 use crate::types::types::CalleeKind;
 use crate::types::types::Forall;
 use crate::types::types::Forallable;
@@ -177,7 +178,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // __new__ is a staticmethod, and does not take a self parameter.
             None
         } else {
-            defining_cls.as_ref().map(|cls| cls.self_type())
+            defining_cls.as_ref().map(|cls| {
+                let cls_type = ClassType::new(cls.dupe(), self.create_default_targs(cls, None));
+                Type::SelfType(cls_type)
+            })
         };
 
         let mut is_overload = false;

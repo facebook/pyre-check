@@ -54,8 +54,8 @@ class C:
     def foo(cls) -> int:
         return 42
 def f(c: C):
-    reveal_type(C.foo)  # E: revealed type: BoundMethod[type[C], (cls: type[C]) -> int]
-    reveal_type(c.foo)  # E: revealed type: BoundMethod[type[C], (cls: type[C]) -> int]
+    reveal_type(C.foo)  # E: revealed type: BoundMethod[type[C], (cls: type[Self@C]) -> int]
+    reveal_type(c.foo)  # E: revealed type: BoundMethod[type[C], (cls: type[Self@C]) -> int]
     "#,
 );
 
@@ -98,7 +98,7 @@ class C:
 def f(c: C):
     assert_type(c.foo, int)
     c.foo = 42  # E: Attribute `foo` of class `C` is a read-only property and cannot be set
-    reveal_type(C.foo)  # E: revealed type: (self: C) -> int
+    reveal_type(C.foo)  # E: revealed type: (self: Self@C) -> int
     "#,
 );
 
@@ -116,7 +116,7 @@ class C:
 def f(c: C):
     assert_type(c.foo, int)
     c.foo = "42"
-    reveal_type(C.foo)  # E: revealed type: (self: C, value: str)
+    reveal_type(C.foo)  # E: revealed type: (self: Self@C, value: str)
     "#,
 );
 
@@ -185,7 +185,7 @@ class classproperty[T, R]:
     def __init__(self, fget: Callable[[type[T]], R]) -> None: ...
     def __get__(self, obj: object, obj_cls_type: type[T]) -> R: ...
 class C:
-    @classproperty    # E: Argument `(cls: C) -> int` is not assignable to parameter `fget` with type `(type[@_]) -> int`
+    @classproperty    # E: Argument `(cls: Self@C) -> int` is not assignable to parameter `fget` with type `(type[@_]) -> int`
     def cp(cls) -> int:
         return 42
 assert_type(C.cp, int)

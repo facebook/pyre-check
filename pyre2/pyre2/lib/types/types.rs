@@ -293,6 +293,18 @@ impl BoundMethodType {
         }
     }
 
+    pub fn subst_self_type_mut(&mut self, replacement: &Type) {
+        match self {
+            Self::Function(func) => func.signature.subst_self_type_mut(replacement),
+            Self::Forall(forall) => forall.body.signature.subst_self_type_mut(replacement),
+            Self::Overload(overload) => {
+                for sig in overload.signatures.iter_mut() {
+                    sig.subst_self_type_mut(replacement)
+                }
+            }
+        }
+    }
+
     fn is_typeguard(&self) -> bool {
         match self {
             Self::Function(func) => func.signature.is_typeguard(),
@@ -343,6 +355,13 @@ impl OverloadType {
             Self::Forall(forall) => {
                 Forallable::Function(forall.body.clone()).forall(forall.tparams.clone())
             }
+        }
+    }
+
+    fn subst_self_type_mut(&mut self, replacement: &Type) {
+        match self {
+            Self::Callable(c) => c.subst_self_type_mut(replacement),
+            Self::Forall(forall) => forall.body.signature.subst_self_type_mut(replacement),
         }
     }
 
@@ -501,6 +520,9 @@ pub enum Type {
     /// that is, attribute lookup should be done on class `A`. And the type of `self` is class `C`.
     /// So the super instance is represented as `SuperInstance[ClassType(A), ClassType(C)]`.
     SuperInstance(Box<(ClassType, SuperObj)>),
+    /// typing.Self with the class definition it appears in. We store the latter as a ClassType
+    /// because of how often we need the type of an instance of the class.
+    SelfType(ClassType),
     None,
 }
 
@@ -540,6 +562,7 @@ impl Visit for Type {
             Type::Never(x) => x.visit(f),
             Type::TypeAlias(x) => x.visit(f),
             Type::SuperInstance(x) => x.visit(f),
+            Type::SelfType(x) => x.visit(f),
             Type::None => {}
         }
     }
@@ -581,6 +604,7 @@ impl VisitMut for Type {
             Type::Never(x) => x.visit_mut(f),
             Type::TypeAlias(x) => x.visit_mut(f),
             Type::SuperInstance(x) => x.visit_mut(f),
+            Type::SelfType(x) => x.visit_mut(f),
             Type::None => {}
         }
     }
@@ -767,7 +791,7 @@ impl Type {
         })
     }
 
-    pub fn subst_self_type_mut(&mut self, self_type: &Type) {
+    pub fn subst_self_special_form_mut(&mut self, self_type: &Type) {
         self.transform_mut(&mut |x| {
             if x == &Type::SpecialForm(SpecialForm::SelfType) {
                 *x = self_type.clone()

@@ -166,7 +166,7 @@ class MyEnum(Enum):
 reveal_type(MyEnum.A)  # E: revealed type: Literal[MyEnum.A]
 reveal_type(MyEnum.B)  # E: revealed type: nonmember[int]
 reveal_type(MyEnum.C)  # E: revealed type: Literal[MyEnum.C]
-reveal_type(MyEnum.D)  # E: revealed type: (self: MyEnum) -> None
+reveal_type(MyEnum.D)  # E: revealed type: (self: Self@MyEnum) -> None
 "#,
 );
 

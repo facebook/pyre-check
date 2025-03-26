@@ -99,6 +99,7 @@ impl<'a> TypeDisplayContext<'a> {
                 Type::TypeVar(t) => Some(t.qname()),
                 Type::TypeVarTuple(t) => Some(t.qname()),
                 Type::ParamSpec(t) => Some(t.qname()),
+                Type::SelfType(cls) => Some(cls.qname()),
                 _ => None,
             };
             if let Some(qname) = qname {
@@ -196,6 +197,10 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(f, "ParamSpec[")?;
                 self.fmt_qname(t.qname(), f)?;
                 write!(f, "]")
+            }
+            Type::SelfType(cls) => {
+                write!(f, "Self@")?;
+                self.fmt_qname(cls.qname(), f)
             }
 
             // Other things

@@ -1010,6 +1010,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match ty {
             Type::ClassType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
             Type::ClassDef(cls) => Some(AttributeBase::ClassObject(cls)),
+            Type::SelfType(class_type) => Some(AttributeBase::ClassInstance(class_type)),
+            Type::Type(box Type::SelfType(class_type)) => {
+                Some(AttributeBase::ClassObject(class_type.class_object().dupe()))
+            }
             Type::TypedDict(_) => Some(AttributeBase::ClassInstance(stdlib.mapping(
                 stdlib.str().to_type(),
                 stdlib.object_class_type().clone().to_type(),
