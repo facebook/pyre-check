@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use crate::alt::types::class_metadata::ClassMetadata;
 use crate::binding::binding::KeyClassMetadata;
+use crate::config::ErrorConfigs;
 use crate::state::handle::Handle;
 use crate::state::state::State;
 use crate::test::util::get_class;
@@ -39,7 +40,7 @@ fn assert_no_errors(state: &State) {
 
 fn assert_has_error(state: &State, error_msg: &str, assertion_msg: &str) {
     state
-        .collect_errors()
+        .collect_errors(&ErrorConfigs::default())
         .iter()
         .find(|e| e.msg().contains(error_msg))
         .unwrap_or_else(|| panic!("{assertion_msg}"));

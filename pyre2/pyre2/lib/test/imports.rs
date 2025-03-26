@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::config::ErrorConfigs;
 use crate::test::util::TestEnv;
 use crate::testcase;
 use crate::testcase_with_bug;
@@ -538,7 +539,7 @@ fn test_import_fail_to_load() {
     let mut env = TestEnv::new();
     env.add_real_path("foo", temp.path().join("foo.py"));
     env.add("main", "import foo");
-    let errs = env.to_state().0.collect_errors();
+    let errs = env.to_state().0.collect_errors(&ErrorConfigs::default());
     assert_eq!(errs.len(), 1);
     let msg = errs[0].to_string();
     assert!(msg.contains("foo.py:1:1: Failed to load"));

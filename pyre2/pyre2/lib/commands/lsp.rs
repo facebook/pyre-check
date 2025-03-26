@@ -66,6 +66,7 @@ use starlark_map::small_map::SmallMap;
 
 use crate::clap_env;
 use crate::commands::util::module_from_path;
+use crate::config::ErrorConfigs;
 use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::finder::find_module;
@@ -333,7 +334,8 @@ impl<'a> Server<'a> {
         for x in open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
-        for e in self.state.lock().collect_errors() {
+        // TODO(connernilsen): replace with real error config from config file
+        for e in self.state.lock().collect_errors(&ErrorConfigs::default()) {
             if let Some(path) = to_real_path(e.path()) {
                 if open_files.contains_key(path) {
                     diags.entry(path.to_owned()).or_default().push(Diagnostic {

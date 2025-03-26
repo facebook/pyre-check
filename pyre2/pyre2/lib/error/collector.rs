@@ -14,6 +14,7 @@ use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use vec1::vec1;
 
+use crate::config::ErrorConfig;
 use crate::error::context::ErrorContext;
 use crate::error::error::Error;
 use crate::error::kind::ErrorKind;
@@ -152,7 +153,7 @@ impl ErrorCollector {
             .count()
     }
 
-    pub fn collect(&self) -> Vec<Error> {
+    pub fn collect(&self, _: &ErrorConfig) -> Vec<Error> {
         self.errors.lock().iter().cloned().collect()
     }
 
@@ -229,6 +230,9 @@ mod tests {
             ErrorKind::InternalError,
             None,
         );
-        assert_eq!(errors.collect().map(|x| x.msg()), vec!["a", "b", "a"]);
+        assert_eq!(
+            errors.collect(&ErrorConfig::default()).map(|x| x.msg()),
+            vec!["a", "b", "a"]
+        );
     }
 }

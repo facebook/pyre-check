@@ -28,6 +28,7 @@ use crate::commands::suppress;
 use crate::commands::util::module_from_path;
 use crate::config::set_if_some;
 use crate::config::ConfigFile;
+use crate::config::ErrorConfigs;
 use crate::error::error::print_error_counts;
 use crate::error::error::print_errors;
 use crate::error::error::Error;
@@ -405,9 +406,12 @@ impl Args {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
 
+        // TODO(connernilsen): pass in real error config
+        let error_configs = ErrorConfigs::default();
+
         state.run(handles, default_require, Some(progress));
         let computing = start.elapsed();
-        let errors = state.collect_errors();
+        let errors = state.collect_errors(&error_configs);
         if let Some(path) = &self.output {
             self.output_format.write_errors_to_file(path, &errors)?;
         } else {
@@ -436,8 +440,9 @@ impl Args {
             state.report_timings(timings, Some(Box::new(ProgressBarSubscriber::new())))?;
         }
         if let Some(debug_info) = &self.debug_info {
-            let mut output =
-                serde_json::to_string_pretty(&state.debug_info(&handles.map(|x| x.0.dupe())))?;
+            let mut output = serde_json::to_string_pretty(
+                &state.debug_info(&handles.map(|x| x.0.dupe()), &error_configs),
+            )?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
             }
@@ -464,7 +469,7 @@ impl Args {
             suppress::suppress_errors(&errors);
         }
         if self.expectations {
-            state.check_against_expectations()?;
+            state.check_against_expectations(&error_configs)?;
             Ok(CommandExitStatus::Success)
         } else if error_count > suppressed_count {
             Ok(CommandExitStatus::UserError)

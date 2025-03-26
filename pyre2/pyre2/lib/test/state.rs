@@ -14,6 +14,7 @@ use std::sync::Arc;
 use dupe::Dupe;
 use starlark_map::small_map::SmallMap;
 
+use crate::config::ErrorConfigs;
 use crate::error::error::print_errors;
 use crate::metadata::PythonVersion;
 use crate::metadata::RuntimeMetadata;
@@ -72,7 +73,9 @@ else:
         Require::Exports,
         None,
     );
-    state.check_against_expectations().unwrap();
+    state
+        .check_against_expectations(&ErrorConfigs::default())
+        .unwrap();
 }
 
 #[test]
@@ -128,9 +131,11 @@ fn test_multiple_path() {
         Require::Exports,
         None,
     );
-    print_errors(&state.collect_errors());
-    state.check_against_expectations().unwrap();
-    assert_eq!(state.collect_errors().len(), 3);
+    print_errors(&state.collect_errors(&ErrorConfigs::default()));
+    state
+        .check_against_expectations(&ErrorConfigs::default())
+        .unwrap();
+    assert_eq!(state.collect_errors(&ErrorConfigs::default()).len(), 3);
 }
 
 #[derive(Default, Clone, Dupe, Debug)]
@@ -203,8 +208,10 @@ impl Incremental {
             Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
-        print_errors(&self.state.collect_errors());
-        self.state.check_against_expectations().unwrap();
+        print_errors(&self.state.collect_errors(&ErrorConfigs::default()));
+        self.state
+            .check_against_expectations(&ErrorConfigs::default())
+            .unwrap();
 
         let mut recompute = recompute.map(|x| (*x).to_owned());
         recompute.sort();

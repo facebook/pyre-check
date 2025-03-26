@@ -18,6 +18,7 @@ use ruff_source_file::SourceLocation;
 use serde::Serialize;
 use starlark_map::small_map::SmallMap;
 
+use crate::config::ErrorConfigs;
 use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
 use crate::module::bundled::BundledTypeshed;
@@ -239,7 +240,7 @@ impl LanguageServiceState {
 
     pub fn get_errors(&self) -> Vec<Diagnostic> {
         self.state
-            .collect_errors()
+            .collect_errors(&ErrorConfigs::default())
             .into_iter()
             .map(|e| {
                 let range = e.source_range();

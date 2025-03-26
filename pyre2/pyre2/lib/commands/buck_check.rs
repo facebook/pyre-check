@@ -16,6 +16,7 @@ use serde::Deserialize;
 use tracing::info;
 
 use crate::clap_env;
+use crate::config::ErrorConfigs;
 use crate::error::error::Error;
 use crate::error::legacy::LegacyErrors;
 use crate::metadata::PythonVersion;
@@ -71,7 +72,7 @@ fn compute_errors(config: RuntimeMetadata, sourcedb: BuckSourceDatabase) -> Vec<
     });
     let mut state = State::new();
     state.run(&modules_to_check, Require::Exports, None);
-    state.collect_errors()
+    state.collect_errors(&ErrorConfigs::default())
 }
 
 fn write_output_to_file(path: &Path, legacy_errors: &LegacyErrors) -> anyhow::Result<()> {

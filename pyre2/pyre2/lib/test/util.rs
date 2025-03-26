@@ -23,6 +23,7 @@ use ruff_text_size::TextSize;
 use starlark_map::small_map::SmallMap;
 
 use crate::binding::binding::KeyExport;
+use crate::config::ErrorConfigs;
 use crate::error::error::print_errors;
 use crate::metadata::RuntimeMetadata;
 use crate::module::bundled::typeshed;
@@ -159,7 +160,7 @@ impl TestEnv {
             Some(Box::new(subscriber.dupe())),
         );
         subscriber.finish();
-        print_errors(&state.collect_errors());
+        print_errors(&state.collect_errors(&ErrorConfigs::default()));
         (state, move |module| {
             let name = ModuleName::from_str(module);
             Handle::new(
@@ -360,7 +361,10 @@ pub fn testcase_for_macro(
     let limit = 10;
     for _ in 0..3 {
         let start = Instant::now();
-        env.clone().to_state().0.check_against_expectations()?;
+        env.clone()
+            .to_state()
+            .0
+            .check_against_expectations(&ErrorConfigs::default())?;
         if start.elapsed().as_secs() <= limit {
             return Ok(());
         }

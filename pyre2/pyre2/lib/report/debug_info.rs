@@ -18,6 +18,7 @@ use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
+use crate::config::ErrorConfigs;
 use crate::error::collector::ErrorCollector;
 use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
@@ -52,7 +53,10 @@ struct Error {
 }
 
 impl DebugInfo {
-    pub fn new(modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &Solutions)]) -> Self {
+    pub fn new(
+        modules: &[(&ModuleInfo, &ErrorCollector, &Bindings, &Solutions)],
+        error_configs: &ErrorConfigs,
+    ) -> Self {
         fn f<K: Keyed>(
             t: &SolutionsEntry<K>,
             module_info: &ModuleInfo,
@@ -78,8 +82,9 @@ impl DebugInfo {
                 .iter()
                 .map(|(module_info, errors, bindings, solutions)| {
                     let mut res = Vec::new();
+                    let error_config = error_configs.get(module_info.path());
                     table_for_each!(solutions.table(), |t| f(t, module_info, bindings, &mut res));
-                    let errors = errors.collect().map(|e| Error {
+                    let errors = errors.collect(error_config).map(|e| Error {
                         location: e.source_range().to_string(),
                         message: e.msg().to_owned(),
                     });
