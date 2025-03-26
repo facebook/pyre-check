@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_fstring_literal,
@@ -146,5 +147,33 @@ Z = Literal[X, Y]
 
 def f(x: Z) -> None:
     assert_type(x, Literal["foo", "bar", "baz", None])
+"#,
+);
+
+testcase_with_bug!(
+    "Should support nested literal",
+    test_literal_direct_nesting,
+    r#"
+from typing import Literal
+
+good: Literal[Literal[Literal[1, 2, 3], "foo"], 5, None] = "foo"  # E: Invalid literal expression
+"#,
+);
+
+testcase_with_bug!(
+    "Should ban brackets/tuples",
+    test_literal_brackets,
+    r#"
+from typing import Literal
+bad6: Literal[(1, "foo", "bar")]  # Should be an error
+"#,
+);
+
+testcase_with_bug!(
+    "Should ban empty literals",
+    test_literal_with_nothing,
+    r#"
+from typing import Literal
+bad6: Literal # Should be an error
 "#,
 );
