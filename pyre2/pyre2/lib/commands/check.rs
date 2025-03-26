@@ -453,8 +453,7 @@ impl Args {
             fs_anyhow::write(path, report::trace::trace(state).as_bytes())?;
         }
         if self.suppress_errors {
-            let errors: SmallMap<PathBuf, Vec<Error>> = state
-                .collect_errors()
+            let errors: SmallMap<PathBuf, Vec<Error>> = errors
                 .into_iter()
                 .filter(|e| matches!(e.path().details(), ModulePathDetails::FileSystem(_)))
                 .fold(SmallMap::new(), |mut acc, e| {
