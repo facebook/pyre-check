@@ -212,7 +212,9 @@ module.exports = {
       {
         docs: {
           routeBasePath: 'en/docs',
-          sidebarPath: false, // TODO (T217317240): add back sidebar when we are ready to publish docs
+          sidebarPath: process.env.INTERNAL_STATIC_DOCS
+            ? require.resolve('./sidebars.js')
+            : false, // TODO (T217317240): add back sidebar when we are ready to publish docs
           editUrl: fbContent({
             internal:
               'https://www.internalfb.com/code/fbsource/fbcode/tools/pyre/pyre2/website/',
