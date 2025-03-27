@@ -74,6 +74,7 @@ class PyreConnection:
         wait_on_initialization: bool = False,
         analyze_external_sources: bool = False,
         number_of_buck_threads: Optional[int] = None,
+        use_pysa_version: bool = False,
     ) -> None:
         self.pyre_directory: Path = (
             pyre_directory if pyre_directory is not None else Path.cwd()
@@ -84,6 +85,7 @@ class PyreConnection:
         self.wait_on_initialization = wait_on_initialization
         self.analyze_external_sources = analyze_external_sources
         self.number_of_buck_threads = number_of_buck_threads
+        self.use_pysa_version = use_pysa_version
 
     def __enter__(self) -> "PyreConnection":
         self.start_server()
@@ -173,7 +175,11 @@ class PyreConnection:
     def _run_pyre_command(
         self, arguments: List[str], check: bool = False
     ) -> subprocess.CompletedProcess[bytes]:
-        command = ["pyre", "--noninteractive"] + self.pyre_arguments + arguments
+        command = ["pyre", "--noninteractive"]
+        if self.use_pysa_version:
+            command.append("--pysa")
+        command += self.pyre_arguments
+        command += arguments
         LOG.debug(f"Running command: `{' '.join(map(shlex.quote, command))}`")
         return subprocess.run(
             command,
