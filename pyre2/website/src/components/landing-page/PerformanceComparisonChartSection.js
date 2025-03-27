@@ -16,19 +16,19 @@ import {Project, type ProjectValue} from './PerformanceComparisonTypes';
 
 export default component PerformanceComparisonChartSection() {
   const [selectedProject, setSelectedProject] = useState<ProjectValue>(
-    Project.INSTAGRAM,
+    Project.PYTORCH,
   );
 
   return (
     <div>
       <div {...stylex.props(styles.buttonRow)}>
         <PerformanceComparisonButton
-          project={Project.INSTAGRAM}
+          project={Project.PYTORCH}
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}
         />
         <PerformanceComparisonButton
-          project={Project.PYTORCH}
+          project={Project.INSTAGRAM}
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}
         />

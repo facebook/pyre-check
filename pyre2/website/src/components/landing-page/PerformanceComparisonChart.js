@@ -82,6 +82,16 @@ function getData(project: ProjectValue) {
 
 const performanceComparsionChartData = [
   {
+    project: Project.PYTORCH,
+    data: [
+      {typechecker: TypeChecker.PYREFLY, durationInSeconds: 0.5},
+      {typechecker: TypeChecker.MYPY, durationInSeconds: 8},
+      {typechecker: TypeChecker.PYRIGHT, durationInSeconds: 5},
+      {typechecker: TypeChecker.PYTYPE, durationInSeconds: 12},
+      {typechecker: TypeChecker.PYRE1, durationInSeconds: 15},
+    ],
+  },
+  {
     project: Project.INSTAGRAM,
     data: [
       {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
@@ -89,16 +99,6 @@ const performanceComparsionChartData = [
       {typechecker: TypeChecker.PYRIGHT, durationInSeconds: 20},
       {typechecker: TypeChecker.PYTYPE, durationInSeconds: 40},
       {typechecker: TypeChecker.PYRE1, durationInSeconds: 40},
-    ],
-  },
-  {
-    project: Project.PYTORCH,
-    data: [
-      {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
-      {typechecker: TypeChecker.MYPY, durationInSeconds: 10},
-      {typechecker: TypeChecker.PYRIGHT, durationInSeconds: 5},
-      {typechecker: TypeChecker.PYTYPE, durationInSeconds: 12},
-      {typechecker: TypeChecker.PYRE1, durationInSeconds: 12},
     ],
   },
   {
