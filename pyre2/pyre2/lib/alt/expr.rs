@@ -601,6 +601,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                             Some(&context),
                         ),
+                        Type::Any(style) => style.propagate(),
                         _ => self.error(
                             errors,
                             x.range,

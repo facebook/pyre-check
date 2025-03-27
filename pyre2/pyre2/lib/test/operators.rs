@@ -293,3 +293,12 @@ def f(x: int, y: int | A) -> None:
     x += y
     "#,
 );
+
+testcase!(
+    test_unop_on_any,
+    r#"
+from typing import Any, assert_type
+def f(x: Any):
+    assert_type(-x, Any)
+    "#,
+);
