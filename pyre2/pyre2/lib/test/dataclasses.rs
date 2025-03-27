@@ -506,3 +506,20 @@ class A:
 A()  # OK
     "#,
 );
+
+testcase_with_bug!(
+    "False positive",
+    test_override,
+    r#"
+import dataclasses
+class A:
+    pass
+class B:
+    def f(self, x: A) -> None:
+        raise NotImplementedError()
+@dataclasses.dataclass(frozen=True)
+class C(B):
+    def f(self, x: A) -> None:  # E: Class member `C.f` overrides parent class `B` in an inconsistent manner
+        pass
+    "#,
+);
