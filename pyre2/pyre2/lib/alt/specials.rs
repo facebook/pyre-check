@@ -269,11 +269,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None => Type::type_form(Type::Tuple(Tuple::unbounded(Type::any_error()))),
             },
             SpecialForm::Literal => {
-                let mut literals = Vec::new();
-                for x in arguments.iter() {
-                    let lit = self.apply_literal(x, errors);
-                    literals.push(lit);
-                }
+                let literals = arguments.map(|x| self.apply_literal(x, errors));
                 Type::type_form(self.unions(literals))
             }
             SpecialForm::Concatenate => {
