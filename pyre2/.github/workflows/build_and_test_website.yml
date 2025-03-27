@@ -27,7 +27,7 @@ jobs:
       - name: Install yarn deps
         run: cd website && yarn install
       - name: Install wasm-pack
-        run: cargo install wasm-pack
+        run: cargo install wasm-pack wasm-opt
       - name: Use rust nightly
         run: rustup install nightly && rustup default nightly
       - name: Build

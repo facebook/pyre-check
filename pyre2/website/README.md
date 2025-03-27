@@ -13,7 +13,7 @@ Install the prerequisites:
 sudo dnf install clang
 export HTTPS_PROXY=fwdproxy:8080
 rustup install nightly && rustup default nightly
-cargo install wasm-pack
+cargo install wasm-pack wasm-opt
 yarn install
 ```
 
@@ -37,7 +37,7 @@ Install dependencies:
 
 ```bash
 rustup install nightly && rustup default nightly
-cargo install wasm-pack
+cargo install wasm-pack wasm-opt
 yarn install
 ```
 

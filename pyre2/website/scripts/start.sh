@@ -15,6 +15,6 @@
 ../pyre2_wasm/build.sh
 echo "copying wasm files from pyre2_wasm/ to website/"
 cp ../pyre2_wasm/target/pyre2_wasm.js src/try-pyre2/pyre2_wasm.js
-cp ../pyre2_wasm/target/pyre2_wasm_bg.wasm src/try-pyre2/pyre2_wasm_bg.wasm
+cp ../pyre2_wasm/target/pyre2_wasm_bg.wasm.opt src/try-pyre2/pyre2_wasm_bg.wasm
 echo "finished copying wasm files"
 yarn start --port 3000
