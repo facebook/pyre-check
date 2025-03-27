@@ -11,18 +11,13 @@ import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 import {useState} from 'react';
 import PerformanceComparisonButton from './PerformanceComparisonButton';
-import type {ProjectValue} from './PerformanceComparisonChartSection';
 import ProgressBar from './ProgressBar';
-
-// TODO: convert this to enum when we migrate to typescript
-export type TypeCheckerValue = 'Pyrefly' | 'Pyright' | 'MyPy' | 'Pytype';
-const TypeChecker = Object.freeze({
-  PYREFLY: 'Pyrefly',
-  PYRIGHT: 'Pyright',
-  MYPY: 'MyPy',
-  PYTYPE: 'Pytype',
-  PYRE1: 'Pyre1',
-});
+import {
+  Project,
+  TypeChecker,
+  type ProjectValue,
+  type TypeCheckerValue,
+} from './PerformanceComparisonTypes';
 
 export default component PerformanceComparisonChart(project: ProjectValue) {
   const data = getData(project);
@@ -79,7 +74,7 @@ function getData(project: ProjectValue) {
 
 const performanceComparsionChartData = [
   {
-    project: 'Instagram',
+    project: Project.INSTAGRAM,
     data: [
       {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
       {typechecker: TypeChecker.MYPY, durationInSeconds: 50},
@@ -89,7 +84,7 @@ const performanceComparsionChartData = [
     ],
   },
   {
-    project: 'PyTorch',
+    project: Project.PYTORCH,
     data: [
       {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
       {typechecker: TypeChecker.MYPY, durationInSeconds: 10},
@@ -99,7 +94,7 @@ const performanceComparsionChartData = [
     ],
   },
   {
-    project: 'Example',
+    project: Project.EXAMPLE,
     data: [
       {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
       {typechecker: TypeChecker.MYPY, durationInSeconds: 10},

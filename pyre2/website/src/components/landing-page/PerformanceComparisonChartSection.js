@@ -12,14 +12,7 @@ import * as stylex from '@stylexjs/stylex';
 import {useState} from 'react';
 import PerformanceComparisonButton from './PerformanceComparisonButton';
 import PerformanceComparisonChart from './PerformanceComparisonChart';
-
-// TODO: convert this to enum when we migrate to typescript
-export type ProjectValue = 'Instagram' | 'PyTorch' | 'Example';
-const Project = Object.freeze({
-  INSTAGRAM: 'Instagram',
-  PYTORCH: 'PyTorch',
-  EXAMPLE: 'Example',
-});
+import {Project, type ProjectValue} from './PerformanceComparisonTypes';
 
 export default component PerformanceComparisonChartSection() {
   const [selectedProject, setSelectedProject] = useState<ProjectValue>(
