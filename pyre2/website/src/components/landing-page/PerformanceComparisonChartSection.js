@@ -20,7 +20,7 @@ export default component PerformanceComparisonChartSection() {
   );
 
   return (
-    <div>
+    <div {...stylex.props(styles.body)}>
       <div {...stylex.props(styles.buttonRow)}>
         <PerformanceComparisonButton
           project={Project.PYTORCH}
@@ -46,14 +46,15 @@ export default component PerformanceComparisonChartSection() {
 }
 
 const styles = stylex.create({
+  body: {
+    border: '1px solid var(--ifm-color-emphasis-300)',
+    padding: '2rem',
+  },
   buttonRow: {
     display: 'flex',
     justifyContent: 'center',
     gap: '1rem',
     marginBottom: '2rem',
   },
-  chartContainer: {
-    border: '1px solid var(--ifm-color-emphasis-300)',
-    padding: '2rem',
-  },
+  chartContainer: {paddingHorizontal: '1rem'},
 });
