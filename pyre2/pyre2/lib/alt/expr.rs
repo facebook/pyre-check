@@ -714,8 +714,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     let elem_tys = x.elts.map(|x| match x {
                         Expr::Starred(ExprStarred { box value, .. }) => {
+                            let hint = elt_hint
+                                .as_ref()
+                                .map(|ty| self.stdlib.iterable(ty.clone()).to_type());
                             let unpacked_ty =
-                                self.expr_infer_with_hint_promote(value, hint, errors);
+                                self.expr_infer_with_hint_promote(value, hint.as_ref(), errors);
                             if let Some(iterable_ty) = self.unwrap_iterable(&unpacked_ty) {
                                 iterable_ty
                             } else {

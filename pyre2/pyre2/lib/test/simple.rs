@@ -1286,3 +1286,10 @@ def f(x: type):
 f(A)
     "#,
 );
+
+testcase!(
+    test_list_star_with_hint,
+    r#"
+x: list[str] | int = ["a", *["b"]]
+"#,
+);
