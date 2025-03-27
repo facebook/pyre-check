@@ -1110,7 +1110,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Type::Tuple(Tuple::Concrete(ref elts)) if xs.len() == 1 => self
                             .infer_tuple_index(
                                 elts.to_owned(),
-                                &x.slice,
+                                &xs[0],
                                 x.range,
                                 errors,
                                 Some(&|| ErrorContext::Index(fun.clone())),
@@ -1246,13 +1246,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn infer_tuple_index(
         &self,
         elts: Vec<Type>,
-        slice: &Expr,
+        index: &Expr,
         range: TextRange,
         errors: &ErrorCollector,
         context: Option<&dyn Fn() -> ErrorContext>,
     ) -> Type {
-        let xs = Ast::unpack_slice(slice);
-        match &xs[0] {
+        match index {
             Expr::Slice(ExprSlice {
                 lower: lower_expr,
                 upper: upper_expr,
@@ -1294,7 +1293,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &Type::Tuple(Tuple::Concrete(elts)),
                         &dunder::GETITEM,
                         range,
-                        &[CallArg::Expr(slice)],
+                        &[CallArg::Expr(index)],
                         &[],
                         errors,
                         context,
@@ -1302,7 +1301,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             _ => {
-                let idx_type = self.expr_infer(&xs[0], errors);
+                let idx_type = self.expr_infer(index, errors);
                 match &idx_type {
                     Type::Literal(Lit::Int(idx)) if let Some(idx) = idx.as_i64() => {
                         let elt_idx = if idx >= 0 {
@@ -1329,7 +1328,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         &Type::Tuple(Tuple::Concrete(elts)),
                         &dunder::GETITEM,
                         range,
-                        &[CallArg::Expr(slice)],
+                        &[CallArg::Expr(index)],
                         &[],
                         errors,
                         context,
