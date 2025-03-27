@@ -8,6 +8,7 @@
 pub mod dirty;
 pub mod epoch;
 pub mod handle;
+pub mod load;
 pub mod loader;
 pub mod lsp;
 pub mod require;

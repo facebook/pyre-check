@@ -15,7 +15,7 @@ use starlark_map::small_map::Entry;
 use starlark_map::small_map::SmallMap;
 
 use crate::state::handle::Handle;
-use crate::state::steps::Load;
+use crate::state::load::Load;
 use crate::util::lock::Mutex;
 
 /// Trait to capture which handles are executed by `State`.
