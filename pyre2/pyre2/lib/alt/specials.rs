@@ -5,8 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
+use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprList;
+use ruff_python_ast::ExprUnaryOp;
+use ruff_python_ast::Identifier;
+use ruff_python_ast::Number;
+use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
@@ -17,11 +23,14 @@ use crate::binding::binding::Key;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::module::short_identifier::ShortIdentifier;
+use crate::ruff::ast::Ast;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
+use crate::types::lit_int::LitInt;
 use crate::types::literal::Lit;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
+use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
@@ -153,6 +162,87 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn apply_literal(
+        &self,
+        x: &Expr,
+        get_nested: &dyn Fn(&Expr) -> Type, // Only ever called on an identifier
+        get_enum_member: &dyn Fn(Identifier, &Name) -> Option<Lit>,
+        errors: &ErrorCollector,
+    ) -> Type {
+        match x {
+            Expr::UnaryOp(ExprUnaryOp {
+                op: UnaryOp::UAdd,
+                operand: box Expr::NumberLiteral(n),
+                ..
+            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).to_type(),
+            Expr::UnaryOp(ExprUnaryOp {
+                op: UnaryOp::USub,
+                operand: box Expr::NumberLiteral(n),
+                ..
+            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).negate().to_type(),
+            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => {
+                LitInt::from_ast(i).to_type()
+            }
+            Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
+            Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
+            Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
+            Expr::Name(_) => {
+                fn is_valid_literal(x: &Type) -> bool {
+                    match x {
+                        Type::None | Type::Literal(_) | Type::Any(AnyStyle::Error) => true,
+                        Type::Union(xs) => xs.iter().all(is_valid_literal),
+                        _ => false,
+                    }
+                }
+                let t = get_nested(x);
+                if is_valid_literal(&t) {
+                    t
+                } else {
+                    errors.add(
+                        x.range(),
+                        format!("Invalid type inside literal, `{t}`"),
+                        ErrorKind::InvalidLiteral,
+                        None,
+                    );
+                    Type::any_error()
+                }
+            }
+            Expr::Attribute(ExprAttribute {
+                range,
+                value: box Expr::Name(maybe_enum_name),
+                attr: member_name,
+                ctx: _,
+            }) => match get_enum_member(
+                Ast::expr_name_identifier(maybe_enum_name.clone()),
+                &member_name.id,
+            ) {
+                Some(lit) => lit.to_type(),
+                None => {
+                    errors.add(
+                        *range,
+                        format!(
+                            "`{}.{}` is not a valid enum member",
+                            maybe_enum_name.id, member_name.id
+                        ),
+                        ErrorKind::InvalidLiteral,
+                        None,
+                    );
+                    Type::any_error()
+                }
+            },
+            Expr::NoneLiteral(_) => Type::None,
+            _ => {
+                errors.add(
+                    x.range(),
+                    "Invalid literal expression".to_owned(),
+                    ErrorKind::InvalidLiteral,
+                    None,
+                );
+                Type::any_error()
+            }
+        }
+    }
+
     pub fn apply_special_form(
         &self,
         special_form: SpecialForm,
@@ -187,7 +277,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             SpecialForm::Literal => {
                 let mut literals = Vec::new();
                 for x in arguments.iter() {
-                    let lit = Lit::from_expr(
+                    let lit = self.apply_literal(
                         x,
                         &|x| self.expr_untype(x, TypeFormContext::TypeArgument, errors),
                         &|enum_name, member_name| {

@@ -13,29 +13,18 @@ use pyrefly_derive::TypeEq;
 use pyrefly_derive::Visit;
 use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
-use ruff_python_ast::Expr;
-use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBooleanLiteral;
 use ruff_python_ast::ExprBytesLiteral;
 use ruff_python_ast::ExprFString;
 use ruff_python_ast::ExprStringLiteral;
-use ruff_python_ast::ExprUnaryOp;
 use ruff_python_ast::FStringElement;
 use ruff_python_ast::FStringPart;
-use ruff_python_ast::Identifier;
 use ruff_python_ast::Int;
-use ruff_python_ast::Number;
-use ruff_python_ast::UnaryOp;
-use ruff_text_size::Ranged;
 
 use crate::assert_words;
-use crate::error::collector::ErrorCollector;
-use crate::error::kind::ErrorKind;
-use crate::ruff::ast::Ast;
 use crate::types::class::ClassType;
 use crate::types::lit_int::LitInt;
 use crate::types::stdlib::Stdlib;
-use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 
 assert_words!(Lit, 3);
@@ -82,86 +71,6 @@ impl Display for Lit {
 }
 
 impl Lit {
-    pub fn from_expr(
-        x: &Expr,
-        get_nested: &dyn Fn(&Expr) -> Type, // Only ever called on an identifier
-        get_enum_member: &dyn Fn(Identifier, &Name) -> Option<Lit>,
-        errors: &ErrorCollector,
-    ) -> Type {
-        match x {
-            Expr::UnaryOp(ExprUnaryOp {
-                op: UnaryOp::UAdd,
-                operand: box Expr::NumberLiteral(n),
-                ..
-            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).to_type(),
-            Expr::UnaryOp(ExprUnaryOp {
-                op: UnaryOp::USub,
-                operand: box Expr::NumberLiteral(n),
-                ..
-            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).negate().to_type(),
-            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => {
-                LitInt::from_ast(i).to_type()
-            }
-            Expr::StringLiteral(x) => Self::from_string_literal(x).to_type(),
-            Expr::BytesLiteral(x) => Self::from_bytes_literal(x).to_type(),
-            Expr::BooleanLiteral(x) => Self::from_boolean_literal(x).to_type(),
-            Expr::Name(_) => {
-                fn is_valid_literal(x: &Type) -> bool {
-                    match x {
-                        Type::None | Type::Literal(_) | Type::Any(AnyStyle::Error) => true,
-                        Type::Union(xs) => xs.iter().all(is_valid_literal),
-                        _ => false,
-                    }
-                }
-                let t = get_nested(x);
-                if is_valid_literal(&t) {
-                    t
-                } else {
-                    errors.add(
-                        x.range(),
-                        format!("Invalid type inside literal, `{t}`"),
-                        ErrorKind::InvalidLiteral,
-                        None,
-                    );
-                    Type::any_error()
-                }
-            }
-            Expr::Attribute(ExprAttribute {
-                range,
-                value: box Expr::Name(maybe_enum_name),
-                attr: member_name,
-                ctx: _,
-            }) => match get_enum_member(
-                Ast::expr_name_identifier(maybe_enum_name.clone()),
-                &member_name.id,
-            ) {
-                Some(lit) => lit.to_type(),
-                None => {
-                    errors.add(
-                        *range,
-                        format!(
-                            "`{}.{}` is not a valid enum member",
-                            maybe_enum_name.id, member_name.id
-                        ),
-                        ErrorKind::InvalidLiteral,
-                        None,
-                    );
-                    Type::any_error()
-                }
-            },
-            Expr::NoneLiteral(_) => Type::None,
-            _ => {
-                errors.add(
-                    x.range(),
-                    "Invalid literal expression".to_owned(),
-                    ErrorKind::InvalidLiteral,
-                    None,
-                );
-                Type::any_error()
-            }
-        }
-    }
-
     /// Returns the negated type, or None if literal can't be negated.
     pub fn negate(&self) -> Option<Type> {
         match self {
