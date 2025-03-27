@@ -363,8 +363,7 @@ twice(a_int_b_str, "A", 1)     # Rejected # E: Argument `(a: int, b: str) -> int
 "#,
 );
 
-testcase_with_bug!(
-    "PyTorch TODO: testcase should not emit an error.",
+testcase!(
     test_functools_wraps_paramspec,
     r#"
 from functools import wraps
@@ -372,14 +371,13 @@ from functools import wraps
 def f(fn):
     @wraps(fn)
     def wrapped_fn(x):
-        return fn(x) # E: Unexpected ParamSpec type: `Unknown`
+        return fn(x)
 
     return wrapped_fn
 "#,
 );
 
-testcase_with_bug!(
-    "Spurious error about unexpected ParamSpec type",
+testcase!(
     test_bad_paramspec_in_concatenate,
     r#"
 from typing import Callable, Concatenate
@@ -387,6 +385,6 @@ from typing import Callable, Concatenate
 X = Callable[Concatenate[int, "oops"], int]  # E: Expected a `ParamSpec`  # E: Expected a type form
 
 def f(x: X, y):
-    x(0)  # E: Unexpected ParamSpec type: `Error`
+    x(0)
   "#,
 );

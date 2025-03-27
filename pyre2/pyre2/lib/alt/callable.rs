@@ -693,6 +693,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         }
                     }
+                    Type::Any(_) => {}
                     _ => {
                         // This could well be our error, but not really sure
                         self.error(
