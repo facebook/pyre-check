@@ -21,6 +21,10 @@ import {
 
 export default component PerformanceComparisonChart(project: ProjectValue) {
   const data = getData(project);
+
+  // Calculate the maximum duration for scaling
+  const maxDuration = Math.max(...data.map(item => item.durationInSeconds));
+
   return (
     <div key={project}>
       {data.map((typechecker, index) => (
@@ -29,7 +33,10 @@ export default component PerformanceComparisonChart(project: ProjectValue) {
             <strong>{typechecker.typechecker}</strong>
           </span>
           <div {...stylex.props(styles.progressBarContainer)}>
-            <ProgressBar durationInSeconds={typechecker.durationInSeconds} />
+            <ProgressBar
+              durationInSeconds={typechecker.durationInSeconds}
+              maxDurationInSeconds={maxDuration}
+            />
           </div>
           <span {...stylex.props(styles.duration)}>
             <strong>{`${typechecker.durationInSeconds}s`}</strong>
@@ -54,6 +61,7 @@ const styles = stylex.create({
   },
   progressBarContainer: {
     flexGrow: 1,
+    marginRight: 20,
   },
   duration: {
     marginLeft: 'auto',
