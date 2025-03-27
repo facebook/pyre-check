@@ -38,6 +38,7 @@ use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
 use crate::types::class::Class;
 use crate::types::types::Type;
+use crate::util::prelude::SliceExt;
 use crate::util::thread_pool::init_thread_pool;
 use crate::util::trace::init_tracing;
 
@@ -145,21 +146,17 @@ impl TestEnv {
             // Reverse so we start at the last file, which is likely to be what the user
             // would have opened, so make it most faithful.
             .rev()
-            .map(|(x, (path, _))| {
-                (
-                    Handle::new(x, path, config.dupe(), loader.dupe()),
-                    Require::Everything,
-                )
-            })
+            .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
             .collect::<Vec<_>>();
         let mut state = State::new();
         let subscriber = TestSubscriber::new();
         state.run(
-            &handles,
+            &handles.map(|x| (x.dupe(), Require::Everything)),
             Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
         subscriber.finish();
+        let _ = state.get_loads(handles.iter());
         print_errors(&state.collect_errors(&ErrorConfigs::default()).shown);
         (state, move |module| {
             let name = ModuleName::from_str(module);
@@ -250,6 +247,11 @@ pub fn mk_multi_file_state(
         test_env.add(name, code);
     }
     let (state, handle) = test_env.to_state();
+    let mut handles = HashMap::new();
+    for (name, _) in files {
+        handles.insert(*name, handle(name));
+    }
+    let _ = state.get_loads(handles.values());
     if assert_zero_errors {
         assert_eq!(
             state.collect_errors(&ErrorConfigs::default()).shown.len(),
@@ -364,10 +366,9 @@ pub fn testcase_for_macro(
     let limit = 10;
     for _ in 0..3 {
         let start = Instant::now();
-        env.clone()
-            .to_state()
-            .0
-            .check_against_expectations(&ErrorConfigs::default())?;
+        let (state, handle) = env.clone().to_state();
+        let _ = state.get_loads([&handle("main")]);
+        state.check_against_expectations(&ErrorConfigs::default())?;
         if start.elapsed().as_secs() <= limit {
             return Ok(());
         }

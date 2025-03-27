@@ -329,6 +329,10 @@ impl<'a> Server<'a> {
         );
 
         self.state.lock().run(&handles, Require::Exports, None);
+        let _ = self
+            .state
+            .lock()
+            .get_loads(handles.iter().map(|(handle, _)| handle));
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         let open_files = self.open_files.lock();
         for x in open_files.keys() {

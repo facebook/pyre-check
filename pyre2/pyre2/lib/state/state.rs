@@ -62,6 +62,7 @@ use crate::state::epoch::Epoch;
 use crate::state::epoch::Epochs;
 use crate::state::handle::Handle;
 use crate::state::load::Load;
+use crate::state::load::Loads;
 use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderFindCache;
@@ -192,6 +193,19 @@ impl State {
 
     pub fn get_load(&self, handle: &Handle) -> Option<Arc<Load>> {
         self.modules.get(handle)?.state.read().steps.load.dupe()
+    }
+
+    pub fn get_loads<'a>(&self, handles: impl IntoIterator<Item = &'a Handle>) -> Loads {
+        Loads::new(handles.into_iter().filter_map(|handle| {
+            self.modules
+                .get(handle)?
+                .state
+                .read()
+                .steps
+                .load
+                .as_ref()
+                .map(|x| x.dupe())
+        }))
     }
 
     pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {

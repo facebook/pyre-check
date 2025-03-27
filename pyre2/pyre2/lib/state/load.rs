@@ -28,6 +28,12 @@ pub struct Load {
     pub module_info: ModuleInfo,
 }
 
+#[derive(Debug)]
+pub struct Loads {
+    #[allow(dead_code)]
+    loads: Vec<Arc<Load>>,
+}
+
 impl Load {
     /// Return the code for this module, and whether there was an error while loading (a self-error).
     pub fn load_from_path(
@@ -74,6 +80,14 @@ impl Load {
         Self {
             errors,
             module_info,
+        }
+    }
+}
+
+impl Loads {
+    pub fn new(loads: impl IntoIterator<Item = Arc<Load>>) -> Self {
+        Self {
+            loads: loads.into_iter().collect(),
         }
     }
 }

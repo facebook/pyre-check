@@ -422,6 +422,11 @@ impl Args {
         let start = Instant::now();
 
         state.run(handles, default_require, Some(progress));
+        let _ = if self.check_all {
+            state.get_loads(state.handles().iter())
+        } else {
+            state.get_loads(handles.iter().map(|(handle, _)| handle))
+        };
         let computing = start.elapsed();
         let errors = state.collect_errors(error_configs);
         if let Some(path) = &self.output {

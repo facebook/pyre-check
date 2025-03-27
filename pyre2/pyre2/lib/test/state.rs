@@ -64,15 +64,13 @@ else:
         )
     };
 
-    state.run(
-        &[
-            f("linux", &linux),
-            f("windows", &windows),
-            f("main", &linux),
-        ],
-        Require::Exports,
-        None,
-    );
+    let handles = [
+        f("linux", &linux),
+        f("windows", &windows),
+        f("main", &linux),
+    ];
+    state.run(&handles, Require::Exports, None);
+    let _ = state.get_loads(handles.iter().map(|(handle, _)| handle));
     state
         .check_against_expectations(&ErrorConfigs::default())
         .unwrap();
@@ -116,21 +114,20 @@ fn test_multiple_path() {
     let loader = LoaderId::new(Load(TestEnv::new()));
 
     let mut state = State::new();
+    let handles = FILES.map(|(name, path, _)| {
+        Handle::new(
+            ModuleName::from_str(name),
+            ModulePath::memory(PathBuf::from(path)),
+            TestEnv::config(),
+            loader.dupe(),
+        )
+    });
     state.run(
-        &FILES.map(|(name, path, _)| {
-            (
-                Handle::new(
-                    ModuleName::from_str(name),
-                    ModulePath::memory(PathBuf::from(path)),
-                    TestEnv::config(),
-                    loader.dupe(),
-                ),
-                Require::Everything,
-            )
-        }),
+        &handles.map(|x| (x.dupe(), Require::Everything)),
         Require::Exports,
         None,
     );
+    let _ = state.get_loads(handles.iter());
     print_errors(&state.collect_errors(&ErrorConfigs::default()).shown);
     state
         .check_against_expectations(&ErrorConfigs::default())
@@ -206,11 +203,13 @@ impl Incremental {
     /// Run a check. Expect recompute things to have changed.
     fn check(&mut self, want: &[&str], recompute: &[&str]) {
         let subscriber = TestSubscriber::new();
+        let handles = want.map(|x| self.handle(x));
         self.state.run(
-            &want.map(|x| (self.handle(x), Require::Everything)),
+            &handles.map(|x| (x.dupe(), Require::Everything)),
             Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
+        let _ = self.state.get_loads(handles.iter());
         print_errors(&self.state.collect_errors(&ErrorConfigs::default()).shown);
         self.state
             .check_against_expectations(&ErrorConfigs::default())
@@ -381,17 +380,20 @@ fn test_change_require() {
         LoaderId::new(t),
     );
     state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);
+    let _ = state.get_loads([&handle]);
     assert_eq!(
         state.collect_errors(&ErrorConfigs::default()).shown.len(),
         0
     );
     assert!(state.get_bindings(&handle).is_none());
     state.run(&[(handle.dupe(), Require::Errors)], Require::Exports, None);
+    let _ = state.get_loads([&handle]);
     assert_eq!(
         state.collect_errors(&ErrorConfigs::default()).shown.len(),
         1
     );
     assert!(state.get_bindings(&handle).is_none());
+    let _ = state.get_loads([&handle]);
     state.run(
         &[(handle.dupe(), Require::Everything)],
         Require::Exports,

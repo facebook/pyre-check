@@ -539,11 +539,9 @@ fn test_import_fail_to_load() {
     let mut env = TestEnv::new();
     env.add_real_path("foo", temp.path().join("foo.py"));
     env.add("main", "import foo");
-    let errs = env
-        .to_state()
-        .0
-        .collect_errors(&ErrorConfigs::default())
-        .shown;
+    let (state, handle) = env.to_state();
+    let _ = state.get_loads([&handle("foo")]);
+    let errs = state.collect_errors(&ErrorConfigs::default()).shown;
     assert_eq!(errs.len(), 1);
     let msg = errs[0].to_string();
     assert!(msg.contains("foo.py:1:1: Failed to load"));

@@ -72,6 +72,7 @@ fn compute_errors(config: RuntimeMetadata, sourcedb: BuckSourceDatabase) -> Vec<
     });
     let mut state = State::new();
     state.run(&modules_to_check, Require::Exports, None);
+    let _ = state.get_loads(modules_to_check.iter().map(|(handle, _)| handle));
     state.collect_errors(&ErrorConfigs::default()).shown
 }
 
