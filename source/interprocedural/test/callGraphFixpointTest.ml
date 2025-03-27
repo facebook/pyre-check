@@ -1538,7 +1538,13 @@ let test_higher_order_call_graph_fixpoint =
                                      ()) );
                             ]) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       ~implicit_receiver:true
+                       (Target.Regular.Method
+                          { class_name = "test.A"; method_name = "name"; kind = Normal });
+                   ];
                };
                {
                  Expected.callable =
@@ -1564,7 +1570,14 @@ let test_higher_order_call_graph_fixpoint =
                                ~is_attribute:false
                                ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       ~implicit_receiver:true
+                       (* TODO: This should be `test.foo`. *)
+                       (Target.Regular.Method
+                          { class_name = "test.A"; method_name = "name"; kind = Normal });
+                   ];
                };
              ]
            ();
@@ -1622,7 +1635,13 @@ let test_higher_order_call_graph_fixpoint =
                                      ()) );
                             ]) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       ~implicit_receiver:true
+                       (Target.Regular.Method
+                          { class_name = "test.A"; method_name = "name"; kind = Normal });
+                   ];
                };
                {
                  Expected.callable =
@@ -1648,7 +1667,14 @@ let test_higher_order_call_graph_fixpoint =
                                ~is_attribute:false
                                ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       ~implicit_receiver:true
+                       (* TODO: This should be `test.foo`. *)
+                       (Target.Regular.Method
+                          { class_name = "test.A"; method_name = "name"; kind = Normal });
+                   ];
                };
              ]
            ();

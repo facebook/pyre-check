@@ -1325,7 +1325,8 @@ module AttributeAccessCallees = struct
   type t = {
     property_targets: CallTarget.t list;
     global_targets: CallTarget.t list;
-    (* True if the attribute access should also be considered a regular attribute.
+    (* True if that there is at least one case (i.e., execution flow) where this is a regular
+       attribute access.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;
     (* Function-typed runtime values that the attribute access may evaluate into. *)
@@ -4840,10 +4841,21 @@ module HigherOrderCallGraph = struct
               let callables =
                 Context.input_define_call_graph
                 |> DefineCallGraph.resolve_attribute_access ~location ~attribute
-                >>| (fun ({ AttributeAccessCallees.callable_targets; _ } as
-                         attribute_access_callees) ->
-                      let decorated_targets, non_decorated_targets =
+                >>| (fun ({
+                            AttributeAccessCallees.callable_targets;
+                            property_targets;
+                            is_attribute =
+                              _
+                              (* This is irrelevant. Regardless of whether this could potentially be
+                                 an attribute access, we still need to treat `property_targets` in
+                                 the same way as `callable_targets`. *);
+                            _;
+                          } as attribute_access_callees) ->
+                      let decorated_callable_targets, non_decorated_callable_targets =
                         partition_decorated_targets callable_targets
+                      in
+                      let decorated_property_targets, non_decorated_property_targets =
+                        partition_decorated_targets property_targets
                       in
                       Context.output_define_call_graph :=
                         DefineCallGraph.set_attribute_access_callees
@@ -4852,13 +4864,23 @@ module HigherOrderCallGraph = struct
                           ~attribute_access_callees:
                             {
                               attribute_access_callees with
-                              callable_targets = non_decorated_targets;
-                              decorated_targets;
+                              callable_targets = non_decorated_callable_targets;
+                              property_targets =
+                                decorated_property_targets
+                                |> returned_callables
+                                |> CallTarget.Set.elements
+                                |> List.rev_append non_decorated_property_targets;
+                              decorated_targets =
+                                List.rev_append
+                                  decorated_callable_targets
+                                  decorated_property_targets;
                             }
                           !Context.output_define_call_graph;
-                      non_decorated_targets
+                      non_decorated_callable_targets
+                      |> List.rev_append non_decorated_property_targets
                       |> CallTarget.Set.of_list
-                      |> CallTarget.Set.join (returned_callables decorated_targets))
+                      |> CallTarget.Set.join (returned_callables decorated_callable_targets)
+                      |> CallTarget.Set.join (returned_callables decorated_property_targets))
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               callables, state
