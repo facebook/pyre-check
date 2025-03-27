@@ -10,7 +10,7 @@
 import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 import {useState} from 'react';
-import type {ProjectValue} from './PerformanceComparisonChart';
+import type {ProjectValue} from './PerformanceComparisonChartSection';
 
 export default component PerformanceComparisonButton(
   project: ProjectValue,

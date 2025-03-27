@@ -17,7 +17,7 @@ import * as stylex from '@stylexjs/stylex';
 import {landingPageStyles} from './index';
 import Firefly from '../components/landing-page/firefly';
 import QuoteCard from '../components/landing-page/quoteCard';
-import PerformanceComparisonChart from '../components/landing-page/PerformanceComparisonChart';
+import PerformanceComparisonChartSection from '../components/landing-page/PerformanceComparisonChartSection';
 import QuotesGrid from '../components/landing-page/quotesGrid';
 import WhyPyrefly from '../components/landing-page/whyPyrefly';
 import LandingPageSection from '../components/landing-page/landingPageSection';
@@ -40,7 +40,7 @@ export default component NewLandingPage() {
       <LandingPageSection title="Why Pyrefly" child={<WhyPyrefly />} />
       <LandingPageSection
         title="Performance Comparison"
-        child={<PerformanceComparisonChart />}
+        child={<PerformanceComparisonChartSection />}
       />
       <LandingPageSection
         title="What People Say About Pyrefly"
