@@ -3227,32 +3227,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "revealed type: (*args: Any, **Any) -> Self@Class5",
-      "description": "revealed type: (*args: Any, **Any) -> Self@Class5",
+      "concise_description": "revealed type: (*args: Any, **Any) -> NoReturn",
+      "description": "revealed type: (*args: Any, **Any) -> NoReturn",
       "line": 97,
       "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 97
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Self@Class5, NoReturn) failed",
-      "description": "assert_type(Self@Class5, NoReturn) failed",
-      "line": 100,
-      "name": "assert-type",
-      "stop_column": 32,
-      "stop_line": 100
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Self@Class5, NoReturn) failed",
-      "description": "assert_type(Self@Class5, NoReturn) failed",
-      "line": 105,
-      "name": "assert-type",
-      "stop_column": 38,
-      "stop_line": 105
     },
     {
       "code": -2,

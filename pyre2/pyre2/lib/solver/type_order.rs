@@ -55,6 +55,10 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         }
     }
 
+    pub fn get_metaclass_dunder_call(self, cls: &ClassType) -> Option<Type> {
+        self.0.get_metaclass_dunder_call(cls)
+    }
+
     pub fn is_protocol(self, cls: &Class) -> bool {
         self.0.get_metadata_for_class(cls).is_protocol()
     }

@@ -154,8 +154,6 @@
     "Line 50: Unexpected errors ['assert_type(Self@object, Class2) failed']",
     "Line 62: Unexpected errors ['Argument `type[Class3]` is not assignable to parameter `cb` with type `(*args: Unknown, **Unknown) -> Self@Class3` in function `accepts_callable`']",
     "Line 64: Unexpected errors ['assert_type(Self@Class3, Class3) failed']",
-    "Line 100: Unexpected errors ['assert_type(Self@Class5, NoReturn) failed']",
-    "Line 105: Unexpected errors ['assert_type(Self@Class5, NoReturn) failed']",
     "Line 141: Unexpected errors ['Argument `type[Class6Any]` is not assignable to parameter `cb` with type `() -> Any` in function `accepts_callable`']",
     "Line 164: Unexpected errors ['assert_type(Self@object, Class7[int]) failed', 'Expected 0 positional arguments, got 1']",
     "Line 165: Unexpected errors ['assert_type(Self@object, Class7[str]) failed', 'Expected 0 positional arguments, got 1']",

@@ -55,7 +55,7 @@ def test(x: Callable[int]):  # E: Callable requires exactly two arguments but 1 
 testcase!(
     test_callable_constructor,
     r#"
-from typing import Callable, Self
+from typing import Callable, Self, NoReturn
 class C1:
     def __init__(self, x: str) -> None: pass
 class C2:
@@ -75,6 +75,12 @@ class C6:
     def __new__(cls, *args, **kwargs) -> Self:
         return super(C6, cls).__new__(cls)
     def __init__(self, x: int) -> None: pass
+class CustomMeta(type):
+    def __call__(cls) -> NoReturn:
+        raise NotImplementedError("Class not constructable")
+class C7(metaclass=CustomMeta):
+    def __new__(cls, *args, **kwargs) -> Self:
+        return super(C7, cls).__new__(cls)
 
 x1: Callable[[], int] = int
 x2: Callable[[str], C1] = C1
@@ -83,6 +89,7 @@ x4: Callable[[str], C3] = C3
 x5: Callable[[], C4] = C4
 x6: Callable[[int], int] = C5
 x7: Callable[[int], C6] = C6
+x8: Callable[[], NoReturn] = C7
 "#,
 );
 

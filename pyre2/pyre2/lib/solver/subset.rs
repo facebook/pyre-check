@@ -317,8 +317,23 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         if self.type_order.is_protocol(cls.class_object()) {
             // If it's a protocol, always use the __call__ method
             return self.try_lookup_attr_from_class(&class_type, &dunder::CALL);
+        } else if let Some(metaclass_call_attr_ty) = self.type_order.get_metaclass_dunder_call(cls)
+        {
+            // If the class has a custom metaclass and the return type of the metaclass's __call__
+            // is not a subclass of the current class, use that and ignore __new__ and __init__
+            if metaclass_call_attr_ty
+                .callable_return_type()
+                .and_then(|ret| match ret {
+                    Type::ClassType(ret_cls) => {
+                        self.type_order.as_superclass(&ret_cls, cls.class_object())
+                    }
+                    _ => None,
+                })
+                .is_none()
+            {
+                return Some(metaclass_call_attr_ty);
+            }
         }
-        // TODO(yangdanny): check metaclass __call__
         // Check the __new__ method and whether it comes from object or has been overridden
         let new_attr_ty = self.try_lookup_attr_from_class(&class_type, &dunder::NEW);
         let overrides_new = self
