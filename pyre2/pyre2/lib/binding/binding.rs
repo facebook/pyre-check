@@ -1080,8 +1080,11 @@ impl DisplayWith<Bindings> for BindingClassField {
 /// The value that the class field is initialized to.
 #[derive(Clone, Debug)]
 pub enum ClassFieldInitialValue {
-    /// The field does not have an initial value.
-    Instance,
+    /// The field does not have an initial value. If a name is provided, it is the name of the
+    /// method where the field was inferred (which will be None for fields declared but not
+    /// initialized in the class body, or for instance-only fields of synthesized classes)
+    #[expect(dead_code)] // TODO(stroxler) Use this in class field solving.
+    Instance(Option<Name>),
     /// The field has an initial value.
     ///
     /// If the value is from an assignment, stores the expression that the field is assigned to,

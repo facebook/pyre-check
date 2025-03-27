@@ -214,7 +214,7 @@ impl FlowInfo {
             }) => ClassFieldInitialValue::Class(Some(e.clone())),
             Some(FlowStyle::AnnotatedClassField {
                 initial_value: None,
-            }) => ClassFieldInitialValue::Instance,
+            }) => ClassFieldInitialValue::Instance(None),
             // All other styles (e.g. function def, import) indicate we do have
             // a value, but it is not coming from a simple style.
             _ => ClassFieldInitialValue::Class(None),

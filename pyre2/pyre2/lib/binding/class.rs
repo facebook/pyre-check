@@ -184,7 +184,9 @@ impl<'a> BindingsBuilder<'a> {
                                     value,
                                     annotation,
                                     range,
-                                    initial_value: ClassFieldInitialValue::Instance,
+                                    initial_value: ClassFieldInitialValue::Instance(Some(
+                                        method_name.clone(),
+                                    )),
                                 },
                             );
                         } else if annotation.is_some() {
@@ -342,7 +344,7 @@ impl<'a> BindingsBuilder<'a> {
             let initial_value = if force_class_initialization || member_value.is_some() {
                 ClassFieldInitialValue::Class(member_value.clone())
             } else {
-                ClassFieldInitialValue::Instance
+                ClassFieldInitialValue::Instance(None)
             };
             let value_binding = match member_value {
                 Some(value) => Binding::Expr(None, value),

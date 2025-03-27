@@ -595,7 +595,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         initial_value: &ClassFieldInitialValue,
     ) -> ClassFieldInitialization {
         match initial_value {
-            ClassFieldInitialValue::Instance => ClassFieldInitialization::Instance,
+            ClassFieldInitialValue::Instance(_) => ClassFieldInitialization::Instance,
             ClassFieldInitialValue::Class(None) => ClassFieldInitialization::Class(None),
             ClassFieldInitialValue::Class(Some(e)) => {
                 // If this field was created via a call to a dataclass field specifier, extract field flags from the call.
