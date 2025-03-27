@@ -334,7 +334,7 @@ class C:
 );
 
 testcase!(
-    test_dataclasses_field,
+    test_dataclasses_field_with_init_flag,
     r#"
 from dataclasses import dataclass, field
 @dataclass
