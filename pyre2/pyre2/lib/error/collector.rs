@@ -175,14 +175,6 @@ impl ErrorCollector {
         self.errors.lock().len()
     }
 
-    pub fn count_suppressed(&self) -> usize {
-        self.errors
-            .lock()
-            .iter_all()
-            .filter(|x| x.is_ignored())
-            .count()
-    }
-
     pub fn collect(&self, error_config: &ErrorConfig) -> CollectedErrors {
         let mut shown = Vec::new();
         let mut suppressed = Vec::new();

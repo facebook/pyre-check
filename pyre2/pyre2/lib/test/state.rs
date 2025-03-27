@@ -381,16 +381,25 @@ fn test_change_require() {
         LoaderId::new(t),
     );
     state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);
-    assert_eq!(state.count_errors(), 0);
+    assert_eq!(
+        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        0
+    );
     assert!(state.get_bindings(&handle).is_none());
     state.run(&[(handle.dupe(), Require::Errors)], Require::Exports, None);
-    assert_eq!(state.count_errors(), 1);
+    assert_eq!(
+        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        1
+    );
     assert!(state.get_bindings(&handle).is_none());
     state.run(
         &[(handle.dupe(), Require::Everything)],
         Require::Exports,
         None,
     );
-    assert_eq!(state.count_errors(), 1);
+    assert_eq!(
+        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        1
+    );
     assert!(state.get_bindings(&handle).is_some());
 }

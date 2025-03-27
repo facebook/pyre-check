@@ -251,7 +251,10 @@ pub fn mk_multi_file_state(
     }
     let (state, handle) = test_env.to_state();
     if assert_zero_errors {
-        assert_eq!(state.count_errors(), 0);
+        assert_eq!(
+            state.collect_errors(&ErrorConfigs::default()).shown.len(),
+            0
+        );
     }
     let mut handles = HashMap::new();
     for (name, _) in files {

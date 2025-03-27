@@ -423,26 +423,25 @@ impl Args {
 
         state.run(handles, default_require, Some(progress));
         let computing = start.elapsed();
-        let errors = state.collect_errors(error_configs).shown;
+        let errors = state.collect_errors(error_configs);
         if let Some(path) = &self.output {
-            self.output_format.write_errors_to_file(path, &errors)?;
+            self.output_format
+                .write_errors_to_file(path, &errors.shown)?;
         } else {
-            print_errors(&errors);
+            print_errors(&errors.shown);
         }
         let printing = start.elapsed();
         memory_trace.stop();
         if let Some(limit) = self.count_errors {
-            print_error_counts(&errors, limit);
+            print_error_counts(&errors.shown, limit);
         }
         if let Some(path_index) = self.summarize_errors {
-            print_error_summary(&errors, path_index);
+            print_error_summary(&errors.shown, path_index);
         }
-        let error_count = state.count_errors();
-        let suppressed_count = state.count_suppressed_errors();
         info!(
             "{} errors ({} suppressed), {} modules, {} lines, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
-            number_thousands(error_count),
-            number_thousands(suppressed_count),
+            number_thousands(errors.shown.len() + errors.suppressed.len() + errors.disabled.len()),
+            number_thousands(errors.suppressed.len() + errors.disabled.len()),
             number_thousands(state.module_count()),
             number_thousands(state.line_count()),
             memory_trace.peak()
@@ -471,6 +470,7 @@ impl Args {
         }
         if self.suppress_errors {
             let errors: SmallMap<PathBuf, Vec<Error>> = errors
+                .suppressed
                 .into_iter()
                 .filter(|e| matches!(e.path().details(), ModulePathDetails::FileSystem(_)))
                 .fold(SmallMap::new(), |mut acc, e| {
@@ -483,7 +483,7 @@ impl Args {
         if self.expectations {
             state.check_against_expectations(error_configs)?;
             Ok(CommandExitStatus::Success)
-        } else if error_count > suppressed_count {
+        } else if !errors.shown.is_empty() {
             Ok(CommandExitStatus::UserError)
         } else {
             Ok(CommandExitStatus::Success)

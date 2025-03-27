@@ -265,34 +265,6 @@ impl State {
             .sum()
     }
 
-    pub fn count_errors(&self) -> usize {
-        self.modules
-            .values()
-            .map(|x| {
-                x.state
-                    .read()
-                    .steps
-                    .load
-                    .as_ref()
-                    .map_or(0, |x| x.errors.len())
-            })
-            .sum()
-    }
-
-    pub fn count_suppressed_errors(&self) -> usize {
-        self.modules
-            .values()
-            .map(|x| {
-                x.state
-                    .read()
-                    .steps
-                    .load
-                    .as_ref()
-                    .map_or(0, |x| x.errors.count_suppressed())
-            })
-            .sum()
-    }
-
     pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Result<Handle, FindError> {
         Ok(Handle::new(
             module,
