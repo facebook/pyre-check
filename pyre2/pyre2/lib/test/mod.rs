@@ -43,6 +43,7 @@ mod tuple;
 mod type_alias;
 mod type_var_tuple;
 mod typed_dict;
+mod typing_self;
 mod util;
 mod with;
 mod yields;

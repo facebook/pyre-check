@@ -450,22 +450,6 @@ C.x  # E: Generic attribute `x` of class `C` is not visible on the class
 );
 
 testcase!(
-    test_use_self,
-    r#"
-from typing import assert_type
-from typing import Self
-import typing
-from typing import Self as Myself
-
-class C:
-    def m(self, x: Self, y: Myself) -> list[typing.Self]:
-        return [self, x, y]
-
-assert_type(C().m(C(), C()), list[C])
-"#,
-);
-
-testcase!(
     test_var_attribute,
     r#"
 from typing import assert_type

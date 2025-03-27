@@ -1247,52 +1247,6 @@ def foo(x):
 );
 
 testcase!(
-    test_typing_self_return,
-    r#"
-from typing import Self, assert_type
-class A:
-    def f(self) -> Self:
-        return self
-    @classmethod
-    def g(cls) -> type[Self]:
-        return cls
-class B(A):
-    pass
-assert_type(B().f(), B)
-assert_type(B().g(), type[B])
-    "#,
-);
-
-testcase!(
-    test_typing_self_param,
-    r#"
-from typing import Self
-class A:
-    def f(self, x: Self):
-        pass
-class B(A):
-    pass
-def f(a: A, b: B):
-    b.f(b)  # OK
-    b.f(a)  # E:
-    "#,
-);
-
-testcase!(
-    test_typing_self_new_param,
-    r#"
-from typing import Self
-class A:
-    def __new__(cls, x: type[Self]):
-        return super().__new__(cls)
-class B(A):
-    pass
-B(B)  # OK
-B(A)  # E:
-    "#,
-);
-
-testcase!(
     test_module_type,
     r#"
 import types
