@@ -899,6 +899,7 @@ impl Type {
         }
     }
 
+    // This doesn't handle generics currently
     pub fn callable_return_type(&self) -> Option<Type> {
         match self {
             Type::Function(box func)
@@ -909,8 +910,16 @@ impl Type {
             | Type::BoundMethod(box BoundMethod {
                 func: BoundMethodType::Function(func),
                 ..
+            })
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Forall(Forall { body: func, .. }),
+                ..
             }) => Some(func.signature.ret.clone()),
-            Type::Overload(overload) => Some(unions(
+            Type::Overload(overload)
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Overload(overload),
+                ..
+            }) => Some(unions(
                 overload
                     .signatures
                     .iter()
@@ -924,6 +933,7 @@ impl Type {
         }
     }
 
+    // This doesn't handle generics currently
     pub fn set_callable_return_type(&mut self, ret: Type) {
         match self {
             Type::Function(box func)
@@ -934,10 +944,18 @@ impl Type {
             | Type::BoundMethod(box BoundMethod {
                 func: BoundMethodType::Function(func),
                 ..
+            })
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Forall(Forall { body: func, .. }),
+                ..
             }) => {
                 func.signature.ret = ret;
             }
-            Type::Overload(overload) => overload.signatures.iter_mut().for_each(|x| match x {
+            Type::Overload(overload)
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Overload(overload),
+                ..
+            }) => overload.signatures.iter_mut().for_each(|x| match x {
                 OverloadType::Callable(callable) => callable.ret = ret.clone(),
                 OverloadType::Forall(forall) => forall.body.signature.ret = ret.clone(),
             }),
