@@ -340,12 +340,18 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             .type_order
             .get_class_defining_method(cls.class_object(), &dunder::NEW)
             .is_some_and(|c| c != *self.type_order.stdlib().object_class_type().class_object());
-        if let Some(ret) = new_attr_ty
+        if new_attr_ty
             .as_ref()
             .and_then(|ty| ty.callable_return_type())
-            && !self.is_subset_eq(&ret, &class_type)
+            .and_then(|ret| match ret {
+                Type::ClassType(ret_cls) => {
+                    self.type_order.as_superclass(&ret_cls, cls.class_object())
+                }
+                _ => None,
+            })
+            .is_none()
         {
-            // If the return type of __new__ is not a subtype of the current class, use that and ignore __init__
+            // If the return type of __new__ is not a subclass of the current class, use that and ignore __init__
             return new_attr_ty;
         }
         // Check the __init__ method and whether it comes from object or has been overridden

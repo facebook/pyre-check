@@ -3156,16 +3156,6 @@
     },
     {
       "code": -2,
-      "column": 23,
-      "concise_description": "Argument `type[Class3]` is not assignable to parameter `cb` with type `(*args: Unknown, **Unknown) -> Self@Class3` in function `accepts_callable`",
-      "description": "Argument `type[Class3]` is not assignable to parameter `cb` with type `(*args: Unknown, **Unknown) -> Self@Class3` in function `accepts_callable`",
-      "line": 62,
-      "name": "bad-argument-type",
-      "stop_column": 29,
-      "stop_line": 62
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "revealed type: (*args: Unknown, **Unknown) -> Self@Class3",
       "description": "revealed type: (*args: Unknown, **Unknown) -> Self@Class3",
@@ -3253,16 +3243,6 @@
       "name": "bad-argument-type",
       "stop_column": 5,
       "stop_line": 127
-    },
-    {
-      "code": -2,
-      "column": 27,
-      "concise_description": "Argument `type[Class6Any]` is not assignable to parameter `cb` with type `() -> Any` in function `accepts_callable`",
-      "description": "Argument `type[Class6Any]` is not assignable to parameter `cb` with type `() -> Any` in function `accepts_callable`",
-      "line": 141,
-      "name": "bad-argument-type",
-      "stop_column": 36,
-      "stop_line": 141
     },
     {
       "code": -2,
@@ -3986,16 +3966,6 @@
       "name": "bad-argument-type",
       "stop_column": 66,
       "stop_line": 102
-    },
-    {
-      "code": -2,
-      "column": 52,
-      "concise_description": "Argument `type[dict]` is not assignable to parameter `converter` with type `(Any) -> Self@dict` in function `model_field`",
-      "description": "Argument `type[dict]` is not assignable to parameter `converter` with type `(Any) -> Self@dict` in function `model_field`",
-      "line": 104,
-      "name": "bad-argument-type",
-      "stop_column": 56,
-      "stop_line": 104
     },
     {
       "code": -2,
