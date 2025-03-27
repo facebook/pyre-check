@@ -493,11 +493,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Types provided in annotations shadow inferred types
         let ty = if let Some(ann) = annotation {
             match &ann.ty {
-                Some(ty) => ty,
-                None => &value_ty,
+                Some(ty) => ty.clone(),
+                None => value_ty.clone(),
             }
         } else {
-            &value_ty
+            value_ty.clone()
         };
 
         // Enum handling:
@@ -508,7 +508,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // types for the `.value` / `._value_` attributes of literals. This is permitted in the spec although not optimal
         // for most cases; we are handling it this way in part because generic enum behavior is not yet well-specified.
         let ty = if let Some(enum_) = metadata.enum_metadata()
-            && self.is_valid_enum_member(name, ty, &initialization)
+            && self.is_valid_enum_member(name, &ty, &initialization)
         {
             if annotation.is_some() {
                 self.error(
@@ -520,7 +520,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 if !matches!(ty, Type::Tuple(_))
                     && !self
                         .solver()
-                        .is_subset_eq(ty, &enum_value_ty, self.type_order())
+                        .is_subset_eq(&ty, &enum_value_ty, self.type_order())
                 {
                     self.error(
                         errors, range, ErrorKind::BadAssignment, None,
@@ -528,7 +528,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
             }
-            &Type::Literal(Lit::Enum(Box::new((
+            Type::Literal(Lit::Enum(Box::new((
                 enum_.cls.clone(),
                 name.clone(),
                 ty.clone(),
@@ -548,7 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         // Identify whether this is a descriptor
         let (mut descriptor_getter, mut descriptor_setter) = (None, None);
-        match ty {
+        match &ty {
             // TODO(stroxler): This works for simple descriptors. There three known gaps, there may be others:
             // - If the field is instance-only, descriptor dispatching won't occur, an instance-only attribute
             //   that happens to be a descriptor just behaves like a normal instance-only attribute.
@@ -559,11 +559,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::ClassType(c) => {
                 if c.class_object().contains(&dunder::GET) {
                     descriptor_getter =
-                        Some(self.attr_infer(ty, &dunder::GET, range, errors, None));
+                        Some(self.attr_infer(&ty, &dunder::GET, range, errors, None));
                 }
                 if c.class_object().contains(&dunder::SET) {
                     descriptor_setter =
-                        Some(self.attr_infer(ty, &dunder::SET, range, errors, None));
+                        Some(self.attr_infer(&ty, &dunder::SET, range, errors, None));
                 }
             }
             _ => {}
@@ -571,7 +571,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         // Create the resulting field and check for override inconsistencies before returning
         let class_field = ClassField::new(
-            ty.clone(),
+            ty,
             annotation.cloned(),
             initialization,
             readonly,
