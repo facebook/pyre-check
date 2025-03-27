@@ -4379,7 +4379,23 @@ module HigherOrderCallGraph = struct
         |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
 
 
-      let partition_decorated_targets call_targets =
+      module AnalyzeDecoratedTargetsResult = struct
+        type t = {
+          (* A subset of the input call targets that are of `kind=Decorated`. *)
+          decorated_targets: CallTarget.t list;
+          (* A subset of the input call targets that are not of `kind=Decorated`. *)
+          non_decorated_targets: CallTarget.t list;
+          (* The result of evaluating the input call targets. *)
+          result_targets: CallTarget.t list;
+        }
+      end
+
+      (* Analyze any list of `CallTarget.t`s, which may contain decorated targets -- we would get
+         their returned callable. The reason is that, the original call graph contains call edges to
+         `foo@decorated` targets, which are symbolic target representing the decorated callables.
+         Those need to be replaced by the actual function being called, which will usually be some
+         kind of `decorator.inner[captured(f):foo]` target. *)
+      let resolve_decorated_targets call_targets =
         let decorated_targets, non_decorated_targets =
           List.partition_tf
             ~f:(fun { CallTarget.target; _ } -> Target.is_decorated target)
@@ -4389,7 +4405,15 @@ module HigherOrderCallGraph = struct
           "Decorated targets: `%a`"
           Target.List.pp_pretty_with_kind
           (List.map ~f:CallTarget.target decorated_targets);
-        decorated_targets, non_decorated_targets
+        {
+          AnalyzeDecoratedTargetsResult.decorated_targets;
+          non_decorated_targets;
+          result_targets =
+            non_decorated_targets
+            |> CallTarget.Set.of_list
+            |> CallTarget.Set.join (returned_callables decorated_targets)
+            |> CallTarget.Set.elements;
+        }
 
 
       let validate_target target =
@@ -4476,18 +4500,14 @@ module HigherOrderCallGraph = struct
           in
           List.filter call_targets ~f:(fun call_target -> call_target |> is_parameterized |> not)
         in
-        let decorated_targets, non_decorated_targets =
-          track_apply_call_step PartitionDecoratedTargets (fun () ->
-              partition_decorated_targets callee_targets)
-        in
-        (* The analysis of the callee AST handles the redirection to artifically created decorator
-           defines. *)
-        let call_targets_from_callee =
+        let {
+          AnalyzeDecoratedTargetsResult.decorated_targets;
+          non_decorated_targets = _;
+          result_targets = call_targets_from_callee;
+        }
+          =
           track_apply_call_step ComputeCalleeTargets (fun () ->
-              non_decorated_targets
-              |> CallTarget.Set.of_list
-              |> CallTarget.Set.join (returned_callables decorated_targets)
-              |> CallTarget.Set.elements)
+              resolve_decorated_targets callee_targets)
         in
         let create_call_target = function
           | Some ({ CallTarget.implicit_receiver; _ } as callee_target) :: parameter_targets ->
@@ -4814,8 +4834,13 @@ module HigherOrderCallGraph = struct
                 Context.input_define_call_graph
                 |> DefineCallGraph.resolve_identifier ~location ~identifier
                 >>| (fun ({ IdentifierCallees.callable_targets; _ } as identifier_callees) ->
-                      let decorated_targets, non_decorated_targets =
-                        partition_decorated_targets callable_targets
+                      let {
+                        AnalyzeDecoratedTargetsResult.decorated_targets;
+                        non_decorated_targets;
+                        result_targets;
+                      }
+                        =
+                        resolve_decorated_targets callable_targets
                       in
                       Context.output_define_call_graph :=
                         DefineCallGraph.set_identifier_callees
@@ -4828,9 +4853,7 @@ module HigherOrderCallGraph = struct
                               decorated_targets;
                             }
                           !Context.output_define_call_graph;
-                      non_decorated_targets
-                      |> CallTarget.Set.of_list
-                      |> CallTarget.Set.join (returned_callables decorated_targets))
+                      CallTarget.Set.of_list result_targets)
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               let callables_from_variable =
@@ -4851,11 +4874,21 @@ module HigherOrderCallGraph = struct
                                  the same way as `callable_targets`. *);
                             _;
                           } as attribute_access_callees) ->
-                      let decorated_callable_targets, non_decorated_callable_targets =
-                        partition_decorated_targets callable_targets
+                      let {
+                        AnalyzeDecoratedTargetsResult.decorated_targets = decorated_callable_targets;
+                        non_decorated_targets = non_decorated_callable_targets;
+                        result_targets = result_callable_targets;
+                      }
+                        =
+                        resolve_decorated_targets callable_targets
                       in
-                      let decorated_property_targets, non_decorated_property_targets =
-                        partition_decorated_targets property_targets
+                      let {
+                        AnalyzeDecoratedTargetsResult.decorated_targets = decorated_property_targets;
+                        non_decorated_targets = _;
+                        result_targets = result_property_targets;
+                      }
+                        =
+                        resolve_decorated_targets property_targets
                       in
                       Context.output_define_call_graph :=
                         DefineCallGraph.set_attribute_access_callees
@@ -4865,22 +4898,16 @@ module HigherOrderCallGraph = struct
                             {
                               attribute_access_callees with
                               callable_targets = non_decorated_callable_targets;
-                              property_targets =
-                                decorated_property_targets
-                                |> returned_callables
-                                |> CallTarget.Set.elements
-                                |> List.rev_append non_decorated_property_targets;
+                              property_targets = result_property_targets;
                               decorated_targets =
                                 List.rev_append
                                   decorated_callable_targets
                                   decorated_property_targets;
                             }
                           !Context.output_define_call_graph;
-                      non_decorated_callable_targets
-                      |> List.rev_append non_decorated_property_targets
-                      |> CallTarget.Set.of_list
-                      |> CallTarget.Set.join (returned_callables decorated_callable_targets)
-                      |> CallTarget.Set.join (returned_callables decorated_property_targets))
+                      CallTarget.Set.join
+                        (CallTarget.Set.of_list result_callable_targets)
+                        (CallTarget.Set.of_list result_property_targets))
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               callables, state

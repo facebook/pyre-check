@@ -16,7 +16,6 @@ module Analysis = struct
       | ComputeCalleeTargets
       | FindNonParameterizedTargets
       | StoreCallCallees
-      | PartitionDecoratedTargets
       | ResolveCall
     [@@deriving sexp, compare]
 
@@ -27,7 +26,6 @@ module Analysis = struct
       | ComputeCalleeTargets -> Format.fprintf formatter "compute-callee-targets"
       | FindNonParameterizedTargets -> Format.fprintf formatter "find-non-parameterized-targets"
       | StoreCallCallees -> Format.fprintf formatter "store-call-callees"
-      | PartitionDecoratedTargets -> Format.fprintf formatter "partition-decorated-targets"
       | ResolveCall -> Format.fprintf formatter "resolve-call"
   end
 end
