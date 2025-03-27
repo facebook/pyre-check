@@ -65,7 +65,7 @@ enum Command {
         #[clap(long, env = clap_env("PROJECT_EXCLUDES"))]
         project_excludes: Option<Vec<String>>,
         /// Watch for file changes and re-check them.
-        #[clap(long, env = clap_env("WATCH"))]
+        #[clap(long, env = clap_env("WATCH"), conflicts_with = "check_all")]
         watch: bool,
 
         /// Explicitly set the Pyre configuration to use when type checking or starting a language server.
