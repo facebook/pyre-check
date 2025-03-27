@@ -127,13 +127,13 @@ fn test_multiple_path() {
         Require::Exports,
         None,
     );
-    let _ = state.get_loads(handles.iter());
-    print_errors(&state.collect_errors(&ErrorConfigs::default()).shown);
+    let loads = state.get_loads(handles.iter());
+    print_errors(&loads.collect_errors(&ErrorConfigs::default()).shown);
     state
         .check_against_expectations(&ErrorConfigs::default())
         .unwrap();
     assert_eq!(
-        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        loads.collect_errors(&ErrorConfigs::default()).shown.len(),
         3
     );
 }
@@ -209,8 +209,8 @@ impl Incremental {
             Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
-        let _ = self.state.get_loads(handles.iter());
-        print_errors(&self.state.collect_errors(&ErrorConfigs::default()).shown);
+        let loads = self.state.get_loads(handles.iter());
+        print_errors(&loads.collect_errors(&ErrorConfigs::default()).shown);
         self.state
             .check_against_expectations(&ErrorConfigs::default())
             .unwrap();
@@ -380,27 +380,36 @@ fn test_change_require() {
         LoaderId::new(t),
     );
     state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);
-    let _ = state.get_loads([&handle]);
     assert_eq!(
-        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        state
+            .get_loads([&handle])
+            .collect_errors(&ErrorConfigs::default())
+            .shown
+            .len(),
         0
     );
     assert!(state.get_bindings(&handle).is_none());
     state.run(&[(handle.dupe(), Require::Errors)], Require::Exports, None);
-    let _ = state.get_loads([&handle]);
     assert_eq!(
-        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        state
+            .get_loads([&handle])
+            .collect_errors(&ErrorConfigs::default())
+            .shown
+            .len(),
         1
     );
     assert!(state.get_bindings(&handle).is_none());
-    let _ = state.get_loads([&handle]);
     state.run(
         &[(handle.dupe(), Require::Everything)],
         Require::Exports,
         None,
     );
     assert_eq!(
-        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        state
+            .get_loads([&handle])
+            .collect_errors(&ErrorConfigs::default())
+            .shown
+            .len(),
         1
     );
     assert!(state.get_bindings(&handle).is_some());

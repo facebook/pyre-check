@@ -11,6 +11,8 @@ use anyhow::anyhow;
 use dupe::Dupe;
 use ruff_text_size::TextRange;
 
+use crate::config::ErrorConfigs;
+use crate::error::collector::CollectedErrors;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
@@ -30,7 +32,6 @@ pub struct Load {
 
 #[derive(Debug)]
 pub struct Loads {
-    #[allow(dead_code)]
     loads: Vec<Arc<Load>>,
 }
 
@@ -89,5 +90,15 @@ impl Loads {
         Self {
             loads: loads.into_iter().collect(),
         }
+    }
+
+    pub fn collect_errors(&self, error_configs: &ErrorConfigs) -> CollectedErrors {
+        let mut errors = CollectedErrors::empty();
+        for load in self.loads.iter() {
+            let module_path = load.module_info.path();
+            let error_config = error_configs.get(module_path);
+            errors.extend(load.errors.collect(error_config));
+        }
+        errors
     }
 }

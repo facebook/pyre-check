@@ -156,8 +156,12 @@ impl TestEnv {
             Some(Box::new(subscriber.dupe())),
         );
         subscriber.finish();
-        let _ = state.get_loads(handles.iter());
-        print_errors(&state.collect_errors(&ErrorConfigs::default()).shown);
+        print_errors(
+            &state
+                .get_loads(handles.iter())
+                .collect_errors(&ErrorConfigs::default())
+                .shown,
+        );
         (state, move |module| {
             let name = ModuleName::from_str(module);
             Handle::new(
@@ -251,10 +255,13 @@ pub fn mk_multi_file_state(
     for (name, _) in files {
         handles.insert(*name, handle(name));
     }
-    let _ = state.get_loads(handles.values());
     if assert_zero_errors {
         assert_eq!(
-            state.collect_errors(&ErrorConfigs::default()).shown.len(),
+            state
+                .get_loads(handles.values())
+                .collect_errors(&ErrorConfigs::default())
+                .shown
+                .len(),
             0
         );
     }

@@ -239,8 +239,8 @@ impl LanguageServiceState {
     }
 
     pub fn get_errors(&self) -> Vec<Diagnostic> {
-        let _ = self.state.get_loads([&self.handle]);
         self.state
+            .get_loads([&self.handle])
             .collect_errors(&ErrorConfigs::default())
             .shown
             .into_iter()

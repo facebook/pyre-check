@@ -422,13 +422,13 @@ impl Args {
         let start = Instant::now();
 
         state.run(handles, default_require, Some(progress));
-        let _ = if self.check_all {
+        let loads = if self.check_all {
             state.get_loads(state.handles().iter())
         } else {
             state.get_loads(handles.iter().map(|(handle, _)| handle))
         };
         let computing = start.elapsed();
-        let errors = state.collect_errors(error_configs);
+        let errors = loads.collect_errors(error_configs);
         if let Some(path) = &self.output {
             self.output_format
                 .write_errors_to_file(path, &errors.shown)?;

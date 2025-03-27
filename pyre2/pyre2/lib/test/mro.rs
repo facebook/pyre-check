@@ -35,17 +35,20 @@ fn get_mro_names(name: &str, handle: &Handle, state: &State) -> Vec<String> {
 }
 
 fn assert_no_errors(handle: &Handle, state: &State) {
-    let _ = state.get_loads([handle]);
     assert_eq!(
-        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        state
+            .get_loads([handle])
+            .collect_errors(&ErrorConfigs::default())
+            .shown
+            .len(),
         0,
         "Expected no errors"
     );
 }
 
 fn assert_has_error(handle: &Handle, state: &State, error_msg: &str, assertion_msg: &str) {
-    let _ = state.get_loads([handle]);
     state
+        .get_loads([handle])
         .collect_errors(&ErrorConfigs::default())
         .shown
         .iter()

@@ -46,7 +46,6 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::config::ErrorConfigs;
-use crate::error::collector::CollectedErrors;
 use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::ExportLocation;
@@ -247,18 +246,6 @@ impl State {
                 .check(&load.errors.collect(error_config).shown)?;
         }
         Ok(())
-    }
-
-    pub fn collect_errors(&self, error_configs: &ErrorConfigs) -> CollectedErrors {
-        let mut errors = CollectedErrors::empty();
-        for module in self.modules.values() {
-            let error_config = error_configs.get(module.handle.path());
-            let steps = module.state.read();
-            if let Some(load) = &steps.steps.load {
-                errors.extend(load.errors.collect(error_config));
-            }
-        }
-        errors
     }
 
     pub fn module_count(&self) -> usize {
