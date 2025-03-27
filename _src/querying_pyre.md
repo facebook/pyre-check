@@ -3,6 +3,7 @@ id: querying-pyre
 title: Querying Pyre
 sidebar_label: Querying Pyre
 ---
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 
 :::warning
 These interfaces are considered legacy code by our team. They are far from production-ready, will receive minimal maintenance effort in the short to medium term (for Pysa only) and will eventually be removed in the long term. It is ok if you want to rely on them for debugging or manual triaging purpose. But we would **strongly discourage** relying on them to build any automation or product on top.
@@ -370,9 +371,28 @@ $ pyre query "model_query(path='/absolute/path/to/test_pysa/directory', query_na
 with `pyre analyze` (i.e, Pysa). To avoid this problem, we recommend starting
 a pyre server with the following parameters:
 
+<OssOnly>
+
 ```bash
+$ pyre servers stop # Stop existing pyre servers
 $ pyre --no-saved-state start --skip-initial-type-check --wait-on-initialization --analyze-external-sources
 ```
+
+</OssOnly>
+<FbInternalOnly>
+
+```bash
+$ pyre servers stop # Stop existing pyre servers
+$ pyre --no-saved-state --pysa start --skip-initial-type-check --wait-on-initialization --analyze-external-sources
+```
+
+You should also use the `--pysa` option when running `pyre query`, in order to use the right binary version:
+```bash
+$ pyre --pysa query "model_query(path='/absolute/path/to/test_pysa/directory', query_name='get_foo_sources')"
+```
+
+</FbInternalOnly>
+
 
 :::
 
