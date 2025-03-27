@@ -41,6 +41,7 @@ fn assert_no_errors(state: &State) {
 fn assert_has_error(state: &State, error_msg: &str, assertion_msg: &str) {
     state
         .collect_errors(&ErrorConfigs::default())
+        .shown
         .iter()
         .find(|e| e.msg().contains(error_msg))
         .unwrap_or_else(|| panic!("{assertion_msg}"));

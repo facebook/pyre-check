@@ -160,7 +160,7 @@ impl TestEnv {
             Some(Box::new(subscriber.dupe())),
         );
         subscriber.finish();
-        print_errors(&state.collect_errors(&ErrorConfigs::default()));
+        print_errors(&state.collect_errors(&ErrorConfigs::default()).shown);
         (state, move |module| {
             let name = ModuleName::from_str(module);
             Handle::new(

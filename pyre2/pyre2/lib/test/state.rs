@@ -131,11 +131,14 @@ fn test_multiple_path() {
         Require::Exports,
         None,
     );
-    print_errors(&state.collect_errors(&ErrorConfigs::default()));
+    print_errors(&state.collect_errors(&ErrorConfigs::default()).shown);
     state
         .check_against_expectations(&ErrorConfigs::default())
         .unwrap();
-    assert_eq!(state.collect_errors(&ErrorConfigs::default()).len(), 3);
+    assert_eq!(
+        state.collect_errors(&ErrorConfigs::default()).shown.len(),
+        3
+    );
 }
 
 #[derive(Default, Clone, Dupe, Debug)]
@@ -208,7 +211,7 @@ impl Incremental {
             Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
-        print_errors(&self.state.collect_errors(&ErrorConfigs::default()));
+        print_errors(&self.state.collect_errors(&ErrorConfigs::default()).shown);
         self.state
             .check_against_expectations(&ErrorConfigs::default())
             .unwrap();

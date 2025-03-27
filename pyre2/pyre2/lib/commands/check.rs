@@ -423,7 +423,7 @@ impl Args {
 
         state.run(handles, default_require, Some(progress));
         let computing = start.elapsed();
-        let errors = state.collect_errors(error_configs);
+        let errors = state.collect_errors(error_configs).shown;
         if let Some(path) = &self.output {
             self.output_format.write_errors_to_file(path, &errors)?;
         } else {

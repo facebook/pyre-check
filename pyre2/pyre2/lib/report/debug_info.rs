@@ -84,7 +84,7 @@ impl DebugInfo {
                     let mut res = Vec::new();
                     let error_config = error_configs.get(module_info.path());
                     table_for_each!(solutions.table(), |t| f(t, module_info, bindings, &mut res));
-                    let errors = errors.collect(error_config).map(|e| Error {
+                    let errors = errors.collect(error_config).shown.map(|e| Error {
                         location: e.source_range().to_string(),
                         message: e.msg().to_owned(),
                     });

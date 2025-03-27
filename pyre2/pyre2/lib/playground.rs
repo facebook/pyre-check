@@ -241,6 +241,7 @@ impl LanguageServiceState {
     pub fn get_errors(&self) -> Vec<Diagnostic> {
         self.state
             .collect_errors(&ErrorConfigs::default())
+            .shown
             .into_iter()
             .map(|e| {
                 let range = e.source_range();

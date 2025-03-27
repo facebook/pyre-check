@@ -75,6 +75,32 @@ impl ModuleErrors {
     }
 }
 
+#[derive(Debug)]
+pub struct CollectedErrors {
+    /// Errors that will be reported to the user.
+    pub shown: Vec<Error>,
+    /// Errors that are suppressed with inline ignore comments.
+    pub suppressed: Vec<Error>,
+    /// Errors that are disabled with configuration options.
+    pub disabled: Vec<Error>,
+}
+
+impl CollectedErrors {
+    pub fn empty() -> Self {
+        Self {
+            shown: Vec::new(),
+            suppressed: Vec::new(),
+            disabled: Vec::new(),
+        }
+    }
+
+    pub fn extend(&mut self, other: CollectedErrors) {
+        self.shown.extend(other.shown);
+        self.suppressed.extend(other.suppressed);
+        self.disabled.extend(other.disabled);
+    }
+}
+
 /// Collects the user errors (e.g. type errors) associated with a module.
 // Deliberately don't implement Clone,
 #[derive(Debug)]
@@ -157,8 +183,24 @@ impl ErrorCollector {
             .count()
     }
 
-    pub fn collect(&self, error_config: &ErrorConfig) -> Vec<Error> {
-        self.errors.lock().iter(error_config).cloned().collect()
+    pub fn collect(&self, error_config: &ErrorConfig) -> CollectedErrors {
+        let mut shown = Vec::new();
+        let mut suppressed = Vec::new();
+        let mut disabled = Vec::new();
+        for err in self.errors.lock().iter_all() {
+            if err.is_ignored() {
+                suppressed.push(err.clone());
+            } else if !error_config.is_enabled(err.error_kind()) {
+                disabled.push(err.clone());
+            } else {
+                shown.push(err.clone());
+            }
+        }
+        CollectedErrors {
+            shown,
+            suppressed,
+            disabled,
+        }
     }
 
     pub fn todo(&self, msg: &str, v: impl Ranged + Debug) {
@@ -236,7 +278,10 @@ mod tests {
             None,
         );
         assert_eq!(
-            errors.collect(&ErrorConfig::default()).map(|x| x.msg()),
+            errors
+                .collect(&ErrorConfig::default())
+                .shown
+                .map(|x| x.msg()),
             vec!["a", "b", "a"]
         );
     }
@@ -287,7 +332,7 @@ mod tests {
         ]));
 
         assert_eq!(
-            errors.collect(&config).map(|x| x.msg()),
+            errors.collect(&config).shown.map(|x| x.msg()),
             vec!["b", "a", "d"]
         );
     }

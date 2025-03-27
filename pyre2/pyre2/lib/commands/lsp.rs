@@ -335,7 +335,12 @@ impl<'a> Server<'a> {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
         // TODO(connernilsen): replace with real error config from config file
-        for e in self.state.lock().collect_errors(&ErrorConfigs::default()) {
+        for e in self
+            .state
+            .lock()
+            .collect_errors(&ErrorConfigs::default())
+            .shown
+        {
             if let Some(path) = to_real_path(e.path()) {
                 if open_files.contains_key(path) {
                     diags.entry(path.to_owned()).or_default().push(Diagnostic {

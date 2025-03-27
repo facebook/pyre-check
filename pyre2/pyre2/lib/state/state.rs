@@ -46,7 +46,7 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::config::ErrorConfigs;
-use crate::error::error::Error;
+use crate::error::collector::CollectedErrors;
 use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::ExportLocation;
@@ -230,13 +230,13 @@ impl State {
             let load = steps.steps.load.as_ref().unwrap();
             let error_config = error_configs.get(module.handle.path());
             Expectation::parse(load.module_info.dupe(), load.module_info.contents())
-                .check(&load.errors.collect(error_config))?;
+                .check(&load.errors.collect(error_config).shown)?;
         }
         Ok(())
     }
 
-    pub fn collect_errors(&self, error_configs: &ErrorConfigs) -> Vec<Error> {
-        let mut errors = Vec::new();
+    pub fn collect_errors(&self, error_configs: &ErrorConfigs) -> CollectedErrors {
+        let mut errors = CollectedErrors::empty();
         for module in self.modules.values() {
             let error_config = error_configs.get(module.handle.path());
             let steps = module.state.read();
