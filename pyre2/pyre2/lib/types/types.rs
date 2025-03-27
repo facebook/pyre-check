@@ -972,6 +972,14 @@ impl Type {
         })
     }
 
+    pub fn noreturn_to_never(self) -> Self {
+        self.transform(&mut |ty| {
+            if let Type::Never(style) = ty {
+                *style = NeverStyle::Never;
+            }
+        })
+    }
+
     pub fn anon_callables(self) -> Self {
         self.transform(&mut |ty| {
             if let Type::Function(func) = ty {

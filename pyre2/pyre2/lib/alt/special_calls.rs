@@ -40,10 +40,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let a = self
                 .canonicalize_all_class_types(self.solver().deep_force(a), expr_a.range())
                 .explicit_any()
+                .noreturn_to_never()
                 .anon_callables();
             let b = self
                 .canonicalize_all_class_types(self.solver().deep_force(b), expr_b.range())
                 .explicit_any()
+                .noreturn_to_never()
                 .anon_callables();
             if a != b {
                 self.error(

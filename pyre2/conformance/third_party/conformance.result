@@ -132,11 +132,11 @@
     "Line 75: Unexpected errors ['assert_type(Class5[list[int]], Class5[float]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', 'Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`']"
   ],
   "constructors_call_metaclass.py": [
-    "Line 23: Unexpected errors ['assert_type(Class1, NoReturn) failed', 'Missing argument `x` in function `Class1.__new__`']"
+    "Line 23: Unexpected errors ['assert_type(Class1, Never) failed', 'Missing argument `x` in function `Class1.__new__`']"
   ],
   "constructors_call_new.py": [
     "Line 64: Unexpected errors ['assert_type(Class4, Class4 | Any) failed', 'Missing argument `x` in function `Class4.__init__`']",
-    "Line 76: Unexpected errors ['assert_type(Class5, NoReturn) failed', 'Missing argument `x` in function `Class5.__init__`']"
+    "Line 76: Unexpected errors ['assert_type(Class5, Never) failed', 'Missing argument `x` in function `Class5.__init__`']"
   ],
   "constructors_call_type.py": [
     "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",

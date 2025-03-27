@@ -2831,8 +2831,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class1, NoReturn) failed",
-      "description": "assert_type(Class1, NoReturn) failed",
+      "concise_description": "assert_type(Class1, Never) failed",
+      "description": "assert_type(Class1, Never) failed",
       "line": 23,
       "name": "assert-type",
       "stop_column": 32,
@@ -2903,8 +2903,8 @@
     {
       "code": -2,
       "column": 5,
-      "concise_description": "assert_type(Class5, NoReturn) failed",
-      "description": "assert_type(Class5, NoReturn) failed",
+      "concise_description": "assert_type(Class5, Never) failed",
+      "description": "assert_type(Class5, Never) failed",
       "line": 76,
       "name": "assert-type",
       "stop_column": 36,
