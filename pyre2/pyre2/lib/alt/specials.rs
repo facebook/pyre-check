@@ -5,12 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use ruff_python_ast::name::Name;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprList;
 use ruff_python_ast::ExprUnaryOp;
-use ruff_python_ast::Identifier;
 use ruff_python_ast::Number;
 use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
@@ -19,11 +17,8 @@ use ruff_text_size::TextRange;
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::solve::TypeFormContext;
-use crate::binding::binding::Key;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
-use crate::module::short_identifier::ShortIdentifier;
-use crate::ruff::ast::Ast;
 use crate::types::callable::Param;
 use crate::types::callable::Required;
 use crate::types::lit_int::LitInt;
@@ -162,13 +157,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn apply_literal(
-        &self,
-        x: &Expr,
-        get_nested: &dyn Fn(&Expr) -> Type, // Only ever called on an identifier
-        get_enum_member: &dyn Fn(Identifier, &Name) -> Option<Lit>,
-        errors: &ErrorCollector,
-    ) -> Type {
+    fn apply_literal(&self, x: &Expr, errors: &ErrorCollector) -> Type {
         match x {
             Expr::UnaryOp(ExprUnaryOp {
                 op: UnaryOp::UAdd,
@@ -186,6 +175,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
+            Expr::NoneLiteral(_) => Type::None,
             Expr::Name(_) => {
                 fn is_valid_literal(x: &Type) -> bool {
                     match x {
@@ -194,7 +184,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         _ => false,
                     }
                 }
-                let t = get_nested(x);
+                let t = self.expr_untype(x, TypeFormContext::TypeArgument, errors);
                 if is_valid_literal(&t) {
                     t
                 } else {
@@ -209,28 +199,32 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Expr::Attribute(ExprAttribute {
                 range,
-                value: box Expr::Name(maybe_enum_name),
+                value: box value @ Expr::Name(name),
                 attr: member_name,
                 ctx: _,
-            }) => match get_enum_member(
-                Ast::expr_name_identifier(maybe_enum_name.clone()),
-                &member_name.id,
-            ) {
-                Some(lit) => lit.to_type(),
-                None => {
-                    errors.add(
-                        *range,
-                        format!(
-                            "`{}.{}` is not a valid enum member",
-                            maybe_enum_name.id, member_name.id
-                        ),
-                        ErrorKind::InvalidLiteral,
-                        None,
-                    );
-                    Type::any_error()
+            }) => {
+                let ty = self.expr_infer(value, errors);
+                match ty {
+                    Type::ClassDef(c)
+                        if let Some(e) = self.get_enum_member(&c, &member_name.id) =>
+                    {
+                        e.to_type()
+                    }
+                    Type::Any(AnyStyle::Error) => Type::any_error(),
+                    _ => {
+                        errors.add(
+                            *range,
+                            format!(
+                                "`{}.{}` is not a valid enum member",
+                                name.id, member_name.id
+                            ),
+                            ErrorKind::InvalidLiteral,
+                            None,
+                        );
+                        Type::any_error()
+                    }
                 }
-            },
-            Expr::NoneLiteral(_) => Type::None,
+            }
             _ => {
                 errors.add(
                     x.range(),
@@ -277,21 +271,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             SpecialForm::Literal => {
                 let mut literals = Vec::new();
                 for x in arguments.iter() {
-                    let lit = self.apply_literal(
-                        x,
-                        &|x| self.expr_untype(x, TypeFormContext::TypeArgument, errors),
-                        &|enum_name, member_name| {
-                            let ty = self.get(&Key::Usage(ShortIdentifier::new(&enum_name)));
-                            let cls = match &*ty {
-                                Type::ClassDef(c) => c,
-                                _ => {
-                                    return None;
-                                }
-                            };
-                            self.get_enum_member(cls, member_name)
-                        },
-                        errors,
-                    );
+                    let lit = self.apply_literal(x, errors);
                     literals.push(lit);
                 }
                 Type::type_form(self.unions(literals))
