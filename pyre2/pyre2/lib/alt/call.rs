@@ -301,7 +301,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// If the metaclass defines a custom `__call__`, call it. If the `__call__` comes from `type`, ignore
     /// it because `type.__call__` behavior is baked into our constructor logic.
-    pub fn call_metaclass(
+    fn call_metaclass(
         &self,
         cls: &ClassType,
         range: TextRange,
