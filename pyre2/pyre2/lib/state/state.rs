@@ -164,6 +164,135 @@ impl State {
         }
     }
 
+    pub fn handles(&self) -> Vec<Handle> {
+        self.modules.keys().cloned().collect()
+    }
+
+    pub fn get_bindings(&self, handle: &Handle) -> Option<Bindings> {
+        self.modules
+            .get(handle)?
+            .state
+            .read()
+            .steps
+            .answers
+            .as_ref()
+            .map(|x| x.0.dupe())
+    }
+
+    pub fn get_answers(&self, handle: &Handle) -> Option<Arc<Answers>> {
+        self.modules
+            .get(handle)?
+            .state
+            .read()
+            .steps
+            .answers
+            .as_ref()
+            .map(|x| x.1.dupe())
+    }
+
+    pub fn get_load(&self, handle: &Handle) -> Option<Arc<Load>> {
+        self.modules.get(handle)?.state.read().steps.load.dupe()
+    }
+
+    pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {
+        self.get_load(handle).map(|x| x.module_info.dupe())
+    }
+
+    pub fn get_ast(&self, handle: &Handle) -> Option<Arc<ruff_python_ast::ModModule>> {
+        self.modules.get(handle)?.state.read().steps.ast.dupe()
+    }
+
+    #[allow(dead_code)]
+    pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
+        let reader = self.modules.get(handle)?.state.read();
+        Some(reader.steps.solutions.as_ref()?.dupe())
+    }
+
+    pub fn debug_info(&self, handles: &[Handle], error_configs: &ErrorConfigs) -> DebugInfo {
+        let owned = handles.map(|x| {
+            let module = self.get_module(x);
+            let steps = module.state.read();
+            (
+                steps.steps.load.dupe().unwrap(),
+                steps.steps.answers.dupe().unwrap(),
+                steps.steps.solutions.dupe().unwrap(),
+            )
+        });
+        DebugInfo::new(
+            &owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)),
+            error_configs,
+        )
+    }
+
+    pub fn check_against_expectations(&self, error_configs: &ErrorConfigs) -> anyhow::Result<()> {
+        for module in self.modules.values() {
+            let steps = module.state.read();
+            let load = steps.steps.load.as_ref().unwrap();
+            let error_config = error_configs.get(module.handle.path());
+            Expectation::parse(load.module_info.dupe(), load.module_info.contents())
+                .check(&load.errors.collect(error_config))?;
+        }
+        Ok(())
+    }
+
+    pub fn collect_errors(&self, error_configs: &ErrorConfigs) -> Vec<Error> {
+        let mut errors = Vec::new();
+        for module in self.modules.values() {
+            let error_config = error_configs.get(module.handle.path());
+            let steps = module.state.read();
+            if let Some(load) = &steps.steps.load {
+                errors.extend(load.errors.collect(error_config));
+            }
+        }
+        errors
+    }
+
+    pub fn module_count(&self) -> usize {
+        self.modules.len()
+    }
+
+    pub fn line_count(&self) -> usize {
+        self.modules
+            .values()
+            .map(|x| {
+                x.state
+                    .read()
+                    .steps
+                    .load
+                    .as_ref()
+                    .map_or(0, |x| x.module_info.line_count())
+            })
+            .sum()
+    }
+
+    pub fn count_errors(&self) -> usize {
+        self.modules
+            .values()
+            .map(|x| {
+                x.state
+                    .read()
+                    .steps
+                    .load
+                    .as_ref()
+                    .map_or(0, |x| x.errors.len())
+            })
+            .sum()
+    }
+
+    pub fn count_suppressed_errors(&self) -> usize {
+        self.modules
+            .values()
+            .map(|x| {
+                x.state
+                    .read()
+                    .steps
+                    .load
+                    .as_ref()
+                    .map_or(0, |x| x.errors.count_suppressed())
+            })
+            .sum()
+    }
+
     pub fn import_handle(&self, handle: &Handle, module: ModuleName) -> Result<Handle, FindError> {
         Ok(Handle::new(
             module,
@@ -550,64 +679,6 @@ impl State {
         )
     }
 
-    pub fn collect_errors(&self, error_configs: &ErrorConfigs) -> Vec<Error> {
-        let mut errors = Vec::new();
-        for module in self.modules.values() {
-            let error_config = error_configs.get(module.handle.path());
-            let steps = module.state.read();
-            if let Some(load) = &steps.steps.load {
-                errors.extend(load.errors.collect(error_config));
-            }
-        }
-        errors
-    }
-
-    pub fn module_count(&self) -> usize {
-        self.modules.len()
-    }
-
-    pub fn line_count(&self) -> usize {
-        self.modules
-            .values()
-            .map(|x| {
-                x.state
-                    .read()
-                    .steps
-                    .load
-                    .as_ref()
-                    .map_or(0, |x| x.module_info.line_count())
-            })
-            .sum()
-    }
-
-    pub fn count_errors(&self) -> usize {
-        self.modules
-            .values()
-            .map(|x| {
-                x.state
-                    .read()
-                    .steps
-                    .load
-                    .as_ref()
-                    .map_or(0, |x| x.errors.len())
-            })
-            .sum()
-    }
-
-    pub fn count_suppressed_errors(&self) -> usize {
-        self.modules
-            .values()
-            .map(|x| {
-                x.state
-                    .read()
-                    .steps
-                    .load
-                    .as_ref()
-                    .map_or(0, |x| x.errors.count_suppressed())
-            })
-            .sum()
-    }
-
     fn get_cached_find_dependency(
         &self,
         loader: &LoaderId,
@@ -805,50 +876,6 @@ impl State {
         self.subscriber = None;
     }
 
-    pub fn handles(&self) -> Vec<Handle> {
-        self.modules.keys().cloned().collect()
-    }
-
-    pub fn get_bindings(&self, handle: &Handle) -> Option<Bindings> {
-        self.modules
-            .get(handle)?
-            .state
-            .read()
-            .steps
-            .answers
-            .as_ref()
-            .map(|x| x.0.dupe())
-    }
-
-    pub fn get_answers(&self, handle: &Handle) -> Option<Arc<Answers>> {
-        self.modules
-            .get(handle)?
-            .state
-            .read()
-            .steps
-            .answers
-            .as_ref()
-            .map(|x| x.1.dupe())
-    }
-
-    pub fn get_load(&self, handle: &Handle) -> Option<Arc<Load>> {
-        self.modules.get(handle)?.state.read().steps.load.dupe()
-    }
-
-    pub fn get_module_info(&self, handle: &Handle) -> Option<ModuleInfo> {
-        self.get_load(handle).map(|x| x.module_info.dupe())
-    }
-
-    pub fn get_ast(&self, handle: &Handle) -> Option<Arc<ruff_python_ast::ModModule>> {
-        self.modules.get(handle)?.state.read().steps.ast.dupe()
-    }
-
-    #[allow(dead_code)]
-    pub fn get_solutions(&self, handle: &Handle) -> Option<Arc<Solutions>> {
-        let reader = self.modules.get(handle)?.state.read();
-        Some(reader.steps.solutions.as_ref()?.dupe())
-    }
-
     pub fn ad_hoc_solve<R: Sized, F: FnOnce(AnswersSolver<StateHandle>) -> R>(
         &self,
         handle: &Handle,
@@ -873,33 +900,6 @@ impl State {
         );
         let result = solve(solver);
         Some(result)
-    }
-
-    pub fn debug_info(&self, handles: &[Handle], error_configs: &ErrorConfigs) -> DebugInfo {
-        let owned = handles.map(|x| {
-            let module = self.get_module(x);
-            let steps = module.state.read();
-            (
-                steps.steps.load.dupe().unwrap(),
-                steps.steps.answers.dupe().unwrap(),
-                steps.steps.solutions.dupe().unwrap(),
-            )
-        });
-        DebugInfo::new(
-            &owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)),
-            error_configs,
-        )
-    }
-
-    pub fn check_against_expectations(&self, error_configs: &ErrorConfigs) -> anyhow::Result<()> {
-        for module in self.modules.values() {
-            let steps = module.state.read();
-            let load = steps.steps.load.as_ref().unwrap();
-            let error_config = error_configs.get(module.handle.path());
-            Expectation::parse(load.module_info.dupe(), load.module_info.contents())
-                .check(&load.errors.collect(error_config))?;
-        }
-        Ok(())
     }
 
     /// Called if the `find` portion of loading might have changed.
