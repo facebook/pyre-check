@@ -22,6 +22,7 @@ use crate::alt::solve::TypeFormContext;
 use crate::error::collector::ErrorCollector;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::unexpected_keyword;
+use crate::types::special_form::SpecialForm;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -37,16 +38,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let expr_b = &args[1];
             let a = self.expr_infer(expr_a, errors);
             let b = self.expr_untype(expr_b, TypeFormContext::FunctionArgument, errors);
-            let a = self
+            let mut a = self
                 .canonicalize_all_class_types(self.solver().deep_force(a), expr_a.range())
                 .explicit_any()
                 .noreturn_to_never()
                 .anon_callables();
-            let b = self
+            let mut b = self
                 .canonicalize_all_class_types(self.solver().deep_force(b), expr_b.range())
                 .explicit_any()
                 .noreturn_to_never()
                 .anon_callables();
+            // Make assert_type(Self@SomeClass, typing.Self) work.
+            let self_form = Type::SpecialForm(SpecialForm::SelfType);
+            a.subst_self_type_mut(&self_form);
+            b.subst_self_type_mut(&self_form);
             if a != b {
                 self.error(
                     errors,

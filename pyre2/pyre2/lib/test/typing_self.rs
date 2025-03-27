@@ -68,3 +68,14 @@ B(B)  # OK
 B(A)  # E:
     "#,
 );
+
+testcase!(
+    test_assert_type,
+    r#"
+from typing import Self, assert_type
+class A:
+    def f(self: Self) -> Self:
+        assert_type(self, Self)
+        return self
+    "#,
+);

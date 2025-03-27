@@ -150,13 +150,13 @@
     "Line 66: Expected 1 errors",
     "Line 67: Expected 1 errors",
     "Line 184: Expected 1 errors",
-    "Line 37: Unexpected errors ['assert_type(Self@object, Class1) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 50: Unexpected errors ['assert_type(Self@object, Class2) failed']",
-    "Line 64: Unexpected errors ['assert_type(Self@Class3, Class3) failed']",
-    "Line 164: Unexpected errors ['assert_type(Self@object, Class7[int]) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 165: Unexpected errors ['assert_type(Self@object, Class7[str]) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 183: Unexpected errors ['assert_type(Self@Class8, Class8[str]) failed']",
-    "Line 194: Unexpected errors ['assert_type(Self@object, Class9) failed', 'Expected 0 positional arguments, got 2']"
+    "Line 37: Unexpected errors ['assert_type(Self, Class1) failed', 'Expected 0 positional arguments, got 1']",
+    "Line 50: Unexpected errors ['assert_type(Self, Class2) failed']",
+    "Line 64: Unexpected errors ['assert_type(Self, Class3) failed']",
+    "Line 164: Unexpected errors ['assert_type(Self, Class7[int]) failed', 'Expected 0 positional arguments, got 1']",
+    "Line 165: Unexpected errors ['assert_type(Self, Class7[str]) failed', 'Expected 0 positional arguments, got 1']",
+    "Line 183: Unexpected errors ['assert_type(Self, Class8[str]) failed']",
+    "Line 194: Unexpected errors ['assert_type(Self, Class9) failed', 'Expected 0 positional arguments, got 2']"
   ],
   "constructors_consistency.py": [],
   "dataclasses_descriptors.py": [
@@ -323,7 +323,7 @@
     "Line 148: Unexpected errors ['Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
     "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
     "Line 152: Unexpected errors ['Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
-    "Line 166: Unexpected errors ['assert_type((Self@Foo7) -> Self@Foo7, (Foo7[int]) -> Foo7[int]) failed']",
+    "Line 166: Unexpected errors ['assert_type((Self) -> Self, (Foo7[int]) -> Foo7[int]) failed']",
     "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],
   "generics_defaults_referential.py": [
@@ -360,9 +360,7 @@
     "Line 96: Expected 1 errors"
   ],
   "generics_self_advanced.py": [
-    "Line 35: Unexpected errors ['assert_type(Self@ChildB, Self) failed']",
     "Line 38: Unexpected errors ['assert_type(ChildB, Self) failed']",
-    "Line 42: Unexpected errors ['assert_type(type[Self@ChildB], type[Self]) failed']",
     "Line 43: Unexpected errors ['assert_type(Any, list[Self]) failed', 'Instance-only attribute `a` of class `ChildB` is not visible on the class']",
     "Line 44: Unexpected errors ['assert_type(Any, Self) failed', 'Instance-only attribute `a` of class `ChildB` is not visible on the class']",
     "Line 45: Unexpected errors ['assert_type(ChildB, Self) failed']"
@@ -373,12 +371,9 @@
   "generics_self_basic.py": [
     "Line 20: Expected 1 errors",
     "Line 33: Expected 1 errors",
-    "Line 14: Unexpected errors ['assert_type(Self@Shape, Self) failed']",
     "Line 15: Unexpected errors ['Object of class `Shape` has no attribute `scale`']",
-    "Line 27: Unexpected errors ['assert_type(type[Self@Shape], type[Self]) failed']",
     "Line 28: Unexpected errors ['Expected a callable, got type[Self@Shape]']",
-    "Line 37: Unexpected errors ['Expected a callable, got type[Self@Shape]']",
-    "Line 40: Unexpected errors ['assert_type(Self@Shape, Self) failed']"
+    "Line 37: Unexpected errors ['Expected a callable, got type[Self@Shape]']"
   ],
   "generics_self_protocols.py": [
     "Line 58: Unexpected errors ['Argument `ReturnConcreteShape` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`']"

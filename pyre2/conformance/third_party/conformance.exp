@@ -3097,8 +3097,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@object, Class1) failed",
-      "description": "assert_type(Self@object, Class1) failed",
+      "concise_description": "assert_type(Self, Class1) failed",
+      "description": "assert_type(Self, Class1) failed",
       "line": 37,
       "name": "assert-type",
       "stop_column": 27,
@@ -3137,8 +3137,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@object, Class2) failed",
-      "description": "assert_type(Self@object, Class2) failed",
+      "concise_description": "assert_type(Self, Class2) failed",
+      "description": "assert_type(Self, Class2) failed",
       "line": 50,
       "name": "assert-type",
       "stop_column": 26,
@@ -3167,8 +3167,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@Class3, Class3) failed",
-      "description": "assert_type(Self@Class3, Class3) failed",
+      "concise_description": "assert_type(Self, Class3) failed",
+      "description": "assert_type(Self, Class3) failed",
       "line": 64,
       "name": "assert-type",
       "stop_column": 27,
@@ -3277,8 +3277,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@object, Class7[int]) failed",
-      "description": "assert_type(Self@object, Class7[int]) failed",
+      "concise_description": "assert_type(Self, Class7[int]) failed",
+      "description": "assert_type(Self, Class7[int]) failed",
       "line": 164,
       "name": "assert-type",
       "stop_column": 32,
@@ -3297,8 +3297,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@object, Class7[str]) failed",
-      "description": "assert_type(Self@object, Class7[str]) failed",
+      "concise_description": "assert_type(Self, Class7[str]) failed",
+      "description": "assert_type(Self, Class7[str]) failed",
       "line": 165,
       "name": "assert-type",
       "stop_column": 33,
@@ -3327,8 +3327,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@Class8, Class8[str]) failed",
-      "description": "assert_type(Self@Class8, Class8[str]) failed",
+      "concise_description": "assert_type(Self, Class8[str]) failed",
+      "description": "assert_type(Self, Class8[str]) failed",
       "line": 183,
       "name": "assert-type",
       "stop_column": 41,
@@ -3347,8 +3347,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self@object, Class9) failed",
-      "description": "assert_type(Self@object, Class9) failed",
+      "concise_description": "assert_type(Self, Class9) failed",
+      "description": "assert_type(Self, Class9) failed",
       "line": 194,
       "name": "assert-type",
       "stop_column": 36,
@@ -5126,8 +5126,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type((self: Self@Pet4) -> str, Any) failed",
-      "description": "assert_type((self: Self@Pet4) -> str, Any) failed",
+      "concise_description": "assert_type((self: Self) -> str, Any) failed",
+      "description": "assert_type((self: Self) -> str, Any) failed",
       "line": 84,
       "name": "assert-type",
       "stop_column": 49,
@@ -5146,8 +5146,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type((self: Self@Pet4) -> None, Any) failed",
-      "description": "assert_type((self: Self@Pet4) -> None, Any) failed",
+      "concise_description": "assert_type((self: Self) -> None, Any) failed",
+      "description": "assert_type((self: Self) -> None, Any) failed",
       "line": 85,
       "name": "assert-type",
       "stop_column": 45,
@@ -5604,8 +5604,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type((Self@Foo7) -> Self@Foo7, (Foo7[int]) -> Foo7[int]) failed",
-      "description": "assert_type((Self@Foo7) -> Self@Foo7, (Foo7[int]) -> Foo7[int]) failed",
+      "concise_description": "assert_type((Self) -> Self, (Foo7[int]) -> Foo7[int]) failed",
+      "description": "assert_type((Self) -> Self, (Foo7[int]) -> Foo7[int]) failed",
       "line": 166,
       "name": "assert-type",
       "stop_column": 57,
@@ -6250,32 +6250,12 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Self@ChildB, Self) failed",
-      "description": "assert_type(Self@ChildB, Self) failed",
-      "line": 35,
-      "name": "assert-type",
-      "stop_column": 32,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "assert_type(ChildB, Self) failed",
       "description": "assert_type(ChildB, Self) failed",
       "line": 38,
       "name": "assert-type",
       "stop_column": 42,
       "stop_line": 38
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(type[Self@ChildB], type[Self]) failed",
-      "description": "assert_type(type[Self@ChildB], type[Self]) failed",
-      "line": 42,
-      "name": "assert-type",
-      "stop_column": 37,
-      "stop_line": 42
     },
     {
       "code": -2,
@@ -6364,32 +6344,12 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "assert_type(Self@Shape, Self) failed",
-      "description": "assert_type(Self@Shape, Self) failed",
-      "line": 14,
-      "name": "assert-type",
-      "stop_column": 32,
-      "stop_line": 14
-    },
-    {
-      "code": -2,
-      "column": 9,
       "concise_description": "Object of class `Shape` has no attribute `scale`",
       "description": "Object of class `Shape` has no attribute `scale`",
       "line": 15,
       "name": "missing-attribute",
       "stop_column": 19,
       "stop_line": 15
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(type[Self@Shape], type[Self]) failed",
-      "description": "assert_type(type[Self@Shape], type[Self]) failed",
-      "line": 27,
-      "name": "assert-type",
-      "stop_column": 37,
-      "stop_line": 27
     },
     {
       "code": -2,
@@ -6410,16 +6370,6 @@
       "name": "not-callable",
       "stop_column": 19,
       "stop_line": 37
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "assert_type(Self@Shape, Self) failed",
-      "description": "assert_type(Self@Shape, Self) failed",
-      "line": 40,
-      "name": "assert-type",
-      "stop_column": 33,
-      "stop_line": 40
     },
     {
       "code": -2,
