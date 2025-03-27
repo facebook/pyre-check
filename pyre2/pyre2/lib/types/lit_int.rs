@@ -12,10 +12,13 @@ use std::ops::Neg;
 
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
+use num_traits::Num;
 use pyrefly_derive::Visit;
 use pyrefly_derive::VisitMut;
+use ruff_python_ast::Int;
 
 use crate::types::equality::TypeEq;
+use crate::types::literal::Lit;
 use crate::types::types::Type;
 use crate::util::visit::Visit;
 use crate::util::visit::VisitMut;
@@ -72,6 +75,19 @@ impl LitInt {
         Self(LitIntInner::Small(x))
     }
 
+    pub fn from_ast(x: &Int) -> Self {
+        match x.as_i64() {
+            Some(x) => Self(LitIntInner::Small(x)),
+            None => Self(LitIntInner::Big(Box::new(parse_ruff_int_str(
+                &x.to_string(),
+            )))),
+        }
+    }
+
+    pub fn to_type(self) -> Type {
+        Type::Literal(Lit::Int(self))
+    }
+
     fn new_big(x: BigInt) -> Self {
         match x.to_i64() {
             Some(x) => Self(LitIntInner::Small(x)),
@@ -109,4 +125,24 @@ impl LitInt {
             LitIntInner::Big(_) => true,
         }
     }
+}
+
+/// Ruff produced a `Number`, that came from a radix and number portion.
+/// We need to accurately reconstruct that split, so we can use the BigInt parser.
+fn parse_ruff_int_str(x: &str) -> BigInt {
+    let (mut radix, mut number) = (10, x);
+    if x.len() >= 3 && x.starts_with('0') {
+        let prefix = match x.as_bytes()[1] {
+            b'x' | b'X' => Some(16),
+            b'o' | b'O' => Some(8),
+            b'b' | b'B' => Some(2),
+            _ => None,
+        };
+        if let Some(prefix) = prefix {
+            radix = prefix;
+            number = &x[2..];
+        }
+    }
+    BigInt::from_str_radix(number, radix)
+        .expect("Parse success from Ruff means parse success from BigInt")
 }

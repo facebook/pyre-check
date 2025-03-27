@@ -1004,10 +1004,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
             Expr::NumberLiteral(x) => match &x.value {
-                Number::Int(x) => match Lit::from_int(x) {
-                    Some(lit) => lit.to_type(),
-                    None => self.stdlib.int().to_type(),
-                },
+                Number::Int(x) => Lit::from_int(x).to_type(),
                 Number::Float(_) => self.stdlib.float().to_type(),
                 Number::Complex { .. } => self.stdlib.complex().to_type(),
             },

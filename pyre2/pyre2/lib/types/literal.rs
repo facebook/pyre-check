@@ -88,31 +88,20 @@ impl Lit {
         get_enum_member: &dyn Fn(Identifier, &Name) -> Option<Lit>,
         errors: &ErrorCollector,
     ) -> Type {
-        let int = |i| match i {
-            Some(i) => Lit::Int(LitInt::new(i)).to_type(),
-            None => {
-                errors.add(
-                    x.range(),
-                    "Int literal exceeds range, expected to fit within 64 bits".to_owned(),
-                    ErrorKind::InvalidLiteral,
-                    None,
-                );
-                Type::any_error()
-            }
-        };
-
         match x {
             Expr::UnaryOp(ExprUnaryOp {
                 op: UnaryOp::UAdd,
                 operand: box Expr::NumberLiteral(n),
                 ..
-            }) if let Number::Int(i) = &n.value => int(i.as_i64()),
+            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).to_type(),
             Expr::UnaryOp(ExprUnaryOp {
                 op: UnaryOp::USub,
                 operand: box Expr::NumberLiteral(n),
                 ..
-            }) if let Number::Int(i) = &n.value => int(i.as_i64().and_then(|x| x.checked_neg())),
-            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => int(i.as_i64()),
+            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).negate().to_type(),
+            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => {
+                LitInt::from_ast(i).to_type()
+            }
             Expr::StringLiteral(x) => Self::from_string_literal(x).to_type(),
             Expr::BytesLiteral(x) => Self::from_bytes_literal(x).to_type(),
             Expr::BooleanLiteral(x) => Self::from_boolean_literal(x).to_type(),
@@ -228,8 +217,8 @@ impl Lit {
         Some(Lit::String(collected_literals.join("").into_boxed_str()))
     }
 
-    pub fn from_int(x: &Int) -> Option<Self> {
-        Some(Lit::Int(LitInt::new(x.as_i64()?)))
+    pub fn from_int(x: &Int) -> Self {
+        Lit::Int(LitInt::from_ast(x))
     }
 
     pub fn from_boolean_literal(x: &ExprBooleanLiteral) -> Self {
