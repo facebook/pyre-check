@@ -53,6 +53,40 @@ def test(x: Callable[int]):  # E: Callable requires exactly two arguments but 1 
 );
 
 testcase!(
+    test_callable_constructor,
+    r#"
+from typing import Callable, Self
+class C1:
+    def __init__(self, x: str) -> None: pass
+class C2:
+    def __new__(cls, x: str) -> Self:
+        return super(C2, cls).__new__(cls)
+class C3:
+    def __init__(self, x: str) -> None: pass
+    def __new__(cls, x: str) -> Self:
+        return super(C3, cls).__new__(cls)
+class C4: pass
+class C5:
+    # The __init__ should be ignored
+    def __new__(cls, x: int) -> int:
+        return 1
+    def __init__(self, x: str) -> None: pass
+class C6:
+    def __new__(cls, *args, **kwargs) -> Self:
+        return super(C6, cls).__new__(cls)
+    def __init__(self, x: int) -> None: pass
+
+x1: Callable[[], int] = int
+x2: Callable[[str], C1] = C1
+x3: Callable[[str], C2] = C2
+x4: Callable[[str], C3] = C3
+x5: Callable[[], C4] = C4
+x6: Callable[[int], int] = C5
+x7: Callable[[int], C6] = C6
+"#,
+);
+
+testcase!(
     test_callable_unpack,
     r#"
 from typing import Callable

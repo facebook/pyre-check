@@ -10,6 +10,7 @@ use std::cmp::Ordering;
 use itertools::izip;
 use itertools::EitherOrBoth;
 use itertools::Itertools;
+use ruff_python_ast::name::Name;
 use starlark_map::small_map::SmallMap;
 use starlark_map::Hashed;
 
@@ -305,11 +306,60 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
         true
     }
 
-    fn get_call_attr(&mut self, protocol: &ClassType) -> Option<Type> {
-        let attr = self
+    fn try_lookup_attr_from_class(&mut self, cls: &Type, name: &Name) -> Option<Type> {
+        self.type_order
+            .try_lookup_attr_no_union(cls, name)
+            .and_then(|attr| self.type_order.resolve_as_instance_method(attr))
+    }
+
+    fn convert_class_to_callable(&mut self, cls: &ClassType) -> Option<Type> {
+        let class_type = cls.clone().to_type();
+        if self.type_order.is_protocol(cls.class_object()) {
+            // If it's a protocol, always use the __call__ method
+            return self.try_lookup_attr_from_class(&class_type, &dunder::CALL);
+        }
+        // TODO(yangdanny): check metaclass __call__
+        // Check the __new__ method and whether it comes from object or has been overridden
+        let new_attr_ty = self.try_lookup_attr_from_class(&class_type, &dunder::NEW);
+        let overrides_new = self
             .type_order
-            .try_lookup_attr_no_union(&protocol.clone().to_type(), &dunder::CALL);
-        attr.and_then(|attr| self.type_order.resolve_as_instance_method(attr))
+            .get_class_defining_method(cls.class_object(), &dunder::NEW)
+            .is_some_and(|c| c != *self.type_order.stdlib().object_class_type().class_object());
+        if let Some(ret) = new_attr_ty
+            .as_ref()
+            .and_then(|ty| ty.callable_return_type())
+            && !self.is_subset_eq(&ret, &class_type)
+        {
+            // If the return type of __new__ is not a subtype of the current class, use that and ignore __init__
+            return new_attr_ty;
+        }
+        // Check the __init__ method and whether it comes from object or has been overridden
+        let mut init_attr_ty = self.try_lookup_attr_from_class(&class_type, &dunder::INIT);
+        // Replace the return type with Self (the current class)
+        init_attr_ty.iter_mut().for_each(|init| {
+            init.set_callable_return_type(class_type.clone());
+        });
+        let overrides_init = self
+            .type_order
+            .get_class_defining_method(cls.class_object(), &dunder::INIT)
+            .is_some_and(|c| c != *self.type_order.stdlib().object_class_type().class_object());
+        match (new_attr_ty, init_attr_ty) {
+            (Some(new), Some(init)) => {
+                if !overrides_new && overrides_init {
+                    // If `__init__` is overridden and `__new__` is inherited from object, use `__init__`
+                    Some(init)
+                } else if overrides_new && !overrides_init {
+                    // If `__new__` is overridden and `__init__` is inherited from object, use `__new__`
+                    Some(new)
+                } else {
+                    let result = unions(vec![new, init]);
+                    // If both are overridden, take the union
+                    // Only if neither are overridden, use the `__new__` and `__init__` from object
+                    Some(result)
+                }
+            }
+            _ => unreachable!("__new__ and __init__ should always be defined"),
+        }
     }
 
     pub fn is_subset_protocol(&mut self, got: Type, protocol: ClassType) -> bool {
@@ -327,9 +377,9 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             }
             if matches!(
                 got,
-                Type::Callable(_) | Type::Function(_) | Type::BoundMethod(_) | Type::Overload(_)
+                Type::Callable(_) | Type::Function(_) | Type::BoundMethod(_)
             ) && name == dunder::CALL
-                && let Some(want) = self.get_call_attr(&protocol)
+                && let Some(want) = self.convert_class_to_callable(&protocol)
             {
                 if let Type::BoundMethod(box ref method) = want
                     && let Some(want_no_self) = method.to_callable()
@@ -719,13 +769,27 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (_, Type::ClassType(want)) if self.type_order.is_protocol(want.class_object()) => {
                 self.is_subset_protocol(got.clone(), want.clone())
             }
+            // Callable protocols
             (
                 Type::ClassType(got),
                 Type::BoundMethod(_) | Type::Callable(_) | Type::Function(_),
             ) if self.type_order.is_protocol(got.class_object())
-                && let Some(call_ty) = self.get_call_attr(got) =>
+                && let Some(call_ty) = self.convert_class_to_callable(got) =>
             {
                 self.is_subset_eq(&call_ty, want)
+            }
+            // Constructors as callables
+            (
+                Type::Type(box Type::ClassType(got)),
+                Type::BoundMethod(_) | Type::Callable(_) | Type::Function(_),
+            ) if let Some(call_ty) = self.convert_class_to_callable(got) => {
+                self.is_subset_eq(&call_ty, want)
+            }
+            (Type::ClassDef(got), Type::BoundMethod(_) | Type::Callable(_) | Type::Function(_)) => {
+                self.is_subset_eq(
+                    &Type::type_form(self.type_order.promote_silently(got)),
+                    want,
+                )
             }
             (Type::ClassType(got), Type::Tuple(_))
                 if *got.class_object() == self.type_order.stdlib().tuple_class_object()

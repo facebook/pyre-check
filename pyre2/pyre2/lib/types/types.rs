@@ -33,6 +33,7 @@ use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
 use crate::types::quantified::Quantified;
+use crate::types::simplify::unions;
 use crate::types::special_form::SpecialForm;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
@@ -894,6 +895,52 @@ impl Type {
                 ..
             }) => f(&mut func.metadata),
             Type::Overload(overload) => f(&mut overload.metadata),
+            _ => {}
+        }
+    }
+
+    pub fn callable_return_type(&self) -> Option<Type> {
+        match self {
+            Type::Function(box func)
+            | Type::Forall(box Forall {
+                body: Forallable::Function(func),
+                ..
+            })
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Function(func),
+                ..
+            }) => Some(func.signature.ret.clone()),
+            Type::Overload(overload) => Some(unions(
+                overload
+                    .signatures
+                    .iter()
+                    .map(|x| match x {
+                        OverloadType::Callable(callable) => callable.ret.clone(),
+                        OverloadType::Forall(forall) => forall.body.signature.ret.clone(),
+                    })
+                    .collect(),
+            )),
+            _ => None,
+        }
+    }
+
+    pub fn set_callable_return_type(&mut self, ret: Type) {
+        match self {
+            Type::Function(box func)
+            | Type::Forall(box Forall {
+                body: Forallable::Function(func),
+                ..
+            })
+            | Type::BoundMethod(box BoundMethod {
+                func: BoundMethodType::Function(func),
+                ..
+            }) => {
+                func.signature.ret = ret;
+            }
+            Type::Overload(overload) => overload.signatures.iter_mut().for_each(|x| match x {
+                OverloadType::Callable(callable) => callable.ret = ret.clone(),
+                OverloadType::Forall(forall) => forall.body.signature.ret = ret.clone(),
+            }),
             _ => {}
         }
     }

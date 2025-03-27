@@ -81,6 +81,10 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.resolve_as_instance_method(attr)
     }
 
+    pub fn get_class_defining_method(self, cls: &Class, name: &Name) -> Option<Class> {
+        self.0.get_class_defining_method(cls, name)
+    }
+
     pub fn is_attr_subset(
         self,
         got: &Attribute,

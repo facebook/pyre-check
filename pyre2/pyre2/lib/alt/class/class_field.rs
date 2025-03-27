@@ -872,6 +872,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    pub fn get_class_defining_method(&self, cls: &Class, name: &Name) -> Option<Class> {
+        self.get_class_member(cls, name).map(|m| m.defining_class)
+    }
+
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), cls))
