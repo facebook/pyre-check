@@ -60,18 +60,9 @@ impl ModuleErrors {
     }
 
     /// Iterates over all errors, including ignored ones.
-    fn iter_all(&mut self) -> impl Iterator<Item = &Error> {
+    fn iter(&mut self) -> impl Iterator<Item = &Error> {
         self.cleanup();
         self.items.iter()
-    }
-
-    /// Iterates over errors that are not ignored.
-    fn iter<'a>(
-        &mut self,
-        error_config: &'a ErrorConfig,
-    ) -> impl Iterator<Item = &Error> + use<'_, 'a> {
-        self.iter_all()
-            .filter(move |x| !x.is_ignored() && error_config.is_enabled(x.error_kind()))
     }
 }
 
@@ -112,7 +103,7 @@ pub struct ErrorCollector {
 
 impl Display for ErrorCollector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for err in self.errors.lock().iter(&ErrorConfig::default()) {
+        for err in self.errors.lock().iter() {
             writeln!(f, "ERROR: {err}")?;
         }
         Ok(())
@@ -179,7 +170,7 @@ impl ErrorCollector {
         let mut shown = Vec::new();
         let mut suppressed = Vec::new();
         let mut disabled = Vec::new();
-        for err in self.errors.lock().iter_all() {
+        for err in self.errors.lock().iter() {
             if err.is_ignored() {
                 suppressed.push(err.clone());
             } else if !error_config.is_enabled(err.error_kind()) {
