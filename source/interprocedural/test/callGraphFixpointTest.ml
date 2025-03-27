@@ -1173,6 +1173,8 @@ let test_higher_order_call_graph_fixpoint =
                                 Target.Regular.Function { name = "test.foo"; kind = Normal }
                                 |> Target.from_regular );
                             ]);
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
                    ];
                };
              ]
@@ -1903,7 +1905,11 @@ let test_higher_order_call_graph_fixpoint =
                                  ]
                                ())) );
                    ];
-                 returned_callables = [];
+                 returned_callables =
+                   [
+                     CallTarget.create_regular
+                       (Target.Regular.Function { name = "test.stub_contextmanager"; kind = Normal });
+                   ];
                };
              ]
            ();
