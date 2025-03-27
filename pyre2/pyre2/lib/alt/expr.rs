@@ -1105,7 +1105,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                         )),
                         Type::Type(box Type::SpecialForm(special)) => {
-                            self.apply_special_form(special, xs, x.range, errors)
+                            self.apply_special_form(special, &x.slice, x.range, errors)
                         }
                         Type::Tuple(Tuple::Concrete(ref elts)) if xs.len() == 1 => self
                             .infer_tuple_index(

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::slice;
+
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprList;
@@ -240,10 +242,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn apply_special_form(
         &self,
         special_form: SpecialForm,
-        arguments: &[Expr],
+        arguments: &Expr,
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
+        let (arguments, parens) = match arguments {
+            Expr::Tuple(x) => (x.elts.as_slice(), x.parenthesized),
+            _ => (slice::from_ref(arguments), false),
+        };
+
         match special_form {
             SpecialForm::Optional if arguments.len() == 1 => Type::type_form(Type::Union(vec![
                 self.expr_untype(&arguments[0], TypeFormContext::TypeArgument, errors),
@@ -269,6 +276,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None => Type::type_form(Type::Tuple(Tuple::unbounded(Type::any_error()))),
             },
             SpecialForm::Literal => {
+                if parens {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidLiteral,
+                        None,
+                        "Literal arguments cannot be parenthesized".to_owned(),
+                    );
+                }
                 let literals = arguments.map(|x| self.apply_literal(x, errors));
                 Type::type_form(self.unions(literals))
             }

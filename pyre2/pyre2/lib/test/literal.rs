@@ -160,12 +160,11 @@ good: Literal[Literal[Literal[1, 2, 3], "foo"], 5, None] = "foo"  # E: Invalid l
 "#,
 );
 
-testcase_with_bug!(
-    "Should ban brackets/tuples",
+testcase!(
     test_literal_brackets,
     r#"
 from typing import Literal
-bad6: Literal[(1, "foo", "bar")]  # Should be an error
+bad6: Literal[(1, "foo", "bar")]  # E: Literal arguments cannot be parenthesized
 "#,
 );
 
