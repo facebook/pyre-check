@@ -375,11 +375,18 @@ def f(fn):
         return fn(x) # E: Unexpected ParamSpec type: `Unknown`
 
     return wrapped_fn
-
-def g(f):
-    @wraps(f)
-    def wrapper(): ...
-
-    return wrapper
 "#,
+);
+
+testcase_with_bug!(
+    "Spurious error about unexpected ParamSpec type",
+    test_bad_paramspec_in_concatenate,
+    r#"
+from typing import Callable, Concatenate
+
+X = Callable[Concatenate[int, "oops"], int]  # E: Expected a `ParamSpec`  # E: Expected a type form
+
+def f(x: X, y):
+    x(0)  # E: Unexpected ParamSpec type: `Error`
+  "#,
 );
