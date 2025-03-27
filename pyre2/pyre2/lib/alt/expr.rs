@@ -16,7 +16,6 @@ use ruff_python_ast::ExprStarred;
 use ruff_python_ast::Identifier;
 use ruff_python_ast::Keyword;
 use ruff_python_ast::Number;
-use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
@@ -577,59 +576,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
             Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint, errors),
             Expr::BinOp(x) => self.binop_infer(x, errors),
-            Expr::UnaryOp(x) => {
-                let t = self.expr_infer(&x.operand, errors);
-                let unop = |t: &Type, f: &dyn Fn(&Lit) -> Option<Type>, method: &Name| {
-                    let context = || ErrorContext::UnaryOp(x.op.as_str().to_owned(), t.clone());
-                    match t {
-                        Type::Literal(lit) if let Some(ret) = f(lit) => ret,
-                        Type::ClassType(_) => self.call_method_or_error(
-                            t,
-                            method,
-                            x.range,
-                            &[],
-                            &[],
-                            errors,
-                            Some(&context),
-                        ),
-                        Type::Literal(Lit::Enum(box (cls, ..))) => self.call_method_or_error(
-                            &cls.clone().to_type(),
-                            method,
-                            x.range,
-                            &[],
-                            &[],
-                            errors,
-                            Some(&context),
-                        ),
-                        Type::Any(style) => style.propagate(),
-                        _ => self.error(
-                            errors,
-                            x.range,
-                            ErrorKind::UnsupportedOperand,
-                            None,
-                            context().format(),
-                        ),
-                    }
-                };
-                self.distribute_over_union(&t, |t| match x.op {
-                    UnaryOp::USub => {
-                        let f = |lit: &Lit| lit.negate();
-                        unop(t, &f, &dunder::NEG)
-                    }
-                    UnaryOp::UAdd => {
-                        let f = |lit: &Lit| lit.positive();
-                        unop(t, &f, &dunder::POS)
-                    }
-                    UnaryOp::Not => match t.as_bool() {
-                        None => self.stdlib.bool().to_type(),
-                        Some(b) => Type::Literal(Lit::Bool(!b)),
-                    },
-                    UnaryOp::Invert => {
-                        let f = |lit: &Lit| lit.invert();
-                        unop(t, &f, &dunder::INVERT)
-                    }
-                })
-            }
+            Expr::UnaryOp(x) => self.unop_infer(x, errors),
             Expr::Lambda(lambda) => {
                 let mut param_vars = Vec::new();
                 if let Some(parameters) = &lambda.parameters {

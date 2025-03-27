@@ -10,8 +10,10 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::ExprBinOp;
 use ruff_python_ast::ExprCompare;
+use ruff_python_ast::ExprUnaryOp;
 use ruff_python_ast::Operator;
 use ruff_python_ast::StmtAugAssign;
+use ruff_python_ast::UnaryOp;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 
@@ -28,6 +30,7 @@ use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::graph::index::Idx;
+use crate::types::literal::Lit;
 use crate::types::types::Type;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
@@ -345,5 +348,53 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             });
         }
         self.stdlib.bool().to_type()
+    }
+
+    pub fn unop_infer(&self, x: &ExprUnaryOp, errors: &ErrorCollector) -> Type {
+        let t = self.expr_infer(&x.operand, errors);
+        let unop = |t: &Type, f: &dyn Fn(&Lit) -> Option<Type>, method: &Name| {
+            let context = || ErrorContext::UnaryOp(x.op.as_str().to_owned(), t.clone());
+            match t {
+                Type::Literal(lit) if let Some(ret) = f(lit) => ret,
+                Type::ClassType(_) => {
+                    self.call_method_or_error(t, method, x.range, &[], &[], errors, Some(&context))
+                }
+                Type::Literal(Lit::Enum(box (cls, ..))) => self.call_method_or_error(
+                    &cls.clone().to_type(),
+                    method,
+                    x.range,
+                    &[],
+                    &[],
+                    errors,
+                    Some(&context),
+                ),
+                Type::Any(style) => style.propagate(),
+                _ => self.error(
+                    errors,
+                    x.range,
+                    ErrorKind::UnsupportedOperand,
+                    None,
+                    context().format(),
+                ),
+            }
+        };
+        self.distribute_over_union(&t, |t| match x.op {
+            UnaryOp::USub => {
+                let f = |lit: &Lit| lit.negate();
+                unop(t, &f, &dunder::NEG)
+            }
+            UnaryOp::UAdd => {
+                let f = |lit: &Lit| lit.positive();
+                unop(t, &f, &dunder::POS)
+            }
+            UnaryOp::Not => match t.as_bool() {
+                None => self.stdlib.bool().to_type(),
+                Some(b) => Type::Literal(Lit::Bool(!b)),
+            },
+            UnaryOp::Invert => {
+                let f = |lit: &Lit| lit.invert();
+                unop(t, &f, &dunder::INVERT)
+            }
+        })
     }
 }
