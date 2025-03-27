@@ -61,7 +61,7 @@ reveal_type(foo2)  # E: revealed type: (ParamSpec(Unknown)) -> Unknown
 );
 
 testcase_with_bug!(
-    "Generic class constructors are not type-safe when treated as callables - the ClassDef is promoted to ClassType w/ implicit Any",
+    "I would expect this to capture the type var on the class",
     test_param_spec_generic_class,
     r#"
 from typing import Callable, ParamSpec, TypeVar, reveal_type
@@ -73,6 +73,7 @@ class C[T]:
     self.x = x
 c2 = identity(C)
 reveal_type(c2)  # E: revealed type: () -> Self@object
+x: C[int] = c2(1)  # E: `Self@object` is not assignable to `C[int]`  # E: Expected 0 positional arguments, got 1
 "#,
 );
 
