@@ -346,6 +346,17 @@ C(x=0, y="")  # E: Unexpected keyword argument `x`
     "#,
 );
 
+testcase_with_bug!(
+    "TODO(stroxler): We need to support dataclass fields with default factories",
+    test_dataclass_field_with_default_factory,
+    r#"
+from dataclasses import dataclass, field
+@dataclass(frozen=True)
+class C:
+    x: list[str] = field(default_factory=list)  # E: `Self@object` is not assignable to `list[str]`
+    "#,
+);
+
 testcase!(
     test_default,
     r#"
