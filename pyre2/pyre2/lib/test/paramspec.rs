@@ -71,8 +71,8 @@ class C[T]:
   x: T
   def __init__(self, x: T) -> None:
     self.x = x
-c2 = identity(C)  # E: Argument `type[C]` is not assignable to parameter `x` with type `(ParamSpec(@_)) -> @_`
-reveal_type(c2)  # E: revealed type: (ParamSpec(Unknown)) -> Unknown
+c2 = identity(C)
+reveal_type(c2)  # E: revealed type: () -> Self@object
 "#,
 );
 
