@@ -28,7 +28,12 @@ export default component PerformanceComparisonChart(project: ProjectValue) {
   return (
     <div key={project}>
       {data.map((typechecker, index) => (
-        <div {...stylex.props(styles.barContainer)} key={index}>
+        <div
+          {...stylex.props(
+            styles.barContainer,
+            index !== data.length - 1 ? {marginBottom: 20} : null,
+          )}
+          key={index}>
           <span {...stylex.props(styles.typecheckerName)}>
             <strong>{typechecker.typechecker}</strong>
           </span>
@@ -52,7 +57,6 @@ const styles = stylex.create({
     flex: 1,
     display: 'flex',
     flexDirection: 'row',
-    marginBottom: 20,
   },
   typecheckerName: {
     display: 'inline-block',
