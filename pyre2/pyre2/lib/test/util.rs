@@ -374,8 +374,9 @@ pub fn testcase_for_macro(
     for _ in 0..3 {
         let start = Instant::now();
         let (state, handle) = env.clone().to_state();
-        let _ = state.get_loads([&handle("main")]);
-        state.check_against_expectations(&ErrorConfigs::default())?;
+        state
+            .get_loads([&handle("main")])
+            .check_against_expectations(&ErrorConfigs::default())?;
         if start.elapsed().as_secs() <= limit {
             return Ok(());
         }

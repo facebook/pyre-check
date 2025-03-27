@@ -14,6 +14,7 @@ use ruff_text_size::TextRange;
 use crate::config::ErrorConfigs;
 use crate::error::collector::CollectedErrors;
 use crate::error::collector::ErrorCollector;
+use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
 use crate::module::bundled::typeshed;
@@ -100,5 +101,15 @@ impl Loads {
             errors.extend(load.errors.collect(error_config));
         }
         errors
+    }
+
+    pub fn check_against_expectations(&self, error_configs: &ErrorConfigs) -> anyhow::Result<()> {
+        for load in self.loads.iter() {
+            let module_info = &load.module_info;
+            let error_config = error_configs.get(module_info.path());
+            Expectation::parse(module_info.dupe(), module_info.contents())
+                .check(&load.errors.collect(error_config).shown)?;
+        }
+        Ok(())
     }
 }

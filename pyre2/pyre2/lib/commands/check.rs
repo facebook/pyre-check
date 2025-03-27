@@ -486,7 +486,7 @@ impl Args {
             suppress::suppress_errors(&errors);
         }
         if self.expectations {
-            state.check_against_expectations(error_configs)?;
+            loads.check_against_expectations(error_configs)?;
             Ok(CommandExitStatus::Success)
         } else if !errors.shown.is_empty() {
             Ok(CommandExitStatus::UserError)

@@ -46,7 +46,6 @@ use crate::binding::bindings::BindingTable;
 use crate::binding::bindings::Bindings;
 use crate::binding::table::TableKeyed;
 use crate::config::ErrorConfigs;
-use crate::error::expectation::Expectation;
 use crate::error::kind::ErrorKind;
 use crate::export::exports::ExportLocation;
 use crate::export::exports::Exports;
@@ -235,17 +234,6 @@ impl State {
             &owned.map(|x| (&x.0.module_info, &x.0.errors, &x.1.0, &*x.2)),
             error_configs,
         )
-    }
-
-    pub fn check_against_expectations(&self, error_configs: &ErrorConfigs) -> anyhow::Result<()> {
-        for module in self.modules.values() {
-            let steps = module.state.read();
-            let load = steps.steps.load.as_ref().unwrap();
-            let error_config = error_configs.get(module.handle.path());
-            Expectation::parse(load.module_info.dupe(), load.module_info.contents())
-                .check(&load.errors.collect(error_config).shown)?;
-        }
-        Ok(())
     }
 
     pub fn module_count(&self) -> usize {

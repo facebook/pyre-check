@@ -70,8 +70,8 @@ else:
         f("main", &linux),
     ];
     state.run(&handles, Require::Exports, None);
-    let _ = state.get_loads(handles.iter().map(|(handle, _)| handle));
     state
+        .get_loads(handles.iter().map(|(handle, _)| handle))
         .check_against_expectations(&ErrorConfigs::default())
         .unwrap();
 }
@@ -129,7 +129,7 @@ fn test_multiple_path() {
     );
     let loads = state.get_loads(handles.iter());
     print_errors(&loads.collect_errors(&ErrorConfigs::default()).shown);
-    state
+    loads
         .check_against_expectations(&ErrorConfigs::default())
         .unwrap();
     assert_eq!(
@@ -211,7 +211,7 @@ impl Incremental {
         );
         let loads = self.state.get_loads(handles.iter());
         print_errors(&loads.collect_errors(&ErrorConfigs::default()).shown);
-        self.state
+        loads
             .check_against_expectations(&ErrorConfigs::default())
             .unwrap();
 
