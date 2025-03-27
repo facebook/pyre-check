@@ -1056,10 +1056,6 @@ impl Type {
             _ => None,
         }
     }
-
-    pub fn is_error(&self) -> bool {
-        matches!(self, Type::Any(AnyStyle::Error))
-    }
 }
 
 #[cfg(test)]

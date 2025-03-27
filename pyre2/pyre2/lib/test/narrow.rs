@@ -688,3 +688,13 @@ def g(x) -> TypeGuard[str]:  # E: Function declared to return `TypeGuard[str]` b
     pass
     "#,
 );
+
+testcase!(
+    test_isinstance_any,
+    r#"
+from typing import Any
+def f(x: int | str, y: Any):
+    if isinstance(x, y):
+        pass
+    "#,
+);
