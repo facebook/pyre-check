@@ -80,7 +80,7 @@ class CustomMeta(type):
     def __call__(cls) -> NoReturn:
         raise NotImplementedError("Class not constructable")
 class C7(metaclass=CustomMeta):
-    def __new__(cls, *args, **kwargs) -> Self:
+    def __new__(cls, x: int) -> Self:
         return super(C7, cls).__new__(cls)
 
 x1: Callable[[], int] = int
