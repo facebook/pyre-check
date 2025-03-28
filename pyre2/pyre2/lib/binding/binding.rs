@@ -778,6 +778,16 @@ impl Binding {
             Self::Phi(xs, None)
         }
     }
+
+    /// Like `phi`, uses the first element as the default.
+    pub fn phi_first_default(xs: SmallSet<Idx<Key>>) -> Self {
+        if xs.len() == 1 {
+            Self::Forward(xs.into_iter().next().unwrap())
+        } else {
+            let default = xs.iter().next().copied();
+            Self::Phi(xs, default)
+        }
+    }
 }
 
 impl DisplayWith<Bindings> for Binding {

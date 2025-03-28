@@ -951,7 +951,16 @@ impl<'a> BindingsBuilder<'a> {
         merged
     }
 
-    pub fn merge_flow(&mut self, mut xs: Vec<Flow>, range: TextRange) -> Flow {
+    pub fn merge_flow(&mut self, xs: Vec<Flow>, range: TextRange) -> Flow {
+        self.merge_flow_is_loop(xs, range, false)
+    }
+
+    pub fn merge_flow_is_loop(
+        &mut self,
+        mut xs: Vec<Flow>,
+        range: TextRange,
+        is_loop: bool,
+    ) -> Flow {
         if xs.len() == 1 && xs[0].no_next {
             return xs.pop().unwrap();
         }
@@ -996,7 +1005,14 @@ impl<'a> BindingsBuilder<'a> {
         let mut res = SmallMap::with_capacity(names.len());
         for (name, (key, values, styles)) in names.into_iter_hashed() {
             let style = self.merge_flow_style(styles);
-            self.table.insert_idx(key, Binding::phi(values));
+            self.table.insert_idx(
+                key,
+                if is_loop {
+                    Binding::phi_first_default(values)
+                } else {
+                    Binding::phi(values)
+                },
+            );
             res.insert_hashed(name, FlowInfo { key, style });
         }
         Flow {
@@ -1007,7 +1023,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn merge_loop_into_current(&mut self, mut branches: Vec<Flow>, range: TextRange) {
         branches.push(mem::take(&mut self.scopes.current_mut().flow));
-        self.scopes.current_mut().flow = self.merge_flow(branches, range);
+        self.scopes.current_mut().flow = self.merge_flow_is_loop(branches, range, true);
     }
 }
 
