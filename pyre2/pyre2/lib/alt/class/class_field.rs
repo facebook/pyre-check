@@ -872,10 +872,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn get_class_defining_method(&self, cls: &Class, name: &Name) -> Option<Class> {
-        self.get_class_member(cls, name).map(|m| m.defining_class)
-    }
-
     pub fn get_instance_attribute(&self, cls: &ClassType, name: &Name) -> Option<Attribute> {
         self.get_class_member(cls.class_object(), name)
             .map(|member| self.as_instance_attribute(Arc::unwrap_or_clone(member.value), cls))
@@ -925,15 +921,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    /// Get the class's `__init__` method, if we should analyze it
-    /// We skip analyzing the call to `__init__` if:
-    /// (1) it isn't defined (possible if we've been passed a custom typeshed), or
-    /// (2) the class overrides `object.__new__` but not `object.__init__`, in which case the
-    ///     `__init__` call always succeeds at runtime.
-    pub fn get_dunder_init(&self, cls: &ClassType, overrides_new: bool) -> Option<Type> {
+    /// Get the class's `__init__` method. The second argument controls whether we return an inherited `object.__init__`.
+    pub fn get_dunder_init(&self, cls: &ClassType, get_object_init: bool) -> Option<Type> {
         let init_method = self.get_class_member(cls.class_object(), &dunder::INIT)?;
-        if !(overrides_new
-            && init_method.defined_on(self.stdlib.object_class_type().class_object()))
+        if get_object_init
+            || !init_method.defined_on(self.stdlib.object_class_type().class_object())
         {
             Arc::unwrap_or_clone(init_method.value).as_special_method_type(cls)
         } else {

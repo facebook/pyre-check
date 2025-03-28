@@ -145,18 +145,17 @@
     "Line 80: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "constructors_callable.py": [
-    "Line 38: Expected 1 errors",
     "Line 65: Expected 1 errors",
     "Line 66: Expected 1 errors",
     "Line 67: Expected 1 errors",
     "Line 184: Expected 1 errors",
-    "Line 37: Unexpected errors ['assert_type(Self, Class1) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 50: Unexpected errors ['assert_type(Self, Class2) failed']",
+    "Line 195: Expected 1 errors",
     "Line 64: Unexpected errors ['assert_type(Self, Class3) failed']",
-    "Line 164: Unexpected errors ['assert_type(Self, Class7[int]) failed', 'Expected 0 positional arguments, got 1']",
-    "Line 165: Unexpected errors ['assert_type(Self, Class7[str]) failed', 'Expected 0 positional arguments, got 1']",
+    "Line 164: Unexpected errors ['assert_type(Class7[Any], Class7[int]) failed']",
+    "Line 165: Unexpected errors ['assert_type(Class7[Any], Class7[str]) failed', \"Argument `Literal['']` is not assignable to parameter `x` with type `int`\"]",
     "Line 183: Unexpected errors ['assert_type(Self, Class8[str]) failed']",
-    "Line 194: Unexpected errors ['assert_type(Self, Class9) failed', 'Expected 0 positional arguments, got 2']"
+    "Line 192: Unexpected errors ['Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`']",
+    "Line 194: Unexpected errors ['assert_type(Any, Class9) failed']"
   ],
   "constructors_consistency.py": [],
   "dataclasses_descriptors.py": [
@@ -211,7 +210,6 @@
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
     "Line 29: Unexpected errors ['Argument `tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: (() -> S) | None) -> T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`']",
-    "Line 102: Unexpected errors ['`Self@object` is not assignable to `ConverterClass`', 'Argument `type[ConverterClass]` is not assignable to parameter `converter` with type `(@_) -> Self@object` in function `model_field`']",
     "Line 112: Unexpected errors ['Expected 0 positional arguments, got 5 in function `object.__init__`']",
     "Line 114: Unexpected errors [\"`Literal['f1']` is not assignable to attribute `field0` with type `int`\"]",
     "Line 115: Unexpected errors [\"`Literal['f6']` is not assignable to attribute `field3` with type `ConverterClass`\"]",

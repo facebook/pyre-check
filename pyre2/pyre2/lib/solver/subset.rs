@@ -17,6 +17,7 @@ use starlark_map::Hashed;
 use crate::alt::answers::LookupAnswer;
 use crate::dunder;
 use crate::solver::solver::Subset;
+use crate::types::callable::Callable;
 use crate::types::callable::Function;
 use crate::types::callable::Param;
 use crate::types::callable::ParamList;
@@ -334,52 +335,55 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 return Some(metaclass_call_attr_ty);
             }
         }
+        // Default constructor that takes no args and returns Self.
+        let default_constructor = || {
+            Type::Callable(Box::new(Callable::list(
+                ParamList::new(Vec::new()),
+                class_type.clone(),
+            )))
+        };
         // Check the __new__ method and whether it comes from object or has been overridden
-        let new_attr_ty = self.try_lookup_attr_from_class(&class_type, &dunder::NEW);
-        let overrides_new = self
+        let (new_attr_ty, overrides_new) = if let Some(t) = self
             .type_order
-            .get_class_defining_method(cls.class_object(), &dunder::NEW)
-            .is_some_and(|c| c != *self.type_order.stdlib().object_class_type().class_object());
-        if new_attr_ty
-            .as_ref()
-            .and_then(|ty| ty.callable_return_type())
-            .and_then(|ret| match ret {
-                Type::ClassType(ret_cls) => {
-                    self.type_order.as_superclass(&ret_cls, cls.class_object())
-                }
-                _ => None,
-            })
-            .is_none()
+            .get_dunder_new(cls)
+            .and_then(|t| t.to_unbound_callable())
         {
-            // If the return type of __new__ is not a subclass of the current class, use that and ignore __init__
-            return new_attr_ty;
-        }
-        // Check the __init__ method and whether it comes from object or has been overridden
-        let mut init_attr_ty = self.try_lookup_attr_from_class(&class_type, &dunder::INIT);
-        // Replace the return type with Self (the current class)
-        init_attr_ty.iter_mut().for_each(|init| {
-            init.set_callable_return_type(class_type.clone());
-        });
-        let overrides_init = self
-            .type_order
-            .get_class_defining_method(cls.class_object(), &dunder::INIT)
-            .is_some_and(|c| c != *self.type_order.stdlib().object_class_type().class_object());
-        match (new_attr_ty, init_attr_ty) {
-            (Some(new), Some(init)) => {
-                if !overrides_new && overrides_init {
-                    // If `__init__` is overridden and `__new__` is inherited from object, use `__init__`
-                    Some(init)
-                } else if overrides_new && !overrides_init {
-                    // If `__new__` is overridden and `__init__` is inherited from object, use `__new__`
-                    Some(new)
-                } else {
-                    let result = unions(vec![new, init]);
-                    // If both are overridden, take the union
-                    // Only if neither are overridden, use the `__new__` and `__init__` from object
-                    Some(result)
-                }
+            if t.callable_return_type()
+                .and_then(|ret| match ret {
+                    Type::ClassType(ret_cls) => {
+                        self.type_order.as_superclass(&ret_cls, cls.class_object())
+                    }
+                    _ => None,
+                })
+                .is_none()
+            {
+                // If the return type of __new__ is not a subclass of the current class, use that and ignore __init__
+                return Some(t);
             }
-            _ => unreachable!("__new__ and __init__ should always be defined"),
+            (t, true)
+        } else {
+            (default_constructor(), false)
+        };
+        // Check the __init__ method and whether it comes from object or has been overridden
+        let (init_attr_ty, overrides_init) =
+            if let Some(mut t) = self.type_order.get_dunder_init(cls, false) {
+                // Replace the return type with Self (the current class)
+                t.set_callable_return_type(class_type.clone());
+                (t, true)
+            } else {
+                (default_constructor(), false)
+            };
+        if !overrides_new && overrides_init {
+            // If `__init__` is overridden and `__new__` is inherited from object, use `__init__`
+            Some(init_attr_ty)
+        } else if overrides_new && !overrides_init {
+            // If `__new__` is overridden and `__init__` is inherited from object, use `__new__`
+            Some(new_attr_ty)
+        } else {
+            let result = unions(vec![new_attr_ty, init_attr_ty]);
+            // If both are overridden, take the union
+            // Only if neither are overridden, use the `__new__` and `__init__` from object
+            Some(result)
         }
     }
 

@@ -85,10 +85,6 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.resolve_as_instance_method(attr)
     }
 
-    pub fn get_class_defining_method(self, cls: &Class, name: &Name) -> Option<Class> {
-        self.0.get_class_defining_method(cls, name)
-    }
-
     pub fn is_attr_subset(
         self,
         got: &Attribute,
@@ -108,5 +104,13 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
 
     pub fn promote_silently(self, cls: &Class) -> Type {
         self.0.promote_silently(cls)
+    }
+
+    pub fn get_dunder_new(self, cls: &ClassType) -> Option<Type> {
+        self.0.get_dunder_new(cls)
+    }
+
+    pub fn get_dunder_init(self, cls: &ClassType, get_object_init: bool) -> Option<Type> {
+        self.0.get_dunder_init(cls, get_object_init)
     }
 }

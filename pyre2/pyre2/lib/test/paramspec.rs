@@ -60,8 +60,7 @@ reveal_type(foo2)  # E: revealed type: (ParamSpec(Unknown)) -> Unknown
 "#,
 );
 
-testcase_with_bug!(
-    "I would expect this to capture the type var on the class",
+testcase!(
     test_param_spec_generic_class,
     r#"
 from typing import Callable, ParamSpec, TypeVar, reveal_type
@@ -72,8 +71,8 @@ class C[T]:
   def __init__(self, x: T) -> None:
     self.x = x
 c2 = identity(C)
-reveal_type(c2)  # E: revealed type: () -> Self@object
-x: C[int] = c2(1)  # E: `Self@object` is not assignable to `C[int]`  # E: Expected 0 positional arguments, got 1
+reveal_type(c2)  # E: revealed type: (x: Unknown) -> C[Unknown]
+x: C[int] = c2(1)
 "#,
 );
 

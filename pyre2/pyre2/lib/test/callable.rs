@@ -83,13 +83,18 @@ class C7(metaclass=CustomMeta):
         return super(C7, cls).__new__(cls)
 
 x1: Callable[[], int] = int
-x2: Callable[[str], C1] = C1  # E: `type[C1]` is not assignable to `(str) -> C1`
+x2: Callable[[str], C1] = C1
 x3: Callable[[str], C2] = C2
 x4: Callable[[str], C3] = C3
-x5: Callable[[], C4] = C4  # E: `type[C4]` is not assignable to `() -> C4`
+x5: Callable[[], C4] = C4
 x6: Callable[[int], int] = C5
 x7: Callable[[int], C6] = C6
 x8: Callable[[], NoReturn] = C7
+
+x9: Callable[[], str] = int  # E:
+x10: Callable[[], C2] = C2  # E:
+x11: Callable[[int], C3] = C3  # E:
+x12: Callable[[int], C5] = C5  # E:
 "#,
 );
 

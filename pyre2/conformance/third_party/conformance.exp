@@ -3087,8 +3087,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "revealed type: () -> Self@object",
-      "description": "revealed type: () -> Self@object",
+      "concise_description": "revealed type: (x: int) -> Class1",
+      "description": "revealed type: (x: int) -> Class1",
       "line": 36,
       "name": "reveal-type",
       "stop_column": 16,
@@ -3097,22 +3097,22 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self, Class1) failed",
-      "description": "assert_type(Self, Class1) failed",
-      "line": 37,
-      "name": "assert-type",
-      "stop_column": 27,
-      "stop_line": 37
+      "concise_description": "Missing argument `x`",
+      "description": "Missing argument `x`",
+      "line": 38,
+      "name": "missing-argument",
+      "stop_column": 3,
+      "stop_line": 38
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 37,
-      "name": "bad-argument-type",
-      "stop_column": 17,
-      "stop_line": 37
+      "column": 1,
+      "concise_description": "Missing argument `x`",
+      "description": "Missing argument `x`",
+      "line": 39,
+      "name": "missing-argument",
+      "stop_column": 3,
+      "stop_line": 39
     },
     {
       "code": -2,
@@ -3127,22 +3127,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "revealed type: () -> Self@object",
-      "description": "revealed type: () -> Self@object",
+      "concise_description": "revealed type: () -> Class2",
+      "description": "revealed type: () -> Class2",
       "line": 49,
       "name": "reveal-type",
       "stop_column": 16,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Self, Class2) failed",
-      "description": "assert_type(Self, Class2) failed",
-      "line": 50,
-      "name": "assert-type",
-      "stop_column": 26,
-      "stop_line": 50
     },
     {
       "code": -2,
@@ -3267,8 +3257,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "revealed type: () -> Self@object",
-      "description": "revealed type: () -> Self@object",
+      "concise_description": "revealed type: (x: int) -> Class7[Unknown]",
+      "description": "revealed type: (x: int) -> Class7[Unknown]",
       "line": 161,
       "name": "reveal-type",
       "stop_column": 2,
@@ -3277,8 +3267,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self, Class7[int]) failed",
-      "description": "assert_type(Self, Class7[int]) failed",
+      "concise_description": "assert_type(Class7[Any], Class7[int]) failed",
+      "description": "assert_type(Class7[Any], Class7[int]) failed",
       "line": 164,
       "name": "assert-type",
       "stop_column": 32,
@@ -3286,19 +3276,9 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
-      "line": 164,
-      "name": "bad-argument-type",
-      "stop_column": 17,
-      "stop_line": 164
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self, Class7[str]) failed",
-      "description": "assert_type(Self, Class7[str]) failed",
+      "concise_description": "assert_type(Class7[Any], Class7[str]) failed",
+      "description": "assert_type(Class7[Any], Class7[str]) failed",
       "line": 165,
       "name": "assert-type",
       "stop_column": 33,
@@ -3307,8 +3287,8 @@
     {
       "code": -2,
       "column": 16,
-      "concise_description": "Expected 0 positional arguments, got 1",
-      "description": "Expected 0 positional arguments, got 1",
+      "concise_description": "Argument `Literal['']` is not assignable to parameter `x` with type `int`",
+      "description": "Argument `Literal['']` is not assignable to parameter `x` with type `int`",
       "line": 165,
       "name": "bad-argument-type",
       "stop_column": 18,
@@ -3336,9 +3316,19 @@
     },
     {
       "code": -2,
+      "column": 23,
+      "concise_description": "Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
+      "description": "Argument `type[Class9]` is not assignable to parameter `cb` with type `(ParamSpec(@_)) -> @_` in function `accepts_callable`",
+      "line": 192,
+      "name": "bad-argument-type",
+      "stop_column": 29,
+      "stop_line": 192
+    },
+    {
+      "code": -2,
       "column": 1,
-      "concise_description": "revealed type: () -> Self@object",
-      "description": "revealed type: () -> Self@object",
+      "concise_description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
+      "description": "revealed type: (ParamSpec(Unknown)) -> Unknown",
       "line": 193,
       "name": "reveal-type",
       "stop_column": 16,
@@ -3347,32 +3337,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Self, Class9) failed",
-      "description": "assert_type(Self, Class9) failed",
+      "concise_description": "assert_type(Any, Class9) failed",
+      "description": "assert_type(Any, Class9) failed",
       "line": 194,
       "name": "assert-type",
       "stop_column": 36,
       "stop_line": 194
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 194,
-      "name": "bad-argument-type",
-      "stop_column": 20,
-      "stop_line": 194
-    },
-    {
-      "code": -2,
-      "column": 4,
-      "concise_description": "Expected 0 positional arguments, got 2",
-      "description": "Expected 0 positional arguments, got 2",
-      "line": 195,
-      "name": "bad-argument-type",
-      "stop_column": 7,
-      "stop_line": 195
     }
   ],
   "constructors_consistency.py": [],
@@ -3946,26 +3916,6 @@
       "name": "bad-argument-type",
       "stop_column": 55,
       "stop_line": 49
-    },
-    {
-      "code": -2,
-      "column": 30,
-      "concise_description": "`Self@object` is not assignable to `ConverterClass`",
-      "description": "`Self@object` is not assignable to `ConverterClass`",
-      "line": 102,
-      "name": "bad-assignment",
-      "stop_column": 67,
-      "stop_line": 102
-    },
-    {
-      "code": -2,
-      "column": 52,
-      "concise_description": "Argument `type[ConverterClass]` is not assignable to parameter `converter` with type `(@_) -> Self@object` in function `model_field`",
-      "description": "Argument `type[ConverterClass]` is not assignable to parameter `converter` with type `(@_) -> Self@object` in function `model_field`",
-      "line": 102,
-      "name": "bad-argument-type",
-      "stop_column": 66,
-      "stop_line": 102
     },
     {
       "code": -2,

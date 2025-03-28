@@ -390,7 +390,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             } else {
                 (false, false)
             };
-        if let Some(init_method) = self.get_dunder_init(&cls, overrides_new) {
+        // If the class overrides `object.__new__` but not `object.__init__`, the `__init__` call
+        // always succeeds at runtime, so we skip analyzing it.
+        if let Some(init_method) = self.get_dunder_init(&cls, !overrides_new) {
             let dunder_init_errors =
                 ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
             self.call_infer(
@@ -426,7 +428,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         // We know `__init__` exists because we synthesize it.
         let init_method = self
-            .get_dunder_init(&typed_dict.as_class_type(), false)
+            .get_dunder_init(&typed_dict.as_class_type(), true)
             .unwrap();
         self.call_infer(
             self.as_call_target_or_error(
