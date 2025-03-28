@@ -15,6 +15,7 @@ module CallGraphAnalysis = struct
       method_kinds: CallGraph.MethodKind.SharedMemory.ReadOnly.t;
       callables_to_definitions_map: Target.DefinesSharedMemory.ReadOnly.t;
       maximum_target_depth: int;
+      maximum_parameterized_targets_at_call_site: int option;
     }
   end
 
@@ -91,6 +92,7 @@ module CallGraphAnalysis = struct
           method_kinds;
           callables_to_definitions_map;
           maximum_target_depth;
+          maximum_parameterized_targets_at_call_site;
         }
       ~callable
       ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
@@ -145,7 +147,8 @@ module CallGraphAnalysis = struct
                    callable)
               ~get_callee_model
               ~profiler
-              ~maximum_target_depth)
+              ~maximum_target_depth
+              ~maximum_parameterized_targets_at_call_site)
           ()
       in
       CallGraphProfiler.stop ~max_number_expressions:50 ~max_number_apply_call_steps:50 profiler;
@@ -269,7 +272,13 @@ let log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy 
 let compute
     ~scheduler
     ~scheduler_policy
-    ~static_analysis_configuration
+    ~static_analysis_configuration:
+      ({
+         Configuration.StaticAnalysis.maximum_target_depth;
+         maximum_parameterized_targets_at_call_site;
+         higher_order_call_graph_max_iterations;
+         _;
+       } as static_analysis_configuration)
     ~resolve_module_path
     ~pyre_api
     ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
@@ -280,8 +289,6 @@ let compute
     ~decorators
     ~method_kinds
     ~callables_to_definitions_map
-    ~max_iterations
-    ~maximum_target_depth
   =
   let callables_to_definitions_map =
     CallGraph.DecoratorResolution.Results.register_decorator_defines
@@ -350,10 +357,11 @@ let compute
           callables_to_definitions_map =
             Target.DefinesSharedMemory.read_only callables_to_definitions_map;
           maximum_target_depth;
+          maximum_parameterized_targets_at_call_site;
         }
       ~callables_to_analyze:(List.rev_append override_targets callables_with_call_graphs)
         (* Build higher order call graphs only for targets that have call graphs. *)
-      ~max_iterations
+      ~max_iterations:higher_order_call_graph_max_iterations
       ~error_on_max_iterations:false
       ~epoch:Fixpoint.Epoch.initial
       ~state

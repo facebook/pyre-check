@@ -4314,6 +4314,8 @@ module HigherOrderCallGraph = struct
 
     val maximum_target_depth : int
 
+    val maximum_parameterized_targets_at_call_site : int option
+
     val input_define_call_graph : DefineCallGraph.t
 
     (* Outputs. *)
@@ -4354,6 +4356,27 @@ module HigherOrderCallGraph = struct
         Log.dump format
       else
         Log.log ~section:`CallGraph format
+
+
+    let cartesian_product_with_limit ~limit ~message_when_exceeding_limit list =
+      match limit, list with
+      | Some limit, head :: tail when limit > 0 ->
+          let number_of_combinations =
+            List.fold
+              ~init:(List.length head)
+              ~f:(fun so_far element -> element |> List.length |> Int.( * ) so_far)
+              tail
+          in
+          if number_of_combinations > limit then (
+            log
+              "%s due to `%d` exceeding limit `%d`"
+              message_when_exceeding_limit
+              number_of_combinations
+              limit;
+            None)
+          else
+            Some (Algorithms.cartesian_product list)
+      | _, _ -> Some (Algorithms.cartesian_product list)
 
 
     module Fixpoint = Analysis.Fixpoint.Make (struct
@@ -4607,7 +4630,11 @@ module HigherOrderCallGraph = struct
               |> List.map ~f:(fun call_targets ->
                      call_targets |> CallTarget.Set.elements |> to_option_list)
               |> List.cons (to_option_list call_targets_from_callee)
-              |> Algorithms.cartesian_product
+              |> cartesian_product_with_limit
+                   ~limit:Context.maximum_parameterized_targets_at_call_site
+                   ~message_when_exceeding_limit:
+                     "Avoid generating parameterized targets when analyzing call"
+              |> Option.value ~default:[]
               |> List.filter_map ~f:create_call_target)
         in
         let non_parameterized_targets =
@@ -5134,6 +5161,7 @@ let higher_order_call_graph_of_define
     ~get_callee_model
     ~profiler
     ~maximum_target_depth
+    ~maximum_parameterized_targets_at_call_site
   =
   let module Context = struct
     let input_define_call_graph = define_call_graph
@@ -5159,6 +5187,8 @@ let higher_order_call_graph_of_define
     let profiler = profiler
 
     let maximum_target_depth = maximum_target_depth
+
+    let maximum_parameterized_targets_at_call_site = maximum_parameterized_targets_at_call_site
   end
   in
   log

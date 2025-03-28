@@ -553,6 +553,7 @@ val higher_order_call_graph_of_define
   get_callee_model:(Target.t -> HigherOrderCallGraph.t option) ->
   profiler:CallGraphProfiler.t ->
   maximum_target_depth:int ->
+  maximum_parameterized_targets_at_call_site:int option ->
   HigherOrderCallGraph.t
 
 module DecoratorResolution : sig

@@ -67,6 +67,7 @@ let test_json_parsing context =
       higher_order_call_graph = false;
       higher_order_call_graph_max_iterations = None;
       maximum_target_depth = None;
+      maximum_parameterized_targets_at_call_site = None;
     }
   in
 
@@ -238,6 +239,12 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("maximum_target_depth", `Int 412) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with maximum_target_depth = Some 412 };
+  assert_parsed
+    (`Assoc
+      (("maximum_parameterized_targets_at_call_site", `Int 410)
+      :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      { dummy_analyze_configuration with maximum_parameterized_targets_at_call_site = Some 410 };
   assert_parsed
     (`Assoc
       (( "scheduler_policies",

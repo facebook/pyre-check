@@ -66,6 +66,7 @@ module AnalyzeConfiguration = struct
     higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
     maximum_target_depth: int option;
+    maximum_parameterized_targets_at_call_site: int option;
   }
   [@@deriving sexp, compare, hash]
 
@@ -91,6 +92,9 @@ module AnalyzeConfiguration = struct
             optional_int_member "higher_order_call_graph_max_iterations" json
           in
           let maximum_target_depth = optional_int_member "maximum_target_depth" json in
+          let maximum_parameterized_targets_at_call_site =
+            optional_int_member "maximum_parameterized_targets_at_call_site" json
+          in
           let inline_decorators = bool_member "inline_decorators" ~default:false json in
           if higher_order_call_graph && inline_decorators then
             failwith "higher_order_call_graph and inline_decorators cannot both be true";
@@ -212,6 +216,7 @@ module AnalyzeConfiguration = struct
               higher_order_call_graph;
               higher_order_call_graph_max_iterations;
               maximum_target_depth;
+              maximum_parameterized_targets_at_call_site;
             }
     with
     | Type_error (message, _)
@@ -290,6 +295,7 @@ module AnalyzeConfiguration = struct
         higher_order_call_graph;
         higher_order_call_graph_max_iterations;
         maximum_target_depth;
+        maximum_parameterized_targets_at_call_site;
       }
     =
     let configuration =
@@ -371,6 +377,7 @@ module AnalyzeConfiguration = struct
         Option.value
           maximum_target_depth
           ~default:Configuration.StaticAnalysis.default_maximum_target_depth;
+      maximum_parameterized_targets_at_call_site;
     }
 end
 

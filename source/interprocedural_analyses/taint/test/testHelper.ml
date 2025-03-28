@@ -568,7 +568,13 @@ let initialize
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
   let static_analysis_configuration =
-    Configuration.StaticAnalysis.create ~maximum_target_depth configuration ?find_missing_flows ()
+    Configuration.StaticAnalysis.create
+      ~maximum_target_depth
+      ~higher_order_call_graph_max_iterations:
+        Configuration.StaticAnalysis.default_higher_order_call_graph_max_iterations_in_tests
+      configuration
+      ?find_missing_flows
+      ()
   in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source = source_from_qualifier ~pyre_api qualifier in
@@ -771,9 +777,6 @@ let initialize
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~callables_to_definitions_map
-      ~max_iterations:
-        Configuration.StaticAnalysis.default_higher_order_call_graph_max_iterations_in_tests
-      ~maximum_target_depth
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models

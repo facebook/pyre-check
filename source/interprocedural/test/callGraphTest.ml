@@ -154,6 +154,9 @@ let assert_higher_order_call_graph_of_define
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
   let maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth in
+  let maximum_parameterized_targets_at_call_site =
+    Some Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site
+  in
   let define_call_graph, callables_to_definitions_map, method_kinds =
     compute_define_call_graph
       ~maximum_target_depth
@@ -177,6 +180,7 @@ let assert_higher_order_call_graph_of_define
       ~get_callee_model:(fun _ -> None)
       ~profiler:CallGraphProfiler.disabled
       ~maximum_target_depth
+      ~maximum_parameterized_targets_at_call_site
     |> HigherOrderCallGraphForTest.from_actual
   in
   CallGraph.MethodKind.SharedMemory.cleanup method_kinds;

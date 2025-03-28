@@ -554,8 +554,6 @@ let run_taint_analysis
          compute_coverage = compute_coverage_flag;
          scheduler_policies;
          higher_order_call_graph;
-         higher_order_call_graph_max_iterations;
-         maximum_target_depth;
          inline_decorators;
          _;
        } as static_analysis_configuration)
@@ -981,8 +979,6 @@ let run_taint_analysis
                callables_to_decorators_map)
           ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
           ~callables_to_definitions_map
-          ~max_iterations:higher_order_call_graph_max_iterations
-          ~maximum_target_depth
       in
       let () = StepLogger.finish step_logger in
 
