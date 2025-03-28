@@ -541,6 +541,8 @@ fn test_import_fail_to_load() {
     env.add("main", "import foo");
     let (state, handle) = env.to_state();
     let errs = state
+        .transaction()
+        .readable()
         .get_loads([&handle("foo")])
         .collect_errors(&ErrorConfigs::default())
         .shown;

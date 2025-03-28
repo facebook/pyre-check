@@ -14,7 +14,7 @@ use starlark_map::small_map::SmallMap;
 use crate::module::module_name::ModuleName;
 use crate::module::module_path::ModulePath;
 use crate::state::handle::Handle;
-use crate::state::state::State;
+use crate::state::state::Transaction;
 use crate::util::visit::Visit;
 
 #[derive(Serialize)]
@@ -30,9 +30,10 @@ struct ModuleOutput {
     definitions: SmallMap<String, (String, String)>,
 }
 
-fn trace_module(state: &State, handle: &Handle) -> Option<ModuleOutput> {
-    let info = state.get_module_info(handle)?;
-    let ast = state.get_ast(handle)?;
+fn trace_module(transaction: &Transaction, handle: &Handle) -> Option<ModuleOutput> {
+    let readable = transaction.readable();
+    let info = readable.get_module_info(handle)?;
+    let ast = readable.get_ast(handle)?;
 
     let mut types = SmallMap::new();
     let mut definitions = SmallMap::new();
@@ -42,10 +43,10 @@ fn trace_module(state: &State, handle: &Handle) -> Option<ModuleOutput> {
             Expr::Attribute(x) => x.attr.range,
             _ => return,
         };
-        if let Some(ty) = state.hover(handle, loc.start()) {
+        if let Some(ty) = transaction.hover(handle, loc.start()) {
             types.insert(info.source_range(x.range()).to_string(), ty.to_string());
         }
-        if let Some(def) = state.goto_definition(handle, loc.start()) {
+        if let Some(def) = transaction.goto_definition(handle, loc.start()) {
             definitions.insert(
                 info.source_range(x.range()).to_string(),
                 (
@@ -64,10 +65,10 @@ fn trace_module(state: &State, handle: &Handle) -> Option<ModuleOutput> {
 }
 
 /// Report on how many there are of each binding, and how much memory they take up, per module.
-pub fn trace(state: &State) -> String {
+pub fn trace(transaction: &Transaction) -> String {
     let mut modules = Vec::new();
-    for h in state.handles() {
-        if let Some(module) = trace_module(state, &h) {
+    for h in transaction.readable().handles() {
+        if let Some(module) = trace_module(transaction, &h) {
             modules.push(module);
         }
     }

@@ -352,10 +352,11 @@ impl Args {
                 eprintln!("{e:#}");
             }
             let events = get_watcher_events(&mut watcher).await?;
-            state.invalidate_disk(&events.modified);
+            let transaction = state.transaction_mut();
+            transaction.invalidate_disk(&events.modified);
 
-            state.invalidate_disk(&events.created);
-            state.invalidate_disk(&events.removed);
+            transaction.invalidate_disk(&events.created);
+            transaction.invalidate_disk(&events.removed);
             // File addition and removal may affect the list of files/handles to check. Update
             // the handles accordingly.
             handles.update(
@@ -364,7 +365,7 @@ impl Args {
                 &config_finder,
             );
             for loader in handles.loaders() {
-                state.invalidate_find(&loader);
+                transaction.invalidate_find(&loader);
             }
         }
     }
@@ -421,11 +422,18 @@ impl Args {
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
 
-        state.run(handles, default_require, Some(progress));
+        state
+            .transaction_mut()
+            .run(handles, default_require, Some(progress));
+        let transaction = state.transaction();
+        let readable_state = transaction.readable();
         let loads = if self.check_all {
-            state.get_loads(state.handles().iter())
+            readable_state.get_loads(readable_state.handles().iter())
         } else {
-            state.get_loads(handles.iter().map(|(handle, _)| handle))
+            state
+                .transaction()
+                .readable()
+                .get_loads(handles.iter().map(|(handle, _)| handle))
         };
         let computing = start.elapsed();
         let errors = loads.collect_errors(error_configs);
@@ -447,17 +455,17 @@ impl Args {
             "{} errors ({} suppressed), {} modules, {} lines, took {printing:.2?} ({computing:.2?} without printing errors), peak memory {}",
             number_thousands(errors.shown.len() + errors.suppressed.len() + errors.disabled.len()),
             number_thousands(errors.suppressed.len() + errors.disabled.len()),
-            number_thousands(state.module_count()),
-            number_thousands(state.line_count()),
+            number_thousands(readable_state.module_count()),
+            number_thousands(readable_state.line_count()),
             memory_trace.peak()
         );
         if let Some(timings) = &self.report_timings {
             eprintln!("Computing timing information");
-            state.report_timings(timings, Some(Box::new(ProgressBarSubscriber::new())))?;
+            transaction.report_timings(timings, Some(Box::new(ProgressBarSubscriber::new())))?;
         }
         if let Some(debug_info) = &self.debug_info {
             let mut output = serde_json::to_string_pretty(
-                &state.debug_info(&handles.map(|x| x.0.dupe()), error_configs),
+                &readable_state.debug_info(&handles.map(|x| x.0.dupe()), error_configs),
             )?;
             if debug_info.extension() == Some(OsStr::new("js")) {
                 output = format!("var data = {output}");
@@ -467,11 +475,11 @@ impl Args {
         if let Some(path) = &self.report_binding_memory {
             fs_anyhow::write(
                 path,
-                report::binding_memory::binding_memory(state).as_bytes(),
+                report::binding_memory::binding_memory(readable_state).as_bytes(),
             )?;
         }
         if let Some(path) = &self.report_trace {
-            fs_anyhow::write(path, report::trace::trace(state).as_bytes())?;
+            fs_anyhow::write(path, report::trace::trace(transaction).as_bytes())?;
         }
         if self.suppress_errors {
             let errors: SmallMap<PathBuf, Vec<Error>> = errors

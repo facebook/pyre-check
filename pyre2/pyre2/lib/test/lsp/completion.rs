@@ -20,7 +20,7 @@ fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String
         detail,
         kind,
         ..
-    } in state.completion(handle, position)
+    } in state.transaction().completion(handle, position)
     {
         report.push_str("\n- (");
         report.push_str(&format!("{:?}", kind.unwrap()));

@@ -17,7 +17,7 @@ use crate::test::util::get_batched_lsp_operations_report_allow_error;
 
 fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String {
     if let Some(TextRangeWithModuleInfo { module_info, range }) =
-        state.goto_definition(handle, position)
+        state.transaction().goto_definition(handle, position)
     {
         format!(
             "Definition Result:\n{}",

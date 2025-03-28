@@ -71,6 +71,8 @@ else:
     ];
     state.run(&handles, Require::Exports, None);
     state
+        .transaction()
+        .readable()
         .get_loads(handles.iter().map(|(handle, _)| handle))
         .check_against_expectations(&ErrorConfigs::default())
         .unwrap();
@@ -127,7 +129,7 @@ fn test_multiple_path() {
         Require::Exports,
         None,
     );
-    let loads = state.get_loads(handles.iter());
+    let loads = state.transaction().readable().get_loads(handles.iter());
     print_errors(&loads.collect_errors(&ErrorConfigs::default()).shown);
     loads
         .check_against_expectations(&ErrorConfigs::default())
@@ -188,6 +190,7 @@ impl Incremental {
             .lock()
             .insert(ModuleName::from_str(file), Arc::new(content.to_owned()));
         self.state
+            .transaction_mut()
             .invalidate_memory(self.loader.dupe(), &[PathBuf::from(file)]);
     }
 
@@ -209,7 +212,11 @@ impl Incremental {
             Require::Exports,
             Some(Box::new(subscriber.dupe())),
         );
-        let loads = self.state.get_loads(handles.iter());
+        let loads = self
+            .state
+            .transaction()
+            .readable()
+            .get_loads(handles.iter());
         print_errors(&loads.collect_errors(&ErrorConfigs::default()).shown);
         loads
             .check_against_expectations(&ErrorConfigs::default())
@@ -281,15 +288,30 @@ fn test_interface_consistent(code: &str, broken: bool) {
     let mut i = Incremental::new();
     i.set("main", code);
     i.check(&["main"], &["main"]);
-    let base = i.state.get_solutions(&i.handle("main")).unwrap();
+    let base = i
+        .state
+        .transaction()
+        .readable()
+        .get_solutions(&i.handle("main"))
+        .unwrap();
 
     i.set("main", &format!("{code} # after"));
     i.check(&["main"], &["main"]);
-    let suffix = i.state.get_solutions(&i.handle("main")).unwrap();
+    let suffix = i
+        .state
+        .transaction()
+        .readable()
+        .get_solutions(&i.handle("main"))
+        .unwrap();
 
     i.set("main", &format!("# before\n{code}"));
     i.check(&["main"], &["main"]);
-    let prefix = i.state.get_solutions(&i.handle("main")).unwrap();
+    let prefix = i
+        .state
+        .transaction()
+        .readable()
+        .get_solutions(&i.handle("main"))
+        .unwrap();
 
     let same = base.first_difference(&base);
     let suffix = suffix.first_difference(&base);
@@ -382,23 +404,39 @@ fn test_change_require() {
     state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);
     assert_eq!(
         state
+            .transaction()
+            .readable()
             .get_loads([&handle])
             .collect_errors(&ErrorConfigs::default())
             .shown
             .len(),
         0
     );
-    assert!(state.get_bindings(&handle).is_none());
+    assert!(
+        state
+            .transaction()
+            .readable()
+            .get_bindings(&handle)
+            .is_none()
+    );
     state.run(&[(handle.dupe(), Require::Errors)], Require::Exports, None);
     assert_eq!(
         state
+            .transaction()
+            .readable()
             .get_loads([&handle])
             .collect_errors(&ErrorConfigs::default())
             .shown
             .len(),
         1
     );
-    assert!(state.get_bindings(&handle).is_none());
+    assert!(
+        state
+            .transaction()
+            .readable()
+            .get_bindings(&handle)
+            .is_none()
+    );
     state.run(
         &[(handle.dupe(), Require::Everything)],
         Require::Exports,
@@ -406,11 +444,19 @@ fn test_change_require() {
     );
     assert_eq!(
         state
+            .transaction()
+            .readable()
             .get_loads([&handle])
             .collect_errors(&ErrorConfigs::default())
             .shown
             .len(),
         1
     );
-    assert!(state.get_bindings(&handle).is_some());
+    assert!(
+        state
+            .transaction()
+            .readable()
+            .get_bindings(&handle)
+            .is_some()
+    );
 }

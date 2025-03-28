@@ -13,7 +13,7 @@ use crate::state::state::State;
 use crate::test::util::get_batched_lsp_operations_report;
 
 fn get_test_report(state: &State, handle: &Handle, position: TextSize) -> String {
-    if let Some(t) = state.hover(handle, position) {
+    if let Some(t) = state.transaction().hover(handle, position) {
         format!("Hover Result: `{}`", t)
     } else {
         "Hover Result: None".to_owned()

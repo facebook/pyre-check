@@ -323,21 +323,23 @@ impl<'a> Server<'a> {
             })
             .collect::<Vec<_>>();
 
-        self.state.lock().invalidate_memory(
+        let mut lock = self.state.lock();
+        let transaction = lock.transaction_mut();
+        transaction.invalidate_memory(
             self.loader.dupe(),
             &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
         );
 
-        self.state.lock().run(&handles, Require::Exports, None);
+        transaction.run(&handles, Require::Exports, None);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         let open_files = self.open_files.lock();
         for x in open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
         // TODO(connernilsen): replace with real error config from config file
-        for e in self
-            .state
-            .lock()
+        for e in lock
+            .transaction()
+            .readable()
             .get_loads(handles.iter().map(|(handle, _)| handle))
             .collect_errors(&ErrorConfigs::default())
             .shown
@@ -409,13 +411,14 @@ impl<'a> Server<'a> {
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {
         let state = self.state.lock();
+        let transaction = state.transaction();
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
-        let info = state.get_module_info(&handle)?;
+        let info = transaction.readable().get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
         let TextRangeWithModuleInfo {
             module_info: definition_module_info,
             range,
-        } = state.goto_definition(&handle, range)?;
+        } = transaction.goto_definition(&handle, range)?;
         let path = to_real_path(definition_module_info.path())?;
         let path = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_owned());
         Some(GotoDefinitionResponse::Scalar(Location {
@@ -426,11 +429,13 @@ impl<'a> Server<'a> {
 
     fn completion(&self, params: CompletionParams) -> anyhow::Result<CompletionResponse> {
         let state = self.state.lock();
+        let transaction = state.transaction();
         let handle = self.make_handle(&params.text_document_position.text_document.uri);
-        let items = state
+        let items = transaction
+            .readable()
             .get_module_info(&handle)
             .map(|info| {
-                state.completion(
+                transaction.completion(
                     &handle,
                     position_to_text_size(&info, params.text_document_position.position),
                 )
@@ -445,9 +450,10 @@ impl<'a> Server<'a> {
     fn hover(&self, params: HoverParams) -> Option<Hover> {
         let state = self.state.lock();
         let handle = self.make_handle(&params.text_document_position_params.text_document.uri);
-        let info = state.get_module_info(&handle)?;
+        let transaction = state.transaction();
+        let info = transaction.readable().get_module_info(&handle)?;
         let range = position_to_text_size(&info, params.text_document_position_params.position);
-        let t = state.hover(&handle, range)?;
+        let t = transaction.hover(&handle, range)?;
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::Markdown,
@@ -465,8 +471,9 @@ impl<'a> Server<'a> {
     fn inlay_hints(&self, params: InlayHintParams) -> Option<Vec<InlayHint>> {
         let state = self.state.lock();
         let handle = self.make_handle(&params.text_document.uri);
-        let info = state.get_module_info(&handle)?;
-        let t = state.inlay_hints(&handle)?;
+        let transaction = state.transaction();
+        let info = transaction.readable().get_module_info(&handle)?;
+        let t = transaction.inlay_hints(&handle)?;
         Some(t.into_map(|x| {
             let position = text_size_to_position(&info, x.0);
             InlayHint {

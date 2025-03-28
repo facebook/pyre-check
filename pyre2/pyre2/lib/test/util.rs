@@ -158,6 +158,8 @@ impl TestEnv {
         subscriber.finish();
         print_errors(
             &state
+                .transaction()
+                .readable()
                 .get_loads(handles.iter())
                 .collect_errors(&ErrorConfigs::default())
                 .shown,
@@ -258,6 +260,8 @@ pub fn mk_multi_file_state(
     if assert_zero_errors {
         assert_eq!(
             state
+                .transaction()
+                .readable()
                 .get_loads(handles.values())
                 .collect_errors(&ErrorConfigs::default())
                 .shown
@@ -375,6 +379,8 @@ pub fn testcase_for_macro(
         let start = Instant::now();
         let (state, handle) = env.clone().to_state();
         state
+            .transaction()
+            .readable()
             .get_loads([&handle("main")])
             .check_against_expectations(&ErrorConfigs::default())?;
         if start.elapsed().as_secs() <= limit {
@@ -392,7 +398,11 @@ pub fn mk_state(code: &str) -> (Handle, State) {
 }
 
 pub fn get_class(name: &str, handle: &Handle, state: &State) -> Option<Class> {
-    let solutions = state.get_solutions(handle).unwrap();
+    let solutions = state
+        .transaction()
+        .readable()
+        .get_solutions(handle)
+        .unwrap();
 
     match solutions.get(&KeyExport(Name::new(name))).map(|x| &**x) {
         Some(Type::ClassDef(cls)) => Some(cls.dupe()),

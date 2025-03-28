@@ -30,7 +30,7 @@ def g() -> int:
         report.push_str(name);
         report.push_str(".py\n");
         let handle = handles.get(name).unwrap();
-        for (pos, hint) in state.inlay_hints(handle).unwrap() {
+        for (pos, hint) in state.transaction().inlay_hints(handle).unwrap() {
             report.push_str(&code_frame_of_source_at_position(code, pos));
             report.push_str(" inlay-hint: `");
             report.push_str(&hint);
