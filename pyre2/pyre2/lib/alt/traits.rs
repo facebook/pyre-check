@@ -78,7 +78,7 @@ pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     fn solve(
         answers: &AnswersSolver<Ans>,
         binding: &Self::Value,
-        _errors: &ErrorCollector,
+        errors: &ErrorCollector,
     ) -> Arc<Self::Answer>;
 
     fn create_recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive;
