@@ -40,7 +40,7 @@ use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
 use crate::types::callable::unexpected_keyword;
-use crate::types::types::AnyStyle;
+use crate::types::types::Type;
 use crate::util::visit::VisitMut;
 
 impl<'a> BindingsBuilder<'a> {
@@ -86,7 +86,7 @@ impl<'a> BindingsBuilder<'a> {
             Err(error) => {
                 // Record a type error and fall back to `Any`.
                 self.error(name.range, error.message(name), ErrorKind::UnknownName);
-                self.table.insert(key, Binding::AnyType(AnyStyle::Error));
+                self.table.insert(key, Binding::Type(Type::any_error()));
             }
         }
     }

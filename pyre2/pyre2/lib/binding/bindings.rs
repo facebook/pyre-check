@@ -80,7 +80,7 @@ use crate::table;
 use crate::table_for_each;
 use crate::table_try_for_each;
 use crate::types::quantified::Quantified;
-use crate::types::types::AnyStyle;
+use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::DisplayWithCtx;
 use crate::util::uniques::UniqueFactory;
@@ -351,7 +351,7 @@ impl Bindings {
                         ErrorKind::InternalError,
                         None,
                     );
-                    Binding::AnyType(AnyStyle::Error)
+                    Binding::Type(Type::any_error())
                 }
             };
             if exported.contains_key_hashed(k) {

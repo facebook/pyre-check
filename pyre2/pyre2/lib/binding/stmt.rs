@@ -42,7 +42,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
 use crate::types::alias::resolve_typeshed_alias;
 use crate::types::special_form::SpecialForm;
-use crate::types::types::AnyStyle;
+use crate::types::types::Type;
 
 impl<'a> BindingsBuilder<'a> {
     fn bind_unimportable_names(&mut self, x: &StmtImportFrom) {
@@ -50,7 +50,7 @@ impl<'a> BindingsBuilder<'a> {
             if &x.name != "*" {
                 let asname = x.asname.as_ref().unwrap_or(&x.name);
                 // We pass None as imported_from, since we are really faking up a local error definition
-                self.bind_definition(asname, Binding::AnyType(AnyStyle::Error), None);
+                self.bind_definition(asname, Binding::Type(Type::any_error()), None);
             }
         }
     }
@@ -226,7 +226,7 @@ impl<'a> BindingsBuilder<'a> {
             Err(error) => {
                 // Record a type error and fall back to `Any`.
                 self.error(name.range, error.message(name), ErrorKind::UnknownName);
-                self.table.insert(key, Binding::AnyType(AnyStyle::Error));
+                self.table.insert(key, Binding::Type(Type::any_error()));
             }
         }
     }
@@ -243,7 +243,7 @@ impl<'a> BindingsBuilder<'a> {
             Err(error) => {
                 // Record a type error and fall back to `Any`.
                 self.error(name.range, error.message(name), ErrorKind::UnknownName);
-                self.table.insert(key, Binding::AnyType(AnyStyle::Error));
+                self.table.insert(key, Binding::Type(Type::any_error()));
             }
         }
     }
@@ -454,7 +454,7 @@ impl<'a> BindingsBuilder<'a> {
                     } else {
                         Binding::AnnotatedType(
                             ann_key,
-                            Box::new(Binding::AnyType(AnyStyle::Implicit)),
+                            Box::new(Binding::Type(Type::any_implicit())),
                         )
                     };
                     if let Some(ann) = self.bind_definition(&name, binding, flow_style)
@@ -479,7 +479,7 @@ impl<'a> BindingsBuilder<'a> {
                     );
                     let value_binding = match &x.value {
                         Some(v) => Binding::Expr(None, *v.clone()),
-                        None => Binding::AnyType(AnyStyle::Implicit),
+                        None => Binding::Type(Type::any_implicit()),
                     };
                     if !self.bind_attr_if_self(&attr, value_binding, Some(ann_key)) {
                         self.error(
@@ -745,7 +745,7 @@ impl<'a> BindingsBuilder<'a> {
                                                 format!("Could not import `{name}` from `{m}`"),
                                                 ErrorKind::MissingModuleAttribute,
                                             );
-                                            Binding::AnyType(AnyStyle::Error)
+                                            Binding::Type(Type::any_error())
                                         };
                                         let key = self.table.insert(key, val);
                                         self.bind_key(
@@ -785,7 +785,7 @@ impl<'a> BindingsBuilder<'a> {
                                                 ),
                                                 ErrorKind::MissingModuleAttribute,
                                             );
-                                            Binding::AnyType(AnyStyle::Error)
+                                            Binding::Type(Type::any_error())
                                         }
                                     };
                                     self.bind_definition(

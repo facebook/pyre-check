@@ -55,7 +55,6 @@ use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassIndex;
 use crate::types::equality::TypeEq;
 use crate::types::quantified::Quantified;
-use crate::types::types::AnyStyle;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::commas_iter;
@@ -705,8 +704,8 @@ pub enum Binding {
     /// A record of an "augmented assignment" statement like `x -= _`
     /// or `a.b *= _`. These desugar to special method calls.
     AugAssign(Option<Idx<KeyAnnotation>>, StmtAugAssign),
-    /// The Any type.
-    AnyType(AnyStyle),
+    /// An explicit type.
+    Type(Type),
     /// The str type.
     StrType,
     /// A type parameter.
@@ -866,7 +865,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::ClassDef(x, _) => write!(f, "{}", ctx.display(*x)),
             Self::Forward(k) => write!(f, "{}", ctx.display(*k)),
             Self::AugAssign(_, s) => write!(f, "augmented_assign {:?}", s),
-            Self::AnyType(s) => write!(f, "anytype {s}"),
+            Self::Type(t) => write!(f, "type {t}"),
             Self::StrType => write!(f, "strtype"),
             Self::TypeParameter(q) => write!(f, "type_parameter {q}"),
             Self::CheckLegacyTypeParam(k, _) => {

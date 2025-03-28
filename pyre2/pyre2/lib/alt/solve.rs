@@ -1877,7 +1877,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(ty) => (*ty).clone(),
                 None => self.solve_binding_inner(val, errors),
             },
-            Binding::AnyType(x) => Type::Any(*x),
+            Binding::Type(x) => x.clone(),
             Binding::StrType => self.stdlib.str().to_type(),
             Binding::TypeParameter(q) => Type::type_form(q.to_type()),
             Binding::Module(m, path, prev) => {

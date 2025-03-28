@@ -48,7 +48,7 @@ use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassIndex;
 use crate::types::special_form::SpecialForm;
-use crate::types::types::AnyStyle;
+use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 
 enum IllegalIdentifierHandling {
@@ -357,7 +357,7 @@ impl<'a> BindingsBuilder<'a> {
             };
             let value_binding = match member_value {
                 Some(value) => Binding::Expr(None, value),
-                None => Binding::AnyType(AnyStyle::Implicit),
+                None => Binding::Type(Type::any_implicit()),
             };
             let annotation_binding = if let Some(annotation) = member_annotation {
                 let ann_key = KeyAnnotation::Annotation(ShortIdentifier::new(&Identifier::new(
