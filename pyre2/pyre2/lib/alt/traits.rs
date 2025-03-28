@@ -60,24 +60,14 @@ pub trait SolveRecursive: Keyed {
 impl SolveRecursive for Key {
     type Recursive = Var;
 }
-impl SolveRecursive for KeyExpect {
-    type Recursive = ();
-}
 impl SolveRecursive for KeyExport {
     type Recursive = Var;
 }
-impl SolveRecursive for KeyFunction {
-    type Recursive = ();
-}
-impl SolveRecursive for KeyClass {
-    type Recursive = ();
-}
-impl SolveRecursive for KeyClassField {
-    type Recursive = ();
-}
-impl SolveRecursive for KeyClassSynthesizedFields {
-    type Recursive = ();
-}
+impl SolveRecursive for KeyExpect {}
+impl SolveRecursive for KeyFunction {}
+impl SolveRecursive for KeyClass {}
+impl SolveRecursive for KeyClassField {}
+impl SolveRecursive for KeyClassSynthesizedFields {}
 impl SolveRecursive for KeyAnnotation {}
 impl SolveRecursive for KeyClassMetadata {}
 impl SolveRecursive for KeyLegacyTypeParam {}
