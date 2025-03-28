@@ -45,5 +45,6 @@ mod type_var_tuple;
 mod typed_dict;
 mod typing_self;
 mod util;
+mod variance_inference;
 mod with;
 mod yields;
