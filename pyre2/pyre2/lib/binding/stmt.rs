@@ -508,7 +508,11 @@ impl<'a> BindingsBuilder<'a> {
                         self.type_params(params);
                     }
                     self.ensure_type(&mut x.value, &mut None);
-                    let binding = Binding::ScopedTypeAlias(name.id.clone(), x.type_params, x.value);
+                    let binding = Binding::ScopedTypeAlias(
+                        name.id.clone(),
+                        x.type_params.map(|x| *x),
+                        x.value,
+                    );
                     self.bind_definition(&Ast::expr_name_identifier(name), binding, None);
                 } else {
                     self.todo("Bindings::stmt TypeAlias", &x);
