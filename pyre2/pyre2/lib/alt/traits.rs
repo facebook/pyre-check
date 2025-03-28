@@ -114,7 +114,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
     }
 
     fn create_recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
-        answers.solver().fresh_recursive(answers.uniques)
+        answers.create_recursive()
     }
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
@@ -158,7 +158,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
     }
 
     fn create_recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive {
-        answers.solver().fresh_recursive(answers.uniques)
+        answers.create_recursive()
     }
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {

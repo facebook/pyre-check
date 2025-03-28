@@ -550,6 +550,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_idx(self.bindings().key_to_idx(k))
     }
 
+    pub fn create_recursive(&self) -> Var {
+        self.solver().fresh_recursive(self.uniques)
+    }
+
     pub fn record_recursive(
         &self,
         loc: TextRange,
