@@ -380,10 +380,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let base = Type::ClassType(enum_.cls.clone());
         match self.lookup_attr_no_union(&base, &Name::new_static("_value_")) {
             LookupResult::Found(attr) => match attr.inner {
-                AttributeInner::Simple(ty, Visibility::ReadWrite) => Some(ty),
+                AttributeInner::Simple(ty, ..) => Some(ty),
                 // NOTE: We currently do not expect to use `__getattr__` for `_value_` annotation lookup.
-                AttributeInner::Simple(_, Visibility::ReadOnly)
-                | AttributeInner::NoAccess(_)
+                AttributeInner::NoAccess(_)
                 | AttributeInner::Property(..)
                 | AttributeInner::Descriptor(..)
                 | AttributeInner::GetAttr(..) => None,
