@@ -7,6 +7,7 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_if_simple,
@@ -889,5 +890,33 @@ import imported
 from typing import assert_type
 
 assert_type(imported.exported, None)
+"#,
+);
+
+testcase_with_bug!(
+    "Should be int, not Any",
+    test_loop_increment,
+    r#"
+from typing import assert_type, Literal, Any
+
+def f(cond: bool):
+    n = 1
+    while cond:
+        n += 1
+    assert_type(n, Literal[1] | Any)
+"#,
+);
+
+testcase_with_bug!(
+    "Should be int, not Any",
+    test_loop_test_and_increment,
+    r#"
+from typing import assert_type, Literal, Any
+
+def f(cond: bool):
+    n = 1
+    while n < 10:
+        n += 1
+    assert_type(n, Literal[1] | Any)
 "#,
 );
