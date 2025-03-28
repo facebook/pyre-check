@@ -7,6 +7,7 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_lambda,
@@ -96,6 +97,23 @@ x10: Callable[[], C2] = C2  # E:
 x11: Callable[[int], C3] = C3  # E:
 x12: Callable[[int], C5] = C5  # E:
 "#,
+);
+
+testcase_with_bug!(
+    "We can't detect that the metaclass's __call__ is unannotated, because the return type gets inferred",
+    test_callable_constructor_unannotated_metaclass_call,
+    r#"
+from typing import Self, Callable
+class Meta(type):
+    # This is unannotated, so we should treat it as compatible and use the signature of __new__
+    def __call__(cls, x: str):
+        raise TypeError("Cannot instantiate class")
+class MyClass(metaclass=Meta):
+    def __new__(cls, x: int) -> Self:
+        return super().__new__(cls)
+x1: Callable[[int], MyClass] = MyClass  # This should be OK  # E: `type[MyClass]` is not assignable to `(int) -> MyClass`
+x2: Callable[[str], MyClass] = MyClass  # This is the one that should error
+    "#,
 );
 
 testcase!(
