@@ -17,6 +17,7 @@ use lsp_server::Notification;
 use lsp_server::Request;
 use lsp_server::RequestId;
 use lsp_server::Response;
+use lsp_types::Url;
 use pretty_assertions::assert_eq;
 
 use crate::commands::lsp::run_lsp;
@@ -182,7 +183,7 @@ fn build_did_open_notification(path: PathBuf) -> lsp_server::Notification {
         method: "textDocument/didOpen".to_owned(),
         params: serde_json::json!({
             "textDocument": {
-                "uri": format!("file://{}", path.to_str().unwrap()),
+                "uri": Url::from_file_path(&path).unwrap().to_string(),
                 "languageId": "python",
                 "version": 1,
                 "text": std::fs::read_to_string(path).unwrap()
@@ -221,7 +222,7 @@ fn test_go_to_def() {
         method: "textDocument/definition".to_owned(),
         params: serde_json::json!({
             "textDocument": {
-                "uri": format!("file://{}/foo.py", root.to_str().unwrap())
+                "uri": Url::from_file_path(root.join("foo.py")).unwrap().to_string()
             },
             "position": {
                 "line": 5,
@@ -233,7 +234,7 @@ fn test_go_to_def() {
     expected_responses.push(Response {
         id: RequestId::from(2),
         result: Some(serde_json::json!({
-            "uri": format!("file://{}/bar.py", root.to_str().unwrap()),
+            "uri": Url::from_file_path(root.join("bar.py")).unwrap().to_string(),
             "range": {
                 "start": {
                     "line": 6,
