@@ -533,7 +533,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             || K::create_recursive(self),
         );
         if let Ok((v, Some(r))) = &result {
-            let k = self.bindings().idx_to_key(idx);
+            let k = self.bindings().idx_to_key(idx).range();
             K::record_recursive(self, k, v.dupe(), r.clone(), self.base_errors);
         }
         match result {

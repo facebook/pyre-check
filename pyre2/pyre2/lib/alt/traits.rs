@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use dupe::Dupe;
 use ruff_python_ast::name::Name;
-use ruff_text_size::Ranged;
+use ruff_text_size::TextRange;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
@@ -96,7 +96,7 @@ pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     /// Record that recursive value along with the answer.
     fn record_recursive(
         _answers: &AnswersSolver<Ans>,
-        _key: &Self,
+        _range: TextRange,
         _answer: Arc<Self::Answer>,
         _recursive: Self::Recursive,
         _errors: &ErrorCollector,
@@ -123,12 +123,12 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
 
     fn record_recursive(
         answers: &AnswersSolver<Ans>,
-        key: &Key,
+        range: TextRange,
         answer: Arc<Type>,
         recursive: Var,
         errors: &ErrorCollector,
     ) {
-        answers.record_recursive(key.range(), answer, recursive, errors);
+        answers.record_recursive(range, answer, recursive, errors);
     }
 }
 
@@ -167,12 +167,12 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
 
     fn record_recursive(
         answers: &AnswersSolver<Ans>,
-        key: &KeyExport,
+        range: TextRange,
         answer: Arc<Type>,
         recursive: Var,
         errors: &ErrorCollector,
     ) {
-        answers.record_recursive(key.range(), answer, recursive, errors);
+        answers.record_recursive(range, answer, recursive, errors);
     }
 }
 
