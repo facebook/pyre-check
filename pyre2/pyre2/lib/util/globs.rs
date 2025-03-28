@@ -223,6 +223,11 @@ impl FileList for FilteredGlobs {
                 result.push(file);
             }
         }
+        if result.is_empty() {
+            return Err(anyhow::anyhow!(
+                "All found `project_includes` files were filtered by `project_excludes` patterns"
+            ));
+        }
         Ok(result)
     }
 

@@ -62,3 +62,12 @@ ERROR */glob*.py:1:* (glob)
  INFO 2 errors* (glob)
 [1]
 ```
+
+## We return an error when all files are filtered by project_excludes
+
+```scrut {output_stream: stderr}
+$ echo "x: str = 12" > $TMPDIR/excluded.py && \
+> $PYRE2 check $TMPDIR/excluded.py --project-excludes="$TMPDIR/*"
+All found `project_includes` files were filtered by `project_excludes` patterns
+[1]
+```
