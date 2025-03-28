@@ -267,6 +267,17 @@ def test(x: tuple[int, str, bool], y: tuple[int, ...], start: int, stop: int, st
 "#,
 );
 
+testcase_with_bug!(
+    "Slice subset should work",
+    test_slice_subset,
+    r#"
+def f(x: slice) -> None:
+    pass
+def g(x: slice[int, int, int]) -> None:
+    f(x) # E: `slice[int, int, int]` is not assignable to parameter `x` with type `slice[Any, TypeVar[_StartT_co], TypeVar[_StartT_co] | TypeVar[_StopT_co]]`
+"#,
+);
+
 testcase!(
     test_tuple_constructor,
     r#"
