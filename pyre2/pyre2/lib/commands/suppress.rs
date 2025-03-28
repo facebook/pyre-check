@@ -21,7 +21,7 @@ fn dedup_errors(errors: &[Error]) -> SmallMap<usize, String> {
             .entry(error.source_range().start.row.to_zero_indexed())
             .or_default();
         if e.is_empty() {
-            e.push_str("# type: ignore  # ");
+            e.push_str("# pyrefly: ignore  # ");
         } else {
             e.push_str(", ");
         }
@@ -161,19 +161,19 @@ f(x)
         assert!(got_failures.is_empty());
         assert_eq!(vec![&path], got_successes);
 
-        let want_file = r#"# type: ignore  # bad-assignment
+        let want_file = r#"# pyrefly: ignore  # bad-assignment
 x: str = 1
 
 
 def f(y: int) -> None:
     """Doc comment"""
-    # type: ignore  # bad-argument-type
+    # pyrefly: ignore  # bad-argument-type
     x = "one" + y
-    # type: ignore  # bad-return
+    # pyrefly: ignore  # bad-return
     return x
 
 
-# type: ignore  # bad-argument-type
+# pyrefly: ignore  # bad-argument-type
 f(x)
 
 "#;
