@@ -648,11 +648,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match (&got.inner, &want.inner) {
             (_, AttributeInner::NoAccess(_)) => true,
             (AttributeInner::NoAccess(_), _) => false,
-            (
-                AttributeInner::Property(_, _, _),
-                AttributeInner::Simple(_, Visibility::ReadOnly)
-                | AttributeInner::Simple(_, Visibility::ReadWrite),
-            ) => false,
+            (AttributeInner::Property(_, _, _), AttributeInner::Simple(..)) => false,
             (
                 AttributeInner::Simple(_, Visibility::ReadOnly),
                 AttributeInner::Property(_, Some(_), _)
@@ -667,8 +663,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 AttributeInner::Simple(want, Visibility::ReadWrite),
             ) => is_subset(got, want) && is_subset(want, got),
             (
-                AttributeInner::Simple(got, Visibility::ReadOnly)
-                | AttributeInner::Simple(got, Visibility::ReadWrite),
+                AttributeInner::Simple(got, ..),
                 AttributeInner::Simple(want, Visibility::ReadOnly),
             ) => is_subset(got, want),
             (
