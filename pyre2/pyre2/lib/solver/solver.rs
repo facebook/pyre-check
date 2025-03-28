@@ -49,8 +49,9 @@ enum Variable {
     /// A variable due to generic instantitation, `def f[T](x: T): T` with `f(1)`
     /// The second value is the default value of the type parameter, if one exists
     Quantified(QuantifiedKind, Option<Type>),
-    /// A variable caused by recursion, e.g. `x = f(); def f(): return x`
-    Recursive,
+    /// A variable caused by recursion, e.g. `x = f(); def f(): return x`.
+    /// The second value is the default value of the Var, if one exists.
+    Recursive(Option<Type>),
     /// A variable that used to decompose a type, e.g. getting T from Awaitable[T]
     Unwrap,
     /// A variable we have solved
@@ -63,7 +64,8 @@ impl Display for Variable {
             Variable::Contained => write!(f, "Contained"),
             Variable::Quantified(k, Some(t)) => write!(f, "Quantified({k}, default={t})"),
             Variable::Quantified(k, None) => write!(f, "Quantified({k})"),
-            Variable::Recursive => write!(f, "Recursive"),
+            Variable::Recursive(Some(t)) => write!(f, "Recursive(default={t})"),
+            Variable::Recursive(None) => write!(f, "Recursive"),
             Variable::Unwrap => write!(f, "Unwrap"),
             Variable::Answer(t) => write!(f, "{t}"),
         }
@@ -154,14 +156,12 @@ impl Solver {
         match e {
             Variable::Answer(t) => t.clone(),
             _ => {
-                let mut default = None;
-                let quantified_kind = if let Variable::Quantified(q, default_value) = e {
-                    default = default_value.clone();
-                    *q
-                } else {
-                    QuantifiedKind::TypeVar
+                let (kind, default) = match e {
+                    Variable::Quantified(kind, default) => (*kind, default.clone()),
+                    Variable::Recursive(default) => (QuantifiedKind::TypeVar, default.clone()),
+                    _ => (QuantifiedKind::TypeVar, None),
                 };
-                let res = default.unwrap_or_else(|| quantified_kind.empty_value());
+                let res = default.unwrap_or_else(|| kind.empty_value());
                 *e = Variable::Answer(res.clone());
                 res
             }
@@ -321,9 +321,11 @@ impl Solver {
     }
 
     /// Generate a fresh variable used to tie recursive bindings.
-    pub fn fresh_recursive(&self, uniques: &UniqueFactory) -> Var {
+    pub fn fresh_recursive(&self, uniques: &UniqueFactory, default: Option<Type>) -> Var {
         let v = Var::new(uniques);
-        self.variables.write().insert(v, Variable::Recursive);
+        self.variables
+            .write()
+            .insert(v, Variable::Recursive(default));
         v
     }
 

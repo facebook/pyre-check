@@ -113,8 +113,8 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
         answers.solve_binding(binding, errors)
     }
 
-    fn create_recursive(answers: &AnswersSolver<Ans>, _: &Self::Value) -> Self::Recursive {
-        answers.create_recursive()
+    fn create_recursive(answers: &AnswersSolver<Ans>, binding: &Self::Value) -> Self::Recursive {
+        answers.create_recursive(binding)
     }
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {
@@ -157,8 +157,8 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
         answers.solve_binding(binding, errors)
     }
 
-    fn create_recursive(answers: &AnswersSolver<Ans>, _: &Self::Value) -> Self::Recursive {
-        answers.create_recursive()
+    fn create_recursive(answers: &AnswersSolver<Ans>, binding: &Self::Value) -> Self::Recursive {
+        answers.create_recursive(binding)
     }
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {

@@ -19,6 +19,7 @@ use starlark_map::small_map::SmallMap;
 
 use crate::alt::traits::Solve;
 use crate::alt::traits::SolveRecursive;
+use crate::binding::binding::Binding;
 use crate::binding::binding::Keyed;
 use crate::binding::bindings::BindingEntry;
 use crate::binding::bindings::BindingTable;
@@ -511,12 +512,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         TypeOrder::new(self)
     }
 
-    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>) -> Arc<K::Answer>
+    fn get_calculation<K: Solve<Ans>>(
+        &self,
+        idx: Idx<K>,
+    ) -> &Calculation<Arc<K::Answer>, K::Recursive>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        let calculation = self.current.table.get::<K>().get(idx).unwrap_or_else(|| {
+        self.current.table.get::<K>().get(idx).unwrap_or_else(|| {
             // Do not fix a panic by removing this error.
             // We should always be sure before calling `get`.
             panic!(
@@ -524,7 +528,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.module_info().name(),
                 self.module_info().display(self.bindings().idx_to_key(idx)),
             )
-        });
+        })
+    }
+
+    pub fn get_idx<K: Solve<Ans>>(&self, idx: Idx<K>) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        let calculation = self.get_calculation(idx);
         let result = calculation.calculate_with_recursive(
             || {
                 let binding = self.bindings().get(idx);
@@ -553,8 +565,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.get_idx(self.bindings().key_to_idx(k))
     }
 
-    pub fn create_recursive(&self) -> Var {
-        self.solver().fresh_recursive(self.uniques)
+    pub fn create_recursive(&self, binding: &Binding) -> Var {
+        let t = if let Binding::Phi(_, Some(default)) = binding {
+            self.get_calculation(*default)
+                .peek()
+                .map(|t| t.arc_clone().promote_literals(self.stdlib))
+        } else {
+            None
+        };
+        self.solver().fresh_recursive(self.uniques, t)
     }
 
     pub fn record_recursive(

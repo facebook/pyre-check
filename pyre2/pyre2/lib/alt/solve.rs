@@ -62,6 +62,7 @@ use crate::error::context::TypeCheckContext;
 use crate::error::context::TypeCheckKind;
 use crate::error::kind::ErrorKind;
 use crate::error::style::ErrorStyle;
+use crate::graph::index::Idx;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
 use crate::types::annotation::Annotation;
@@ -1839,14 +1840,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             },
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),
-            Binding::Phi(ks, _default) => {
+            Binding::Phi(ks, default) => {
+                // We force the default first so that if we hit a recursive case it is already available
+                let default_val = default.map(|x| self.get_idx(x));
+
+                let get_idx = |k: Idx<Key>| {
+                    if Some(k) == *default {
+                        // Just optimise looking up Idx twice
+                        default_val.dupe().unwrap()
+                    } else {
+                        self.get_idx(k)
+                    }
+                };
+
                 if ks.len() == 1 {
-                    self.get_idx(*ks.first().unwrap()).arc_clone()
+                    get_idx(*ks.first().unwrap()).arc_clone()
                 } else {
                     let ts = ks
                         .iter()
                         .filter_map(|k| {
-                            let t = self.get_idx(*k);
+                            let t: Arc<Type> = get_idx(*k);
                             // Filter out all `@overload`-decorated types except the one that
                             // accumulates all signatures into a Type::Overload.
                             if matches!(*t, Type::Overload(_)) || !t.is_overload() {

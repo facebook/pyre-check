@@ -75,6 +75,14 @@ impl<T: Dupe, R: Dupe> Calculation<T, R> {
             .map(|(r, _)| r)
     }
 
+    /// Return the value currently stored, if it has been calculated. Otherwise `None`.
+    pub fn peek(&self) -> Option<T> {
+        match &*self.0.lock() {
+            Status::NotCalculated | Status::Calculating(_) => None,
+            Status::Calculated(x) => Some(x.dupe()),
+        }
+    }
+
     /// Force calculation. In addition to the simple [calculate] function, it also takes a function
     /// to generate values if it hits a recursive case. The result will be either the recursive value,
     /// or the result. The recursive value will be returned in the `Ok` at most once.
