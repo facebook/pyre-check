@@ -1077,6 +1077,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   let join left right =
     if left == right || is_bottom right then
       left
+    else if is_bottom left then
+      right
     else
       let message () =
         Format.sprintf "join trees: left_tree\n%s\nright_tree:\n%s\n" (show left) (show right)
