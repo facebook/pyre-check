@@ -253,8 +253,7 @@ assert_type(MyClass(), Never)
     "#,
 );
 
-testcase_with_bug!(
-    "We can't detect that the metaclass's __call__ is unannotated, because the return type gets inferred",
+testcase!(
     test_metaclass_call_unannotated,
     r#"
 from typing import Self
@@ -265,7 +264,7 @@ class Meta(type):
 class MyClass(metaclass=Meta):
     def __new__(cls, x: int) -> Self:
         return super().__new__(cls)
-MyClass()  # We should complain about missing argument x
+MyClass()  # E: Missing argument `x` in function `MyClass.__new__`
     "#,
 );
 

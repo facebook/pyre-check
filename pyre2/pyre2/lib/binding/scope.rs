@@ -177,7 +177,8 @@ pub enum FlowStyle {
     /// would get `foo.bar` here.
     ImportAs(ModuleName),
     /// Am I a function definition? Used to chain overload definitions.
-    FunctionDef(Idx<KeyFunction>),
+    /// If so, does my return type have an explicit annotation?
+    FunctionDef(Idx<KeyFunction>, bool),
     /// The name is possibly unbound (perhaps due to merging branches)
     PossiblyUnbound,
     /// The name is possibly uninitialized (perhaps due to merging branches)

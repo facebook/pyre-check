@@ -131,10 +131,7 @@
     "Line 74: Unexpected errors ['assert_type(Class5[list[int]], Class5[set[str]]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', \"Argument `Literal['']` is not assignable to parameter `value` with type `int` in function `Class5.__init__`\"]",
     "Line 75: Unexpected errors ['assert_type(Class5[list[int]], Class5[float]) failed', 'No matching overload found for function `Class5.__init__`, reporting errors for closest overload: `(value: int) -> None`', 'Argument `float` is not assignable to parameter `value` with type `int` in function `Class5.__init__`']"
   ],
-  "constructors_call_metaclass.py": [
-    "Line 65: Expected 1 errors",
-    "Line 66: Unexpected errors ['assert_type(Any, Class4) failed']"
-  ],
+  "constructors_call_metaclass.py": [],
   "constructors_call_new.py": [
     "Line 116: Unexpected errors ['assert_type(Class8[int], Class8[list[int]]) failed']",
     "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed']"

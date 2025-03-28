@@ -1180,6 +1180,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     annotation.as_deref().map(|annot| &annot.annotation),
                     &field.initial_value,
                     class,
+                    field.is_function_without_return_annotation,
                     field.range,
                     errors,
                 )

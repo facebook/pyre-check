@@ -38,6 +38,7 @@ use crate::binding::binding::KeyClassMetadata;
 use crate::binding::binding::KeyClassSynthesizedFields;
 use crate::binding::bindings::BindingsBuilder;
 use crate::binding::bindings::LegacyTParamBuilder;
+use crate::binding::scope::FlowStyle;
 use crate::binding::scope::InstanceAttribute;
 use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
@@ -146,6 +147,12 @@ impl<'a> BindingsBuilder<'a> {
         self.scopes.pop(); // annotation scope
         let mut fields = SmallMap::with_capacity(last_scope.stat.0.len());
         for (name, info) in last_scope.flow.info.iter_hashed() {
+            let is_function_without_return_annotation =
+                if let Some(FlowStyle::FunctionDef(_, has_return_annotation)) = info.style {
+                    !has_return_annotation
+                } else {
+                    false
+                };
             // A name with flow in the last_scope, but whose static is in a parent scope, is a reference to something that isn't a class field.
             // Can occur when we narrow a parent scopes variable, thus producing a fresh flow for it, but no static.
             if let Some(stat_info) = last_scope.stat.0.get_hashed(name) {
@@ -156,6 +163,7 @@ impl<'a> BindingsBuilder<'a> {
                     annotation: stat_info.annot,
                     range: stat_info.loc,
                     initial_value: info.as_initial_value(),
+                    is_function_without_return_annotation,
                 };
                 fields.insert_hashed(
                     name.cloned(),
@@ -187,6 +195,7 @@ impl<'a> BindingsBuilder<'a> {
                                     initial_value: ClassFieldInitialValue::Instance(Some(
                                         method_name.clone(),
                                     )),
+                                    is_function_without_return_annotation: false,
                                 },
                             );
                         } else if annotation.is_some() {
@@ -380,6 +389,7 @@ impl<'a> BindingsBuilder<'a> {
                     annotation: annotation_binding,
                     range,
                     initial_value,
+                    is_function_without_return_annotation: false,
                 },
             );
         }

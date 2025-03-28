@@ -96,7 +96,7 @@ impl<'a> BindingsBuilder<'a> {
         let mut pred_idx = None;
         let mut pred_function_idx = None;
         if let Some(flow) = self.scopes.current().flow.info.get(&x.name.id) {
-            if let Some(FlowStyle::FunctionDef(fidx)) = flow.style {
+            if let Some(FlowStyle::FunctionDef(fidx, _)) = flow.style {
                 pred_idx = Some(flow.key);
                 pred_function_idx = Some(fidx);
             }
@@ -286,7 +286,7 @@ impl<'a> BindingsBuilder<'a> {
         self.bind_definition(
             &func_name,
             Binding::Function(function_idx, pred_idx, class_meta),
-            Some(FlowStyle::FunctionDef(function_idx)),
+            Some(FlowStyle::FunctionDef(function_idx, return_ann.is_some())),
         );
     }
 }

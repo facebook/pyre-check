@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_lambda,
@@ -99,8 +98,7 @@ x12: Callable[[int], C5] = C5  # E:
 "#,
 );
 
-testcase_with_bug!(
-    "We can't detect that the metaclass's __call__ is unannotated, because the return type gets inferred",
+testcase!(
     test_callable_constructor_unannotated_metaclass_call,
     r#"
 from typing import Self, Callable
@@ -111,8 +109,8 @@ class Meta(type):
 class MyClass(metaclass=Meta):
     def __new__(cls, x: int) -> Self:
         return super().__new__(cls)
-x1: Callable[[int], MyClass] = MyClass  # This should be OK  # E: `type[MyClass]` is not assignable to `(int) -> MyClass`
-x2: Callable[[str], MyClass] = MyClass  # This is the one that should error
+x1: Callable[[int], MyClass] = MyClass  # OK
+x2: Callable[[str], MyClass] = MyClass  # E: `type[MyClass]` is not assignable to `(str) -> MyClass`
     "#,
 );
 

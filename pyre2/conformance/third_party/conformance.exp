@@ -2841,12 +2841,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Any, Class4) failed",
-      "description": "assert_type(Any, Class4) failed",
-      "line": 66,
-      "name": "assert-type",
-      "stop_column": 31,
-      "stop_line": 66
+      "concise_description": "Missing argument `x` in function `Class4.__new__`",
+      "description": "Missing argument `x` in function `Class4.__new__`",
+      "line": 65,
+      "name": "missing-argument",
+      "stop_column": 7,
+      "stop_line": 65
     }
   ],
   "constructors_call_new.py": [

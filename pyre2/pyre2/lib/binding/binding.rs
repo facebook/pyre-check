@@ -81,7 +81,7 @@ assert_words!(BindingExpect, 8);
 assert_words!(BindingAnnotation, 13);
 assert_words!(BindingClass, 22);
 assert_words!(BindingClassMetadata, 8);
-assert_words!(BindingClassField, 22);
+assert_words!(BindingClassField, 23);
 assert_bytes!(BindingClassSynthesizedFields, 4);
 assert_bytes!(BindingLegacyTypeParam, 4);
 assert_words!(BindingYield, 3);
@@ -1069,6 +1069,7 @@ pub struct BindingClassField {
     pub annotation: Option<Idx<KeyAnnotation>>,
     pub range: TextRange,
     pub initial_value: ClassFieldInitialValue,
+    pub is_function_without_return_annotation: bool,
 }
 
 impl DisplayWith<Bindings> for BindingClassField {
