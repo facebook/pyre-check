@@ -155,7 +155,7 @@ impl Default for ConfigFile {
 
 impl ConfigFile {
     pub fn default_project_includes() -> Globs {
-        Globs::new(vec!["".to_owned()])
+        Globs::new(vec!["**/*.py".to_owned()])
     }
 
     pub fn default_project_excludes() -> Globs {
