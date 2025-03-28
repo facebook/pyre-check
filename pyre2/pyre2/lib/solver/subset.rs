@@ -324,13 +324,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             // is not a subclass of the current class, use that and ignore __new__ and __init__
             if metaclass_call_attr_ty
                 .callable_return_type()
-                .and_then(|ret| match ret {
-                    Type::ClassType(ret_cls) => {
-                        self.type_order.as_superclass(&ret_cls, cls.class_object())
-                    }
-                    _ => None,
+                .is_some_and(|ret| {
+                    !self
+                        .type_order
+                        .is_compatible_constructor_return(&ret, cls.class_object())
                 })
-                .is_none()
             {
                 return Some(metaclass_call_attr_ty);
             }
@@ -348,15 +346,11 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             .get_dunder_new(cls)
             .and_then(|t| t.to_unbound_callable())
         {
-            if t.callable_return_type()
-                .and_then(|ret| match ret {
-                    Type::ClassType(ret_cls) => {
-                        self.type_order.as_superclass(&ret_cls, cls.class_object())
-                    }
-                    _ => None,
-                })
-                .is_none()
-            {
+            if t.callable_return_type().is_some_and(|ret| {
+                !self
+                    .type_order
+                    .is_compatible_constructor_return(&ret, cls.class_object())
+            }) {
                 // If the return type of __new__ is not a subclass of the current class, use that and ignore __init__
                 return Some(t);
             }

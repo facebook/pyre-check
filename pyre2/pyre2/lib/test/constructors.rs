@@ -240,6 +240,35 @@ assert_type(C(), C)
 );
 
 testcase!(
+    test_metaclass_call_noreturn,
+    r#"
+from typing import Self, NoReturn, Never, assert_type
+class Meta(type):
+    def __call__(cls, *args, **kwargs) -> NoReturn:
+        raise TypeError("Cannot instantiate class")
+class MyClass(metaclass=Meta):
+    def __new__(cls, *args, **kwargs) -> Self:
+        return super().__new__(cls, *args, **kwargs)
+assert_type(MyClass(), Never)
+    "#,
+);
+
+testcase!(
+    test_new_explicit_any_return,
+    r#"
+from typing import Any, assert_type
+class MyClass:
+    def __new__(cls) -> Any:
+        return 0
+    # The __init__ method will not be called in this case, so
+    # it should not be evaluated.
+    def __init__(self, x: int):
+        pass
+assert_type(MyClass(), Any)
+    "#,
+);
+
+testcase!(
     test_cls_type_in_new_annotated,
     r#"
 from typing import Self

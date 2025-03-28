@@ -2831,26 +2831,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class1, Never) failed",
-      "description": "assert_type(Class1, Never) failed",
-      "line": 23,
-      "name": "assert-type",
-      "stop_column": 32,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 13,
-      "concise_description": "Missing argument `x` in function `Class1.__new__`",
-      "description": "Missing argument `x` in function `Class1.__new__`",
-      "line": 23,
-      "name": "missing-argument",
-      "stop_column": 19,
-      "stop_line": 23
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "Missing argument `x` in function `Class3.__new__`",
       "description": "Missing argument `x` in function `Class3.__new__`",
       "line": 51,
@@ -2861,12 +2841,12 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "Missing argument `x` in function `Class4.__new__`",
-      "description": "Missing argument `x` in function `Class4.__new__`",
-      "line": 65,
-      "name": "missing-argument",
-      "stop_column": 7,
-      "stop_line": 65
+      "concise_description": "assert_type(Any, Class4) failed",
+      "description": "assert_type(Any, Class4) failed",
+      "line": 66,
+      "name": "assert-type",
+      "stop_column": 31,
+      "stop_line": 66
     }
   ],
   "constructors_call_new.py": [
@@ -2883,42 +2863,22 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class4, Class4 | Any) failed",
-      "description": "assert_type(Class4, Class4 | Any) failed",
-      "line": 64,
+      "concise_description": "assert_type(Class8[int], Class8[list[int]]) failed",
+      "description": "assert_type(Class8[int], Class8[list[int]]) failed",
+      "line": 116,
       "name": "assert-type",
-      "stop_column": 36,
-      "stop_line": 64
+      "stop_column": 46,
+      "stop_line": 116
     },
     {
       "code": -2,
-      "column": 13,
-      "concise_description": "Missing argument `x` in function `Class4.__init__`",
-      "description": "Missing argument `x` in function `Class4.__init__`",
-      "line": 64,
-      "name": "missing-argument",
-      "stop_column": 19,
-      "stop_line": 64
-    },
-    {
-      "code": -2,
-      "column": 5,
-      "concise_description": "assert_type(Class5, Never) failed",
-      "description": "assert_type(Class5, Never) failed",
-      "line": 76,
+      "column": 1,
+      "concise_description": "assert_type(Class8[str], Class8[list[str]]) failed",
+      "description": "assert_type(Class8[str], Class8[list[str]]) failed",
+      "line": 117,
       "name": "assert-type",
-      "stop_column": 36,
-      "stop_line": 76
-    },
-    {
-      "code": -2,
-      "column": 17,
-      "concise_description": "Missing argument `x` in function `Class5.__init__`",
-      "description": "Missing argument `x` in function `Class5.__init__`",
-      "line": 76,
-      "name": "missing-argument",
-      "stop_column": 23,
-      "stop_line": 76
+      "stop_column": 46,
+      "stop_line": 117
     },
     {
       "code": -2,
@@ -3143,6 +3103,16 @@
       "name": "bad-argument-type",
       "stop_column": 5,
       "stop_line": 51
+    },
+    {
+      "code": -2,
+      "column": 23,
+      "concise_description": "Argument `type[Class3]` is not assignable to parameter `cb` with type `(*args: Unknown, **Unknown) -> Self@Class3` in function `accepts_callable`",
+      "description": "Argument `type[Class3]` is not assignable to parameter `cb` with type `(*args: Unknown, **Unknown) -> Self@Class3` in function `accepts_callable`",
+      "line": 62,
+      "name": "bad-argument-type",
+      "stop_column": 29,
+      "stop_line": 62
     },
     {
       "code": -2,

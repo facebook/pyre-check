@@ -349,9 +349,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Based on https://typing.readthedocs.io/en/latest/spec/constructors.html.
         let instance_ty = Type::ClassType(cls.clone());
         if let Some(ret) = self.call_metaclass(&cls, range, args, keywords, errors, context)
-            && !self
-                .solver()
-                .is_subset_eq(&ret, &instance_ty, self.type_order())
+            && !self.is_compatible_constructor_return(&ret, cls.class_object())
         {
             // Got something other than an instance of the class under construction.
             return ret;
@@ -379,10 +377,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
                 let has_errors = !dunder_new_errors.is_empty();
                 errors.extend(dunder_new_errors);
-                if !self
-                    .solver()
-                    .is_subset_eq(&ret, &instance_ty, self.type_order())
-                {
+                if !self.is_compatible_constructor_return(&ret, cls.class_object()) {
                     // Got something other than an instance of the class under construction.
                     return ret;
                 }

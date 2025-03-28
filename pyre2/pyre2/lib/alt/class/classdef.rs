@@ -41,6 +41,21 @@ use crate::util::display::count;
 use crate::util::prelude::SliceExt;
 
 impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
+    // Given a constructor (__new__ or metaclass __call__) that returns `ty`, return true if the type is:
+    // - SelfType or ClassType representing some subclass of `class`
+    // - union only containing the aforementioned types
+    pub fn is_compatible_constructor_return(&self, ty: &Type, class: &Class) -> bool {
+        match ty {
+            Type::SelfType(ty_cls) | Type::ClassType(ty_cls) => {
+                self.as_superclass(ty_cls, class).is_some()
+            }
+            Type::Union(xs) => xs
+                .iter()
+                .all(|x| self.is_compatible_constructor_return(x, class)),
+            _ => false,
+        }
+    }
+
     pub fn class_definition(
         &self,
         index: ClassIndex,

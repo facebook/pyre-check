@@ -45,6 +45,10 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.as_superclass(class, want)
     }
 
+    pub fn is_compatible_constructor_return(self, ty: &Type, class: &Class) -> bool {
+        self.0.is_compatible_constructor_return(ty, class)
+    }
+
     pub fn has_metaclass(self, cls: &Class, metaclass: &ClassType) -> bool {
         let metadata = self.0.get_metadata_for_class(cls);
         match metadata.metaclass() {
