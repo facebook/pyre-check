@@ -148,7 +148,7 @@ impl Transaction {
         let bindings = self.readable().get_bindings(handle)?;
         match binding {
             Binding::Forward(k) => self.key_to_definition(handle, bindings.idx_to_key(*k), gas - 1),
-            Binding::Phi(ks) if !ks.is_empty() => self.key_to_definition(
+            Binding::Phi(ks, _) if !ks.is_empty() => self.key_to_definition(
                 handle,
                 bindings.idx_to_key(*ks.iter().next().unwrap()),
                 gas - 1,

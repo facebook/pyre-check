@@ -1839,7 +1839,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             },
             Binding::Forward(k) => self.get_idx(*k).arc_clone(),
-            Binding::Phi(ks) => {
+            Binding::Phi(ks, _default) => {
                 if ks.len() == 1 {
                     self.get_idx(*ks.first().unwrap()).arc_clone()
                 } else {

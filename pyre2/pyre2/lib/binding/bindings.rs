@@ -406,9 +406,9 @@ impl BindingTable {
         match self
             .types
             .1
-            .insert_if_missing(idx, || Binding::Phi(SmallSet::new()))
+            .insert_if_missing(idx, || Binding::Phi(SmallSet::new(), None))
         {
-            Binding::Phi(phi) => (idx, phi),
+            Binding::Phi(phi, _) => (idx, phi),
             _ => unreachable!(),
         }
     }

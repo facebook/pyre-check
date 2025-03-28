@@ -725,7 +725,8 @@ pub enum Binding {
     /// A forward reference to another binding.
     Forward(Idx<Key>),
     /// A phi node, representing the union of several alternative keys.
-    Phi(SmallSet<Idx<Key>>),
+    /// Optionally contain a value to default if you end up being recursive.
+    Phi(SmallSet<Idx<Key>>, Option<Idx<Key>>),
     /// A narrowed type.
     Narrow(Idx<Key>, Box<NarrowOp>, TextRange),
     /// An import of a module.
@@ -774,7 +775,7 @@ impl Binding {
         if xs.len() == 1 {
             Self::Forward(xs.into_iter().next().unwrap())
         } else {
-            Self::Phi(xs)
+            Self::Phi(xs, None)
         }
     }
 }
@@ -876,7 +877,7 @@ impl DisplayWith<Bindings> for Binding {
                     }
                 )
             }
-            Self::Phi(xs) => {
+            Self::Phi(xs, default) => {
                 write!(f, "phi(")?;
                 for (i, x) in xs.iter().enumerate() {
                     if i != 0 {
@@ -884,7 +885,11 @@ impl DisplayWith<Bindings> for Binding {
                     }
                     write!(f, "{}", ctx.display(*x))?;
                 }
-                write!(f, ")")
+                write!(f, ")")?;
+                if let Some(x) = default {
+                    write!(f, " default {}", ctx.display(*x))?;
+                }
+                Ok(())
             }
             Self::Narrow(k, op, _) => {
                 write!(f, "narrow({}, {op:?})", ctx.display(*k))
