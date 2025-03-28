@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_typed_dict,
@@ -398,6 +399,27 @@ class D(TypedDict):
 # Default values are completely ignored in constructor behavior, so requiredness in `__init__` should be
 # determined entirely by whether the field is required in the resulting dict.
 D(x=5)  # E: Missing argument `y`
+    "#,
+);
+
+testcase_with_bug!(
+    "TODO(stroxler): Inlining TypedDict fields cannot work with cycles",
+    test_cyclic_typed_dicts,
+    r#"
+from typing import TypedDict, reveal_type
+class TD0(TypedDict):
+    x: int
+    y: TD1
+class TD1(TypedDict):
+    x: int
+    y: TD0
+def foo(td0: TD0, td1: TD1) -> None:
+    reveal_type(td0)  # E: revealed type: TypedDict[TD0]
+    reveal_type(td0['x'])  # E: revealed type: int
+    reveal_type(td0['y'])  # E: revealed type: Error  # E: TypedDict `TD0` does not have key `y`
+    reveal_type(td1)  # E: revealed type: TypedDict[TD1]
+    reveal_type(td1['x'])  # E: revealed type: int
+    reveal_type(td1['y'])  # E: revealed type: TypedDict[TD0]
     "#,
 );
 
