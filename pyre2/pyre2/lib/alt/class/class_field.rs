@@ -558,10 +558,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let is_namedtuple_member = metadata
             .named_tuple_metadata()
             .is_some_and(|named_tuple| named_tuple.elements.contains(name));
-        let is_frozen_dataclass = metadata
-            .dataclass_metadata()
-            .is_some_and(|dataclass| dataclass.kws.is_set(&DataclassKeywords::FROZEN));
-        let readonly = is_namedtuple_member || is_frozen_dataclass;
+        let is_frozen_dataclass_field = metadata.dataclass_metadata().is_some_and(|dataclass| {
+            dataclass.kws.is_set(&DataclassKeywords::FROZEN) && dataclass.fields.contains(name)
+        });
+        let readonly = is_namedtuple_member || is_frozen_dataclass_field;
 
         // Identify whether this is a descriptor
         let (mut descriptor_getter, mut descriptor_setter) = (None, None);
