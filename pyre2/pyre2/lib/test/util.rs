@@ -6,6 +6,7 @@
  */
 
 use std::collections::HashMap;
+use std::num::NonZeroUsize;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -40,6 +41,7 @@ use crate::types::class::Class;
 use crate::types::types::Type;
 use crate::util::prelude::SliceExt;
 use crate::util::thread_pool::init_thread_pool;
+use crate::util::thread_pool::ThreadCount;
 use crate::util::trace::init_tracing;
 
 #[macro_export]
@@ -352,7 +354,7 @@ impl Loader for TestEnv {
 pub fn init_test() {
     init_tracing(true, true);
     // Enough threads to see parallelism bugs, but not too many to debug through.
-    init_thread_pool(Some(3));
+    init_thread_pool(ThreadCount::NumThreads(NonZeroUsize::new(3).unwrap()));
 }
 
 /// Should only be used from the `testcase!` macro.

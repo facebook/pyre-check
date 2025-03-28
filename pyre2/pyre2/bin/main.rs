@@ -256,7 +256,7 @@ async fn run() -> anyhow::Result<ExitCode> {
         }
     } else {
         init_tracing(args.verbose, false);
-        init_thread_pool(args.common.thread_count_override());
+        init_thread_pool(args.common.threads);
         run_command(args.command, true).await.map(to_exit_code)
     }
 }

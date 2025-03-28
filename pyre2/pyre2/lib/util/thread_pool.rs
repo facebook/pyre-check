@@ -7,16 +7,41 @@
 
 //! Utilities for creating the initial thread pool.
 
+use std::num::NonZeroUsize;
+use std::str::FromStr;
 use std::sync::LazyLock;
 
 use tracing::debug;
 
 use crate::util::lock::Mutex;
 
-static THREADS: LazyLock<Mutex<Option<usize>>> = LazyLock::new(|| Mutex::new(None));
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ThreadCount {
+    #[default]
+    AllThreads,
+    NumThreads(NonZeroUsize),
+}
+
+impl FromStr for ThreadCount {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.parse::<usize>() {
+            Ok(n) => match NonZeroUsize::new(n) {
+                None => Ok(ThreadCount::AllThreads),
+                Some(n) => Ok(ThreadCount::NumThreads(n)),
+            },
+            Err(e) => Err(format!(
+                "Failed to parse thread count, expected number, failed due to {e}"
+            )),
+        }
+    }
+}
+
+static THREADS: LazyLock<Mutex<ThreadCount>> = LazyLock::new(|| Mutex::new(ThreadCount::default()));
 
 /// Set up the global thread pool.
-pub fn init_thread_pool(threads: Option<usize>) {
+pub fn init_thread_pool(threads: ThreadCount) {
     *THREADS.lock() = threads;
 }
 
@@ -34,8 +59,8 @@ impl ThreadPool {
         }
 
         let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
-        if let Some(threads) = *THREADS.lock() {
-            builder = builder.num_threads(threads);
+        if let ThreadCount::NumThreads(threads) = *THREADS.lock() {
+            builder = builder.num_threads(threads.get());
         }
         let pool = builder.build().expect("To be able to build a thread pool");
         // Only print the message once
