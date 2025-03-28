@@ -41,7 +41,7 @@ pub struct Context<'a, Lookup> {
     pub lookup: &'a Lookup,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Dupe, Clone)]
 pub struct Steps {
     /// The last step that was computed.
     /// None means no steps have been computed yet.

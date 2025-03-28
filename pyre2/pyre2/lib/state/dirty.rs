@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#[derive(Debug, Default, Clone)]
+use dupe::Dupe;
+
+#[derive(Debug, Default, Dupe, Clone, Copy)]
 pub struct Dirty {
     /// The result from loading has potentially changed, either
     /// `load_from_memory` on `Loader` (if a memory file path) or
