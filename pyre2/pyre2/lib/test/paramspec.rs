@@ -50,7 +50,7 @@ testcase_with_bug!(
     "Generic functions don't work with ParamSpec",
     test_param_spec_generic_function,
     r#"
-from typing import Callable, ParamSpec, TypeVar, reveal_type
+from typing import Callable, reveal_type
 def identity[**P, R](x: Callable[P, R]) -> Callable[P, R]:
     return x
 def foo[T](x: T, y: T) -> T:
@@ -60,10 +60,11 @@ reveal_type(foo2)  # E: revealed type: (ParamSpec(Unknown)) -> Unknown
 "#,
 );
 
-testcase!(
-    test_param_spec_generic_class,
+testcase_with_bug!(
+    "Generic class constructors don't work with ParamSpec",
+    test_param_spec_generic_constructor,
     r#"
-from typing import Callable, ParamSpec, TypeVar, reveal_type
+from typing import Callable, reveal_type
 def identity[**P, R](x: Callable[P, R]) -> Callable[P, R]:
   return x
 class C[T]:
@@ -73,6 +74,17 @@ class C[T]:
 c2 = identity(C)
 reveal_type(c2)  # E: revealed type: (x: Unknown) -> C[Unknown]
 x: C[int] = c2(1)
+"#,
+);
+
+testcase!(
+    test_param_spec_invariance,
+    r#"
+from typing import Callable, reveal_type
+def identity[**P, R](x: Callable[P, R]) -> Callable[P, R]:
+  return x
+def test(f1: Callable[[int], None] | Callable[[str], None]):
+  f3 = identity(f1)  # E: Argument `((int) -> None) | ((str) -> None)` is not assignable to parameter `x` with type `(int) -> None` in function `identity`
 "#,
 );
 
