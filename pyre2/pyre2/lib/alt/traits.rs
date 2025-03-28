@@ -75,16 +75,25 @@ impl SolveRecursive for KeyYield {}
 impl SolveRecursive for KeyYieldFrom {}
 
 pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
+    /// Solve the binding.
+    /// Note that the key (`Self`) is not provided, as the result of a binding should
+    /// not depend on the key it was bound to.
     fn solve(
         answers: &AnswersSolver<Ans>,
         binding: &Self::Value,
         errors: &ErrorCollector,
     ) -> Arc<Self::Answer>;
 
+    /// We have reached a recursive solve of this binding.
+    /// Create a sentinel value to store information about it.
     fn create_recursive(answers: &AnswersSolver<Ans>) -> Self::Recursive;
 
+    /// We hit a recursive case, so promote the recursive value into an answer that needs to be
+    /// sufficient for now.
     fn promote_recursive(x: Self::Recursive) -> Self::Answer;
 
+    /// We solved a binding, but during its execution we gave some peope back a recursive value.
+    /// Record that recursive value along with the answer.
     fn record_recursive(
         _answers: &AnswersSolver<Ans>,
         _key: &Self,
