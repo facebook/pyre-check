@@ -4316,6 +4316,8 @@ module HigherOrderCallGraph = struct
 
     val maximum_parameterized_targets_at_call_site : int option
 
+    val maximum_parameterized_targets_when_analyzing_define : int option
+
     val input_define_call_graph : DefineCallGraph.t
 
     (* Outputs. *)
@@ -5072,7 +5074,12 @@ module HigherOrderCallGraph = struct
                       |> CallTarget.Set.singleton
                     else
                       parameters_targets
-                      |> Algorithms.cartesian_product
+                      |> cartesian_product_with_limit
+                           ~limit:Context.maximum_parameterized_targets_when_analyzing_define
+                           ~message_when_exceeding_limit:
+                             "Avoid generating parameterized targets when analyzing `Define` \
+                              statement"
+                      |> Option.value ~default:[]
                       |> List.filter_map ~f:(fun parameters_targets ->
                              Target.Parameterized
                                {
@@ -5189,6 +5196,10 @@ let higher_order_call_graph_of_define
     let maximum_target_depth = maximum_target_depth
 
     let maximum_parameterized_targets_at_call_site = maximum_parameterized_targets_at_call_site
+
+    (* TODO(T219483466): Make this configurable from command line. *)
+    let maximum_parameterized_targets_when_analyzing_define =
+      maximum_parameterized_targets_at_call_site
   end
   in
   log
