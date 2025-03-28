@@ -530,7 +530,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let binding = self.bindings().get(idx);
                 K::solve(self, binding, self.base_errors)
             },
-            || K::recursive(self),
+            || K::create_recursive(self),
         );
         if let Ok((v, Some(r))) = &result {
             let k = self.bindings().idx_to_key(idx);
