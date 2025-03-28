@@ -430,7 +430,7 @@
   ],
   "generics_typevartuple_callable.py": [],
   "generics_typevartuple_concat.py": [
-    "Line 56: Unexpected errors ['Returned type `tuple[*tuple[Unknown, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`']"
+    "Line 56: Unexpected errors ['Returned type `tuple[*tuple[@_, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`', 'Cannot index into `tuple[?_TypeVar, *?_TypeVarTuple]`\\n  No matching overload found for function `tuple.__getitem__`, reporting errors for closest overload: `(SupportsIndex) -> Unknown`', 'Argument `slice[int, int, int]` is not assignable to parameter with type `SupportsIndex` in function `tuple.__getitem__`']"
   ],
   "generics_typevartuple_overloads.py": [],
   "generics_typevartuple_specialization.py": [
@@ -512,7 +512,9 @@
     "Line 195: Expected 1 errors",
     "Line 199: Expected 1 errors"
   ],
-  "overloads_basic.py": [],
+  "overloads_basic.py": [
+    "Line 36: Unexpected errors ['assert_type(Any, bytes) failed', 'Cannot index into `Bytes`\\n  No matching overload found for function `Bytes.__getitem__`, reporting errors for closest overload: `(__i: int) -> int`', 'Argument `slice[int, int, int]` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`']"
+  ],
   "protocols_class_objects.py": [
     "Line 29: Expected 1 errors",
     "Line 34: Expected 1 errors",

@@ -7206,11 +7206,31 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "Returned type `tuple[*tuple[Unknown, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`",
-      "description": "Returned type `tuple[*tuple[Unknown, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`",
+      "concise_description": "Returned type `tuple[*tuple[@_, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`",
+      "description": "Returned type `tuple[*tuple[@_, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`",
       "line": 56,
       "name": "bad-return",
       "stop_column": 30,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 14,
+      "concise_description": "Cannot index into `tuple[?_TypeVar, *?_TypeVarTuple]`\n  No matching overload found for function `tuple.__getitem__`, reporting errors for closest overload: `(SupportsIndex) -> Unknown`",
+      "description": "Cannot index into `tuple[?_TypeVar, *?_TypeVarTuple]`\n  No matching overload found for function `tuple.__getitem__`, reporting errors for closest overload: `(SupportsIndex) -> Unknown`",
+      "line": 56,
+      "name": "no-matching-overload",
+      "stop_column": 21,
+      "stop_line": 56
+    },
+    {
+      "code": -2,
+      "column": 18,
+      "concise_description": "Argument `slice[int, int, int]` is not assignable to parameter with type `SupportsIndex` in function `tuple.__getitem__`",
+      "description": "Argument `slice[int, int, int]` is not assignable to parameter with type `SupportsIndex` in function `tuple.__getitem__`",
+      "line": 56,
+      "name": "bad-argument-type",
+      "stop_column": 20,
       "stop_line": 56
     }
   ],
@@ -8567,6 +8587,36 @@
     }
   ],
   "overloads_basic.py": [
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, bytes) failed",
+      "description": "assert_type(Any, bytes) failed",
+      "line": 36,
+      "name": "assert-type",
+      "stop_column": 27,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Cannot index into `Bytes`\n  No matching overload found for function `Bytes.__getitem__`, reporting errors for closest overload: `(__i: int) -> int`",
+      "description": "Cannot index into `Bytes`\n  No matching overload found for function `Bytes.__getitem__`, reporting errors for closest overload: `(__i: int) -> int`",
+      "line": 36,
+      "name": "no-matching-overload",
+      "stop_column": 19,
+      "stop_line": 36
+    },
+    {
+      "code": -2,
+      "column": 15,
+      "concise_description": "Argument `slice[int, int, int]` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`",
+      "description": "Argument `slice[int, int, int]` is not assignable to parameter `__i` with type `int` in function `Bytes.__getitem__`",
+      "line": 36,
+      "name": "bad-argument-type",
+      "stop_column": 18,
+      "stop_line": 36
+    },
     {
       "code": -2,
       "column": 1,

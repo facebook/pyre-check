@@ -6,6 +6,7 @@
  */
 
 use crate::testcase;
+use crate::testcase_with_bug;
 
 testcase!(
     test_tuple,
@@ -255,13 +256,14 @@ def test(x: tuple[int, *tuple[str, ...]]) -> None:
 "#,
 );
 
-testcase!(
+testcase_with_bug!(
+    "Regressed with an upgrade of typeshed. Should have no bugs.",
     test_tuple_slice_non_literal,
     r#"
 from typing import assert_type
 def test(x: tuple[int, str, bool], y: tuple[int, ...], start: int, stop: int, step: int):
-    assert_type(x[start:stop:step], tuple[int | str | bool, ...])
-    assert_type(y[start:stop:step], tuple[int, ...])
+    assert_type(x[start:stop:step], tuple[int | str | bool, ...]) # E: # E: # E:
+    assert_type(y[start:stop:step], tuple[int, ...]) # E: # E: # E:
 "#,
 );
 

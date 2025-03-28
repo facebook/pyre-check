@@ -1067,7 +1067,7 @@ testcase_with_bug!(
     test_resolving_any_correctly,
     r#"
 import typing
-x: typing.Any = 1  # E: Expected a type form, got instance of `object`
+x: typing.Any = 1  # E: `Literal[1]` is not assignable to `Any`
 class Any: ...
 a: Any = Any()  # E: Expected a callable, got type[Any]
 "#,
