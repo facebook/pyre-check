@@ -21,7 +21,7 @@ impl Ignore {
     pub fn new(code: &str) -> Self {
         let mut ignores = SmallSet::new();
         for (line, line_str) in code.lines().enumerate() {
-            if line_str.contains("# type: ignore") {
+            if line_str.contains("# type: ignore") || line_str.contains("# pyrefly: ignore") {
                 ignores.insert(OneIndexed::from_zero_indexed(line));
             }
         }

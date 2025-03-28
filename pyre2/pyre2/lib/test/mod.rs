@@ -39,6 +39,7 @@ mod returns;
 mod scope;
 mod simple;
 mod state;
+mod suppression;
 mod tuple;
 mod type_alias;
 mod type_var_tuple;
