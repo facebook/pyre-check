@@ -655,6 +655,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 | AttributeInner::Simple(_, Visibility::ReadWrite),
             ) => false,
             (
+                // TODO(stroxler): Investigate this case more: methods should be ReadOnly, but
+                // in some cases for unknown reasons they wind up being ReadWrite.
                 AttributeInner::Simple(got @ Type::BoundMethod(_), Visibility::ReadWrite),
                 AttributeInner::Simple(want @ Type::BoundMethod(_), Visibility::ReadWrite),
             ) => is_subset(got, want),
