@@ -26,6 +26,7 @@ use pyre2::init_tracing;
 use pyre2::run::BuckCheckArgs;
 use pyre2::run::CheckArgs;
 use pyre2::run::CommandExitStatus;
+use pyre2::run::CommonGlobalArgs;
 use pyre2::run::LspArgs;
 use pyre2::ConfigFile;
 use pyre2::NotifyWatcher;
@@ -43,9 +44,8 @@ struct Args {
     #[clap(long = "profiling", global = true, hide = true, env = clap_env("PROFILING"))]
     profiling: bool,
 
-    /// Number of threads to use for parallelization.
-    #[clap(long, short = 'j', default_value = "0", global = true, env = clap_env("THREADS"))]
-    threads: usize,
+    #[clap(flatten)]
+    common: CommonGlobalArgs,
 
     #[command(subcommand)]
     command: Command,
@@ -256,11 +256,7 @@ async fn run() -> anyhow::Result<ExitCode> {
         }
     } else {
         init_tracing(args.verbose, false);
-        init_thread_pool(if args.threads == 0 {
-            None
-        } else {
-            Some(args.threads)
-        });
+        init_thread_pool(args.common.thread_count_override());
         run_command(args.command, true).await.map(to_exit_code)
     }
 }
