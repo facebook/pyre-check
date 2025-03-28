@@ -1056,20 +1056,13 @@ f("test")
     "#,
 );
 
-// TODO(stroxler): We currently are using a raw name match to handle `Any`, which
-// causes two problems: `typing.Any` won't work correctly, and a user can't define
-// a new name `Any` in their own namespace.
-//
-// We encountered a surprising stub in typeshed that affects our options for
-// solving this, so we are deferring the fix for now, this test records the problem.
-testcase_with_bug!(
-    "Any should be resolved properly rather than using a raw name match",
+testcase!(
     test_resolving_any_correctly,
     r#"
 import typing
-x: typing.Any = 1  # E: `Literal[1]` is not assignable to `Any`
+x: typing.Any = 1
 class Any: ...
-a: Any = Any()  # E: Expected a callable, got type[Any]
+a: Any = Any()
 "#,
 );
 

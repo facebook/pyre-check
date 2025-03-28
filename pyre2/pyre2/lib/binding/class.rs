@@ -44,6 +44,7 @@ use crate::binding::scope::Scope;
 use crate::binding::scope::ScopeKind;
 use crate::dunder;
 use crate::error::kind::ErrorKind;
+use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassIndex;
@@ -65,6 +66,17 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     pub fn class_def(&mut self, mut x: StmtClassDef) {
+        if self.module_info.name() == ModuleName::typing() && x.name.as_str() == "Any" {
+            // We special case the definition of `Any`, because it isn't a `SpecialForm`,
+            // but an ordinary `class`.
+            self.bind_definition(
+                &x.name,
+                Binding::Type(Type::type_form(Type::any_explicit())),
+                None,
+            );
+            return;
+        }
+
         let body = mem::take(&mut x.body);
         let decorators = self.ensure_and_bind_decorators(mem::take(&mut x.decorator_list));
 
