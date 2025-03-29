@@ -122,10 +122,7 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_dunder_init(cls, get_object_init)
     }
 
-    pub fn typed_dict_fields<'t>(
-        self,
-        typed_dict: &'t TypedDict,
-    ) -> &'t OrderedMap<Name, TypedDictField> {
+    pub fn typed_dict_fields(self, typed_dict: &TypedDict) -> OrderedMap<Name, TypedDictField> {
         self.0.typed_dict_fields(typed_dict)
     }
 

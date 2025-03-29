@@ -351,7 +351,6 @@ mod tests {
     use dupe::Dupe;
     use ruff_python_ast::Identifier;
     use ruff_text_size::TextSize;
-    use starlark_map::ordered_map::OrderedMap;
 
     use super::*;
     use crate::module::module_info::ModuleInfo;
@@ -532,7 +531,7 @@ mod tests {
         let cls = fake_class("C", "test", 0, Vec::new());
         let t = Type::None;
         let targs = TArgs::new(vec![t]);
-        let td = TypedDict::new(cls, targs, OrderedMap::new());
+        let td = TypedDict::new(cls, targs);
         assert_eq!(
             Type::TypedDict(Box::new(td)).to_string(),
             "TypedDict[C[None]]"

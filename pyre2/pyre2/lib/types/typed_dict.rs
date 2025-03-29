@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use std::cmp::Ordering;
-
 use dupe::Dupe;
 use pyrefly_derive::TypeEq;
+use pyrefly_derive::Visit;
+use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
-use starlark_map::ordered_map::OrderedMap;
 
 use crate::types::class::Class;
 use crate::types::class::ClassType;
@@ -18,8 +17,6 @@ use crate::types::class::Substitution;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
 use crate::types::types::Type;
-use crate::util::visit::Visit;
-use crate::util::visit::VisitMut;
 
 #[derive(Clone, Debug, TypeEq, PartialEq, Eq, Hash)]
 pub struct TypedDictField {
@@ -38,57 +35,17 @@ impl TypedDictField {
     }
 }
 
-#[derive(Debug, Clone, TypeEq, Eq, PartialEq, Hash)]
+#[derive(
+    Debug, Visit, VisitMut, PartialOrd, Ord, Clone, TypeEq, Eq, PartialEq, Hash
+)]
 pub struct TypedDict {
     class: Class,
     args: TArgs,
-    fields: OrderedMap<Name, TypedDictField>,
-}
-
-impl Visit<Type> for TypedDict {
-    fn recurse<'a>(&'a self, mut f: &mut dyn FnMut(&'a Type)) {
-        let Self {
-            class: _,
-            args,
-            fields,
-        } = self;
-        args.recurse(&mut f);
-        fields.values().for_each(|x| f(&x.ty));
-    }
-}
-
-impl VisitMut<Type> for TypedDict {
-    fn recurse_mut(&mut self, mut f: &mut dyn FnMut(&mut Type)) {
-        let Self {
-            class: _,
-            args,
-            fields,
-        } = self;
-        args.recurse_mut(&mut f);
-        fields.values_mut().for_each(|x| f(&mut x.ty));
-    }
-}
-
-impl PartialOrd for TypedDict {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for TypedDict {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // The class uniquely defines the `TypeDict`, everything else is just supporting.
-        self.class.cmp(&other.class)
-    }
 }
 
 impl TypedDict {
-    pub fn new(class: Class, args: TArgs, fields: OrderedMap<Name, TypedDictField>) -> Self {
-        Self {
-            class,
-            args,
-            fields,
-        }
+    pub fn new(class: Class, args: TArgs) -> Self {
+        Self { class, args }
     }
 
     pub fn qname(&self) -> &QName {
@@ -113,10 +70,5 @@ impl TypedDict {
         // share a bit of behavior, so we occasionally convert a TypedDict to a ClassType in order
         // to reuse code.
         ClassType::new(self.class.dupe(), self.args.clone())
-    }
-
-    /// Temporary method as we refactor to move field calculation into a separate binding.
-    pub fn fields_(&self) -> &OrderedMap<Name, TypedDictField> {
-        &self.fields
     }
 }

@@ -238,6 +238,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ),
             )
         };
+        // TODO(stroxler): This is needed for now because I'm not sure how to wire up a data structure
+        // that would let me preserve owned copies of the fields, while using references in the same
+        // loop (which is what would be needed to deal with typed dict fields without looping twice).
+        //
+        // Such a data structure may already exists, or we add one to our utils. From a skim, it
+        // looks like append_only_vec might have the API we need.
+        let mut kwargs_typed_dict_fields_vec = Vec::new();
+        let mut kwargs_typed_dict_fields_idx = 0;
+        for p in params.items().iter() {
+            match p {
+                Param::Kwargs(Type::Unpack(box Type::TypedDict(typed_dict))) => {
+                    kwargs_typed_dict_fields_vec.push(self.typed_dict_fields(typed_dict))
+                }
+                _ => {}
+            }
+        }
         let iargs = self_arg.iter().chain(args.iter());
         let mut iparams = params.items().iter().enumerate().peekable();
         let mut num_positional_params = 0;
@@ -407,12 +423,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Param::Pos(name, ty, required) | Param::KwOnly(name, ty, required) => {
                     kwparams.insert(name.clone(), (p_idx, ty, *required == Required::Required));
                 }
-                Param::Kwargs(Type::Unpack(box Type::TypedDict(typed_dict))) => {
-                    self.typed_dict_fields(typed_dict)
+                Param::Kwargs(Type::Unpack(box Type::TypedDict(_))) => {
+                    // Note: this relies on our pre-computation at the top of the function; the invariant
+                    // we rely on is that the matches occur in the same order both times.
+                    //
+                    // TODO(stroxler): See if we can use an append-only vec to avoid the need for two iterations.
+                    kwargs_typed_dict_fields_vec[kwargs_typed_dict_fields_idx]
                         .iter()
                         .for_each(|(name, field)| {
                             kwparams.insert(name.clone(), (p_idx, &field.ty, field.required));
                         });
+                    kwargs_typed_dict_fields_idx += 1;
                     kwargs_is_unpack = true;
                 }
                 Param::Kwargs(ty) => {

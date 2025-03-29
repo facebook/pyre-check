@@ -35,7 +35,6 @@ use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
-use crate::types::class::TArgs;
 use crate::types::literal::Lit;
 use crate::types::typed_dict::TypedDict;
 use crate::types::typed_dict::TypedDictField;
@@ -141,11 +140,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         all_fields
     }
 
-    pub fn sub_typed_dict_fields(
-        &self,
-        cls: &Class,
-        targs: &TArgs,
-    ) -> OrderedMap<Name, TypedDictField> {
+    pub fn typed_dict_fields(&self, typed_dict: &TypedDict) -> OrderedMap<Name, TypedDictField> {
+        let cls = typed_dict.class_object();
+        let targs = typed_dict.targs();
         let tparams = cls.tparams();
         let substitution = Substitution::new(
             tparams
@@ -210,13 +207,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Some(ClassSynthesizedFields::new(
             smallmap! { dunder::INIT => self.get_typed_dict_init(cls, &td.fields) },
         ))
-    }
-
-    pub fn typed_dict_fields<'t>(
-        &self,
-        typed_dict: &'t TypedDict,
-    ) -> &'t OrderedMap<Name, TypedDictField> {
-        typed_dict.fields_()
     }
 
     pub fn typed_dict_kw_param_info(&self, typed_dict: &TypedDict) -> Vec<(Name, Type, Required)> {
