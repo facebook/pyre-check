@@ -36,7 +36,11 @@ export default component NewLandingPage() {
       title="Pyrefly: A Static Type Checker for Python"
       description={siteConfig.description}>
       <LandingPageHeader />
-      <LandingPageSection title="Why Pyrefly" child={<WhyPyrefly />} />
+      <LandingPageSection
+        title="Why Pyrefly"
+        child={<WhyPyrefly />}
+        isFirstSection={true}
+      />
       <LandingPageSection
         title="Performance Comparison"
         child={<PerformanceComparisonChartSection />}
