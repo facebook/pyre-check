@@ -6,6 +6,7 @@
  */
 
 use std::ops::Deref;
+use std::sync::Arc;
 
 use dupe::Dupe;
 use itertools::Either;
@@ -258,7 +259,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             let is_total = !keywords.iter().any(|(n, t)| {
                 n.as_str() == "total" && matches!(t, Type::Literal(Lit::Bool(false)))
             });
-            let fields = self.get_typed_dict_fields(cls, &bases_with_metadata, is_total);
+            let fields =
+                self.calculate_typed_dict_metadata_fields(cls, &bases_with_metadata, is_total);
             Some(TypedDictMetadata { fields })
         } else {
             None
@@ -353,6 +355,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             is_final,
             errors,
         )
+    }
+
+    fn calculate_typed_dict_metadata_fields(
+        &self,
+        cls: &Class,
+        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
+        is_total: bool,
+    ) -> SmallMap<Name, bool> {
+        let mut all_fields = SmallMap::new();
+        for (_, metadata) in bases_with_metadata.iter().rev() {
+            if let Some(td) = metadata.typed_dict_metadata() {
+                all_fields.extend(td.fields.clone());
+            }
+        }
+        for name in cls.fields() {
+            if cls.is_field_annotated(name) {
+                all_fields.insert(name.clone(), is_total);
+            }
+        }
+        all_fields
     }
 
     /// This helper deals with special cases where we want to intercept an `Expr`

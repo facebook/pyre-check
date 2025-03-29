@@ -32,7 +32,6 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Required;
 use crate::types::class::Class;
-use crate::types::class::ClassType;
 use crate::types::class::Substitution;
 use crate::types::literal::Lit;
 use crate::types::typed_dict::TypedDict;
@@ -117,26 +116,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             });
         }
-    }
-
-    pub fn get_typed_dict_fields(
-        &self,
-        cls: &Class,
-        bases_with_metadata: &[(ClassType, Arc<ClassMetadata>)],
-        is_total: bool,
-    ) -> SmallMap<Name, bool> {
-        let mut all_fields = SmallMap::new();
-        for (_, metadata) in bases_with_metadata.iter().rev() {
-            if let Some(td) = metadata.typed_dict_metadata() {
-                all_fields.extend(td.fields.clone());
-            }
-        }
-        for name in cls.fields() {
-            if cls.is_field_annotated(name) {
-                all_fields.insert(name.clone(), is_total);
-            }
-        }
-        all_fields
     }
 
     fn substitution(&self, typed_dict: &TypedDict, class: &Class) -> Substitution {
