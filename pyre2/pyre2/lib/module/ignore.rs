@@ -21,15 +21,21 @@ impl Ignore {
     pub fn new(code: &str) -> Self {
         let mut ignores = SmallSet::new();
         for (line, line_str) in code.lines().enumerate() {
-            if line_str.contains("# type: ignore")
-                || line_str.contains("# pyrefly: ignore")
-                || line_str.contains("# pyre-ignore")
-                || line_str.contains("# pyre-fixme")
-            {
+            if Self::is_ignore_directive(line_str) {
                 ignores.insert(OneIndexed::from_zero_indexed(line));
             }
         }
         Self { ignores }
+    }
+
+    fn is_ignore_directive(line: &str) -> bool {
+        // We support `type: ignore` and `pyrefly: ignore` for now people who want to ignore
+        // things either for all typecheckers, or just for Pyrefly.
+        // We support `pyre-ignore` and `pyre-fixme` for now for compatibility with Pyre.
+        line.contains("# type: ignore")
+            || line.contains("# pyrefly: ignore")
+            || line.contains("# pyre-ignore")
+            || line.contains("# pyre-fixme")
     }
 
     pub fn is_ignored(&self, range: &SourceRange, msg: &str) -> bool {
