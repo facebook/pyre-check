@@ -114,7 +114,7 @@ fn test_multiple_path() {
     }
 
     let test_env = TestEnv::new();
-    let config = test_env.config();
+    let config = test_env.metadata();
     let loader = LoaderId::new(Load(test_env));
 
     let mut state = State::new();
@@ -400,7 +400,7 @@ fn test_change_require() {
     let handle = Handle::new(
         ModuleName::from_str("foo"),
         ModulePath::memory(PathBuf::from("foo")),
-        t.config(),
+        t.metadata(),
         LoaderId::new(t),
     );
     state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);

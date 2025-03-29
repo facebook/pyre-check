@@ -135,12 +135,12 @@ impl TestEnv {
             .insert(module_name, (ModulePath::filesystem(path), None));
     }
 
-    pub fn config(&self) -> RuntimeMetadata {
+    pub fn metadata(&self) -> RuntimeMetadata {
         RuntimeMetadata::default()
     }
 
     pub fn to_state(self) -> (State, impl Fn(&str) -> Handle) {
-        let config = self.config();
+        let config = self.metadata();
         let loader = LoaderId::new(self.clone());
         let handles = self
             .0
