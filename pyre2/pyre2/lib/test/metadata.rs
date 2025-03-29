@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use crate::test::util::TestEnv;
 use crate::testcase;
+use crate::PythonVersion;
 
 testcase!(
     test_sys_version,
@@ -106,4 +108,10 @@ else:
     Y1 = int
 assert_type(Y1(), int)
 "#,
+);
+
+testcase!(
+    test_python_3_13,
+    TestEnv::new_with_version(PythonVersion::new(3, 13, 0)),
+    "",
 );

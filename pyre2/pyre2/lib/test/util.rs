@@ -43,6 +43,7 @@ use crate::util::prelude::SliceExt;
 use crate::util::thread_pool::init_thread_pool;
 use crate::util::thread_pool::ThreadCount;
 use crate::util::trace::init_tracing;
+use crate::PythonVersion;
 
 #[macro_export]
 macro_rules! testcase {
@@ -93,6 +94,7 @@ fn default_path(module: ModuleName) -> PathBuf {
 #[derive(Debug, Default, Clone)]
 pub struct TestEnv {
     modules: SmallMap<ModuleName, (ModulePath, Option<String>)>,
+    version: PythonVersion,
 }
 
 impl TestEnv {
@@ -100,6 +102,12 @@ impl TestEnv {
         // We aim to init the tracing before now, but if not, better now than never
         init_test();
         Self::default()
+    }
+
+    pub fn new_with_version(version: PythonVersion) -> Self {
+        let mut res = Self::new();
+        res.version = version;
+        res
     }
 
     pub fn add_with_path(&mut self, name: &str, code: &str, path: &str) {
@@ -138,7 +146,7 @@ impl TestEnv {
     }
 
     pub fn metadata(&self) -> RuntimeMetadata {
-        RuntimeMetadata::default()
+        RuntimeMetadata::new(self.version, "linux".to_owned())
     }
 
     pub fn to_state(self) -> (State, impl Fn(&str) -> Handle) {
