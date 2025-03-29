@@ -12,7 +12,6 @@ use pyrefly_derive::TypeEq;
 use ruff_python_ast::name::Name;
 use starlark_map::ordered_map::OrderedMap;
 
-use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::Substitution;
@@ -100,10 +99,6 @@ impl TypedDict {
         self.class.name()
     }
 
-    pub fn fields(&self) -> &OrderedMap<Name, TypedDictField> {
-        &self.fields
-    }
-
     pub fn class_object(&self) -> &Class {
         &self.class
     }
@@ -120,20 +115,8 @@ impl TypedDict {
         ClassType::new(self.class.dupe(), self.args.clone())
     }
 
-    pub fn kw_param_info(&self) -> Vec<(Name, Type, Required)> {
-        self.fields()
-            .iter()
-            .map(|(name, field)| {
-                (
-                    name.clone(),
-                    field.ty.clone(),
-                    if field.required {
-                        Required::Required
-                    } else {
-                        Required::Optional
-                    },
-                )
-            })
-            .collect()
+    /// Temporary method as we refactor to move field calculation into a separate binding.
+    pub fn fields_(&self) -> &OrderedMap<Name, TypedDictField> {
+        &self.fields
     }
 }

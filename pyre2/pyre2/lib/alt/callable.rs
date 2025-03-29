@@ -408,9 +408,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     kwparams.insert(name.clone(), (p_idx, ty, *required == Required::Required));
                 }
                 Param::Kwargs(Type::Unpack(box Type::TypedDict(typed_dict))) => {
-                    typed_dict.fields().iter().for_each(|(name, field)| {
-                        kwparams.insert(name.clone(), (p_idx, &field.ty, field.required));
-                    });
+                    self.typed_dict_fields(typed_dict)
+                        .iter()
+                        .for_each(|(name, field)| {
+                            kwparams.insert(name.clone(), (p_idx, &field.ty, field.required));
+                        });
                     kwargs_is_unpack = true;
                 }
                 Param::Kwargs(ty) => {
@@ -437,50 +439,56 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 None => {
                     let ty = self.expr_infer(&kw.value, arg_errors);
                     if let Type::TypedDict(typed_dict) = ty {
-                        typed_dict.fields().iter().for_each(|(name, field)| {
-                            let mut hint = kwargs;
-                            if let Some(&p_idx) = seen_names.get(name) {
-                                error(
-                                    call_errors,
-                                    kw.range,
-                                    ErrorKind::BadKeywordArgument,
-                                    context,
-                                    format!("Multiple values for argument `{}`", name),
-                                );
-                                params.items()[p_idx].visit(&mut |ty| hint = Some(ty));
-                            } else if let Some(&(p_idx, ty, required)) = kwparams.get(name) {
-                                seen_names.insert(name.clone(), p_idx);
-                                if required && !field.required {
+                        self.typed_dict_fields(&typed_dict)
+                            .iter()
+                            .for_each(|(name, field)| {
+                                let mut hint = kwargs;
+                                if let Some(&p_idx) = seen_names.get(name) {
                                     error(
                                         call_errors,
                                         kw.range,
-                                        ErrorKind::MissingArgument,
+                                        ErrorKind::BadKeywordArgument,
                                         context,
-                                        format!("Expected key `{}` to be required", name),
+                                        format!("Multiple values for argument `{}`", name),
+                                    );
+                                    params.items()[p_idx].visit(&mut |ty| hint = Some(ty));
+                                } else if let Some(&(p_idx, ty, required)) = kwparams.get(name) {
+                                    seen_names.insert(name.clone(), p_idx);
+                                    if required && !field.required {
+                                        error(
+                                            call_errors,
+                                            kw.range,
+                                            ErrorKind::MissingArgument,
+                                            context,
+                                            format!("Expected key `{}` to be required", name),
+                                        );
+                                    }
+                                    hint = Some(ty)
+                                } else if kwargs.is_none() && !kwargs_is_unpack {
+                                    error(
+                                        call_errors,
+                                        kw.range,
+                                        ErrorKind::UnexpectedKeyword,
+                                        context,
+                                        format!("Unexpected keyword argument `{}`", name),
                                     );
                                 }
-                                hint = Some(ty)
-                            } else if kwargs.is_none() && !kwargs_is_unpack {
-                                error(
-                                    call_errors,
-                                    kw.range,
-                                    ErrorKind::UnexpectedKeyword,
-                                    context,
-                                    format!("Unexpected keyword argument `{}`", name),
-                                );
-                            }
-                            hint.iter().for_each(|want| {
-                                self.check_type(want, &field.ty, kw.range, call_errors, &|| {
-                                    TypeCheckContext {
-                                        kind: TypeCheckKind::CallArgument(
-                                            Some(name.clone()),
-                                            callable_name.clone(),
-                                        ),
-                                        context: context.map(|ctx| ctx()),
-                                    }
+                                hint.iter().for_each(|want| {
+                                    self.check_type(
+                                        want,
+                                        &field.ty,
+                                        kw.range,
+                                        call_errors,
+                                        &|| TypeCheckContext {
+                                            kind: TypeCheckKind::CallArgument(
+                                                Some(name.clone()),
+                                                callable_name.clone(),
+                                            ),
+                                            context: context.map(|ctx| ctx()),
+                                        },
+                                    );
                                 });
-                            });
-                        })
+                            })
                     } else {
                         match self.unwrap_mapping(&ty) {
                             Some((key, value)) => {

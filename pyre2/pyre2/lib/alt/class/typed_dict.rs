@@ -49,7 +49,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         range: TextRange,
         errors: &ErrorCollector,
     ) {
-        let fields = typed_dict.fields();
+        let fields = self.typed_dict_fields(typed_dict);
         let mut has_expansion = false;
         let mut keys: SmallSet<Name> = SmallSet::new();
         dict_items.iter().for_each(|x| match &x.key {
@@ -210,5 +210,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         Some(ClassSynthesizedFields::new(
             smallmap! { dunder::INIT => self.get_typed_dict_init(cls, &td.fields) },
         ))
+    }
+
+    pub fn typed_dict_fields<'t>(
+        &self,
+        typed_dict: &'t TypedDict,
+    ) -> &'t OrderedMap<Name, TypedDictField> {
+        typed_dict.fields_()
+    }
+
+    pub fn typed_dict_kw_param_info(&self, typed_dict: &TypedDict) -> Vec<(Name, Type, Required)> {
+        self.typed_dict_fields(typed_dict)
+            .iter()
+            .map(|(name, field)| {
+                (
+                    name.clone(),
+                    field.ty.clone(),
+                    if field.required {
+                        Required::Required
+                    } else {
+                        Required::Optional
+                    },
+                )
+            })
+            .collect()
     }
 }

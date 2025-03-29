@@ -9,14 +9,18 @@ use dupe::Clone_;
 use dupe::Copy_;
 use dupe::Dupe_;
 use ruff_python_ast::name::Name;
+use starlark_map::ordered_map::OrderedMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
 use crate::alt::answers::LookupAnswer;
 use crate::alt::attr::Attribute;
+use crate::types::callable::Required;
 use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
+use crate::types::typed_dict::TypedDict;
+use crate::types::typed_dict::TypedDictField;
 use crate::types::types::Type;
 
 /// `TypeOrder` provides a minimal API allowing `Subset` to request additional
@@ -116,5 +120,16 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
 
     pub fn get_dunder_init(self, cls: &ClassType, get_object_init: bool) -> Option<Type> {
         self.0.get_dunder_init(cls, get_object_init)
+    }
+
+    pub fn typed_dict_fields<'t>(
+        self,
+        typed_dict: &'t TypedDict,
+    ) -> &'t OrderedMap<Name, TypedDictField> {
+        self.0.typed_dict_fields(typed_dict)
+    }
+
+    pub fn typed_dict_kw_param_info(self, typed_dict: &TypedDict) -> Vec<(Name, Type, Required)> {
+        self.0.typed_dict_kw_param_info(typed_dict)
     }
 }

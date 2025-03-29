@@ -1104,8 +1104,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             let key_ty = self.expr_infer(&x.slice, errors);
                             self.distribute_over_union(&key_ty, |ty| match ty {
                                 Type::Literal(Lit::String(field_name)) => {
-                                    if let Some(field) =
-                                        typed_dict.fields().get(&Name::new(field_name.clone()))
+                                    if let Some(field) = self
+                                        .typed_dict_fields(&typed_dict)
+                                        .get(&Name::new(field_name.clone()))
                                     {
                                         field.ty.clone()
                                     } else {

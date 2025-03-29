@@ -252,22 +252,26 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 Some(Type::Unpack(box Type::TypedDict(box l_typed_dict))),
                 Some(Type::Unpack(box Type::TypedDict(box u_typed_dict))),
             ) => {
-                for (name, ty, required) in l_typed_dict.kw_param_info() {
+                for (name, ty, required) in self.type_order.typed_dict_kw_param_info(&l_typed_dict)
+                {
                     l_keywords.insert(name, (ty, required));
                 }
-                for (name, ty, required) in u_typed_dict.kw_param_info() {
+                for (name, ty, required) in self.type_order.typed_dict_kw_param_info(&u_typed_dict)
+                {
                     u_keywords.insert(name, (ty, required));
                 }
                 Some(object_type)
             }
             (Some(Type::Unpack(box Type::TypedDict(box l_typed_dict))), _) => {
-                for (name, ty, required) in l_typed_dict.kw_param_info() {
+                for (name, ty, required) in self.type_order.typed_dict_kw_param_info(&l_typed_dict)
+                {
                     l_keywords.insert(name, (ty, required));
                 }
                 Some(object_type)
             }
             (l_kwargs @ Some(_), Some(Type::Unpack(box Type::TypedDict(box u_typed_dict)))) => {
-                for (name, ty, required) in u_typed_dict.kw_param_info() {
+                for (name, ty, required) in self.type_order.typed_dict_kw_param_info(&u_typed_dict)
+                {
                     u_keywords.insert(name, (ty, required));
                 }
                 l_kwargs
@@ -729,15 +733,25 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 // and the corresponding value type in `got` is consistent with the value type in `want`.
                 // For each required key in `got`, the corresponding key is required in `want`.
                 // For each non-required key in `got`, the corresponding key is not required in `want`.
-                want.fields().iter().all(|(k, want_v)| {
-                    got.fields()
-                        .get(k)
-                        .is_some_and(|got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
-                }) && got.fields().iter().all(|(k, got_v)| {
-                    want.fields()
-                        .get(k)
-                        .is_none_or(|want_v| got_v.required == want_v.required)
-                })
+                self.type_order
+                    .typed_dict_fields(want)
+                    .iter()
+                    .all(|(k, want_v)| {
+                        self.type_order
+                            .typed_dict_fields(got)
+                            .get(k)
+                            .is_some_and(|got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
+                    })
+                    && self
+                        .type_order
+                        .typed_dict_fields(got)
+                        .iter()
+                        .all(|(k, got_v)| {
+                            self.type_order
+                                .typed_dict_fields(want)
+                                .get(k)
+                                .is_none_or(|want_v| got_v.required == want_v.required)
+                        })
             }
             (Type::TypedDict(_), _) => {
                 let stdlib = self.type_order.stdlib();
