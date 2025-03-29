@@ -14,7 +14,6 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import * as stylex from '@stylexjs/stylex';
-import {landingPageStyles} from './index';
 import Firefly from '../components/landing-page/firefly';
 import QuoteCard from '../components/landing-page/quoteCard';
 import PerformanceComparisonChartSection from '../components/landing-page/PerformanceComparisonChartSection';
