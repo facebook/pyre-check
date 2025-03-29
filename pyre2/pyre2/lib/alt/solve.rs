@@ -1720,9 +1720,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let value_ty = self.solve_binding_inner(b, errors);
                 match (&base, &slice_ty) {
                     (Type::TypedDict(typed_dict), Type::Literal(Lit::String(field_name))) => {
-                        if let Some(field) = self
-                            .typed_dict_fields(typed_dict)
-                            .get(&Name::new(field_name.clone()))
+                        if let Some(field) =
+                            self.typed_dict_field(typed_dict, &Name::new(field_name.clone()))
                         {
                             if field.read_only {
                                 self.error(

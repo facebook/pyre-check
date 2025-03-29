@@ -140,30 +140,62 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         all_fields
     }
 
-    pub fn typed_dict_fields(&self, typed_dict: &TypedDict) -> OrderedMap<Name, TypedDictField> {
-        let cls = typed_dict.class_object();
+    fn substitution(&self, typed_dict: &TypedDict, class: &Class) -> Substitution {
         let targs = typed_dict.targs();
-        let tparams = cls.tparams();
-        let substitution = Substitution::new(
+        let tparams = class.tparams();
+        Substitution::new(
             tparams
                 .quantified()
                 .zip(targs.as_slice().iter().cloned())
                 .collect(),
-        );
-        let metadata = self.get_metadata_for_class(cls);
-        metadata
-            .typed_dict_metadata()
-            .unwrap()
-            .fields
+        )
+    }
+
+    // Unwrap class metadata that we know is for a typed dict, and get the fields
+    fn fields_from_metadata<'m>(
+        &self,
+        metadata: &'m ClassMetadata,
+        _: &TypedDict,
+    ) -> &'m SmallMap<Name, bool> {
+        &metadata.typed_dict_metadata().unwrap().fields
+    }
+
+    fn class_field_to_typed_dict_field(
+        &self,
+        class: &Class,
+        substitution: &Substitution,
+        name: &Name,
+        is_total: bool,
+    ) -> Option<TypedDictField> {
+        self.get_class_member(class, name).and_then(|member| {
+            Arc::unwrap_or_clone(member.value)
+                .as_typed_dict_field_info(is_total)
+                .map(|field| field.substitute(substitution))
+        })
+    }
+
+    pub fn typed_dict_fields(&self, typed_dict: &TypedDict) -> OrderedMap<Name, TypedDictField> {
+        let class = typed_dict.class_object();
+        let metadata = self.get_metadata_for_class(class);
+        let substitution = self.substitution(typed_dict, class);
+        self.fields_from_metadata(&metadata, typed_dict)
             .iter()
             .filter_map(|(name, is_total)| {
-                self.get_class_member(cls, name)
-                    .and_then(|member| {
-                        Arc::unwrap_or_clone(member.value).as_typed_dict_field_info(*is_total)
-                    })
-                    .map(|field| (name.clone(), field.substitute(&substitution)))
+                self.class_field_to_typed_dict_field(class, &substitution, name, *is_total)
+                    .map(|field| (name.clone(), field))
             })
             .collect()
+    }
+
+    pub fn typed_dict_field(&self, typed_dict: &TypedDict, name: &Name) -> Option<TypedDictField> {
+        let class = typed_dict.class_object();
+        let metadata = self.get_metadata_for_class(class);
+        let substitution = self.substitution(typed_dict, class);
+        self.fields_from_metadata(&metadata, typed_dict)
+            .get(name)
+            .and_then(|is_total| {
+                self.class_field_to_typed_dict_field(class, &substitution, name, *is_total)
+            })
     }
 
     fn get_typed_dict_init(
