@@ -95,7 +95,6 @@ use crate::util::prelude::SliceExt;
 use crate::util::visit::VisitMut;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-#[allow(dead_code)]
 pub enum TypeFormContext {
     /// Expression in a base class list
     BaseClassList,

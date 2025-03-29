@@ -453,7 +453,6 @@ impl LookupError {
     }
 }
 
-#[allow(dead_code)]
 #[derive(PartialEq, Eq)]
 pub enum LookupKind {
     Regular,

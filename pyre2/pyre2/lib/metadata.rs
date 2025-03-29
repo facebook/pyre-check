@@ -130,7 +130,6 @@ impl<'de> Deserialize<'de> for PythonVersion {
 }
 
 impl PythonVersion {
-    #[allow(dead_code)] // Only used in tests so far
     pub fn new(major: u32, minor: u32, micro: u32) -> Self {
         Self {
             major,

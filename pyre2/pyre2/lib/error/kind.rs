@@ -152,10 +152,8 @@ pub enum ErrorKind {
     /// Attempting to apply an operator to arguments that do not support it.
     UnsupportedOperand,
     /// Attempting to use a feature that is not yet supported.
-    #[allow(dead_code)]
     Unsupported,
     /// Unknown or not-yet-defined error.
-    #[allow(dead_code)]
     Unknown,
 }
 
