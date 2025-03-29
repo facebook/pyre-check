@@ -91,7 +91,9 @@ fn default_path(module: ModuleName) -> PathBuf {
 }
 
 #[derive(Debug, Default, Clone)]
-pub struct TestEnv(SmallMap<ModuleName, (ModulePath, Option<String>)>);
+pub struct TestEnv {
+    modules: SmallMap<ModuleName, (ModulePath, Option<String>)>,
+}
 
 impl TestEnv {
     pub fn new() -> Self {
@@ -101,7 +103,7 @@ impl TestEnv {
     }
 
     pub fn add_with_path(&mut self, name: &str, code: &str, path: &str) {
-        self.0.insert(
+        self.modules.insert(
             ModuleName::from_str(name),
             (
                 ModulePath::memory(PathBuf::from(path)),
@@ -113,7 +115,7 @@ impl TestEnv {
     pub fn add(&mut self, name: &str, code: &str) {
         let module_name = ModuleName::from_str(name);
         let relative_path = ModulePath::memory(default_path(module_name));
-        self.0
+        self.modules
             .insert(module_name, (relative_path, Some(code.to_owned())));
     }
 
@@ -131,7 +133,7 @@ impl TestEnv {
 
     pub fn add_real_path(&mut self, name: &str, path: PathBuf) {
         let module_name = ModuleName::from_str(name);
-        self.0
+        self.modules
             .insert(module_name, (ModulePath::filesystem(path), None));
     }
 
@@ -143,7 +145,7 @@ impl TestEnv {
         let config = self.metadata();
         let loader = LoaderId::new(self.clone());
         let handles = self
-            .0
+            .modules
             .into_iter()
             // Reverse so we start at the last file, which is likely to be what the user
             // would have opened, so make it most faithful.
@@ -327,7 +329,7 @@ pub fn get_batched_lsp_operations_report_allow_error(
 
 impl Loader for TestEnv {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
-        if let Some((path, _)) = self.0.get(&module) {
+        if let Some((path, _)) = self.modules.get(&module) {
             Ok(path.dupe())
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok(path)
@@ -340,7 +342,7 @@ impl Loader for TestEnv {
         // This function involves scanning all paths to find what matches.
         // Not super efficient, but fine for tests, and we don't have many modules.
         let memory_path = ModulePath::memory(path.to_owned());
-        for (p, contents) in self.0.values() {
+        for (p, contents) in self.modules.values() {
             if p == &memory_path
                 && let Some(c) = contents
             {
@@ -366,7 +368,7 @@ pub fn testcase_for_macro(
 ) -> anyhow::Result<()> {
     init_test();
     let mut start_line = line as usize + 1;
-    if !env.0.is_empty() {
+    if !env.modules.is_empty() {
         start_line += 1;
     }
     env.add_with_path(
