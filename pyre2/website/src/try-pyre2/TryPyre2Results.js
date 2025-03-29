@@ -21,6 +21,7 @@ export type PyreflyErrorMessage = {
   endLineNumber: number,
   endColumn: number,
   message: string,
+  kind: string,
   severity: number,
 };
 
@@ -49,7 +50,7 @@ component ErrorMessage(error: PyreflyErrorMessage, goToDef: GoToDefFromError) {
     rangeStr = `${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn}`;
   }
 
-  const message = `${rangeStr}: ${error.message}`;
+  const message = `${rangeStr}: [${error.kind}] ${error.message}`;
   return (
     <span
       className={styles.msgType}
