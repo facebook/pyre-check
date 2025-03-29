@@ -84,6 +84,7 @@ pub struct Diagnostic {
     #[serde(rename(serialize = "endColumn"))]
     pub end_col: i32,
     pub message: String,
+    pub kind: String,
     pub severity: i32,
 }
 
@@ -254,6 +255,7 @@ impl LanguageServiceState {
                     end_line: range.end.row.to_zero_indexed() as i32 + 1,
                     end_col: range.end.column.to_zero_indexed() as i32 + 1,
                     message: e.msg().to_owned(),
+                    kind: e.error_kind().to_name().to_owned(),
                     severity: 8,
                 }
             })
@@ -342,6 +344,7 @@ impl LanguageServiceState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::kind::ErrorKind;
 
     #[test]
     fn test_regular_import() {
@@ -368,6 +371,8 @@ mod tests {
             "Could not find import of `t`, module is not available in sandbox",
             "Parse error: Expected 'import', found newline at byte range 6..6",
         ];
+        let expected_error_kinds: Vec<ErrorKind> =
+            vec![ErrorKind::MissingModuleAttribute, ErrorKind::ParseError];
 
         assert_eq!(
             state
@@ -376,6 +381,18 @@ mod tests {
                 .map(|x| x.message)
                 .collect::<Vec<_>>(),
             expected_errors,
+        );
+
+        assert_eq!(
+            state
+                .get_errors()
+                .into_iter()
+                .map(|x| x.kind)
+                .collect::<Vec<_>>(),
+            expected_error_kinds
+                .iter()
+                .map(|k| k.to_name())
+                .collect::<Vec<_>>(),
         );
     }
 }
