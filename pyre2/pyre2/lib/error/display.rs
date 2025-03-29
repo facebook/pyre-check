@@ -218,13 +218,6 @@ impl TypeCheckKind {
             Self::Unknown => {
                 format!("EXPECTED {} <: {}", ctx.display(got), ctx.display(want))
             }
-            Self::Test => {
-                format!(
-                    "TEST TEST TEST - got: {}, want: {}",
-                    ctx.display(got),
-                    ctx.display(want)
-                )
-            }
         }
     }
 }
