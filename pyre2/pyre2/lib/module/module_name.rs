@@ -224,28 +224,28 @@ mod tests {
     fn test_relative() {
         let base = ModuleName::from_str("a.b.c");
         assert_eq!(
-            base.new_maybe_relative(false, 0, Some(&Name::new("d")))
+            base.new_maybe_relative(false, 0, Some(&Name::new_static("d")))
                 .unwrap(),
             ModuleName::from_str("d")
         );
         assert_eq!(
-            base.new_maybe_relative(false, 1, Some(&Name::new("d")))
+            base.new_maybe_relative(false, 1, Some(&Name::new_static("d")))
                 .unwrap(),
             ModuleName::from_str("a.b.d")
         );
         assert_eq!(
-            base.new_maybe_relative(false, 2, Some(&Name::new("d")))
+            base.new_maybe_relative(false, 2, Some(&Name::new_static("d")))
                 .unwrap(),
             ModuleName::from_str("a.d")
         );
         assert_eq!(
-            base.new_maybe_relative(false, 3, Some(&Name::new("d")))
+            base.new_maybe_relative(false, 3, Some(&Name::new_static("d")))
                 .unwrap(),
             ModuleName::from_str("d")
         );
         // TODO: This is wrong. The relative level 4 should be invalid
         assert_eq!(
-            base.new_maybe_relative(false, 4, Some(&Name::new("d"))),
+            base.new_maybe_relative(false, 4, Some(&Name::new_static("d"))),
             None
         );
         assert_eq!(

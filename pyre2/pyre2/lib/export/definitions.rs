@@ -481,11 +481,11 @@ def bar(x: str) -> str: ...
             &[],
             &["overload", "foo", "bar"],
         );
-        let foo = defs.definitions.get(&Name::new("foo")).unwrap();
+        let foo = defs.definitions.get(&Name::new_static("foo")).unwrap();
         assert_eq!(foo.style, DefinitionStyle::Local);
         assert_eq!(foo.count, 3);
 
-        let bar = defs.definitions.get(&Name::new("bar")).unwrap();
+        let bar = defs.definitions.get(&Name::new_static("bar")).unwrap();
         assert_eq!(bar.style, DefinitionStyle::Local);
         assert_eq!(bar.count, 2);
     }

@@ -225,7 +225,7 @@ mod tests {
     #[test]
     fn test_error_collector() {
         let mi = ModuleInfo::new(
-            ModuleName::from_name(&Name::new("main")),
+            ModuleName::from_name(&Name::new_static("main")),
             ModulePath::filesystem(Path::new("main.py").to_owned()),
             Arc::new("contents".to_owned()),
         );
@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn test_error_collector_with_disabled_errors() {
         let mi = ModuleInfo::new(
-            ModuleName::from_name(&Name::new("main")),
+            ModuleName::from_name(&Name::new_static("main")),
             ModulePath::filesystem(Path::new("main.py").to_owned()),
             Arc::new("contents".to_owned()),
         );

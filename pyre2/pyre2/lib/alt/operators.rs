@@ -67,7 +67,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
             let method_type_dunder = self.type_of_attr_get_if_found(
                 lhs,
-                &Name::new(op.dunder()),
+                &Name::new_static(op.dunder()),
                 range,
                 errors,
                 Some(&context),
@@ -76,7 +76,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
             let method_type_reflected = self.type_of_attr_get_if_found(
                 rhs,
-                &Name::new(op.reflected_dunder()),
+                &Name::new_static(op.reflected_dunder()),
                 range,
                 errors,
                 Some(&context),
@@ -172,7 +172,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 || ErrorContext::InplaceBinaryOp(op.as_str().to_owned(), lhs.clone(), rhs.clone());
             let inplace_dunder = self.type_of_attr_get_if_found(
                 lhs,
-                &Name::new(op.in_place_dunder()),
+                &Name::new_static(op.in_place_dunder()),
                 range,
                 errors,
                 Some(&context),
@@ -180,7 +180,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
             let regular_dunder = self.type_of_attr_get_if_found(
                 lhs,
-                &Name::new(op.dunder()),
+                &Name::new_static(op.dunder()),
                 range,
                 errors,
                 Some(&context),
@@ -188,7 +188,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             );
             let reflected_dunder = self.type_of_attr_get_if_found(
                 rhs,
-                &Name::new(op.reflected_dunder()),
+                &Name::new_static(op.reflected_dunder()),
                 range,
                 errors,
                 Some(&context),
