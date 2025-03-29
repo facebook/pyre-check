@@ -19,6 +19,7 @@ path = "bin/main.rs"
 
 [dependencies]
 anyhow = "1.0.95"
+append-only-vec = "0.1.2"
 argfile = "0.1.6"
 async-trait = "0.1.86"
 clap = { version = "4.5.30", features = ["derive", "env", "string", "unicode", "wrap_help"] }
