@@ -11,7 +11,6 @@ use ruff_python_ast::name::Name;
 use ruff_python_ast::DictItem;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
-use starlark_map::ordered_map::OrderedMap;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 use starlark_map::smallmap;
@@ -151,12 +150,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         )
     }
 
-    // Unwrap class metadata that we know is for a typed dict, and get the fields
-    fn fields_from_metadata<'m>(
-        &self,
-        metadata: &'m ClassMetadata,
-        _: &TypedDict,
-    ) -> &'m SmallMap<Name, bool> {
+    // Get the field names + requiredness, given the ClassMetadata of a typed dict.
+    // Callers must be certain the class is a typed dict, we will panic if it is not.
+    fn fields_from_metadata<'m>(metadata: &'m ClassMetadata) -> &'m SmallMap<Name, bool> {
         &metadata.typed_dict_metadata().unwrap().fields
     }
 
@@ -174,11 +170,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    pub fn typed_dict_fields(&self, typed_dict: &TypedDict) -> OrderedMap<Name, TypedDictField> {
+    pub fn typed_dict_fields(&self, typed_dict: &TypedDict) -> SmallMap<Name, TypedDictField> {
         let class = typed_dict.class_object();
         let metadata = self.get_metadata_for_class(class);
         let substitution = self.substitution(typed_dict, class);
-        self.fields_from_metadata(&metadata, typed_dict)
+        Self::fields_from_metadata(&metadata)
             .iter()
             .filter_map(|(name, is_total)| {
                 self.class_field_to_typed_dict_field(class, &substitution, name, *is_total)
@@ -191,7 +187,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let class = typed_dict.class_object();
         let metadata = self.get_metadata_for_class(class);
         let substitution = self.substitution(typed_dict, class);
-        self.fields_from_metadata(&metadata, typed_dict)
+        Self::fields_from_metadata(&metadata)
             .get(name)
             .and_then(|is_total| {
                 self.class_field_to_typed_dict_field(class, &substitution, name, *is_total)

@@ -9,7 +9,7 @@ use dupe::Clone_;
 use dupe::Copy_;
 use dupe::Dupe_;
 use ruff_python_ast::name::Name;
-use starlark_map::ordered_map::OrderedMap;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
@@ -122,7 +122,7 @@ impl<'a, Ans: LookupAnswer> TypeOrder<'a, Ans> {
         self.0.get_dunder_init(cls, get_object_init)
     }
 
-    pub fn typed_dict_fields(self, typed_dict: &TypedDict) -> OrderedMap<Name, TypedDictField> {
+    pub fn typed_dict_fields(self, typed_dict: &TypedDict) -> SmallMap<Name, TypedDictField> {
         self.0.typed_dict_fields(typed_dict)
     }
 
