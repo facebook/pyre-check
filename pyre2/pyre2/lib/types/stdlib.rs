@@ -13,6 +13,7 @@ use crate::types::class::Class;
 use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::types::Type;
+use crate::PythonVersion;
 
 #[derive(Debug, Clone)]
 struct StdlibError {
@@ -66,12 +67,16 @@ pub struct Stdlib {
 }
 
 impl Stdlib {
-    pub fn new(lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>) -> Self {
-        Self::new_with_bootstrapping(false, lookup_class)
+    pub fn new(
+        version: PythonVersion,
+        lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>,
+    ) -> Self {
+        Self::new_with_bootstrapping(false, version, lookup_class)
     }
 
     pub fn new_with_bootstrapping(
         bootstrapping: bool,
+        version: PythonVersion,
         mut lookup_class: impl FnMut(ModuleName, &Name) -> Option<Class>,
     ) -> Self {
         let builtins = ModuleName::builtins();
@@ -84,6 +89,12 @@ impl Stdlib {
                 bootstrapping,
                 name,
             })
+        };
+
+        let none_location = if version >= PythonVersion::new(3, 10, 0) {
+            types
+        } else {
+            ModuleName::from_str("_typeshed")
         };
 
         Self {
@@ -103,7 +114,7 @@ impl Stdlib {
             tuple: lookup_str(builtins, "tuple"),
             builtins_type: lookup_str(builtins, "type"),
             ellipsis_type: lookup_str(types, "EllipsisType"),
-            none_type: lookup_str(types, "NoneType"),
+            none_type: lookup_str(none_location, "NoneType"),
             iterable: lookup_str(typing, "Iterable"),
             async_iterable: lookup_str(typing, "AsyncIterable"),
             generator: lookup_str(typing, "Generator"),
@@ -137,7 +148,7 @@ impl Stdlib {
     /// It works because the lookups only need a tiny subset of all `AnswersSolver` functionality,
     /// none of which actually depends on `Stdlib`.
     pub fn for_bootstrapping() -> Stdlib {
-        Self::new_with_bootstrapping(true, |_, _| None)
+        Self::new_with_bootstrapping(true, PythonVersion::default(), |_, _| None)
     }
 
     fn unwrap<T>(x: &StdlibResult<T>) -> &T {

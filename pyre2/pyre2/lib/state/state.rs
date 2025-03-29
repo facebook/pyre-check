@@ -701,7 +701,7 @@ impl Transaction {
             .map(|(c, l)| {
                 (
                     (c.dupe(), l.dupe()),
-                    Arc::new(Stdlib::new(|module, name| {
+                    Arc::new(Stdlib::new(c.version(), |module, name| {
                         let path = self.get_cached_find_dependency(l, module).ok()?;
                         self.lookup_stdlib(&Handle::new(module, path, c.dupe(), l.dupe()), name)
                     })),

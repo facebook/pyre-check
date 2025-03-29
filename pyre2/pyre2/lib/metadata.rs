@@ -162,6 +162,10 @@ impl RuntimeMetadata {
             platform,
         })))
     }
+
+    pub fn version(&self) -> PythonVersion {
+        self.0.key().version
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]

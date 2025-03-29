@@ -115,3 +115,39 @@ testcase!(
     TestEnv::new_with_version(PythonVersion::new(3, 13, 0)),
     "",
 );
+
+testcase!(
+    test_python_3_12,
+    TestEnv::new_with_version(PythonVersion::new(3, 12, 0)),
+    "",
+);
+
+testcase!(
+    test_python_3_11,
+    TestEnv::new_with_version(PythonVersion::new(3, 11, 0)),
+    "",
+);
+
+testcase!(
+    test_python_3_10,
+    TestEnv::new_with_version(PythonVersion::new(3, 10, 0)),
+    "",
+);
+
+testcase!(
+    test_python_3_9,
+    TestEnv::new_with_version(PythonVersion::new(3, 9, 0)),
+    "",
+);
+
+testcase!(
+    test_python_3_8,
+    TestEnv::new_with_version(PythonVersion::new(3, 8, 0)),
+    "",
+);
+
+testcase!(
+    test_python_3_7,
+    TestEnv::new_with_version(PythonVersion::new(3, 7, 0)),
+    "",
+);
