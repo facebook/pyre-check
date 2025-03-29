@@ -113,14 +113,16 @@ fn test_multiple_path() {
         }
     }
 
-    let loader = LoaderId::new(Load(TestEnv::new()));
+    let test_env = TestEnv::new();
+    let config = test_env.config();
+    let loader = LoaderId::new(Load(test_env));
 
     let mut state = State::new();
     let handles = FILES.map(|(name, path, _)| {
         Handle::new(
             ModuleName::from_str(name),
             ModulePath::memory(PathBuf::from(path)),
-            TestEnv::config(),
+            config.dupe(),
             loader.dupe(),
         )
     });
@@ -398,7 +400,7 @@ fn test_change_require() {
     let handle = Handle::new(
         ModuleName::from_str("foo"),
         ModulePath::memory(PathBuf::from("foo")),
-        TestEnv::config(),
+        t.config(),
         LoaderId::new(t),
     );
     state.run(&[(handle.dupe(), Require::Exports)], Require::Exports, None);
