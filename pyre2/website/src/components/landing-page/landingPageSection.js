@@ -15,6 +15,7 @@ export default component LandingPageSection(
   title: string,
   child: React.Node,
   isLastSection: boolean = false,
+  hasBrownBackground: boolean = false,
 ) {
   const [selectedSource, setSelectedSource] = useState('instagram');
 
@@ -23,9 +24,18 @@ export default component LandingPageSection(
       {...stylex.props(
         styles.section,
         isLastSection ? styles.lastSection : null,
+        hasBrownBackground
+          ? {background: 'var(--color-background)'}
+          : {background: 'var(--color-text)'},
       )}>
       <div className="container">
-        <h2 {...stylex.props(styles.sectionTitle)}>{title}</h2>
+        <h2
+          {...stylex.props(
+            styles.sectionTitle,
+            hasBrownBackground ? {color: 'var(--color-text)'} : null,
+          )}>
+          {title}
+        </h2>
         {child}
       </div>
     </section>
@@ -35,10 +45,10 @@ export default component LandingPageSection(
 const styles = stylex.create({
   section: {
     flex: 1,
-    marginTop: 20,
+    paddingVertical: 20,
   },
   lastSection: {
-    marginBottom: 30,
+    paddingBottom: 30,
   },
   sectionTitle: {
     fontSize: '3rem',

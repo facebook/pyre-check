@@ -30,7 +30,6 @@ const styles = stylex.create({
   quoteCard: {
     padding: '2rem',
     borderRadius: '8px',
-    backgroundColor: 'var(--ifm-background-surface-color)',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
   },
   quoteText: {

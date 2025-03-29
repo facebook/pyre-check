@@ -38,22 +38,15 @@
 
 
 :root {
-  --ifm-color-primary: #dc2319;
-  --ifm-color-primary-dark: #dc2319;
-  --ifm-color-primary-darker: #dc2319;
-  --ifm-color-primary-darkest: #dc2319;
-  --ifm-color-primary-light: #dc2319;
-  --ifm-color-primary-lighter: #dc2319;
-  --ifm-color-primary-lightest: #dc2319;
   --ifm-navbar-height: 3.5rem;
   --ifm-navbar-padding-vertical: 0;
-  --flow-yellow: #e8bd36;
-  --flow-gray-darker: #384048;
-  --flow-gray-darkest: #2d343a;
-  --flow-green: #9cd732;
-  --flow-red: #dc2319;
-  --off-white: #edecdf;
-  --ifm-footer-background-color:#2d343a;
+
+  /* color palette */
+  --color-background: #543d3b;
+  --color-primary: #fe9801;
+  --color-secondary: #ff7701;
+  --color-accent: #ff4300;
+  --color-text: #efefef;
 }
 
 .docusaurus-highlight-code-line {

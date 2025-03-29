@@ -47,8 +47,11 @@ export default component PerformanceComparisonChartSection() {
 
 const styles = stylex.create({
   body: {
-    border: '1px solid var(--ifm-color-emphasis-300)',
-    padding: '2rem',
+    border: '1px solid',
+    borderRadius: '20px',
+    backgroundColor: 'var(--color-text)',
+    marginVertical: '2rem',
+    paddingVertical: '2rem',
   },
   buttonRow: {
     display: 'flex',

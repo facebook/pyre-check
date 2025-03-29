@@ -88,11 +88,11 @@ const updown2 = stylex.keyframes({
 
 const blinking = stylex.keyframes({
   '0%, 100%': {
-    boxShadow: '0 0 1px 1px rgb(232, 189, 54)',
+    boxShadow: '0 0 1px 1px var(--color-primary)',
     opacity: 0.1,
   },
   '50%': {
-    boxShadow: '0 0 5px 5px rgb(232, 189, 54)',
+    boxShadow: '0 0 5px 5px var(--color-primary)',
     opacity: 1,
   },
 });
@@ -101,7 +101,7 @@ const styles = stylex.create({
   firefly: {
     listStyleType: 'none',
     borderRadius: '50%',
-    backgroundColor: 'rgb(232, 189, 54)',
+    backgroundColor: 'var(--color-primary)',
     height: '10px',
     width: '10px',
     opacity: 0,

@@ -23,7 +23,7 @@ export default component LandingPageHeader() {
             {' '}
             <a
               href="https://github.com/facebook/pyrefly/milestone/1"
-              {...stylex.props(styles.yellowLink)}>
+              {...stylex.props(styles.link)}>
               Coming soon
             </a>
             : A faster Python type checker written in Rust
@@ -51,8 +51,8 @@ const styles: any = stylex.create({
     alignItems: 'center',
     position: 'relative',
     overflow: 'hidden',
-    background: 'var(--flow-gray-darker)',
-    color: 'var(--off-white)',
+    background: 'var(--color-background)',
+    color: 'var(--color-text)',
     WebkitFontSmoothing: 'antialiased',
     marginLeft: 'auto',
     marginRight: 'auto',
@@ -117,8 +117,8 @@ const styles: any = stylex.create({
       fontSize: 'var(--subtitle-font-size)',
     },
   },
-  yellowLink: {
-    color: 'var(--flow-yellow)',
+  link: {
+    color: 'var(--color-primary)',
     textDecoration: 'underline',
     transition:
       'color var(--ifm-transition-fast) var(--ifm-transition-timing-default)',

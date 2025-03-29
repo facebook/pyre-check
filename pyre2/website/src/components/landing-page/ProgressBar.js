@@ -43,14 +43,14 @@ const fillUpKeyframes = stylex.keyframes({
 
 const styles = stylex.create({
   progressBar: {
-    backgroundColor: 'var(--flow-yellow)',
+    backgroundColor: 'var(--color-background)',
     borderRadius: 30,
     width: '100%',
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    backgroundColor: 'var(--flow-gray-darker)',
+    backgroundColor: 'var(--color-secondary)',
     borderRadius: 'inherit',
     animationName: fillUpKeyframes,
     animationFillMode: 'forwards',

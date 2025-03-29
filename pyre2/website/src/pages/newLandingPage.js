@@ -40,6 +40,7 @@ export default component NewLandingPage() {
       <LandingPageSection
         title="Performance Comparison"
         child={<PerformanceComparisonChartSection />}
+        hasBrownBackground={true}
       />
       <LandingPageSection
         title="What People Say About Pyrefly"
