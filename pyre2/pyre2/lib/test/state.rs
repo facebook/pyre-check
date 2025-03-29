@@ -286,7 +286,7 @@ fn test_incremental_cyclic() {
 }
 
 /// Check that the interface is consistent as we change things.
-fn test_interface_consistent(code: &str, broken: bool) {
+fn test_interface_consistent(code: &str) {
     let mut i = Incremental::new();
     i.set("main", code);
     i.check(&["main"], &["main"]);
@@ -318,31 +318,21 @@ fn test_interface_consistent(code: &str, broken: bool) {
     let same = base.first_difference(&base);
     let suffix = suffix.first_difference(&base);
     let prefix = prefix.first_difference(&base);
-    if !broken {
-        assert!(same.is_none(), "{code:?} led to {same:?}");
-        assert!(suffix.is_none(), "{code:?} led to {suffix:?}");
-        assert!(prefix.is_none(), "{code:?} led to {prefix:?}");
-    } else {
-        assert!(
-            same.is_some() || suffix.is_some() || prefix.is_some(),
-            "{code:?} now works"
-        );
-    }
+    assert!(same.is_none(), "{code:?} led to {same:?}");
+    assert!(suffix.is_none(), "{code:?} led to {suffix:?}");
+    assert!(prefix.is_none(), "{code:?} led to {prefix:?}");
 }
 
 #[test]
 fn test_interfaces() {
-    #[allow(dead_code)]
-    const BROKEN: bool = true;
-
-    test_interface_consistent("x: int = 1\ndef f(y: bool) -> list[str]: return []", false);
+    test_interface_consistent("x: int = 1\ndef f(y: bool) -> list[str]: return []");
 
     // Important to have a class with a field, as those also have positions
-    test_interface_consistent("class X: y: int", false);
+    test_interface_consistent("class X: y: int");
 
     // These should not change, but do because the quality algorithm doesn't deal
     // well with Forall.
-    test_interface_consistent("def f[X](x: X) -> X: ...", false);
+    test_interface_consistent("def f[X](x: X) -> X: ...");
 
     // These should not change, but do because the quality algorithm doesn't deal
     // well with Forall.
@@ -351,11 +341,10 @@ fn test_interfaces() {
 from typing import TypeVar, Generic
 T = TypeVar('T')
 class C(Generic[T]): pass",
-        false,
     );
 
     // Another failing example
-    test_interface_consistent("class C[T]: x: T", false);
+    test_interface_consistent("class C[T]: x: T");
 
     // Another failing example
     test_interface_consistent(
@@ -363,7 +352,6 @@ class C(Generic[T]): pass",
 from typing import TypeVar, Generic
 T = TypeVar('T')
 class C(Generic[T]): x: T",
-        false,
     );
 
     test_interface_consistent(
@@ -372,7 +360,6 @@ from typing import TypeVar, Generic
 T = TypeVar('T')
 class C(Generic[T]): pass
 class D(C[T]): pass",
-        false,
     );
 
     test_interface_consistent(
@@ -380,7 +367,6 @@ class D(C[T]): pass",
 from typing import TypeVar
 class C: pass
 T = TypeVar('T', bound=C)",
-        false,
     );
 
     test_interface_consistent(
@@ -389,7 +375,6 @@ class C:
     def __init__[R](self, field: R) -> None:
         self.field = R
 ",
-        false,
     );
 }
 
