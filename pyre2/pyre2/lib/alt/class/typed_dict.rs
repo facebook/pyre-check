@@ -53,7 +53,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(key) => {
                 let key_type = self.expr_infer(key, errors);
                 if let Type::Literal(Lit::String(name)) = key_type {
-                    let key_name = Name::new(name.clone());
+                    let key_name = Name::new(name);
                     if let Some(field) = fields.get(&key_name) {
                         self.expr(
                             &x.value,
@@ -72,7 +72,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None,
                             format!(
                                 "Key `{}` is not defined in TypedDict `{}`",
-                                name,
+                                key_name,
                                 typed_dict.name()
                             ),
                         );
