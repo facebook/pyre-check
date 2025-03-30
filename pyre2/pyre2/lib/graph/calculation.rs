@@ -71,7 +71,7 @@ impl<T: Dupe, R: Dupe> Calculation<T, R> {
     where
         R: Default,
     {
-        self.calculate_with_recursive(calculate, || R::default())
+        self.calculate_with_recursive(calculate, R::default)
             .ok()
             .map(|(r, _)| r)
     }
