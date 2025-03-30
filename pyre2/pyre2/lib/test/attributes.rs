@@ -635,15 +635,14 @@ class Test(B):
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler): Should probably error when setting the field",
+testcase!(
     test_field_using_method_scope_type_variable,
     r#"
 from typing import assert_type, Any
 
 class C:
     def __init__[R](self, field: R):
-        self.field = field  # should be an error
+        self.field = field  # E: Cannot initialize attribute `field` to a value that depends on method-scoped type variable `R`
 
 c = C("test")
 assert_type(c.field, Any)

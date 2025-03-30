@@ -528,9 +528,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
         let ty = match initial_value {
             ClassFieldInitialValue::Class(_) | ClassFieldInitialValue::Instance(None) => ty,
-            ClassFieldInitialValue::Instance(Some(method_name)) => {
-                self.sanitize_method_scope_type_parameters(class, method_name, ty)
-            }
+            ClassFieldInitialValue::Instance(Some(method_name)) => self
+                .check_and_sanitize_method_scope_type_parameters(
+                    class,
+                    method_name,
+                    ty,
+                    name,
+                    range,
+                    errors,
+                ),
         };
 
         // Enum handling:
@@ -672,11 +678,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn sanitize_method_scope_type_parameters(
+    fn check_and_sanitize_method_scope_type_parameters(
         &self,
         class: &Class,
         method_name: &Name,
         ty: Type,
+        name: &Name,
+        range: TextRange,
+        errors: &ErrorCollector,
     ) -> Type {
         let mut qs = SmallSet::new();
         ty.collect_quantifieds(&mut qs);
@@ -686,10 +695,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             match &method_field.raw_type() {
                 Type::Forall(box Forall { tparams, .. }) => {
                     let gradual_fallbacks: SmallMap<_, _> = tparams
-                        .quantified()
-                        .filter_map(|q| {
-                            if qs.contains(&q) {
-                                Some((q, q.as_gradual_type()))
+                        .iter()
+                        .filter_map(|param| {
+                            let q = &param.quantified;
+                            if qs.contains(q) {
+                                self.error(
+                                    errors,
+                                    range,
+                                    ErrorKind::InvalidTypeVar,
+                            None,
+                                format!(
+                                        "Cannot initialize attribute `{}` to a value that depends on method-scoped type variable `{}`",
+                                        name,
+                                        &param.name,
+                                    ),
+                                );
+                                Some((*q, q.as_gradual_type()))
                             } else {
                                 None
                             }

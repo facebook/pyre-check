@@ -371,8 +371,8 @@ T = TypeVar('T', bound=C)",
 
     test_interface_consistent(
         "
-class C:
-    def __init__[R](self, field: R) -> None:
+class C[R]:
+    def __init__(self, field: R) -> None:
         self.field = R
 ",
     );
