@@ -155,11 +155,11 @@ impl TParams {
         self.0.is_empty()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &TParam> {
+    pub fn iter(&self) -> impl ExactSizeIterator<Item = &TParam> {
         self.0.iter()
     }
 
-    pub fn quantified(&self) -> impl Iterator<Item = Quantified> + '_ {
+    pub fn quantified(&self) -> impl ExactSizeIterator<Item = Quantified> + '_ {
         self.0.iter().map(|x| x.quantified)
     }
 }

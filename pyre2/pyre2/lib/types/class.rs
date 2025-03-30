@@ -115,7 +115,7 @@ impl Class {
         self.0.qname.module_info()
     }
 
-    pub fn fields(&self) -> impl Iterator<Item = &Name> {
+    pub fn fields(&self) -> impl ExactSizeIterator<Item = &Name> {
         self.0.fields.keys()
     }
 

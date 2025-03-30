@@ -60,7 +60,7 @@ impl ModuleErrors {
     }
 
     /// Iterates over all errors, including ignored ones.
-    fn iter(&mut self) -> impl Iterator<Item = &Error> {
+    fn iter(&mut self) -> impl ExactSizeIterator<Item = &Error> {
         self.cleanup();
         self.items.iter()
     }
