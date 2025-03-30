@@ -412,7 +412,7 @@ impl<'a> BindingsBuilder<'a> {
         );
         self.table.insert(
             class_key,
-            BindingClass::FunctionalClassDef(class_index, class_name.clone(), fields),
+            BindingClass::FunctionalClassDef(class_index, class_name, fields),
         );
     }
 
