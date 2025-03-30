@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::iter;
 use std::slice;
 
 use ruff_python_ast::DictItem;
@@ -140,7 +141,7 @@ impl Ast {
     /// Iterates over the branches of an if statement, returning the test and body.
     /// A test on `None` is an `else` branch that is always taken.
     pub fn if_branches(x: &StmtIf) -> impl Iterator<Item = (Option<&Expr>, &[Stmt])> {
-        let first = [(Some(&*x.test), x.body.as_slice())].into_iter();
+        let first = iter::once((Some(&*x.test), x.body.as_slice()));
         let elses = x
             .elif_else_clauses
             .iter()
@@ -152,7 +153,7 @@ impl Ast {
     pub fn if_branches_owned(
         x: StmtIf,
     ) -> impl Iterator<Item = (TextRange, Option<Expr>, Vec<Stmt>)> {
-        let first = std::iter::once((x.range, Some(*x.test), x.body));
+        let first = iter::once((x.range, Some(*x.test), x.body));
         let elses = x
             .elif_else_clauses
             .into_iter()

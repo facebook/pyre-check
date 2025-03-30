@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::iter;
 use std::sync::Arc;
 
 use dupe::Dupe;
@@ -1211,7 +1212,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut lookup_cls = None;
         let metadata = self.get_metadata_for_class(obj.class_object());
         let mut found = false;
-        for ancestor in [obj].into_iter().chain(metadata.ancestors(self.stdlib)) {
+        for ancestor in iter::once(obj).chain(metadata.ancestors(self.stdlib)) {
             if ancestor.class_object() == cls {
                 found = true;
                 // Handle the corner case of `ancestor` being `object` (and
@@ -1468,7 +1469,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     } else {
                         self.unions(
                             returns
-                                .chain(std::iter::once(implicit_return.arc_clone()))
+                                .chain(iter::once(implicit_return.arc_clone()))
                                 .collect(),
                         )
                     };

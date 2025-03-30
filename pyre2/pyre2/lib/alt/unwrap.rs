@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::iter;
+
 use ruff_python_ast::name::Name;
 
 use crate::alt::answers::AnswersSolver;
@@ -162,7 +164,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let params = param_vars
             .iter()
             .map(|(name, var)| Param::Pos((*name).clone(), var.to_type(), Required::Optional))
-            .chain(std::iter::once(Param::VarArg(None, Type::any_implicit())))
+            .chain(iter::once(Param::VarArg(None, Type::any_implicit())))
             .collect::<Vec<_>>();
         let callable_ty = Type::callable(params, return_ty.to_type());
 

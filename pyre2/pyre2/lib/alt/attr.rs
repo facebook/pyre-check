@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+use std::iter;
+
 use dupe::Dupe;
 use itertools::Either;
 use ruff_python_ast::name::Name;
@@ -1152,7 +1154,7 @@ pub struct AttrInfo {
 impl<'a, Ans: LookupAnswer + LookupExport> AnswersSolver<'a, Ans> {
     fn completions_class(&self, cls: &Class, res: &mut Vec<AttrInfo>) {
         let mut seen = SmallSet::new();
-        for c in std::iter::once(cls).chain(
+        for c in iter::once(cls).chain(
             self.get_metadata_for_class(cls)
                 .ancestors(self.stdlib)
                 .map(|x| x.class_object()),
