@@ -787,7 +787,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ..
             } => {
                 if field.depends_on_class_type_parameter(cls) {
-                    Attribute::no_access(NoAccessReason::ClassAttributeIsGeneric(cls.clone()))
+                    Attribute::no_access(NoAccessReason::ClassAttributeIsGeneric(cls.dupe()))
                 } else {
                     bind_class_attribute(cls, ty.clone())
                 }
