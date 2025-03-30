@@ -6,7 +6,6 @@
  */
 
 use ruff_python_ast::name::Name;
-use ruff_python_ast::Identifier;
 use starlark_map::smallmap;
 
 use crate::alt::answers::AnswersSolver;
@@ -28,11 +27,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_new_type_init(&self, cls: &Class, base: ClassType) -> ClassSynthesizedField {
         let params = vec![
             cls.self_param(),
-            Param::Pos(
-                Name::new(Identifier::new("_x", cls.range())),
-                base.to_type(),
-                Required::Required,
-            ),
+            Param::Pos(Name::new_static("_x"), base.to_type(), Required::Required),
         ];
         let ty = Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), cls.instance_type()),
@@ -52,11 +47,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Type::type_form(cls.instance_type()),
                 Required::Required,
             ),
-            Param::Pos(
-                Name::new(Identifier::new("_x", cls.range())),
-                base.to_type(),
-                Required::Required,
-            ),
+            Param::Pos(Name::new_static("_x"), base.to_type(), Required::Required),
         ];
         let ty = Type::Function(Box::new(Function {
             signature: Callable::list(ParamList::new(params), cls.instance_type()),
