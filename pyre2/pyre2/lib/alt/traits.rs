@@ -97,8 +97,8 @@ pub trait Solve<Ans: LookupAnswer>: SolveRecursive {
     fn record_recursive(
         _answers: &AnswersSolver<Ans>,
         _range: TextRange,
-        _answer: Arc<Self::Answer>,
-        _recursive: Self::Recursive,
+        _answer: &Arc<Self::Answer>,
+        _recursive: &Self::Recursive,
         _errors: &ErrorCollector,
     ) {
     }
@@ -124,11 +124,11 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
     fn record_recursive(
         answers: &AnswersSolver<Ans>,
         range: TextRange,
-        answer: Arc<Type>,
-        recursive: Var,
+        answer: &Arc<Type>,
+        recursive: &Var,
         errors: &ErrorCollector,
     ) {
-        answers.record_recursive(range, answer, recursive, errors);
+        answers.record_recursive(range, answer, *recursive, errors);
     }
 }
 
@@ -168,11 +168,11 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
     fn record_recursive(
         answers: &AnswersSolver<Ans>,
         range: TextRange,
-        answer: Arc<Type>,
-        recursive: Var,
+        answer: &Arc<Type>,
+        recursive: &Var,
         errors: &ErrorCollector,
     ) {
-        answers.record_recursive(range, answer, recursive, errors);
+        answers.record_recursive(range, answer, *recursive, errors);
     }
 }
 

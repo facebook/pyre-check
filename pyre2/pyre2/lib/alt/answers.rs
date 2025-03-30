@@ -549,7 +549,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         );
         if let Ok((v, Some(r))) = &result {
             let k = self.bindings().idx_to_key(idx).range();
-            K::record_recursive(self, k, v.dupe(), r.clone(), self.base_errors);
+            K::record_recursive(self, k, v, r, self.base_errors);
         }
         match result {
             Ok((v, _)) => v,
@@ -579,13 +579,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn record_recursive(
         &self,
         loc: TextRange,
-        answer: Arc<Type>,
+        answer: &Arc<Type>,
         recursive: Var,
         errors: &ErrorCollector,
     ) {
         self.solver().record_recursive(
             recursive,
-            answer.arc_clone(),
+            (**answer).clone(),
             self.type_order(),
             errors,
             loc,
