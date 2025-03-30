@@ -101,4 +101,9 @@ impl Quantified {
     pub fn is_type_var_tuple(&self) -> bool {
         matches!(self.kind, QuantifiedKind::TypeVarTuple)
     }
+
+    pub fn as_gradual_type(&self) -> Type {
+        // TODO(stroxler): Look into what it would take to do better when there's an upper-bound on a TypeVar.
+        self.kind.empty_value()
+    }
 }

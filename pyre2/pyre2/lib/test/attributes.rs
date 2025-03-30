@@ -637,16 +637,16 @@ class Test(B):
 
 testcase_with_bug!(
     "TODO(stroxler): Should probably error when setting the field",
-    test_generic_init_field,
+    test_field_using_method_scope_type_variable,
     r#"
-from typing import reveal_type
+from typing import assert_type, Any
 
 class C:
     def __init__[R](self, field: R):
-        self.field = field
+        self.field = field  # should be an error
 
 c = C("test")
-reveal_type(c.field)  # E: revealed type: ?_TypeVar
+assert_type(c.field, Any)
 "#,
 );
 

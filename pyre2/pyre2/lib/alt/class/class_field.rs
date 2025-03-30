@@ -17,6 +17,7 @@ use ruff_python_ast::Arguments;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprCall;
 use ruff_text_size::TextRange;
+use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
 
 use crate::alt::answers::AnswersSolver;
@@ -131,6 +132,14 @@ impl ClassField {
             descriptor_setter,
             is_function_without_return_annotation,
         })
+    }
+
+    /// Get the raw type. Only suitable for use in this module, this type may
+    /// not correspond to the type of any actual operations on the attribute.
+    fn raw_type(&self) -> &Type {
+        match &self.0 {
+            ClassFieldInner::Simple { ty, .. } => ty,
+        }
     }
 
     pub fn new_synthesized(ty: Type) -> Self {
@@ -517,6 +526,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             value_ty.clone()
         };
 
+        let ty = match initial_value {
+            ClassFieldInitialValue::Class(_) | ClassFieldInitialValue::Instance(None) => ty,
+            ClassFieldInitialValue::Instance(Some(method_name)) => {
+                self.sanitize_method_scope_type_parameters(class, method_name, ty)
+            }
+        };
+
         // Enum handling:
         // - Check whether the field is a member (which depends only on its type and name)
         // - Validate that a member should not have an annotation, and should respect any explicit annotation on `_value_`
@@ -653,6 +669,38 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ClassFieldInitialization::Class(None)
                 }
             }
+        }
+    }
+
+    fn sanitize_method_scope_type_parameters(
+        &self,
+        class: &Class,
+        method_name: &Name,
+        ty: Type,
+    ) -> Type {
+        let mut qs = SmallSet::new();
+        ty.collect_quantifieds(&mut qs);
+        if let Some(method_field) =
+            self.get_non_synthesized_field_from_current_class_only(class, method_name)
+        {
+            match &method_field.raw_type() {
+                Type::Forall(box Forall { tparams, .. }) => {
+                    let gradual_fallbacks: SmallMap<_, _> = tparams
+                        .quantified()
+                        .filter_map(|q| {
+                            if qs.contains(&q) {
+                                Some((q, q.as_gradual_type()))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                    ty.subst(&gradual_fallbacks)
+                }
+                _ => ty,
+            }
+        } else {
+            ty
         }
     }
 

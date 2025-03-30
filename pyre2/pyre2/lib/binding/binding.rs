@@ -1098,7 +1098,6 @@ pub enum ClassFieldInitialValue {
     /// The field does not have an initial value. If a name is provided, it is the name of the
     /// method where the field was inferred (which will be None for fields declared but not
     /// initialized in the class body, or for instance-only fields of synthesized classes)
-    #[expect(dead_code)] // TODO(stroxler) Use this in class field solving.
     Instance(Option<Name>),
     /// The field has an initial value.
     ///
