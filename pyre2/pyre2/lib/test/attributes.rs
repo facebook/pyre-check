@@ -668,6 +668,23 @@ def f():
     "#,
 );
 
+testcase_with_bug!(
+    "TODO(stroxler): We need to define the semantics of generic class nesting and avoid leaked type variables",
+    test_class_nested_inside_generic_class,
+    r#"
+from typing import Any, assert_type, reveal_type
+class Outer[T]:
+    class Inner:
+        x: T | None = None
+assert_type(Outer[int].Inner, type[Outer.Inner])
+assert_type(Outer.Inner, type[Outer.Inner])
+reveal_type(Outer[int].Inner.x)  # E: revealed type: ?_TypeVar | None
+reveal_type(Outer.Inner.x)  # E: revealed type: ?_TypeVar | None
+reveal_type(Outer[int].Inner().x)  # E: revealed type: ?_TypeVar | None
+reveal_type(Outer.Inner().x)  # E: revealed type: ?_TypeVar | None
+   "#,
+);
+
 testcase!(
     test_attr_base,
     r#"
