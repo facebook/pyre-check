@@ -93,7 +93,7 @@ impl<'a> BindingsBuilder<'a> {
 
     fn bind_comprehensions(&mut self, range: TextRange, comprehensions: &mut [Comprehension]) {
         self.scopes.push(Scope::comprehension(range));
-        for comp in comprehensions.iter_mut() {
+        for comp in comprehensions {
             self.scopes.current_mut().stat.expr_lvalue(&comp.target);
             let make_binding =
                 |k| Binding::IterableValue(k, comp.iter.clone(), IsAsync::new(comp.is_async));
@@ -109,7 +109,7 @@ impl<'a> BindingsBuilder<'a> {
     pub fn bind_lambda(&mut self, lambda: &ExprLambda) {
         self.scopes.push(Scope::function(lambda.range));
         if let Some(parameters) = &lambda.parameters {
-            for x in parameters.iter() {
+            for x in parameters {
                 self.bind_lambda_param(x.name());
             }
         }

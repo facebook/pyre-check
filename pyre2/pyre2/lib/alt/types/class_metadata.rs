@@ -448,7 +448,7 @@ impl Linearization {
             Err(_) => return Linearization::empty(),
         };
         let mut ancestor_chains = Vec::new();
-        for (base, mro) in bases_with_metadata.iter() {
+        for (base, mro) in bases_with_metadata {
             match &**mro {
                 ClassMetadata {
                     mro: Mro::Resolved(ancestors),

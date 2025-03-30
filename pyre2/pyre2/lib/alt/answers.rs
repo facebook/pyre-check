@@ -138,7 +138,7 @@ impl DisplayWith<ModuleInfo> for Solutions {
         where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
-            for (key, answer) in entry.iter() {
+            for (key, answer) in entry {
                 writeln!(f, "{} = {}", ctx.display(key), answer)?;
             }
             Ok(())
@@ -219,7 +219,7 @@ impl Solutions {
         {
             let y = y.0.get::<K>();
             if y.len() > x.len() {
-                for (k, v) in y.iter() {
+                for (k, v) in y {
                     if !x.contains_key(k) {
                         return Some(SolutionsDifference {
                             key: (k, k),
@@ -230,7 +230,7 @@ impl Solutions {
                 }
                 unreachable!();
             }
-            for (k, v) in x.iter() {
+            for (k, v) in x {
                 match y.get(k) {
                     Some(v2) if !v.type_eq(v2, ctx) => {
                         return Some(SolutionsDifference {

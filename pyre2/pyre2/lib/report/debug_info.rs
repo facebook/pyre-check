@@ -65,7 +65,7 @@ impl DebugInfo {
         ) where
             BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         {
-            for (key, val) in t.iter() {
+            for (key, val) in t {
                 let idx = bindings.key_to_idx(key);
                 res.push(Binding {
                     kind: type_name_of_val(key).rsplit_once(':').unwrap().1.to_owned(),

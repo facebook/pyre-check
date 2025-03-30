@@ -120,7 +120,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Infers types for `if` clauses in the given comprehensions.
     /// This is for error detection only; the types are not used.
     fn ifs_infer(&self, comps: &[Comprehension], errors: &ErrorCollector) {
-        for comp in comps.iter() {
+        for comp in comps {
             for if_clause in comp.ifs.iter() {
                 self.expr_infer(if_clause, errors);
             }
@@ -581,7 +581,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let mut param_vars = Vec::new();
                 if let Some(parameters) = &lambda.parameters {
                     param_vars.reserve(parameters.len());
-                    for x in parameters.iter() {
+                    for x in parameters {
                         param_vars.push((&x.name().id, self.bindings().get_lambda_param(x.name())));
                     }
                 }

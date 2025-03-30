@@ -54,7 +54,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let mut suffix: Vec<Type> = Vec::new();
         let mut middle: Option<Type> = None;
         let mut has_unpack = false;
-        for value in arguments.iter() {
+        for value in arguments {
             if matches!(value, Expr::EllipsisLiteral(_)) {
                 if let [t] = prefix.as_slice()
                     && middle.is_none()

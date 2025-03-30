@@ -43,7 +43,7 @@ fn get_top_error_dirs(
     path_index: usize,
 ) -> Vec<(PathBuf, Vec<(ErrorKind, usize)>)> {
     let mut dirs: SmallMap<_, ErrorCounts> = SmallMap::new();
-    for (path, errors) in path_errors.iter() {
+    for (path, errors) in path_errors {
         let dir = PathBuf::from(path.to_string())
             .components()
             .take(path_index + 1)

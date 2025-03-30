@@ -474,14 +474,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         for base in bases.iter() {
             match base {
                 BaseClass::Generic(ts) => {
-                    for t in ts.iter() {
+                    for t in ts {
                         if let Some(p) = lookup_tparam(t) {
                             generic_tparams.insert(p);
                         }
                     }
                 }
                 BaseClass::Protocol(ts) if !ts.is_empty() => {
-                    for t in ts.iter() {
+                    for t in ts {
                         if let Some(p) = lookup_tparam(t) {
                             protocol_tparams.insert(p);
                         }
@@ -548,7 +548,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(metaclass)
         } else {
             let mut inherited_meta: Option<ClassType> = None;
-            for (_, m) in base_metaclasses.iter() {
+            for (_, m) in base_metaclasses {
                 let m = (*m).clone();
                 let accept_m = match &inherited_meta {
                     None => true,
@@ -577,7 +577,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // specified directly or through inheritance) is not a subtype of all
         // base class metaclasses.
         let metaclass_type = Type::ClassType(metaclass.clone());
-        for (base_name, m) in base_metaclasses.iter() {
+        for (base_name, m) in base_metaclasses {
             let base_metaclass_type = Type::ClassType((*m).clone());
             if !self
                 .solver()
