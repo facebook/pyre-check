@@ -733,25 +733,18 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 // and the corresponding value type in `got` is consistent with the value type in `want`.
                 // For each required key in `got`, the corresponding key is required in `want`.
                 // For each non-required key in `got`, the corresponding key is not required in `want`.
-                self.type_order
-                    .typed_dict_fields(want)
-                    .iter()
-                    .all(|(k, want_v)| {
-                        self.type_order
-                            .typed_dict_fields(got)
-                            .get(k)
-                            .is_some_and(|got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
-                    })
-                    && self
-                        .type_order
-                        .typed_dict_fields(got)
-                        .iter()
-                        .all(|(k, got_v)| {
-                            self.type_order
-                                .typed_dict_fields(want)
-                                .get(k)
-                                .is_none_or(|want_v| got_v.required == want_v.required)
-                        })
+                let got_fields = self.type_order.typed_dict_fields(got);
+                let want_fields = self.type_order.typed_dict_fields(want);
+
+                want_fields.iter().all(|(k, want_v)| {
+                    got_fields
+                        .get(k)
+                        .is_some_and(|got_v| self.is_subset_eq(&got_v.ty, &want_v.ty))
+                }) && got_fields.iter().all(|(k, got_v)| {
+                    want_fields
+                        .get(k)
+                        .is_none_or(|want_v| got_v.required == want_v.required)
+                })
             }
             (Type::TypedDict(_), _) => {
                 let stdlib = self.type_order.stdlib();
