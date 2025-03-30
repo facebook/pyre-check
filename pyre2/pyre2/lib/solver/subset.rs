@@ -303,7 +303,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 return false;
             }
         }
-        for (_, (_, l_req)) in l_keywords.iter() {
+        for (_, l_req) in l_keywords.values() {
             if *l_req == Required::Required {
                 return false;
             }
