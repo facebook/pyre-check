@@ -29,13 +29,12 @@ impl Ignore {
     }
 
     fn is_ignore_directive(line: &str) -> bool {
-        // We support `type: ignore` and `pyrefly: ignore` for now people who want to ignore
-        // things either for all typecheckers, or just for Pyrefly.
-        // We support `pyre-ignore` and `pyre-fixme` for now for compatibility with Pyre.
-        line.contains("# type: ignore")
-            || line.contains("# pyrefly: ignore")
-            || line.contains("# pyre-ignore")
-            || line.contains("# pyre-fixme")
+        line.split("# ").skip(1).any(|part| {
+            part.starts_with("type: ignore")
+                || part.starts_with("pyrefly: ignore")
+                || part.starts_with("pyre-ignore")
+                || part.starts_with("pyre-fixme")
+        })
     }
 
     pub fn is_ignored(&self, range: &SourceRange, msg: &str) -> bool {
@@ -45,5 +44,23 @@ impl Ignore {
         // We convert to/from zero-indexed because OneIndexed does not implement Step.
         (range.start.row.to_zero_indexed().saturating_sub(1)..=range.end.row.to_zero_indexed())
             .any(|x| self.ignores.contains(&OneIndexed::from_zero_indexed(x)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_ignore_directive() {
+        assert!(Ignore::is_ignore_directive(
+            "stuff # type: ignore # and then stuff"
+        ));
+        assert!(Ignore::is_ignore_directive(
+            "more # stuff # type: ignore[valid-type]"
+        ));
+        assert!(!Ignore::is_ignore_directive("# ignore: pyrefly"));
+        assert!(!Ignore::is_ignore_directive(" pyrefly: ignore"));
+        assert!(!Ignore::is_ignore_directive("normal line"));
     }
 }
