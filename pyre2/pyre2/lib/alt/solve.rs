@@ -2284,7 +2284,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match self.canonicalize_all_class_types(ty, range) {
             Type::Union(xs) if !xs.is_empty() => {
                 let mut ts = Vec::new();
-                for x in xs.into_iter() {
+                for x in xs {
                     let t = self.untype_opt(x, range)?;
                     ts.push(t);
                 }

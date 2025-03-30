@@ -137,7 +137,7 @@ impl NarrowOps {
     }
 
     pub fn and_all(&mut self, other: Self) {
-        for (name, (op, range)) in other.0.into_iter() {
+        for (name, (op, range)) in other.0 {
             self.and(name, op, range);
         }
     }

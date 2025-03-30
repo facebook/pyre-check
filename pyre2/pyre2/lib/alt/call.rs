@@ -571,7 +571,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         let mut closest_overload = None;
         let mut fewest_errors: Option<ErrorCollector> = None;
-        for callable in overloads.into_iter() {
+        for callable in overloads {
             let arg_errors = ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
             let call_errors = ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
             let res = self.callable_infer(
