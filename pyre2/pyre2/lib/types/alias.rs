@@ -39,15 +39,15 @@ pub fn resolve_typeshed_alias(
         return None;
     }
     match lhs.as_str() {
-        "List" => Some((ModuleName::builtins(), Name::new("list"))),
-        "Dict" => Some((ModuleName::builtins(), Name::new("dict"))),
-        "Set" => Some((ModuleName::builtins(), Name::new("set"))),
-        "FrozenSet" => Some((ModuleName::builtins(), Name::new("frozenset"))),
-        "DefaultDict" => Some((ModuleName::collections(), Name::new("defaultdict"))),
-        "Counter" => Some((ModuleName::collections(), Name::new("Counter"))),
-        "Deque" => Some((ModuleName::collections(), Name::new("deque"))),
-        "ChainMap" => Some((ModuleName::collections(), Name::new("ChainMap"))),
-        "OrderedDict" => Some((ModuleName::collections(), Name::new("OrderedDict"))),
+        "List" => Some((ModuleName::builtins(), Name::new_static("list"))),
+        "Dict" => Some((ModuleName::builtins(), Name::new_static("dict"))),
+        "Set" => Some((ModuleName::builtins(), Name::new_static("set"))),
+        "FrozenSet" => Some((ModuleName::builtins(), Name::new_static("frozenset"))),
+        "DefaultDict" => Some((ModuleName::collections(), Name::new_static("defaultdict"))),
+        "Counter" => Some((ModuleName::collections(), Name::new_static("Counter"))),
+        "Deque" => Some((ModuleName::collections(), Name::new_static("deque"))),
+        "ChainMap" => Some((ModuleName::collections(), Name::new_static("ChainMap"))),
+        "OrderedDict" => Some((ModuleName::collections(), Name::new_static("OrderedDict"))),
         _ => None,
     }
 }

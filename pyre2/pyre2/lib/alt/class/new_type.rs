@@ -48,7 +48,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn get_new_type_new(&self, cls: &Class, base: ClassType) -> ClassSynthesizedField {
         let params = vec![
             Param::Pos(
-                Name::new("cls"),
+                Name::new_static("cls"),
                 Type::type_form(cls.instance_type()),
                 Required::Required,
             ),

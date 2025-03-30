@@ -96,7 +96,11 @@ impl Class {
     }
 
     pub fn self_param(&self) -> Param {
-        Param::Pos(Name::new("self"), self.instance_type(), Required::Required)
+        Param::Pos(
+            Name::new_static("self"),
+            self.instance_type(),
+            Required::Required,
+        )
     }
 
     pub fn index(&self) -> ClassIndex {

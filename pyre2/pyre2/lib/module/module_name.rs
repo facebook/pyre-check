@@ -215,9 +215,12 @@ mod tests {
     fn test_first_component() {
         assert_eq!(
             ModuleName::from_str("a.b.c").first_component(),
-            Name::new("a")
+            Name::new_static("a")
         );
-        assert_eq!(ModuleName::from_str("a").first_component(), Name::new("a"));
+        assert_eq!(
+            ModuleName::from_str("a").first_component(),
+            Name::new_static("a")
+        );
     }
 
     #[test]

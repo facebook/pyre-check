@@ -511,10 +511,10 @@ __all__.remove('r')
             &["a", "b", "__all__"],
         );
         let loc = TextRange::default();
-        let a = &DunderAllEntry::Name(loc, Name::new("a"));
-        let b = &DunderAllEntry::Name(loc, Name::new("b"));
+        let a = &DunderAllEntry::Name(loc, Name::new_static("a"));
+        let b = &DunderAllEntry::Name(loc, Name::new_static("b"));
         let foo = &DunderAllEntry::Module(loc, ModuleName::from_str("foo"));
-        let r = &DunderAllEntry::Remove(loc, Name::new("r"));
+        let r = &DunderAllEntry::Remove(loc, Name::new_static("r"));
         assert_eq!(
             defs.dunder_all.map(|x| x),
             vec![a, b, a, b, foo, a, b, foo, a, r]

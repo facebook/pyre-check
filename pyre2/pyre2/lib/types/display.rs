@@ -517,8 +517,8 @@ mod tests {
 
     #[test]
     fn test_display_callable() {
-        let param1 = Param::Pos(Name::new("hello"), Type::None, Required::Required);
-        let param2 = Param::KwOnly(Name::new("world"), Type::None, Required::Required);
+        let param1 = Param::Pos(Name::new_static("hello"), Type::None, Required::Required);
+        let param2 = Param::KwOnly(Name::new_static("world"), Type::None, Required::Required);
         let callable = Callable::list(ParamList::new(vec![param1, param2]), Type::None);
         assert_eq!(
             Type::Callable(Box::new(callable)).to_string(),
