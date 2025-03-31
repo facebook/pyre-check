@@ -3,7 +3,7 @@
 ## No errors on the empty file
 
 ```scrut
-$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a  2>&1 | grep -v "overrides"
+$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py --search-path $TMPDIR -a  2>&1 | grep -v "overrides"
 * INFO * errors* (glob)
 [0]
 ```
@@ -11,7 +11,7 @@ $ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py -a  2>&1 | grep -v
 ## Error on a non-existent file
 
 ```scrut {output_stream: stderr}
-$ $PYRE2 check $TMPDIR/does_not_exist
+$ $PYRE2 check $TMPDIR/does_not_exist --search-path $TMPDIR/does_not_exist
 No files matched pattern `*/does_not_exist` (glob)
 [1]
 ```
@@ -21,7 +21,7 @@ No files matched pattern `*/does_not_exist` (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/same_name.py && \
 > echo "x: str = True" > $TMPDIR/same_name.pyi && \
-> $PYRE2 check $TMPDIR/same_name.py $TMPDIR/same_name.pyi
+> $PYRE2 check $TMPDIR/same_name.py $TMPDIR/same_name.pyi --search-path $TMPDIR
 ERROR */same_name.py*:1:10-* (glob)
 ERROR */same_name.py*:1:10-* (glob)
  INFO 2 errors* (glob)
@@ -56,7 +56,7 @@ ERROR */shown*.py:1:* (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/glob1.py && \
 > echo "x: str = 12" > $TMPDIR/glob2.py && \
-> $PYRE2 check "$TMPDIR/glob*.py"
+> $PYRE2 check "$TMPDIR/glob*.py" --search-path $TMPDIR
 ERROR */glob*.py:1:* (glob)
 ERROR */glob*.py:1:* (glob)
  INFO 2 errors* (glob)
@@ -70,4 +70,15 @@ $ echo "x: str = 12" > $TMPDIR/excluded.py && \
 > $PYRE2 check $TMPDIR/excluded.py --project-excludes="$TMPDIR/*"
 All found `project_includes` files were filtered by `project_excludes` patterns
 [1]
+```
+
+## Error on a non-existent search-path/site-package-path
+
+```scrut
+$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py --search-path $TMPDIR/abcd \
+> --site-package-path $TMPDIR/abcd
+*WARN Nonexistent `site_package_path` found:* (glob)
+*WARN Nonexistent `search_path` found:* (glob)
+* INFO * errors* (glob)
+[0]
 ```

@@ -387,6 +387,7 @@ impl Args {
         move |path| {
             let mut config = config_finder(path);
             self.override_config(&mut config);
+            config.validate();
             config
         }
     }

@@ -203,6 +203,26 @@ impl ConfigFile {
         self.project_excludes = self.project_excludes.clone().from_root(config_root);
     }
 
+    pub fn validate(&self) {
+        fn warn_on_invalid(p: &Path, field: &str) {
+            if p.exists() {
+                return;
+            }
+            let p = if p == Path::new("") {
+                Path::new("./")
+            } else {
+                p
+            };
+            tracing::warn!("Nonexistent `{field}` found: {}", p.display());
+        }
+        self.site_package_path
+            .iter()
+            .for_each(|p| warn_on_invalid(p, "site_package_path"));
+        self.search_path
+            .iter()
+            .for_each(|p| warn_on_invalid(p, "search_path"));
+    }
+
     pub fn from_file(config_path: &Path, error_on_extras: bool) -> anyhow::Result<ConfigFile> {
         // TODO(connernilsen): fix return type and handle config searching
         let config_str = fs::read_to_string(config_path)?;
