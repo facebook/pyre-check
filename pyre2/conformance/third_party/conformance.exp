@@ -549,46 +549,6 @@
   "aliases_recursive.py": [
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "Expected a type form, got instance of `Literal['Json']`",
-      "description": "Expected a type form, got instance of `Literal['Json']`",
-      "line": 14,
-      "name": "not-a-type",
-      "stop_column": 48,
-      "stop_line": 14
-    },
-    {
-      "code": -2,
-      "column": 61,
-      "concise_description": "Expected a type form, got instance of `Literal['Json']`",
-      "description": "Expected a type form, got instance of `Literal['Json']`",
-      "line": 14,
-      "name": "not-a-type",
-      "stop_column": 67,
-      "stop_line": 14
-    },
-    {
-      "code": -2,
-      "column": 43,
-      "concise_description": "Expected a type form, got instance of `Literal['Json2']`",
-      "description": "Expected a type form, got instance of `Literal['Json2']`",
-      "line": 24,
-      "name": "not-a-type",
-      "stop_column": 50,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
-      "column": 63,
-      "concise_description": "Expected a type form, got instance of `Literal['Json2']`",
-      "description": "Expected a type form, got instance of `Literal['Json2']`",
-      "line": 24,
-      "name": "not-a-type",
-      "stop_column": 70,
-      "stop_line": 24
-    },
-    {
-      "code": -2,
       "column": 36,
       "concise_description": "Expected a type form, got instance of `Literal['RecursiveTuple']`",
       "description": "Expected a type form, got instance of `Literal['RecursiveTuple']`",

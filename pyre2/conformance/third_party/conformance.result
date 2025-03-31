@@ -27,8 +27,6 @@
     "Line 52: Expected 1 errors",
     "Line 72: Expected 1 errors",
     "Line 75: Expected 1 errors",
-    "Line 14: Unexpected errors [\"Expected a type form, got instance of `Literal['Json']`\", \"Expected a type form, got instance of `Literal['Json']`\"]",
-    "Line 24: Unexpected errors [\"Expected a type form, got instance of `Literal['Json2']`\", \"Expected a type form, got instance of `Literal['Json2']`\"]",
     "Line 30: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveTuple']`\"]",
     "Line 42: Unexpected errors [\"Expected a type form, got instance of `Literal['RecursiveMapping']`\"]",
     "Line 58: Unexpected errors [\"`|` is not supported between `Literal['GenericTypeAlias1[T1]']` and `type[TypeVar[T1]]`\\n  TODO: Expr::binop_infer attribute base undefined for type: type[TypeVar[T1]] (trying to access __ror__)\"]",

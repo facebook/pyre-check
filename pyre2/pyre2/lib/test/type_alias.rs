@@ -438,13 +438,23 @@ def f(x: X | str):
 );
 
 testcase!(
-    bug = "TODO zeina: Consider a heuristic of when to interpret the RHS of an assignment as type",
     test_type_alias_union,
     r#"
-from typing import Union
+from typing import Union, Optional
 class Y: pass
-X = Union[int, "Y"] # E: Expected a type form, got instance of `Literal['Y']`
-    "#,
+X = Union[int, "Y"]
+Z = Optional["Y"]
+"#,
+);
+
+testcase!(
+    bug = "Doesn't detect as a TypeAlias, but it is one. Maybe this is reasonable.",
+    test_type_alias_with_string,
+    r#"
+class Y: pass
+class C[T]: pass
+X = C["Y"] # E: Expected a type form, got instance of `Literal['Y']`
+"#,
 );
 
 testcase!(

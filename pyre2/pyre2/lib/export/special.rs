@@ -31,6 +31,8 @@ pub enum SpecialExport {
     TypingNamedTuple,
     AssertType,
     NewType,
+    Union,
+    Optional,
     Cast,
     Super,
 }
@@ -64,6 +66,8 @@ impl SpecialExport {
             "NamedTuple" => Some(Self::TypingNamedTuple),
             "assert_type" => Some(Self::AssertType),
             "NewType" => Some(Self::NewType),
+            "Union" => Some(Self::Union),
+            "Optional" => Some(Self::Optional),
             "cast" => Some(Self::Cast),
             "super" => Some(Self::Super),
             _ => None,
@@ -81,6 +85,8 @@ impl SpecialExport {
             | Self::TypedDict
             | Self::TypingNamedTuple
             | Self::NewType
+            | Self::Union
+            | Self::Optional
             | Self::AssertType
             | Self::Cast => {
                 matches!(m.as_str(), "typing" | "typing_extensions")

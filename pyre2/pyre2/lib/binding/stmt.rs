@@ -249,6 +249,18 @@ impl<'a> BindingsBuilder<'a> {
         }
     }
 
+    /// If someone does `x = C["test"]`, that might be a type alias, it might not.
+    /// Use this heuristic to detect things that are definitely type aliases.
+    fn is_definitely_type_alias_rhs(&mut self, x: &Expr) -> bool {
+        match x {
+            Expr::Subscript(x) => matches!(
+                self.as_special_export(&x.value),
+                Some(SpecialExport::Union | SpecialExport::Optional)
+            ),
+            _ => false,
+        }
+    }
+
     /// Evaluate the statements and update the bindings.
     /// Every statement should end up in the bindings, perhaps with a location that is never used.
     pub fn stmt(&mut self, x: Stmt) {
@@ -367,7 +379,11 @@ impl<'a> BindingsBuilder<'a> {
                             _ => {}
                         }
                     }
-                    self.ensure_expr(&mut x.value);
+                    if self.is_definitely_type_alias_rhs(&x.value) {
+                        self.ensure_type(&mut x.value, &mut None);
+                    } else {
+                        self.ensure_expr(&mut x.value);
+                    }
                     self.bind_assign(name, |k: Option<Idx<KeyAnnotation>>| {
                         Binding::NameAssign(
                             name.id.clone(),
