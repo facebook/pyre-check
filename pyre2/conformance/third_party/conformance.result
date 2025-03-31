@@ -587,7 +587,6 @@
     "Line 81: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
   ],
   "qualifiers_final_annotation.py": [
-    "Line 16: Expected 1 errors",
     "Line 34: Expected 1 errors",
     "Line 38: Expected 1 errors",
     "Line 54: Expected 1 errors",

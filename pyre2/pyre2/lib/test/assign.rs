@@ -350,6 +350,16 @@ def f(x: X[int]):
 );
 
 testcase!(
+    test_assign_final,
+    r#"
+from typing import Final
+x: Final   # E: Expected a type argument for `Final`
+y: Final[int]  # OK
+z: Final = 1  # OK
+    "#,
+);
+
+testcase!(
     test_aug_assign_integer,
     r#"
 def f(x: int):

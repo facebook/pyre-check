@@ -23,6 +23,7 @@ use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
 use crate::binding::binding::BindingExpect;
+use crate::binding::binding::Initialized;
 use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
@@ -404,7 +405,7 @@ impl<'a> BindingsBuilder<'a> {
                     self.ensure_type(&mut x.annotation, &mut None);
                     let ann_val = if let Some(special) = SpecialForm::new(&name.id, &x.annotation) {
                         BindingAnnotation::Type(
-                            AnnotationTarget::Assign(name.id.clone()),
+                            AnnotationTarget::Assign(name.id.clone(), Initialized::Yes),
                             special.to_type(),
                         )
                     } else {
@@ -412,7 +413,14 @@ impl<'a> BindingsBuilder<'a> {
                             if in_class_body {
                                 AnnotationTarget::ClassMember(name.id.clone())
                             } else {
-                                AnnotationTarget::Assign(name.id.clone())
+                                AnnotationTarget::Assign(
+                                    name.id.clone(),
+                                    if x.value.is_some() {
+                                        Initialized::Yes
+                                    } else {
+                                        Initialized::No
+                                    },
+                                )
                             },
                             *x.annotation.clone(),
                             None,

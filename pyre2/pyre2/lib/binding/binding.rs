@@ -971,6 +971,12 @@ impl DisplayWith<Bindings> for Binding {
     }
 }
 
+#[derive(Debug, Clone, Copy, VisitMut, TypeEq, PartialEq, Eq)]
+pub enum Initialized {
+    Yes,
+    No,
+}
+
 #[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq)]
 pub struct AnnotationWithTarget {
     pub target: AnnotationTarget,
@@ -998,7 +1004,8 @@ pub enum AnnotationTarget {
     /// A return type annotation on a function. The name is that of the function
     Return(Name),
     /// An annotated assignment. For attribute assignments, the name is the attribute name ("attr" in "x.attr")
-    Assign(Name),
+    /// Does the annotated assignment have an initial value?
+    Assign(Name, Initialized),
     /// A member of a class
     ClassMember(Name),
 }
@@ -1010,7 +1017,7 @@ impl Display for AnnotationTarget {
             Self::ArgsParam(name) => write!(f, "args {name}"),
             Self::KwargsParam(name) => write!(f, "kwargs {name}"),
             Self::Return(name) => write!(f, "{name} return"),
-            Self::Assign(name) => write!(f, "var {name}"),
+            Self::Assign(name, _initialized) => write!(f, "var {name}"),
             Self::ClassMember(name) => write!(f, "attr {name}"),
         }
     }
@@ -1023,7 +1030,7 @@ impl AnnotationTarget {
             Self::ArgsParam(_) => TypeFormContext::ParameterArgsAnnotation,
             Self::KwargsParam(_) => TypeFormContext::ParameterKwargsAnnotation,
             Self::Return(_) => TypeFormContext::ReturnAnnotation,
-            Self::Assign(_) => TypeFormContext::VarAnnotation,
+            Self::Assign(_, is_initialized) => TypeFormContext::VarAnnotation(*is_initialized),
             Self::ClassMember(_) => TypeFormContext::ClassVarAnnotation,
         }
     }

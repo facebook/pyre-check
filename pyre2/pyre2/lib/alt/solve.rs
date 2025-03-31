@@ -46,6 +46,7 @@ use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::EmptyAnswer;
 use crate::binding::binding::FunctionSource;
+use crate::binding::binding::Initialized;
 use crate::binding::binding::IsAsync;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyExport;
@@ -119,7 +120,8 @@ pub enum TypeFormContext {
     /// Scoped type params for functions and classes
     TypeVarConstraint,
     /// Variable annotation outside of a class definition
-    VarAnnotation,
+    /// Is the variable assigned a value here?
+    VarAnnotation(Initialized),
 }
 
 pub enum Iterable {
@@ -257,7 +259,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 Some(Qualifier::Final)
                     if !matches!(
                         type_form_context,
-                        TypeFormContext::ClassVarAnnotation | TypeFormContext::VarAnnotation,
+                        TypeFormContext::ClassVarAnnotation | TypeFormContext::VarAnnotation(_),
                     ) =>
                 {
                     self.error(
@@ -291,7 +293,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     qualifier
                 }
                 Some(Qualifier::TypeAlias)
-                    if type_form_context != TypeFormContext::VarAnnotation =>
+                    if !matches!(type_form_context, TypeFormContext::VarAnnotation(_)) =>
                 {
                     self.error(
                         errors,
@@ -365,7 +367,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match x {
             _ if let Some(qualifier) = self.expr_qualifier(x, type_form_context, errors) => {
                 match qualifier {
-                    Qualifier::Final | Qualifier::TypeAlias | Qualifier::ClassVar => {}
+                    Qualifier::TypeAlias | Qualifier::ClassVar => {}
+                    // A local variable annotated assignment is only allowed to have an un-parameterized
+                    // Final annotation if it's initialized with a value
+                    Qualifier::Final
+                        if !matches!(
+                            type_form_context,
+                            TypeFormContext::VarAnnotation(Initialized::No)
+                        ) => {}
                     _ => {
                         self.error(
                             errors,
@@ -1658,7 +1667,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None => (None, None),
                             Some(t) => (
                                 match &t.target {
-                                    AnnotationTarget::Assign(name)
+                                    AnnotationTarget::Assign(name, _)
                                     | AnnotationTarget::ClassMember(name) => Some(name.clone()),
                                     _ => None,
                                 },

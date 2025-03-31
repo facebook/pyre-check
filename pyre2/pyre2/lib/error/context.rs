@@ -132,7 +132,7 @@ impl TypeCheckKind {
             | AnnotationTarget::ArgsParam(_)
             | AnnotationTarget::KwargsParam(_) => Self::Unknown,
             AnnotationTarget::Return(_func) => Self::ExplicitFunctionReturn,
-            AnnotationTarget::Assign(name) => Self::AnnotatedName(name.clone()),
+            AnnotationTarget::Assign(name, _is_initialized) => Self::AnnotatedName(name.clone()),
             AnnotationTarget::ClassMember(member) => Self::Attribute(member.clone()),
         }
     }

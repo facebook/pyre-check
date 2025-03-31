@@ -34,6 +34,7 @@ use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
 use crate::binding::binding::EmptyAnswer;
+use crate::binding::binding::Initialized;
 use crate::binding::binding::Key;
 use crate::binding::binding::KeyAnnotation;
 use crate::binding::binding::KeyClass;
@@ -257,7 +258,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyAnnotation {
 
     fn promote_recursive(_: Self::Recursive) -> Self::Answer {
         AnnotationWithTarget {
-            target: AnnotationTarget::Assign(Name::default()),
+            target: AnnotationTarget::Assign(Name::default(), Initialized::Yes),
             annotation: Annotation::default(),
         }
     }

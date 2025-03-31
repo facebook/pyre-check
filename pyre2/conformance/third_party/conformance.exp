@@ -9384,6 +9384,16 @@
     {
       "code": -2,
       "column": 7,
+      "concise_description": "Expected a type argument for `Final`",
+      "description": "Expected a type argument for `Final`",
+      "line": 16,
+      "name": "invalid-annotation",
+      "stop_column": 12,
+      "stop_line": 16
+    },
+    {
+      "code": -2,
+      "column": 7,
       "concise_description": "Expected 1 type argument for Final, got 2",
       "description": "Expected 1 type argument for Final, got 2",
       "line": 18,
