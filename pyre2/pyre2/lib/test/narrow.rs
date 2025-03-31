@@ -19,6 +19,23 @@ def f(x: str | None):
 );
 
 testcase!(
+    bug = "PyTorch TODO: implement attribute narrowing",
+    test_attr_refine,
+    r#"
+from typing import Any, Optional, reveal_type
+
+class N:
+    type: Optional[Any]
+
+def add_inference_rule(n: N):
+    reveal_type(n) # E: revealed type: N
+    reveal_type(n.type) # E: revealed type: Any | None
+    n.type = 3
+    reveal_type(n.type + 3) # E: revealed type: int | Unknown # E: `+` is not supported between `None` and `Literal[3]`
+"#,
+);
+
+testcase!(
     test_truthy_falsy,
     r#"
 from typing import assert_type, Literal
