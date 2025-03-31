@@ -2,11 +2,11 @@ This folder contains the Python typing conformance test suite.
 
 The `src/` directory contains several types of files:
 
-- the conformance test sources, `.py` and `.pyi`
-- the conformance test outputs, `.py.exp`
-- the comparison of the conformance test results with the expected errors,
-  `.py.result`
-- overall results, `results.json`
+- the conformance test sources, `.py` and `.pyi` files
+- what pyrefly outputs for each conformance test: `conformance.exp`
+- comparison of pyrefly's outputs with the expected errors for each conformance
+  test: `conformance.result`
+- high-level summary: `results.json`
 
 Commands (from this directory):
 
