@@ -233,6 +233,9 @@ function fetchCurMonacoModelAndTriggerUpdate(fileName: string): editor.ITextMode
     // Force update to trigger initial inlay hint
     model.setValue(model.getValue());
 
+    // Ensure tab size is correctly set
+    model.updateOptions({ tabSize: 4, insertSpaces: true });
+
     return model;
 }
 
