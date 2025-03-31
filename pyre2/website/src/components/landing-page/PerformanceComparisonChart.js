@@ -21,27 +21,15 @@ import {
 
 export default component PerformanceComparisonChart(project: ProjectValue) {
   const data = getData(project);
-
-  // Calculate the maximum duration for scaling
-  const maxDuration = Math.max(...data.map(item => item.durationInSeconds));
-
   return (
     <div key={project}>
       {data.map((typechecker, index) => (
-        <div
-          {...stylex.props(
-            styles.barContainer,
-            index !== data.length - 1 ? {marginBottom: 20} : null,
-          )}
-          key={index}>
+        <div {...stylex.props(styles.barContainer)} key={index}>
           <span {...stylex.props(styles.typecheckerName)}>
             <strong>{typechecker.typechecker}</strong>
           </span>
           <div {...stylex.props(styles.progressBarContainer)}>
-            <ProgressBar
-              durationInSeconds={typechecker.durationInSeconds}
-              maxDurationInSeconds={maxDuration}
-            />
+            <ProgressBar durationInSeconds={typechecker.durationInSeconds} />
           </div>
           <span {...stylex.props(styles.duration)}>
             <strong>{`${typechecker.durationInSeconds}s`}</strong>
@@ -57,6 +45,7 @@ const styles = stylex.create({
     flex: 1,
     display: 'flex',
     flexDirection: 'row',
+    marginBottom: 20,
   },
   typecheckerName: {
     display: 'inline-block',
@@ -65,7 +54,6 @@ const styles = stylex.create({
   },
   progressBarContainer: {
     flexGrow: 1,
-    marginRight: 20,
   },
   duration: {
     marginLeft: 'auto',
@@ -86,16 +74,6 @@ function getData(project: ProjectValue) {
 
 const performanceComparsionChartData = [
   {
-    project: Project.PYTORCH,
-    data: [
-      {typechecker: TypeChecker.PYREFLY, durationInSeconds: 0.5},
-      {typechecker: TypeChecker.MYPY, durationInSeconds: 8},
-      {typechecker: TypeChecker.PYRIGHT, durationInSeconds: 5},
-      {typechecker: TypeChecker.PYTYPE, durationInSeconds: 12},
-      {typechecker: TypeChecker.PYRE1, durationInSeconds: 15},
-    ],
-  },
-  {
     project: Project.INSTAGRAM,
     data: [
       {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
@@ -103,6 +81,16 @@ const performanceComparsionChartData = [
       {typechecker: TypeChecker.PYRIGHT, durationInSeconds: 20},
       {typechecker: TypeChecker.PYTYPE, durationInSeconds: 40},
       {typechecker: TypeChecker.PYRE1, durationInSeconds: 40},
+    ],
+  },
+  {
+    project: Project.PYTORCH,
+    data: [
+      {typechecker: TypeChecker.PYREFLY, durationInSeconds: 2},
+      {typechecker: TypeChecker.MYPY, durationInSeconds: 10},
+      {typechecker: TypeChecker.PYRIGHT, durationInSeconds: 5},
+      {typechecker: TypeChecker.PYTYPE, durationInSeconds: 12},
+      {typechecker: TypeChecker.PYRE1, durationInSeconds: 12},
     ],
   },
   {
