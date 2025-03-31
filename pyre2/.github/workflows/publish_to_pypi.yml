@@ -5,6 +5,7 @@ on:
     paths:
       - pyre2/version.bzl
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-binaries:
