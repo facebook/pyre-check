@@ -491,7 +491,6 @@
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]"
   ],
   "literals_parameterizations.py": [
-    "Line 60: Expected 1 errors",
     "Line 35: Unexpected errors ['Invalid literal expression']"
   ],
   "literals_semantics.py": [],

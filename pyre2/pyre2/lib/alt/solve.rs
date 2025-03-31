@@ -434,7 +434,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ann.qualifiers.insert(0, qualifier);
                 ann
             }
-            _ => Annotation::new_type(self.expr_untype(x, type_form_context, errors)),
+            _ => {
+                let ann_ty = self.expr_untype(x, type_form_context, errors);
+                if let Type::SpecialForm(special_form) = ann_ty
+                    && !special_form.is_valid_unparameterized_annotation()
+                {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::InvalidAnnotation,
+                        None,
+                        format!("Expected a type argument for `{}`", special_form),
+                    );
+                }
+                Annotation::new_type(ann_ty)
+            }
         }
     }
 
@@ -2402,6 +2416,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 ErrorKind::InvalidAnnotation,
                 None,
                 format!("{} is not allowed in this context.", result),
+            );
+        }
+        if let Type::SpecialForm(special_form) = result
+            && !special_form.is_valid_unparameterized_annotation()
+        {
+            self.error(
+                errors,
+                x.range(),
+                ErrorKind::InvalidAnnotation,
+                None,
+                format!("Expected a type argument for `{}`", special_form),
             );
         }
         if let Type::Quantified(quantified) = result {

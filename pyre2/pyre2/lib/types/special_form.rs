@@ -71,6 +71,23 @@ impl SpecialForm {
         }
     }
 
+    /// Is this special form valid as an un-parameterized annotation anywhere?
+    pub fn is_valid_unparameterized_annotation(self) -> bool {
+        match self {
+            SpecialForm::LiteralString
+            | SpecialForm::Never
+            | SpecialForm::NoReturn
+            | SpecialForm::Generic
+            | SpecialForm::Protocol
+            | SpecialForm::Final
+            | SpecialForm::TypeAlias
+            | SpecialForm::TypedDict
+            | SpecialForm::Type
+            | SpecialForm::SelfType => true,
+            _ => false,
+        }
+    }
+
     pub fn to_qualifier(self) -> Option<Qualifier> {
         match self {
             Self::Annotated => Some(Qualifier::Annotated),

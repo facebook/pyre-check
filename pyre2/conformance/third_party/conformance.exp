@@ -8103,6 +8103,16 @@
     },
     {
       "code": -2,
+      "column": 4,
+      "concise_description": "Expected a type argument for `Literal`",
+      "description": "Expected a type argument for `Literal`",
+      "line": 60,
+      "name": "invalid-annotation",
+      "stop_column": 11,
+      "stop_line": 60
+    },
+    {
+      "code": -2,
       "column": 12,
       "concise_description": "Expected a type form, got instance of `(x: Error) -> int`",
       "description": "Expected a type form, got instance of `(x: Error) -> int`",
