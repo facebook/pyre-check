@@ -48,6 +48,23 @@ Ts = TypeVarTuple('Ts')
 );
 
 testcase!(
+    bug = "C2 shouldn't give an error here",
+    test_type_var_tuple_class_field_and_constructor,
+    r#"
+class C1[T]:
+    x: tuple[T]
+    def __init__(self, x: tuple[T]) -> None:
+        self.x = x
+        self.y: T = x
+class C2[*Ts]:
+    x: tuple[*Ts]
+    def __init__(self, x: tuple[*Ts]) -> None:
+        self.x = x  # E: `?_TypeVarTuple` is not assignable to attribute `x` with type `Unknown`
+        self.y: tuple[*Ts] = x  # E: `?_TypeVarTuple` is not assignable to attribute `y` with type `Unknown`
+"#,
+);
+
+testcase!(
     test_require_unpack,
     r#"
 from typing import TypeVarTuple, Unpack, Generic
