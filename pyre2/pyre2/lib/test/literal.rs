@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_fstring_literal,
@@ -150,8 +149,8 @@ def f(x: Z) -> None:
 "#,
 );
 
-testcase_with_bug!(
-    "Should support nested literal",
+testcase!(
+    bug = "Should support nested literal",
     test_literal_direct_nesting,
     r#"
 from typing import Literal
@@ -168,8 +167,8 @@ bad6: Literal[(1, "foo", "bar")]  # E: Literal arguments cannot be parenthesized
 "#,
 );
 
-testcase_with_bug!(
-    "Should ban empty literals",
+testcase!(
+    bug = "Should ban empty literals",
     test_literal_with_nothing,
     r#"
 from typing import Literal

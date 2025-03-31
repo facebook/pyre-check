@@ -8,7 +8,6 @@
 use crate::config::ErrorConfigs;
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 fn env_class_x() -> TestEnv {
     TestEnv::one(
@@ -157,8 +156,8 @@ fn env_redefine_class() -> TestEnv {
     TestEnv::one("foo", "class Foo: ...")
 }
 
-testcase_with_bug!(
-    "The anywhere lookup of Foo in the function body finds both the imported and locally defined classes",
+testcase!(
+    bug = "The anywhere lookup of Foo in the function body finds both the imported and locally defined classes",
     test_redefine_class,
     env_redefine_class(),
     r#"
@@ -362,8 +361,8 @@ fn env_dunder_init_overlap_submodule() -> TestEnv {
     t
 }
 
-testcase_with_bug!(
-    r#"
+testcase!(
+    bug = r#"
 TODO: foo.bar should not be a str (it should be the module object)
 TODO: foo.bar.x should exist and should be an int
     "#,
@@ -378,8 +377,8 @@ foo.bar.x # TODO # E: Object of class `str` has no attribute `x`
 "#,
 );
 
-testcase_with_bug!(
-    "TODO: Surprisingly (to Sam), importing __init__ after the submodule does not overwrite foo.bar with the global from __init__.py.",
+testcase!(
+    bug = "TODO: Surprisingly (to Sam), importing __init__ after the submodule does not overwrite foo.bar with the global from __init__.py.",
     test_import_dunder_init_overlap_submodule_first,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -402,8 +401,8 @@ foo.bar.x # E: Object of class `str` has no attribute `x`
 "#,
 );
 
-testcase_with_bug!(
-    "`foo.bar` is explicitly imported as module so it should be treated as a module.",
+testcase!(
+    bug = "`foo.bar` is explicitly imported as module so it should be treated as a module.",
     test_import_dunder_init_overlap_submodule_only,
     env_dunder_init_overlap_submodule(),
     r#"
@@ -421,8 +420,8 @@ fn env_dunder_init_reexport_submodule() -> TestEnv {
     t
 }
 
-testcase_with_bug!(
-    "We currently don't model auto re-exporting submodules in __init__.py",
+testcase!(
+    bug = "We currently don't model auto re-exporting submodules in __init__.py",
     test_import_dunder_init_reexport_submodule,
     env_dunder_init_reexport_submodule(),
     r#"
@@ -459,8 +458,8 @@ from foo import *  # E: Could not import `bad_definition` from `foo`
 "#,
 );
 
-testcase_with_bug!(
-    "False negative",
+testcase!(
+    bug = "False negative",
     test_export_all_not_module,
     r#"
 class not_module:

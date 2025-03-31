@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_set_attribute,
@@ -77,8 +76,8 @@ class MyTestCase:
     "#,
 );
 
-testcase_with_bug!(
-    "Example of how making methods read-write but not invariant is unsound",
+testcase!(
+    bug = "Example of how making methods read-write but not invariant is unsound",
     test_method_assign,
     r#"
 from typing import Protocol
@@ -208,8 +207,8 @@ def f(a: A):
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler): We are always promoting literals. It is sound to preserve literals for read-only attributes",
+testcase!(
+    bug = "TODO(stroxler): We are always promoting literals. It is sound to preserve literals for read-only attributes",
     test_final_attribute_assined_in_init,
     r#"
 from typing import assert_type, Final, Literal
@@ -668,8 +667,8 @@ def f():
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler): We need to define the semantics of generic class nesting and avoid leaked type variables",
+testcase!(
+    bug = "TODO(stroxler): We need to define the semantics of generic class nesting and avoid leaked type variables",
     test_class_nested_inside_generic_class,
     r#"
 from typing import Any, assert_type, reveal_type

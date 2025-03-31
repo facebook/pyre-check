@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_tyvar_function,
@@ -152,8 +151,8 @@ class C(B[str]):
     "#,
 );
 
-testcase_with_bug!(
-    "The TODO here is because we implemented but have temporarily disabled a check for the use of a generic class without type arguments as a type annotation; this check needs to be configurable and we don't have the plumbing yet.",
+testcase!(
+    bug = "The TODO here is because we implemented but have temporarily disabled a check for the use of a generic class without type arguments as a type annotation; this check needs to be configurable and we don't have the plumbing yet.",
     test_legacy_generic_syntax_implicit_targs,
     r#"
 from typing import Any, Generic, TypeVar, assert_type
@@ -460,8 +459,8 @@ x2: str = f("hello")
 "#,
 );
 
-testcase_with_bug!(
-    "TODO: We should raise an error on list[T] because T is unbounded",
+testcase!(
+    bug = "TODO: We should raise an error on list[T] because T is unbounded",
     test_unbounded_typevar,
     r#"
 from typing import TypeVar
@@ -479,8 +478,8 @@ T = TypeVar('T')  # E: `type[TypeVar[T]]` is not assignable to variable `T` with
     "#,
 );
 
-testcase_with_bug!(
-    "Should use the bound to check it is safe",
+testcase!(
+    bug = "Should use the bound to check it is safe",
     test_typevar_bound,
     r#"
 from typing import Callable, TypeVar

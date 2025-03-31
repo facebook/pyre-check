@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_tuple,
@@ -256,8 +255,8 @@ def test(x: tuple[int, *tuple[str, ...]]) -> None:
 "#,
 );
 
-testcase_with_bug!(
-    "Regressed with an upgrade of typeshed. Should have no bugs.",
+testcase!(
+    bug = "Regressed with an upgrade of typeshed. Should have no bugs.",
     test_tuple_slice_non_literal,
     r#"
 from typing import assert_type
@@ -267,8 +266,8 @@ def test(x: tuple[int, str, bool], y: tuple[int, ...], start: int, stop: int, st
 "#,
 );
 
-testcase_with_bug!(
-    "Slice subset should work",
+testcase!(
+    bug = "Slice subset should work",
     test_slice_subset,
     r#"
 def f(x: slice) -> None:

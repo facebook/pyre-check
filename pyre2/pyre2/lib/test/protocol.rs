@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_protocol,
@@ -313,8 +312,8 @@ f(C()) # E: Argument `C` is not assignable to parameter `proto` with type `P`
     "#,
 );
 
-testcase_with_bug!(
-    "The conformance tests require that we accept this, and mypy and pyright do so, but it is unsound. Consider emitting an error.",
+testcase!(
+    bug = "The conformance tests require that we accept this, and mypy and pyright do so, but it is unsound. Consider emitting an error.",
     test_self_param,
     r#"
 from typing import Protocol, Self

@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_type_var_tuple,
@@ -38,8 +37,8 @@ y: tuple[Unpack[tuple[int, str]]] = (1, "2")  # OK
 "#,
 );
 
-testcase_with_bug!(
-    "We should disallow star-unpacking in invalid contexts",
+testcase!(
+    bug = "We should disallow star-unpacking in invalid contexts",
     test_invalid_star,
     r#"
 from typing import TypeVarTuple, Generic

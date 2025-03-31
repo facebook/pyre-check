@@ -8,7 +8,6 @@
 //! Many of these tests come from <https://typing.readthedocs.io/en/latest/spec/generics.html#paramspec>.
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_callable_param_spec,
@@ -46,8 +45,8 @@ def test(x1: Callable[[int, str], int], x2: Callable[..., int]):
 "#,
 );
 
-testcase_with_bug!(
-    "Generic functions don't work with ParamSpec",
+testcase!(
+    bug = "Generic functions don't work with ParamSpec",
     test_param_spec_generic_function,
     r#"
 from typing import Callable, reveal_type
@@ -60,8 +59,8 @@ reveal_type(foo2)  # E: revealed type: (ParamSpec(Unknown)) -> Unknown
 "#,
 );
 
-testcase_with_bug!(
-    "Generic class constructors don't work with ParamSpec",
+testcase!(
+    bug = "Generic class constructors don't work with ParamSpec",
     test_param_spec_generic_constructor,
     r#"
 from typing import Callable, reveal_type
@@ -255,8 +254,8 @@ reveal_type(transform(bar)) # Should return (a: str, /, *args: bool) -> bool # E
 "#,
 );
 
-testcase_with_bug!(
-    "P.args and P.kwargs should only work when P is in scope",
+testcase!(
+    bug = "P.args and P.kwargs should only work when P is in scope",
     test_paramspec_component_usage,
     r#"
 from typing import Callable, ParamSpec
@@ -352,8 +351,8 @@ def foo(x: int, *args: P1.args, **kwargs: P2.kwargs) -> None: ...  # E: *args an
 "#,
 );
 
-testcase_with_bug!(
-    "Rejects everything",
+testcase!(
+    bug = "Rejects everything",
     test_paramspec_twice,
     r#"
 from typing import Callable, ParamSpec

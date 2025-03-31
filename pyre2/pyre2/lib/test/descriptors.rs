@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_staticmethod_with_explicit_parameter_type,
@@ -176,8 +175,8 @@ C().d = "42"
     "#,
 );
 
-testcase_with_bug!(
-    "TODO(stroxler): type inference causes us to complain on the decorator application",
+testcase!(
+    bug = "TODO(stroxler): type inference causes us to complain on the decorator application",
     test_class_property_descriptor,
     r#"
 from typing import assert_type, Callable

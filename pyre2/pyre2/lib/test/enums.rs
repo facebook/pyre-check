@@ -10,7 +10,6 @@ use itertools::Itertools;
 use crate::test::util::get_class;
 use crate::test::util::mk_state;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 #[test]
 fn test_fields() {
@@ -110,8 +109,8 @@ Color = Enum("C", 'RED', 'GREEN', 'BLUE')  # E: Expected string literal "Color"
 // types and method calls so that binding is handled at call time.
 //
 // This test should be fixed as part of making that work in a general way.
-testcase_with_bug!(
-    "Call resolution for metaclasses does not play well with the constraint solver, we need better method types to fix.",
+testcase!(
+    bug = "Call resolution for metaclasses does not play well with the constraint solver, we need better method types to fix.",
     test_iterate,
     r#"
 from typing import assert_type

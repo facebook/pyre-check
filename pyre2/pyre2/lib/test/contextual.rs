@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_context_annassign,
@@ -174,8 +173,8 @@ xs: dict[A, X] = {B(): Y() for _ in [0]}
 "#,
 );
 
-testcase_with_bug!(
-    "We should push context into generator expressions",
+testcase!(
+    bug = "We should push context into generator expressions",
     test_context_generator_expr,
     r#"
 from typing import Generator, Iterable
@@ -273,8 +272,8 @@ reveal_type(x2) # E: revealed type: (x: int, y: str) -> None
 "#,
 );
 
-testcase_with_bug!(
-    "Push expected return type context through generic function call",
+testcase!(
+    bug = "Push expected return type context through generic function call",
     test_context_return,
     r#"
 from typing import Callable
@@ -291,8 +290,8 @@ z: list[A] = y # E: `list[B]` is not assignable to `list[A]`
 "#,
 );
 
-testcase_with_bug!(
-    "Push expected return type context through generic constructor call",
+testcase!(
+    bug = "Push expected return type context through generic constructor call",
     test_context_ctor_return,
     r#"
 class A: ...
@@ -305,8 +304,8 @@ x: C[list[A]] = C([B()]) # E: `C[list[B]]` is not assignable to `C[list[A]]`
 "#,
 );
 
-testcase_with_bug!(
-    "TODO: We do not currently validate assignments in multi-target assigns. Depending how we fix it, contextual typing may not work",
+testcase!(
+    bug = "TODO: We do not currently validate assignments in multi-target assigns. Depending how we fix it, contextual typing may not work",
     test_context_assign_unpacked_tuple,
     r#"
 class A: ...
@@ -317,8 +316,8 @@ xs: list[A] = []
 "#,
 );
 
-testcase_with_bug!(
-    "TODO: No context propagated to subscript assignment target, error message is bad",
+testcase!(
+    bug = "TODO: No context propagated to subscript assignment target, error message is bad",
     test_context_assign_subscript,
     r#"
 class A: ...
@@ -329,8 +328,8 @@ xs[0] = [B()] # E: No matching overload found for function `list.__setitem__`  #
 "#,
 );
 
-testcase_with_bug!(
-    "Context should be propagated to argument",
+testcase!(
+    bug = "Context should be propagated to argument",
     test_generic_get_literal,
     r#"
 from typing import assert_type, TypeVar, Literal

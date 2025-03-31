@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_class_init,
@@ -294,8 +293,8 @@ A.__new__(int)  # E: `type[int]` is not assignable to parameter `cls`
     "#,
 );
 
-testcase_with_bug!(
-    "We should give the first parameter of `__new__` a type of `type[Self]` even when unannotated",
+testcase!(
+    bug = "We should give the first parameter of `__new__` a type of `type[Self]` even when unannotated",
     test_cls_type_in_new_unannotated,
     r#"
 class A:

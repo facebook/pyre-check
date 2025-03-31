@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_type_alias_simple,
@@ -438,8 +437,8 @@ def f(x: X | str):
     "#,
 );
 
-testcase_with_bug!(
-    "TODO zeina: Consider a heuristic of when to interpret the RHS of an assignment as a type.",
+testcase!(
+    bug = "TODO zeina: Consider a heuristic of when to interpret the RHS of an assignment as type",
     test_type_alias_union,
     r#"
 from typing import Union

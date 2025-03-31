@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_new_type_simple,
@@ -43,8 +42,8 @@ nt1: GoodNewType1[int] # E: Expected 0 type arguments for `GoodNewType1`, got 1
      "#,
 );
 
-testcase_with_bug!(
-    "TODO: None of these types are allowed for a NewType. We will add checks for that.",
+testcase!(
+    bug = "TODO: None of these types are allowed for a NewType. We will add checks for that.",
     test_new_type_generic,
     r#"
 from typing import NewType, TypeVar, Hashable, Literal

@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_canonicalized_call,
@@ -687,8 +686,8 @@ z: int = "3"  # E: `Literal['3']` is not assignable to `int`
 "#,
 );
 
-testcase_with_bug!(
-    "An ignore comment should attach to either the current line or next line, but not both",
+testcase!(
+    bug = "An ignore comment should attach to either the current line or next line, but not both",
     test_ignore_attachment,
     r#"
 # type: ignore
@@ -699,8 +698,8 @@ y: int = "2"  # TODO: this error should not be suppressed
 "#,
 );
 
-testcase_with_bug!(
-    "This test is a placeholder, we've commented out the check for missing type arguments because until we have configurable errors it causes too many problems.",
+testcase!(
+    bug = "This test is a placeholder, we've commented out the check for missing type arguments because until we have configurable errors it causes too many problems.",
     test_untype_with_missing_targs,
     r#"
 class C[T]: pass
@@ -872,8 +871,8 @@ assert_type(x, list[int])
     "#,
 );
 
-testcase_with_bug!(
-    "TODO",
+testcase!(
+    bug = "TODO",
     test_type_of_type,
     r#"
 class C:

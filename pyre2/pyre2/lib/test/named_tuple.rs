@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_named_tuple,
@@ -148,8 +147,8 @@ def test(p: Pair, p2: Pair2[bytes]):
     "#,
 );
 
-testcase_with_bug!(
-    "NamedTuple extends tuple[Any, ...], making it a subtype of too many things",
+testcase!(
+    bug = "NamedTuple extends tuple[Any, ...], making it a subtype of too many things",
     test_named_tuple_subclass,
     r#"
 from typing import NamedTuple, Sequence, Never

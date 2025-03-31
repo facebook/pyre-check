@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_is,
@@ -162,8 +161,8 @@ def f1(x: type[A] | type[B]):
     "#,
 );
 
-testcase_with_bug!(
-    "`Literal[False] | bool` should collapse to `bool`",
+testcase!(
+    bug = "`Literal[False] | bool` should collapse to `bool`",
     test_and,
     r#"
 from typing import assert_type, Literal, Never
@@ -227,8 +226,8 @@ def f(x: str | None):
     "#,
 );
 
-testcase_with_bug!(
-    "`Literal[False, True] | bool` should collapse to `bool`",
+testcase!(
+    bug = "`Literal[False, True] | bool` should collapse to `bool`",
     test_not_and,
     r#"
 from typing import assert_type, Literal
@@ -291,8 +290,8 @@ assert_type(x, str | None)
     "#,
 );
 
-testcase_with_bug!(
-    "Unwanted EXPECTED error",
+testcase!(
+    bug = "Unwanted EXPECTED error",
     test_while_overwrite,
     r#"
 from typing import assert_type, Literal
@@ -306,8 +305,8 @@ assert_type(x, Literal[42] | str)
     "#,
 );
 
-testcase_with_bug!(
-    "At narrowing-time it's still a Var instead of a bool",
+testcase!(
+    bug = "At narrowing-time it's still a Var instead of a bool",
     test_while_narrow,
     r#"
 from typing import assert_type, Literal, reveal_type

@@ -7,7 +7,6 @@
 
 use crate::test::util::TestEnv;
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_subscript_unpack_assign,
@@ -565,8 +564,8 @@ x3: B
     "#,
 );
 
-testcase_with_bug!(
-    "False negative",
+testcase!(
+    bug = "False negative",
     test_read_before_write,
     r#"
 x = y  # this should be an error
@@ -574,8 +573,8 @@ y = 42
     "#,
 );
 
-testcase_with_bug!(
-    "We never validate that assignments to unpacked targets are valid",
+testcase!(
+    bug = "We never validate that assignments to unpacked targets are valid",
     test_assign_unpacked_with_existing_annotations,
     r#"
 x: int

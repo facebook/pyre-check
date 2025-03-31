@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_def,
@@ -202,8 +201,8 @@ assert_type(c.__match_args__, tuple[Literal['x']])  # Ok
     "#,
 );
 
-testcase_with_bug!(
-    "TODO: consider erroring on unannotated attributes",
+testcase!(
+    bug = "TODO: consider erroring on unannotated attributes",
     test_unannotated_attribute,
     r#"
 import dataclasses

@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_override_any,
@@ -253,8 +252,8 @@ class ChildA(ParentA):
  "#,
 );
 
-testcase_with_bug!(
-    "TODO: method4 should be marked as an error since it doesn't exist in the parent class",
+testcase!(
+    bug = "TODO: method4 should be marked as an error since it doesn't exist in the parent class",
     test_overload_override_error,
     r#"
 

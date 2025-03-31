@@ -6,7 +6,6 @@
  */
 
 use crate::testcase;
-use crate::testcase_with_bug;
 
 testcase!(
     test_class_super_no_args,
@@ -49,8 +48,8 @@ class C(B, A):
     "#,
 );
 
-testcase_with_bug!(
-    "Demonstration of a limitation of our super() implementation",
+testcase!(
+    bug = "Demonstration of a limitation of our super() implementation",
     test_inherit_method_with_super,
     r#"
 from typing import assert_type
@@ -166,8 +165,8 @@ class B(A):
     "#,
 );
 
-testcase_with_bug!(
-    "There should be no errors",
+testcase!(
+    bug = "There should be no errors",
     test_dunder_new_explicit_with_unannotated_cls,
     r#"
 from typing import Self
