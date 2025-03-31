@@ -630,35 +630,33 @@ impl Transaction {
         SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
         let key = Hashed::new(key);
-        {
-            // if we happen to have solutions available, use them instead
-            if let Some(solutions) = &module_data.state.read().steps.solutions {
-                return solutions.get_hashed(key).unwrap().dupe();
-            }
-        }
 
-        self.demand(&module_data, Step::Answers);
-        let (load, answers) = {
-            let steps = module_data.state.read();
-            if let Some(solutions) = &steps.steps.solutions {
+        // Either: We have solutions (use that), or we have answers (calculate that), or we have none (demand and try again)
+        // Check; demand; check - the second check is guaranteed to work.
+        for _ in 0..2 {
+            let lock = module_data.state.read();
+            if let Some(solutions) = &lock.steps.solutions {
                 return solutions.get_hashed(key).unwrap().dupe();
+            } else if let Some(answers) = &lock.steps.answers {
+                let load = lock.steps.load.dupe().unwrap();
+                let answers = answers.dupe();
+                drop(lock);
+                let stdlib = self.get_stdlib(&module_data.handle);
+                let lookup = self.lookup(module_data);
+                return answers.1.solve_exported_key(
+                    &lookup,
+                    &lookup,
+                    &answers.0,
+                    &load.errors,
+                    &stdlib,
+                    &self.uniques,
+                    key,
+                );
             }
-            (
-                steps.steps.load.dupe().unwrap(),
-                steps.steps.answers.dupe().unwrap(),
-            )
-        };
-        let stdlib = self.get_stdlib(&module_data.handle);
-        let lookup = self.lookup(module_data);
-        answers.1.solve_exported_key(
-            &lookup,
-            &lookup,
-            &answers.0,
-            &load.errors,
-            &stdlib,
-            &self.uniques,
-            key,
-        )
+            drop(lock);
+            self.demand(&module_data, Step::Answers);
+        }
+        unreachable!("We demanded the answers, either answers or solutions should be present");
     }
 
     fn get_cached_find_dependency(
