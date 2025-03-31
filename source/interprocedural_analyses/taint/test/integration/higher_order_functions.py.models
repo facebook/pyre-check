@@ -1590,9 +1590,9 @@
               }
             ],
             "local_features": [
+              { "always-via": "higher-order-parameter" },
               { "always-via": "obscure:model" },
-              { "always-via": "tito" },
-              { "always-via": "lambda" }
+              { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 151, "start": 24, "end": 25 } ],
             "call": {

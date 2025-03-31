@@ -1251,7 +1251,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           arguments_taint
           |> List.fold ~f:BackwardState.Tree.join ~init:BackwardState.Tree.bottom
           |> read_tree [Abstract.TreeDomain.Label.AnyIndex]
-          |> BackwardState.Tree.add_local_breadcrumb (Features.lambda ())
+          |> BackwardState.Tree.add_local_breadcrumb (Features.higher_order_parameter ())
           |> BackwardState.Tree.join all_taint
         in
         all_taint, state

@@ -1381,6 +1381,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~f:(fun taint (_, argument_taint) -> ForwardState.Tree.join taint argument_taint)
           ~init:ForwardState.Tree.empty
         |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
+        |> ForwardState.Tree.add_local_breadcrumb (Features.higher_order_parameter ())
       in
 
       let analyze_function_call
@@ -1427,7 +1428,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~state
             (CallGraph.CallCallees.create ~call_targets ~unresolved ())
         in
-        let taint = ForwardState.Tree.add_local_breadcrumb (Features.lambda ()) taint in
+        let taint =
+          ForwardState.Tree.add_local_breadcrumb (Features.higher_order_parameter ()) taint
+        in
         (* Join result_fn taint from both if and else branches. *)
         let taint = ForwardState.Tree.join taint callee_taint in
         (index, taint) :: function_call_taints, state
