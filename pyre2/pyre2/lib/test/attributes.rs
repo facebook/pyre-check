@@ -654,7 +654,7 @@ testcase!(
     r#"
 from typing import Any, Optional, reveal_type
 
-Arg = Optional[tuple["Arg", ...]] # E: Expected a type form, got instance of `Literal['Arg']`
+Arg = Optional[tuple["Arg", ...]]
 
 class N:
     _args: tuple["Arg", ...]
