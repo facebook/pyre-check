@@ -83,27 +83,6 @@ macro_rules! testcase {
     };
 }
 
-#[macro_export]
-macro_rules! testcase_with_bug {
-    ($explanation:literal, $name:ident, $imports:expr, $contents:literal,) => {
-        #[test]
-        fn $name() -> anyhow::Result<()> {
-            $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!() + 1)
-        }
-    };
-    ($explanation:literal, $name:ident, $contents:literal,) => {
-        #[test]
-        fn $name() -> anyhow::Result<()> {
-            $crate::test::util::testcase_for_macro(
-                $crate::test::util::TestEnv::new(),
-                $contents,
-                file!(),
-                line!() + 1,
-            )
-        }
-    };
-}
-
 fn default_path(module: ModuleName) -> PathBuf {
     PathBuf::from(format!("{}.py", module.as_str().replace('.', "/")))
 }
