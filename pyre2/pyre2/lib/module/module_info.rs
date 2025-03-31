@@ -123,7 +123,7 @@ impl ModuleInfo {
         for err in parse_errors {
             errors.add(
                 err.location,
-                format!("Parse error: {err}"),
+                format!("Parse error: {}", err.error),
                 ErrorKind::ParseError,
                 None,
             );

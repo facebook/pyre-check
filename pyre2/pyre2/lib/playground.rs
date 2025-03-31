@@ -369,7 +369,7 @@ mod tests {
         state.update_source("from t".to_owned());
         let expected_errors: Vec<&str> = vec![
             "Could not find import of `t`, module is not available in sandbox",
-            "Parse error: Expected 'import', found newline at byte range 6..6",
+            "Parse error: Expected 'import', found newline",
         ];
         let expected_error_kinds: Vec<ErrorKind> =
             vec![ErrorKind::MissingModuleAttribute, ErrorKind::ParseError];
