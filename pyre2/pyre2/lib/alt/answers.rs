@@ -49,6 +49,7 @@ use crate::types::equality::TypeEq;
 use crate::types::equality::TypeEqCtx;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::AnyStyle;
+use crate::types::types::NeverStyle;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::DisplayWith;
@@ -639,6 +640,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     pub fn distribute_over_union(&self, ty: &Type, mut f: impl FnMut(&Type) -> Type) -> Type {
         match ty {
+            Type::Never(_) => Type::Never(NeverStyle::Never),
             Type::Union(tys) => self.unions(tys.map(f)),
             Type::Type(box Type::Union(tys)) => {
                 self.unions(tys.map(|ty| f(&Type::type_form(ty.clone()))))

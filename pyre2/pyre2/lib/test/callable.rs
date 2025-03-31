@@ -636,12 +636,11 @@ B().f("")  # E: in function `A.f`
 );
 
 testcase!(
-    bug = "Should propagate the never",
     test_never_callable,
     r#"
 from typing import Never
 
 def f(x: Never) -> Never:
-    return x() # E: Expected a callable, got Never
+    return x()
 "#,
 );

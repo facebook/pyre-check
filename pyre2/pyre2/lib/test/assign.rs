@@ -504,7 +504,7 @@ testcase!(
     r#"
 def expect_str(x: str): ...
 def test(x: None):
-    x += expect_str(0) # E: `+=` is not supported between `None` and `Never` # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
+    x += expect_str(0) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
@@ -515,7 +515,7 @@ def expect_str(x: str): ...
 class C:
     __iadd__: None = None
 def test(x: C):
-    x += expect_str(0) # E: `+=` is not supported between `C` and `Never` # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
+    x += expect_str(0) # E: Argument `Literal[0]` is not assignable to parameter `x` with type `str`
 "#,
 );
 
