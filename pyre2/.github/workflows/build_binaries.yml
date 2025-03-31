@@ -96,6 +96,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: ${{ matrix.platform.arch }}
+      - name: Set windows cargo home
+        # we need to set CARGO_HOME to a high-up directory on Windows machines, since some dependencies cloned
+        # by Cargo have long paths and will cause builds/tests to fail
+        run: echo "CARGO_HOME=C:\\cargo" >> $env:GITHUB_ENV
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
