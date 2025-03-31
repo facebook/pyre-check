@@ -275,11 +275,11 @@ x = C() + 1  # E:  `+` is not supported between `C` and `Literal[1]`"#,
 );
 
 testcase!(
-    test_float_int,
+    test_float_int_add,
     r#"
-from typing import reveal_type
+from typing import assert_type
 x = 3 + 3.0
-reveal_type(x) # E: revealed type: float
+assert_type(x, float)
 "#,
 );
 
