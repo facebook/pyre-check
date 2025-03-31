@@ -649,6 +649,31 @@ assert_type(c.field, Any)
 );
 
 testcase!(
+    bug = "PyTorch TODO: This test should typecheck and the reveal_type should be Optional[Any]",
+    test_attr_arg,
+    r#"
+from typing import Any, Optional, reveal_type
+
+Arg = Optional[tuple["Arg", ...]] # E: Expected a type form, got instance of `Literal['Arg']`
+
+class N:
+    _args: tuple["Arg", ...]
+    type: Optional[Any]
+
+    @property
+    def args(self) -> tuple[Arg, ...]:
+        return self._args
+
+
+def f(n: N):
+    assert isinstance(n.args[0], N)
+    t1 = n.args[0].type # E:  Object of class `NoneType` has no attribute `type` # E: Object of class `tuple` has no attribute `type`
+    reveal_type(t1) # E: revealed type: Error
+
+"#,
+);
+
+testcase!(
     test_with,
     r#"
 class C:
