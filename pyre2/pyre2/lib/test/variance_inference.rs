@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use crate::testcase_with_bug;
+use crate::testcase;
 
-testcase_with_bug!(
-    "T is only used in covariant positions so it should be inferred as covariant",
+testcase!(
+    bug = "T is only used in covariant positions so it should be inferred as covariant",
     test_covariance_inference,
     r#"
 from typing import Sequence, reveal_type

@@ -47,6 +47,23 @@ use crate::PythonVersion;
 
 #[macro_export]
 macro_rules! testcase {
+    (bug = $explanation:literal, $name:ident, $imports:expr, $contents:literal,) => {
+        #[test]
+        fn $name() -> anyhow::Result<()> {
+            $crate::test::util::testcase_for_macro($imports, $contents, file!(), line!() + 1)
+        }
+    };
+    (bug = $explanation:literal, $name:ident, $contents:literal,) => {
+        #[test]
+        fn $name() -> anyhow::Result<()> {
+            $crate::test::util::testcase_for_macro(
+                $crate::test::util::TestEnv::new(),
+                $contents,
+                file!(),
+                line!() + 1,
+            )
+        }
+    };
     ($name:ident, $imports:expr, $contents:literal,) => {
         #[test]
         fn $name() -> anyhow::Result<()> {
