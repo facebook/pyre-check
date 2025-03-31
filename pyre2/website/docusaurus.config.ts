@@ -62,7 +62,11 @@ const config: Config = {
         mermaid: true,
     },
     themes: ['@docusaurus/theme-mermaid'],
-    // TODO (T218604911): enable faster docusaurus build
+    // We likely won't be able to use the faster docusaurus build for this website due to
+    // the custom configuration in the plugins section. We would need another way to import these
+    // plugins into the build if we want to use the experimental_faster option.
+    // See https://fb.workplace.com/groups/docusaurus/posts/2314262428945865/?comment_id=2314271988944909
+    // for more details.
     // future: {
     //   experimental_faster: true,
     // },
