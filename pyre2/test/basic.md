@@ -68,7 +68,9 @@ ERROR */glob*.py:1:* (glob)
 ```scrut {output_stream: stderr}
 $ echo "x: str = 12" > $TMPDIR/excluded.py && \
 > $PYRE2 check $TMPDIR/excluded.py --project-excludes="$TMPDIR/*"
-All found `project_includes` files were filtered by `project_excludes` patterns
+All found `project_includes` files were filtered by `project_excludes` patterns.
+`project_includes`:* (glob)
+`project_excludes`:* (glob)
 [1]
 ```
 

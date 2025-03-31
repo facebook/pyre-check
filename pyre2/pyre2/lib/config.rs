@@ -155,11 +155,15 @@ impl Default for ConfigFile {
 
 impl ConfigFile {
     pub fn default_project_includes() -> Globs {
-        Globs::new(vec!["**/*.py".to_owned()])
+        Globs::new(vec!["**/*".to_owned()])
     }
 
     pub fn default_project_excludes() -> Globs {
-        Globs::new(vec!["**/__pycache__/**".to_owned(), "**/.*".to_owned()])
+        Globs::new(vec![
+            "**/__pycache__/**".to_owned(),
+            // match any hidden file, but don't match `.` or `..` (equivalent to regex: `\.[^/\.]{0,1}.*`)
+            "**/.[!/.]*".to_owned(),
+        ])
     }
 
     pub fn default_python_platform() -> String {

@@ -12,6 +12,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use itertools::Itertools;
 use serde::Deserialize;
 use starlark_map::small_set::SmallSet;
 
@@ -166,7 +167,7 @@ impl Globs {
                 pattern_str.push_str("**");
             }
             let pattern = glob::Pattern::new(&pattern_str)
-                .with_context(|| format!("When resolving pattern `{pattern_str}"))?;
+                .with_context(|| format!("When resolving pattern `{pattern_str}`"))?;
             if pattern.matches_path(file) {
                 return Ok(true);
             }
@@ -225,7 +226,9 @@ impl FileList for FilteredGlobs {
         }
         if result.is_empty() {
             return Err(anyhow::anyhow!(
-                "All found `project_includes` files were filtered by `project_excludes` patterns"
+                "All found `project_includes` files were filtered by `project_excludes` patterns.\n`project_includes`: {}\n`project_excludes`: {}",
+                self.includes.0.iter().map(|p| p.display()).join(", "),
+                self.excludes.0.iter().map(|p| p.display()).join(", "),
             ));
         }
         Ok(result)
@@ -513,7 +516,10 @@ mod tests {
 
     #[test]
     fn test_matches_path() {
-        let patterns = Globs::new(vec!["**/__pycache__/**".to_owned(), "**/.*".to_owned()]);
+        let patterns = Globs::new(vec![
+            "**/__pycache__/**".to_owned(),
+            "**/.[!/.]*".to_owned(),
+        ]);
 
         assert!(patterns.matches(Path::new("__pycache__/")).unwrap());
         assert!(
@@ -524,6 +530,18 @@ mod tests {
         assert!(patterns.matches(Path::new("path/to/__pycache__/")).unwrap());
         assert!(patterns.matches(Path::new(".hidden")).unwrap());
         assert!(patterns.matches(Path::new("path/to/.hidden")).unwrap());
+        assert!(!patterns.matches(Path::new("./test")).unwrap());
+        assert!(!patterns.matches(Path::new("../test")).unwrap());
+        assert!(!patterns.matches(Path::new("a/.")).unwrap());
+        assert!(!patterns.matches(Path::new("a/..")).unwrap());
+        assert!(!patterns.matches(Path::new("a/./")).unwrap());
+        assert!(!patterns.matches(Path::new("a/../")).unwrap());
+        assert!(!patterns.matches(Path::new("a/./test")).unwrap());
+        assert!(!patterns.matches(Path::new("a/../test")).unwrap());
+        assert!(patterns.matches(Path::new("a/.a/")).unwrap());
+        assert!(patterns.matches(Path::new("a/.ab/")).unwrap());
+        assert!(patterns.matches(Path::new("a/.a/")).unwrap());
+        assert!(patterns.matches(Path::new("a/.ab/")).unwrap());
         assert!(!patterns.matches(Path::new("just/a/regular.file")).unwrap());
         assert!(!patterns.matches(Path::new("file/with/a.dot")).unwrap());
         assert!(
