@@ -150,12 +150,12 @@ def f(x: Z) -> None:
 );
 
 testcase!(
-    bug = "Should support nested literal",
     test_literal_direct_nesting,
     r#"
 from typing import Literal
 
-good: Literal[Literal[Literal[1, 2, 3], "foo"], 5, None] = "foo"  # E: Invalid literal expression
+good: Literal[Literal[Literal[1, 2, 3], "foo"], 5, None] = "foo"
+bad: Literal[Literal, 3]  # E: Expected a type argument for `Literal`  # E: Invalid type inside literal, `Literal`
 "#,
 );
 

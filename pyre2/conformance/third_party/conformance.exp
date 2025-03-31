@@ -7953,16 +7953,6 @@
   "literals_parameterizations.py": [
     {
       "code": -2,
-      "column": 17,
-      "concise_description": "Invalid literal expression",
-      "description": "Invalid literal expression",
-      "line": 35,
-      "name": "invalid-literal",
-      "stop_column": 49,
-      "stop_line": 35
-    },
-    {
-      "code": -2,
       "column": 15,
       "concise_description": "Invalid literal expression",
       "description": "Invalid literal expression",

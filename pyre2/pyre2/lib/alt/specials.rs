@@ -159,25 +159,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn apply_literal(&self, x: &Expr, errors: &ErrorCollector) -> Type {
+    fn apply_literal(&self, x: &Expr, errors: &ErrorCollector, literals: &mut Vec<Type>) {
         match x {
             Expr::UnaryOp(ExprUnaryOp {
                 op: UnaryOp::UAdd,
                 operand: box Expr::NumberLiteral(n),
                 ..
-            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).to_type(),
+            }) if let Number::Int(i) = &n.value => literals.push(LitInt::from_ast(i).to_type()),
             Expr::UnaryOp(ExprUnaryOp {
                 op: UnaryOp::USub,
                 operand: box Expr::NumberLiteral(n),
                 ..
-            }) if let Number::Int(i) = &n.value => LitInt::from_ast(i).negate().to_type(),
-            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => {
-                LitInt::from_ast(i).to_type()
+            }) if let Number::Int(i) = &n.value => {
+                literals.push(LitInt::from_ast(i).negate().to_type())
             }
-            Expr::StringLiteral(x) => Lit::from_string_literal(x).to_type(),
-            Expr::BytesLiteral(x) => Lit::from_bytes_literal(x).to_type(),
-            Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
-            Expr::NoneLiteral(_) => Type::None,
+            Expr::NumberLiteral(n) if let Number::Int(i) = &n.value => {
+                literals.push(LitInt::from_ast(i).to_type())
+            }
+            Expr::StringLiteral(x) => literals.push(Lit::from_string_literal(x).to_type()),
+            Expr::BytesLiteral(x) => literals.push(Lit::from_bytes_literal(x).to_type()),
+            Expr::BooleanLiteral(x) => literals.push(Lit::from_boolean_literal(x).to_type()),
+            Expr::NoneLiteral(_) => literals.push(Type::None),
             Expr::Name(_) => {
                 fn is_valid_literal(x: &Type) -> bool {
                     match x {
@@ -188,7 +190,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 let t = self.expr_untype(x, TypeFormContext::TypeArgument, errors);
                 if is_valid_literal(&t) {
-                    t
+                    literals.push(t)
                 } else {
                     errors.add(
                         x.range(),
@@ -196,7 +198,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ErrorKind::InvalidLiteral,
                         None,
                     );
-                    Type::any_error()
+                    literals.push(Type::any_error())
                 }
             }
             Expr::Attribute(ExprAttribute {
@@ -210,9 +212,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::ClassDef(c)
                         if let Some(e) = self.get_enum_member(&c, &member_name.id) =>
                     {
-                        e.to_type()
+                        literals.push(e.to_type())
                     }
-                    Type::Any(AnyStyle::Error) => Type::any_error(),
+                    Type::Any(AnyStyle::Error) => literals.push(Type::any_error()),
                     _ => {
                         errors.add(
                             *range,
@@ -223,9 +225,25 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             ErrorKind::InvalidLiteral,
                             None,
                         );
-                        Type::any_error()
+                        literals.push(Type::any_error())
                     }
                 }
+            }
+            Expr::Subscript(_) => {
+                let ty = self.expr_infer(x, errors);
+                self.map_over_union(&ty, |ty| match ty {
+                    Type::Type(box lit @ Type::Literal(_)) => literals.push(lit.clone()),
+                    Type::Any(AnyStyle::Error) => literals.push(Type::any_error()),
+                    _ => {
+                        errors.add(
+                            x.range(),
+                            "Invalid literal expression".to_owned(),
+                            ErrorKind::InvalidLiteral,
+                            None,
+                        );
+                        literals.push(Type::any_error())
+                    }
+                });
             }
             _ => {
                 errors.add(
@@ -234,7 +252,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ErrorKind::InvalidLiteral,
                     None,
                 );
-                Type::any_error()
+                literals.push(Type::any_error())
             }
         }
     }
@@ -285,7 +303,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         "Literal arguments cannot be parenthesized".to_owned(),
                     );
                 }
-                let literals = arguments.map(|x| self.apply_literal(x, errors));
+                let mut literals = Vec::new();
+                arguments
+                    .iter()
+                    .for_each(|x| self.apply_literal(x, errors, &mut literals));
                 Type::type_form(self.unions(literals))
             }
             SpecialForm::Concatenate => {
