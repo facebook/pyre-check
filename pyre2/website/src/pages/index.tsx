@@ -18,16 +18,16 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import '../js/parser-playground';
 
 export default function Home(): React.ReactElement {
-    const { siteConfig } = useDocusaurusContext();
+  const { siteConfig } = useDocusaurusContext();
 
-    // TODO (T218370640): replace current landing page with new landing page
-    return process.env.INTERNAL_STATIC_DOCS === '1' ? (
-        <NewLandingPage />
-    ) : (
-        <Layout
-            title="Pyrefly: A Static Type Checker for Python"
-            description={siteConfig.description}>
-            <LandingPageHeader />
-        </Layout>
-    );
+  // TODO (T218370640): replace current landing page with new landing page
+  return process.env.INTERNAL_STATIC_DOCS === '1' ? (
+    <NewLandingPage />
+  ) : (
+    <Layout
+      title="Pyrefly: A Static Type Checker for Python"
+      description={siteConfig.description}>
+      <LandingPageHeader />
+    </Layout>
+  );
 }
