@@ -77,13 +77,13 @@ use crate::types::class::Class;
 use crate::types::stdlib::Stdlib;
 use crate::types::types::Type;
 use crate::util::arc_id::ArcId;
-use crate::util::enum_heap::EnumHeap;
 use crate::util::lock::Mutex;
 use crate::util::lock::RwLock;
 use crate::util::locked_map::LockedMap;
 use crate::util::no_hash::BuildNoHash;
 use crate::util::prelude::SliceExt;
 use crate::util::recurser::Recurser;
+use crate::util::task_heap::TaskHeap;
 use crate::util::thread_pool::ThreadPool;
 use crate::util::uniques::UniqueFactory;
 use crate::util::upgrade_lock::UpgradeLock;
@@ -244,7 +244,7 @@ pub struct Transaction {
     /// Items we still need to process. Stored in a max heap, so that
     /// the highest step (the module that is closest to being finished)
     /// gets picked first, ensuring we release its memory quickly.
-    todo: Mutex<EnumHeap<Step, ArcId<ModuleData>>>,
+    todo: TaskHeap<Step, ArcId<ModuleData>>,
     /// Values whose solutions changed value since the last time we recomputed
     changed: Mutex<Vec<ArcId<ModuleData>>>,
     /// Handles which are dirty
@@ -529,7 +529,7 @@ impl Transaction {
         if computed && let Some(next) = step.next() {
             // For a large benchmark, LIFO is 10Gb retained, FIFO is 13Gb.
             // Perhaps we are getting to the heart of the graph with LIFO?
-            self.todo.lock().push_lifo(next, module_data.dupe());
+            self.todo.push_lifo(next, module_data.dupe());
         }
     }
 
@@ -713,15 +713,9 @@ impl Transaction {
 
     fn work(&self) {
         // ensure we have answers for everything, keep going until we don't discover any new modules
-        loop {
-            let mut lock = self.todo.lock();
-            let x = match lock.pop() {
-                Some(x) => x.1,
-                None => break,
-            };
-            drop(lock);
+        self.todo.work(|_, x| {
             self.demand(&x, Step::last());
-        }
+        });
     }
 
     fn run_step(&mut self, handles: &[(Handle, Require)], old_require: Option<RequireDefault>) {
@@ -734,7 +728,6 @@ impl Transaction {
 
         {
             let dirty = mem::take(&mut *self.dirty.lock());
-            let mut lock = self.todo.lock();
             for (h, r) in handles {
                 let (m, created) = self.get_module_ex(h);
                 let mut state = m.state.write(Step::first()).unwrap();
@@ -747,11 +740,11 @@ impl Transaction {
                 state.require.set(self.readable.require, *r);
                 drop(state);
                 if (created || dirty_require) && !dirty.contains(&m) {
-                    lock.push_fifo(Step::first(), m);
+                    self.todo.push_fifo(Step::first(), m);
                 }
             }
             for x in dirty {
-                lock.push_fifo(Step::first(), x);
+                self.todo.push_fifo(Step::first(), x);
             }
         }
 

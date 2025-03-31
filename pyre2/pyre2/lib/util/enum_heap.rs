@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#![allow(dead_code)] // Clean up later if not used
+
 //! A max-heap for values represented by an enum.
 
 use std::cmp::Ordering;
