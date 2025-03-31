@@ -284,6 +284,17 @@ assert_type(x, float)
 );
 
 testcase!(
+    bug = "Pandas: Float and int comparison should work",
+    test_float_int_compare,
+    r#"
+0 < 1.0 # E: `<` is not supported between `Literal[0]` and `float`
+1.0 < 2
+1 < 2
+1.0 < 3.0
+"#,
+);
+
+testcase!(
     test_inplace_operator_rhs_union,
     r#"
 class A:
