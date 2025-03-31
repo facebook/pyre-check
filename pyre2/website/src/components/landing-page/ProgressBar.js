@@ -10,19 +10,13 @@
 import React, {useState, useEffect} from 'react';
 import * as stylex from '@stylexjs/stylex';
 
-export default component ProgressBar(
-  durationInSeconds: number,
-  maxDurationInSeconds: number,
-) {
-  // Calculate the relative percentage width based on the maximum duration
-  const relativeWidth = (durationInSeconds / maxDurationInSeconds) * 100;
-
+export default component ProgressBar(durationInSeconds: number) {
   return (
     <div
       {...stylex.props(styles.progressBar)}
       style={{
         height: '100%',
-        width: `${relativeWidth}%`,
+        width: `${durationInSeconds}%`,
       }}>
       <div
         {...stylex.props(styles.fill)}

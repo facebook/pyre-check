@@ -4332,10 +4332,6 @@ module HigherOrderCallGraph = struct
         None
 
 
-    let is_decorated_target =
-      Context.callable >>| Target.is_decorated |> Option.value ~default:false
-
-
     let get_returned_callables state =
       self_variable
       >>| (fun self_variable ->
@@ -4431,12 +4427,12 @@ module HigherOrderCallGraph = struct
         type t = {
           (* Transforming the input call targets by providing parameter targets. *)
           parameterized_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are of `kind=Decorated`. *)
+          (* A subset of the input call targets that are of `kind=Decorated`. *)
           decorated_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are not transformed above. *)
+          (* A subset of the input call targets that are not transformed above. *)
           non_parameterized_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are stubs. *)
-          stub_targets: Target.t list;
+          (* Whether one of the input call targets is a stub. *)
+          has_stub_targets: bool;
         }
       end
 
@@ -4614,26 +4610,21 @@ module HigherOrderCallGraph = struct
           track_apply_call_step FindNonParameterizedTargets (fun () ->
               non_parameterized_targets ~parameterized_targets call_targets_from_callee)
         in
-        let stub_targets =
-          List.filter_map call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
+        let has_stub_targets =
+          List.exists call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
               (* TODO: Improve performance since this loads the body for each callable, although the
                  body is not used here. *)
-              let is_stub =
-                target
-                |> get_define
-                >>| (fun {
-                           Target.DefinesSharedMemory.Define.define = { Node.value = define; _ };
-                           _;
-                         } -> Define.is_stub define)
-                |> Option.value ~default:false
-              in
-              if is_stub then Some target else None)
+              target
+              |> get_define
+              >>| (fun { Target.DefinesSharedMemory.Define.define = { Node.value = define; _ }; _ } ->
+                    Define.is_stub define)
+              |> Option.value ~default:false)
         in
         {
           AnalyzeCalleeResult.parameterized_targets;
           decorated_targets;
           non_parameterized_targets;
-          stub_targets;
+          has_stub_targets;
         }
 
 
@@ -4714,7 +4705,7 @@ module HigherOrderCallGraph = struct
           AnalyzeCalleeResult.parameterized_targets = parameterized_call_targets;
           decorated_targets = decorated_call_targets;
           non_parameterized_targets = non_parameterized_call_targets;
-          stub_targets = stub_call_targets;
+          _;
         }
           =
           callee_return_values
@@ -4732,7 +4723,7 @@ module HigherOrderCallGraph = struct
           AnalyzeCalleeResult.parameterized_targets = parameterized_init_targets;
           decorated_targets = decorated_init_targets;
           non_parameterized_targets = non_parameterized_init_targets;
-          stub_targets = stub_init_targets;
+          has_stub_targets = has_stub_init_targets;
         }
           =
           analyze_callee_targets
@@ -4781,33 +4772,19 @@ module HigherOrderCallGraph = struct
                   }
                 !Context.output_define_call_graph);
         track_apply_call_step FetchReturnedCallables (fun () ->
-            let returned_callables_from_call =
-              parameterized_call_targets
-              |> List.rev_append parameterized_init_targets
-              |> returned_callables
-            in
             (* To avoid false negatives, sometimes we allow all function-typed arguments to be
                passed directly to the return values, especially for targets with `kind=Decorated`.
-               Example 1 is some calls might be unresolved. Example 2 is when `__init__` methods are
-               stubs. Example 3 is sometimes context managers define stubs instead of actual bodies
-               for `__call__`, where the actual bodies would return the callable that is decorated.
-               However since it is expensive to know if a class is a context manager, we use an
-               approximation below. *)
+               One example is some calls might be unresolved. Another example is when `__init__`
+               methods are stubs. *)
             let pass_through_arguments =
-              let exist_stub_init_targets = not (List.is_empty stub_init_targets) in
-              let exist_stub_call_targets =
-                List.exists stub_call_targets ~f:(fun target ->
-                    match Target.get_regular target with
-                    | Target.Regular.Method
-                        { class_name = _; method_name = "__call__"; kind = Normal } ->
-                        true
-                    | _ -> false)
+              let is_decorated_target =
+                Context.callable >>| Target.is_decorated |> Option.value ~default:false
               in
               if
                 is_decorated_target
-                && (exist_stub_init_targets
-                   || Unresolved.is_unresolved unresolved
-                   || exist_stub_call_targets)
+                && (has_stub_init_targets
+                    (* Not handling stub `__init__` methods lead to false negatives. *)
+                   || Unresolved.is_unresolved unresolved)
               then
                 Algorithms.fold_balanced
                   ~f:CallTarget.Set.join
@@ -4816,7 +4793,11 @@ module HigherOrderCallGraph = struct
               else
                 CallTarget.Set.bottom
             in
-            CallTarget.Set.join pass_through_arguments returned_callables_from_call, state)
+            ( parameterized_call_targets
+              |> List.rev_append parameterized_init_targets
+              |> returned_callables
+              |> CallTarget.Set.join pass_through_arguments,
+              state ))
 
 
       (* Return possible callees and the new state. *)
