@@ -90,6 +90,8 @@ use crate::util::prelude::VecExt;
 pub struct Args {
     #[clap(long = "search-path", env = clap_env("SEARCH_PATH"))]
     pub(crate) search_path: Vec<PathBuf>,
+    #[clap(long = "site-package-path", env = clap_env("SITE_PACKAGE_PATH"))]
+    pub(crate) site_package_path: Vec<PathBuf>,
 }
 
 struct Server<'a> {
@@ -133,8 +135,9 @@ pub fn run_lsp(
         }
     };
     let search_path = args.search_path;
+    let site_package_path = args.site_package_path;
     let send = |msg| connection.sender.send(msg).unwrap();
-    let mut server = Server::new(&send, initialization_params, search_path);
+    let mut server = Server::new(&send, initialization_params, search_path, site_package_path);
     eprintln!("Reading messages");
     for msg in &connection.receiver {
         if matches!(&msg, Message::Request(req) if connection.handle_shutdown(req)?) {
@@ -171,6 +174,7 @@ impl Args {
 struct LspLoader {
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
     search_path: Vec<PathBuf>,
+    site_package_path: Vec<PathBuf>,
 }
 
 impl Loader for LspLoader {
@@ -179,9 +183,13 @@ impl Loader for LspLoader {
             Ok(path)
         } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
             Ok(path)
+        } else if let Some(path) = find_module(module, &self.site_package_path) {
+            Ok(path)
         } else {
-            // TODO(connernilsen): add site package path here
-            Err(FindError::search_path(&self.search_path, &[]))
+            Err(FindError::search_path(
+                &self.search_path,
+                &self.site_package_path,
+            ))
         }
     }
 
@@ -273,11 +281,13 @@ impl<'a> Server<'a> {
         send: &'a dyn Fn(Message),
         initialize_params: InitializeParams,
         search_path: Vec<PathBuf>,
+        site_package_path: Vec<PathBuf>,
     ) -> Self {
         let open_files = Arc::new(Mutex::new(SmallMap::new()));
         let loader = LoaderId::new(LspLoader {
             open_files: open_files.dupe(),
             search_path: search_path.clone(),
+            site_package_path,
         });
         Self {
             send,

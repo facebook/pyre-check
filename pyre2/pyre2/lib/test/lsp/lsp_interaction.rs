@@ -33,6 +33,7 @@ fn run_test_lsp(test_case: TestCase) {
     let timeout = Duration::from_secs(25);
     let args = Args {
         search_path: vec![get_test_files_root()],
+        site_package_path: Vec::new(),
     };
     let (writer_sender, writer_receiver) = bounded::<Message>(0);
     let (reader_sender, reader_receiver) = bounded::<Message>(0);
