@@ -60,11 +60,6 @@ impl RequireDefault {
         epoch.next();
         Self(epoch, default)
     }
-
-    pub fn set(&mut self, default: Require) {
-        self.0.next();
-        self.1 = default;
-    }
 }
 
 /// An override for a `RequireDefault` value.
@@ -104,12 +99,10 @@ mod tests {
 
     #[test]
     fn test_require() {
-        let mut default = RequireDefault::new(Require::Errors);
+        let default = RequireDefault::new(Require::Errors);
         let mut over = RequireOverride::new();
         assert_eq!(over.get(default), Require::Errors);
         over.set(default, Require::Everything);
         assert_eq!(over.get(default), Require::Everything);
-        default.set(Require::Exports);
-        assert_eq!(over.get(default), Require::Exports);
     }
 }

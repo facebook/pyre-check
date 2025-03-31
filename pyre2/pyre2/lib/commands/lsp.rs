@@ -333,21 +333,20 @@ impl<'a> Server<'a> {
             })
             .collect::<Vec<_>>();
 
-        let mut lock = self.state.lock();
-        let transaction = lock.transaction_mut();
-        transaction.invalidate_memory(
+        let state = self.state.lock();
+        let mut transaction = state.new_committable_transaction(Require::Exports, None);
+        transaction.as_mut().invalidate_memory(
             self.loader.dupe(),
             &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
         );
-
-        transaction.run(&handles, Require::Exports, None);
+        state.run_with_committing_transaction(transaction, &handles);
         let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
         let open_files = self.open_files.lock();
         for x in open_files.keys() {
             diags.insert(x.as_path().to_owned(), Vec::new());
         }
         // TODO(connernilsen): replace with real error config from config file
-        for e in lock
+        for e in state
             .transaction()
             .readable()
             .get_loads(handles.iter().map(|(handle, _)| handle))

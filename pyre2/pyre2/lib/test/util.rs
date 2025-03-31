@@ -156,7 +156,7 @@ impl TestEnv {
             .rev()
             .map(|(x, (path, _))| Handle::new(x, path, config.dupe(), loader.dupe()))
             .collect::<Vec<_>>();
-        let mut state = State::new();
+        let state = State::new();
         let subscriber = TestSubscriber::new();
         state.run(
             &handles.map(|x| (x.dupe(), Require::Everything)),

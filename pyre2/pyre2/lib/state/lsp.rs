@@ -30,7 +30,7 @@ use crate::types::types::Type;
 use crate::util::prelude::VecExt;
 use crate::util::visit::Visit;
 
-impl Transaction {
+impl<'a> Transaction<'a> {
     fn get_type(&self, handle: &Handle, key: &Key) -> Option<Type> {
         let readable = self.readable();
         let idx = readable.get_bindings(handle)?.key_to_idx(key);

@@ -49,6 +49,7 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::require::Require;
+use crate::state::state::CommittingTransaction;
 use crate::state::state::State;
 use crate::state::subscriber::ProgressBarSubscriber;
 use crate::util::display;
@@ -322,6 +323,7 @@ impl Args {
         let require_levels = self.get_required_levels();
         self.run_inner(
             holder.as_mut(),
+            None,
             &handles.all(require_levels.specified),
             require_levels.default,
             &handles.error_configs(),
@@ -340,10 +342,12 @@ impl Args {
         let require_levels = self.get_required_levels();
         let config_finder = self.overriding_config_finder(config_finder);
         let mut handles = Handles::new(expanded_file_list, &config_finder);
-        let mut state = State::new();
+        let state = State::new();
+        let mut transaction = None;
         loop {
             let res = self.run_inner(
-                &mut state,
+                &state,
+                transaction,
                 &handles.all(require_levels.specified),
                 require_levels.default,
                 &handles.error_configs(),
@@ -352,11 +356,15 @@ impl Args {
                 eprintln!("{e:#}");
             }
             let events = get_watcher_events(&mut watcher).await?;
-            let transaction = state.transaction_mut();
-            transaction.invalidate_disk(&events.modified);
+            let mut new_transaction = state.new_committable_transaction(
+                require_levels.default,
+                Some(Box::new(ProgressBarSubscriber::new())),
+            );
+            let new_transaction_mut = new_transaction.as_mut();
+            new_transaction_mut.invalidate_disk(&events.modified);
 
-            transaction.invalidate_disk(&events.created);
-            transaction.invalidate_disk(&events.removed);
+            new_transaction_mut.invalidate_disk(&events.created);
+            new_transaction_mut.invalidate_disk(&events.removed);
             // File addition and removal may affect the list of files/handles to check. Update
             // the handles accordingly.
             handles.update(
@@ -365,8 +373,9 @@ impl Args {
                 &config_finder,
             );
             for loader in handles.loaders() {
-                transaction.invalidate_find(&loader);
+                new_transaction_mut.invalidate_find(&loader);
             }
+            transaction = Some(new_transaction);
         }
     }
 
@@ -414,18 +423,21 @@ impl Args {
 
     fn run_inner(
         &self,
-        state: &mut State,
+        state: &State,
+        transaction: Option<CommittingTransaction>,
         handles: &[(Handle, Require)],
         default_require: Require,
         error_configs: &ErrorConfigs,
     ) -> anyhow::Result<CommandExitStatus> {
-        let progress = Box::new(ProgressBarSubscriber::new());
         let mut memory_trace = MemoryUsageTrace::start(Duration::from_secs_f32(0.1));
         let start = Instant::now();
 
-        state
-            .transaction_mut()
-            .run(handles, default_require, Some(progress));
+        if let Some(transaction) = transaction {
+            state.run_with_committing_transaction(transaction, handles);
+        } else {
+            let progress = Box::new(ProgressBarSubscriber::new());
+            state.run(handles, default_require, Some(progress));
+        }
         let transaction = state.transaction();
         let readable_state = transaction.readable();
         let loads = if self.check_all {
@@ -480,7 +492,7 @@ impl Args {
             )?;
         }
         if let Some(path) = &self.report_trace {
-            fs_anyhow::write(path, report::trace::trace(transaction).as_bytes())?;
+            fs_anyhow::write(path, report::trace::trace(&transaction).as_bytes())?;
         }
         if self.suppress_errors {
             let errors: SmallMap<PathBuf, Vec<Error>> = errors

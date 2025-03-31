@@ -70,7 +70,7 @@ fn compute_errors(config: RuntimeMetadata, sourcedb: BuckSourceDatabase) -> Vec<
             Require::Errors,
         )
     });
-    let mut state = State::new();
+    let state = State::new();
     state.run(&modules_to_check, Require::Exports, None);
     let transaction = state.transaction();
     transaction

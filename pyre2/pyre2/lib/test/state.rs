@@ -25,6 +25,7 @@ use crate::state::loader::FindError;
 use crate::state::loader::Loader;
 use crate::state::loader::LoaderId;
 use crate::state::require::Require;
+use crate::state::state::CommittingTransaction;
 use crate::state::state::State;
 use crate::state::subscriber::TestSubscriber;
 use crate::test::util::init_test;
@@ -52,7 +53,7 @@ else:
         "main",
         "import lib; x: str = lib.value  # E: `Literal[42]` is not assignable to `str`",
     );
-    let mut state = State::new();
+    let state = State::new();
     let loader = LoaderId::new(test_env);
 
     let f = |name: &str, config: &RuntimeMetadata| {
@@ -117,7 +118,7 @@ fn test_multiple_path() {
     let config = test_env.metadata();
     let loader = LoaderId::new(Load(test_env));
 
-    let mut state = State::new();
+    let state = State::new();
     let handles = FILES.map(|(name, path, _)| {
         Handle::new(
             ModuleName::from_str(name),
@@ -185,14 +186,19 @@ impl Incremental {
         }
     }
 
+    fn new_committable_transaction(&self) -> CommittingTransaction {
+        self.state
+            .new_committable_transaction(Require::Exports, None)
+    }
+
     /// Change this file to these contents, expecting this number of errors.
-    fn set(&mut self, file: &str, content: &str) {
+    fn set(&self, transaction: &mut CommittingTransaction, file: &str, content: &str) {
         self.data
             .0
             .lock()
             .insert(ModuleName::from_str(file), Arc::new(content.to_owned()));
-        self.state
-            .transaction_mut()
+        transaction
+            .as_mut()
             .invalidate_memory(self.loader.dupe(), &[PathBuf::from(file)]);
     }
 
@@ -206,13 +212,13 @@ impl Incremental {
     }
 
     /// Run a check. Expect recompute things to have changed.
-    fn check(&mut self, want: &[&str], recompute: &[&str]) {
+    fn check(&self, mut transaction: CommittingTransaction, want: &[&str], recompute: &[&str]) {
         let subscriber = TestSubscriber::new();
         let handles = want.map(|x| self.handle(x));
-        self.state.run(
+        transaction.set_subscriber(Some(Box::new(subscriber.dupe())));
+        self.state.run_with_committing_transaction(
+            transaction,
             &handles.map(|x| (x.dupe(), Require::Everything)),
-            Require::Exports,
-            Some(Box::new(subscriber.dupe())),
         );
         let loads = self
             .state
@@ -243,53 +249,69 @@ impl Incremental {
 
 #[test]
 fn test_in_memory_updated_content_recheck() {
-    let mut i = Incremental::new();
-    i.set("main", "unbound_name # E:");
-    i.check(&["main"], &["main"]);
-    i.set("main", "bound_name = 3");
-    i.check(&["main"], &["main"]);
+    let i = Incremental::new();
+    let mut transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", "unbound_name # E:");
+    i.check(transaction, &["main"], &["main"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", "bound_name = 3");
+    i.check(transaction, &["main"], &["main"]);
 }
 
 #[test]
 fn test_incremental_minimal_recompute() {
-    let mut i = Incremental::new();
-    i.set("main", "import foo; x = foo.x");
-    i.set("foo", "x = 7");
-    i.check(&["main"], &["main", "foo"]);
-    i.set("foo", "x = 'test'");
-    i.check(&["main"], &["main", "foo"]);
-    i.set("foo", "x = 'test' # still");
-    i.check(&["main"], &["foo"]);
-    i.set("main", "import foo; x = foo.x # still");
-    i.check(&["main"], &["main"]);
+    let i = Incremental::new();
+    let mut transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", "import foo; x = foo.x");
+    i.set(&mut transaction, "foo", "x = 7");
+    i.check(transaction, &["main"], &["main", "foo"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "foo", "x = 'test'");
+    i.check(transaction, &["main"], &["main", "foo"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "foo", "x = 'test' # still");
+    i.check(transaction, &["main"], &["foo"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", "import foo; x = foo.x # still");
+    i.check(transaction, &["main"], &["main"]);
 
     // We stop depending on `foo`, so no longer have to recompute it even though it is dirty.
     // However, our current state algorithm does so anyway as it can be cheaper to compute
+    transaction = i.new_committable_transaction();
     // everything than do careful graph traversal.
-    i.set("foo", "x = True");
-    i.set("main", "x = 7");
-    i.check(&["main"], &["main", "foo"]); // `foo` is not required here
-    i.set("main", "import foo; x = foo.x # still");
-    i.check(&["main"], &["main"]); // `foo` is required by this point
+    i.set(&mut transaction, "foo", "x = True");
+    i.set(&mut transaction, "main", "x = 7");
+    i.check(transaction, &["main"], &["main", "foo"]); // `foo` is not required here
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", "import foo; x = foo.x # still");
+    i.check(transaction, &["main"], &["main"]); // `foo` is required by this point
 }
 
 #[test]
 fn test_incremental_cyclic() {
-    let mut i = Incremental::new();
-    i.set("foo", "import bar; x = 1; y = bar.x");
-    i.set("bar", "import foo; x = True; y = foo.x");
-    i.check(&["foo"], &["foo", "bar"]);
-    i.set("foo", "import bar; x = 1; y = bar.x # still");
-    i.check(&["foo"], &["foo"]);
-    i.set("foo", "import bar; x = 'test'; y = bar.x");
-    i.check(&["foo"], &["foo", "foo", "bar"]);
+    let i = Incremental::new();
+    let mut transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "foo", "import bar; x = 1; y = bar.x");
+    i.set(&mut transaction, "bar", "import foo; x = True; y = foo.x");
+    i.check(transaction, &["foo"], &["foo", "bar"]);
+    transaction = i.new_committable_transaction();
+    i.set(
+        &mut transaction,
+        "foo",
+        "import bar; x = 1; y = bar.x # still",
+    );
+    i.check(transaction, &["foo"], &["foo"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "foo", "import bar; x = 'test'; y = bar.x");
+    i.check(transaction, &["foo"], &["foo", "foo", "bar"]);
 }
 
 /// Check that the interface is consistent as we change things.
 fn test_interface_consistent(code: &str) {
-    let mut i = Incremental::new();
-    i.set("main", code);
-    i.check(&["main"], &["main"]);
+    let i = Incremental::new();
+    let mut transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", code);
+    i.check(transaction, &["main"], &["main"]);
     let base = i
         .state
         .transaction()
@@ -297,8 +319,9 @@ fn test_interface_consistent(code: &str) {
         .get_solutions(&i.handle("main"))
         .unwrap();
 
-    i.set("main", &format!("{code} # after"));
-    i.check(&["main"], &["main"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", &format!("{code} # after"));
+    i.check(transaction, &["main"], &["main"]);
     let suffix = i
         .state
         .transaction()
@@ -306,8 +329,9 @@ fn test_interface_consistent(code: &str) {
         .get_solutions(&i.handle("main"))
         .unwrap();
 
-    i.set("main", &format!("# before\n{code}"));
-    i.check(&["main"], &["main"]);
+    transaction = i.new_committable_transaction();
+    i.set(&mut transaction, "main", &format!("# before\n{code}"));
+    i.check(transaction, &["main"], &["main"]);
     let prefix = i
         .state
         .transaction()
@@ -381,7 +405,7 @@ class C[R]:
 #[test]
 fn test_change_require() {
     let t = TestEnv::one("foo", "x: str = 1");
-    let mut state = State::new();
+    let state = State::new();
     let handle = Handle::new(
         ModuleName::from_str("foo"),
         ModulePath::memory(PathBuf::from("foo")),
