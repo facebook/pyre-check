@@ -12,6 +12,8 @@
 //! If we have a panic, we immediately terminate the program, so we should never encounter a poisoned lock.
 //! These wrappers just panic if we encounter a poisoned lock.
 
+#![allow(dead_code)] // A full API
+
 use std::sync;
 
 #[derive(Debug, Default)]
@@ -35,7 +37,6 @@ impl<T> Mutex<T> {
 pub struct RwLock<T>(sync::RwLock<T>);
 
 impl<T> RwLock<T> {
-    #[allow(dead_code)] // Part of the API
     pub fn new(t: T) -> Self {
         Self(sync::RwLock::new(t))
     }
@@ -48,8 +49,35 @@ impl<T> RwLock<T> {
         self.0.write().unwrap()
     }
 
-    #[allow(dead_code)] // Part of the API
     pub fn into_inner(self) -> T {
         self.0.into_inner().unwrap()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct Condvar(sync::Condvar);
+
+impl Condvar {
+    pub fn new() -> Self {
+        Self(sync::Condvar::new())
+    }
+
+    pub fn notify_one(&self) {
+        self.0.notify_one();
+    }
+
+    pub fn notify_all(&self) {
+        self.0.notify_all();
+    }
+
+    pub fn wait_while<'a, T, F>(
+        &self,
+        guard: sync::MutexGuard<'a, T>,
+        condition: F,
+    ) -> sync::MutexGuard<'a, T>
+    where
+        F: FnMut(&mut T) -> bool,
+    {
+        self.0.wait_while(guard, condition).unwrap()
     }
 }
