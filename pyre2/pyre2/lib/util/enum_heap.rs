@@ -7,59 +7,77 @@
 
 //! A max-heap for values represented by an enum.
 
-use std::collections::VecDeque;
-use std::iter;
-use std::marker::PhantomData;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 
-use enum_iterator::Sequence;
-
-pub struct EnumHeap<K, V> {
-    /// store the highest item last
-    items: Vec<VecDeque<V>>,
-    phantom: PhantomData<K>,
+struct Element<K, V> {
+    key: (K, isize),
+    value: V,
 }
 
-impl<K: Sequence, V> Default for EnumHeap<K, V> {
-    fn default() -> Self {
-        Self::new()
+impl<K: PartialEq, V> PartialEq for Element<K, V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
     }
 }
 
-impl<K: Sequence, V> EnumHeap<K, V> {
-    fn new() -> Self {
-        let mut items = Vec::with_capacity(K::CARDINALITY);
-        for _ in 0..K::CARDINALITY {
-            items.push(VecDeque::new());
-        }
+impl<K: Eq, V> Eq for Element<K, V> {}
+
+impl<K: PartialOrd, V> PartialOrd for Element<K, V> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.key.partial_cmp(&other.key)
+    }
+}
+
+impl<K: Ord, V> Ord for Element<K, V> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.key.cmp(&other.key)
+    }
+}
+
+pub struct EnumHeap<K, V> {
+    index: isize,
+    items: BinaryHeap<Element<K, V>>,
+}
+
+impl<K: Ord, V> Default for EnumHeap<K, V> {
+    fn default() -> Self {
         Self {
-            items,
-            phantom: PhantomData,
+            index: 0,
+            items: BinaryHeap::new(),
         }
+    }
+}
+
+impl<K: Ord, V> EnumHeap<K, V> {
+    fn new() -> Self {
+        Self::default()
     }
 
     pub fn pop(&mut self) -> Option<(K, V)> {
-        for (i, k) in enum_iterator::reverse_all().enumerate() {
-            if let Some(v) = self.items[i].pop_front() {
-                return Some((k, v));
-            }
-        }
-        None
+        self.items.pop().map(|e| (e.key.0, e.value))
     }
 
     /// LIFO = Last In First Out
     pub fn push_lifo(&mut self, k: K, v: V) {
-        let i = iter::successors(K::next(&k), K::next).count();
-        self.items[i].push_front(v);
+        self.items.push(Element {
+            key: (k, self.index),
+            value: v,
+        });
+        self.index += 1;
     }
 
     /// FIFO = First In First Out
     pub fn push_fifo(&mut self, k: K, v: V) {
-        let i = iter::successors(K::next(&k), K::next).count();
-        self.items[i].push_back(v);
+        self.items.push(Element {
+            key: (k, -self.index),
+            value: v,
+        });
+        self.index += 1;
     }
 }
 
-impl<K: Sequence, V> FromIterator<(K, V)> for EnumHeap<K, V> {
+impl<K: Ord, V> FromIterator<(K, V)> for EnumHeap<K, V> {
     fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
         let mut res = Self::new();
         for (k, v) in iter {
@@ -73,7 +91,7 @@ impl<K: Sequence, V> FromIterator<(K, V)> for EnumHeap<K, V> {
 mod tests {
     use super::*;
 
-    #[derive(Sequence, Eq, PartialEq, Debug)]
+    #[derive(Eq, PartialEq, Debug, Ord, PartialOrd)]
     enum Colors {
         Red,
         Green,
