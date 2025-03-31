@@ -52,20 +52,24 @@ pub struct ThreadPool(
 );
 
 impl ThreadPool {
-    pub fn new() -> Self {
+    pub fn with_thread_count(count: ThreadCount) -> Self {
         if cfg!(target_arch = "wasm32") {
             // ThreadPool doesn't work on WASM
             return Self(None);
         }
 
         let mut builder = rayon::ThreadPoolBuilder::new().stack_size(4 * 1024 * 1024);
-        if let ThreadCount::NumThreads(threads) = *THREADS.lock() {
+        if let ThreadCount::NumThreads(threads) = count {
             builder = builder.num_threads(threads.get());
         }
         let pool = builder.build().expect("To be able to build a thread pool");
         // Only print the message once
         debug!("Running with {} threads", pool.current_num_threads());
         Self(Some(pool))
+    }
+
+    pub fn new() -> Self {
+        Self::with_thread_count(*THREADS.lock())
     }
 
     pub fn spawn_many(&self, f: impl Fn() + Sync) {
