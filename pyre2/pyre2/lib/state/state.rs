@@ -26,6 +26,7 @@ use ruff_python_ast::name::Name;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
 use starlark_map::small_set::SmallSet;
+use starlark_map::Hashed;
 use tracing::debug;
 use tracing::error;
 use tracing::info;
@@ -628,10 +629,11 @@ impl Transaction {
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
         SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
+        let key = Hashed::new(key);
         {
             // if we happen to have solutions available, use them instead
             if let Some(solutions) = &module_data.state.read().steps.solutions {
-                return solutions.get(key).unwrap().dupe();
+                return solutions.get_hashed(key).unwrap().dupe();
             }
         }
 
@@ -639,7 +641,7 @@ impl Transaction {
         let (load, answers) = {
             let steps = module_data.state.read();
             if let Some(solutions) = &steps.steps.solutions {
-                return solutions.get(key).unwrap().dupe();
+                return solutions.get_hashed(key).unwrap().dupe();
             }
             (
                 steps.steps.load.dupe().unwrap(),

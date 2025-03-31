@@ -16,6 +16,7 @@ use dupe::OptionDupedExt;
 use ruff_text_size::Ranged;
 use ruff_text_size::TextRange;
 use starlark_map::small_map::SmallMap;
+use starlark_map::Hashed;
 
 use crate::alt::traits::Solve;
 use crate::alt::traits::SolveRecursive;
@@ -197,11 +198,22 @@ impl Solutions {
         &self.0
     }
 
+    #[allow(dead_code)] // Used in tests.
     pub fn get<K: Keyed<EXPORTED = true>>(&self, key: &K) -> Option<&Arc<<K as Keyed>::Answer>>
     where
         SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
     {
-        self.0.get().get(key)
+        self.get_hashed(Hashed::new(key))
+    }
+
+    pub fn get_hashed<K: Keyed<EXPORTED = true>>(
+        &self,
+        key: Hashed<&K>,
+    ) -> Option<&Arc<<K as Keyed>::Answer>>
+    where
+        SolutionsTable: TableKeyed<K, Value = SolutionsEntry<K>>,
+    {
+        self.0.get().get_hashed(key)
     }
 
     /// Find the first key that differs between two solutions, with the two values.
@@ -400,7 +412,7 @@ impl Answers {
         errors: &ErrorCollector,
         stdlib: &Stdlib,
         uniques: &UniqueFactory,
-        key: &K,
+        key: Hashed<&K>,
     ) -> Arc<K::Answer>
     where
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
@@ -416,7 +428,7 @@ impl Answers {
             recurser: &Recurser::new(),
             current: self,
         };
-        let v = solver.get(key);
+        let v = solver.get_hashed(key);
         let mut vv = (*v).clone();
         vv.visit_mut(&mut |x| self.solver.deep_force_mut(x));
         Arc::new(vv)
@@ -562,7 +574,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
         BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
     {
-        self.get_idx(self.bindings().key_to_idx(k))
+        self.get_hashed(Hashed::new(k))
+    }
+
+    pub fn get_hashed<K: Solve<Ans>>(&self, k: Hashed<&K>) -> Arc<K::Answer>
+    where
+        AnswerTable: TableKeyed<K, Value = AnswerEntry<K>>,
+        BindingTable: TableKeyed<K, Value = BindingEntry<K>>,
+    {
+        self.get_idx(self.bindings().key_to_idx_hashed(k))
     }
 
     pub fn create_recursive(&self, binding: &Binding) -> Var {

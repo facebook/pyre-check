@@ -86,6 +86,10 @@ impl<K: Eq + Hash> Index<K> {
         self.map.get_index_of(k).map(Idx::new)
     }
 
+    pub fn key_to_idx_hashed(&self, k: Hashed<&K>) -> Option<Idx<K>> {
+        self.map.get_index_of_hashed(k).map(Idx::new)
+    }
+
     pub fn idx_to_key(&self, idx: Idx<K>) -> &K {
         self.map.get_index(idx.idx()).unwrap()
     }
