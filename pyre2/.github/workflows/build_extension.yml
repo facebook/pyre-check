@@ -74,7 +74,7 @@ jobs:
       - name: set windows cargo home
         # we need to set CARGO_HOME to a high-up directory on Windows machines, since some dependencies cloned
         # by Cargo have long paths and will cause builds/tests to fail
-        if: ${{ env.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-latest' }}
         run: echo "CARGO_HOME=C:\\cargo" >> ${{ matrix.github_env }}
       - name: build pyrefly binary
         run: cargo build --release --all-features --target-dir lsp/bin --manifest-path pyre2/Cargo.toml
