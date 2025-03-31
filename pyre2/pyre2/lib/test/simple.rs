@@ -1285,3 +1285,10 @@ testcase!(
 x: list[str] | int = ["a", *["b"]]
 "#,
 );
+
+testcase!(
+    test_parse_error,
+    r#"
+if  # E: Parse error: Expected an expression at byte range
+"#,
+);
