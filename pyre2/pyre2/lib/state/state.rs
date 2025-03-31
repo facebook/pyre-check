@@ -1038,7 +1038,7 @@ impl<'a> TransactionHandle<'a> {
             .module_data
             .deps
             .write()
-            .insert(module, res.handle.dupe())
+            .insert(module, handle)
             .is_none()
         {
             res.rdeps.lock().insert(self.module_data.handle.dupe());
