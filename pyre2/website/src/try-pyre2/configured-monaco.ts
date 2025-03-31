@@ -9,8 +9,6 @@
 
 import * as monaco from 'monaco-editor';
 import { default as MonacoEditor, loader } from '@monaco-editor/react';
-import flowLanguageConfiguration from './flow-configuration.json';
-import type { PyreflyErrorMessage } from './TryPyre2Results';
 
 type CompletionItem = monaco.languages.CompletionItem;
 type Range = monaco.IRange;
@@ -85,8 +83,6 @@ monaco.languages.register({
     extensions: ['.py'],
     aliases: ['Python'],
 });
-monaco.languages.setLanguageConfiguration('python', flowLanguageConfiguration);
-const languageId = monaco.languages.getEncodedLanguageId('python');
 
 monaco.languages.registerCompletionItemProvider('python', {
     triggerCharacters: [
