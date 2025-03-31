@@ -1034,13 +1034,10 @@ impl<'a> TransactionHandle<'a> {
             .transaction
             .import_handle(&self.module_data.handle, module)?;
         let res = self.transaction.get_module(&handle);
-        if self
-            .module_data
-            .deps
-            .write()
-            .insert(module, handle)
-            .is_none()
-        {
+        let mut write = self.module_data.deps.write();
+        let did_insert = write.insert(module, handle).is_none();
+        drop(write);
+        if did_insert {
             res.rdeps.lock().insert(self.module_data.handle.dupe());
         }
         Ok(res)
