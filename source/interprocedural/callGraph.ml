@@ -166,7 +166,7 @@ module CallableToDecoratorsMap = struct
   }
 
   let ignored_decorator_prefixes_for_higher_order =
-    ["sqlalchemy.testing"] |> SerializableStringSet.of_list
+    ["sqlalchemy.testing"; "pytest"] |> SerializableStringSet.of_list
 
 
   let ignored_decorators_for_higher_order =
@@ -199,6 +199,11 @@ module CallableToDecoratorsMap = struct
       "abc.abstractmethod";
       "abc.abstractproperty";
       "pyre_extensions.override";
+      "typing_extensions.deprecated";
+      "typing_extensions.final";
+      "typing_extensions.overload";
+      "typing_extensions.override";
+      "typing_extensions.runtime_checkable";
     ]
     @ class_method_decorators
     @ static_method_decorators
@@ -213,12 +218,15 @@ module CallableToDecoratorsMap = struct
     then
       false
     else
-      let callee_and_parameters decorator =
+      let get_callee decorator =
         match decorator.Node.value with
-        | Expression.Call { Call.callee; arguments } -> callee, Some arguments
-        | _ -> decorator, None
+        | Expression.Call { Call.callee; _ } -> callee
+        | _ -> decorator
       in
-      let decorator_name = decorator |> callee_and_parameters |> Core.fst |> Expression.show in
+      let decorator_name =
+        decorator |> get_callee |> Expression.show
+        (* TODO: Match with `Expressoin.Name` of the callee, instead of using `Expression.show`. *)
+      in
       (not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order))
       && not
            (SerializableStringSet.exists
