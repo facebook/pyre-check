@@ -51,7 +51,7 @@ function ErrorMessage({ error, goToDef }: ErrorMessageProps): React.ReactElement
         rangeStr = `${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn}`;
     }
 
-    const message = `${rangeStr}: [${error.kind}] ${error.message}`;
+    const message = `${rangeStr}: ${error.message} [${error.kind}]`;
     return (
         <span
             className={styles.msgType}
