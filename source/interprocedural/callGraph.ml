@@ -204,6 +204,18 @@ module CallableToDecoratorsMap = struct
       "typing_extensions.overload";
       "typing_extensions.override";
       "typing_extensions.runtime_checkable";
+      "click.command";
+      "click.group";
+      "click.argument";
+      "click.option";
+      "click.password_option";
+      "click.confirmation_option";
+      "click.version_option";
+      "click.help_option";
+      "click.pass_context";
+      "click.pass_obj";
+      "click.make_pass_decorator";
+      "click.decorators.pass_meta_key";
     ]
     @ class_method_decorators
     @ static_method_decorators
