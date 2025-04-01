@@ -87,6 +87,15 @@ def foo(x: tuple, y: Tuple) -> None:
 );
 
 testcase!(
+    test_tuple_bad_unpack,
+    r#"
+from typing import Any, Iterable
+def test(y: int):
+    x: tuple[int, ...] = (3, *y, 4)  # E: Expected an iterable, got int
+"#,
+);
+
+testcase!(
     test_unpack_index_out_of_bounds,
     r#"
 def test(x: tuple[int]) -> None:
