@@ -724,11 +724,21 @@ def g(x) -> TypeGuard[str]:  # E: Function declared to return `TypeGuard[str]` b
 );
 
 testcase!(
-    test_isinstance_any,
+    test_isinstance_any_second,
     r#"
 from typing import Any
 def f(x: int | str, y: Any):
     if isinstance(x, y):
+        pass
+    "#,
+);
+
+testcase!(
+    test_isinstance_any_literally,
+    r#"
+from typing import Any
+def f(x: int | str):
+    if isinstance(x, Any): # E: Expected class object, got type[Any]
         pass
     "#,
 );
