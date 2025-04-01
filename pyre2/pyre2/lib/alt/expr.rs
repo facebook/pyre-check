@@ -641,6 +641,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let mut unbounded = Vec::new();
                 let mut suffix = Vec::new();
                 let mut hint_ts_idx: usize = 0;
+                let mut encountered_invalid_star = false;
                 for elt in x.elts.iter() {
                     match elt {
                         Expr::Starred(ExprStarred { box value, .. }) => {
@@ -673,13 +674,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         unbounded.push(Type::Tuple(Tuple::unbounded(iterable_ty)));
                                         hint_ts_idx = usize::MAX;
                                     } else {
-                                        return self.error(
+                                        self.error(
                                             errors,
                                             x.range(),
                                             ErrorKind::NotIterable,
                                             None,
                                             format!("Expected an iterable, got {}", ty),
                                         );
+                                        encountered_invalid_star = true;
                                     }
                                 }
                             }
@@ -703,24 +705,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                 }
-                match unbounded.as_slice() {
-                    [] => Type::tuple(prefix),
-                    [middle] => Type::Tuple(Tuple::unpacked(prefix, middle.clone(), suffix)),
-                    // We can't precisely model unpacking two unbounded iterables, so we'll keep any
-                    // concrete prefix and suffix elements and merge everything in between into an unbounded tuple
-                    _ => {
-                        let middle_types: Vec<Type> = unbounded
-                            .iter()
-                            .map(|t| {
-                                self.unwrap_iterable(t)
-                                    .unwrap_or(Type::Any(AnyStyle::Implicit))
-                            })
-                            .collect();
-                        Type::Tuple(Tuple::unpacked(
-                            prefix,
-                            Type::Tuple(Tuple::Unbounded(Box::new(self.unions(middle_types)))),
-                            suffix,
-                        ))
+                if encountered_invalid_star {
+                    // We already produced the type error, and we can't really roll up a suitable outermost type here.
+                    // TODO(stroxler): should we really be producing a `tuple[Any]` here? We do at least know *something* about the type!
+                    Type::any_error()
+                } else {
+                    match unbounded.as_slice() {
+                        [] => Type::tuple(prefix),
+                        [middle] => Type::Tuple(Tuple::unpacked(prefix, middle.clone(), suffix)),
+                        // We can't precisely model unpacking two unbounded iterables, so we'll keep any
+                        // concrete prefix and suffix elements and merge everything in between into an unbounded tuple
+                        _ => {
+                            let middle_types: Vec<Type> = unbounded
+                                .iter()
+                                .map(|t| {
+                                    self.unwrap_iterable(t)
+                                        .unwrap_or(Type::Any(AnyStyle::Implicit))
+                                })
+                                .collect();
+                            Type::Tuple(Tuple::unpacked(
+                                prefix,
+                                Type::Tuple(Tuple::Unbounded(Box::new(self.unions(middle_types)))),
+                                suffix,
+                            ))
+                        }
                     }
                 }
             }
@@ -878,82 +886,85 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty_fun = self.expr_infer(&x.func, errors);
                 if matches!(&ty_fun, Type::ClassDef(cls) if cls.has_qname("builtins", "super")) {
                     if is_special_name(&x.func, "super") {
-                        return self.get(&Key::SuperInstance(x.range)).arc_clone();
+                        self.get(&Key::SuperInstance(x.range)).arc_clone()
                     } else {
                         // Because we have to construct a binding for super in order to fill in
                         // implicit arguments, we can't handle things like local aliases to super.
-                        return Type::any_implicit();
+                        Type::any_implicit()
                     }
+                } else {
+                    let func_range = x.func.range();
+                    self.distribute_over_union(&ty_fun, |ty| match ty.callee_kind() {
+                        Some(CalleeKind::Function(FunctionKind::AssertType)) => self
+                            .call_assert_type(
+                                &x.arguments.args,
+                                &x.arguments.keywords,
+                                x.range,
+                                errors,
+                            ),
+                        Some(CalleeKind::Function(FunctionKind::RevealType)) => self
+                            .call_reveal_type(
+                                &x.arguments.args,
+                                &x.arguments.keywords,
+                                x.range,
+                                errors,
+                            ),
+                        Some(CalleeKind::Function(FunctionKind::Cast)) => {
+                            // For typing.cast, we have to hard-code a check for whether the first argument
+                            // is a type, so it's simplest to special-case the entire call.
+                            self.call_typing_cast(
+                                &x.arguments.args,
+                                &x.arguments.keywords,
+                                func_range,
+                                errors,
+                            )
+                        }
+                        // Treat assert_type and reveal_type like pseudo-builtins for convenience. Note that we still
+                        // log a name-not-found error, but we also assert/reveal the type as requested.
+                        None if matches!(ty, Type::Any(AnyStyle::Error))
+                            && is_special_name(&x.func, "assert_type") =>
+                        {
+                            self.call_assert_type(
+                                &x.arguments.args,
+                                &x.arguments.keywords,
+                                x.range,
+                                errors,
+                            )
+                        }
+                        None if matches!(ty, Type::Any(AnyStyle::Error))
+                            && is_special_name(&x.func, "reveal_type") =>
+                        {
+                            self.call_reveal_type(
+                                &x.arguments.args,
+                                &x.arguments.keywords,
+                                x.range,
+                                errors,
+                            )
+                        }
+                        _ => {
+                            self.check_isinstance(&ty_fun, x, errors);
+                            let args = x.arguments.args.map(|arg| match arg {
+                                Expr::Starred(x) => CallArg::Star(&x.value, x.range),
+                                _ => CallArg::Expr(arg),
+                            });
+                            let callable = self.as_call_target_or_error(
+                                ty.clone(),
+                                CallStyle::FreeForm,
+                                func_range,
+                                errors,
+                                None,
+                            );
+                            self.call_infer(
+                                callable,
+                                &args,
+                                &x.arguments.keywords,
+                                func_range,
+                                errors,
+                                None,
+                            )
+                        }
+                    })
                 }
-                let func_range = x.func.range();
-                self.distribute_over_union(&ty_fun, |ty| match ty.callee_kind() {
-                    Some(CalleeKind::Function(FunctionKind::AssertType)) => self.call_assert_type(
-                        &x.arguments.args,
-                        &x.arguments.keywords,
-                        x.range,
-                        errors,
-                    ),
-                    Some(CalleeKind::Function(FunctionKind::RevealType)) => self.call_reveal_type(
-                        &x.arguments.args,
-                        &x.arguments.keywords,
-                        x.range,
-                        errors,
-                    ),
-                    Some(CalleeKind::Function(FunctionKind::Cast)) => {
-                        // For typing.cast, we have to hard-code a check for whether the first argument
-                        // is a type, so it's simplest to special-case the entire call.
-                        self.call_typing_cast(
-                            &x.arguments.args,
-                            &x.arguments.keywords,
-                            func_range,
-                            errors,
-                        )
-                    }
-                    // Treat assert_type and reveal_type like pseudo-builtins for convenience. Note that we still
-                    // log a name-not-found error, but we also assert/reveal the type as requested.
-                    None if matches!(ty, Type::Any(AnyStyle::Error))
-                        && is_special_name(&x.func, "assert_type") =>
-                    {
-                        self.call_assert_type(
-                            &x.arguments.args,
-                            &x.arguments.keywords,
-                            x.range,
-                            errors,
-                        )
-                    }
-                    None if matches!(ty, Type::Any(AnyStyle::Error))
-                        && is_special_name(&x.func, "reveal_type") =>
-                    {
-                        self.call_reveal_type(
-                            &x.arguments.args,
-                            &x.arguments.keywords,
-                            x.range,
-                            errors,
-                        )
-                    }
-                    _ => {
-                        self.check_isinstance(&ty_fun, x, errors);
-                        let args = x.arguments.args.map(|arg| match arg {
-                            Expr::Starred(x) => CallArg::Star(&x.value, x.range),
-                            _ => CallArg::Expr(arg),
-                        });
-                        let callable = self.as_call_target_or_error(
-                            ty.clone(),
-                            CallStyle::FreeForm,
-                            func_range,
-                            errors,
-                            None,
-                        );
-                        self.call_infer(
-                            callable,
-                            &args,
-                            &x.arguments.keywords,
-                            func_range,
-                            errors,
-                            None,
-                        )
-                    }
-                })
             }
             Expr::FString(x) => {
                 // Ensure we detect type errors in f-string expressions.
