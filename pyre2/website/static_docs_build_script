@@ -7,4 +7,4 @@ yarn install
 ../facebook/wasm.sh
 cp ../pyre2_wasm/target/pyre2_wasm.js src/try-pyre2/pyre2_wasm.js
 cp ../pyre2_wasm/target/pyre2_wasm_bg.wasm src/try-pyre2/pyre2_wasm_bg.wasm
-yarn build
+yarn build --no-minify
