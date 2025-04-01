@@ -619,6 +619,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    /// Check if `want` matches `got` returning `want` if the check fails.
+    pub fn check_and_return_type(
+        &self,
+        want: &Type,
+        got: Type,
+        loc: TextRange,
+        errors: &ErrorCollector,
+        tcc: &dyn Fn() -> TypeCheckContext,
+    ) -> Type {
+        if self.check_type(want, &got, loc, errors, tcc) {
+            got
+        } else {
+            want.clone()
+        }
+    }
+
+    /// Check if `want` matches `got`, returning `true` on success and `false` on failure.
     pub fn check_type(
         &self,
         want: &Type,
@@ -626,15 +643,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         loc: TextRange,
         errors: &ErrorCollector,
         tcc: &dyn Fn() -> TypeCheckContext,
-    ) -> Type {
-        if matches!(got, Type::Any(AnyStyle::Error)) {
-            // Don't propagate errors
-            got.clone()
-        } else if self.solver().is_subset_eq(got, want, self.type_order()) {
-            got.clone()
+    ) -> bool {
+        if matches!(got, Type::Any(AnyStyle::Error))
+            || self.solver().is_subset_eq(got, want, self.type_order())
+        {
+            true
         } else {
             self.solver().error(want, got, errors, loc, tcc);
-            want.clone()
+            false
         }
     }
 

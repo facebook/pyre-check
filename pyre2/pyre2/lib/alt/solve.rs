@@ -1389,7 +1389,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             },
                     } = &*self.get_idx(*k)
                 {
-                    self.check_type(want, &ty, x.range, errors, &|| {
+                    self.check_and_return_type(want, ty, x.range, errors, &|| {
                         TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
                     })
                 } else {
@@ -1409,7 +1409,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             },
                     } = &*self.get_idx(*k)
                 {
-                    self.check_type(want, &ty, x.range, errors, &|| {
+                    self.check_and_return_type(want, ty, x.range, errors, &|| {
                         TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
                     })
                 } else {
@@ -1431,7 +1431,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             },
                     } = &*self.get_idx(*k)
                 {
-                    self.check_type(want, &ty, x.range, errors, &|| {
+                    self.check_and_return_type(want, ty, x.range, errors, &|| {
                         TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
                     })
                 } else {
@@ -1459,11 +1459,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     } else if is_generator {
                         if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
-                            self.check_type(&return_ty, &implicit_return, *range, errors, &|| {
-                                TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
-                                    !x.returns.is_empty(),
-                                ))
-                            });
+                            self.check_type(
+                                &return_ty,
+                                implicit_return.as_ref(),
+                                *range,
+                                errors,
+                                &|| {
+                                    TypeCheckContext::of_kind(
+                                        TypeCheckKind::ImplicitFunctionReturn(
+                                            !x.returns.is_empty(),
+                                        ),
+                                    )
+                                },
+                            );
                         } else {
                             self.error(
                                 errors,
@@ -1474,7 +1482,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         }
                     } else {
-                        self.check_type(&ty, &implicit_return, *range, errors, &|| {
+                        self.check_type(&ty, implicit_return.as_ref(), *range, errors, &|| {
                             TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
                                 !x.returns.is_empty(),
                             ))
@@ -1729,7 +1737,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty().map(|t| (t, &x.target))) {
                     Some((ty, target)) => {
-                        self.check_type(ty, &context_value, *range, errors, &|| {
+                        self.check_and_return_type(ty, context_value, *range, errors, &|| {
                             TypeCheckContext::of_kind(TypeCheckKind::from_annotation_target(target))
                         })
                     }
@@ -2179,9 +2187,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             errors,
                         )
                     } else {
-                        self.check_type(&yield_hint, &Type::None, x.range, errors, &|| {
-                            TypeCheckContext::of_kind(TypeCheckKind::UnexpectedBareYield)
-                        })
+                        self.check_and_return_type(
+                            &yield_hint,
+                            Type::None,
+                            x.range,
+                            errors,
+                            &|| TypeCheckContext::of_kind(TypeCheckKind::UnexpectedBareYield),
+                        )
                     };
                     Arc::new(YieldResult { yield_ty, send_ty })
                 } else {

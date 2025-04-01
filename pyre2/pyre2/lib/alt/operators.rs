@@ -276,7 +276,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 );
             }
             if let Some(ann_ty) = ann.ty() {
-                return self.check_type(ann_ty, &result, x.range(), errors, tcc);
+                return self.check_and_return_type(ann_ty, result, x.range(), errors, tcc);
             }
         }
         result
