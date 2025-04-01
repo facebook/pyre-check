@@ -218,20 +218,15 @@ module CallableToDecoratorsMap = struct
     then
       false
     else
-      let get_callee decorator =
-        match decorator.Node.value with
-        | Expression.Call { Call.callee; _ } -> callee
-        | _ -> decorator
-      in
-      let decorator_name =
-        decorator |> get_callee |> Expression.show
-        (* TODO: Match with `Expressoin.Name` of the callee, instead of using `Expression.show`. *)
-      in
-      (not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order))
-      && not
-           (SerializableStringSet.exists
-              (fun prefix -> String.is_prefix ~prefix decorator_name)
-              ignored_decorator_prefixes_for_higher_order)
+      match Ast.Statement.Decorator.from_expression decorator with
+      | Some { Decorator.name = { Node.value = decorator_name; _ }; _ } ->
+          let decorator_name = Reference.show decorator_name in
+          (not (SerializableStringSet.mem decorator_name ignored_decorators_for_higher_order))
+          && not
+               (SerializableStringSet.exists
+                  (fun prefix -> String.is_prefix ~prefix decorator_name)
+                  ignored_decorator_prefixes_for_higher_order)
+      | None -> true
 
 
   let collect_decorators ~callables_to_definitions_map callable =
