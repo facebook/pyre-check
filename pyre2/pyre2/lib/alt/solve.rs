@@ -1911,7 +1911,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             Binding::Type(x) => x.clone(),
             Binding::StrType => self.stdlib.str().to_type(),
-            Binding::TypeParameter(q) => Type::type_form(q.to_type()),
+            Binding::TypeParameter(unique, kind) => {
+                Type::type_form(Quantified::new(*unique, *kind).to_type())
+            }
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
