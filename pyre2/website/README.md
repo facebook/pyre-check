@@ -54,3 +54,8 @@ localhost:3000
 ```
 
 Most changes are reflected live without having to restart the server.
+
+### Formatter
+
+Please use "Typescript and Javascript Language Features" as your default
+formatter to avoid formatting issues.
