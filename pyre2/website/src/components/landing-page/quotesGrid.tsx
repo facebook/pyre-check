@@ -41,5 +41,9 @@ const styles = stylex.create({
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '2rem',
+        '@media (max-width: 800px)': {
+            gridTemplateColumns: 'repeat(1, 1fr)',
+        },
     },
+
 });
