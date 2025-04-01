@@ -1001,7 +1001,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// using the raw callable type).
     pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
         let new_member = self.get_class_member(cls.class_object(), &dunder::NEW)?;
-        if new_member.defined_on(self.stdlib.object_class_type().class_object()) {
+        if new_member.defining_class.has_qname("builtins", "object") {
             // The default behavior of `object.__new__` is already baked into our implementation of
             // class construction; we only care about `__new__` if it is overridden.
             None
