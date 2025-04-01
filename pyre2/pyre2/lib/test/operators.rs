@@ -312,3 +312,14 @@ def f(x: Any):
     assert_type(-x, Any)
     "#,
 );
+
+testcase!(
+    test_comparison_return_type,
+    r#"
+from typing import Literal, assert_type
+class A:
+  def __lt__(self, other):
+    return 1
+assert_type(A() < A(), Literal[1])
+    "#,
+);
