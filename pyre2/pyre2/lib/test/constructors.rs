@@ -303,3 +303,20 @@ A.__new__(A)  # OK
 A.__new__(int)  # Should be an error
     "#,
 );
+
+testcase!(
+    test_call_self,
+    r#"
+class Foo:
+    @classmethod
+    def foo(cls) -> None:
+      cls()
+
+class Bar:
+    def __call__(self) -> None:
+      pass
+
+    def bar(self) -> None:
+      self()
+    "#,
+);

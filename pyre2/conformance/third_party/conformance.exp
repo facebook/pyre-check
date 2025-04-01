@@ -6233,26 +6233,6 @@
     },
     {
       "code": -2,
-      "column": 16,
-      "concise_description": "Expected a callable, got type[Self@Shape]",
-      "description": "Expected a callable, got type[Self@Shape]",
-      "line": 28,
-      "name": "not-callable",
-      "stop_column": 19,
-      "stop_line": 28
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected a callable, got type[Self@Shape]",
-      "description": "Expected a callable, got type[Self@Shape]",
-      "line": 37,
-      "name": "not-callable",
-      "stop_column": 19,
-      "stop_line": 37
-    },
-    {
-      "code": -2,
       "column": 26,
       "concise_description": "TODO: Answers::apply_special_form cannot handle `Self[int]`",
       "description": "TODO: Answers::apply_special_form cannot handle `Self[int]`",
@@ -6295,16 +6275,6 @@
     }
   ],
   "generics_self_usage.py": [
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Expected a callable, got type[Self@ReturnsSelf]",
-      "description": "Expected a callable, got type[Self@ReturnsSelf]",
-      "line": 15,
-      "name": "not-callable",
-      "stop_column": 19,
-      "stop_line": 15
-    },
     {
       "code": -2,
       "column": 34,

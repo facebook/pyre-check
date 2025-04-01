@@ -156,7 +156,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Type::ClassDef(cls) => self.as_call_target(self.instantiate_fresh(&cls)),
-            Type::Type(box Type::ClassType(cls)) => Some(CallTarget::new(Target::Class(cls))),
+            Type::Type(box Type::ClassType(cls))
+            | Type::Type(box Type::SelfType(cls))
+            | Type::SelfType(cls) => Some(CallTarget::new(Target::Class(cls))),
             Type::Forall(forall) => {
                 let (qs, t) = self.solver().fresh_quantified(
                     &forall.tparams,

@@ -366,9 +366,7 @@
   "generics_self_basic.py": [
     "Line 20: Expected 1 errors",
     "Line 33: Expected 1 errors",
-    "Line 15: Unexpected errors ['Object of class `Shape` has no attribute `scale`']",
-    "Line 28: Unexpected errors ['Expected a callable, got type[Self@Shape]']",
-    "Line 37: Unexpected errors ['Expected a callable, got type[Self@Shape]']"
+    "Line 15: Unexpected errors ['Object of class `Shape` has no attribute `scale`']"
   ],
   "generics_self_protocols.py": [
     "Line 58: Unexpected errors ['Argument `ReturnConcreteShape` is not assignable to parameter `shape` with type `ShapeProtocol` in function `accepts_shape`']"
@@ -385,7 +383,6 @@
     "Line 116: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 125: Expected 1 errors",
-    "Line 15: Unexpected errors ['Expected a callable, got type[Self@ReturnsSelf]']",
     "Line 50: Unexpected errors ['`(self: Self@CallableAttribute) -> int` is not assignable to `(Self) -> int`']",
     "Line 60: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: Self (trying to access x)']",
     "Line 63: Unexpected errors ['Argument `Self@HasNestedFunction` is not assignable to parameter `inner_self` with type `Self` in function `nested`']"
