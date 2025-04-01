@@ -240,33 +240,60 @@ let build_whole_program_call_graph ~scheduler ~scheduler_policy state =
 let analyzed_callables { Fixpoint.state; _ } = Fixpoint.State.targets state
 
 let log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy ~decorators state =
-  let log_if_no_returned_callables ~readonly_state callable =
+  let open Data_structures in
+  let merge_decorator_counts _ left_count right_count = Some (left_count + right_count) in
+  let log_and_count_if_no_returned_callables ~readonly_state so_far callable =
     let open Option in
     callable
     |> get_model_from_readonly_state ~readonly_state
     >>| (fun { CallGraph.HigherOrderCallGraph.returned_callables; _ } ->
-          if CallGraph.CallTarget.Set.is_bottom returned_callables then
+          if CallGraph.CallTarget.Set.is_bottom returned_callables then (
+            let decorator_expressions =
+              Target.set_kind Target.Normal callable
+              |> CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators decorators
+              |> Option.value ~default:[]
+              |> List.map ~f:Ast.Expression.show
+            in
             Log.info
               "Failed to apply decorators for `%a`, which may lead to false negatives. Consider \
                skipping one of these decorators: [%s]"
               Target.pp_pretty
               callable
-              (Target.set_kind Target.Normal callable
-              |> CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.get_decorators decorators
-              |> Option.value ~default:[]
-              |> List.map ~f:Ast.Expression.show
-              |> String.concat ~sep:"; "))
-    |> Option.value ~default:()
+              (String.concat ~sep:"; " decorator_expressions);
+            decorator_expressions
+            |> List.sort_and_group ~compare:String.compare
+            |> List.filter_map ~f:(function
+                   | [] -> None
+                   | decorator :: _ as decorators -> Some (decorator, List.length decorators))
+            |> SerializableStringMap.of_alist_exn
+            |> SerializableStringMap.union merge_decorator_counts so_far)
+          else
+            so_far)
+    |> Option.value ~default:so_far
   in
   let readonly_state = Fixpoint.State.read_only state in
-  Scheduler.map_reduce
-    scheduler
-    ~policy:scheduler_policy
-    ~initial:()
-    ~map:(List.iter ~f:(log_if_no_returned_callables ~readonly_state))
-    ~reduce:(fun () () -> ())
-    ~inputs:(state |> Fixpoint.State.targets |> List.filter ~f:Target.is_decorated)
-    ()
+  let decorator_counts =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:scheduler_policy
+      ~initial:SerializableStringMap.empty
+      ~map:
+        (List.fold
+           ~init:SerializableStringMap.empty
+           ~f:(log_and_count_if_no_returned_callables ~readonly_state))
+      ~reduce:(SerializableStringMap.union merge_decorator_counts)
+      ~inputs:(state |> Fixpoint.State.targets |> List.filter ~f:Target.is_decorated)
+      ()
+  in
+  Log.info "Top frequent decorators that potentially lead to failing to apply decorators:";
+  let sorted_decorator_counts =
+    decorator_counts
+    |> SerializableStringMap.to_alist
+    |> List.sort ~compare:(fun (_, left_count) (_, right_count) ->
+           Int.compare right_count left_count)
+  in
+  List.take sorted_decorator_counts 10
+  |> List.iter ~f:(fun (decorator, count) -> Log.info "Decorator %s: %d times" decorator count)
 
 
 let compute
