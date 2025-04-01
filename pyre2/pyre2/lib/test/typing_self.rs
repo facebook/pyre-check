@@ -79,3 +79,33 @@ class A:
         return self
     "#,
 );
+
+testcase!(
+    bug = "Should not contain any errors",
+    test_instance_attr,
+    r#"
+from typing import Self, assert_type
+class A:
+    x: Self
+    def f(self):
+        assert_type(self.x, Self)
+class B(A):
+    pass
+assert_type(A().x, A)  # E:
+assert_type(B().x, B)  # E:
+    "#,
+);
+
+testcase!(
+    bug = "Should not contain any errors",
+    test_class_attr,
+    r#"
+from typing import ClassVar, Self, assert_type
+class A:
+    x: ClassVar[Self]
+class B(A):
+    pass
+assert_type(A.x, A)  # E:
+assert_type(B.x, B)  # E:
+    "#,
+);
