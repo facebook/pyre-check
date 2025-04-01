@@ -704,7 +704,7 @@ impl<'a> Transaction<'a> {
                     &answers.0,
                     &load.errors,
                     &stdlib,
-                    &self.uniques,
+                    self.uniques,
                     key,
                 );
             }
