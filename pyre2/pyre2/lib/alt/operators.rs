@@ -294,8 +294,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let context = || {
                         ErrorContext::BinaryOp(op.as_str().to_owned(), left.clone(), right.clone())
                     };
-                    let compare_by_method = |ty, method, arg| {
-                        self.call_method(ty, &method, x.range, &[arg], &[], errors, Some(&context))
+                    let compare_by_method = |ty, method, arg, errs| {
+                        self.call_method(ty, &method, x.range, &[arg], &[], errs, Some(&context))
                     };
                     let comparison_error = || {
                         self.error(
@@ -319,6 +319,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 right,
                                 dunder::CONTAINS,
                                 CallArg::Type(left, x.left.range()),
+                                errors,
                             )
                             .is_some()
                             {
@@ -329,17 +330,44 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             }
                         }
                         _ => {
+                            let errs =
+                                ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
+                            let fallback_errs =
+                                ErrorCollector::new(self.module_info().dupe(), ErrorStyle::Delayed);
                             if let Some(magic_method) = dunder::rich_comparison_dunder(*op)
                                 && compare_by_method(
                                     left,
                                     magic_method,
                                     CallArg::Type(right, right_range),
+                                    &errs,
                                 )
                                 .is_some()
+                                && errs.is_empty()
                             {
-                                // Comparison method called. We ignore the return type.
+                                // Comparison method successfully called. We ignore the return type.
                                 Type::any_implicit()
+                            } else if let Some(magic_method) = dunder::rich_comparison_fallback(*op)
+                                && compare_by_method(
+                                    right,
+                                    magic_method,
+                                    CallArg::Type(left, x.left.range()),
+                                    &fallback_errs,
+                                )
+                                .is_some()
+                                && fallback_errs.is_empty()
+                            {
+                                // Fallback comparison method successfully called. We ignore the return type.
+                                Type::any_implicit()
+                            } else if !errs.is_empty() {
+                                // Report errors from calling the comparison method on the LHS.
+                                errors.extend(errs);
+                                Type::any_error()
+                            } else if !fallback_errs.is_empty() {
+                                // Report errors from calling the comparison method on the RHS.
+                                errors.extend(fallback_errs);
+                                Type::any_error()
                             } else {
+                                // We couldn't find a comparison method.
                                 comparison_error()
                             }
                         }

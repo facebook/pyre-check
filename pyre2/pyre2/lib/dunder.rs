@@ -56,3 +56,18 @@ pub fn rich_comparison_dunder(op: CmpOp) -> Option<Name> {
     };
     Some(name)
 }
+
+/// Returns the fallback dunder if `op` corresponds to a "rich comparison method":
+/// https://docs.python.org/3/reference/datamodel.html#object.__lt__.
+pub fn rich_comparison_fallback(op: CmpOp) -> Option<Name> {
+    let name = match op {
+        CmpOp::Lt => GT,
+        CmpOp::LtE => GE,
+        CmpOp::Eq => NE,
+        CmpOp::NotEq => EQ,
+        CmpOp::Gt => LT,
+        CmpOp::GtE => LE,
+        _ => return None,
+    };
+    Some(name)
+}
