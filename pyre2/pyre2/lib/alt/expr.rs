@@ -573,8 +573,26 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
         let ty = match x {
-            Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
+            Expr::Name(x) => match x.id.as_str() {
+                "" => Type::any_error(), // Must already have a parse error
+                _ => self
+                    .get(&Key::Usage(ShortIdentifier::expr_name(x)))
+                    .arc_clone(),
+            },
+            Expr::Attribute(x) => {
+                let obj = self.expr_infer(&x.value, errors);
+                match (&obj, x.attr.id.as_str()) {
+                    (Type::Literal(Lit::Enum(box (_, member, _))), "_name_" | "name") => {
+                        Type::Literal(Lit::String(member.as_str().into()))
+                    }
+                    (Type::Literal(Lit::Enum(box (_, _, raw_type))), "_value_" | "value") => {
+                        raw_type.clone()
+                    }
+                    _ => self.attr_infer(&obj, &x.attr.id, x.range, errors, None),
+                }
+            }
             Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint, errors),
+            Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
             Expr::BinOp(x) => self.binop_infer(x, errors),
             Expr::UnaryOp(x) => self.unop_infer(x, errors),
             Expr::Lambda(lambda) => {
@@ -962,18 +980,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Expr::BooleanLiteral(x) => Lit::from_boolean_literal(x).to_type(),
             Expr::NoneLiteral(_) => Type::None,
             Expr::EllipsisLiteral(_) => Type::Ellipsis,
-            Expr::Attribute(x) => {
-                let obj = self.expr_infer(&x.value, errors);
-                match (&obj, x.attr.id.as_str()) {
-                    (Type::Literal(Lit::Enum(box (_, member, _))), "_name_" | "name") => {
-                        Type::Literal(Lit::String(member.as_str().into()))
-                    }
-                    (Type::Literal(Lit::Enum(box (_, _, raw_type))), "_value_" | "value") => {
-                        raw_type.clone()
-                    }
-                    _ => self.attr_infer(&obj, &x.attr.id, x.range, errors, None),
-                }
-            }
             Expr::Subscript(x) => {
                 let xs = Ast::unpack_slice(&x.slice);
                 // TODO: We don't deal properly with hint here, we should.
@@ -1152,12 +1158,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty = self.expr_untype(x, TypeFormContext::TypeArgument, errors);
                 Type::Unpack(Box::new(ty))
             }
-            Expr::Name(x) => match x.id.as_str() {
-                "" => Type::any_error(), // Must already have a parse error
-                _ => self
-                    .get(&Key::Usage(ShortIdentifier::expr_name(x)))
-                    .arc_clone(),
-            },
             Expr::Slice(_) => {
                 // TODO(stroxler, yangdanny): slices are generic, we should not hard code to int.
                 let int = self.stdlib.int().to_type();
