@@ -718,3 +718,13 @@ def f(x, key, dict):
             pass
     "#,
 );
+
+testcase!(
+    test_classvar_no_value,
+    r#"
+from typing import ClassVar, assert_type
+class C:
+    x: ClassVar[int]
+assert_type(C.x, int)
+    "#,
+);

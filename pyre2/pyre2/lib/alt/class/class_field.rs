@@ -779,13 +779,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             ClassFieldInner::Simple {
                 initialization: ClassFieldInitialization::Instance,
+                annotation,
                 ..
-            } => Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.dupe())),
-            ClassFieldInner::Simple {
-                initialization: ClassFieldInitialization::Class(_),
-                ty,
-                ..
-            } => {
+            } if annotation
+                .as_ref()
+                .is_none_or(|annot| !annot.has_qualifier(&Qualifier::ClassVar)) =>
+            {
+                Attribute::no_access(NoAccessReason::ClassUseOfInstanceAttribute(cls.dupe()))
+            }
+            ClassFieldInner::Simple { ty, .. } => {
                 if field.depends_on_class_type_parameter(cls) {
                     Attribute::no_access(NoAccessReason::ClassAttributeIsGeneric(cls.dupe()))
                 } else {
