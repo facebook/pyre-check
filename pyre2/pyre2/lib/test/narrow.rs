@@ -742,3 +742,15 @@ def f(x: int | str):
         pass
     "#,
 );
+
+testcase!(
+    test_isinstance_any_first,
+    r#"
+from typing import Any, assert_type
+def f(x: Any):
+    if isinstance(x, bool):
+        assert_type(x, bool)
+    else:
+        assert_type(x, Any)
+"#,
+);
