@@ -108,7 +108,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check: Option<(&Type, &dyn Fn() -> TypeCheckContext, &ErrorCollector)>,
         errors: &ErrorCollector,
     ) -> Type {
-        match &check {
+        match check {
             Some((want, tcc, check_errors)) if !want.is_any() => {
                 let got = self.expr_infer_with_hint(x, Some(want), errors);
                 self.check_type(want, &got, x.range(), check_errors, tcc)
