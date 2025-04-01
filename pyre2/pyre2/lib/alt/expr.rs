@@ -592,6 +592,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint, errors),
+            Expr::If(x) => {
+                // TODO: Support type narrowing
+                let condition_type = self.expr_infer(&x.test, errors);
+                let body_type = self.expr_infer_with_hint(&x.body, hint, errors);
+                let orelse_type = self.expr_infer_with_hint(&x.orelse, hint, errors);
+                match condition_type.as_bool() {
+                    Some(true) => body_type,
+                    Some(false) => orelse_type,
+                    None => self.union(body_type, orelse_type),
+                }
+            }
             Expr::BoolOp(x) => self.boolop(&x.values, x.op, errors),
             Expr::BinOp(x) => self.binop_infer(x, errors),
             Expr::UnaryOp(x) => self.unop_infer(x, errors),
@@ -614,17 +625,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let params = Params::List(ParamList::new(params));
                 let ret = self.expr_infer_with_hint(&lambda.body, return_hint.as_ref(), errors);
                 Type::Callable(Box::new(Callable { params, ret }))
-            }
-            Expr::If(x) => {
-                // TODO: Support type refinement
-                let condition_type = self.expr_infer(&x.test, errors);
-                let body_type = self.expr_infer_with_hint(&x.body, hint, errors);
-                let orelse_type = self.expr_infer_with_hint(&x.orelse, hint, errors);
-                match condition_type.as_bool() {
-                    Some(true) => body_type,
-                    Some(false) => orelse_type,
-                    None => self.union(body_type, orelse_type),
-                }
             }
             Expr::Tuple(x) => {
                 // These hints could be more precise
