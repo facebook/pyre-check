@@ -59,23 +59,20 @@ impl Display for Quantified {
 }
 
 impl Quantified {
-    pub fn new(uniques: &UniqueFactory, kind: QuantifiedKind) -> Self {
-        Quantified {
-            unique: uniques.fresh(),
-            kind,
-        }
+    pub fn new(unique: Unique, kind: QuantifiedKind) -> Self {
+        Quantified { unique, kind }
     }
 
     pub fn type_var(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::TypeVar)
+        Quantified::new(uniques.fresh(), QuantifiedKind::TypeVar)
     }
 
     pub fn param_spec(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::ParamSpec)
+        Quantified::new(uniques.fresh(), QuantifiedKind::ParamSpec)
     }
 
     pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques, QuantifiedKind::TypeVarTuple)
+        Quantified::new(uniques.fresh(), QuantifiedKind::TypeVarTuple)
     }
 
     pub fn to_type(self) -> Type {

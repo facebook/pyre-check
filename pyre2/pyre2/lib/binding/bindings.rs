@@ -79,7 +79,7 @@ use crate::solver::solver::Solver;
 use crate::table;
 use crate::table_for_each;
 use crate::table_try_for_each;
-use crate::types::quantified::Quantified;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::DisplayWithCtx;
@@ -777,10 +777,9 @@ impl<'a> BindingsBuilder<'a> {
         info.annot
     }
 
-    pub fn type_params(&mut self, x: &mut TypeParams) -> Vec<Quantified> {
-        let mut qs = Vec::new();
+    pub fn type_params(&mut self, x: &mut TypeParams) {
         for x in x.type_params.iter_mut() {
-            let q = match x {
+            let kind = match x {
                 TypeParam::TypeVar(x) => {
                     if let Some(bound) = &mut x.bound {
                         self.ensure_type(bound, &mut None);
@@ -788,20 +787,22 @@ impl<'a> BindingsBuilder<'a> {
                     if let Some(default) = &mut x.default {
                         self.ensure_type(default, &mut None);
                     }
-                    Quantified::type_var(self.uniques)
+                    QuantifiedKind::TypeVar
                 }
-                TypeParam::ParamSpec(_) => Quantified::param_spec(self.uniques),
-                TypeParam::TypeVarTuple(_) => Quantified::type_var_tuple(self.uniques),
+                TypeParam::ParamSpec(_) => QuantifiedKind::ParamSpec,
+                TypeParam::TypeVarTuple(_) => QuantifiedKind::TypeVarTuple,
             };
-            qs.push(q);
             let name = x.name();
             self.scopes
                 .current_mut()
                 .stat
                 .add(name.id.clone(), name.range, None);
-            self.bind_definition(name, Binding::TypeParameter(q), None);
+            self.bind_definition(
+                name,
+                Binding::TypeParameter(self.uniques.fresh(), kind),
+                None,
+            );
         }
-        qs
     }
 
     pub fn add_loop_exitpoint(&mut self, exit: LoopExit, range: TextRange) {

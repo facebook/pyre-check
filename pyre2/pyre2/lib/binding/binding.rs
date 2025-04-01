@@ -54,12 +54,13 @@ use crate::types::class::Class;
 use crate::types::class::ClassFieldProperties;
 use crate::types::class::ClassIndex;
 use crate::types::equality::TypeEq;
-use crate::types::quantified::Quantified;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::types::Type;
 use crate::types::types::Var;
 use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
 use crate::util::display::DisplayWithCtx;
+use crate::util::uniques::Unique;
 use crate::util::visit::VisitMut;
 
 assert_words!(Key, 5);
@@ -709,7 +710,7 @@ pub enum Binding {
     /// The str type.
     StrType,
     /// A type parameter.
-    TypeParameter(Quantified),
+    TypeParameter(Unique, QuantifiedKind),
     /// The type of a function. Stores an optional reference to the predecessor of this function.
     /// If the function is defined in a class scope, stores a reference to the class metadata.
     Function(
@@ -867,7 +868,7 @@ impl DisplayWith<Bindings> for Binding {
             Self::AugAssign(_, s) => write!(f, "augmented_assign {:?}", s),
             Self::Type(t) => write!(f, "type {t}"),
             Self::StrType => write!(f, "strtype"),
-            Self::TypeParameter(q) => write!(f, "type_parameter {q}"),
+            Self::TypeParameter(unique, kind) => write!(f, "type_parameter({unique}, {kind})"),
             Self::CheckLegacyTypeParam(k, _) => {
                 write!(f, "check_legacy_type_param {}", ctx.display(*k))
             }
