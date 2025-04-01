@@ -87,11 +87,14 @@ def foo(x: tuple, y: Tuple) -> None:
 );
 
 testcase!(
+    bug = "We are terminating type checking early, which hides clear errors in the tail. This is not acceptable.",
     test_tuple_bad_unpack,
     r#"
 from typing import Any, Iterable
+def f(x: int) -> int: ...
 def test(y: int):
     x: tuple[int, ...] = (3, *y, 4)  # E: Expected an iterable, got int
+    x: tuple[int, ...] = (3, *y, f("x"))  # E: Expected an iterable, got int
 "#,
 );
 
