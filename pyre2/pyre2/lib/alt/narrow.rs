@@ -149,15 +149,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     fn narrow_isinstance(
         &self,
         left: &Type,
-        right: Type,
+        right: &Type,
         range: TextRange,
         errors: &ErrorCollector,
     ) -> Type {
         if let Some(distributed_op) =
-            self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, &right, range)
+            self.distribute_narrow_op_over_tuple(&NarrowOp::IsInstance, right, range)
         {
             self.narrow(left, &distributed_op, range, errors)
-        } else if let Some(right) = self.unwrap_class_object_or_error(&right, range, errors) {
+        } else if let Some(right) = self.unwrap_class_object_or_error(right, range, errors) {
             self.intersect(left, &right)
         } else {
             left.clone()
@@ -220,7 +220,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             NarrowOp::IsInstance(v) => {
                 let right = self.narrow_val_infer(v, errors);
-                self.narrow_isinstance(ty, right, v.range(), errors)
+                self.narrow_isinstance(ty, &right, v.range(), errors)
             }
             NarrowOp::IsNotInstance(v) => {
                 let right = self.narrow_val_infer(v, errors);
