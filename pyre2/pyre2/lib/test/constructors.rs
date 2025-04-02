@@ -50,6 +50,21 @@ Box[int]("oops")  # E: Argument `Literal['oops']` is not assignable to parameter
 );
 
 testcase!(
+    bug = "Inside __init__, self should be parameterized with the same T as x, instead of defaulting to Unknown",
+    test_self_in_generic_class,
+    r#"
+from typing import reveal_type
+class A[T]:
+    x: T
+    def __init__(self, x: T):
+        reveal_type(self)  # E: revealed type: Self@A
+        reveal_type(self.x)  # E: revealed type: Unknown
+        self.x = 1  # This shouldn't be allowed
+        self.x = x  # OK
+    "#,
+);
+
+testcase!(
     test_generic_init_in_generic_class,
     r#"
 from typing import assert_type
