@@ -571,6 +571,35 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         self.call_infer(call_target, &[arg], &[], range, errors, None)
     }
 
+    /// Helper to infer element types for a list or set.
+    fn elts_infer(
+        &self,
+        elts: &[Expr],
+        elt_hint: Option<Type>,
+        errors: &ErrorCollector,
+    ) -> Vec<Type> {
+        elts.map(|x| match x {
+            Expr::Starred(ExprStarred { box value, .. }) => {
+                let hint = elt_hint
+                    .as_ref()
+                    .map(|ty| self.stdlib.iterable(ty.clone()).to_type());
+                let unpacked_ty = self.expr_infer_with_hint_promote(value, hint.as_ref(), errors);
+                if let Some(iterable_ty) = self.unwrap_iterable(&unpacked_ty) {
+                    iterable_ty
+                } else {
+                    self.error(
+                        errors,
+                        x.range(),
+                        ErrorKind::NotIterable,
+                        None,
+                        format!("Expected an iterable, got {}", unpacked_ty),
+                    )
+                }
+            }
+            _ => self.expr_infer_with_hint_promote(x, elt_hint.as_ref(), errors),
+        })
+    }
+
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
         let ty = match x {
             Expr::Name(x) => match x.id.as_str() {
@@ -738,27 +767,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     let elem_ty = self.solver().fresh_contained(self.uniques).to_type();
                     self.stdlib.list(elem_ty).to_type()
                 } else {
-                    let elem_tys = x.elts.map(|x| match x {
-                        Expr::Starred(ExprStarred { box value, .. }) => {
-                            let hint = elt_hint
-                                .as_ref()
-                                .map(|ty| self.stdlib.iterable(ty.clone()).to_type());
-                            let unpacked_ty =
-                                self.expr_infer_with_hint_promote(value, hint.as_ref(), errors);
-                            if let Some(iterable_ty) = self.unwrap_iterable(&unpacked_ty) {
-                                iterable_ty
-                            } else {
-                                self.error(
-                                    errors,
-                                    x.range(),
-                                    ErrorKind::NotIterable,
-                                    None,
-                                    format!("Expected an iterable, got {}", unpacked_ty),
-                                )
-                            }
-                        }
-                        _ => self.expr_infer_with_hint_promote(x, elt_hint.as_ref(), errors),
-                    });
+                    let elem_tys = self.elts_infer(&x.elts, elt_hint, errors);
                     self.stdlib.list(self.unions(elem_tys)).to_type()
                 }
             }
@@ -830,9 +839,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .unwrap_or_else(|| self.solver().fresh_contained(self.uniques).to_type());
                     self.stdlib.set(elem_ty).to_type()
                 } else {
-                    let elem_tys = x
-                        .elts
-                        .map(|x| self.expr_infer_with_hint_promote(x, elem_hint.as_ref(), errors));
+                    let elem_tys = self.elts_infer(&x.elts, elem_hint, errors);
                     self.stdlib.set(self.unions(elem_tys)).to_type()
                 }
             }

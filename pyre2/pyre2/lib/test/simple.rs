@@ -1292,3 +1292,13 @@ testcase!(
 if  # E: Parse error: Expected an expression
 "#,
 );
+
+testcase!(
+    test_unpack_union,
+    r#"
+from typing import Sequence, assert_type
+
+def foo(a: list[str] | Sequence[str]) -> None:
+    assert_type({'a', 'b', *a}, set[str])
+    "#,
+);
