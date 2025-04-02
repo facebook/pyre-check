@@ -58,4 +58,14 @@ Most changes are reflected live without having to restart the server.
 ### Formatter
 
 Please use "Typescript and Javascript Language Features" as your default
-formatter to avoid formatting issues.
+formatter to avoid formatting issues. This should be the default for VSCode. For
+Meta engineers with Prettier, you can update your default formatter using the
+following steps:
+
+1. Open VSCode settings (cmd + shift + p)
+2. Format document with
+3. Configure default formatter
+4. Select "Typescript and Javascript Language Features"
+
+If you are using a different code editor, you can include `tsserver` to get all
+the typescript IDE support.
