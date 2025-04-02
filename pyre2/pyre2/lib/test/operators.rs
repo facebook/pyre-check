@@ -180,6 +180,20 @@ assert_type(x, Literal[""])
 );
 
 testcase!(
+    bug = "Should narrow",
+    test_boolean_operator_narrow,
+    r#"
+from typing import assert_type, Literal
+
+def f(x: bool, y: int):
+    assert_type(x and y, Literal[False] | int) # E: assert_type(bool | int, Literal[False] | int) failed
+
+def g(x: bool, y: Literal['a'], z: Literal['b']):
+    assert_type((x and y) or z, Literal['a', 'b']) # E: assert_type(Literal['a', 'b'] | bool, Literal['a', 'b']) failed
+"#,
+);
+
+testcase!(
     test_unary_not_unknown,
     r#"
 from typing import assert_type
