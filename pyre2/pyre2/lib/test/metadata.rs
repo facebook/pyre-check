@@ -120,6 +120,14 @@ if sys.platform == "linux":
 else:
     X = int
 assert_type(X(), str)
+
+if sys.platform.startswith("win"):
+    Y = str
+elif sys.platform.startswith("lin"):
+    Y = int
+else:
+    Y = None
+assert_type(Y(), int)
 "#,
 );
 

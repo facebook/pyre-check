@@ -14,11 +14,13 @@ use dupe::Dupe;
 use itertools::Itertools;
 use regex::Match;
 use regex::Regex;
+use ruff_python_ast::Arguments;
 use ruff_python_ast::BoolOp;
 use ruff_python_ast::CmpOp;
 use ruff_python_ast::Expr;
 use ruff_python_ast::ExprAttribute;
 use ruff_python_ast::ExprBooleanLiteral;
+use ruff_python_ast::ExprCall;
 use ruff_python_ast::ExprNumberLiteral;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::StmtIf;
@@ -250,6 +252,26 @@ impl RuntimeMetadata {
                 ..
             }) if &name.id == "typing" && attr.as_str() == "TYPE_CHECKING" => {
                 Some(Value::Bool(true))
+            }
+            Expr::Call(ExprCall {
+                func:
+                    box Expr::Attribute(ExprAttribute {
+                        value: box value,
+                        attr,
+                        ..
+                    }),
+                arguments:
+                    Arguments {
+                        args: box [arg],
+                        keywords: box [],
+                        ..
+                    },
+                ..
+            }) if attr.as_str() == "startswith"
+                && let Some(Value::String(x)) = self.evaluate(value)
+                && let Some(Value::String(y)) = self.evaluate(arg) =>
+            {
+                Some(Value::Bool(x.starts_with(&y)))
             }
             Expr::Tuple(x) => Some(Value::Tuple(
                 x.elts.try_map(|x| self.evaluate(x).ok_or(())).ok()?,
