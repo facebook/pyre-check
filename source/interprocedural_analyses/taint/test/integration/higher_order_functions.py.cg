@@ -75,14 +75,14 @@ Call dependencies
     "higher_order_functions.apply_without_return (fun)[formal(f, position=0)=_test_sink (fun)]"
   ],
   "higher_order_functions.test_callable_class_to_obscure (fun)": [
-    "higher_order_functions.test_callable_class_to_obscure.obscure_tito (fun)",
     "higher_order_functions.CallableSource.__call__ (method)",
     "higher_order_functions.CallableSource.__init__ (method)",
+    "higher_order_functions.test_callable_class_to_obscure.obscure_tito (fun)",
     "object.__new__ (method)"
   ],
   "higher_order_functions.test_callable_class_to_perfect_tito (fun)": [
-    "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito (fun)",
     "higher_order_functions.CallableSource.__init__ (method)",
+    "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito (fun)",
     "object.__new__ (method)"
   ],
   "higher_order_functions.test_conditional_apply_backward (fun)": [
@@ -114,7 +114,7 @@ Call dependencies
     "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]"
   ],
   "higher_order_functions.test_location (fun)": [
-    "higher_order_functions.sink_args (fun)",
-    "higher_order_functions.Callable.__call__ (method)"
+    "higher_order_functions.Callable.__call__ (method)",
+    "higher_order_functions.sink_args (fun)"
   ]
 }

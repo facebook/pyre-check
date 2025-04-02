@@ -104,15 +104,15 @@ Call dependencies
   "properties.test_union_property_attribute_sink (fun)": [
     "_test_sink (fun)", "int.__gt__ (method)", "int.__le__ (method)",
     "object.__init__ (method)", "object.__new__ (method)",
+    "properties.DerivedTaintedSetter.my_property (override)",
     "properties.RegularAttribute.__init__ (method)",
-    "properties.TaintedGetterAndSetter.my_property (method)",
-    "properties.DerivedTaintedSetter.my_property (override)"
+    "properties.TaintedGetterAndSetter.my_property (method)"
   ],
   "properties.test_union_property_attribute_source (fun)": [
     "_test_source (fun)", "int.__gt__ (method)", "int.__le__ (method)",
     "object.__init__ (method)", "object.__new__ (method)",
+    "properties.DerivedTaintedSetter.my_property (override)",
     "properties.RegularAttribute.__init__ (method)",
-    "properties.TaintedGetterAndSetter.my_property (method)",
-    "properties.DerivedTaintedSetter.my_property (override)"
+    "properties.TaintedGetterAndSetter.my_property (method)"
   ]
 }

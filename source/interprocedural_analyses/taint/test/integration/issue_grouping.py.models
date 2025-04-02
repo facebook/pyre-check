@@ -4,73 +4,6 @@
   "data": {
     "callable": "issue_grouping.issue",
     "callable_line": 28,
-    "code": 1003,
-    "line": 32,
-    "start": 15,
-    "end": 16,
-    "filename": "issue_grouping.py",
-    "message": "source B to sink B",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "issue_grouping.source_b",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "SourceB"
-              }
-            ],
-            "origin": { "line": 31, "start": 13, "end": 23 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" }, { "first-index": "b" }
-                ],
-                "leaves": [
-                  { "name": "issue_grouping.sink_b", "port": "leaf:arg" }
-                ],
-                "length": 1,
-                "kind": "SinkB"
-              }
-            ],
-            "call": {
-              "position": { "line": 32, "start": 15, "end": 16 },
-              "resolves_to": [ "issue_grouping.multi_sink" ],
-              "port": "formal(d, position=0)[b]",
-              "call_site": "32:4-32:17"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "has": "first-index" }, { "first-index": "b" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "issue_grouping.multi_sink",
-      "index": 0,
-      "parameter": "formal(d)"
-    },
-    "master_handle": "issue_grouping.issue:1003:0:Call|issue_grouping.multi_sink|0|formal(d):3a59e7397660c7d8070a92a8a244a960"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "issue_grouping.issue",
-    "callable_line": 28,
     "code": 1000,
     "line": 32,
     "start": 15,
@@ -131,6 +64,73 @@
       "parameter": "formal(d)"
     },
     "master_handle": "issue_grouping.issue:1000:0:Call|issue_grouping.multi_sink|0|formal(d):8de0af2b47354365a27f7eb6d4686d3f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "issue_grouping.issue",
+    "callable_line": 28,
+    "code": 1003,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "issue_grouping.py",
+    "message": "source B to sink B",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "issue_grouping.source_b",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "SourceB"
+              }
+            ],
+            "origin": { "line": 31, "start": 13, "end": 23 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "b" }
+                ],
+                "leaves": [
+                  { "name": "issue_grouping.sink_b", "port": "leaf:arg" }
+                ],
+                "length": 1,
+                "kind": "SinkB"
+              }
+            ],
+            "call": {
+              "position": { "line": 32, "start": 15, "end": 16 },
+              "resolves_to": [ "issue_grouping.multi_sink" ],
+              "port": "formal(d, position=0)[b]",
+              "call_site": "32:4-32:17"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "b" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "issue_grouping.multi_sink",
+      "index": 0,
+      "parameter": "formal(d)"
+    },
+    "master_handle": "issue_grouping.issue:1003:0:Call|issue_grouping.multi_sink|0|formal(d):3a59e7397660c7d8070a92a8a244a960"
   }
 }
 {

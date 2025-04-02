@@ -9,7 +9,7 @@ Call dependencies
     "exception_test.none_throws (fun)"
   ],
   "exception_test.test_caught_exception (fun)": [
-    "isinstance (fun)", "BaseException.__str__ (method)"
+    "BaseException.__str__ (method)", "isinstance (fun)"
   ],
   "exception_test.test_constructed_exception (fun)": [
     "BaseException.__init__ (method)", "BaseException.__str__ (method)",

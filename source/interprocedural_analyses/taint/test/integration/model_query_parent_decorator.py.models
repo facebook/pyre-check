@@ -130,69 +130,6 @@
     "callable": "model_query_parent_decorator.TestC_1.__init__",
     "callable_line": 23,
     "code": 5002,
-    "line": 25,
-    "start": 19,
-    "end": 22,
-    "filename": "model_query_parent_decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parent_decorator.TestC_1.__init__",
-                    "port": "leaf:bar"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 23, "start": 28, "end": 31 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
-            "call_site": "23:4-26:23"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 25, "start": 19, "end": 22 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
-            "call_site": "25:8-25:23"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parent_decorator.TestC_1.__init__:5002:0:Call|_test_sink|1|formal(arg):3195fd4447e2170f2df43c12963ea524"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parent_decorator.TestC_1.__init__",
-    "callable_line": 23,
-    "code": 5002,
     "line": 24,
     "start": 19,
     "end": 22,
@@ -248,6 +185,69 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "model_query_parent_decorator.TestC_1.__init__:5002:0:Call|_test_sink|0|formal(arg):47ae3b9e47cf576ace0e9b6ab55d7ba5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parent_decorator.TestC_1.__init__",
+    "callable_line": 23,
+    "code": 5002,
+    "line": 25,
+    "start": 19,
+    "end": 22,
+    "filename": "model_query_parent_decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parent_decorator.TestC_1.__init__",
+                    "port": "leaf:bar"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 23, "start": 28, "end": 31 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "call_site": "23:4-26:23"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 25, "start": 19, "end": 22 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "call_site": "25:8-25:23"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parent_decorator.TestC_1.__init__:5002:0:Call|_test_sink|1|formal(arg):3195fd4447e2170f2df43c12963ea524"
   }
 }
 {
@@ -395,69 +395,6 @@
     "callable": "model_query_parent_decorator.TestC_3.__init__",
     "callable_line": 40,
     "code": 5002,
-    "line": 42,
-    "start": 19,
-    "end": 22,
-    "filename": "model_query_parent_decorator.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parent_decorator.TestC_3.__init__",
-                    "port": "leaf:bar"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 40, "start": 28, "end": 31 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
-            "call_site": "40:4-43:23"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 42, "start": 19, "end": 22 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
-            "call_site": "42:8-42:23"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parent_decorator.TestC_3.__init__:5002:0:Call|_test_sink|1|formal(arg):71616e3a1d85c3a06f80f661dc1a9685"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parent_decorator.TestC_3.__init__",
-    "callable_line": 40,
-    "code": 5002,
     "line": 41,
     "start": 19,
     "end": 22,
@@ -513,5 +450,68 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "model_query_parent_decorator.TestC_3.__init__:5002:0:Call|_test_sink|0|formal(arg):33fc2a06904f0412cc50c4231aa87721"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parent_decorator.TestC_3.__init__",
+    "callable_line": 40,
+    "code": 5002,
+    "line": 42,
+    "start": 19,
+    "end": 22,
+    "filename": "model_query_parent_decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parent_decorator.TestC_3.__init__",
+                    "port": "leaf:bar"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 40, "start": 28, "end": 31 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "call_site": "40:4-43:23"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 42, "start": 19, "end": 22 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "call_site": "42:8-42:23"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parent_decorator.TestC_3.__init__:5002:0:Call|_test_sink|1|formal(arg):71616e3a1d85c3a06f80f661dc1a9685"
   }
 }

@@ -46,10 +46,10 @@ Call dependencies
     "typing.Iterator.__next__ (method)"
   ],
   "taint_broadening.test_different_tito_broadenings (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
+    "_test_sink (fun)", "_test_source (fun)", "str.__str__ (method)",
+    "str.join (method)",
     "taint_broadening.tito_broaden_input_and_output_paths (fun)",
     "taint_broadening.tito_broaden_input_paths_but_not_output_path (fun)",
-    "str.__str__ (method)", "str.join (method)",
     "typing.Mapping.keys (method)"
   ],
   "taint_broadening.tito_broaden_input_and_output_paths (fun)": [
@@ -59,7 +59,7 @@ Call dependencies
     "dict.__setitem__ (method)"
   ],
   "taint_broadening.tito_broaden_output_paths_but_not_input_path (fun)": [
-    "taint_broadening.random_tito (fun)", "dict.__setitem__ (method)"
+    "dict.__setitem__ (method)", "taint_broadening.random_tito (fun)"
   ],
   "taint_broadening.tito_collapse_issue (fun)": [
     "_test_sink (fun)", "_test_source (fun)", "taint_broadening.tito (fun)"

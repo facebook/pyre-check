@@ -15,8 +15,8 @@ Call dependencies
     "typing.Iterator.__next__ (method)"
   ],
   "iterators.test_next_iter (fun)": [
-    "_test_sink (fun)", "_test_source (fun)", "next (fun)",
-    "dict.__getitem__ (method)", "list.__iter__ (method)",
+    "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",
+    "list.__iter__ (method)", "next (fun)",
     "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
   ]
 }

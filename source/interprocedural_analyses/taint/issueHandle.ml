@@ -29,6 +29,22 @@ module Sink = struct
       }
   [@@deriving compare, equal, hash, sexp, show]
 
+  (* Since we use interning, the default comparison wouldn't be deterministic:
+   * i.e, two different runs might produce a different order. This function is
+   * meant to produce a consistent order between runs. *)
+  let deterministic_compare left right =
+    match left, right with
+    | Call { callee = left_callee; _ }, Call { callee = right_callee; _ }
+    | Global { callee = left_callee; _ }, Global { callee = right_callee; _ }
+    | StringFormat { callee = left_callee; _ }, StringFormat { callee = right_callee; _ } ->
+        let callee_compare = Target.compare left_callee right_callee in
+        if callee_compare <> 0 then
+          callee_compare
+        else
+          compare left right
+    | _ -> compare left right
+
+
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
     let root =
       (* Ignore extra information in the parameter in order to group issues together. *)
@@ -88,6 +104,21 @@ module T = struct
     sink: Sink.t;
   }
   [@@deriving compare, equal, hash, sexp, show]
+
+  let deterministic_compare
+      { callable = left_callable; code = left_code; sink = left_sink }
+      { callable = right_callable; code = right_code; sink = right_sink }
+    =
+    let callable_compare = Target.compare left_callable right_callable in
+    if callable_compare <> 0 then
+      callable_compare
+    else
+      let code_compare = Int.compare left_code right_code in
+      if code_compare <> 0 then
+        code_compare
+      else
+        Sink.deterministic_compare left_sink right_sink
+
 
   let master_handle { code; callable; sink = sink_handle; _ } =
     let version = 0 (* Increment the version on format change. *) in

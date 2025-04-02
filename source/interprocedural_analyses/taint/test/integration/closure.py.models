@@ -4,12 +4,12 @@
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
     "callable_line": 288,
-    "code": 5003,
+    "code": 5002,
     "line": 301,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
-    "message": "Data from [Test2] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -17,14 +17,14 @@
           {
             "kinds": [
               {
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "closure._test_source2", "port": "leaf:return" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
-                "kind": "Test2"
+                "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "captured-variable" } ],
-            "origin": { "line": 294, "start": 18, "end": 33 }
+            "origin": { "line": 289, "start": 10, "end": 24 }
           }
         ]
       },
@@ -46,7 +46,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" }, { "always-via": "captured-variable" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -54,7 +54,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure.nonlocal_closure_conditional_write:5003:0:Call|_test_sink|0|formal(arg):9e6e82bfaef3ca1a89fb038a40978c11"
+    "master_handle": "closure.nonlocal_closure_conditional_write:5002:0:Call|_test_sink|0|formal(arg):4f82690eddf07742f67b381e40a2c38a"
   }
 }
 {
@@ -126,12 +126,12 @@
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
     "callable_line": 288,
-    "code": 5002,
+    "code": 5003,
     "line": 301,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "message": "Data from [Test2] source(s) may reach [Test] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -139,14 +139,14 @@
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  { "name": "closure._test_source2", "port": "leaf:return" }
                 ],
-                "kind": "Test"
+                "kind": "Test2"
               }
             ],
-            "origin": { "line": 289, "start": 10, "end": 24 }
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": { "line": 294, "start": 18, "end": 33 }
           }
         ]
       },
@@ -168,7 +168,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
+      { "always-via": "special_sink" }, { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -176,7 +176,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure.nonlocal_closure_conditional_write:5002:0:Call|_test_sink|0|formal(arg):4f82690eddf07742f67b381e40a2c38a"
+    "master_handle": "closure.nonlocal_closure_conditional_write:5003:0:Call|_test_sink|0|formal(arg):9e6e82bfaef3ca1a89fb038a40978c11"
   }
 }
 {
@@ -520,6 +520,71 @@
     "callable_line": 9,
     "code": 5002,
     "line": 16,
+    "start": 10,
+    "end": 11,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 11, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 16, "start": 10, "end": 11 },
+              "resolves_to": [
+                "closure.nonlocal_closure_read_reduction.inner"
+              ],
+              "port": "formal(z, position=0)",
+              "call_site": "16:4-16:12"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.nonlocal_closure_read_reduction.inner",
+      "index": 0,
+      "parameter": "formal(z)"
+    },
+    "master_handle": "closure.nonlocal_closure_read_reduction:5002:0:Call|closure.nonlocal_closure_read_reduction.inner|0|formal(z):6cb6fe9e9a0bfb5ecf1a291816f7f7cc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.nonlocal_closure_read_reduction",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 16,
     "start": 4,
     "end": 12,
     "filename": "closure.py",
@@ -585,12 +650,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.nonlocal_closure_read_reduction",
-    "callable_line": 9,
+    "callable": "closure.nonlocal_closure_reduction",
+    "callable_line": 139,
     "code": 5002,
-    "line": 16,
-    "start": 10,
-    "end": 11,
+    "line": 160,
+    "start": 9,
+    "end": 13,
     "filename": "closure.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -600,14 +665,21 @@
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_source" } ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
+                "length": 1,
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 11, "start": 8, "end": 22 }
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 152, "start": 22, "end": 26 } ],
+            "call": {
+              "position": { "line": 151, "start": 11, "end": 19 },
+              "resolves_to": [ "closure.nonlocal_closure_reduction.source" ],
+              "port": "result"
+            }
           }
         ]
       },
@@ -624,81 +696,10 @@
               }
             ],
             "call": {
-              "position": { "line": 16, "start": 10, "end": 11 },
-              "resolves_to": [
-                "closure.nonlocal_closure_read_reduction.inner"
-              ],
-              "port": "formal(z, position=0)",
-              "call_site": "16:4-16:12"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "closure.nonlocal_closure_read_reduction.inner",
-      "index": 0,
-      "parameter": "formal(z)"
-    },
-    "master_handle": "closure.nonlocal_closure_read_reduction:5002:0:Call|closure.nonlocal_closure_read_reduction.inner|0|formal(z):6cb6fe9e9a0bfb5ecf1a291816f7f7cc"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "closure.nonlocal_closure_reduction",
-    "callable_line": 139,
-    "code": 5002,
-    "line": 160,
-    "start": 4,
-    "end": 14,
-    "filename": "closure.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" }, { "always-via": "captured-variable" }
-            ],
-            "tito_positions": [ { "line": 152, "start": 17, "end": 27 } ],
-            "origin": { "line": 144, "start": 15, "end": 29 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-via": "captured-variable" }
-                ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 160, "start": 4, "end": 14 },
+              "position": { "line": 160, "start": 9, "end": 13 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
-              "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
+              "port": "formal(obj2, position=0)",
+              "call_site": "160:4-160:14"
             }
           }
         ]
@@ -707,16 +708,15 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "tito" },
-      { "always-via": "captured-variable" }
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "closure.nonlocal_closure_reduction.sink",
       "index": 0,
-      "parameter": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
+      "parameter": "formal(obj2)"
     },
-    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable($local_closure?nonlocal_closure_reduction$obj3):1b63fb3d67cc89fcdf52eb8a46fbf1e4"
+    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|formal(obj2):40c7eab5df7801acbedbf94abf4180f2"
   }
 }
 {
@@ -794,8 +794,8 @@
     "callable_line": 139,
     "code": 5002,
     "line": 160,
-    "start": 9,
-    "end": 13,
+    "start": 4,
+    "end": 14,
     "filename": "closure.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -805,21 +805,18 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
-                "length": 1,
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 152, "start": 22, "end": 26 } ],
-            "call": {
-              "position": { "line": 151, "start": 11, "end": 19 },
-              "resolves_to": [ "closure.nonlocal_closure_reduction.source" ],
-              "port": "result"
-            }
+            "local_features": [
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 152, "start": 17, "end": 27 } ],
+            "origin": { "line": 144, "start": 15, "end": 29 }
           }
         ]
       },
@@ -829,17 +826,19 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
+                ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "length": 1,
                 "kind": "Test"
               }
             ],
             "call": {
-              "position": { "line": 160, "start": 9, "end": 13 },
+              "position": { "line": 160, "start": 4, "end": 14 },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
-              "port": "formal(obj2, position=0)",
-              "call_site": "160:4-160:14"
+              "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
             }
           }
         ]
@@ -848,15 +847,16 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "tito" }
+      { "always-via": "tito" },
+      { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "closure.nonlocal_closure_reduction.sink",
       "index": 0,
-      "parameter": "formal(obj2)"
+      "parameter": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
     },
-    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|formal(obj2):40c7eab5df7801acbedbf94abf4180f2"
+    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable($local_closure?nonlocal_closure_reduction$obj3):1b63fb3d67cc89fcdf52eb8a46fbf1e4"
   }
 }
 {
@@ -991,71 +991,6 @@
     "callable": "closure.nonlocal_closure_write_reduction",
     "callable_line": 125,
     "code": 5002,
-    "line": 136,
-    "start": 15,
-    "end": 16,
-    "filename": "closure.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 134, "start": 8, "end": 16 },
-              "resolves_to": [
-                "closure.nonlocal_closure_write_reduction.source"
-              ],
-              "port": "result"
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 136, "start": 15, "end": 16 },
-            "call_site": "136:4-136:17"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "closure.nonlocal_closure_write_reduction:5002:0:Call|_test_sink|1|formal(arg):425241f92bf37e36e230d9e5afb823e1"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "closure.nonlocal_closure_write_reduction",
-    "callable_line": 125,
-    "code": 5002,
     "line": 135,
     "start": 15,
     "end": 16,
@@ -1114,12 +1049,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.taint_propagation",
-    "callable_line": 19,
+    "callable": "closure.nonlocal_closure_write_reduction",
+    "callable_line": 125,
     "code": 5002,
-    "line": 22,
-    "start": 37,
-    "end": 38,
+    "line": 136,
+    "start": 15,
+    "end": 16,
     "filename": "closure.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -1129,14 +1064,21 @@
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_source" } ],
+                "features": [ { "always-via": "special_source" } ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
                 ],
+                "length": 1,
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 21, "start": 8, "end": 22 }
+            "call": {
+              "position": { "line": 134, "start": 8, "end": 16 },
+              "resolves_to": [
+                "closure.nonlocal_closure_write_reduction.source"
+              ],
+              "port": "result"
+            }
           }
         ]
       },
@@ -1146,18 +1088,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 2,
                 "kind": "Test"
               }
             ],
-            "call": {
-              "position": { "line": 22, "start": 37, "end": 38 },
-              "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
-              "port": "formal(z, position=1)",
-              "call_site": "22:4-22:39"
-            }
+            "origin": { "line": 136, "start": 15, "end": 16 },
+            "call_site": "136:4-136:17"
           }
         ]
       }
@@ -1167,11 +1104,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "closure.wrapper_for_taint_propagation",
-      "index": 0,
-      "parameter": "formal(z)"
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
     },
-    "master_handle": "closure.taint_propagation:5002:0:Call|closure.wrapper_for_taint_propagation|0|formal(z):d878608229c113dfeaba3b976a3db5d3"
+    "master_handle": "closure.nonlocal_closure_write_reduction:5002:0:Call|_test_sink|1|formal(arg):425241f92bf37e36e230d9e5afb823e1"
   }
 }
 {
@@ -1240,6 +1177,69 @@
       "parameter": "formal(x)"
     },
     "master_handle": "closure.taint_propagation:5002:0:Call|closure.wrapper_for_taint_propagation|0|formal(x):37d12eccf218ca05f3b929330fc4b1f7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.taint_propagation",
+    "callable_line": 19,
+    "code": 5002,
+    "line": 22,
+    "start": 37,
+    "end": 38,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 21, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 22, "start": 37, "end": 38 },
+              "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
+              "port": "formal(z, position=1)",
+              "call_site": "22:4-22:39"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.wrapper_for_taint_propagation",
+      "index": 0,
+      "parameter": "formal(z)"
+    },
+    "master_handle": "closure.taint_propagation:5002:0:Call|closure.wrapper_for_taint_propagation|0|formal(z):d878608229c113dfeaba3b976a3db5d3"
   }
 }
 {

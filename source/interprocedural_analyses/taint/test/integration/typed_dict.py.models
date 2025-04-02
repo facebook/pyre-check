@@ -5,9 +5,9 @@
     "callable": "typed_dict.test_sanitize_field",
     "callable_line": 57,
     "code": 5002,
-    "line": 66,
+    "line": 59,
     "start": 15,
-    "end": 36,
+    "end": 27,
     "filename": "typed_dict.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -24,9 +24,12 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" }, { "first-index": "nested" }
+              { "has": "first-index" },
+              { "first-index": "genuine" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
             ],
-            "origin": { "line": 65, "start": 27, "end": 41 }
+            "origin": { "line": 58, "start": 25, "end": 39 }
           }
         ]
       },
@@ -40,20 +43,25 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 66, "start": 15, "end": 36 },
-            "call_site": "66:4-66:37"
+            "origin": { "line": 59, "start": 15, "end": 27 },
+            "call_site": "59:4-59:28"
           }
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "nested" } ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "genuine" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 2,
+      "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|_test_sink|2|formal(arg):7b270d2a6975752893b81100125f79b1"
+    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|_test_sink|0|formal(arg):3010ac0b1edb8a1381d0bd432f436ab7"
   }
 }
 {
@@ -119,9 +127,9 @@
     "callable": "typed_dict.test_sanitize_field",
     "callable_line": 57,
     "code": 5002,
-    "line": 59,
+    "line": 66,
     "start": 15,
-    "end": 27,
+    "end": 36,
     "filename": "typed_dict.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -138,12 +146,9 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "genuine" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "has": "first-index" }, { "first-index": "nested" }
             ],
-            "origin": { "line": 58, "start": 25, "end": 39 }
+            "origin": { "line": 65, "start": 27, "end": 41 }
           }
         ]
       },
@@ -157,25 +162,20 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 59, "start": 15, "end": 27 },
-            "call_site": "59:4-59:28"
+            "origin": { "line": 66, "start": 15, "end": 36 },
+            "call_site": "66:4-66:37"
           }
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "genuine" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" }
-    ],
+    "features": [ { "has": "first-index" }, { "first-index": "nested" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 0,
+      "index": 2,
       "parameter": "formal(arg)"
     },
-    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|_test_sink|0|formal(arg):3010ac0b1edb8a1381d0bd432f436ab7"
+    "master_handle": "typed_dict.test_sanitize_field:5002:0:Call|_test_sink|2|formal(arg):7b270d2a6975752893b81100125f79b1"
   }
 }
 {
@@ -184,79 +184,7 @@
     "callable": "typed_dict.test_typed_dict_constructor",
     "callable_line": 22,
     "code": 5002,
-    "line": 44,
-    "start": 15,
-    "end": 23,
-    "filename": "typed_dict.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
-            "tito_positions": [ { "line": 42, "start": 24, "end": 61 } ],
-            "origin": { "line": 42, "start": 45, "end": 59 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 44, "start": 15, "end": 23 },
-            "call_site": "44:4-44:24"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 12,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|12|formal(arg):8f2827c46ee1090cacd02379a9e4a3bd"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "typed_dict.test_typed_dict_constructor",
-    "callable_line": 22,
-    "code": 5002,
-    "line": 43,
+    "line": 24,
     "start": 15,
     "end": 23,
     "filename": "typed_dict.py",
@@ -277,12 +205,10 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "bar" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 42, "start": 24, "end": 61 } ],
-            "origin": { "line": 42, "start": 45, "end": 59 }
+            "tito_positions": [ { "line": 23, "start": 35, "end": 49 } ],
+            "origin": { "line": 23, "start": 35, "end": 49 }
           }
         ]
       },
@@ -296,8 +222,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 43, "start": 15, "end": 23 },
-            "call_site": "43:4-43:24"
+            "origin": { "line": 24, "start": 15, "end": 23 },
+            "call_site": "24:4-24:24"
           }
         ]
       }
@@ -305,17 +231,15 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "bar" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" }
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 11,
+      "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|11|formal(arg):db860b8e707f71a053c66b9c25fce22e"
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|0|formal(arg):2503e3c0e6fd0b4d26e04537d39fa3f7"
   }
 }
 {
@@ -324,7 +248,71 @@
     "callable": "typed_dict.test_typed_dict_constructor",
     "callable_line": 22,
     "code": 5002,
-    "line": 38,
+    "line": 28,
+    "start": 15,
+    "end": 28,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 27, "start": 35, "end": 56 } ],
+            "origin": { "line": 27, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 28, "start": 15, "end": 28 },
+            "call_site": "28:4-28:29"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|2|formal(arg):32455990fd4ab2c8e450d6f8f14cd3b8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 34,
     "start": 15,
     "end": 23,
     "filename": "typed_dict.py",
@@ -343,12 +331,12 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 37, "start": 24, "end": 43 } ],
-            "origin": { "line": 37, "start": 25, "end": 39 }
+            "tito_positions": [ { "line": 33, "start": 24, "end": 57 } ],
+            "origin": { "line": 33, "start": 42, "end": 56 }
           }
         ]
       },
@@ -362,24 +350,24 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 15, "end": 23 },
-            "call_site": "38:4-38:24"
+            "origin": { "line": 34, "start": 15, "end": 23 },
+            "call_site": "34:4-34:24"
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" }
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 8,
+      "index": 6,
       "parameter": "formal(arg)"
     },
-    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|8|formal(arg):d79e69aa9282b59d21f501fa25de71b2"
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|6|formal(arg):3fc9d2a1d02bf07919b423e5f4631764"
   }
 }
 {
@@ -456,7 +444,71 @@
     "callable": "typed_dict.test_typed_dict_constructor",
     "callable_line": 22,
     "code": 5002,
-    "line": 34,
+    "line": 38,
+    "start": 15,
+    "end": 23,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 37, "start": 24, "end": 43 } ],
+            "origin": { "line": 37, "start": 25, "end": 39 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 38, "start": 15, "end": 23 },
+            "call_site": "38:4-38:24"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 8,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|8|formal(arg):d79e69aa9282b59d21f501fa25de71b2"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test_typed_dict_constructor",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 43,
     "start": 15,
     "end": 23,
     "filename": "typed_dict.py",
@@ -477,10 +529,12 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "bar" },
-              { "always-via": "tito" }
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 33, "start": 24, "end": 57 } ],
-            "origin": { "line": 33, "start": 42, "end": 56 }
+            "tito_positions": [ { "line": 42, "start": 24, "end": 61 } ],
+            "origin": { "line": 42, "start": 45, "end": 59 }
           }
         ]
       },
@@ -494,8 +548,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 34, "start": 15, "end": 23 },
-            "call_site": "34:4-34:24"
+            "origin": { "line": 43, "start": 15, "end": 23 },
+            "call_site": "43:4-43:24"
           }
         ]
       }
@@ -503,15 +557,17 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "bar" },
-      { "always-via": "tito" }
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 6,
+      "index": 11,
       "parameter": "formal(arg)"
     },
-    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|6|formal(arg):3fc9d2a1d02bf07919b423e5f4631764"
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|11|formal(arg):db860b8e707f71a053c66b9c25fce22e"
   }
 }
 {
@@ -520,71 +576,7 @@
     "callable": "typed_dict.test_typed_dict_constructor",
     "callable_line": 22,
     "code": 5002,
-    "line": 28,
-    "start": 15,
-    "end": 28,
-    "filename": "typed_dict.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "bar" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 27, "start": 35, "end": 56 } ],
-            "origin": { "line": 27, "start": 41, "end": 55 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 28, "start": 15, "end": 28 },
-            "call_site": "28:4-28:29"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "bar" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 2,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|2|formal(arg):32455990fd4ab2c8e450d6f8f14cd3b8"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "typed_dict.test_typed_dict_constructor",
-    "callable_line": 22,
-    "code": 5002,
-    "line": 24,
+    "line": 44,
     "start": 15,
     "end": 23,
     "filename": "typed_dict.py",
@@ -604,11 +596,15 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "bar" },
-              { "always-via": "tito" }
+              { "first-index": "foo" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 23, "start": 35, "end": 49 } ],
-            "origin": { "line": 23, "start": 35, "end": 49 }
+            "tito_positions": [ { "line": 42, "start": 24, "end": 61 } ],
+            "origin": { "line": 42, "start": 45, "end": 59 }
           }
         ]
       },
@@ -622,24 +618,28 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 24, "start": 15, "end": 23 },
-            "call_site": "24:4-24:24"
+            "origin": { "line": 44, "start": 15, "end": 23 },
+            "call_site": "44:4-44:24"
           }
         ]
       }
     ],
     "features": [
       { "has": "first-index" },
-      { "first-index": "bar" },
-      { "always-via": "tito" }
+      { "first-index": "foo" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 0,
+      "index": 12,
       "parameter": "formal(arg)"
     },
-    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|0|formal(arg):2503e3c0e6fd0b4d26e04537d39fa3f7"
+    "master_handle": "typed_dict.test_typed_dict_constructor:5002:0:Call|_test_sink|12|formal(arg):8f2827c46ee1090cacd02379a9e4a3bd"
   }
 }
 {

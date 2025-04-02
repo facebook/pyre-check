@@ -24,6 +24,7 @@ val fetch_and_externalize
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
+  sorted:bool ->
   dump_override_models:bool ->
   Target.t ->
   NewlineDelimitedJson.Line.t list

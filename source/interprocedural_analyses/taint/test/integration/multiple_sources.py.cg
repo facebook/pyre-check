@@ -10,10 +10,10 @@ Call dependencies
     "multiple_sources.multi_sink_share_both_sinks (fun)"
   ],
   "multiple_sources.combine_tainted_user_and_dangerous_vc (fun)": [
-    "multiple_sources.permissive_context (fun)",
-    "multiple_sources.user_controlled_input (fun)",
     "multiple_sources.Node.get (method)",
-    "multiple_sources.Node.send (method)"
+    "multiple_sources.Node.send (method)",
+    "multiple_sources.permissive_context (fun)",
+    "multiple_sources.user_controlled_input (fun)"
   ],
   "multiple_sources.demonstrate_triggered_c_from_d (fun)": [
     "multiple_sources.d_source (fun)",
@@ -24,28 +24,28 @@ Call dependencies
     "multiple_sources.multi_sink_share_both_sinks (fun)"
   ],
   "multiple_sources.demonstrate_triggered_c_from_d_or_e (fun)": [
+    "int.__eq__ (method)", "int.__ne__ (method)",
     "multiple_sources.d_source (fun)", "multiple_sources.e_source (fun)",
-    "multiple_sources.multi_sink_share_both_sinks (fun)",
-    "int.__eq__ (method)", "int.__ne__ (method)"
+    "multiple_sources.multi_sink_share_both_sinks (fun)"
   ],
   "multiple_sources.demonstrate_triggered_context (fun)": [
-    "multiple_sources.user_controlled_input (fun)",
     "multiple_sources.Node.get (method)",
-    "multiple_sources.Node.send (method)"
+    "multiple_sources.Node.send (method)",
+    "multiple_sources.user_controlled_input (fun)"
   ],
   "multiple_sources.demonstrate_triggered_context_more_hops (fun)": [
-    "multiple_sources.user_controlled_input_wrapper (fun)",
     "multiple_sources.Node.get (method)",
-    "multiple_sources.Node.send (method)"
+    "multiple_sources.Node.send (method)",
+    "multiple_sources.user_controlled_input_wrapper (fun)"
   ],
   "multiple_sources.demonstrate_triggered_d_and_e (fun)": [
     "multiple_sources.c_source (fun)",
     "multiple_sources.multi_sink_share_both_sinks (fun)"
   ],
   "multiple_sources.demonstrate_triggered_input (fun)": [
-    "multiple_sources.permissive_context (fun)",
     "multiple_sources.Node.get (method)",
-    "multiple_sources.Node.send (method)"
+    "multiple_sources.Node.send (method)",
+    "multiple_sources.permissive_context (fun)"
   ],
   "multiple_sources.issue_with_sanitizer (fun)": [
     "multiple_sources.a_source (fun)",
@@ -97,19 +97,19 @@ Call dependencies
     "multiple_sources.wrapper_node_get_send_triggered_context (fun)"
   ],
   "multiple_sources.muliple_main_issues_1 (fun)": [
-    "multiple_sources.permissive_context (fun)",
-    "multiple_sources.user_controlled_input (fun)",
     "multiple_sources.A.multi_sink (method)",
-    "multiple_sources.B.multi_sink (method)"
+    "multiple_sources.B.multi_sink (method)",
+    "multiple_sources.permissive_context (fun)",
+    "multiple_sources.user_controlled_input (fun)"
   ],
   "multiple_sources.muliple_main_issues_2 (fun)": [
     "multiple_sources.multiple_triggered_context (fun)",
     "multiple_sources.permissive_context (fun)"
   ],
   "multiple_sources.multiple_triggered_context (fun)": [
-    "multiple_sources.user_controlled_input (fun)",
     "multiple_sources.Node.get (method)",
-    "multiple_sources.Node.send (method)"
+    "multiple_sources.Node.send (method)",
+    "multiple_sources.user_controlled_input (fun)"
   ],
   "multiple_sources.no_issue_with_transform (fun)": [
     "multiple_sources.a_source (fun)",

@@ -3,8 +3,8 @@ Call dependencies
 {
   "raise.backward (fun)": [ "_test_sink (fun)" ],
   "raise.conditional_unreachability (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "BaseException.__init__ (method)", "object.__new__ (method)"
+    "BaseException.__init__ (method)", "_test_sink (fun)",
+    "_test_source (fun)", "object.__new__ (method)"
   ],
   "raise.forward (fun)": [ "_test_sink (fun)", "_test_source (fun)" ],
   "raise.no_sink (fun)": [
@@ -14,7 +14,7 @@ Call dependencies
     "BaseException.__init__ (method)", "object.__new__ (method)"
   ],
   "raise.unreachable (fun)": [
-    "_test_source (fun)", "BaseException.__init__ (method)",
+    "BaseException.__init__ (method)", "_test_source (fun)",
     "object.__new__ (method)"
   ],
   "raise.unreachable_code_do_to_always_exception (fun)": [

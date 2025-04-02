@@ -129,7 +129,7 @@ let assert_call_graph ?other_sources ~context source ~expected =
     create_call_graph ?other_sources ~context source
     |> DependencyGraph.Reversed.from_call_graph
     |> DependencyGraph.Reversed.to_target_graph
-    |> TargetGraph.to_alist
+    |> TargetGraph.to_alist ~sorted:true
   in
   compare_dependency_graph graph ~expected
 
@@ -140,7 +140,7 @@ let assert_reverse_call_graph ~context source ~expected =
     |> DependencyGraph.Reversed.from_call_graph
     |> DependencyGraph.Reversed.reverse
     |> DependencyGraph.to_target_graph
-    |> TargetGraph.to_alist
+    |> TargetGraph.to_alist ~sorted:true
   in
   compare_dependency_graph graph ~expected
 
@@ -238,9 +238,9 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.call_foo", [`Method "test.Base.foo"];
         `Method "test.Base.$class_toplevel", [];
         `Method "test.C.$class_toplevel", [];
+        `Function "test.call_foo", [`Method "test.Base.foo"];
       ];
   assert_call_graph
     {|
@@ -258,11 +258,11 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"];
         `Method "test.Base.$class_toplevel", [];
         `Method "test.C.$class_toplevel", [];
         `Method "test.D.$class_toplevel", [];
         `Method "test.E.$class_toplevel", [];
+        `Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"];
       ];
 
   (* Ensure that we don't include UnrelatedToC.foo here. *)
@@ -282,11 +282,11 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"];
         `Method "test.Base.$class_toplevel", [];
         `Method "test.C.$class_toplevel", [];
         `Method "test.D.$class_toplevel", [];
         `Method "test.UnrelatedToC.$class_toplevel", [];
+        `Function "test.call_foo", [`Method "test.Base.foo"; `Method "test.D.foo"];
       ];
 
   (* We only dereference overrides by one level. *)
@@ -306,11 +306,11 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"];
         `Method "test.Base.$class_toplevel", [];
         `Method "test.C.$class_toplevel", [];
         `Method "test.Child.$class_toplevel", [];
         `Method "test.Grandchild.$class_toplevel", [];
+        `Function "test.call_foo", [`Override "test.Child.foo"; `Method "test.Base.foo"];
       ];
   assert_call_graph
     {|
@@ -330,12 +330,12 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.calls_c", [`Override "test.C.foo"];
-        `Function "test.calls_d", [`Method "test.E.foo"; `Method "test.C.foo"];
-        `Function "test.calls_e", [`Method "test.E.foo"];
         `Method "test.C.$class_toplevel", [];
         `Method "test.D.$class_toplevel", [];
         `Method "test.E.$class_toplevel", [];
+        `Function "test.calls_c", [`Override "test.C.foo"];
+        `Function "test.calls_d", [`Method "test.E.foo"; `Method "test.C.foo"];
+        `Function "test.calls_e", [`Method "test.E.foo"];
       ];
   assert_call_graph
     {|
@@ -349,8 +349,8 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.format_str", [`Override "str.format"];
         `Method "test.C.$class_toplevel", [];
+        `Function "test.format_str", [`Override "str.format"];
       ];
 
   assert_call_graph
@@ -382,10 +382,10 @@ let test_construction context =
     ~expected:
       [
         `Function "test.$toplevel", [];
-        `Function "test.calls_C_int", [`Override "test.C.method"];
-        `Function "test.calls_C_str", [`Override "test.C.method"];
         `Method "test.C.$class_toplevel", [];
         `Method "test.D.$class_toplevel", [];
+        `Function "test.calls_C_int", [`Override "test.C.method"];
+        `Function "test.calls_C_str", [`Override "test.C.method"];
       ]
 
 
@@ -578,7 +578,7 @@ let test_prune_callables _ =
       (List.map expected_dependencies ~f:(fun (key, values) ->
            ( create (Reference.create key),
              List.map values ~f:(fun value -> create (Reference.create value)) )))
-      (Target.Map.Tree.to_alist actual_dependencies)
+      (TargetGraph.to_alist ~sorted:true actual_dependencies)
   in
   (* Basic case. *)
   assert_pruned
@@ -630,12 +630,12 @@ let test_prune_callables _ =
     ~expected_dependencies:
       [
         "a.foo", ["external.bar"];
+        "external.C.m", [];
+        "O|external.C.m", ["external.C.m"; "O|external.D.m"];
+        "external.D.m", ["external.called_by_override"];
+        "O|external.D.m", ["external.D.m"];
         "external.bar", ["O|external.C.m"];
         "external.called_by_override", [];
-        "external.C.m", [];
-        "external.D.m", ["external.called_by_override"];
-        "O|external.C.m", ["O|external.D.m"; "external.C.m"];
-        "O|external.D.m", ["external.D.m"];
       ];
   (* The calls go away if we don't have the override between C and D. *)
   assert_pruned
@@ -652,7 +652,7 @@ let test_prune_callables _ =
     ~project_callables:["a.foo"]
     ~expected_callables:["a.foo"; "external.bar"; "external.C.m"]
     ~expected_dependencies:
-      ["a.foo", ["external.bar"]; "external.bar", ["external.C.m"]; "external.C.m", []];
+      ["a.foo", ["external.bar"]; "external.C.m", []; "external.bar", ["external.C.m"]];
 
   (* Transitive overrides. *)
   assert_pruned
@@ -681,13 +681,13 @@ let test_prune_callables _ =
     ~expected_dependencies:
       [
         "a.foo", ["O|external.C.m"];
-        "external.called_by_override", [];
         "external.C.m", [];
+        "O|external.C.m", ["external.C.m"; "O|external.D.m"];
         "external.D.m", [];
+        "O|external.D.m", ["external.D.m"; "O|external.E.m"];
         "external.E.m", ["external.called_by_override"];
-        "O|external.C.m", ["O|external.D.m"; "external.C.m"];
-        "O|external.D.m", ["O|external.E.m"; "external.D.m"];
         "O|external.E.m", ["external.E.m"];
+        "external.called_by_override", [];
       ];
   (* Strongly connected components are handled fine. *)
   assert_pruned

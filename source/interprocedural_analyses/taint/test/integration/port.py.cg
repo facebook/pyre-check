@@ -27,7 +27,7 @@ Call dependencies
   ],
   "port.star_arg_wrapper (fun)": [ "port.star_arg (fun)" ],
   "port.star_star_arg (fun)": [
-    "port.sink_field (fun)", "dict.__getitem__ (method)"
+    "dict.__getitem__ (method)", "port.sink_field (fun)"
   ],
   "port.star_star_arg_wrapper (fun)": [ "port.star_star_arg (fun)" ]
 }

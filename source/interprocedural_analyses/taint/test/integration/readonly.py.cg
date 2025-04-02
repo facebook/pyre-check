@@ -5,15 +5,15 @@ Call dependencies
     "readonly.A.B (object)", "readonly.A.mapping (object)"
   ],
   "readonly.A.self_readonly_map (method)": [
-    "_test_sink (fun)", "typing.Mapping.get (method)",
-    "readonly.A.mapping (object)"
+    "_test_sink (fun)", "readonly.A.mapping (object)",
+    "typing.Mapping.get (method)"
   ],
   "readonly.A.self_readonly_str (method)": [
     "_test_sink (fun)", "readonly.A.B (object)"
   ],
   "readonly.A.self_untyped_map (method)": [
-    "_test_sink (fun)", "typing.Mapping.get (method)",
-    "readonly.A.mapping (object)"
+    "_test_sink (fun)", "readonly.A.mapping (object)",
+    "typing.Mapping.get (method)"
   ],
   "readonly.A.self_untyped_str (method)": [
     "_test_sink (fun)", "readonly.A.B (object)"

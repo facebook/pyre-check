@@ -8,11 +8,11 @@ Call dependencies
     "_test_sink (fun)"
   ],
   "callables.async_execute_event_processor (fun)": [
-    "_test_source (fun)", "callables.get_event_processors (fun)",
+    "_test_source (fun)",
     "callables.AbstractEventProcessor.__init__ (method)",
-    "list.__iter__ (method)", "object.__new__ (method)",
-    "typing.Iterator.__next__ (method)",
     "callables.AbstractEventProcessor.async_call_tainted (override)",
-    "callables.AbstractEventProcessor.async_run (override)"
+    "callables.AbstractEventProcessor.async_run (override)",
+    "callables.get_event_processors (fun)", "list.__iter__ (method)",
+    "object.__new__ (method)", "typing.Iterator.__next__ (method)"
   ]
 }

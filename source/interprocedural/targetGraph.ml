@@ -11,8 +11,6 @@ open Core
 
 type t = Target.t list Target.Map.Tree.t
 
-let to_alist = Target.Map.Tree.to_alist
-
 let dump ~path graph =
   let module Buffer = Stdlib.Buffer in
   let buffer = Buffer.create 1024 in
@@ -41,27 +39,30 @@ let dump ~path graph =
 
 let show_target = Target.show_pretty_with_kind
 
-let to_sorted_alist edges =
-  let compare (left, _) (right, _) = String.compare (show_target left) (show_target right) in
-  edges |> Target.Map.Tree.to_alist |> List.sort ~compare
+let compare_target left right = String.compare (show_target left) (show_target right)
+
+let to_alist ~sorted edges =
+  let edges = Target.Map.Tree.to_alist edges in
+  if sorted then
+    List.sort ~compare:(fun (left, _) (right, _) -> compare_target left right) edges
+    |> List.map ~f:(fun (key, value) -> key, List.sort ~compare:compare_target value)
+  else
+    edges
 
 
 let pp formatter edges =
-  let pp_edge (callable, data) =
-    let targets =
-      List.map data ~f:show_target |> List.sort ~compare:String.compare |> String.concat ~sep:" "
-    in
-    Format.fprintf formatter "%a -> [%s]\n" Target.pp_pretty_with_kind callable targets
+  let pp_edge (callable, callees) =
+    let targets = List.map ~f:show_target callees |> String.concat ~sep:" " in
+    Format.fprintf formatter "%s -> [%s]\n" (show_target callable) targets
   in
-  edges |> to_sorted_alist |> List.iter ~f:pp_edge
+  edges |> to_alist ~sorted:true |> List.iter ~f:pp_edge
 
 
-let to_json ~skip_empty_callees edges =
+let to_json ~skip_empty_callees ~sorted edges =
   let callees_to_json callees =
     `List (List.map ~f:(fun target -> `String (show_target target)) callees)
   in
-  edges
-  |> to_sorted_alist
+  to_alist ~sorted edges
   |> List.filter_map ~f:(fun (caller, callees) ->
          if skip_empty_callees && List.is_empty callees then
            None

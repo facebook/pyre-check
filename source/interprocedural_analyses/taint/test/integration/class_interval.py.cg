@@ -4,8 +4,8 @@ Call dependencies
   "class_interval.A0.m1 (method)": [ "class_interval.A0.m2 (override)" ],
   "class_interval.A1.m1 (method)": [ "class_interval.A1.m2 (override)" ],
   "class_interval.A10.object_target (method)": [
-    "object.__init__ (method)", "object.__new__ (method)",
-    "class_interval.A10.f (object)"
+    "class_interval.A10.f (object)", "object.__init__ (method)",
+    "object.__new__ (method)"
   ],
   "class_interval.A13.f (method)": [ "class_interval.A13.g (override)" ],
   "class_interval.A14.m1 (method)": [ "class_interval.A14.m2 (override)" ],
@@ -22,7 +22,7 @@ Call dependencies
   "class_interval.A22.m0 (method)": [ "class_interval.A22.m1 (override)" ],
   "class_interval.A23.m0 (method)": [ "class_interval.A23.m1 (override)" ],
   "class_interval.A24.m0 (method)": [
-    "class_interval.A24.tito (method)", "class_interval.A24.m1 (override)"
+    "class_interval.A24.m1 (override)", "class_interval.A24.tito (method)"
   ],
   "class_interval.A3.m1 (method)": [ "class_interval.A3.m2 (override)" ],
   "class_interval.A4.m2 (method)": [ "class_interval.A4.m3 (override)" ],
@@ -115,12 +115,12 @@ Call dependencies
     "_test_sink (fun)", "class_interval.A24.m0 (method)"
   ],
   "class_interval.no_issue_taint_transform_with_class_interval (fun)": [
-    "_test_source (fun)", "class_interval.sink_d (fun)",
-    "class_interval.A22.m0 (method)"
+    "_test_source (fun)", "class_interval.A22.m0 (method)",
+    "class_interval.sink_d (fun)"
   ],
   "class_interval.no_issue_taint_transform_with_class_interval_for_classmethods (fun)": [
-    "_test_source (fun)", "class_interval.sink_d (fun)",
-    "class_interval.A21.m0 (method)"
+    "_test_source (fun)", "class_interval.A21.m0 (method)",
+    "class_interval.sink_d (fun)"
   ],
   "class_interval.propagate_source_empty (fun)": [
     "_test_sink (fun)", "class_interval.A6.m1 (method)"

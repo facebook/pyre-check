@@ -5,13 +5,12 @@ Call dependencies
     "dict.get (method)", "dictionary.Service.async_get_many_dict (method)"
   ],
   "dictionary.Service.async_get_many_dict (method)": [
-    "typing.cast (fun)", "typing.Iterable.__iter__ (method)",
-    "typing.Iterator.__next__ (method)"
+    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)",
+    "typing.cast (fun)"
   ],
   "dictionary.Service.async_get_mapping (method)": [
-    "dictionary.to_map (fun)",
     "dictionary.Service.async_get_many_dict (method)",
-    "typing.Mapping.get (method)"
+    "dictionary.to_map (fun)", "typing.Mapping.get (method)"
   ],
   "dictionary.SpecialSetitemDict.__setitem__ (method)": [
     "_test_sink (fun)"
@@ -162,9 +161,8 @@ Call dependencies
     "_test_source (fun)", "dictionary.update_dictionary_indirectly (fun)"
   ],
   "dictionary.issue_in_keys (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "dictionary.backward_weak_update (fun)", "dict.__setitem__ (method)",
-    "typing.Mapping.keys (method)"
+    "_test_sink (fun)", "_test_source (fun)", "dict.__setitem__ (method)",
+    "dictionary.backward_weak_update (fun)", "typing.Mapping.keys (method)"
   ],
   "dictionary.lists_of_dictionary_iteration_is_precise (fun)": [
     "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",

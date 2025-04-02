@@ -39,25 +39,23 @@ Call dependencies
   ],
   "self.selftype_access_untyped_self (fun)": [
     "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__init__ (method)",
-    "self.Foo.selftype_access_untyped_self (method)",
-    "self.Foo.__class__.tainted_class (object)"
+    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "self.Foo.__init__ (method)",
+    "self.Foo.selftype_access_untyped_self (method)"
   ],
   "self.typevar_access_other (fun)": [
     "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__init__ (method)",
-    "self.Foo.typevar_access_other (method)",
-    "self.Foo.__class__.tainted_class (object)"
+    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "self.Foo.__init__ (method)", "self.Foo.typevar_access_other (method)"
   ],
   "self.typevar_access_self (fun)": [
     "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__init__ (method)",
-    "self.Foo.typevar_access_self (method)",
-    "self.Foo.__class__.tainted_class (object)"
+    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "self.Foo.__init__ (method)", "self.Foo.typevar_access_self (method)"
   ],
   "self.untyped_access_self (fun)": [
     "_test_sink (fun)", "object.__class__ (method)",
-    "object.__new__ (method)", "self.Foo.__init__ (method)",
-    "self.Foo.__class__.tainted_class (object)"
+    "object.__new__ (method)", "self.Foo.__class__.tainted_class (object)",
+    "self.Foo.__init__ (method)"
   ]
 }

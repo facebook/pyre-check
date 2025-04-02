@@ -2,19 +2,19 @@
 Call dependencies
 {
   "typed_dict.test_sanitize_field (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "TypedDictionary.__getitem__ (method)"
+    "TypedDictionary.__getitem__ (method)", "_test_sink (fun)",
+    "_test_source (fun)"
   ],
   "typed_dict.test_typed_dict_constructor (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "TypedDictionary.__getitem__ (method)", "object.__new__ (method)",
+    "TypedDictionary.__getitem__ (method)", "_test_sink (fun)",
+    "_test_source (fun)", "object.__new__ (method)",
     "str.__getitem__ (method)",
     "typed_dict.SimpleTypedDict.__init__ (method)",
     "typing.Mapping.keys (method)"
   ],
   "typed_dict.test_typed_dict_setitem (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
     "TypedDictionary.__getitem__ (method)",
-    "TypedDictionary.__setitem__ (method)"
+    "TypedDictionary.__setitem__ (method)", "_test_sink (fun)",
+    "_test_source (fun)"
   ]
 }

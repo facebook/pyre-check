@@ -912,7 +912,7 @@ let end_to_end_integration_test path context =
           "generated"
           (call_graph
           |> CallGraph.WholeProgramCallGraph.to_target_graph
-          |> TargetGraph.to_json ~skip_empty_callees:true
+          |> TargetGraph.to_json ~skip_empty_callees:true ~sorted:true
           |> Yojson.Safe.pretty_to_string)
       in
       create_expected_and_actual_files ~suffix:".cg" actual
@@ -1037,6 +1037,7 @@ let end_to_end_integration_test path context =
         ~resolve_callable_location:
           (Target.DefinesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
         ~override_graph:override_graph_shared_memory_read_only
+        ~sorted:true
         ~dump_override_models:true
         callable
       |> List.map ~f:NewlineDelimitedJson.Line.to_json
@@ -1049,8 +1050,7 @@ let end_to_end_integration_test path context =
     in
     let serialized_models =
       List.rev_append (TaintFixpoint.SharedModels.targets initial_models) callables_to_analyze
-      |> Target.Set.of_list
-      |> Target.Set.elements
+      |> List.dedup_and_sort ~compare:Target.compare
       |> List.map ~f:serialize_model
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""

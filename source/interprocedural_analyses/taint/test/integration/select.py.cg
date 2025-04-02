@@ -9,7 +9,7 @@ Call dependencies
   ],
   "select.view_entry_field (fun)": [ "eval (fun)" ],
   "select.view_entry_get (fun)": [
-    "eval (fun)", "dict.get (method)", "django.http.Request.GET (object)"
+    "dict.get (method)", "django.http.Request.GET (object)", "eval (fun)"
   ],
   "select.view_entry_index (fun)": [ "eval (fun)" ]
 }

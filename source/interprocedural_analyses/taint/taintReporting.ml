@@ -134,6 +134,7 @@ let fetch_and_externalize
     ~resolve_module_path
     ~resolve_callable_location
     ~override_graph
+    ~sorted
     ~dump_override_models
     callable
   =
@@ -145,11 +146,20 @@ let fetch_and_externalize
       |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
       |> Option.value ~default:Model.empty_model
     in
-    let result =
+    let issues =
       callable
       |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
-      |> IssueHandle.SerializableMap.data
+      |> IssueHandle.SerializableMap.to_alist
     in
+    let issues =
+      if sorted then
+        List.sort
+          ~compare:(fun (left, _) (right, _) -> IssueHandle.deterministic_compare left right)
+          issues
+      else
+        issues
+    in
+    let issues = List.map ~f:snd issues in
     externalize
       ~taint_configuration
       ~fixpoint_state
@@ -157,7 +167,7 @@ let fetch_and_externalize
       ~resolve_callable_location
       ~override_graph
       callable
-      result
+      issues
       model
 
 
@@ -200,6 +210,7 @@ let save_results_to_directory
         ~resolve_module_path
         ~resolve_callable_location
         ~override_graph
+        ~sorted:false
         ~dump_override_models:false
         callable
     in

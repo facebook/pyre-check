@@ -5,74 +5,6 @@
     "callable": "lists.test_list_append_wrapper",
     "callable_line": 107,
     "code": 5002,
-    "line": 113,
-    "start": 15,
-    "end": 19,
-    "filename": "lists.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
-            "origin": { "line": 109, "start": 27, "end": 41 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 113, "start": 15, "end": 19 },
-            "call_site": "113:4-113:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lists.test_list_append_wrapper:5002:0:Call|_test_sink|1|formal(arg):8b51f64f63149f8d021435e519e5d427"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lists.test_list_append_wrapper",
-    "callable_line": 107,
-    "code": 5002,
     "line": 110,
     "start": 15,
     "end": 19,
@@ -138,10 +70,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "lists.test_list_setitem_wrapper",
-    "callable_line": 96,
+    "callable": "lists.test_list_append_wrapper",
+    "callable_line": 107,
     "code": 5002,
-    "line": 100,
+    "line": 113,
     "start": 15,
     "end": 19,
     "filename": "lists.py",
@@ -165,8 +97,8 @@
               { "first-index": "<numeric>" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
-            "origin": { "line": 98, "start": 31, "end": 45 }
+            "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
+            "origin": { "line": 109, "start": 27, "end": 41 }
           }
         ]
       },
@@ -181,8 +113,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 100, "start": 15, "end": 19 },
-            "call_site": "100:4-100:20"
+            "origin": { "line": 113, "start": 15, "end": 19 },
+            "call_site": "113:4-113:20"
           }
         ]
       }
@@ -200,7 +132,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|1|formal(arg):7e52851226c3e0284e77e68611e29acd"
+    "master_handle": "lists.test_list_append_wrapper:5002:0:Call|_test_sink|1|formal(arg):8b51f64f63149f8d021435e519e5d427"
   }
 }
 {
@@ -269,6 +201,74 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|0|formal(arg):ed15b1cec355bcfdefbcd4fe0a7b066d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lists.test_list_setitem_wrapper",
+    "callable_line": 96,
+    "code": 5002,
+    "line": 100,
+    "start": 15,
+    "end": 19,
+    "filename": "lists.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
+            "origin": { "line": 98, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 100, "start": 15, "end": 19 },
+            "call_site": "100:4-100:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|1|formal(arg):7e52851226c3e0284e77e68611e29acd"
   }
 }
 {

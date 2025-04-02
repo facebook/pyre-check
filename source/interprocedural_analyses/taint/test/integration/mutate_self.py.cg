@@ -42,10 +42,10 @@ Call dependencies
   ],
   "mutate_self.free_function_mutates_self (fun)": [ "_test_source (fun)" ],
   "mutate_self.issue_free_function (fun)": [
-    "mutate_self.free_function_mutates_self (fun)",
     "mutate_self.Base.__init__ (method)",
     "mutate_self.Base.bar_sink (method)",
-    "mutate_self.Base.foo_sink (method)", "object.__new__ (method)"
+    "mutate_self.Base.foo_sink (method)",
+    "mutate_self.free_function_mutates_self (fun)", "object.__new__ (method)"
   ],
   "mutate_self.issue_mutates_foo_and_returns_instance (fun)": [
     "mutate_self.Base.__init__ (method)",

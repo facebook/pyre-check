@@ -42,9 +42,9 @@ Call dependencies
     "entrypoint.transitive_call_accessing_globals (fun)"
   ],
   "entrypoint.main (fun)": [
+    "entrypoint.MyClass.some_entrypoint_function (method)",
     "entrypoint.get_these (fun)",
     "entrypoint.this_one_shouldnt_be_found (fun)",
-    "entrypoint.MyClass.some_entrypoint_function (method)",
     "object.__init__ (method)", "object.__new__ (method)"
   ],
   "entrypoint.nested_run (fun)": [

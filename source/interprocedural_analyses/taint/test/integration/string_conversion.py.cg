@@ -12,9 +12,9 @@ Call dependencies
     "dict.__getitem__ (method)", "django.http.Request.GET (object)"
   ],
   "string_conversion.analyze_implicit_call (fun)": [
-    "eval (fun)", "dict.__getitem__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)", "string_conversion.B.__str__ (method)",
-    "django.http.Request.GET (object)"
+    "dict.__getitem__ (method)", "django.http.Request.GET (object)",
+    "eval (fun)", "object.__init__ (method)", "object.__new__ (method)",
+    "string_conversion.B.__str__ (method)"
   ],
   "string_conversion.backward_unioned_callees (fun)": [
     "str.__str__ (method)", "string_conversion.D.__str__ (method)"
@@ -41,8 +41,8 @@ Call dependencies
     "BaseException.__str__ (fun)", "str.__str__ (method)"
   ],
   "string_conversion.function_call_target_2 (fun)": [
-    "string_conversion.B.__str__ (fun)", "string_conversion.C.__str__ (fun)",
-    "object.__class__ (method)"
+    "object.__class__ (method)", "string_conversion.B.__str__ (fun)",
+    "string_conversion.C.__str__ (fun)"
   ],
   "string_conversion.implicit_repr (fun)": [
     "eval (fun)", "object.__init__ (method)", "object.__new__ (method)",
@@ -53,15 +53,14 @@ Call dependencies
     "string_conversion.StrIsTainted.__str__ (method)"
   ],
   "string_conversion.join_source_and_attribute_source (fun)": [
-    "eval (fun)", "dict.__getitem__ (method)", "int.__gt__ (method)",
-    "int.__le__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)", "str.__str__ (method)",
-    "string_conversion.C.__str__ (method)",
-    "django.http.Request.GET (object)"
+    "dict.__getitem__ (method)", "django.http.Request.GET (object)",
+    "eval (fun)", "int.__gt__ (method)", "int.__le__ (method)",
+    "object.__init__ (method)", "object.__new__ (method)",
+    "str.__str__ (method)", "string_conversion.C.__str__ (method)"
   ],
   "string_conversion.joined_base (fun)": [
-    "eval (fun)", "dict.__getitem__ (method)", "str.__str__ (method)",
-    "django.http.Request.GET (object)"
+    "dict.__getitem__ (method)", "django.http.Request.GET (object)",
+    "eval (fun)", "str.__str__ (method)"
   ],
   "string_conversion.multiple_callees_same_location (fun)": [
     "object.__init__ (method)", "object.__new__ (method)",
@@ -91,10 +90,10 @@ Call dependencies
     "string_conversion.StrIsTainted.__str__ (method)"
   ],
   "string_conversion.propagate_taint (fun)": [
-    "eval (fun)", "dict.__getitem__ (method)", "object.__new__ (method)",
+    "dict.__getitem__ (method)", "django.http.Request.GET (object)",
+    "eval (fun)", "object.__new__ (method)",
     "string_conversion.A.__init__ (method)",
-    "string_conversion.A.__str__ (method)",
-    "django.http.Request.GET (object)"
+    "string_conversion.A.__str__ (method)"
   ],
   "string_conversion.repr_is_tainted (fun)": [
     "eval (fun)", "object.__init__ (method)", "object.__new__ (method)",

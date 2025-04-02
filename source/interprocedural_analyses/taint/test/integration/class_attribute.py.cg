@@ -19,8 +19,9 @@ Call dependencies
     "_test_source (fun)"
   ],
   "class_attribute.class_attribute_A_b_flow1 (fun)": [
+    "class_attribute.A.__init__ (method)",
     "class_attribute.class_attribute_A_b_sink (fun)",
-    "class_attribute.A.__init__ (method)", "object.__new__ (method)"
+    "object.__new__ (method)"
   ],
   "class_attribute.class_attribute_A_b_flow2 (fun)": [
     "class_attribute.A.__init__ (method)",

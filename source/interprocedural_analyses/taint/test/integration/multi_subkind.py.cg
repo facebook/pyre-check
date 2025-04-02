@@ -2,8 +2,8 @@
 Call dependencies
 {
   "multi_subkind.issue (fun)": [
-    "multi_subkind.multi_sink (fun)", "multi_subkind.source_a (fun)",
-    "multi_subkind.source_b (fun)", "dict.__setitem__ (method)"
+    "dict.__setitem__ (method)", "multi_subkind.multi_sink (fun)",
+    "multi_subkind.source_a (fun)", "multi_subkind.source_b (fun)"
   ],
   "multi_subkind.multi_sink (fun)": [
     "multi_subkind.sink_a (fun)", "multi_subkind.sink_b (fun)"

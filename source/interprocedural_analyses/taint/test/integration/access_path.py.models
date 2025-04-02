@@ -197,9 +197,9 @@
     "callable": "access_path.issue_positional_and_variadic",
     "callable_line": 46,
     "code": 5002,
-    "line": 50,
-    "start": 34,
-    "end": 48,
+    "line": 47,
+    "start": 35,
+    "end": 49,
     "filename": "access_path.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -216,7 +216,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 50, "start": 34, "end": 48 }
+            "origin": { "line": 47, "start": 35, "end": 49 }
           }
         ]
       },
@@ -233,10 +233,10 @@
               }
             ],
             "call": {
-              "position": { "line": 50, "start": 34, "end": 48 },
-              "resolves_to": [ "access_path.positional_and_variadic2" ],
-              "port": "formal(y, position=1)",
-              "call_site": "50:4-50:49"
+              "position": { "line": 47, "start": 35, "end": 49 },
+              "resolves_to": [ "access_path.positional_and_variadic1" ],
+              "port": "formal(*args, position=2)",
+              "call_site": "47:4-47:50"
             }
           }
         ]
@@ -247,11 +247,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "access_path.positional_and_variadic2",
-      "index": 2,
-      "parameter": "formal(y)"
+      "callee": "access_path.positional_and_variadic1",
+      "index": 0,
+      "parameter": "formal(*rest0)"
     },
-    "master_handle": "access_path.issue_positional_and_variadic:5002:0:Call|access_path.positional_and_variadic2|2|formal(y):4092eea5e137be9e36c8f876dc240855"
+    "master_handle": "access_path.issue_positional_and_variadic:5002:0:Call|access_path.positional_and_variadic1|0|formal(*rest0):7e97634e66cd78970a5adad32c135bc3"
   }
 }
 {
@@ -323,9 +323,9 @@
     "callable": "access_path.issue_positional_and_variadic",
     "callable_line": 46,
     "code": 5002,
-    "line": 47,
-    "start": 35,
-    "end": 49,
+    "line": 50,
+    "start": 34,
+    "end": 48,
     "filename": "access_path.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -342,7 +342,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 47, "start": 35, "end": 49 }
+            "origin": { "line": 50, "start": 34, "end": 48 }
           }
         ]
       },
@@ -359,10 +359,10 @@
               }
             ],
             "call": {
-              "position": { "line": 47, "start": 35, "end": 49 },
-              "resolves_to": [ "access_path.positional_and_variadic1" ],
-              "port": "formal(*args, position=2)",
-              "call_site": "47:4-47:50"
+              "position": { "line": 50, "start": 34, "end": 48 },
+              "resolves_to": [ "access_path.positional_and_variadic2" ],
+              "port": "formal(y, position=1)",
+              "call_site": "50:4-50:49"
             }
           }
         ]
@@ -373,11 +373,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "access_path.positional_and_variadic1",
-      "index": 0,
-      "parameter": "formal(*rest0)"
+      "callee": "access_path.positional_and_variadic2",
+      "index": 2,
+      "parameter": "formal(y)"
     },
-    "master_handle": "access_path.issue_positional_and_variadic:5002:0:Call|access_path.positional_and_variadic1|0|formal(*rest0):7e97634e66cd78970a5adad32c135bc3"
+    "master_handle": "access_path.issue_positional_and_variadic:5002:0:Call|access_path.positional_and_variadic2|2|formal(y):4092eea5e137be9e36c8f876dc240855"
   }
 }
 {

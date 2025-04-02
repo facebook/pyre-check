@@ -44,8 +44,8 @@ Call dependencies
     "overrides.Base.methodB (method)"
   ],
   "overrides.testB (fun)": [
-    "overrides.Base.methodA (method)", "overrides.B.classMethod (override)",
-    "overrides.B.methodB (override)", "overrides.C.methodA (override)"
+    "overrides.B.classMethod (override)", "overrides.B.methodB (override)",
+    "overrides.Base.methodA (method)", "overrides.C.methodA (override)"
   ],
   "overrides.testBase (fun)": [
     "overrides.Base.classMethod (override)",
@@ -53,11 +53,11 @@ Call dependencies
   ],
   "overrides.testC (fun)": [
     "overrides.B.methodB (method)", "overrides.C.classMethod (method)",
-    "overrides.D.methodB (method)", "overrides.C.methodA (override)"
+    "overrides.C.methodA (override)", "overrides.D.methodB (method)"
   ],
   "overrides.testD (fun)": [
-    "overrides.C.classMethod (method)", "overrides.D.methodB (method)",
-    "overrides.D.methodA (override)"
+    "overrides.C.classMethod (method)", "overrides.D.methodA (override)",
+    "overrides.D.methodB (method)"
   ],
   "overrides.testMakeA (fun)": [
     "object.__new__ (method)", "overrides.A.__init__ (method)",

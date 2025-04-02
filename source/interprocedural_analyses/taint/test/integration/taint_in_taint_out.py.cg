@@ -16,8 +16,8 @@ Call dependencies
     "taint_in_taint_out.GetQuery.__init__ (method)"
   ],
   "taint_in_taint_out.Recursive.__init__ (method)": [
-    "taint_in_taint_out.get_related (fun)", "object.__new__ (method)",
-    "slice.__init__ (method)"
+    "object.__new__ (method)", "slice.__init__ (method)",
+    "taint_in_taint_out.get_related (fun)"
   ],
   "taint_in_taint_out.TitoSelf.self_tito (method)": [
     "taint_in_taint_out.perfect_tito (fun)"
@@ -81,14 +81,14 @@ Call dependencies
     "taint_in_taint_out.obscure_tito (fun)"
   ],
   "taint_in_taint_out.issue_approximate_return_access_paths (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "taint_in_taint_out.approximate_return_access_paths (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)",
+    "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "taint_in_taint_out.approximate_return_access_paths (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)",
+    "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.issue_join_tito_collapse_test_3 (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
@@ -107,35 +107,34 @@ Call dependencies
     "taint_in_taint_out.into_dict_then_tito_collapse (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_1 (fun)": [
-    "taint_in_taint_out.tito_collapse_one (fun)",
-    "taint_in_taint_out.tito_collapse_two (fun)", "int.__gt__ (method)",
-    "int.__le__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "int.__gt__ (method)", "int.__le__ (method)", "object.__init__ (method)",
+    "object.__new__ (method)", "taint_in_taint_out.tito_collapse_one (fun)",
+    "taint_in_taint_out.tito_collapse_two (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_2 (fun)": [
+    "int.__gt__ (method)", "int.__le__ (method)", "object.__init__ (method)",
+    "object.__new__ (method)",
     "taint_in_taint_out.tito_collapse_three (fun)",
-    "taint_in_taint_out.tito_collapse_two (fun)", "int.__gt__ (method)",
-    "int.__le__ (method)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "taint_in_taint_out.tito_collapse_two (fun)"
   ],
   "taint_in_taint_out.join_tito_collapse_test_3 (fun)": [
+    "int.__gt__ (method)", "int.__le__ (method)",
     "taint_in_taint_out.tito_collapse_one (fun)",
-    "taint_in_taint_out.tito_collapse_two (fun)", "int.__gt__ (method)",
-    "int.__le__ (method)"
+    "taint_in_taint_out.tito_collapse_two (fun)"
   ],
   "taint_in_taint_out.loop_perfect_tito (fun)": [
-    "taint_in_taint_out.perfect_tito (fun)", "object.__new__ (method)",
-    "range.__init__ (method)", "range.__iter__ (method)",
+    "object.__new__ (method)", "range.__init__ (method)",
+    "range.__iter__ (method)", "taint_in_taint_out.perfect_tito (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "taint_in_taint_out.loop_tito_collapse_one (fun)": [
-    "taint_in_taint_out.tito_collapse_one (fun)", "object.__new__ (method)",
-    "range.__init__ (method)", "range.__iter__ (method)",
+    "object.__new__ (method)", "range.__init__ (method)",
+    "range.__iter__ (method)", "taint_in_taint_out.tito_collapse_one (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "taint_in_taint_out.loop_tito_collapse_two (fun)": [
-    "taint_in_taint_out.tito_collapse_two (fun)", "object.__new__ (method)",
-    "range.__init__ (method)", "range.__iter__ (method)",
+    "object.__new__ (method)", "range.__init__ (method)",
+    "range.__iter__ (method)", "taint_in_taint_out.tito_collapse_two (fun)",
     "typing.Iterator.__next__ (method)"
   ],
   "taint_in_taint_out.no_issue_tito_collapse_two_with_input_path (fun)": [
@@ -166,9 +165,9 @@ Call dependencies
     "dict.__setitem__ (method)"
   ],
   "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "taint_in_taint_out.approximate_return_access_paths (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)",
+    "taint_in_taint_out.approximate_return_access_paths (fun)"
   ],
   "taint_in_taint_out.perfect_tito_then_into_deep_dict (fun)": [
     "taint_in_taint_out.perfect_tito (fun)"
@@ -180,10 +179,10 @@ Call dependencies
     "dict.__getitem__ (method)"
   ],
   "taint_in_taint_out.product_data (fun)": [
+    "object.__init__ (method)", "object.__new__ (method)",
     "taint_in_taint_out._unpack (fun)", "taint_in_taint_out.get_data (fun)",
     "taint_in_taint_out.product_data (fun)",
-    "taint_in_taint_out.some_service (fun)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "taint_in_taint_out.some_service (fun)"
   ],
   "taint_in_taint_out.product_data_wrapper (fun)": [
     "taint_in_taint_out.product_data (fun)"
@@ -193,9 +192,9 @@ Call dependencies
     "taint_in_taint_out.tito_with_feature (fun)"
   ],
   "taint_in_taint_out.test_complex_argument_tito (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "taint_in_taint_out.complex_argument_tito (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)",
+    "taint_in_taint_out.complex_argument_tito (fun)"
   ],
   "taint_in_taint_out.test_complex_evaluator (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
@@ -250,7 +249,7 @@ Call dependencies
     "taint_in_taint_out.tito_collapse_two_append_a_b (fun)"
   ],
   "taint_in_taint_out.tito_from_0_to_1 (fun)": [
-    "taint_in_taint_out.random_integer (fun)", "dict.__setitem__ (method)"
+    "dict.__setitem__ (method)", "taint_in_taint_out.random_integer (fun)"
   ],
   "taint_in_taint_out.tito_with_feature (fun)": [
     "taint_in_taint_out.add_feature (fun)"

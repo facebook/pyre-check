@@ -7,11 +7,11 @@ Call dependencies
   ],
   "attributes.test_attribute (fun)": [ "attributes.Token.token (object)" ],
   "attributes.test_attribute_union_sink (fun)": [
-    "_test_source (fun)", "isinstance (fun)",
-    "attributes.Sink.token (object)"
+    "_test_source (fun)", "attributes.Sink.token (object)",
+    "isinstance (fun)"
   ],
   "attributes.test_attribute_union_source (fun)": [
-    "_test_sink (fun)", "isinstance (fun)", "attributes.Token.token (object)"
+    "_test_sink (fun)", "attributes.Token.token (object)", "isinstance (fun)"
   ],
   "attributes.test_attribute_via_dunder_dict (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
@@ -27,11 +27,11 @@ Call dependencies
     "_test_source (fun)", "getattr (fun)"
   ],
   "attributes.test_getattr_forward (fun)": [
-    "getattr (fun)", "attributes.Token.token (object)"
+    "attributes.Token.token (object)", "getattr (fun)"
   ],
   "attributes.test_issue_with_text_key_of_dictionary (fun)": [
-    "_test_sink (fun)", "dict.__getitem__ (method)",
-    "attributes.C.dictionary (object)"
+    "_test_sink (fun)", "attributes.C.dictionary (object)",
+    "dict.__getitem__ (method)"
   ],
   "attributes.test_issue_with_tito_copy_dict (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
@@ -39,13 +39,13 @@ Call dependencies
   ],
   "attributes.test_issue_with_tito_copy_multiple_possible_dictlike_objects (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
+    "attributes.RegularForm.__init__ (method)",
     "attributes.tito_copy_multiple_possible_dictlike_objects (fun)",
-    "attributes.RegularForm.__init__ (method)", "dict.__getitem__ (method)",
-    "object.__new__ (method)"
+    "dict.__getitem__ (method)", "object.__new__ (method)"
   ],
   "attributes.test_issue_with_update_to_self_attribute (fun)": [
-    "_test_source (fun)", "list.append (method)",
-    "attributes.D.buffer (object)"
+    "_test_source (fun)", "attributes.D.buffer (object)",
+    "list.append (method)"
   ],
   "attributes.test_no_issue_sanitize (fun)": [
     "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
@@ -57,8 +57,8 @@ Call dependencies
     "object.__new__ (method)"
   ],
   "attributes.test_no_issue_with_other_key_of_dictionary (fun)": [
-    "_test_sink (fun)", "dict.__getitem__ (method)",
-    "attributes.C.dictionary (object)"
+    "_test_sink (fun)", "attributes.C.dictionary (object)",
+    "dict.__getitem__ (method)"
   ],
   "attributes.test_no_list_inference (fun)": [
     "_test_source (fun)", "attributes.NoListInference.__init__ (method)",

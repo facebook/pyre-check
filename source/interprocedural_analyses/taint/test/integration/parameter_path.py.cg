@@ -38,8 +38,8 @@ Call dependencies
     "parameter_path.tito_from_first_to_second (fun)"
   ],
   "parameter_path.issue_tito_from_a_to_self_b (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "parameter_path.tito_from_a_to_self_b (fun)", "dict.__getitem__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",
+    "parameter_path.tito_from_a_to_self_b (fun)"
   ],
   "parameter_path.issue_tito_from_first (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
@@ -50,8 +50,8 @@ Call dependencies
     "parameter_path.tito_from_second (fun)"
   ],
   "parameter_path.issue_with_sink_member (fun)": [
-    "_test_source (fun)", "parameter_path.sink_on_member_a (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)", "parameter_path.sink_on_member_a (fun)"
   ],
   "parameter_path.issue_with_source_member (fun)": [
     "_test_sink (fun)", "parameter_path.source_on_member_a (fun)"

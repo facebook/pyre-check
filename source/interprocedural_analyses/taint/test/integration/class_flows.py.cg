@@ -32,8 +32,9 @@ Call dependencies
     "class_flows.C.__class__.tainted_class_attribute (object)"
   ],
   "class_flows.tainted_class_attribute_through_double_underscore_class_issue (fun)": [
-    "_test_source (fun)", "object.__class__ (method)",
-    "class_flows.C.__class__.tainted_class_attribute (object)"
+    "_test_source (fun)",
+    "class_flows.C.__class__.tainted_class_attribute (object)",
+    "object.__class__ (method)"
   ],
   "class_flows.tainted_class_attribute_through_instance_not_issue (fun)": [
     "_test_source (fun)"

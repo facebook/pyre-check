@@ -8,9 +8,9 @@ Call dependencies
     "multi_sink_ports.source (fun)", "multi_sink_ports.wrapper (fun)"
   ],
   "multi_sink_ports.issue2 (fun)": [
+    "multi_sink_ports.Query.params (method)",
     "multi_sink_ports.source (fun)", "multi_sink_ports.wrapper2 (fun)",
-    "multi_sink_ports.Query.params (method)", "object.__init__ (method)",
-    "object.__new__ (method)"
+    "object.__init__ (method)", "object.__new__ (method)"
   ],
   "multi_sink_ports.log_call (fun)": [ "multi_sink_ports.sinkA (fun)" ],
   "multi_sink_ports.split (fun)": [
@@ -22,7 +22,7 @@ Call dependencies
     "multi_sink_ports.sinkA (fun)", "multi_sink_ports.split (fun)"
   ],
   "multi_sink_ports.wrapper2 (fun)": [
-    "isinstance (fun)", "multi_sink_ports.log_call (fun)",
-    "multi_sink_ports.Query.send (method)"
+    "isinstance (fun)", "multi_sink_ports.Query.send (method)",
+    "multi_sink_ports.log_call (fun)"
   ]
 }

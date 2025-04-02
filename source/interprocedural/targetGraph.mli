@@ -7,10 +7,10 @@
 
 type t = Target.t list Target.Map.Tree.t
 
-val to_alist : ?key_order:[ `Decreasing | `Increasing ] -> t -> (Target.t * Target.t list) list
+val to_alist : sorted:bool -> t -> (Target.t * Target.t list) list
 
 val dump : path:PyrePath.t -> t -> unit
 
 val pp : Format.formatter -> t -> unit
 
-val to_json : skip_empty_callees:bool -> t -> Yojson.Safe.t
+val to_json : skip_empty_callees:bool -> sorted:bool -> t -> Yojson.Safe.t

@@ -4,76 +4,6 @@
   "data": {
     "callable": "multiple_sources.combine_c_d_and_c_e",
     "callable_line": 267,
-    "code": 4324,
-    "line": 269,
-    "start": 44,
-    "end": 54,
-    "filename": "multiple_sources.py",
-    "message": "",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.e_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "TestE"
-              }
-            ],
-            "origin": { "line": 269, "start": 44, "end": 54 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source TestC",
-                    "origin": { "line": 269, "start": 32, "end": 42 },
-                    "leaf_kind": "TestC",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources.multi_sink_share_both_sinks",
-                    "port": "leaf:y"
-                  }
-                ],
-                "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
-              }
-            ],
-            "origin": { "line": 269, "start": 44, "end": 54 },
-            "call_site": "269:4-269:55"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.multi_sink_share_both_sinks",
-      "index": 1,
-      "parameter": "formal(y)"
-    },
-    "master_handle": "multiple_sources.combine_c_d_and_c_e:4324:0:Call|multiple_sources.multi_sink_share_both_sinks|1|formal(y):8a6f4e482f2d5c4f054df35e90173fc0"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.combine_c_d_and_c_e",
-    "callable_line": 267,
     "code": 4323,
     "line": 268,
     "start": 44,
@@ -137,6 +67,76 @@
       "parameter": "formal(y)"
     },
     "master_handle": "multiple_sources.combine_c_d_and_c_e:4323:0:Call|multiple_sources.multi_sink_share_both_sinks|0|formal(y):9ab743ac884cbbf27abc1dfac6b70fd4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.combine_c_d_and_c_e",
+    "callable_line": 267,
+    "code": 4324,
+    "line": 269,
+    "start": 44,
+    "end": 54,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.e_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestE"
+              }
+            ],
+            "origin": { "line": 269, "start": 44, "end": 54 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestC",
+                    "origin": { "line": 269, "start": 32, "end": 42 },
+                    "leaf_kind": "TestC",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "kind": "Triggered[TestC]@PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "origin": { "line": 269, "start": 44, "end": 54 },
+            "call_site": "269:4-269:55"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.multi_sink_share_both_sinks",
+      "index": 1,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.combine_c_d_and_c_e:4324:0:Call|multiple_sources.multi_sink_share_both_sinks|1|formal(y):8a6f4e482f2d5c4f054df35e90173fc0"
   }
 }
 {
@@ -284,76 +284,6 @@
     "callable": "multiple_sources.issue_with_test_a_and_b",
     "callable_line": 75,
     "code": 4322,
-    "line": 77,
-    "start": 43,
-    "end": 63,
-    "filename": "multiple_sources.py",
-    "message": "TestA or TestB and permissive context combine",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.permissive_context",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "PermissiveContext"
-              }
-            ],
-            "origin": { "line": 77, "start": 43, "end": 63 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source TestB",
-                    "origin": { "line": 77, "start": 31, "end": 41 },
-                    "leaf_kind": "TestB",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources.combines_tests_and_context",
-                    "port": "leaf:vc"
-                  }
-                ],
-                "kind": "Triggered[TestB]@PartialSink[ExpectsEitherTestB]"
-              }
-            ],
-            "origin": { "line": 77, "start": 43, "end": 63 },
-            "call_site": "77:4-77:64"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.combines_tests_and_context",
-      "index": 1,
-      "parameter": "formal(vc)"
-    },
-    "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|1|formal(vc):00952f5183650c224ff0c1236b161820"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.issue_with_test_a_and_b",
-    "callable_line": 75,
-    "code": 4322,
     "line": 76,
     "start": 43,
     "end": 63,
@@ -416,6 +346,76 @@
       "parameter": "formal(vc)"
     },
     "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):2952b352e0a37aa627ef7429212a7ad1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_test_a_and_b",
+    "callable_line": 75,
+    "code": 4322,
+    "line": 77,
+    "start": 43,
+    "end": 63,
+    "filename": "multiple_sources.py",
+    "message": "TestA or TestB and permissive context combine",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
+            "origin": { "line": 77, "start": 43, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source TestB",
+                    "origin": { "line": 77, "start": 31, "end": 41 },
+                    "leaf_kind": "TestB",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources.combines_tests_and_context",
+                    "port": "leaf:vc"
+                  }
+                ],
+                "kind": "Triggered[TestB]@PartialSink[ExpectsEitherTestB]"
+              }
+            ],
+            "origin": { "line": 77, "start": 43, "end": 63 },
+            "call_site": "77:4-77:64"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.combines_tests_and_context",
+      "index": 1,
+      "parameter": "formal(vc)"
+    },
+    "master_handle": "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|1|formal(vc):00952f5183650c224ff0c1236b161820"
   }
 }
 {
@@ -492,75 +492,6 @@
   "data": {
     "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
     "callable_line": 232,
-    "code": 4324,
-    "line": 234,
-    "start": 41,
-    "end": 51,
-    "filename": "multiple_sources.py",
-    "message": "",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.c_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "TestC"
-              }
-            ],
-            "origin": { "line": 234, "start": 41, "end": 51 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.multi_sink_share_both_sinks",
-                    "port": "leaf:x"
-                  }
-                ],
-                "length": 1,
-                "kind": "Triggered[TestE]:PartialSink[ShareBothSinksLeft]"
-              }
-            ],
-            "call": {
-              "position": { "line": 234, "start": 41, "end": 51 },
-              "resolves_to": [
-                "multiple_sources.demonstrate_triggered_c_from_d_and_e"
-              ],
-              "port": "formal(x, position=0)",
-              "call_site": "234:4-234:52"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_and_e|0|formal(x):f5167a0dfeda35ef3da24afdaf8b6f07"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
-    "callable_line": 232,
     "code": 4323,
     "line": 234,
     "start": 41,
@@ -628,12 +559,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
-    "callable_line": 253,
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_and_e",
+    "callable_line": 232,
     "code": 4324,
-    "line": 255,
-    "start": 40,
-    "end": 50,
+    "line": 234,
+    "start": 41,
+    "end": 51,
     "filename": "multiple_sources.py",
     "message": "",
     "traces": [
@@ -652,7 +583,7 @@
                 "kind": "TestC"
               }
             ],
-            "origin": { "line": 255, "start": 40, "end": 50 }
+            "origin": { "line": 234, "start": 41, "end": 51 }
           }
         ]
       },
@@ -673,12 +604,12 @@
               }
             ],
             "call": {
-              "position": { "line": 255, "start": 40, "end": 50 },
+              "position": { "line": 234, "start": 41, "end": 51 },
               "resolves_to": [
-                "multiple_sources.demonstrate_triggered_c_from_d_or_e"
+                "multiple_sources.demonstrate_triggered_c_from_d_and_e"
               ],
               "port": "formal(x, position=0)",
-              "call_site": "255:4-255:51"
+              "call_site": "234:4-234:52"
             }
           }
         ]
@@ -687,11 +618,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_and_e",
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):98bbbe05fc248bb09ac039cf4933be0f"
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_and_e|0|formal(x):f5167a0dfeda35ef3da24afdaf8b6f07"
   }
 }
 {
@@ -761,6 +692,75 @@
       "parameter": "formal(x)"
     },
     "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4323:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):42b083168991b29fa594514047a3bade"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_c_from_d_or_e",
+    "callable_line": 253,
+    "code": 4324,
+    "line": 255,
+    "start": 40,
+    "end": 50,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.c_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestC"
+              }
+            ],
+            "origin": { "line": 255, "start": 40, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:x"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestE]:PartialSink[ShareBothSinksLeft]"
+              }
+            ],
+            "call": {
+              "position": { "line": 255, "start": 40, "end": 50 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_c_from_d_or_e"
+              ],
+              "port": "formal(x, position=0)",
+              "call_site": "255:4-255:51"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_c_from_d_or_e",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_c_from_d_or_e:4324:0:Call|multiple_sources.demonstrate_triggered_c_from_d_or_e|0|formal(x):98bbbe05fc248bb09ac039cf4933be0f"
   }
 }
 {
@@ -900,75 +900,6 @@
   "data": {
     "callable": "multiple_sources.issue_with_triggered_d_and_e",
     "callable_line": 262,
-    "code": 4324,
-    "line": 264,
-    "start": 34,
-    "end": 44,
-    "filename": "multiple_sources.py",
-    "message": "",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.e_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "TestE"
-              }
-            ],
-            "origin": { "line": 264, "start": 34, "end": 44 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources.multi_sink_share_both_sinks",
-                    "port": "leaf:y"
-                  }
-                ],
-                "length": 1,
-                "kind": "Triggered[TestC]:PartialSink[ShareBothSinksRight]"
-              }
-            ],
-            "call": {
-              "position": { "line": 264, "start": 34, "end": 44 },
-              "resolves_to": [
-                "multiple_sources.demonstrate_triggered_d_and_e"
-              ],
-              "port": "formal(y, position=0)",
-              "call_site": "264:4-264:45"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "multiple_sources.demonstrate_triggered_d_and_e",
-      "index": 1,
-      "parameter": "formal(y)"
-    },
-    "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_d_and_e|1|formal(y):a74247c595f7ff3150ed12b26bd46067"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources.issue_with_triggered_d_and_e",
-    "callable_line": 262,
     "code": 4323,
     "line": 263,
     "start": 34,
@@ -1031,6 +962,75 @@
       "parameter": "formal(y)"
     },
     "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4323:0:Call|multiple_sources.demonstrate_triggered_d_and_e|0|formal(y):bedc991d7011883b0e49ccc554133f51"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources.issue_with_triggered_d_and_e",
+    "callable_line": 262,
+    "code": 4324,
+    "line": 264,
+    "start": 34,
+    "end": 44,
+    "filename": "multiple_sources.py",
+    "message": "",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.e_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "TestE"
+              }
+            ],
+            "origin": { "line": 264, "start": 34, "end": 44 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources.multi_sink_share_both_sinks",
+                    "port": "leaf:y"
+                  }
+                ],
+                "length": 1,
+                "kind": "Triggered[TestC]:PartialSink[ShareBothSinksRight]"
+              }
+            ],
+            "call": {
+              "position": { "line": 264, "start": 34, "end": 44 },
+              "resolves_to": [
+                "multiple_sources.demonstrate_triggered_d_and_e"
+              ],
+              "port": "formal(y, position=0)",
+              "call_site": "264:4-264:45"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multiple_sources.demonstrate_triggered_d_and_e",
+      "index": 1,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "multiple_sources.issue_with_triggered_d_and_e:4324:0:Call|multiple_sources.demonstrate_triggered_d_and_e|1|formal(y):a74247c595f7ff3150ed12b26bd46067"
   }
 }
 {
@@ -1296,7 +1296,7 @@
                 ],
                 "leaves": [
                   {
-                    "name": "multiple_sources.B.multi_sink",
+                    "name": "multiple_sources.A.multi_sink",
                     "port": "leaf:permissive_context"
                   }
                 ],
@@ -1304,7 +1304,7 @@
               }
             ],
             "origin": { "line": 153, "start": 47, "end": 67 },
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "call_site": "153:4-153:68"
           }
@@ -1314,11 +1314,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "multiple_sources.B.multi_sink",
+      "callee": "multiple_sources.A.multi_sink",
       "index": 0,
       "parameter": "formal(permissive_context)"
     },
-    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.B.multi_sink|0|formal(permissive_context):f654d592ff922dccc394aa85315abd75"
+    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.A.multi_sink|0|formal(permissive_context):58b71672d9a693c4b0936affaa2b0d93"
   }
 }
 {
@@ -1368,7 +1368,7 @@
                 ],
                 "leaves": [
                   {
-                    "name": "multiple_sources.A.multi_sink",
+                    "name": "multiple_sources.B.multi_sink",
                     "port": "leaf:permissive_context"
                   }
                 ],
@@ -1376,7 +1376,7 @@
               }
             ],
             "origin": { "line": 153, "start": 47, "end": 67 },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "call_site": "153:4-153:68"
           }
@@ -1386,11 +1386,11 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee": "multiple_sources.A.multi_sink",
+      "callee": "multiple_sources.B.multi_sink",
       "index": 0,
       "parameter": "formal(permissive_context)"
     },
-    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.A.multi_sink|0|formal(permissive_context):58b71672d9a693c4b0936affaa2b0d93"
+    "master_handle": "multiple_sources.muliple_main_issues_1:4321:0:Call|multiple_sources.B.multi_sink|0|formal(permissive_context):f654d592ff922dccc394aa85315abd75"
   }
 }
 {

@@ -2,14 +2,15 @@
 Call dependencies
 {
   "model_shaping._asdict_inner (fun)": [
-    "getattr (fun)", "isinstance (fun)", "model_shaping._asdict_inner (fun)",
-    "model_shaping._is_dataclass_instance (fun)",
-    "model_shaping.fields (fun)", "typing.cast (fun)", "dict.items (method)",
+    "dict.items (method)", "getattr (fun)", "isinstance (fun)",
     "list.__init__ (method)", "list.__iter__ (method)",
-    "list.append (method)", "object.__new__ (method)",
+    "list.append (method)", "model_shaping._asdict_inner (fun)",
+    "model_shaping._is_dataclass_instance (fun)",
+    "model_shaping.fields (fun)", "object.__new__ (method)",
     "tuple.__init__ (method)", "type.__init__ (method)",
     "type.__new__ (method)", "typing.GenericMeta.__getitem__ (method)",
-    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)"
+    "typing.Iterable.__iter__ (method)", "typing.Iterator.__next__ (method)",
+    "typing.cast (fun)"
   ],
   "model_shaping.asdict (fun)": [ "model_shaping._asdict_inner (fun)" ],
   "model_shaping.asdict_test (fun)": [ "model_shaping.asdict (fun)" ],
@@ -22,8 +23,8 @@ Call dependencies
     "int.__le__ (method)"
   ],
   "model_shaping.test_tito_shaping (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "model_shaping.tito_shaping (fun)", "dict.__getitem__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "dict.__getitem__ (method)",
+    "model_shaping.tito_shaping (fun)"
   ],
   "model_shaping.tito_shaping (fun)": [
     "dict.get (method)", "object.__repr__ (method)"

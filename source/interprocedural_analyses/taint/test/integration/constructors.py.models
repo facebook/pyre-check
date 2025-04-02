@@ -137,64 +137,6 @@
     "callable": "constructors.test_constructor_with_source_model",
     "callable_line": 122,
     "code": 5002,
-    "line": 125,
-    "start": 15,
-    "end": 16,
-    "filename": "constructors.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "constructors.ConstructorWithSourceModel.__init__",
-                    "port": "leaf:self"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 124, "start": 8, "end": 36 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 125, "start": 15, "end": 16 },
-            "call_site": "125:4-125:17"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "constructors.test_constructor_with_source_model:5002:0:Call|_test_sink|1|formal(arg):e69090c082132f164d7cfca46e47e98d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "constructors.test_constructor_with_source_model",
-    "callable_line": 122,
-    "code": 5002,
     "line": 123,
     "start": 15,
     "end": 43,
@@ -245,6 +187,64 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "constructors.test_constructor_with_source_model:5002:0:Call|_test_sink|0|formal(arg):8c5200d74ea429666d8d658e4ec2fa51"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_constructor_with_source_model",
+    "callable_line": 122,
+    "code": 5002,
+    "line": 125,
+    "start": 15,
+    "end": 16,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "constructors.ConstructorWithSourceModel.__init__",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 8, "end": 36 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 125, "start": 15, "end": 16 },
+            "call_site": "125:4-125:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_constructor_with_source_model:5002:0:Call|_test_sink|1|formal(arg):e69090c082132f164d7cfca46e47e98d"
   }
 }
 {
@@ -570,71 +570,6 @@
     "callable": "constructors.test_parent_with_no_constructor",
     "callable_line": 184,
     "code": 5002,
-    "line": 186,
-    "start": 15,
-    "end": 58,
-    "filename": "constructors.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 186, "start": 43, "end": 57 } ],
-            "origin": { "line": 186, "start": 43, "end": 57 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 186, "start": 15, "end": 58 },
-            "call_site": "186:4-186:59"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "constructors.test_parent_with_no_constructor:5002:0:Call|_test_sink|1|formal(arg):7d5592c559e9df2ef218c58ab05e85a8"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "constructors.test_parent_with_no_constructor",
-    "callable_line": 184,
-    "code": 5002,
     "line": 185,
     "start": 15,
     "end": 58,
@@ -697,12 +632,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "constructors.test_parent_with_obscure_constructor",
-    "callable_line": 170,
+    "callable": "constructors.test_parent_with_no_constructor",
+    "callable_line": 184,
     "code": 5002,
-    "line": 172,
+    "line": 186,
     "start": 15,
-    "end": 63,
+    "end": 58,
     "filename": "constructors.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -722,8 +657,8 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 172, "start": 48, "end": 62 } ],
-            "origin": { "line": 172, "start": 48, "end": 62 }
+            "tito_positions": [ { "line": 186, "start": 43, "end": 57 } ],
+            "origin": { "line": 186, "start": 43, "end": 57 }
           }
         ]
       },
@@ -738,8 +673,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 172, "start": 15, "end": 63 },
-            "call_site": "172:4-172:64"
+            "origin": { "line": 186, "start": 15, "end": 58 },
+            "call_site": "186:4-186:59"
           }
         ]
       }
@@ -756,7 +691,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "constructors.test_parent_with_obscure_constructor:5002:0:Call|_test_sink|1|formal(arg):82f2b7abfeeef9a582ecbc2e2fe465c2"
+    "master_handle": "constructors.test_parent_with_no_constructor:5002:0:Call|_test_sink|1|formal(arg):7d5592c559e9df2ef218c58ab05e85a8"
   }
 }
 {
@@ -822,6 +757,71 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "constructors.test_parent_with_obscure_constructor:5002:0:Call|_test_sink|0|formal(arg):b72ebd3243216d9055b4508433de1bcc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "constructors.test_parent_with_obscure_constructor",
+    "callable_line": 170,
+    "code": 5002,
+    "line": 172,
+    "start": 15,
+    "end": 63,
+    "filename": "constructors.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 172, "start": 48, "end": 62 } ],
+            "origin": { "line": 172, "start": 48, "end": 62 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 172, "start": 15, "end": 63 },
+            "call_site": "172:4-172:64"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "constructors.test_parent_with_obscure_constructor:5002:0:Call|_test_sink|1|formal(arg):82f2b7abfeeef9a582ecbc2e2fe465c2"
   }
 }
 {

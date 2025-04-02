@@ -5,9 +5,80 @@
     "callable": "lambda.test_filter_lambda",
     "callable_line": 39,
     "code": 5002,
-    "line": 51,
+    "line": 41,
     "start": 15,
-    "end": 31,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 40, "start": 20, "end": 62 },
+              { "line": 40, "start": 45, "end": 61 }
+            ],
+            "origin": { "line": 40, "start": 46, "end": 60 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 41, "start": 15, "end": 26 },
+            "call_site": "41:4-41:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|0|formal(arg):5e4921bb8cf913e35ce7ddf776aaf4aa"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_filter_lambda",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 42,
+    "start": 15,
+    "end": 26,
     "filename": "lambda.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -30,10 +101,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 49, "start": 20, "end": 82 },
-              { "line": 49, "start": 45, "end": 81 }
+              { "line": 40, "start": 20, "end": 62 },
+              { "line": 40, "start": 45, "end": 61 }
             ],
-            "origin": { "line": 49, "start": 52, "end": 66 }
+            "origin": { "line": 40, "start": 46, "end": 60 }
           }
         ]
       },
@@ -48,8 +119,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 51, "start": 15, "end": 31 },
-            "call_site": "51:4-51:32"
+            "origin": { "line": 42, "start": 15, "end": 26 },
+            "call_site": "42:4-42:27"
           }
         ]
       }
@@ -64,10 +135,223 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 6,
+      "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|6|formal(arg):ee6445b67588fffd93d6a38572dd6e4a"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|1|formal(arg):f53277ec8627abf057db47fa005ef18b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_filter_lambda",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 45,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 44, "start": 20, "end": 68 },
+              { "line": 44, "start": 45, "end": 67 }
+            ],
+            "origin": { "line": 44, "start": 49, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 45, "start": 15, "end": 26 },
+            "call_site": "45:4-45:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|2|formal(arg):9d20eab1b0e719b0cf8c3bbd8027e428"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_filter_lambda",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 46,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 44, "start": 20, "end": 68 },
+              { "line": 44, "start": 45, "end": 67 }
+            ],
+            "origin": { "line": 44, "start": 49, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 46, "start": 15, "end": 26 },
+            "call_site": "46:4-46:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|3|formal(arg):bbefd63d94e7c08862ab2238b8674d33"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_filter_lambda",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 47,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 44, "start": 20, "end": 68 },
+              { "line": 44, "start": 45, "end": 67 }
+            ],
+            "origin": { "line": 44, "start": 49, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 47, "start": 15, "end": 26 },
+            "call_site": "47:4-47:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|4|formal(arg):7221fdbf14dd13450b87e3db33035a17"
   }
 }
 {
@@ -151,151 +435,9 @@
     "callable": "lambda.test_filter_lambda",
     "callable_line": 39,
     "code": 5002,
-    "line": 47,
+    "line": 51,
     "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 44, "start": 20, "end": 68 },
-              { "line": 44, "start": 45, "end": 67 }
-            ],
-            "origin": { "line": 44, "start": 49, "end": 63 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 47, "start": 15, "end": 26 },
-            "call_site": "47:4-47:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 4,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|4|formal(arg):7221fdbf14dd13450b87e3db33035a17"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_filter_lambda",
-    "callable_line": 39,
-    "code": 5002,
-    "line": 46,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 44, "start": 20, "end": 68 },
-              { "line": 44, "start": 45, "end": 67 }
-            ],
-            "origin": { "line": 44, "start": 49, "end": 63 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 46, "start": 15, "end": 26 },
-            "call_site": "46:4-46:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 3,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|3|formal(arg):bbefd63d94e7c08862ab2238b8674d33"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_filter_lambda",
-    "callable_line": 39,
-    "code": 5002,
-    "line": 45,
-    "start": 15,
-    "end": 26,
+    "end": 31,
     "filename": "lambda.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -318,10 +460,10 @@
               { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 44, "start": 20, "end": 68 },
-              { "line": 44, "start": 45, "end": 67 }
+              { "line": 49, "start": 20, "end": 82 },
+              { "line": 49, "start": 45, "end": 81 }
             ],
-            "origin": { "line": 44, "start": 49, "end": 63 }
+            "origin": { "line": 49, "start": 52, "end": 66 }
           }
         ]
       },
@@ -336,8 +478,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 45, "start": 15, "end": 26 },
-            "call_site": "45:4-45:27"
+            "origin": { "line": 51, "start": 15, "end": 31 },
+            "call_site": "51:4-51:32"
           }
         ]
       }
@@ -352,152 +494,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 2,
+      "index": 6,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|2|formal(arg):9d20eab1b0e719b0cf8c3bbd8027e428"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_filter_lambda",
-    "callable_line": 39,
-    "code": 5002,
-    "line": 42,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 40, "start": 20, "end": 62 },
-              { "line": 40, "start": 45, "end": 61 }
-            ],
-            "origin": { "line": 40, "start": 46, "end": 60 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 42, "start": 15, "end": 26 },
-            "call_site": "42:4-42:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|1|formal(arg):f53277ec8627abf057db47fa005ef18b"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_filter_lambda",
-    "callable_line": 39,
-    "code": 5002,
-    "line": 41,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 40, "start": 20, "end": 62 },
-              { "line": 40, "start": 45, "end": 61 }
-            ],
-            "origin": { "line": 40, "start": 46, "end": 60 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 41, "start": 15, "end": 26 },
-            "call_site": "41:4-41:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|0|formal(arg):5e4921bb8cf913e35ce7ddf776aaf4aa"
+    "master_handle": "lambda.test_filter_lambda:5002:0:Call|_test_sink|6|formal(arg):ee6445b67588fffd93d6a38572dd6e4a"
   }
 }
 {
@@ -586,494 +586,7 @@
     "callable": "lambda.test_map_lambda",
     "callable_line": 11,
     "code": 5002,
-    "line": 33,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 32, "start": 20, "end": 59 },
-              { "line": 32, "start": 24, "end": 48 }
-            ],
-            "origin": { "line": 32, "start": 34, "end": 48 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 33, "start": 15, "end": 26 },
-            "call_site": "33:4-33:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 10,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|10|formal(arg):90cc567fa1e4bb65d4c5534c3083dc7e"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 30,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 29, "start": 20, "end": 79 },
-              { "line": 29, "start": 24, "end": 40 },
-              { "line": 29, "start": 42, "end": 78 }
-            ],
-            "origin": { "line": 29, "start": 49, "end": 63 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 30, "start": 15, "end": 26 },
-            "call_site": "30:4-30:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 9,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|9|formal(arg):e0cb3cb64a9697c82736135aa5b88c62"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 27,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 26, "start": 20, "end": 79 },
-              { "line": 26, "start": 24, "end": 40 },
-              { "line": 26, "start": 42, "end": 78 }
-            ],
-            "origin": { "line": 26, "start": 49, "end": 63 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 27, "start": 15, "end": 26 },
-            "call_site": "27:4-27:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 8,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|8|formal(arg):b2327cff7ce35468341795d73d2c2478"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 24,
-    "start": 15,
-    "end": 31,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 21, "start": 20, "end": 74 },
-              { "line": 21, "start": 24, "end": 55 },
-              { "line": 21, "start": 57, "end": 73 }
-            ],
-            "origin": { "line": 21, "start": 58, "end": 72 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 24, "start": 15, "end": 31 },
-            "call_site": "24:4-24:32"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 7,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|7|formal(arg):1f138bbc4402d9ea9c2ebccad492996a"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 23,
-    "start": 15,
-    "end": 31,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 21, "start": 20, "end": 74 },
-              { "line": 21, "start": 24, "end": 55 },
-              { "line": 21, "start": 57, "end": 73 }
-            ],
-            "origin": { "line": 21, "start": 58, "end": 72 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 23, "start": 15, "end": 31 },
-            "call_site": "23:4-23:32"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 6,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|6|formal(arg):3569b363ad876dffc337f38fdf3f7d59"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 22,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 21, "start": 20, "end": 74 },
-              { "line": 21, "start": 24, "end": 55 },
-              { "line": 21, "start": 57, "end": 73 }
-            ],
-            "origin": { "line": 21, "start": 58, "end": 72 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 22, "start": 15, "end": 26 },
-            "call_site": "22:4-22:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 5,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|5|formal(arg):6ebcbaa75658689a3b33d1e59a815091"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 19,
+    "line": 13,
     "start": 15,
     "end": 26,
     "filename": "lambda.py",
@@ -1103,11 +616,11 @@
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 16, "start": 20, "end": 60 },
-              { "line": 16, "start": 24, "end": 35 },
-              { "line": 16, "start": 37, "end": 59 }
+              { "line": 12, "start": 20, "end": 54 },
+              { "line": 12, "start": 24, "end": 35 },
+              { "line": 12, "start": 37, "end": 53 }
             ],
-            "origin": { "line": 16, "start": 41, "end": 55 }
+            "origin": { "line": 12, "start": 38, "end": 52 }
           }
         ]
       },
@@ -1122,8 +635,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 19, "start": 15, "end": 26 },
-            "call_site": "19:4-19:27"
+            "origin": { "line": 13, "start": 15, "end": 26 },
+            "call_site": "13:4-13:27"
           }
         ]
       }
@@ -1143,174 +656,10 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 4,
+      "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|4|formal(arg):0480206225d43db02d615fc5f7709a70"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 18,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 16, "start": 20, "end": 60 },
-              { "line": 16, "start": 24, "end": 35 },
-              { "line": 16, "start": 37, "end": 59 }
-            ],
-            "origin": { "line": 16, "start": 41, "end": 55 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 18, "start": 15, "end": 26 },
-            "call_site": "18:4-18:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 3,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|3|formal(arg):add6844872f3ba073153a94d1a62198b"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lambda.test_map_lambda",
-    "callable_line": 11,
-    "code": 5002,
-    "line": 17,
-    "start": 15,
-    "end": 26,
-    "filename": "lambda.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 16, "start": 20, "end": 60 },
-              { "line": 16, "start": 24, "end": 35 },
-              { "line": 16, "start": 37, "end": 59 }
-            ],
-            "origin": { "line": 16, "start": 41, "end": 55 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 17, "start": 15, "end": 26 },
-            "call_site": "17:4-17:27"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "higher-order-parameter" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 2,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|2|formal(arg):4c2fc89b07288b50bac57800700dce05"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|0|formal(arg):6cb16f947915a816343fa08903300b41"
   }
 }
 {
@@ -1401,7 +750,89 @@
     "callable": "lambda.test_map_lambda",
     "callable_line": 11,
     "code": 5002,
-    "line": 13,
+    "line": 17,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 16, "start": 20, "end": 60 },
+              { "line": 16, "start": 24, "end": 35 },
+              { "line": 16, "start": 37, "end": 59 }
+            ],
+            "origin": { "line": 16, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 17, "start": 15, "end": 26 },
+            "call_site": "17:4-17:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|2|formal(arg):4c2fc89b07288b50bac57800700dce05"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 18,
     "start": 15,
     "end": 26,
     "filename": "lambda.py",
@@ -1431,11 +862,11 @@
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 12, "start": 20, "end": 54 },
-              { "line": 12, "start": 24, "end": 35 },
-              { "line": 12, "start": 37, "end": 53 }
+              { "line": 16, "start": 20, "end": 60 },
+              { "line": 16, "start": 24, "end": 35 },
+              { "line": 16, "start": 37, "end": 59 }
             ],
-            "origin": { "line": 12, "start": 38, "end": 52 }
+            "origin": { "line": 16, "start": 41, "end": 55 }
           }
         ]
       },
@@ -1450,8 +881,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 13, "start": 15, "end": 26 },
-            "call_site": "13:4-13:27"
+            "origin": { "line": 18, "start": 15, "end": 26 },
+            "call_site": "18:4-18:27"
           }
         ]
       }
@@ -1471,10 +902,579 @@
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
-      "index": 0,
+      "index": 3,
       "parameter": "formal(arg)"
     },
-    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|0|formal(arg):6cb16f947915a816343fa08903300b41"
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|3|formal(arg):add6844872f3ba073153a94d1a62198b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 19,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 16, "start": 20, "end": 60 },
+              { "line": 16, "start": 24, "end": 35 },
+              { "line": 16, "start": 37, "end": 59 }
+            ],
+            "origin": { "line": 16, "start": 41, "end": 55 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 19, "start": 15, "end": 26 },
+            "call_site": "19:4-19:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|4|formal(arg):0480206225d43db02d615fc5f7709a70"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 22,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 21, "start": 20, "end": 74 },
+              { "line": 21, "start": 24, "end": 55 },
+              { "line": 21, "start": 57, "end": 73 }
+            ],
+            "origin": { "line": 21, "start": 58, "end": 72 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 15, "end": 26 },
+            "call_site": "22:4-22:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 5,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|5|formal(arg):6ebcbaa75658689a3b33d1e59a815091"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 23,
+    "start": 15,
+    "end": 31,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 21, "start": 20, "end": 74 },
+              { "line": 21, "start": 24, "end": 55 },
+              { "line": 21, "start": 57, "end": 73 }
+            ],
+            "origin": { "line": 21, "start": 58, "end": 72 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 23, "start": 15, "end": 31 },
+            "call_site": "23:4-23:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 6,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|6|formal(arg):3569b363ad876dffc337f38fdf3f7d59"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 24,
+    "start": 15,
+    "end": 31,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 21, "start": 20, "end": 74 },
+              { "line": 21, "start": 24, "end": 55 },
+              { "line": 21, "start": 57, "end": 73 }
+            ],
+            "origin": { "line": 21, "start": 58, "end": 72 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 24, "start": 15, "end": 31 },
+            "call_site": "24:4-24:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 7,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|7|formal(arg):1f138bbc4402d9ea9c2ebccad492996a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 27,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 26, "start": 20, "end": 79 },
+              { "line": 26, "start": 24, "end": 40 },
+              { "line": 26, "start": 42, "end": 78 }
+            ],
+            "origin": { "line": 26, "start": 49, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 27, "start": 15, "end": 26 },
+            "call_site": "27:4-27:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 8,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|8|formal(arg):b2327cff7ce35468341795d73d2c2478"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 30,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 29, "start": 20, "end": 79 },
+              { "line": 29, "start": 24, "end": 40 },
+              { "line": 29, "start": 42, "end": 78 }
+            ],
+            "origin": { "line": 29, "start": 49, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 30, "start": 15, "end": 26 },
+            "call_site": "30:4-30:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 9,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|9|formal(arg):e0cb3cb64a9697c82736135aa5b88c62"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lambda.test_map_lambda",
+    "callable_line": 11,
+    "code": 5002,
+    "line": 33,
+    "start": 15,
+    "end": 26,
+    "filename": "lambda.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 32, "start": 20, "end": 59 },
+              { "line": 32, "start": 24, "end": 48 }
+            ],
+            "origin": { "line": 32, "start": 34, "end": 48 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 33, "start": 15, "end": 26 },
+            "call_site": "33:4-33:27"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "higher-order-parameter" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" },
+      { "via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 10,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lambda.test_map_lambda:5002:0:Call|_test_sink|10|formal(arg):90cc567fa1e4bb65d4c5534c3083dc7e"
   }
 }
 {

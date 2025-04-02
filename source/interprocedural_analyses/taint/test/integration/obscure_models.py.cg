@@ -5,9 +5,9 @@ Call dependencies
     "obscure_models.C.obscure (method)"
   ],
   "obscure_models.test_collapse_depth (fun)": [
-    "_test_sink (fun)", "_test_source (fun)",
-    "obscure_models.should_collapse_depth_zero (fun)",
-    "object.__init__ (method)", "object.__new__ (method)"
+    "_test_sink (fun)", "_test_source (fun)", "object.__init__ (method)",
+    "object.__new__ (method)",
+    "obscure_models.should_collapse_depth_zero (fun)"
   ],
   "obscure_models.test_collapse_source (fun)": [
     "_test_sink (fun)", "_test_source (fun)",

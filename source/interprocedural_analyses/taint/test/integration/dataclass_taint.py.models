@@ -150,64 +150,6 @@
     "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
     "callable_line": 95,
     "code": 5002,
-    "line": 105,
-    "start": 4,
-    "end": 25,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 105, "start": 28, "end": 42 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 105, "start": 4, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
-      "index": 0
-    },
-    "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Global|Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}|0:b81b9304aded9021a85d4fbe1e787a51"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
-    "callable_line": 95,
-    "code": 5002,
     "line": 99,
     "start": 51,
     "end": 65,
@@ -260,6 +202,64 @@
       "parameter": "formal(bad)"
     },
     "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__|1|formal(bad):2f7989bea29b0339ab8a203e62db91c0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
+    "callable_line": 95,
+    "code": 5002,
+    "line": 105,
+    "start": 4,
+    "end": 25,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 105, "start": 28, "end": 42 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 105, "start": 4, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+      "index": 0
+    },
+    "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Global|Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}|0:b81b9304aded9021a85d4fbe1e787a51"
   }
 }
 {
