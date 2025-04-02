@@ -674,7 +674,6 @@ def f(n: N):
 );
 
 testcase!(
-    bug = "PyTorch TODO: Should we admit this program and should reveal_type be Any",
     test_attr_unknown,
     r#"
 class Op:
