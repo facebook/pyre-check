@@ -17,4 +17,6 @@ echo "copying wasm files from pyrefly_wasm/ to website/"
 cp ../pyrefly_wasm/target/pyrefly_wasm.js src/try-pyre2/pyrefly_wasm.js
 cp ../pyrefly_wasm/target/pyrefly_wasm_bg.wasm.opt src/try-pyre2/pyrefly_wasm_bg.wasm
 echo "finished copying wasm files"
-yarn build --no-minify
+
+export USE_SIMPLE_CSS_MINIFIER=true
+yarn build

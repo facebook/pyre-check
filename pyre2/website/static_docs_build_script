@@ -7,4 +7,6 @@ yarn install
 ../facebook/wasm.sh
 cp ../pyrefly_wasm/target/pyrefly_wasm.js src/try-pyre2/pyrefly_wasm.js
 cp ../pyrefly_wasm/target/pyrefly_wasm_bg.wasm src/try-pyre2/pyrefly_wasm_bg.wasm
-yarn build --no-minify
+
+export USE_SIMPLE_CSS_MINIFIER=true
+yarn build
