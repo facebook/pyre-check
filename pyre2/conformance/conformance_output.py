@@ -189,15 +189,15 @@ def compare_conformance_output(
 
 
 def get_pyre2_command() -> list[str]:
-    with resources.path(__package__, "pyre2.exe") as pyre2_path:
-        return [
-            str(pyre2_path),
-            "check",
-            "--expectations",
-            # We seem to be a bit non-deterministic in some places, so let's disable
-            # parallelism for now.
-            "--threads=1",
-        ]
+    pyre2_path = resources.files(__package__).joinpath("pyre2.exe")
+    return [
+        str(pyre2_path),
+        "check",
+        "--expectations",
+        # We seem to be a bit non-deterministic in some places, so let's disable
+        # parallelism for now.
+        "--threads=1",
+    ]
 
 
 def get_conformance_output(directory: str) -> Dict[str, List[Dict[str, Any]]]:
