@@ -838,11 +838,11 @@ module Modelable = struct
         type_annotation: Expression.t option Lazy.t;
       }
 
-  let create_callable ~pyre_api ~method_kinds target =
+  let create_callable ~pyre_api ~callables_to_definitions_map ~method_kinds target =
     let define =
       lazy
-        (match Target.get_module_and_definition ~pyre_api target with
-        | Some (_, { Node.value; _ }) -> value
+        (match Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map target with
+        | Some { define = { Node.value; _ }; _ } -> value
         | None ->
             Format.asprintf
               "unknown target `%a` in `Modelable.create_callable`"

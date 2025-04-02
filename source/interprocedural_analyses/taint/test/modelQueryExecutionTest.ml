@@ -71,6 +71,8 @@ let test_generated_annotations context =
         ~modelable:
           (ModelQueryExecution.CallableQueryExecutor.make_modelable
              ~pyre_api
+             ~callables_to_definitions_map:
+               (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
              ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
              (Target.from_regular callable))
         query
@@ -124,6 +126,8 @@ let test_generated_annotations context =
         ~modelable:
           (ModelQueryExecution.AttributeQueryExecutor.make_modelable
              ~pyre_api
+             ~callables_to_definitions_map:
+               (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
              ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
              target)
         query
@@ -176,6 +180,8 @@ let test_generated_annotations context =
         ~modelable:
           (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable
              ~pyre_api
+             ~callables_to_definitions_map:
+               (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
              ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
              target)
         query
@@ -5045,6 +5051,8 @@ let test_generated_cache context =
         ~verbose:false
         ~pyre_api
         ~class_hierarchy_graph
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
         ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~targets:(List.map regular_callables ~f:Target.from_regular)
         queries

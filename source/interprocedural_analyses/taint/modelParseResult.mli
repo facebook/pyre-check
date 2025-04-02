@@ -438,6 +438,7 @@ module Modelable : sig
 
   val create_callable
     :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
     method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     t

@@ -651,6 +651,8 @@ let initialize
             ~scheduler
             ~scheduler_policies:Configuration.SchedulerPolicies.empty
             ~class_hierarchy_graph
+            ~callables_to_definitions_map:
+              (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
             ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false

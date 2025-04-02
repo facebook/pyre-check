@@ -383,6 +383,7 @@ let initialize_models
             ~scheduler
             ~scheduler_policies
             ~class_hierarchy_graph
+            ~callables_to_definitions_map
             ~method_kinds
             ~verbose
             ~error_on_unexpected_models:true
@@ -432,8 +433,7 @@ let initialize_models
     MissingFlow.add_obscure_models
       ~scheduler
       ~static_analysis_configuration
-      ~callables_to_definitions_map:
-        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+      ~callables_to_definitions_map
       ~stubs:stubs_hashset
       ~initial_models:models
   in
@@ -736,7 +736,8 @@ let run_taint_analysis
       ~taint_configuration
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
-      ~callables_to_definitions_map
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       ~initial_callables
       ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
   in

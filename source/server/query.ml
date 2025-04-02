@@ -776,6 +776,8 @@ let rec process_request_exn
         ~scheduler
         ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~class_hierarchy_graph
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
         ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~source_sink_filter:None
         ~verbose:false
