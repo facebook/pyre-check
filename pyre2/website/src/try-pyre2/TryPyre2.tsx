@@ -46,7 +46,7 @@ interface Pyre2State {
 
 const pyre2WasmUninitializedPromise =
     typeof window !== 'undefined'
-        ? import('./pyre2_wasm')
+        ? import('./pyrefly_wasm')
         : new Promise<any>(_resolve => { });
 
 const pyre2WasmInitializedPromise = pyre2WasmUninitializedPromise

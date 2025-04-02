@@ -15,4 +15,4 @@ wasm-pack build --no-opt --out-dir target -t web --no-typescript
 # [1]: https://github.com/rustwasm/wasm-pack/issues/1190
 # [3]: https://github.com/WebAssembly/binaryen
 
-wasm-opt target/pyre2_wasm_bg.wasm -Os -o target/pyre2_wasm_bg.wasm.opt
+wasm-opt target/pyrefly_wasm_bg.wasm -Os -o target/pyrefly_wasm_bg.wasm.opt

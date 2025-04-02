@@ -6,7 +6,7 @@
 <PROJECT_ROOT>/docusaurus.config.js
 <PROJECT_ROOT>/src/try-pyre2/require_2_3_3.js
 .*/node_modules/.*
-<PROJECT_ROOT>/src/try-pyre2/pyre2_wasm.js
+<PROJECT_ROOT>/src/try-pyre2/pyrefly_wasm.js
 
 [libs]
 flow-typed

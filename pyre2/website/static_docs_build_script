@@ -5,6 +5,6 @@ export INTERNAL_STATIC_DOCS=1
 yarn install
 
 ../facebook/wasm.sh
-cp ../pyre2_wasm/target/pyre2_wasm.js src/try-pyre2/pyre2_wasm.js
-cp ../pyre2_wasm/target/pyre2_wasm_bg.wasm src/try-pyre2/pyre2_wasm_bg.wasm
+cp ../pyrefly_wasm/target/pyrefly_wasm.js src/try-pyre2/pyrefly_wasm.js
+cp ../pyrefly_wasm/target/pyrefly_wasm_bg.wasm src/try-pyre2/pyrefly_wasm_bg.wasm
 yarn build --no-minify

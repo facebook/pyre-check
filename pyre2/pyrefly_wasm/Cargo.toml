@@ -1,5 +1,5 @@
 [package]
-name = "pyre2_wasm"
+name = "pyrefly_wasm"
 version = "0.0.0"
 authors = ["Meta"]
 edition = "2021"

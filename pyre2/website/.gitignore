@@ -26,5 +26,5 @@ yarn-error.log*
 .eslintcache
 
 # wasm
-pyre2_wasm_bg.wasm
-pyre2_wasm.js
+pyrefly_wasm_bg.wasm
+pyrefly_wasm.js
