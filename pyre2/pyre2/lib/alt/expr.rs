@@ -42,6 +42,7 @@ use crate::types::callable::Param;
 use crate::types::callable::ParamList;
 use crate::types::callable::Params;
 use crate::types::callable::Required;
+use crate::types::lit_int::LitInt;
 use crate::types::literal::Lit;
 use crate::types::param_spec::ParamSpec;
 use crate::types::special_form::SpecialForm;
@@ -78,7 +79,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             for t in t.into_unions() {
                 // If we reach the last value, we should always keep it.
                 if i == last_index || !should_discard(&t) {
-                    types.push(t);
+                    if i != last_index && t == self.stdlib.bool().to_type() {
+                        types.push(Lit::Bool(target).to_type());
+                    } else if i != last_index && t == self.stdlib.int().to_type() && !target {
+                        types.push(Lit::Int(LitInt::new(0)).to_type());
+                    } else if i != last_index && t == self.stdlib.str().to_type() && !target {
+                        types.push(Lit::String(String::new().into_boxed_str()).to_type());
+                    } else {
+                        types.push(t);
+                    }
                 }
             }
         }
