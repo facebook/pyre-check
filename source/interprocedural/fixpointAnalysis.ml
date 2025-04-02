@@ -842,11 +842,21 @@ module Make (Analysis : ANALYSIS) = struct
 
   (* Define the meaning of `skip_analysis_targets`. We assume `skip_analysis_targets` only contains
      regular callables. *)
-  let not_skip_analysis_target ~skip_analysis_targets callable =
-    let should_skip = Hash_set.mem skip_analysis_targets (Target.strip_parameters callable) in
-    if should_skip then
-      Log.info "Skipping global fixpoint analysis of %a" Target.pp_pretty callable;
-    not should_skip
+  let filter_skip_analysis_targets ~skip_analysis_targets callables =
+    let skip_analysis_target callable =
+      Hash_set.mem skip_analysis_targets (Target.strip_parameters callable)
+    in
+    let skip, not_skip = List.partition_tf ~f:skip_analysis_target callables in
+    (* Print less log by grouping targets based on their regular part. *)
+    skip
+    |> List.map ~f:Target.strip_parameters
+    |> Target.Set.of_list
+    |> Target.Set.iter (fun callable ->
+           Log.info
+             "Skipping global fixpoint analysis of `%a` (and its parameterized variants)"
+             Target.pp_pretty
+             callable);
+    not_skip
 
 
   let compute
@@ -939,7 +949,7 @@ module Make (Analysis : ANALYSIS) = struct
               (additional_dependencies |> DependencyGraph.keys |> Target.Set.of_list)
               (Target.Set.of_list all_callables)
             |> Target.Set.elements
-            |> List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets)
+            |> filter_skip_analysis_targets ~skip_analysis_targets
           else
             []
         in
@@ -955,7 +965,7 @@ module Make (Analysis : ANALYSIS) = struct
           (List.rev_append new_callables callables_to_analyze)
     in
     let initial_callables_to_analyze =
-      List.filter ~f:(not_skip_analysis_target ~skip_analysis_targets) initial_callables_to_analyze
+      filter_skip_analysis_targets ~skip_analysis_targets initial_callables_to_analyze
     in
     let state, iterations =
       iterate
