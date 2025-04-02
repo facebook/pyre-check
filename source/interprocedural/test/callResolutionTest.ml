@@ -21,6 +21,8 @@ let test_resolve_ignoring_errors context =
     in
     CallResolution.resolve_ignoring_errors
       ~pyre_in_context
+      ~callables_to_definitions_map:
+        (Target.CallablesSharedMemory.empty () |> Target.CallablesSharedMemory.read_only)
       (Test.parse_single_expression expression)
     |> assert_equal ~printer:Type.show expected
   in

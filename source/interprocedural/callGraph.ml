@@ -2125,7 +2125,7 @@ module CalleeKind = struct
     | Method of { is_direct_call: bool }
     | Function
 
-  let rec from_callee ~pyre_in_context callee callee_type =
+  let rec from_callee ~pyre_in_context ~callables_to_definitions_map callee callee_type =
     let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
     let is_super_call =
       let rec is_super callee =
@@ -2144,7 +2144,12 @@ module CalleeKind = struct
     | Type.Callable _ -> (
         match Node.value callee with
         | Expression.Name (Name.Attribute { base; _ }) ->
-            let parent_type = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
+            let parent_type =
+              CallResolution.resolve_ignoring_errors
+                ~pyre_in_context
+                ~callables_to_definitions_map
+                base
+            in
             let is_class () =
               let primitive, _ = Type.split parent_type in
               Type.primitive_name primitive
@@ -2158,7 +2163,8 @@ module CalleeKind = struct
             else
               Function
         | _ -> Function)
-    | Type.Union (callee_type :: _) -> from_callee ~pyre_in_context callee callee_type
+    | Type.Union (callee_type :: _) ->
+        from_callee ~pyre_in_context ~callables_to_definitions_map callee callee_type
     | _ ->
         (* We must be dealing with a callable class. *)
         Method { is_direct_call = false }
@@ -2480,8 +2486,12 @@ and resolve_callees_from_type_external
     ?(dunder_call = false)
     callee
   =
-  let callee_type = CallResolution.resolve_ignoring_errors ~pyre_in_context callee in
-  let callee_kind = CalleeKind.from_callee ~pyre_in_context callee callee_type in
+  let callee_type =
+    CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map callee
+  in
+  let callee_kind =
+    CalleeKind.from_callee ~pyre_in_context ~callables_to_definitions_map callee callee_type
+  in
   resolve_callees_from_type
     ~debug:false
     ~callables_to_definitions_map
@@ -2646,14 +2656,18 @@ let resolve_callee_from_defining_expression
       | _ -> None)
 
 
-let resolve_stringify_call ~pyre_in_context expression =
+let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expression =
   let string_callee =
     Node.create_with_default_location
       (Expression.Name (Name.Attribute { base = expression; attribute = "__str__"; special = true }))
   in
   try
     match
-      CallResolution.resolve_ignoring_errors ~pyre_in_context string_callee |> Type.callable_name
+      CallResolution.resolve_ignoring_errors
+        ~pyre_in_context
+        ~callables_to_definitions_map
+        string_callee
+      |> Type.callable_name
     with
     | Some name when Reference.equal name (Reference.create "object.__str__") ->
         (* Call resolved to object.__str__, fallback to calling __repr__ if it exists. *)
@@ -2665,7 +2679,11 @@ let resolve_stringify_call ~pyre_in_context expression =
 
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
  * This may or may not be sound depending on the analysis performed. *)
-let transform_special_calls ~pyre_in_context { Call.callee; arguments } =
+let transform_special_calls
+    ~pyre_in_context
+    ~callables_to_definitions_map
+    { Call.callee; arguments }
+  =
   let attribute_access base method_name =
     {
       Node.value =
@@ -2677,7 +2695,11 @@ let transform_special_calls ~pyre_in_context { Call.callee; arguments } =
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
-      let callee = attribute_access value (resolve_stringify_call ~pyre_in_context value) in
+      let callee =
+        attribute_access
+          value
+          (resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value)
+      in
       Some { Call.callee; arguments = [] }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
       (* Only handle `iter` with a single argument here. *)
@@ -2720,8 +2742,8 @@ let transform_special_calls ~pyre_in_context { Call.callee; arguments } =
   | _ -> SpecialCallResolution.redirect ~pyre_in_context { Call.callee; arguments }
 
 
-let redirect_special_calls ~pyre_in_context call =
-  match transform_special_calls ~pyre_in_context call with
+let redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call =
+  match transform_special_calls ~pyre_in_context ~callables_to_definitions_map call with
   | Some call -> call
   | None ->
       (* Rewrite certain calls using the same logic used in the type checker.
@@ -2729,7 +2751,7 @@ let redirect_special_calls ~pyre_in_context call =
       PyrePysaEnvironment.InContext.redirect_special_calls pyre_in_context call
 
 
-let redirect_expressions ~pyre_in_context ~location = function
+let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location = function
   | Expression.BinaryOperator { BinaryOperator.operator; left; right } ->
       Expression.Call
         {
@@ -2759,7 +2781,7 @@ let redirect_expressions ~pyre_in_context ~location = function
           arguments = [{ Call.Argument.value = index; name = None }];
         }
   | Expression.Call call ->
-      let call = redirect_special_calls ~pyre_in_context call in
+      let call = redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call in
       Expression.Call call
   | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | expression -> expression
@@ -2842,7 +2864,7 @@ let resolve_recognized_callees
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
-      CallResolution.resolve_ignoring_errors ~pyre_in_context base
+      CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map base
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
         ~debug
@@ -2875,7 +2897,14 @@ let resolve_recognized_callees
   >>| fun call_callees -> { call_callees with recognized_call = CallCallees.RecognizedCall.True }
 
 
-let resolve_callee_ignoring_decorators ~debug ~pyre_in_context ~override_graph ~return_type callee =
+let resolve_callee_ignoring_decorators
+    ~debug
+    ~pyre_in_context
+    ~callables_to_definitions_map
+    ~override_graph
+    ~return_type
+    callee
+  =
   let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   let return_type () = ReturnType.from_annotation ~pyre_api (Lazy.force return_type) in
   let contain_class_method signatures =
@@ -2968,7 +2997,9 @@ let resolve_callee_ignoring_decorators ~debug ~pyre_in_context ~override_graph ~
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
         (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
            classes in the Method Resolution Order. *)
-        match CallResolution.resolve_ignoring_errors ~pyre_in_context base with
+        match
+          CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map base
+        with
         (* The base expression is a class. *)
         | Type.Parametric { name = "type"; arguments = [Single (Type.Primitive class_name)] }
         (* The base expression is a class that has type parameters, such as `class A(Generic[T])`
@@ -3170,7 +3201,9 @@ let resolve_regular_callees
     ~return_type
     ~callee
   =
-  let callee_type = CallResolution.resolve_ignoring_errors ~pyre_in_context callee in
+  let callee_type =
+    CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map callee
+  in
   log
     ~debug
     "Checking if `%a` is a callable, resolved type is `%a`"
@@ -3195,7 +3228,9 @@ let resolve_regular_callees
     let () = log ~debug "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
     recognized_callees
   else
-    let callee_kind = CalleeKind.from_callee ~pyre_in_context callee callee_type in
+    let callee_kind =
+      CalleeKind.from_callee ~pyre_in_context ~callables_to_definitions_map callee callee_type
+    in
     let callees_from_type =
       resolve_callees_from_type
         ~debug
@@ -3212,7 +3247,13 @@ let resolve_regular_callees
       in
       callees_from_type
     else
-      resolve_callee_ignoring_decorators ~debug ~pyre_in_context ~override_graph ~return_type callee
+      resolve_callee_ignoring_decorators
+        ~debug
+        ~pyre_in_context
+        ~callables_to_definitions_map
+        ~override_graph
+        ~return_type
+        callee
       |> function
       | Result.Ok call_targets -> CallCallees.create ~call_targets ()
       | Result.Error reason ->
@@ -3514,6 +3555,7 @@ let resolve_callees
 let resolve_attribute_access
     ~pyre_in_context
     ~debug
+    ~callables_to_definitions_map
     ~override_graph
     ~define_name
     ~attribute_targets
@@ -3522,7 +3564,9 @@ let resolve_attribute_access
     ~special
     ~setter
   =
-  let base_type_info = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
+  let base_type_info =
+    CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map base
+  in
 
   log
     ~debug
@@ -3673,7 +3717,9 @@ module CalleeVisitor = struct
         callees_at_location :=
           DefineCallGraph.add_callees ~expression_identifier ~location ~callees !callees_at_location
       in
-      let value = redirect_expressions ~pyre_in_context ~location value in
+      let value =
+        redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location value
+      in
       let () =
         match value with
         | Expression.Call call ->
@@ -3696,6 +3742,7 @@ module CalleeVisitor = struct
             resolve_attribute_access
               ~pyre_in_context
               ~debug
+              ~callables_to_definitions_map
               ~override_graph
               ~define_name
               ~attribute_targets
@@ -3714,7 +3761,9 @@ module CalleeVisitor = struct
         | Expression.ComparisonOperator comparison -> (
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
-                let call = redirect_special_calls ~pyre_in_context call in
+                let call =
+                  redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call
+                in
                 resolve_callees
                   ~debug
                   ~callables_to_definitions_map
@@ -3752,7 +3801,12 @@ module CalleeVisitor = struct
                       =
                       let { CallCallees.call_targets; _ } =
                         let callee =
-                          let method_name = resolve_stringify_call ~pyre_in_context expression in
+                          let method_name =
+                            resolve_stringify_call
+                              ~pyre_in_context
+                              ~callables_to_definitions_map
+                              expression
+                          in
                           {
                             Node.value =
                               Expression.Name
@@ -3811,6 +3865,7 @@ module CalleeVisitor = struct
             resolve_attribute_access
               ~pyre_in_context
               ~debug
+              ~callables_to_definitions_map
               ~override_graph
               ~define_name
               ~attribute_targets
@@ -3852,6 +3907,7 @@ module CalleeVisitor = struct
             resolve_attribute_access
               ~pyre_in_context
               ~debug
+              ~callables_to_definitions_map
               ~override_graph
               ~define_name
               ~attribute_targets
@@ -4770,7 +4826,13 @@ module HigherOrderCallGraph = struct
           State.pp
           state;
         let analyze_expression_inner () =
-          match redirect_expressions ~pyre_in_context ~location value with
+          match
+            redirect_expressions
+              ~pyre_in_context
+              ~callables_to_definitions_map:Context.callables_to_definitions_map
+              ~location
+              value
+          with
           | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
           | BinaryOperator _ -> CallTarget.Set.bottom, state
           | BooleanOperator _ -> CallTarget.Set.bottom, state

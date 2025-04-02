@@ -148,7 +148,7 @@ let extract_coroutine_value annotation =
 
 (* Resolve an expression into a type, ignoring
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
-let rec resolve_ignoring_errors ~pyre_in_context expression =
+let rec resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map expression =
   let resolve_expression_to_type expression =
     match resolve_ignoring_untracked ~pyre_in_context expression, Node.value expression with
     | ( (Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable) as annotation),
@@ -159,9 +159,7 @@ let rec resolve_ignoring_errors ~pyre_in_context expression =
           function_name
           |> Reference.delocalize
           |> Target.create_function
-          |> Target.get_module_and_definition
-               ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
-          |> Option.is_some
+          |> Target.CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map
         then
           (* Treat nested functions as named callables, only if `function_name` refers to functions
              / methods that have bodies. *)
@@ -174,7 +172,7 @@ let rec resolve_ignoring_errors ~pyre_in_context expression =
     match Node.value expression with
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
         let base_type =
-          resolve_ignoring_errors ~pyre_in_context base
+          resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map base
           |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
         in
         match defining_attribute ~pyre_in_context base_type attribute with

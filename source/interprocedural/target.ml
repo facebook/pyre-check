@@ -587,6 +587,8 @@ let get_module_and_definition ~pyre_api callable =
   Map.find_opt callable callables >>| fun define -> qualifier, define
 
 
+let get_module_and_definition_for_test = get_module_and_definition
+
 let resolve_method ~pyre_api ~class_type ~method_name =
   let callable_implementation =
     Type.split class_type

@@ -78,6 +78,8 @@ let assert_taint ~context source expected =
         ~string_combine_partial_sink_tree:
           (Taint.CallModel.StringFormatCall.declared_partial_sink_tree taint_configuration)
         ~pyre_api
+        ~callables_to_definitions_map:
+          (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)

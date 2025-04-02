@@ -459,6 +459,7 @@ val call_graph_of_define
 
 val redirect_expressions
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   location:Location.t ->
   Expression.expression ->
   Expression.expression

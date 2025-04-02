@@ -21,7 +21,7 @@ let test_get_module_and_definition context =
     let actual =
       target
       |> Target.from_regular
-      |> Target.get_module_and_definition ~pyre_api
+      |> Target.get_module_and_definition_for_test ~pyre_api
       >>| fun (qualifier, { Node.value = { Statement.Define.body; _ }; _ }) -> qualifier, body
     in
     let equal (first_qualifier, first_body) (second_qualifier, second_body) =

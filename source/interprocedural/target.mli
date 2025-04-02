@@ -205,7 +205,8 @@ val get_definitions
   Reference.t ->
   definitions_result option
 
-val get_module_and_definition
+(* Exposed for testing purposes only. *)
+val get_module_and_definition_for_test
   :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   t ->
   (Reference.t * Define.t Node.t) option

@@ -56,6 +56,7 @@ val defining_attribute
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
 val resolve_ignoring_errors
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   Ast.Expression.t ->
   Type.t
 

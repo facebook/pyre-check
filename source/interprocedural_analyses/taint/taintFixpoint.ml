@@ -114,6 +114,7 @@ module Analysis = struct
       ~taint_configuration
       ~string_combine_partial_sink_tree
       ~pyre_api
+      ~callables_to_definitions_map
       ~class_interval_graph
       ~global_constants
       ~get_define_call_graph
@@ -151,6 +152,7 @@ module Analysis = struct
             ~taint_configuration
             ~string_combine_partial_sink_tree
             ~pyre_api
+            ~callables_to_definitions_map
             ~class_interval_graph
             ~global_constants
             ~qualifier
@@ -169,6 +171,7 @@ module Analysis = struct
             ~taint_configuration
             ~string_combine_partial_sink_tree
             ~pyre_api
+            ~callables_to_definitions_map
             ~class_interval_graph
             ~global_constants
             ~qualifier
@@ -261,6 +264,7 @@ module Analysis = struct
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration
         ~string_combine_partial_sink_tree
+        ~callables_to_definitions_map
         ~pyre_api
         ~class_interval_graph
         ~global_constants

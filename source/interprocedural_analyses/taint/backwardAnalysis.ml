@@ -53,6 +53,8 @@ module type FUNCTION_CONTEXT = sig
 
   val pyre_api : PyrePysaEnvironment.ReadOnly.t
 
+  val callables_to_definitions_map : Interprocedural.Target.CallablesSharedMemory.ReadOnly.t
+
   val taint_configuration : TaintConfiguration.Heap.t
 
   val string_combine_partial_sink_tree : BackwardState.Tree.t
@@ -2244,7 +2246,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.Tree.pp
       taint;
     let analyze_expression_inner () =
-      let value = CallGraph.redirect_expressions ~pyre_in_context ~location value in
+      let value =
+        CallGraph.redirect_expressions
+          ~pyre_in_context
+          ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
+          ~location
+          value
+      in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
       | BinaryOperator _ -> failwith "T101299882"
@@ -2898,6 +2906,7 @@ let run
     ~taint_configuration
     ~string_combine_partial_sink_tree
     ~pyre_api
+    ~callables_to_definitions_map
     ~class_interval_graph
     ~global_constants
     ~qualifier
@@ -2939,6 +2948,8 @@ let run
     let profiler = profiler
 
     let pyre_api = pyre_api
+
+    let callables_to_definitions_map = callables_to_definitions_map
 
     let taint_configuration = taint_configuration
 
