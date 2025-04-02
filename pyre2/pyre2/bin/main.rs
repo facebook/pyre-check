@@ -32,7 +32,7 @@ use pyre2::ConfigFile;
 use pyre2::NotifyWatcher;
 
 #[derive(Debug, Parser)]
-#[command(name = "pyre2")]
+#[command(name = "pyrefly")]
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
 struct Args {
     /// Enable verbose logging.
