@@ -987,6 +987,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Arc<EmptyAnswer> {
         match binding {
+            BindingExpect::TypeCheckExpr(box x) => {
+                self.expr_infer(x, errors);
+            }
             BindingExpect::Delete(box x) => match x {
                 Expr::Name(_) => {
                     self.expr_infer(x, errors);

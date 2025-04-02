@@ -707,8 +707,10 @@ impl<'a> BindingsBuilder<'a> {
                     .insert(Key::Anon(x.test.range()), Binding::Expr(None, *x.test));
                 if let Some(mut msg_expr) = x.msg {
                     self.ensure_expr(&mut msg_expr);
-                    self.table
-                        .insert(Key::Anon(msg_expr.range()), Binding::Expr(None, *msg_expr));
+                    self.table.insert(
+                        KeyExpect(msg_expr.range()),
+                        BindingExpect::TypeCheckExpr(Box::new(*msg_expr)),
+                    );
                 };
             }
             Stmt::Import(x) => {

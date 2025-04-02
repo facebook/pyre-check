@@ -165,7 +165,6 @@ pub enum Key {
     /// I am a use in this module at this location.
     Usage(ShortIdentifier),
     /// I am an expression that does not have a simple name but needs its type inferred.
-    /// For example, an attribute access.
     Anon(TextRange),
     /// I am an expression that appears in a statement. The range for this key is the range of the expr itself, which is different than the range of the stmt expr.
     StmtExpr(TextRange),
@@ -254,6 +253,8 @@ impl DisplayWith<ModuleInfo> for KeyExpect {
 
 #[derive(Clone, Debug)]
 pub enum BindingExpect {
+    /// An expression where we need to check for type errors, but don't need the result type.
+    TypeCheckExpr(Box<Expr>),
     /// The expected number of values in an unpacked iterable expression.
     UnpackedLength(Box<Binding>, TextRange, SizeExpectation),
     /// An exception and its cause from a raise statement.
@@ -274,6 +275,9 @@ impl DisplayWith<Bindings> for BindingExpect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
         match self {
+            Self::TypeCheckExpr(box x) => {
+                write!(f, "type check expr {}", m.display(x))
+            }
             Self::Delete(box x) => {
                 write!(f, "del {}", m.display(x))
             }
