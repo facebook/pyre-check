@@ -66,16 +66,14 @@ module CallableQueryExecutor : sig
     :  verbose:bool ->
     pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -93,8 +91,7 @@ module AttributeQueryExecutor : sig
     :  verbose:bool ->
     pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
@@ -106,8 +103,7 @@ module AttributeQueryExecutor : sig
 
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -125,8 +121,7 @@ module GlobalVariableQueryExecutor : sig
     :  verbose:bool ->
     pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
@@ -138,8 +133,7 @@ module GlobalVariableQueryExecutor : sig
 
   val make_modelable
     :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -149,8 +143,7 @@ val generate_models_from_queries
   scheduler:Scheduler.t ->
   scheduler_policies:Configuration.SchedulerPolicies.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->
-  callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-  method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   verbose:bool ->
   error_on_unexpected_models:bool ->

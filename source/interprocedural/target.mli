@@ -210,40 +210,6 @@ val get_module_and_definition
   t ->
   (Reference.t * Define.t Node.t) option
 
-module DefinesSharedMemory : sig
-  module Define : sig
-    type t = {
-      qualifier: Reference.t;
-      define: Define.t Node.t;
-    }
-  end
-
-  type t
-
-  module ReadOnly : sig
-    type t
-
-    val get : t -> T.t -> Define.t option
-
-    val get_location : t -> T.t -> Ast.Location.WithModule.t option
-  end
-
-  val empty : unit -> t
-
-  val from_callables
-    :  scheduler:Scheduler.t ->
-    scheduler_policy:Scheduler.Policy.t ->
-    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-    T.t list ->
-    t
-
-  val read_only : t -> ReadOnly.t
-
-  val cleanup : t -> unit
-
-  val add_alist_sequential : t -> (T.t * Define.t) list -> t
-end
-
 val resolve_method
   :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   class_type:Type.t ->
@@ -292,3 +258,77 @@ module HashsetSharedMemory : sig
 
   val read_only : t -> ReadOnly.t
 end
+
+(** Whether a method is an instance method, or a class method, or a static method. *)
+module MethodKind : sig
+  type t =
+    | Static
+    | Class
+    | Instance
+end
+
+module CallablesSharedMemory : sig
+  type target = t
+
+  type t
+
+  module Signature : sig
+    type t = {
+      qualifier: Reference.t;
+      location: Location.t;
+      define_name: Reference.t;
+      parameters: Expression.Parameter.t list;
+      return_annotation: Expression.t option;
+      decorators: Expression.t list;
+      captures: Define.Capture.t list;
+      method_kind: MethodKind.t option;
+      is_stub: bool;
+    }
+  end
+
+  module DefineAndQualifier : sig
+    type t = {
+      qualifier: Reference.t;
+      define: Define.t Node.t;
+    }
+  end
+
+  module ReadOnly : sig
+    type t
+
+    val get_define : t -> target -> DefineAndQualifier.t option
+
+    val get_location : t -> target -> Ast.Location.WithModule.t option
+
+    val get_signature : t -> target -> Signature.t option
+
+    val get_qualifier : t -> target -> Reference.t option
+
+    val get_method_kind : t -> target -> bool * bool
+
+    val is_stub : t -> target -> bool option
+
+    val get_captures : t -> target -> Define.Capture.t list option
+
+    val mem : t -> target -> bool
+  end
+
+  val empty : unit -> t
+
+  val from_callables
+    :  scheduler:Scheduler.t ->
+    scheduler_policy:Scheduler.Policy.t ->
+    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    target list ->
+    t
+
+  val read_only : t -> ReadOnly.t
+
+  val cleanup : t -> unit
+
+  val add_alist_sequential : t -> (target * DefineAndQualifier.t) list -> t
+end
+
+val class_method_decorators : string list
+
+val static_method_decorators : string list

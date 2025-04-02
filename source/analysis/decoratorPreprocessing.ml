@@ -154,8 +154,8 @@ let add_original_decorators_mapping ~original_define ~new_define =
       (get_define_decorators original_define)
 
 
-let original_decorators_from_preprocessed_signature { Define.Signature.name; decorators; _ } =
-  DecoratedCallableToOriginalDecorators.get name |> Option.value ~default:decorators
+let original_decorators_from_preprocessed_signature ~define_name ~decorators =
+  DecoratedCallableToOriginalDecorators.get define_name |> Option.value ~default:decorators
 
 
 (* Pysa doesn't care about metadata like `unbound_names`. So, strip them. *)

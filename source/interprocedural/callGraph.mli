@@ -33,30 +33,6 @@ module ReturnType : sig
   val to_json : t -> Yojson.Safe.t
 end
 
-(** Whether a method is an instance method, or a class method, or a static method. *)
-module MethodKind : sig
-  module SharedMemory : sig
-    type t
-
-    module ReadOnly : sig
-      type t
-    end
-
-    val from_targets
-      :  scheduler:Scheduler.t ->
-      scheduler_policy:Scheduler.Policy.t ->
-      callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
-      Target.t list ->
-      t
-
-    val empty : unit -> t
-
-    val read_only : t -> ReadOnly.t
-
-    val cleanup : t -> unit
-  end
-end
-
 (** A specific target of a given call, with extra information. *)
 module CallTarget : sig
   type t = {
@@ -358,7 +334,7 @@ end
 (* Exposed for rare use cases, such as resolving the callees of decorators. *)
 val resolve_callees_from_type_external
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
-  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   return_type:Type.t lazy_t ->
   ?dunder_call:bool ->
@@ -454,7 +430,7 @@ module CallableToDecoratorsMap : sig
     (* We assume `DecoratorPreprocessing.setup_preprocessing` is called before since we use its
        shared memory here. *)
     val create
-      :  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+      :  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
       scheduler:Scheduler.t ->
       scheduler_policy:Scheduler.Policy.t ->
       Target.t list ->
@@ -476,8 +452,7 @@ val call_graph_of_define
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
@@ -496,8 +471,7 @@ val call_graph_of_callable
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   callable:Target.t ->
   DefineCallGraph.t
 
@@ -518,7 +492,7 @@ module HigherOrderCallGraph : sig
   val save_to_directory
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     get_call_graph:(Target.t -> t option) ->
     json_kind:NewlineDelimitedJson.Kind.t ->
@@ -532,11 +506,14 @@ module HigherOrderCallGraph : sig
     val empty : t
 
     val initialize_from_roots
-      :  method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
+      :  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
       (TaintAccessPath.Root.t * Target.t) list ->
       t
 
-    val initialize_from_callable : method_kinds:MethodKind.SharedMemory.ReadOnly.t -> Target.t -> t
+    val initialize_from_callable
+      :  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+      Target.t ->
+      t
   end
 end
 
@@ -545,7 +522,7 @@ val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
 val higher_order_call_graph_of_define
   :  define_call_graph:DefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   callable:Target.t option ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
@@ -580,8 +557,7 @@ module DecoratorResolution : sig
     :  ?debug:bool ->
     pyre_in_context:PyrePysaEnvironment.InContext.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     Target.t ->
     t
@@ -597,16 +573,15 @@ module DecoratorResolution : sig
       scheduler:Scheduler.t ->
       scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
-      method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
-      callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+      callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
       decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
       Target.t list ->
       t
 
     val register_decorator_defines
       :  decorator_resolution:t ->
-      Target.DefinesSharedMemory.t ->
-      Target.DefinesSharedMemory.t
+      Target.CallablesSharedMemory.t ->
+      Target.CallablesSharedMemory.t
 
     val decorated_targets : t -> Target.t list
   end
@@ -670,15 +645,14 @@ module SharedMemory : sig
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
+    callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     decorator_resolution:DecoratorResolution.Results.t ->
-    method_kinds:MethodKind.SharedMemory.ReadOnly.t ->
     skip_analysis_targets:Target.Set.t ->
     definitions:Target.t list ->
-    callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
     create_dependency_for:AllTargetsUseCase.t ->
     call_graphs
 end

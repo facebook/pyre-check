@@ -422,7 +422,7 @@ module CallableDecorator : sig
 
   val create
     :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Ast.Statement.Decorator.t ->
     t
 
@@ -438,8 +438,7 @@ module Modelable : sig
 
   val create_callable
     :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
-    callables_to_definitions_map:Interprocedural.Target.DefinesSharedMemory.ReadOnly.t ->
-    method_kinds:Interprocedural.CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
+    callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     t
 
@@ -457,15 +456,17 @@ module Modelable : sig
 
   val name : t -> Ast.Reference.t
 
-  val define : t -> Ast.Statement.Define.t
-
   val type_annotation : t -> Ast.Expression.t option
 
   val return_annotation : t -> Ast.Expression.t option
 
   val parameters : t -> Ast.Expression.Parameter.t list
 
-  val decorators : t -> CallableDecorator.t list
+  val decorator_expressions_after_inlining : t -> Ast.Expression.t list
+
+  val resolved_original_decorators : t -> CallableDecorator.t list
+
+  val signature : t -> Interprocedural.Target.CallablesSharedMemory.Signature.t
 
   val class_name : t -> string option
 

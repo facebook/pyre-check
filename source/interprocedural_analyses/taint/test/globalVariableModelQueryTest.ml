@@ -80,7 +80,6 @@ let test_find_globals =
         (List.exists uninteresting_globals_prefix ~f:(fun exclude_prefix ->
              Reference.is_prefix ~prefix:exclude_prefix name))
     in
-    let method_kinds = CallGraph.MethodKind.SharedMemory.empty () in
     let add_type_annotation name =
       {
         VariableWithType.name;
@@ -103,7 +102,6 @@ let test_find_globals =
           { VariableWithType.name = reference; type_annotation = annotation >>| Type.expression })
         expected
     in
-    CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
     assert_equal
       ~cmp:(List.equal VariableWithType.location_insensitive_equal)
       ~printer:[%show: VariableWithType.t list]

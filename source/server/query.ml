@@ -738,7 +738,7 @@ let rec process_request_exn
             ()
         in
         let callables_to_definitions_map =
-          Interprocedural.Target.DefinesSharedMemory.from_callables
+          Interprocedural.Target.CallablesSharedMemory.from_callables
             ~scheduler
             ~scheduler_policy:
               (Scheduler.Policy.fixed_chunk_count
@@ -752,33 +752,13 @@ let rec process_request_exn
         Taint.StepLogger.finish step_logger;
         callables_to_definitions_map
       in
-      let method_kinds =
-        let step_logger =
-          Taint.StepLogger.start
-            ~command:"query"
-            ~start_message:"Computing method kinds"
-            ~end_message:"Method kinds computed"
-            ()
-        in
-        let method_kinds =
-          Interprocedural.CallGraph.MethodKind.SharedMemory.from_targets
-            ~scheduler
-            ~scheduler_policy:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy
-            ~callables_to_definitions_map:
-              (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-            (Interprocedural.FetchCallables.get ~definitions:true ~stubs:true initial_callables)
-        in
-        Taint.StepLogger.finish step_logger;
-        method_kinds
-      in
       Taint.ModelQueryExecution.generate_models_from_queries
         ~pyre_api
         ~scheduler
         ~scheduler_policies:Configuration.SchedulerPolicies.empty
         ~class_hierarchy_graph
         ~callables_to_definitions_map:
-          (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-        ~method_kinds:(Interprocedural.CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~source_sink_filter:None
         ~verbose:false
         ~error_on_unexpected_models:true

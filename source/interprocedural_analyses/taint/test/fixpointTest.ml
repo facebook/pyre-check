@@ -61,7 +61,7 @@ let assert_fixpoint
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let callables_to_definitions_map =
-    Interprocedural.Target.DefinesSharedMemory.from_callables
+    Interprocedural.Target.CallablesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -84,7 +84,7 @@ let assert_fixpoint
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           decorator_inlined = false;
           callables_to_definitions_map =
-            Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map;
+            Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
         }
       ~callables_to_analyze
       ~max_iterations:100

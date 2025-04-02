@@ -38,18 +38,10 @@ let assert_taint ~context source expected =
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.DefinesSharedMemory.from_callables
+    Interprocedural.Target.CallablesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
-      definitions_and_stubs
-  in
-  let method_kinds =
-    CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler
-      ~scheduler_policy
-      ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions_and_stubs
   in
   let analyze_and_store_in_order models define =
@@ -72,9 +64,8 @@ let assert_taint ~context source expected =
         ~decorators:
           (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
           |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
-        ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
         ~callables_to_definitions_map:
-          (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+          (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~qualifier
         ~define:(Ast.Node.value define)
     in
@@ -107,7 +98,7 @@ let assert_taint ~context source expected =
   let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
   let get_model = Registry.get models in
   let get_errors _ = [] in
-  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
+  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
   List.iter
     ~f:
       (check_expectation

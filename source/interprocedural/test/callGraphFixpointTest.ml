@@ -50,7 +50,7 @@ let assert_higher_order_call_graph_fixpoint
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.DefinesSharedMemory.from_callables
+    Interprocedural.Target.CallablesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -59,18 +59,10 @@ let assert_higher_order_call_graph_fixpoint
   let decorators =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
-  in
-  let method_kinds =
-    CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler
-      ~scheduler_policy
-      ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-      definitions_and_stubs
   in
   let decorator_resolution =
     CallGraph.DecoratorResolution.Results.resolve_batch_exn
@@ -79,10 +71,9 @@ let assert_higher_order_call_graph_fixpoint
       ~scheduler
       ~scheduler_policy
       ~override_graph:override_graph_shared_memory
-      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~callables_to_definitions_map:
-        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
@@ -96,11 +87,10 @@ let assert_higher_order_call_graph_fixpoint
       ~attribute_targets:Target.Set.empty
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~decorator_resolution
-      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~skip_analysis_targets
       ~definitions
       ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
   let dependency_graph =
@@ -126,7 +116,6 @@ let assert_higher_order_call_graph_fixpoint
       ~decorator_resolution
       ~decorators:
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
-      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~callables_to_definitions_map
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
@@ -155,7 +144,7 @@ let assert_higher_order_call_graph_fixpoint
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
   SharedMemory.cleanup define_call_graphs;
   CallGraphFixpoint.cleanup ~keep_models:false fixpoint_state.CallGraphFixpoint.fixpoint;
-  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
+  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
   ()
 
 

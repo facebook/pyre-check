@@ -19,14 +19,13 @@ val compute
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
   pyre_api:CallGraph.PyrePysaEnvironment.ReadOnly.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.t ->
   call_graph:CallGraph.SharedMemory.call_graphs ->
   dependency_graph:DependencyGraph.whole_program_dependency_graph ->
   override_graph_shared_memory:OverrideGraph.SharedMemory.t ->
   skip_analysis_targets:Target.Set.t ->
   decorator_resolution:CallGraph.DecoratorResolution.Results.t ->
   decorators:CallGraph.CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
-  method_kinds:CallGraph.MethodKind.SharedMemory.ReadOnly.t ->
-  callables_to_definitions_map:Target.DefinesSharedMemory.t ->
   t
 
 val analyzed_callables : fixpoint -> Target.t list

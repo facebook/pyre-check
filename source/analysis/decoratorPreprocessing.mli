@@ -40,7 +40,10 @@ val get_configuration : unit -> Configuration.t option
 
 val original_name_from_inlined_name : Ast.Reference.t -> Ast.Reference.t option
 
-val original_decorators_from_preprocessed_signature : Define.Signature.t -> Expression.t list
+val original_decorators_from_preprocessed_signature
+  :  define_name:Reference.t ->
+  decorators:Expression.t list ->
+  Expression.t list
 
 (* This is called automatically by the AST environment during preprocessing. *)
 val preprocess_source : get_source:(Reference.t -> Source.t option) -> Source.t -> Source.t

@@ -4458,13 +4458,13 @@ let create_callable_model_from_annotations
   let open Core.Result in
   let open ModelVerifier in
   let target = Modelable.target modelable in
-  let define = Modelable.define modelable in
+  let decorators = Modelable.decorator_expressions_after_inlining modelable in
   resolve_global_callable
     ~path:None
     ~location:Location.any
     ~pyre_api
     ~verify_decorators:false
-    ~decorators:define.signature.decorators
+    ~decorators
     target
   >>| (function
         | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))

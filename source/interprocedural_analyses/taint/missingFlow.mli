@@ -17,7 +17,7 @@ val unknown_callee_model : Target.t -> Model.t
 val add_obscure_models
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  callables_to_definitions_map:Target.DefinesSharedMemory.ReadOnly.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   stubs:Target.HashSet.t ->
   initial_models:SharedModels.t ->
   SharedModels.t

@@ -785,7 +785,7 @@ module CallableDecorator = struct
     callees: CallGraph.CallCallees.t Lazy.t option;
   }
 
-  let create ~pyre_api ~method_kinds statement =
+  let create ~pyre_api ~callables_to_definitions_map statement =
     let get_callees statement =
       let ({ Node.value = expression; _ } as decorator_expression) =
         Statement.Decorator.to_expression statement
@@ -805,7 +805,7 @@ module CallableDecorator = struct
       in
       Interprocedural.CallGraph.resolve_callees_from_type_external
         ~pyre_in_context:(Analysis.PyrePysaEnvironment.InContext.create_at_global_scope pyre_api)
-        ~method_kinds
+        ~callables_to_definitions_map
         ~override_graph:None
         ~return_type
         callee
@@ -826,7 +826,7 @@ module Modelable = struct
   type t =
     | Callable of {
         target: Target.t;
-        define: Statement.Define.t Lazy.t;
+        signature: Target.CallablesSharedMemory.Signature.t Lazy.t;
         decorators: CallableDecorator.t list Lazy.t;
       }
     | Attribute of {
@@ -838,11 +838,13 @@ module Modelable = struct
         type_annotation: Expression.t option Lazy.t;
       }
 
-  let create_callable ~pyre_api ~callables_to_definitions_map ~method_kinds target =
-    let define =
+  let create_callable ~pyre_api ~callables_to_definitions_map target =
+    let signature =
       lazy
-        (match Target.DefinesSharedMemory.ReadOnly.get callables_to_definitions_map target with
-        | Some { define = { Node.value; _ }; _ } -> value
+        (match
+           Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map target
+         with
+        | Some signature -> signature
         | None ->
             Format.asprintf
               "unknown target `%a` in `Modelable.create_callable`"
@@ -852,15 +854,16 @@ module Modelable = struct
     in
     let decorators =
       lazy
-        (define
+        (signature
         |> Lazy.force
-        |> (function
-             | { Statement.Define.signature; _ } -> signature)
-        |> PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
+        |> (fun { Target.CallablesSharedMemory.Signature.define_name; decorators; _ } ->
+             PyrePysaLogic.DecoratorPreprocessing.original_decorators_from_preprocessed_signature
+               ~define_name
+               ~decorators)
         |> List.filter_map ~f:Statement.Decorator.from_expression
-        |> List.map ~f:(CallableDecorator.create ~pyre_api ~method_kinds))
+        |> List.map ~f:(CallableDecorator.create ~pyre_api ~callables_to_definitions_map))
     in
-    Callable { target; define; decorators }
+    Callable { target; signature; decorators }
 
 
   let create_attribute ~pyre_api target =
@@ -925,11 +928,6 @@ module Modelable = struct
         name
 
 
-  let define = function
-    | Callable { define; _ } -> Lazy.force define
-    | _ -> failwith "unexpected use of define"
-
-
   let type_annotation = function
     | Callable _ -> failwith "unexpected use of type_annotation on a callable"
     | Attribute { type_annotation; _ }
@@ -938,8 +936,10 @@ module Modelable = struct
 
 
   let return_annotation = function
-    | Callable { define; _ } ->
-        let { Statement.Define.signature = { return_annotation; _ }; _ } = Lazy.force define in
+    | Callable { signature; _ } ->
+        let { Target.CallablesSharedMemory.Signature.return_annotation; _ } =
+          Lazy.force signature
+        in
         return_annotation
     | Attribute _
     | Global _ ->
@@ -947,19 +947,35 @@ module Modelable = struct
 
 
   let parameters = function
-    | Callable { define; _ } ->
-        let { Statement.Define.signature = { parameters; _ }; _ } = Lazy.force define in
+    | Callable { signature; _ } ->
+        let { Target.CallablesSharedMemory.Signature.parameters; _ } = Lazy.force signature in
         parameters
     | Attribute _
     | Global _ ->
         failwith "unexpected use of any_parameter on an attribute or global"
 
 
-  let decorators = function
+  let decorator_expressions_after_inlining = function
+    | Callable { signature; _ } ->
+        let { Target.CallablesSharedMemory.Signature.decorators; _ } = Lazy.force signature in
+        decorators
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of decorator_expression on an attribute or global"
+
+
+  let resolved_original_decorators = function
     | Callable { decorators; _ } -> Lazy.force decorators
     | Attribute _
     | Global _ ->
-        failwith "unexpected use of Decorator on an attribute or global"
+        failwith "unexpected use of resolved_decorators on an attribute or global"
+
+
+  let signature = function
+    | Callable { signature; _ } -> Lazy.force signature
+    | Attribute _
+    | Global _ ->
+        failwith "unexpected use of signature on an attribute or global"
 
 
   let class_name = function

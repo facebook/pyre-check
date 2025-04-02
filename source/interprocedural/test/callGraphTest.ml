@@ -36,24 +36,16 @@ let compute_define_call_graph
     Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true
   in
   let callables_to_definitions_map =
-    Interprocedural.Target.DefinesSharedMemory.from_callables
+    Interprocedural.Target.CallablesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
       definitions_and_stubs
   in
-  let method_kinds =
-    CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler
-      ~scheduler_policy
-      ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
-      definitions_and_stubs
-  in
   let decorators =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
       definitions
@@ -67,14 +59,13 @@ let compute_define_call_graph
       ~attribute_targets:
         (object_targets |> List.map ~f:Target.from_regular |> Target.HashSet.of_list)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
-      ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
       ~callables_to_definitions_map:
-        (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~qualifier:module_name
       ~define
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
-  call_graph, callables_to_definitions_map, method_kinds
+  call_graph, callables_to_definitions_map
 
 
 let find_define_exn ~define_name ~module_name source =
@@ -106,7 +97,7 @@ let assert_call_graph_of_define
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let define = find_define_exn ~define_name ~module_name source in
-  let actual, callables_to_definitions_map, method_kinds =
+  let actual, callables_to_definitions_map =
     compute_define_call_graph
       ~maximum_target_depth
       ~define
@@ -116,8 +107,7 @@ let assert_call_graph_of_define
       ~configuration
       ~object_targets
   in
-  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
-  Target.DefinesSharedMemory.cleanup callables_to_definitions_map;
+  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp
     ~printer:DefineCallGraphForTest.show
@@ -157,7 +147,7 @@ let assert_higher_order_call_graph_of_define
   let maximum_parameterized_targets_at_call_site =
     Some Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site
   in
-  let define_call_graph, callables_to_definitions_map, method_kinds =
+  let define_call_graph, callables_to_definitions_map =
     compute_define_call_graph
       ~maximum_target_depth
       ~define
@@ -172,7 +162,7 @@ let assert_higher_order_call_graph_of_define
       ~define_call_graph
       ~pyre_api
       ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~callable:None
       ~qualifier:module_name
       ~define
@@ -183,8 +173,7 @@ let assert_higher_order_call_graph_of_define
       ~maximum_parameterized_targets_at_call_site
     |> HigherOrderCallGraphForTest.from_actual
   in
-  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
-  Target.DefinesSharedMemory.cleanup callables_to_definitions_map;
+  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp
     ~printer:HigherOrderCallGraphForTest.show
@@ -7188,17 +7177,17 @@ let test_higher_order_call_graph_of_define =
                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
              ]
            ~initial_state:
-             (let method_kinds = CallGraph.MethodKind.SharedMemory.empty () in
+             (let callables_to_definitions_map = Target.CallablesSharedMemory.empty () in
               let initial_state =
                 CallGraph.HigherOrderCallGraph.State.initialize_from_roots
-                  ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
+                  ~callables_to_definitions_map:
+                    (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
                   [
                     ( create_positional_parameter 0 "g",
                       Target.Regular.Function { name = "test.bar"; kind = Normal }
                       |> Target.from_regular );
                   ]
               in
-              CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
               initial_state)
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -7850,7 +7839,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let callables_to_definitions_map =
-    Interprocedural.Target.DefinesSharedMemory.from_callables
+    Interprocedural.Target.CallablesSharedMemory.from_callables
       ~scheduler
       ~scheduler_policy
       ~pyre_api
@@ -7859,17 +7848,9 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let decorators =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~scheduler
       ~scheduler_policy
-      definitions
-  in
-  let method_kinds =
-    CallGraph.MethodKind.SharedMemory.from_targets
-      ~scheduler
-      ~scheduler_policy
-      ~callables_to_definitions_map:
-        (Interprocedural.Target.DefinesSharedMemory.read_only callables_to_definitions_map)
       definitions
   in
   let actual =
@@ -7882,9 +7863,8 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                 ~pyre_in_context
                 ~override_graph:
                   (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
-                ~method_kinds:(CallGraph.MethodKind.SharedMemory.read_only method_kinds)
                 ~callables_to_definitions_map:
-                  (Target.DefinesSharedMemory.read_only callables_to_definitions_map)
+                  (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
                 ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
            |> TestResult.from_actual
            |> fun result -> callable, result)
@@ -7897,7 +7877,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
     |> Target.Map.of_alist_exn
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
-  CallGraph.MethodKind.SharedMemory.cleanup method_kinds;
+  Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
   assert_equal
     ~cmp:(Target.Map.equal TestResult.equal)
     ~printer:(Format.asprintf "%a" (Target.Map.pp TestResult.pp))

@@ -626,72 +626,219 @@ module SharedMemoryKey = struct
   let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
 end
 
-module DefinesSharedMemory = struct
-  module Define = struct
+(** Whether a method is an instance method, or a class method, or a static method. *)
+module MethodKind = struct
+  type t =
+    | Static
+    | Class
+    | Instance
+end
+
+let class_method_decorators = ["classmethod"; "abstractclassmethod"; "abc.abstractclassmethod"]
+
+let static_method_decorators = ["staticmethod"; "abstractstaticmethod"; "abc.abstractstaticmethod"]
+
+module CallablesSharedMemory = struct
+  type target = t
+
+  module Signature = struct
+    type t = {
+      qualifier: Reference.t;
+      location: Location.t;
+      define_name: Reference.t;
+      parameters: Expression.Parameter.t list;
+      return_annotation: Expression.t option;
+      decorators: Expression.t list;
+      captures: Define.Capture.t list;
+      method_kind: MethodKind.t option;
+      is_stub: bool;
+    }
+
+    let from_define ~target ~qualifier define =
+      let method_kind =
+        match get_regular target with
+        | Regular.Method { method_name = "__new__"; _ } -> Some MethodKind.Static
+        | Regular.Method _ ->
+            let define = Node.value define in
+            if List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define)
+            then
+              Some MethodKind.Class
+            else if
+              List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define)
+            then
+              Some MethodKind.Static
+            else
+              Some MethodKind.Instance
+        | _ -> None
+      in
+      {
+        qualifier;
+        location = define.Node.location;
+        define_name = define.Node.value.signature.name;
+        parameters = define.Node.value.signature.parameters;
+        return_annotation = define.Node.value.signature.return_annotation;
+        decorators = define.Node.value.signature.decorators;
+        captures = define.Node.value.captures;
+        method_kind;
+        is_stub = Define.is_stub define.Node.value;
+      }
+  end
+
+  module DefineAndQualifier = struct
     type t = {
       qualifier: Reference.t;
       define: Define.t Node.t;
     }
   end
 
-  module T =
+  module DefinesSharedMemory =
     Hack_parallel.Std.SharedMemory.FirstClassWithKeys.Make
       (SharedMemoryKey)
       (struct
-        type t = Define.t
+        type t = DefineAndQualifier.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
-        let description = "qualifiers and defines"
+        let description = "callable defines"
       end)
 
-  type t = T.t
+  module SignaturesSharedMemory =
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+      (SharedMemoryKey)
+      (struct
+        type t = Signature.t
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "callable signatures"
+      end)
+
+  type t = {
+    defines: DefinesSharedMemory.t;
+    signatures: SignaturesSharedMemory.t;
+  }
 
   module ReadOnly = struct
-    type t = T.ReadOnly.t
+    type t = {
+      defines: DefinesSharedMemory.ReadOnly.t;
+      signatures: SignaturesSharedMemory.t;
+    }
 
-    let get = T.ReadOnly.get ~cache:true
+    let get_define { defines; _ } = DefinesSharedMemory.ReadOnly.get ~cache:true defines
 
-    let get_location handle target =
+    let get_location { signatures; _ } target =
       target
       |> strip_parameters
-      |> get handle
-      >>| fun { Define.qualifier; define = { Node.location; _ } } ->
+      |> SignaturesSharedMemory.get signatures
+      >>| fun { Signature.qualifier; location; _ } ->
       Location.with_module ~module_reference:qualifier location
+
+
+    let get_signature { signatures; _ } target = SignaturesSharedMemory.get signatures target
+
+    let get_qualifier { signatures; _ } target =
+      match SignaturesSharedMemory.get signatures target with
+      | Some { Signature.qualifier; _ } -> Some qualifier
+      | None -> None
+
+
+    (* Return `is_class_method` and `is_static_method`. *)
+    let get_method_kind { signatures; _ } target =
+      (* For `Override`, we just check its corresponding method. *)
+      let method_target = target |> get_regular |> Regular.override_to_method in
+      let method_kind =
+        method_target
+        |> from_regular
+        |> SignaturesSharedMemory.get signatures
+        >>= fun { Signature.method_kind; _ } -> method_kind
+      in
+      match method_kind, method_target with
+      | _, Regular.Method { method_name = "__new__"; _ } -> false, true
+      | Some Class, _ -> true, false
+      | Some Static, _ -> false, true
+      | Some Instance, _ -> false, false
+      | None, _ -> false, false
+
+
+    let is_stub { signatures; _ } target =
+      match SignaturesSharedMemory.get signatures target with
+      | Some { Signature.is_stub; _ } -> Some is_stub
+      | None -> None
+
+
+    let get_captures { signatures; _ } target =
+      match SignaturesSharedMemory.get signatures target with
+      | Some { Signature.captures; _ } -> Some captures
+      | None -> None
+
+
+    let mem { signatures; _ } target = SignaturesSharedMemory.mem signatures target
   end
 
-  let read_only = T.read_only
+  let read_only { defines; signatures } =
+    { ReadOnly.defines = DefinesSharedMemory.read_only defines; signatures }
 
-  let empty = T.create
 
-  let cleanup = T.cleanup ~clean_old:true
+  let empty () =
+    { defines = DefinesSharedMemory.create (); signatures = SignaturesSharedMemory.create () }
+
+
+  let cleanup { defines; signatures } =
+    let keys = SignaturesSharedMemory.KeySet.of_list (DefinesSharedMemory.keys defines) in
+    let () = DefinesSharedMemory.cleanup ~clean_old:true defines in
+    let () = SignaturesSharedMemory.remove_old_batch signatures keys in
+    let () = SignaturesSharedMemory.remove_batch signatures keys in
+    ()
+
 
   let from_callables ~scheduler ~scheduler_policy ~pyre_api callables =
-    let shared_memory = T.create () in
-    let shared_memory_add_only = T.add_only shared_memory in
-    let empty_shared_memory = T.AddOnly.create_empty shared_memory_add_only in
+    let define_shared_memory = DefinesSharedMemory.create () in
+    let signature_shared_memory = SignaturesSharedMemory.create () in
+    let define_shared_memory_add_only = DefinesSharedMemory.add_only define_shared_memory in
+    let define_empty_shared_memory =
+      DefinesSharedMemory.AddOnly.create_empty define_shared_memory_add_only
+    in
     let map =
-      List.fold ~init:empty_shared_memory ~f:(fun shared_memory target ->
+      List.fold ~init:define_empty_shared_memory ~f:(fun define_shared_memory target ->
           match get_module_and_definition ~pyre_api target with
           | Some (qualifier, define) ->
-              T.AddOnly.add shared_memory target { Define.qualifier; define }
-          | None -> shared_memory)
+              SignaturesSharedMemory.add
+                signature_shared_memory
+                target
+                (Signature.from_define ~target ~qualifier define);
+              DefinesSharedMemory.AddOnly.add
+                define_shared_memory
+                target
+                { DefineAndQualifier.qualifier; define }
+          | None -> define_shared_memory)
     in
-    let shared_memory_add_only =
+    let define_shared_memory_add_only =
       Scheduler.map_reduce
         scheduler
         ~policy:scheduler_policy
-        ~initial:shared_memory_add_only
+        ~initial:define_shared_memory_add_only
         ~map
         ~reduce:(fun left right ->
-          T.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
+          DefinesSharedMemory.AddOnly.merge_same_handle_disjoint_keys ~smaller:left ~larger:right)
         ~inputs:callables
         ()
     in
-    T.from_add_only shared_memory_add_only
+    {
+      defines = DefinesSharedMemory.from_add_only define_shared_memory_add_only;
+      signatures = signature_shared_memory;
+    }
 
 
-  let add_alist_sequential = T.add_alist_sequential
+  let add_alist_sequential { defines; signatures } entries =
+    let defines = DefinesSharedMemory.add_alist_sequential defines entries in
+    let () =
+      List.iter entries ~f:(fun (target, { DefineAndQualifier.qualifier; define }) ->
+          SignaturesSharedMemory.add
+            signatures
+            target
+            (Signature.from_define ~target ~qualifier define))
+    in
+    { defines; signatures }
 end
 
 (* Represent a hashset of targets inside the shared memory *)

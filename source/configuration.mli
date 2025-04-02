@@ -237,7 +237,7 @@ module ScheduleIdentifier : sig
     | TaintKindCoverage
     | DecoratorResolution
     | CallableToDecoratorsMap
-    | DefinesSharedMemory
+    | CallablesSharedMemory
   [@@deriving sexp, compare, hash]
 
   val of_string : string -> t option
