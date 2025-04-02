@@ -34,6 +34,7 @@ use pyre2::NotifyWatcher;
 #[derive(Debug, Parser)]
 #[command(name = "pyrefly")]
 #[command(about = "Next generation of Pyre type checker", long_about = None)]
+#[command(version)]
 struct Args {
     /// Enable verbose logging.
     #[clap(long = "verbose", short = 'v', global = true, env = clap_env("VERBOSE"))]
