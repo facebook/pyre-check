@@ -75,19 +75,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 types.push(t);
                 break;
             }
-            // If we reach the last value, we should always keep it.
-            if i != last_index && should_discard(&t) {
-                continue;
-            }
-            match t {
-                Type::Union(options) => {
-                    for option in options {
-                        if !should_discard(&option) {
-                            types.push(option);
-                        }
-                    }
+            for t in t.into_unions() {
+                // If we reach the last value, we should always keep it.
+                if i == last_index || !should_discard(&t) {
+                    types.push(t);
                 }
-                _ => types.push(t),
             }
         }
         self.unions(types)

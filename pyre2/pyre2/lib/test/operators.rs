@@ -194,13 +194,12 @@ def g(x: bool, y: Literal['a'], z: Literal['b']):
 );
 
 testcase!(
-    bug = "Show have Literal[False] as a possible output",
     test_boolean_union,
     r#"
 from typing import assert_type, Literal
 
 def f(x: int, y: str | Literal[False]):
-    assert_type(x or y, int | str | Literal[False]) # E: assert_type(int | str, Literal[False] | int | str) failed
+    assert_type(x or y, int | str | Literal[False])
 "#,
 );
 

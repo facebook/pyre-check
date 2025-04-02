@@ -1049,6 +1049,13 @@ impl Type {
         }
     }
 
+    pub fn into_unions(self) -> Vec<Type> {
+        match self {
+            Type::Union(types) => types,
+            _ => vec![self],
+        }
+    }
+
     // The result of calling bool() on a value of this type if we can get a definitive answer, None otherwise.
     pub fn as_bool(&self) -> Option<bool> {
         match self {
