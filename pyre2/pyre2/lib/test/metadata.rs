@@ -111,6 +111,19 @@ assert_type(Y1(), int)
 );
 
 testcase!(
+    test_platform,
+    r#"
+from typing import assert_type
+import sys
+if sys.platform == "linux":
+    X = str
+else:
+    X = int
+assert_type(X(), str)
+"#,
+);
+
+testcase!(
     test_python_3_13,
     TestEnv::new_with_version(PythonVersion::new(3, 13, 0)),
     "",
