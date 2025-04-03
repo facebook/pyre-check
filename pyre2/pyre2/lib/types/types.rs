@@ -105,7 +105,7 @@ impl TParam {
         self.quantified.default()
     }
 
-    pub fn restriction(&self) -> Restriction {
+    pub fn restriction(&self) -> &Restriction {
         self.quantified.restriction()
     }
 }

@@ -656,7 +656,7 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                 }
             }
             (Type::Quantified(q), t2) => match q.restriction() {
-                Restriction::Bound(bound) => self.is_subset_eq(&bound, t2),
+                Restriction::Bound(bound) => self.is_subset_eq(bound, t2),
                 Restriction::Constraints(constraints) => constraints
                     .iter()
                     .all(|constraint| self.is_subset_eq(constraint, t2)),

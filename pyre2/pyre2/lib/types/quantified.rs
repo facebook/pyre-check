@@ -149,8 +149,8 @@ impl Quantified {
         }
     }
 
-    pub fn restriction(&self) -> Restriction {
-        self.info.restriction.clone()
+    pub fn restriction(&self) -> &Restriction {
+        &self.info.restriction
     }
 
     pub fn is_param_spec(&self) -> bool {

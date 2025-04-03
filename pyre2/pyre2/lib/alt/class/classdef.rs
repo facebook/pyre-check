@@ -284,7 +284,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let defaults = tparams.iter().skip(param_idx).map(|x| {
                     if let Some(default) = x.default() {
                         default.clone()
-                    } else if let Restriction::Bound(bound) = &x.restriction() {
+                    } else if let Restriction::Bound(bound) = x.restriction() {
                         bound.clone()
                     } else {
                         match x.quantified.kind() {
