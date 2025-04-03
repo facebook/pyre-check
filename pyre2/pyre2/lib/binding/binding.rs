@@ -812,9 +812,9 @@ impl DisplayWith<Bindings> for Binding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
         let m = ctx.module_info();
         match self {
-            Self::Expr(None, x) => write!(f, "{}", m.display(x)),
+            Self::Expr(None, x) => write!(f, "expr {}", m.display(x)),
             Self::Expr(Some(k), x) => {
-                write!(f, "{}: {}", ctx.display(*k), m.display(x))
+                write!(f, "expr {}: {}", ctx.display(*k), m.display(x))
             }
             Self::TypeVar(_, name, x) => {
                 write!(f, "typevar {} = {}", name, m.display(x))
