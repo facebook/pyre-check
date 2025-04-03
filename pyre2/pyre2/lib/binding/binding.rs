@@ -725,8 +725,12 @@ pub enum Binding {
     StrType,
     /// A type parameter.
     TypeParameter(Box<TypeParameter>),
-    /// The type of a function. Stores an optional reference to the predecessor of this function.
-    /// If the function is defined in a class scope, stores a reference to the class metadata.
+    /// The type of a function. The fields are:
+    /// - A reference to the KeyFunction that point to the def
+    /// - An optional reference to any previous function in the same flow by the same name;
+    ///   this is needed to fold `@overload` decorated defs into a single type.
+    /// - An optional reference to class metadata, which will be non-None when the function
+    ///   is defined within a class scope.
     Function(
         Idx<KeyFunction>,
         Option<Idx<Key>>,
