@@ -17,35 +17,31 @@ export default function WhyPyrefly(): React.ReactElement {
       {/* Short-term benefits */}
       <WhyPyreflyGridItem
         title="Scale with Confidence"
-        content="Lightning fast, Pyrefly can process 1.8 million lines of code in a second!"
+        content=" Typecheck 1.8 million lines of code per second"
       />
       <WhyPyreflyGridItem
         title="Developer Delight"
-        content=" Write better code, faster, and with confidence using your favorite
-          editor supported by the Pyrefly IDE."
+        content=" Catch errors as you write code, and get instant feedback right in your favorite editor"
       />
       <WhyPyreflyGridItem
         title="Easy Onboarding"
-        content=" Seamless transition from existing typechecker configurations to
-          Pyrefly to get started!"
+        content=" Start type checking your code in minutes"
       />
 
       {/* Long-term benefits */}
       <WhyPyreflyGridItem
         title="Codebase clarity"
         content="Improve code readability and maintainability with precise type
-          annotations."
+          annotations"
       />
       <WhyPyreflyGridItem
         title="Tooling for Improving Types"
-        content="Use the tools packaged with Pyrefly to elevate your typing coverage
-          from 0 to 100."
+        content="Comes packaged with tools to elevate your type coverage
+          from 0 to 100"
       />
       <WhyPyreflyGridItem
         title="Fully featured"
-        content="Follows the typing standards introduced in PEPs 484, 526, 612, along
-          with being a typechecker that is being actively developed on and
-          constantly improving."
+        content=" Actively under development. Follows the typing standards introduced in PEPs 484, 526, 612."
       />
     </div>
   );
