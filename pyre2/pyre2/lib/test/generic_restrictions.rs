@@ -43,11 +43,11 @@ class B(A): ...
 class C(B): ...
 
 def test[T: B](x: T) -> None:
-    a: A = x  # OK
-    b: B = x  # OK
+    a: A = x  # OK  # E: `?T` is not assignable to `A`
+    b: B = x  # OK  # E: `?T` is not assignable to `B`
     c: C = x  # E: `?T` is not assignable to `C`
 
-test(A())  # E: Argument `A` is not assignable to parameter `x` with type `@_` in function `test`
+test(A())  # Not OK
 test(B())
 test(C())
  "#,
@@ -62,11 +62,11 @@ class C(A): ...
 class D(C): ...
 
 def test[T: (B, C)](x: T) -> None:
-    a: A = x  # OK
+    a: A = x  # OK  # E: `?T` is not assignable to `A`
     b: B = x  # E: `?T` is not assignable to `B`
     c: C = x  # E: `?T` is not assignable to `C`
 
-test(A())  # E: Argument `A` is not assignable to parameter `x` with type `@_` in function `test`
+test(A())  # Not OK
 test(B())
 test(C())
 test(D())

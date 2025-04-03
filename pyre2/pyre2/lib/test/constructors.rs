@@ -64,6 +64,7 @@ class A[T]:
 );
 
 testcase!(
+    bug = "int should not be assignable to type var with upper bound = int; bounded type var should be assignable to itself, but it is not because the T in x: T is different from the default T used to parameterize self",
     test_bounded_self_in_generic_class,
     r#"
 from typing import reveal_type
