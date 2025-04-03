@@ -11,7 +11,7 @@ import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 import clsx from 'clsx';
 import featureDecorationStyles from './featureDecorationsStyles.module.css';
-
+import typography from './typography';
 interface LandingPageSectionProps {
   title: string;
   child: React.ReactNode;
@@ -69,6 +69,7 @@ export default function LandingPageSection({
         <h2
           {...stylex.props(
             styles.sectionTitle,
+            typography.h2,
             hasBrownBackground ? { color: 'var(--color-text)' } : null,
           )}>
           {title}
@@ -89,7 +90,6 @@ const styles = stylex.create({
     paddingBottom: 30,
   },
   sectionTitle: {
-    fontSize: '3rem',
     marginTop: '2rem',
   },
 });

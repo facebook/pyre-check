@@ -10,15 +10,16 @@
 import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 import Firefly from './firefly';
+import typography from './typography';
 
 export default function LandingPageHeader(): React.ReactElement {
     return (
         <header {...stylex.props(styles.featureHero)}>
             <div className="container">
-                <h1 {...stylex.props(styles.title)}>
+                <h1 {...stylex.props(styles.title, typography.h1)}>
                     pyrefly<span>.</span>
                 </h1>
-                <p {...stylex.props(styles.subtitle)}>
+                <p {...stylex.props(styles.subtitle, typography.h3)}>
                     <span>
                         {' '}
                         <a
@@ -63,7 +64,6 @@ const styles = stylex.create({
         textAlign: 'center',
         marginBottom: '4rem',
         marginTop: '3rem',
-        fontSize: '7rem',
         '@media screen and (max-width: 346px)': {
             fontSize: '3.5rem',
         },
@@ -88,10 +88,8 @@ const styles = stylex.create({
         },
     },
     subtitle: {
-        fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: '1rem',
-        fontSize: '3.5rem',
         '@media screen and (max-width: 346px)': {
             fontSize: '1.5rem',
         },

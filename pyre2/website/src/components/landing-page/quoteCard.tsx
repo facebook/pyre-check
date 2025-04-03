@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
-
+import typography from './typography'
 interface QuoteCardProps {
   quote: string;
   author: string;
@@ -23,8 +23,8 @@ export default function QuoteCard({
 }: QuoteCardProps): React.ReactElement {
   return (
     <div {...stylex.props(styles.quoteCard)}>
-      <p {...stylex.props(styles.quoteText)}>{quote}</p>
-      <div {...stylex.props(styles.quoteAuthor)}>
+      <p {...stylex.props(styles.quoteText, typography.p)}>{quote}</p>
+      <div {...stylex.props(styles.quoteAuthor, typography.p)}>
         <strong>{author}</strong>
         <span>{project}</span>
       </div>
@@ -37,7 +37,6 @@ const styles = stylex.create({
     padding: '2rem',
   },
   quoteText: {
-    fontSize: '1.1rem',
     lineHeight: '1.6',
     marginBottom: '1.5rem',
     fontStyle: 'italic',
