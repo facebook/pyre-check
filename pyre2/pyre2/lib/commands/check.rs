@@ -27,6 +27,7 @@ use crate::clap_env;
 use crate::commands::suppress;
 use crate::commands::util::module_from_path;
 use crate::config::set_if_some;
+use crate::config::set_option_if_some;
 use crate::config::ConfigFile;
 use crate::config::ErrorConfig;
 use crate::config::ErrorConfigs;
@@ -229,7 +230,7 @@ impl Handles {
     fn get_or_register_loader(&mut self, config: &ConfigFile) -> LoaderId {
         let key = LoaderInputs {
             search_path: config.search_path.clone(),
-            site_package_path: config.site_package_path.clone(),
+            site_package_path: config.site_package_path().to_owned(),
         };
         if let Some(loader) = self.loader_factory.get_mut(&key) {
             loader.dupe()
@@ -380,10 +381,10 @@ impl Args {
     }
 
     fn override_config(&self, config: &mut ConfigFile) {
-        set_if_some(&mut config.python_platform, self.python_platform.as_ref());
-        set_if_some(&mut config.python_version, self.python_version.as_ref());
+        set_option_if_some(&mut config.python_platform, self.python_platform.as_ref());
+        set_option_if_some(&mut config.python_version, self.python_version.as_ref());
         set_if_some(&mut config.search_path, self.search_path.as_ref());
-        set_if_some(
+        set_option_if_some(
             &mut config.site_package_path,
             self.site_package_path.as_ref(),
         );
