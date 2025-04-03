@@ -17,6 +17,8 @@ import {
     type TypeCheckerValue,
 } from './PerformanceComparisonTypes';
 
+import PerformanceComparisonChartTimer from './PerformanceComparisonChartTimer';
+
 interface TypeCheckerData {
     typechecker: TypeCheckerValue;
     durationInSeconds: number;
@@ -59,7 +61,7 @@ export default function PerformanceComparisonChart({
                         />
                     </div>
                     <span {...stylex.props(styles.duration)}>
-                        <strong>{`${typechecker.durationInSeconds}s`}</strong>
+                        <PerformanceComparisonChartTimer targetSeconds={typechecker.durationInSeconds} />
                     </span>
                 </div>
             ))}
