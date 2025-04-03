@@ -48,7 +48,7 @@ export default function PerformanceComparisonChartSection(): React.ReactElement 
 const styles = stylex.create({
     body: {
         border: '1px solid',
-        borderRadius: '20px',
+        borderRadius: '4px',
         backgroundColor: 'var(--color-text)',
         marginVertical: '2rem',
         paddingVertical: '2rem',
