@@ -34,6 +34,7 @@ use crate::types::class::ClassType;
 use crate::types::class::TArgs;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Restriction;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::TParams;
 use crate::types::types::Type;
@@ -280,14 +281,19 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         ),
                     );
                 }
-                let defaults = tparams
-                    .iter()
-                    .skip(param_idx)
-                    .map(|x| match x.quantified.kind() {
-                        QuantifiedKind::TypeVarTuple => Type::any_tuple(),
-                        QuantifiedKind::TypeVar => Type::any_error(),
-                        QuantifiedKind::ParamSpec => Type::Ellipsis,
-                    });
+                let defaults = tparams.iter().skip(param_idx).map(|x| {
+                    if let Some(default) = &x.default {
+                        default.clone()
+                    } else if let Restriction::Bound(bound) = &x.restriction {
+                        bound.clone()
+                    } else {
+                        match x.quantified.kind() {
+                            QuantifiedKind::TypeVarTuple => Type::any_tuple(),
+                            QuantifiedKind::TypeVar => Type::any_error(),
+                            QuantifiedKind::ParamSpec => Type::Ellipsis,
+                        }
+                    }
+                });
                 checked_targs.extend(defaults);
                 break;
             }
@@ -333,9 +339,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     .map(|x| {
                         if let Some(default) = &x.default {
                             default.clone()
+                        } else if let Restriction::Bound(bound) = &x.restriction {
+                            bound.clone()
                         } else if range.is_some() {
                             Type::any_error()
                         } else {
+                            // TODO: use different defaults for ParamSpec/TypeVarTuple
                             Type::any_implicit()
                         }
                     })
