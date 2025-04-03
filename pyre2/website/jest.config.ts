@@ -5,9 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { Config } from 'jest';
+import type { Config } from '@jest/types';
+import { pathsToModuleNameMapper } from 'ts-jest';
+import { compilerOptions } from './tsconfig.json';
 
-const config: Config = {
+const config: Config.InitialOptions = {
+    // The root directory that Jest should scan for tests and modules
+    rootDir: '.',
     // The test environment to use (in this case, jsdom)
     testEnvironment: 'jsdom',
     // The file extensions to look for when searching for tests
@@ -16,13 +20,24 @@ const config: Config = {
     moduleFileExtensions: ['js', 'jsx', 'json', 'ts', 'tsx'],
     // The transform configuration
     transform: {
-        '^.+\\.jsx?': 'babel-jest',
-        '^.+\\.tsx?': ['ts-jest', {
+        '^.+\\.(js|jsx)$': 'babel-jest',
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
             tsconfig: 'tsconfig.json',
         }]
     },
     // Setup files for TypeScript tests
     preset: 'ts-jest',
+    // Module name mapper for imports
+    roots: ['<rootDir>'],
+    modulePaths: [compilerOptions.baseUrl], // <-- This will be set to 'baseUrl' value
+    moduleNameMapper: {
+        ...pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
+        '@theme/Layout': '<rootDir>/__mocks__/themeMock.js',
+        '\\.(css|less|sass|scss)$': '<rootDir>/__mocks__/stylexMock.js',
+        '@stylexjs/stylex': '<rootDir>/__mocks__/stylexMock.js',
+        '@docusaurus/useDocusaurusContext': '<rootDir>/__mocks__/docusaurusContextMock.js'
+    },
+    setupFilesAfterEnv: ['@testing-library/jest-dom'],
 };
 
 export default config;

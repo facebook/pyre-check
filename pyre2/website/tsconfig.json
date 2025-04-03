@@ -4,8 +4,11 @@
     "baseUrl": ".",
     "paths": {
       "@site/*": ["./*"]
-    }
+    },
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*", "libs/**/*", "docusaurus.config.ts", "jest.config.ts"],
+  "include": ["src/**/*", "libs/**/*", "docusaurus.config.ts", "jest.config.js", "__mocks__/**/*"],
   "exclude": ["node_modules", "build"]
 }
