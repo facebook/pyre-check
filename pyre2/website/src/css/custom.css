@@ -15,27 +15,6 @@
 
 /* You can override the default Infima variables here. */
 
-@font-face {
-  font-family: 'Source Serif Pro';
-  src: url('/fonts/SourceSerifPro-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Source Serif Pro';
-  src: url('/fonts/SourceSerifPro-Bold.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Montserrat';
-  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
 
 :root {
   --ifm-navbar-height: 3.5rem;
