@@ -2090,7 +2090,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check that value is a mapping
                 // TODO: check against duplicate keys (optional)
                 let key_ty = self.expr_infer(mapping_key, errors);
-                let binding_ty = self.get_idx(*binding_key).arc_clone();
+                let binding_ty = self.get_idx(*binding_key);
                 let arg = CallArg::Type(&key_ty, mapping_key.range());
                 self.call_method_or_error(
                     &binding_ty,
@@ -2105,8 +2105,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::PatternMatchClassPositional(_, idx, key, range) => {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
-                let binding_ty = self.get_idx(*key).arc_clone();
-                let context = || ErrorContext::MatchPositional(binding_ty.clone());
+                let binding_ty = self.get_idx(*key);
+                let context = || ErrorContext::MatchPositional(binding_ty.as_ref().clone());
                 let match_args = self.attr_infer(
                     &binding_ty,
                     &dunder::MATCH_ARGS,
