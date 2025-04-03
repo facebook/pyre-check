@@ -4464,9 +4464,12 @@ module HigherOrderCallGraph = struct
                 Context.callables_to_definitions_map
                 target
             with
-            | None -> None
+            | None ->
+                log "Cannot find define for callable `%a`" Target.pp_pretty_with_kind target;
+                None
             | Some { Target.CallablesSharedMemory.Signature.is_stub; parameters; _ } ->
                 if is_stub then
+                  let () = log "Callable `%a` is a stub" Target.pp_pretty_with_kind target in
                   None
                 else
                   Some
