@@ -44,17 +44,23 @@ impl Display for TypeVarTuple {
 #[derive(Debug, PartialEq, TypeEq, Eq, Ord, PartialOrd)]
 struct TypeVarTupleInner {
     qname: QName,
+    default: Option<Type>,
 }
 
 impl TypeVarTuple {
-    pub fn new(name: Identifier, module: ModuleInfo) -> Self {
+    pub fn new(name: Identifier, module: ModuleInfo, default: Option<Type>) -> Self {
         Self(ArcId::new(TypeVarTupleInner {
             qname: QName::new(name, module),
+            default,
         }))
     }
 
     pub fn qname(&self) -> &QName {
         &self.0.qname
+    }
+
+    pub fn default(&self) -> Option<&Type> {
+        self.0.default.as_ref()
     }
 
     pub fn to_type(&self) -> Type {

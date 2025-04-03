@@ -105,8 +105,24 @@ impl<'a> BindingsBuilder<'a> {
         })
     }
 
-    fn assign_param_spec(&mut self, name: &ExprName, call: &mut ExprCall) {
+    fn ensure_type_var_tuple_and_param_spec_args(&mut self, call: &mut ExprCall) {
         self.ensure_expr(&mut call.func);
+        for arg in call.arguments.args.iter_mut() {
+            self.ensure_expr(arg);
+        }
+        for kw in call.arguments.keywords.iter_mut() {
+            if let Some(id) = &kw.arg
+                && id.id == "default"
+            {
+                self.ensure_type(&mut kw.value, &mut None);
+            } else {
+                self.ensure_expr(&mut kw.value);
+            }
+        }
+    }
+
+    fn assign_param_spec(&mut self, name: &ExprName, call: &mut ExprCall) {
+        self.ensure_type_var_tuple_and_param_spec_args(call);
         self.bind_assign(name, |ann| {
             Binding::ParamSpec(
                 ann,
@@ -117,7 +133,7 @@ impl<'a> BindingsBuilder<'a> {
     }
 
     fn assign_type_var_tuple(&mut self, name: &ExprName, call: &mut ExprCall) {
-        self.ensure_expr(&mut call.func);
+        self.ensure_type_var_tuple_and_param_spec_args(call);
         self.bind_assign(name, |ann| {
             Binding::TypeVarTuple(
                 ann,

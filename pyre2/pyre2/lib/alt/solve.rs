@@ -150,14 +150,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }))
             }
             Type::Type(box Type::TypeVarTuple(x)) => {
-                let q = Quantified::type_var_tuple(x.qname().id().clone(), self.uniques);
+                let q = Quantified::type_var_tuple(
+                    x.qname().id().clone(),
+                    self.uniques,
+                    x.default().cloned(),
+                );
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
                     quantified: q,
                     variance: Some(Variance::Invariant),
                 }))
             }
             Type::Type(box Type::ParamSpec(x)) => {
-                let q = Quantified::param_spec(x.qname().id().clone(), self.uniques);
+                let q = Quantified::param_spec(
+                    x.qname().id().clone(),
+                    self.uniques,
+                    x.default().cloned(),
+                );
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
                     quantified: q,
                     variance: Some(Variance::Invariant),
@@ -666,6 +674,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         let q = Quantified::type_var_tuple(
                             ty_var_tuple.qname().id().clone(),
                             self.uniques,
+                            ty_var_tuple.default().cloned(),
                         );
                         e.insert(q.clone());
                         tparams.push(TParamInfo {
@@ -681,8 +690,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let q = match seen_param_specs.entry(param_spec.dupe()) {
                     Entry::Occupied(e) => e.get().clone(),
                     Entry::Vacant(e) => {
-                        let q =
-                            Quantified::param_spec(param_spec.qname().id().clone(), self.uniques);
+                        let q = Quantified::param_spec(
+                            param_spec.qname().id().clone(),
+                            self.uniques,
+                            param_spec.default().cloned(),
+                        );
                         e.insert(q.clone());
                         tparams.push(TParamInfo {
                             quantified: q.clone(),

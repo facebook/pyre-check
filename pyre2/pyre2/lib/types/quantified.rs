@@ -91,26 +91,26 @@ impl Quantified {
         )
     }
 
-    pub fn param_spec(name: Name, uniques: &UniqueFactory) -> Self {
+    pub fn param_spec(name: Name, uniques: &UniqueFactory, default: Option<Type>) -> Self {
         Self::new(
             uniques.fresh(),
             QuantifiedInfo {
                 name,
                 kind: QuantifiedKind::ParamSpec,
                 restriction: Restriction::Unrestricted,
-                default: None,
+                default,
             },
         )
     }
 
-    pub fn type_var_tuple(name: Name, uniques: &UniqueFactory) -> Self {
+    pub fn type_var_tuple(name: Name, uniques: &UniqueFactory, default: Option<Type>) -> Self {
         Self::new(
             uniques.fresh(),
             QuantifiedInfo {
                 name,
                 kind: QuantifiedKind::TypeVarTuple,
                 restriction: Restriction::Unrestricted,
-                default: None,
+                default,
             },
         )
     }

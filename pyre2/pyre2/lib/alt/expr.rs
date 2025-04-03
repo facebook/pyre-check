@@ -372,7 +372,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             check_name_arg(arg);
             arg_name = true;
         }
-
+        let mut default = None;
         for kw in &x.arguments.keywords {
             match &kw.arg {
                 Some(id) => match id.id.as_str() {
@@ -389,6 +389,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             check_name_arg(&kw.value);
                             arg_name = true;
                         }
+                    }
+                    "default" => {
+                        default = Some(self.expr_untype(
+                            &kw.value,
+                            TypeFormContext::TypeVarConstraint,
+                            errors,
+                        ));
                     }
                     _ => {
                         self.error(
@@ -421,8 +428,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-
-        ParamSpec::new(name, self.module_info().dupe())
+        ParamSpec::new(name, self.module_info().dupe(), default)
     }
 
     pub fn typevartuple_from_call(
@@ -469,6 +475,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Unexpected positional argument to TypeVarTuple".to_owned(),
             );
         }
+        let mut default = None;
         for kw in &x.arguments.keywords {
             match &kw.arg {
                 Some(id) => match id.id.as_str() {
@@ -485,6 +492,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             check_name_arg(&kw.value);
                             arg_name = true;
                         }
+                    }
+                    "default" => {
+                        default = Some(self.expr_untype(
+                            &kw.value,
+                            TypeFormContext::TypeVarConstraint,
+                            errors,
+                        ));
                     }
                     _ => {
                         self.error(
@@ -516,7 +530,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-        TypeVarTuple::new(name, self.module_info().dupe())
+        TypeVarTuple::new(name, self.module_info().dupe(), default)
     }
 
     pub fn expr_infer(&self, x: &Expr, errors: &ErrorCollector) -> Type {
