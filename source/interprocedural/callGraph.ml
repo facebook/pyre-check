@@ -215,6 +215,7 @@ module CallableToDecoratorsMap = struct
     ]
     @ Target.class_method_decorators
     @ Target.static_method_decorators
+    @ Recognized.ignored_decorators_for_higher_order
     |> SerializableStringSet.of_list
 
 
