@@ -130,7 +130,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for Key {
         recursive: &Var,
         errors: &ErrorCollector,
     ) {
-        answers.record_recursive(range, answer, *recursive, errors);
+        answers.record_recursive(range, answer.as_ref().clone(), *recursive, errors);
     }
 }
 
@@ -174,7 +174,7 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
         recursive: &Var,
         errors: &ErrorCollector,
     ) {
-        answers.record_recursive(range, answer, *recursive, errors);
+        answers.record_recursive(range, answer.as_ref().clone(), *recursive, errors);
     }
 }
 

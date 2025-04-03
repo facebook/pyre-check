@@ -600,17 +600,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn record_recursive(
         &self,
         loc: TextRange,
-        answer: &Arc<Type>,
+        answer: Type,
         recursive: Var,
         errors: &ErrorCollector,
     ) {
-        self.solver().record_recursive(
-            recursive,
-            (**answer).clone(),
-            self.type_order(),
-            errors,
-            loc,
-        );
+        self.solver()
+            .record_recursive(recursive, answer, self.type_order(), errors, loc);
     }
 
     pub fn record_type_trace(&self, loc: TextRange, ty: &Type) {
