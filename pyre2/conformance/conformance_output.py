@@ -232,7 +232,8 @@ def get_conformance_output(directory: str) -> Dict[str, List[Dict[str, Any]]]:
                 for error in errors["errors"]:
                     path = error["path"]
                     del error["path"]
-                    outputs[os.path.normpath(path)].append(error)
+                    relative_normalized_path = os.path.relpath(os.path.normpath(path))
+                    outputs[relative_normalized_path].append(error)
         except Exception:
             logger.error("Failed to get conformance output\n{}\n".format(stderr))
     return outputs
@@ -269,7 +270,10 @@ def get_conformance_output_separate(directory: str) -> Dict[str, List[Dict[str, 
                     for error in errors["errors"]:
                         path = error["path"]
                         del error["path"]
-                        outputs[os.path.normpath(path)].append(error)
+                        relative_normalized_path = os.path.relpath(
+                            os.path.normpath(path), directory
+                        )
+                        outputs[relative_normalized_path].append(error)
             except Exception:
                 logger.error(
                     "Failed to get conformance output for {}\n{}\n".format(file, stderr)

@@ -208,6 +208,7 @@ async fn run_check_on_files(
 ) -> anyhow::Result<CommandExitStatus> {
     let project_excludes =
         project_excludes.map_or_else(ConfigFile::default_project_excludes, Globs::new);
+    let files_to_check = files_to_check.from_root(PathBuf::new().absolutize()?.as_ref());
     run_check(
         args,
         watch,

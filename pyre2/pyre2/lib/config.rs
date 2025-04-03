@@ -12,7 +12,9 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use anyhow::bail;
+use anyhow::Context;
 use itertools::Itertools;
+use path_absolutize::Absolutize;
 use serde::Deserialize;
 use toml::Table;
 
@@ -228,8 +230,12 @@ impl ConfigFile {
     }
 
     pub fn from_file(config_path: &Path, error_on_extras: bool) -> anyhow::Result<ConfigFile> {
+        let config_path = config_path
+            .absolutize()
+            .with_context(|| format!("Path `{}` cannot be absolutized", config_path.display()))?
+            .into_owned();
         // TODO(connernilsen): fix return type and handle config searching
-        let config_str = fs::read_to_string(config_path)?;
+        let config_str = fs::read_to_string(&config_path)?;
         let mut config = if config_path.file_name() == Some(OsStr::new(&PYPROJECT_FILE_NAME)) {
             Self::parse_pyproject_toml(&config_str)
         } else {
