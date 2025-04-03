@@ -45,10 +45,13 @@ The following is the order in which configuration options are selected:
   - Flag equivalent: `FILES...` argument
   - Equivalent configs: `include` in Pyright, `files`/`modules`/`packages` in
     mypy
-  - Notes: when overridden by passing in `FILES...`, we do not consult the
-    relevant config file for what to use for `project_excludes`. If
-    `project_excludes` should not use the default, override it with the flag as
-    well.
+  - Notes:
+    - When overridden by passing in `FILES...`, we do not consult the
+      relevant config file for what to use for `project_excludes`. If
+      `project_excludes` should not use the default, override it with the flag as
+      well.
+    - When a `project_includes` pattern does not match any files, we will return
+      an error.
 - `project_excludes`: the glob patterns used to describe which files to avoid
   type checking, usually as a more fine-grained way of controlling the files you
   get type errors on.
@@ -56,13 +59,16 @@ The following is the order in which configuration options are selected:
   - Default: `["**/__pycache__/**", "**/.*"]`
   - Flag equivalent: `--project-excludes`
   - Equivalent configs: `exclude` in Pyright and mypy
-  - Notes: we match on these patterns, unlike `project_includes`, where we
-    enumerate all (Python) files under the directory. Becaues of this,
-    `project_excludes` does not do directory matching unless a `/` is added at
-    the end of your glob pattern. `**/__pycache__/` will only match files under
-    a directory named `__pycache__/`, but not a file named `__pycache__`.
-    Likewise, `**/__pycache__` will only match files named `__pycache__`, but
-    not files under a directory named `__pycache__/`.
+  - Notes:
+    - We match on these patterns, unlike `project_includes`, where we
+      enumerate all (Python) files under the directory. Because of this,
+      `project_excludes` does not do directory matching unless a `/` is added at
+      the end of your glob pattern. `**/__pycache__/` will only match files under
+      a directory named `__pycache__/`, but not a file named `__pycache__`.
+      Likewise, `**/__pycache__` will only match files named `__pycache__`, but
+      not files under a directory named `__pycache__/`.
+    - It is an error if no files are returned from any `project_includes` because
+      they are filtered out by `project_excludes` entries.
 - `search_path`: a file path describing a root from which imports should be
   found and imported from (including modules in `project_includes`). This takes
   the highest precedence in import order, before `typeshed` and
@@ -114,7 +120,7 @@ The following is the order in which configuration options are selected:
   - Equivalent configs: `python_executable` in mypy
   - Notes:
     - This executes the value present in the `python_interpreter` field without any checks. It could
-    be a security risk if your `python_interpreter` executes an arbitrary executable.
+      be a security risk if your `python_interpreter` executes an arbitrary executable.
     - If you are working on a project shared between multiple people, it is likely best not to use this
       option, since there might be different Python interpreter versions used on different systems. Instead,
       we recommend explicitly setting `python_version`, `python_platform`, and `site_package_path`, or using
