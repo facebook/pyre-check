@@ -88,6 +88,8 @@ pub struct Args {
     python_platform: Option<String>,
     #[clap(long, env = clap_env("SITE_PACKAGE_PATH"))]
     site_package_path: Option<Vec<PathBuf>>,
+    #[clap(long, env = clap_env("PYTHON_INTERPRETER"))]
+    python_interpreter: Option<String>,
     /// Produce debugging information about the type checking process.
     #[clap(long, env = clap_env("DEBUG_INFO"))]
     debug_info: Option<PathBuf>,
@@ -393,6 +395,10 @@ impl Args {
         set_option_if_some(
             &mut config.python_environment.site_package_path,
             self.site_package_path.as_ref(),
+        );
+        set_if_some(
+            &mut config.python_interpreter,
+            self.python_interpreter.as_ref(),
         );
     }
 

@@ -118,6 +118,8 @@ pub struct PythonEnvironment {
 }
 
 impl PythonEnvironment {
+    const DEFAULT_INTERPRETER: &'static str = "python3";
+
     pub fn new(
         python_platform: String,
         python_version: PythonVersion,
@@ -128,6 +130,10 @@ impl PythonEnvironment {
             python_version: Some(python_version),
             site_package_path: Some(site_package_path),
         }
+    }
+
+    pub fn get_default_interpreter() -> String {
+        Self::DEFAULT_INTERPRETER.to_owned()
     }
 
     pub fn python_platform(&self) -> &str {
@@ -178,6 +184,9 @@ pub struct ConfigFile {
     #[serde(default = "ConfigFile::default_search_path")]
     pub search_path: Vec<PathBuf>,
 
+    #[serde(default = "PythonEnvironment::get_default_interpreter")]
+    pub python_interpreter: String,
+
     #[serde(flatten)]
     pub python_environment: PythonEnvironment,
 
@@ -200,6 +209,7 @@ impl Default for ConfigFile {
             },
             project_includes: Self::default_project_includes(),
             project_excludes: Self::default_project_excludes(),
+            python_interpreter: PythonEnvironment::get_default_interpreter(),
             errors: ErrorConfig::default(),
             extras: Self::default_extras(),
         }
@@ -365,6 +375,7 @@ mod tests {
             python_platform = \"darwin\"
             python_version = \"1.2.3\"
             site_package_path = [\"venv/lib/python1.2.3/site-packages\"]
+            python_interpreter = \"python2\"
             [errors]
             assert-type = true
             bad-return = false
@@ -384,6 +395,7 @@ mod tests {
                     PythonVersion::new(1, 2, 3),
                     vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
                 ),
+                python_interpreter: "python2".to_owned(),
                 extras: ConfigFile::default_extras(),
                 errors: ErrorConfig::new(HashMap::from_iter([
                     (ErrorKind::AssertType, true),
@@ -517,6 +529,7 @@ mod tests {
             project_excludes: Globs::new(vec!["tests/untyped/**".to_owned()]),
             search_path: vec![PathBuf::from("../..")],
             python_environment: python_environment.clone(),
+            python_interpreter: PythonEnvironment::get_default_interpreter(),
             errors: ErrorConfig::default(),
             extras: ConfigFile::default_extras(),
         };
