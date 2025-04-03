@@ -174,7 +174,8 @@ mod tests {
     use crate::util::thread_pool::ThreadPool;
 
     fn wait() {
-        sleep(Duration::from_millis(100));
+        // at 100ms we occasionally lose the race condition, so sleep for a bit longer
+        sleep(Duration::from_secs(1));
     }
 
     #[test]
