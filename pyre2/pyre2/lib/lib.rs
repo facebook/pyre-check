@@ -53,6 +53,7 @@ mod util;
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::commands::run;
 pub use crate::config::ConfigFile;
+pub use crate::config::PythonEnvironment;
 pub use crate::metadata::PythonVersion;
 pub use crate::util::args::clap_env;
 pub use crate::util::args::get_args_expanded;

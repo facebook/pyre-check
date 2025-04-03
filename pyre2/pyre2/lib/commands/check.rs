@@ -381,11 +381,17 @@ impl Args {
     }
 
     fn override_config(&self, config: &mut ConfigFile) {
-        set_option_if_some(&mut config.python_platform, self.python_platform.as_ref());
-        set_option_if_some(&mut config.python_version, self.python_version.as_ref());
+        set_option_if_some(
+            &mut config.python_environment.python_platform,
+            self.python_platform.as_ref(),
+        );
+        set_option_if_some(
+            &mut config.python_environment.python_version,
+            self.python_version.as_ref(),
+        );
         set_if_some(&mut config.search_path, self.search_path.as_ref());
         set_option_if_some(
-            &mut config.site_package_path,
+            &mut config.python_environment.site_package_path,
             self.site_package_path.as_ref(),
         );
     }

@@ -106,6 +106,60 @@ impl PartialEq for ExtraConfigs {
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
+pub struct PythonEnvironment {
+    #[serde(default)]
+    pub python_platform: Option<String>,
+
+    #[serde(default)]
+    pub python_version: Option<PythonVersion>,
+
+    #[serde(default)]
+    pub site_package_path: Option<Vec<PathBuf>>,
+}
+
+impl PythonEnvironment {
+    pub fn new(
+        python_platform: String,
+        python_version: PythonVersion,
+        site_package_path: Vec<PathBuf>,
+    ) -> Self {
+        Self {
+            python_platform: Some(python_platform),
+            python_version: Some(python_version),
+            site_package_path: Some(site_package_path),
+        }
+    }
+
+    pub fn python_platform(&self) -> &str {
+        self.python_platform
+            .as_deref()
+            .unwrap_or(DEFAULT_PYTHON_PLATFORM)
+    }
+
+    pub fn python_version(&self) -> PythonVersion {
+        self.python_version.unwrap_or_default()
+    }
+
+    pub fn site_package_path(&self) -> &[PathBuf] {
+        self.site_package_path.as_deref().unwrap_or_default()
+    }
+
+    pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
+        RuntimeMetadata::new(self.python_version(), self.python_platform().to_owned())
+    }
+}
+
+impl Default for PythonEnvironment {
+    fn default() -> Self {
+        Self::new(
+            DEFAULT_PYTHON_PLATFORM.to_owned(),
+            PythonVersion::default(),
+            Vec::new(),
+        )
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
 pub struct ConfigFile {
     /// Files that should be counted as sources (e.g. user-space code).
     /// NOTE: this is never replaced with CLI args in this config, but may be overridden by CLI args where used.
@@ -124,19 +178,8 @@ pub struct ConfigFile {
     #[serde(default = "ConfigFile::default_search_path")]
     pub search_path: Vec<PathBuf>,
 
-    /// The default Python platform to use, likely `linux`
-    // TODO(connernilsen): use python_executable if not set
-    #[serde(default)]
-    pub python_platform: Option<String>,
-
-    /// The default Python version to use, likely `3.13.0`
-    // TODO(connernilsen): use python_executable if not set
-    #[serde(default)]
-    pub python_version: Option<PythonVersion>,
-
-    // TODO(connernilsen): use python_executable if not set
-    #[serde(default)]
-    pub site_package_path: Option<Vec<PathBuf>>,
+    #[serde(flatten)]
+    pub python_environment: PythonEnvironment,
 
     #[serde(default)]
     pub errors: ErrorConfig,
@@ -150,9 +193,11 @@ impl Default for ConfigFile {
     fn default() -> ConfigFile {
         ConfigFile {
             search_path: Self::default_search_path(),
-            python_platform: None,
-            python_version: None,
-            site_package_path: None,
+            python_environment: PythonEnvironment {
+                python_platform: None,
+                python_version: None,
+                site_package_path: None,
+            },
             project_includes: Self::default_project_includes(),
             project_excludes: Self::default_project_excludes(),
             errors: ErrorConfig::default(),
@@ -183,21 +228,19 @@ impl ConfigFile {
     }
 
     pub fn python_version(&self) -> PythonVersion {
-        self.python_version.unwrap_or_default()
+        self.python_environment.python_version()
     }
 
     pub fn python_platform(&self) -> &str {
-        self.python_platform
-            .as_deref()
-            .unwrap_or(DEFAULT_PYTHON_PLATFORM)
+        self.python_environment.python_platform()
     }
 
     pub fn site_package_path(&self) -> &[PathBuf] {
-        self.site_package_path.as_deref().unwrap_or_default()
+        self.python_environment.site_package_path()
     }
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
-        RuntimeMetadata::new(self.python_version(), self.python_platform().to_owned())
+        self.python_environment.get_runtime_metadata()
     }
 
     pub fn default_error_config() -> ErrorConfig {
@@ -215,13 +258,16 @@ impl ConfigFile {
         // push config to search path to make sure we can fall back to the config directory as an import path
         // if users forget to add it
         self.search_path.push(config_root.to_path_buf());
-        self.site_package_path.iter_mut().for_each(|v| {
-            v.iter_mut().for_each(|site_package_path| {
-                let mut with_base = config_root.to_path_buf();
-                with_base.push(site_package_path.as_path());
-                *site_package_path = with_base;
+        self.python_environment
+            .site_package_path
+            .iter_mut()
+            .for_each(|v| {
+                v.iter_mut().for_each(|site_package_path| {
+                    let mut with_base = config_root.to_path_buf();
+                    with_base.push(site_package_path.as_path());
+                    *site_package_path = with_base;
+                });
             });
-        });
         self.project_excludes = self.project_excludes.clone().from_root(config_root);
     }
 
@@ -237,10 +283,13 @@ impl ConfigFile {
             };
             tracing::warn!("Nonexistent `{field}` found: {}", p.display());
         }
-        self.site_package_path.as_ref().inspect(|p| {
-            p.iter()
-                .for_each(|p| warn_on_invalid(p, "site_package_path"));
-        });
+        self.python_environment
+            .site_package_path
+            .as_ref()
+            .inspect(|p| {
+                p.iter()
+                    .for_each(|p| warn_on_invalid(p, "site_package_path"))
+            });
         self.search_path
             .iter()
             .for_each(|p| warn_on_invalid(p, "search_path"));
@@ -330,9 +379,11 @@ mod tests {
                 ]),
                 project_excludes: Globs::new(vec!["tests/untyped/**".to_owned()]),
                 search_path: vec![PathBuf::from("../..")],
-                python_platform: Some("darwin".to_owned()),
-                python_version: Some(PythonVersion::new(1, 2, 3)),
-                site_package_path: Some(vec![PathBuf::from("venv/lib/python1.2.3/site-packages")]),
+                python_environment: PythonEnvironment::new(
+                    "darwin".to_owned(),
+                    PythonVersion::new(1, 2, 3),
+                    vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
+                ),
                 extras: ConfigFile::default_extras(),
                 errors: ErrorConfig::new(HashMap::from_iter([
                     (ErrorKind::AssertType, true),
@@ -378,8 +429,11 @@ mod tests {
                     "./tests".to_owned(),
                     "./implementation".to_owned()
                 ]),
-                python_platform: Some("darwin".to_owned()),
-                python_version: Some(PythonVersion::new(1, 2, 3)),
+                python_environment: PythonEnvironment {
+                    python_platform: Some("darwin".to_owned()),
+                    python_version: Some(PythonVersion::new(1, 2, 3)),
+                    site_package_path: None,
+                },
                 ..ConfigFile::default()
             }
         );
@@ -407,7 +461,11 @@ mod tests {
         assert_eq!(
             config,
             ConfigFile {
-                python_version: Some(PythonVersion::new(1, 2, 3)),
+                python_environment: PythonEnvironment {
+                    python_version: Some(PythonVersion::new(1, 2, 3)),
+                    python_platform: None,
+                    site_package_path: None,
+                },
                 ..ConfigFile::default()
             }
         );
@@ -450,13 +508,15 @@ mod tests {
         fn with_sep(s: &str) -> String {
             s.replace("/", path::MAIN_SEPARATOR_STR)
         }
+        let mut python_environment = PythonEnvironment {
+            site_package_path: Some(vec![PathBuf::from("venv/lib/python1.2.3/site-packages")]),
+            ..PythonEnvironment::default()
+        };
         let mut config = ConfigFile {
             project_includes: Globs::new(vec!["path1/**".to_owned(), "path2/path3".to_owned()]),
             project_excludes: Globs::new(vec!["tests/untyped/**".to_owned()]),
             search_path: vec![PathBuf::from("../..")],
-            site_package_path: Some(vec![PathBuf::from("venv/lib/python1.2.3/site-packages")]),
-            python_platform: None,
-            python_version: None,
+            python_environment: python_environment.clone(),
             errors: ErrorConfig::default(),
             extras: ConfigFile::default_extras(),
         };
@@ -470,7 +530,8 @@ mod tests {
         ];
         let project_excludes_vec = vec![path_str.clone() + &with_sep("/tests/untyped/**")];
         let search_path = vec![test_path.join("../.."), test_path.clone()];
-        let site_package_path = Some(vec![test_path.join("venv/lib/python1.2.3/site-packages")]);
+        python_environment.site_package_path =
+            Some(vec![test_path.join("venv/lib/python1.2.3/site-packages")]);
 
         config.rewrite_with_path_to_config(&test_path);
 
@@ -478,7 +539,7 @@ mod tests {
             project_includes: Globs::new(project_includes_vec),
             project_excludes: Globs::new(project_excludes_vec),
             search_path,
-            site_package_path,
+            python_environment,
             ..ConfigFile::default()
         };
         assert_eq!(config, expected_config);
