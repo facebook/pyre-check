@@ -12,7 +12,7 @@ import * as stylex from '@stylexjs/stylex';
 import clsx from 'clsx';
 import typography from './typography';
 interface LandingPageSectionProps {
-  title: string;
+  title?: string;
   child: React.ReactNode;
   id?: string;
   isFirstSection?: boolean;
@@ -42,8 +42,6 @@ export default function LandingPageSection({
       {/* Rise decoration (for all except first section) */}
       {!isFirstSection && (
         <div
-          className={clsx(
-          )}
           style={{
             color: backgroundColor,
           }}
@@ -53,22 +51,20 @@ export default function LandingPageSection({
       {/* Drop decoration (for all sections) */}
       {!isLastSection && (
         <div
-          className={clsx(
-          )}
           style={{
             color: backgroundColor,
           }}
         />
       )}
       <div className="container">
-        <h2
+        {title != null ? <h2
           {...stylex.props(
             styles.sectionTitle,
             typography.h2,
             hasBrownBackground ? { color: 'var(--color-text)' } : null,
           )}>
           {title}
-        </h2>
+        </h2> : <></>}
         {child}
       </div>
     </section>

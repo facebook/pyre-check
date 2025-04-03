@@ -30,7 +30,6 @@ export default function NewLandingPage(): React.ReactElement {
             <LandingPageHeader />
             <LandingPageSection
                 id="why-pyrefly-section"
-                title="Why Pyrefly"
                 child={<WhyPyrefly />}
                 isFirstSection={true}
             />
