@@ -22,6 +22,8 @@ use path_absolutize::Absolutize;
 use serde::Deserialize;
 use starlark_map::small_map::SmallMap;
 use toml::Table;
+#[cfg(not(target_arch = "wasm32"))]
+use which::which;
 
 use crate::error::kind::ErrorKind;
 use crate::globs::Globs;
@@ -32,7 +34,7 @@ use crate::module::module_path::ModulePath;
 
 static PYPROJECT_FILE_NAME: &str = "pyproject.toml";
 
-static INTERPRETER_ENV_REGISTRY: LazyLock<Mutex<SmallMap<String, Option<PythonEnvironment>>>> =
+static INTERPRETER_ENV_REGISTRY: LazyLock<Mutex<SmallMap<PathBuf, Option<PythonEnvironment>>>> =
     LazyLock::new(|| Mutex::new(SmallMap::new()));
 
 pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
@@ -125,7 +127,7 @@ pub struct PythonEnvironment {
 }
 
 impl PythonEnvironment {
-    const DEFAULT_INTERPRETER: &'static str = "python3";
+    const DEFAULT_INTERPRETERS: [&'static str; 2] = ["python3", "python"];
 
     pub fn new(
         python_platform: String,
@@ -139,7 +141,7 @@ impl PythonEnvironment {
         }
     }
 
-    fn get_env_from_interpreter(interpreter: &str) -> anyhow::Result<PythonEnvironment> {
+    fn get_env_from_interpreter(interpreter: &Path) -> anyhow::Result<PythonEnvironment> {
         let script = "\
 import json, site, sys
 platform = sys.platform
@@ -155,15 +157,18 @@ print(json.dumps({'python_platform': platform, 'python_version': version, 'site_
 
         let python_info = command.output()?;
 
-        let stdout = String::from_utf8(python_info.stdout).with_context(
-            || format!("while parsing Python interpreter (`{interpreter}`) stdout for environment configuration")
-        )?;
+        let stdout = String::from_utf8(python_info.stdout).with_context(|| {
+            format!(
+                "while parsing Python interpreter (`{}`) stdout for environment configuration",
+                interpreter.display()
+            )
+        })?;
         if !python_info.status.success() {
             let stderr = String::from_utf8(python_info.stderr)
                 .unwrap_or("<Failed to parse STDOUT from UTF-8 string>".to_owned());
             return Err(anyhow::anyhow!(
                 "Unable to query interpreter {} for environment info:\nSTDOUT: {}\nSTDERR: {}",
-                interpreter,
+                interpreter.display(),
                 stdout,
                 stderr
             ));
@@ -184,8 +189,19 @@ print(json.dumps({'python_platform': platform, 'python_version': version, 'site_
         Ok(deserialized)
     }
 
-    pub fn get_default_interpreter() -> String {
-        Self::DEFAULT_INTERPRETER.to_owned()
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn get_default_interpreter() -> Option<PathBuf> {
+        for interpreter in Self::DEFAULT_INTERPRETERS {
+            if let Ok(interpreter_path) = which(interpreter) {
+                return Some(interpreter_path);
+            }
+        }
+        None
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_default_interpreter() -> Option<PathBuf> {
+        None
     }
 
     pub fn python_platform(&self) -> &str {
@@ -202,10 +218,10 @@ print(json.dumps({'python_platform': platform, 'python_version': version, 'site_
         self.site_package_path.as_deref().unwrap_or_default()
     }
 
-    pub fn get_interpreter_env(interpreter: &str) -> PythonEnvironment {
+    pub fn get_interpreter_env(interpreter: &Path) -> PythonEnvironment {
         LazyLock::force(&INTERPRETER_ENV_REGISTRY)
             .lock().unwrap()
-        .entry(interpreter.to_owned()).or_insert_with(move || {
+        .entry(interpreter.to_path_buf()).or_insert_with(move || {
             Self::get_env_from_interpreter(interpreter).inspect_err(|e| {
                 tracing::error!("Failed to query interpreter, falling back to default Python environment settings\n{}", e);
             }).ok()
@@ -247,7 +263,7 @@ pub struct ConfigFile {
     pub search_path: Vec<PathBuf>,
 
     #[serde(default = "PythonEnvironment::get_default_interpreter")]
-    pub python_interpreter: String,
+    pub python_interpreter: Option<PathBuf>,
 
     #[serde(flatten)]
     pub python_environment: PythonEnvironment,
@@ -322,11 +338,12 @@ impl ConfigFile {
     pub fn configure(&mut self) {
         let env = &mut self.python_environment;
 
-        if env.python_version.is_none()
+        let env_has_empty = env.python_version.is_none()
             || env.python_platform.is_none()
-            || env.site_package_path.is_none()
-        {
-            let system_env = PythonEnvironment::get_interpreter_env(&self.python_interpreter);
+            || env.site_package_path.is_none();
+
+        if env_has_empty && let Some(interpreter) = &self.python_interpreter {
+            let system_env = PythonEnvironment::get_interpreter_env(interpreter);
 
             if env.python_version.is_none() {
                 env.python_version = system_env.python_version;
@@ -337,7 +354,13 @@ impl ConfigFile {
             if env.site_package_path.is_none() {
                 env.site_package_path = system_env.site_package_path;
             }
-        }
+        } else if env_has_empty {
+            tracing::warn!(
+                "Python environment (version, platform, or site_package_path) has value unset, \
+                but no Python interpreter could be found to query for values. Falling back to \
+                Pyrefly defaults for missing values."
+            )
+        };
     }
 
     fn rewrite_with_path_to_config(&mut self, config_root: &Path) {
@@ -478,7 +501,7 @@ mod tests {
                     PythonVersion::new(1, 2, 3),
                     vec![PathBuf::from("venv/lib/python1.2.3/site-packages")],
                 ),
-                python_interpreter: "python2".to_owned(),
+                python_interpreter: Some(PathBuf::from("python2")),
                 extras: ConfigFile::default_extras(),
                 errors: ErrorConfig::new(HashMap::from_iter([
                     (ErrorKind::AssertType, true),

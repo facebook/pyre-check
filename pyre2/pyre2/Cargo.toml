@@ -69,12 +69,15 @@ tempfile = "3.15"
 
 [build-dependencies]
 tar = "0.4.44"
+which = "4.2.4"
 zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+which = "4.2.4"
 zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.build-dependencies]
+which = "4.2.4"
 zstd = { version = "0.13", features = ["experimental", "zstdmt"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
