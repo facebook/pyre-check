@@ -56,6 +56,7 @@ use crate::binding::binding::NoneIfRecursive;
 use crate::binding::binding::RaisedException;
 use crate::binding::binding::SizeExpectation;
 use crate::binding::binding::SuperStyle;
+use crate::binding::binding::TypeParameter;
 use crate::binding::binding::UnpackedPosition;
 use crate::dunder;
 use crate::error::collector::ErrorCollector;
@@ -1914,7 +1915,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             Binding::Type(x) => x.clone(),
             Binding::StrType => self.stdlib.str().to_type(),
-            Binding::TypeParameter(unique, kind) => {
+            Binding::TypeParameter(box TypeParameter { unique, kind, .. }) => {
                 Type::type_form(Quantified::new(*unique, *kind).to_type())
             }
             Binding::Module(m, path, prev) => {

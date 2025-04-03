@@ -51,6 +51,7 @@ use crate::binding::binding::KeyLegacyTypeParam;
 use crate::binding::binding::KeyYield;
 use crate::binding::binding::KeyYieldFrom;
 use crate::binding::binding::Keyed;
+use crate::binding::binding::TypeParameter;
 use crate::binding::narrow::NarrowOps;
 use crate::binding::scope::Flow;
 use crate::binding::scope::FlowInfo;
@@ -802,7 +803,15 @@ impl<'a> BindingsBuilder<'a> {
                 .add(name.id.clone(), name.range, None);
             self.bind_definition(
                 name,
-                Binding::TypeParameter(self.uniques.fresh(), kind),
+                Binding::TypeParameter(Box::new(TypeParameter {
+                    name: name.id.clone(),
+                    unique: self.uniques.fresh(),
+                    kind,
+                    // TODO: populate these fields
+                    default: None,
+                    bound: None,
+                    constraints: None,
+                })),
                 None,
             );
         }

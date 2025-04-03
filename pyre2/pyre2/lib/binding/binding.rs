@@ -675,6 +675,16 @@ pub enum AnnotationStyle {
 }
 
 #[derive(Clone, Debug)]
+pub struct TypeParameter {
+    pub name: Name,
+    pub unique: Unique,
+    pub kind: QuantifiedKind,
+    pub bound: Option<(Idx<Key>, TextRange)>,
+    pub default: Option<(Idx<Key>, TextRange)>,
+    pub constraints: Option<(Vec<Idx<Key>>, TextRange)>,
+}
+
+#[derive(Clone, Debug)]
 pub enum Binding {
     /// An expression, optionally with a Key saying what the type must be.
     /// The Key must be a type of types, e.g. `Type::Type`.
@@ -714,7 +724,7 @@ pub enum Binding {
     /// The str type.
     StrType,
     /// A type parameter.
-    TypeParameter(Unique, QuantifiedKind),
+    TypeParameter(Box<TypeParameter>),
     /// The type of a function. Stores an optional reference to the predecessor of this function.
     /// If the function is defined in a class scope, stores a reference to the class metadata.
     Function(
@@ -872,7 +882,9 @@ impl DisplayWith<Bindings> for Binding {
             Self::AugAssign(_, s) => write!(f, "augmented_assign {:?}", s),
             Self::Type(t) => write!(f, "type {t}"),
             Self::StrType => write!(f, "strtype"),
-            Self::TypeParameter(unique, kind) => write!(f, "type_parameter({unique}, {kind})"),
+            Self::TypeParameter(box TypeParameter { unique, kind, .. }) => {
+                write!(f, "type_parameter({unique}, {kind})")
+            }
             Self::CheckLegacyTypeParam(k, _) => {
                 write!(f, "check_legacy_type_param {}", ctx.display(*k))
             }
