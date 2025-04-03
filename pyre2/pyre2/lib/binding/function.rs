@@ -278,8 +278,8 @@ impl<'a> BindingsBuilder<'a> {
             },
         );
 
-        if let Some(pred_idx) = pred_function_idx {
-            let pred_binding = self.table.functions.1.get_mut(pred_idx).unwrap();
+        if let Some(pred_function_idx) = pred_function_idx {
+            let pred_binding = self.table.functions.1.get_mut(pred_function_idx).unwrap();
             pred_binding.successor = Some(function_idx);
         }
 
