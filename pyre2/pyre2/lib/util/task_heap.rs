@@ -173,6 +173,10 @@ mod tests {
     use crate::util::thread_pool::ThreadCount;
     use crate::util::thread_pool::ThreadPool;
 
+    fn wait() {
+        sleep(Duration::from_millis(100));
+    }
+
     #[test]
     fn test_lifo_ordering() {
         let heap = TaskHeap::new();
@@ -245,11 +249,9 @@ mod tests {
             heap.work(|k, _| {
                 executed.lock().push(thread_index);
                 if k == 1 {
-                    // Make sure we give the second time chance to go to sleep
-                    sleep(Duration::from_millis(100));
+                    wait(); // Make sure we give the second time chance to go to sleep
                     heap.push_fifo(2, ());
-                    // Make sure we sleep enough for the second thread to grab it
-                    sleep(Duration::from_millis(100));
+                    wait(); // Make sure we sleep enough for the second thread to grab it
                 }
             });
         });
@@ -270,7 +272,7 @@ mod tests {
             let thread_index = thread_count.fetch_add(1, Ordering::SeqCst);
             heap.work(|_, _| {
                 executed.lock().push(thread_index);
-                sleep(Duration::from_millis(100)); // Ensure the other thread gets a chance
+                wait(); // Ensure the other thread gets a chance
             });
         });
         let executed = executed.into_inner();
