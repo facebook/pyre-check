@@ -2163,7 +2163,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::PatternMatchClassKeyword(_, attr, key) => {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
-                let binding_ty = self.get_idx(*key).arc_clone();
+                let binding_ty = self.get_idx(*key);
                 self.attr_infer(&binding_ty, &attr.id, attr.range, errors, None)
             }
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
