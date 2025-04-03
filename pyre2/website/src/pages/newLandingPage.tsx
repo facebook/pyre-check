@@ -24,21 +24,24 @@ export default function NewLandingPage(): React.ReactElement {
     const { siteConfig } = useDocusaurusContext();
     // TODO: update content and improve css
     return (
-        <Layout
+        <Layout id="new-landing-page"
             title="Pyrefly: A Static Type Checker for Python"
             description={siteConfig.description}>
             <LandingPageHeader />
             <LandingPageSection
+                id="why-pyrefly-section"
                 title="Why Pyrefly"
                 child={<WhyPyrefly />}
                 isFirstSection={true}
             />
             <LandingPageSection
+                id="performance-comparison-section"
                 title="Performance Comparison"
                 child={<PerformanceComparisonChartSection />}
                 hasBrownBackground={true}
             />
             <LandingPageSection
+                id="quotes-section"
                 title="What People Say About Pyrefly"
                 child={<QuotesGrid />}
                 isLastSection={true}

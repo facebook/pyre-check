@@ -15,6 +15,7 @@ import featureDecorationStyles from './featureDecorationsStyles.module.css';
 interface LandingPageSectionProps {
   title: string;
   child: React.ReactNode;
+  id?: string;
   isFirstSection?: boolean;
   isLastSection?: boolean;
   hasBrownBackground?: boolean;
@@ -23,6 +24,7 @@ interface LandingPageSectionProps {
 export default function LandingPageSection({
   title,
   child,
+  id = '',
   isFirstSection = false,
   isLastSection = false,
   hasBrownBackground = false,
@@ -32,6 +34,7 @@ export default function LandingPageSection({
     : 'var(--color-text)';
   return (
     <section
+      id={id}
       {...stylex.props(
         styles.section,
         isLastSection ? styles.lastSection : null,

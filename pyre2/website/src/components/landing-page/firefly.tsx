@@ -11,7 +11,7 @@ import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 
 export default function Firefly(): React.ReactElement {
-    return <li {...stylex.props(styles.firefly)}></li>;
+    return <li id="firefly" {...stylex.props(styles.firefly)}></li>;
 }
 
 const leftright = stylex.keyframes({

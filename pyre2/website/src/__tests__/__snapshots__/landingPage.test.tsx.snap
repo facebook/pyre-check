@@ -1,0 +1,372 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Home page renders external site correctly 1`] = `
+<div>
+  <div>
+    <div>
+      Pyrefly: A Static Type Checker for Python
+    </div>
+    <div>
+      Pyrefly is a static type checker for Python
+    </div>
+    <div>
+      <header>
+        <div
+          class="container"
+        >
+          <h1>
+            pyrefly
+            <span>
+              .
+            </span>
+          </h1>
+          <p>
+            <span>
+               
+              <a
+                href="https://github.com/facebook/pyrefly/milestone/1"
+              >
+                Coming soon
+              </a>
+              : A faster Python type checker written in Rust
+            </span>
+          </p>
+          <section>
+            <li
+              id="firefly"
+            />
+            <li
+              id="firefly"
+            />
+            <li
+              id="firefly"
+            />
+            <li
+              id="firefly"
+            />
+          </section>
+        </div>
+      </header>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Home page renders internal site correctly 1`] = `
+<div>
+  <div>
+    <div>
+      Pyrefly: A Static Type Checker for Python
+    </div>
+    <div>
+      Pyrefly is a static type checker for Python
+    </div>
+    <div>
+      <header>
+        <div
+          class="container"
+        >
+          <h1>
+            pyrefly
+            <span>
+              .
+            </span>
+          </h1>
+          <p>
+            <span>
+               
+              <a
+                href="https://github.com/facebook/pyrefly/milestone/1"
+              >
+                Coming soon
+              </a>
+              : A faster Python type checker written in Rust
+            </span>
+          </p>
+          <section>
+            <li
+              id="firefly"
+            />
+            <li
+              id="firefly"
+            />
+            <li
+              id="firefly"
+            />
+            <li
+              id="firefly"
+            />
+          </section>
+        </div>
+      </header>
+      <section
+        id="why-pyrefly-section"
+      >
+        <div
+          class=""
+        />
+        <div
+          class="container"
+        >
+          <h2>
+            Why Pyrefly
+          </h2>
+          <div>
+            <div>
+              <h3>
+                Scale with Confidence
+              </h3>
+              <p>
+                Lightning fast, Pyrefly can process 1.8 million lines of code in a second!
+              </p>
+            </div>
+            <div>
+              <h3>
+                Developer Delight
+              </h3>
+              <p>
+                 Write better code, faster, and with confidence using your favorite
+          editor supported by the Pyrefly IDE.
+              </p>
+            </div>
+            <div>
+              <h3>
+                Easy Onboarding
+              </h3>
+              <p>
+                 Seamless transition from existing typechecker configurations to
+          Pyrefly to get started!
+              </p>
+            </div>
+            <div>
+              <h3>
+                Codebase clarity
+              </h3>
+              <p>
+                Improve code readability and maintainability with precise type
+          annotations.
+              </p>
+            </div>
+            <div>
+              <h3>
+                Tooling for Improving Types
+              </h3>
+              <p>
+                Use the tools packaged with Pyrefly to elevate your typing coverage
+          from 0 to 100.
+              </p>
+            </div>
+            <div>
+              <h3>
+                Fully featured
+              </h3>
+              <p>
+                Follows the typing standards introduced in PEPs 484, 526, 612, along
+          with being a typechecker that is being actively developed on and
+          constantly improving.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        id="performance-comparison-section"
+      >
+        <div
+          class=""
+        />
+        <div
+          class=""
+        />
+        <div
+          class="container"
+        >
+          <h2>
+            Performance Comparison
+          </h2>
+          <div>
+            <div>
+              <button>
+                PyTorch
+              </button>
+              <button>
+                Instagram
+              </button>
+              <button>
+                Example
+              </button>
+            </div>
+            <div>
+              <div>
+                <div>
+                  <span>
+                    <strong>
+                      Pyrefly
+                    </strong>
+                  </span>
+                  <div>
+                    <div
+                      style="height: 100%; width: 3.3333333333333335%;"
+                    >
+                      <div
+                        style="animation-duration: 0.5s;"
+                      />
+                    </div>
+                  </div>
+                  <span>
+                    <strong>
+                      0.5s
+                    </strong>
+                  </span>
+                </div>
+                <div>
+                  <span>
+                    <strong>
+                      MyPy
+                    </strong>
+                  </span>
+                  <div>
+                    <div
+                      style="height: 100%; width: 53.333333333333336%;"
+                    >
+                      <div
+                        style="animation-duration: 8s;"
+                      />
+                    </div>
+                  </div>
+                  <span>
+                    <strong>
+                      8s
+                    </strong>
+                  </span>
+                </div>
+                <div>
+                  <span>
+                    <strong>
+                      Pyright
+                    </strong>
+                  </span>
+                  <div>
+                    <div
+                      style="height: 100%; width: 33.33333333333333%;"
+                    >
+                      <div
+                        style="animation-duration: 5s;"
+                      />
+                    </div>
+                  </div>
+                  <span>
+                    <strong>
+                      5s
+                    </strong>
+                  </span>
+                </div>
+                <div>
+                  <span>
+                    <strong>
+                      Pytype
+                    </strong>
+                  </span>
+                  <div>
+                    <div
+                      style="height: 100%; width: 80%;"
+                    >
+                      <div
+                        style="animation-duration: 12s;"
+                      />
+                    </div>
+                  </div>
+                  <span>
+                    <strong>
+                      12s
+                    </strong>
+                  </span>
+                </div>
+                <div>
+                  <span>
+                    <strong>
+                      Pyre1
+                    </strong>
+                  </span>
+                  <div>
+                    <div
+                      style="height: 100%; width: 100%;"
+                    >
+                      <div
+                        style="animation-duration: 15s;"
+                      />
+                    </div>
+                  </div>
+                  <span>
+                    <strong>
+                      15s
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        id="quotes-section"
+      >
+        <div
+          class=""
+        />
+        <div
+          class="container"
+        >
+          <h2>
+            What People Say About Pyrefly
+          </h2>
+          <div>
+            <div>
+              <p>
+                Pyre and Lint are hands down the most important investments Instagram has made into engineering productivity for our Python codebase. We could not have maintained our product dev velocity with so many people working in the codebase, all while serving 2 billion active users, without the safety and security of static analysis.
+              </p>
+              <div>
+                <strong>
+                  &lt;TO BE ADDED&gt;
+                </strong>
+                <span>
+                  Instagram Leadership
+                </span>
+              </div>
+            </div>
+            <div>
+              <p>
+                The enhanced type system and clear error messages have made our
+        codebase more maintainable and easier to debug.
+              </p>
+              <div>
+                <strong>
+                  &lt;TO BE ADDED&gt;
+                </strong>
+                <span>
+                  core Contributor, PyTorch
+                </span>
+              </div>
+            </div>
+            <div>
+              <p>
+                As an early adopter, I'm impressed by Pyrefly's extensibility
+        and the active community support. It's the future of Python type
+        checking.
+              </p>
+              <div>
+                <strong>
+                  &lt;TO BE ADDED&gt;
+                </strong>
+                <span>
+                  &lt;Open Source Project Name - TO BE ADDED&gt;
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+`;
