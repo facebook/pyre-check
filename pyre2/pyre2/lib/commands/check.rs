@@ -134,6 +134,7 @@ pub struct Args {
 struct LoaderInputs {
     search_path: Vec<PathBuf>,
     site_package_path: Vec<PathBuf>,
+    ignore_missing_imports_from: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -235,6 +236,7 @@ impl Handles {
         let key = LoaderInputs {
             search_path: config.search_path.clone(),
             site_package_path: config.site_package_path().to_owned(),
+            ignore_missing_imports_from: config.ignore_missing_imports_from.clone(),
         };
         if let Some(loader) = self.loader_factory.get_mut(&key) {
             loader.dupe()

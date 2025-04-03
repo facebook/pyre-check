@@ -271,6 +271,10 @@ pub struct ConfigFile {
     #[serde(default)]
     pub errors: ErrorConfig,
 
+    /// String-prefix-matched names of modules from which import errors should be ignored.
+    #[serde(default)]
+    pub ignore_missing_imports_from: Vec<String>,
+
     /// Any unknown config items
     #[serde(default, flatten)]
     pub extras: ExtraConfigs,
@@ -290,6 +294,7 @@ impl Default for ConfigFile {
             python_interpreter: PythonEnvironment::get_default_interpreter(),
             errors: ErrorConfig::default(),
             extras: Self::default_extras(),
+            ignore_missing_imports_from: Vec::new(),
         }
     }
 }
@@ -507,6 +512,7 @@ mod tests {
                     (ErrorKind::AssertType, true),
                     (ErrorKind::BadReturn, false)
                 ])),
+                ignore_missing_imports_from: Vec::new(),
             },
         );
     }
@@ -638,6 +644,7 @@ mod tests {
             python_interpreter: PythonEnvironment::get_default_interpreter(),
             errors: ErrorConfig::default(),
             extras: ConfigFile::default_extras(),
+            ignore_missing_imports_from: Vec::new(),
         };
 
         let path_str = with_sep("path/to/my/config");
