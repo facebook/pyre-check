@@ -150,7 +150,7 @@ impl Loader for DemoEnv {
                 module.as_str().replace('.', "/")
             ))))
         } else {
-            Err(FindError::new(anyhow!(
+            Err(FindError::not_found(anyhow!(
                 "module is not available in sandbox"
             )))
         }

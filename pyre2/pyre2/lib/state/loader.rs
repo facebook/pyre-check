@@ -23,12 +23,12 @@ use crate::util::locked_map::LockedMap;
 pub struct FindError(Arc<anyhow::Error>);
 
 impl FindError {
-    pub fn new(err: anyhow::Error) -> Self {
+    pub fn not_found(err: anyhow::Error) -> Self {
         Self(Arc::new(err))
     }
 
     pub fn search_path(search_roots: &[PathBuf], site_package_path: &[PathBuf]) -> FindError {
-        Self::new(anyhow!(
+        Self::not_found(anyhow!(
             "looked at search roots ({}) and site package path ({})",
             commas_iter(|| search_roots.iter().map(|x| x.display())),
             commas_iter(|| site_package_path.iter().map(|x| x.display())),

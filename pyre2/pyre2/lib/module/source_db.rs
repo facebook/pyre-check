@@ -163,7 +163,9 @@ impl Loader for BuckSourceDatabase {
         match self.lookup(module) {
             LookupResult::OwningSource(path) => Ok(ModulePath::filesystem(path.clone())),
             LookupResult::ExternalSource(path) => Ok(ModulePath::filesystem(path.clone())),
-            LookupResult::NoSource => Err(FindError::new(anyhow!("Not a dependency or typeshed"))),
+            LookupResult::NoSource => Err(FindError::not_found(anyhow!(
+                "Not a dependency or typeshed"
+            ))),
         }
     }
 }

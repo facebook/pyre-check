@@ -146,7 +146,7 @@ impl Loader for CheckLoader {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         if let Some(path) = find_module(module, &self.loader_inputs.search_path) {
             Ok(path)
-        } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
+        } else if let Some(path) = typeshed().map_err(FindError::not_found)?.find(module) {
             Ok(path)
         } else if let Some(path) = find_module(module, &self.loader_inputs.site_package_path) {
             Ok(path)

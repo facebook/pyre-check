@@ -335,10 +335,12 @@ impl Loader for TestEnv {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         if let Some((path, _)) = self.modules.get(&module) {
             Ok(path.dupe())
-        } else if let Some(path) = typeshed().map_err(FindError::new)?.find(module) {
+        } else if let Some(path) = typeshed().map_err(FindError::not_found)?.find(module) {
             Ok(path)
         } else {
-            Err(FindError::new(anyhow!("Module not given in test suite")))
+            Err(FindError::not_found(anyhow!(
+                "Module not given in test suite"
+            )))
         }
     }
 
