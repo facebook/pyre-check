@@ -88,6 +88,8 @@ pub struct Args {
     python_platform: Option<String>,
     #[clap(long, env = clap_env("SITE_PACKAGE_PATH"))]
     site_package_path: Option<Vec<PathBuf>>,
+    /// The Python executable that will be queried for Python version, platform, or site package path info
+    /// if the values are missing
     #[clap(long, env = clap_env("PYTHON_INTERPRETER"))]
     python_interpreter: Option<PathBuf>,
     /// Produce debugging information about the type checking process.

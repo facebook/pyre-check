@@ -258,10 +258,10 @@ pub struct ConfigFile {
 
     /// corresponds to --search-path in Args, the list of directories where imports are
     /// found (including type checked files).
-    // TODO(connernilsen): set this to config directory when config is found
     #[serde(default = "ConfigFile::default_search_path")]
     pub search_path: Vec<PathBuf>,
 
+    // TODO(connernilsen): make this mutually exclusive with venv/conda env
     #[serde(default = "PythonEnvironment::get_default_interpreter")]
     pub python_interpreter: Option<PathBuf>,
 

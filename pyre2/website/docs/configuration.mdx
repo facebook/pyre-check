@@ -44,7 +44,7 @@ The following is the order in which configuration options are selected:
   - Default: `["**/*.py"]`
   - Flag equivalent: `FILES...` argument
   - Equivalent configs: `include` in Pyright, `files`/`modules`/`packages` in
-    MyPy
+    mypy
   - Notes: when overridden by passing in `FILES...`, we do not consult the
     relevant config file for what to use for `project_excludes`. If
     `project_excludes` should not use the default, override it with the flag as
@@ -55,7 +55,7 @@ The following is the order in which configuration options are selected:
   - Type: list of Unix Glob patterns
   - Default: `["**/__pycache__/**", "**/.*"]`
   - Flag equivalent: `--project-excludes`
-  - Equivalent configs: `exclude` in Pyright and MyPy
+  - Equivalent configs: `exclude` in Pyright and mypy
   - Notes: we match on these patterns, unlike `project_includes`, where we
     enumerate all (Python) files under the directory. Becaues of this,
     `project_excludes` does not do directory matching unless a `/` is added at
@@ -73,7 +73,7 @@ The following is the order in which configuration options are selected:
   - Default: `["."]`
   - Flag equivalent: `--search-path`
   - ENV equivalent: `PYRE_SEARCH_PATH`
-  - Equivalent configs: `extraPaths` in Pyright, `mypy_path` in MyPy
+  - Equivalent configs: `extraPaths` in Pyright, `mypy_path` in mypy
   - Notes: we automatically append `"."` (the directory containing the
     configuration file) to the `search_roots` when type checking as a sensible
     default and last attempt at an import.
@@ -81,7 +81,7 @@ The following is the order in which configuration options are selected:
   be found and imported from. This takes the lowest priority in import
   resolution, after `project_includes`, `typeshed`, and `search_roots`.
   - Type: list of directories
-  - Default: `["."]`
+  - Default: result from [Environment Autoconfiguration](#environment-autoconfiguration) or `[]`
   - Flag equivalent: `--site-package-path`
   - ENV equivalent: `PYRE_SITE_PACKAGE_PATH`
   - Equivalent configs: none
@@ -90,20 +90,35 @@ The following is the order in which configuration options are selected:
   [`sys.platform`](https://docs.python.org/3/library/sys.html#sys.platform)
   values.
   - Type: string
-  - Default: `"linux"`
+  - Default: result from [Environment Autoconfiguration](#environment-autoconfiguration) or "linux"
   - Flag equivalent: `--python-platform`
   - ENV equivalent: `PYRE_PYTHON_PLATFORM`
-  - Equivalent configs: `pythonPlatform` in Pyright, `platform` in MyPy
+  - Equivalent configs: `pythonPlatform` in Pyright, `platform` in mypy
 - `python_version`: the value used with conditions based on type checking
   against
   [`sys.version`](https://docs.python.org/3/library/sys.html#sys.version)
   values. The format should be `<major>[.<minor>[.<micro>]]`, where minor and
   micro can be omitted to take the default positional value.
   - Type: string
-  - Default: `3.13.0`
+  - Default: result from [Environment Autoconfiguration](#environment-autoconfiguration) or `3.13.0`
   - Flag equivalent: `--python-version`
   - ENV equivalent: `PYRE_PYTHON_VERSION`
-  - Equivalent configs: `pythonVersion` in Pyright, `python_version` in MyPy
+  - Equivalent configs: `pythonVersion` in Pyright, `python_version` in mypy
+- `python_interpreter`: the Python interpreter to query when attempting to autoconfigure
+  Python environment values (`site_package_path`, `python_platform`, `python_version`).
+  See the [Environment Autoconfiguration section](#environment-autoconfiguration) for more information.
+  - Type: string of executable or path to executable
+  - Default: `python3`
+  - Flag equivalent: `--python-interpreter`
+  - ENV equivalent: `PYRE_PYTHON_INTERPRETER`
+  - Equivalent configs: `python_executable` in mypy
+  - Notes:
+    - This executes the value present in the `python_interpreter` field without any checks. It could
+    be a security risk if your `python_interpreter` executes an arbitrary executable.
+    - If you are working on a project shared between multiple people, it is likely best not to use this
+      option, since there might be different Python interpreter versions used on different systems. Instead,
+      we recommend explicitly setting `python_version`, `python_platform`, and `site_package_path`, or using
+      alternative methods of environment autoconfiguration (coming soon).
 - `errors`: configure (enable and disable) the errors Pyrefly shows
   - Type: Table of error code name to boolean representing enabled status
   - Default: `errors = {}`
@@ -115,6 +130,18 @@ The following is the order in which configuration options are selected:
     in Pyright,
     [`enable_error_code`](https://mypy.readthedocs.io/en/stable/config_file.html#confval-enable_error_code) and
     [`disable_error_code`](https://mypy.readthedocs.io/en/stable/config_file.html#confval-disable_error_code)
-    in MyPy
+    in mypy
   - Notes: setting `<error-code> = true` is the same as having no error code configuration present, which means
     the error will be shown. Setting `<error-code> = false` will disable the error for type checking.
+
+# Environment Autoconfiguration
+
+If any of `python_platform`, `python_version`, or `site_package_path` are empty, we attempt to query an interpreter
+for the missing values. By default we query `python3` if it's available on the path, but the interpreter can be
+overridden with the `python_interpreter` config option and flag. If the interpreter does not exist, we fall back to
+Pyrefly's defaults for all unspecified values.
+
+The values queried from the interpreter are:
+* `python_platform`: `sys.platform`
+* `python_version`: `sys.version_info[:3]`
+* `site_package_path`: `site.getsitepackages()`
