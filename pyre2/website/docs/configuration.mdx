@@ -158,6 +158,17 @@ the config is invalid.
     in mypy
   - Notes: setting `<error-code> = true` is the same as having no error code configuration present, which means
     the error will be shown. Setting `<error-code> = false` will disable the error for type checking.
+- `ignore_missing_imports_from`: string-prefix-matched names of modules from which import errors should be
+  ignored. For example, if Pyrefly can't find `from x.y import z`, adding `x`, `x.` or `x.y` to this config will
+  silence those import errors and replace the module with `typing.Any`. If the module can be found, its type
+  information will still be loaded, and will not be replaced with `typing.Any`.
+  - Type: list of string prefixes
+  - Default: `[]`
+  - Flag equivalent: none
+  - ENV equivalent: none
+  - Equivalent configs: `ignore_missing_imports` in mypy
+  - Notes: `reportMissingImports = false` has similar behavior in Pyright, but ignores *all* import errors instead
+    of import errors from specific modules.
 
 # Environment Autoconfiguration
 

@@ -189,18 +189,14 @@ print(json.dumps({'python_platform': platform, 'python_version': version, 'site_
         Ok(deserialized)
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn get_default_interpreter() -> Option<PathBuf> {
+        // disable query with `which` on wasm
+        #[cfg(not(target_arch = "wasm32"))]
         for interpreter in Self::DEFAULT_INTERPRETERS {
             if let Ok(interpreter_path) = which(interpreter) {
                 return Some(interpreter_path);
             }
         }
-        None
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    pub fn get_default_interpreter() -> Option<PathBuf> {
         None
     }
 
