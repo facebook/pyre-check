@@ -400,6 +400,7 @@ impl Args {
             &mut config.python_interpreter,
             self.python_interpreter.as_ref(),
         );
+        config.configure();
     }
 
     fn overriding_config_finder<'a>(

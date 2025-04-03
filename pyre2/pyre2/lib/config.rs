@@ -133,7 +133,6 @@ impl PythonEnvironment {
         }
     }
 
-    #[expect(unused)]
     fn get_env_from_interpreter(interpreter: &str) -> anyhow::Result<PythonEnvironment> {
         let script = "\
 import json, site, sys
@@ -195,6 +194,13 @@ print(json.dumps({'python_platform': platform, 'python_version': version, 'site_
 
     pub fn site_package_path(&self) -> &[PathBuf] {
         self.site_package_path.as_deref().unwrap_or_default()
+    }
+
+    pub fn get_interpreter_env(interpreter: &str) -> PythonEnvironment {
+        // TODO(connernilsen): cache these results
+        Self::get_env_from_interpreter(interpreter).inspect_err(|e| {
+            tracing::error!("Failed to query interpreter, falling back to default Python environment settings\n{}", e);
+        }).unwrap_or_default()
     }
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
@@ -302,6 +308,27 @@ impl ConfigFile {
 
     pub fn default_error_config() -> ErrorConfig {
         ErrorConfig::default()
+    }
+
+    pub fn configure(&mut self) {
+        let env = &mut self.python_environment;
+
+        if env.python_version.is_none()
+            || env.python_platform.is_none()
+            || env.site_package_path.is_none()
+        {
+            let system_env = PythonEnvironment::get_interpreter_env(&self.python_interpreter);
+
+            if env.python_version.is_none() {
+                env.python_version = system_env.python_version;
+            }
+            if env.python_platform.is_none() {
+                env.python_platform = system_env.python_platform;
+            }
+            if env.site_package_path.is_none() {
+                env.site_package_path = system_env.site_package_path;
+            }
+        }
     }
 
     fn rewrite_with_path_to_config(&mut self, config_root: &Path) {

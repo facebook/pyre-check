@@ -3,7 +3,7 @@
 ## No errors on the empty file
 
 ```scrut
-$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py --search-path $TMPDIR -a  2>&1 | grep -v "overrides"
+$ echo "" > $TMPDIR/empty.py && $PYRE2 check --python-version 3.13.0 $TMPDIR/empty.py --search-path $TMPDIR -a  2>&1 | grep -v "overrides"
 * INFO * errors* (glob)
 [0]
 ```
@@ -11,7 +11,7 @@ $ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py --search-path $TMP
 ## Error on a non-existent file
 
 ```scrut {output_stream: stderr}
-$ $PYRE2 check $TMPDIR/does_not_exist --search-path $TMPDIR/does_not_exist
+$ $PYRE2 check $TMPDIR/does_not_exist --python-version 3.13.0 --search-path $TMPDIR/does_not_exist
 No files matched pattern `*/does_not_exist` (glob)
 [1]
 ```
@@ -21,7 +21,7 @@ No files matched pattern `*/does_not_exist` (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/same_name.py && \
 > echo "x: str = True" > $TMPDIR/same_name.pyi && \
-> $PYRE2 check $TMPDIR/same_name.py $TMPDIR/same_name.pyi --search-path $TMPDIR
+> $PYRE2 check --python-version 3.13.0 $TMPDIR/same_name.py $TMPDIR/same_name.pyi --search-path $TMPDIR
 ERROR */same_name.py*:1:10-* (glob)
 ERROR */same_name.py*:1:10-* (glob)
  INFO 2 errors* (glob)
@@ -33,7 +33,7 @@ ERROR */same_name.py*:1:10-* (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/hidden1.py && \
 > echo "import hidden1; y: int = hidden1.x" > $TMPDIR/hidden2.py && \
-> $PYRE2 check $TMPDIR/hidden2.py --search-path=$TMPDIR
+> $PYRE2 check --python-version 3.13.0 $TMPDIR/hidden2.py --search-path=$TMPDIR
 ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` [bad-assignment] (glob)
  INFO 1 errors* (glob)
 [1]
@@ -44,7 +44,7 @@ ERROR */hidden2.py:1:26-35: `str` is not assignable to `int` [bad-assignment] (g
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/shown1.py && \
 > echo "import shown1; y: int = shown1.x" > $TMPDIR/shown2.py && \
-> $PYRE2 check $TMPDIR/shown2.py --search-path=$TMPDIR --check-all 2>&1 | grep -v "overrides"
+> $PYRE2 check --python-version 3.13.0 $TMPDIR/shown2.py --search-path=$TMPDIR --check-all 2>&1 | grep -v "overrides"
 ERROR */shown*.py:1:* (glob)
 ERROR */shown*.py:1:* (glob)
 * INFO * errors* (glob)
@@ -56,7 +56,7 @@ ERROR */shown*.py:1:* (glob)
 ```scrut
 $ echo "x: str = 12" > $TMPDIR/glob1.py && \
 > echo "x: str = 12" > $TMPDIR/glob2.py && \
-> $PYRE2 check "$TMPDIR/glob*.py" --search-path $TMPDIR
+> $PYRE2 check --python-version 3.13.0 "$TMPDIR/glob*.py" --search-path $TMPDIR
 ERROR */glob*.py:1:* (glob)
 ERROR */glob*.py:1:* (glob)
  INFO 2 errors* (glob)
@@ -67,7 +67,7 @@ ERROR */glob*.py:1:* (glob)
 
 ```scrut {output_stream: stderr}
 $ echo "x: str = 12" > $TMPDIR/excluded.py && \
-> $PYRE2 check $TMPDIR/excluded.py --project-excludes="$TMPDIR/*"
+> $PYRE2 check --python-version 3.13.0 $TMPDIR/excluded.py --project-excludes="$TMPDIR/*"
 All found `project_includes` files were filtered by `project_excludes` patterns.
 `project_includes`:* (glob)
 `project_excludes`:* (glob)
@@ -77,8 +77,8 @@ All found `project_includes` files were filtered by `project_excludes` patterns.
 ## Error on a non-existent search-path/site-package-path
 
 ```scrut
-$ echo "" > $TMPDIR/empty.py && $PYRE2 check $TMPDIR/empty.py --search-path $TMPDIR/abcd \
-> --site-package-path $TMPDIR/abcd
+$ echo "" > $TMPDIR/empty.py && $PYRE2 check --python-version 3.13.0 $TMPDIR/empty.py \
+> --search-path $TMPDIR/abcd --site-package-path $TMPDIR/abcd
 *WARN Nonexistent `site_package_path` found:* (glob)
 *WARN Nonexistent `search_path` found:* (glob)
 * INFO * errors* (glob)

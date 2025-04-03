@@ -197,6 +197,8 @@ def get_pyre2_command() -> list[str]:
         # We seem to be a bit non-deterministic in some places, so let's disable
         # parallelism for now.
         "--threads=1",
+        "--python-version",
+        "3.13.0",
     ]
 
 
