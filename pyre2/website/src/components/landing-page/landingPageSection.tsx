@@ -10,7 +10,6 @@
 import * as React from 'react';
 import * as stylex from '@stylexjs/stylex';
 import clsx from 'clsx';
-import featureDecorationStyles from './featureDecorationsStyles.module.css';
 import typography from './typography';
 interface LandingPageSectionProps {
   title: string;
@@ -44,8 +43,6 @@ export default function LandingPageSection({
       {!isFirstSection && (
         <div
           className={clsx(
-            featureDecorationStyles.featureDecoration,
-            featureDecorationStyles.featureDecorationRise,
           )}
           style={{
             color: backgroundColor,
@@ -57,8 +54,6 @@ export default function LandingPageSection({
       {!isLastSection && (
         <div
           className={clsx(
-            featureDecorationStyles.featureDecoration,
-            featureDecorationStyles.featureDecorationDrop,
           )}
           style={{
             color: backgroundColor,
