@@ -270,6 +270,7 @@ mod tests {
     use crate::types::callable::FunctionKind;
     use crate::types::callable::ParamList;
     use crate::types::quantified::Quantified;
+    use crate::types::quantified::QuantifiedInfo;
     use crate::types::quantified::QuantifiedKind;
     use crate::types::type_var::Restriction;
     use crate::types::types::Forallable;
@@ -348,9 +349,16 @@ mod tests {
         let uniques = UniqueFactory::new();
 
         fn mk_function(uniques: &UniqueFactory) -> Type {
-            let q = Quantified::new(uniques.fresh(), QuantifiedKind::TypeVar);
+            let q = Quantified::new(
+                uniques.fresh(),
+                QuantifiedInfo {
+                    kind: QuantifiedKind::TypeVar,
+                    restriction: Restriction::Unrestricted,
+                    default: None,
+                },
+            );
             Forallable::Function(Function {
-                signature: Callable::list(ParamList::everything(), q.to_type()),
+                signature: Callable::list(ParamList::everything(), q.clone().to_type()),
                 metadata: FuncMetadata {
                     kind: FunctionKind::Overload,
                     flags: FuncFlags::default(),

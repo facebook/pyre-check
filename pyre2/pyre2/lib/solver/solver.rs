@@ -316,7 +316,7 @@ impl Solver {
         let t = t.subst(
             &params
                 .iter()
-                .map(|p| p.quantified)
+                .map(|p| p.quantified.clone())
                 .zip(vs.iter().map(|x| x.to_type()))
                 .collect(),
         );

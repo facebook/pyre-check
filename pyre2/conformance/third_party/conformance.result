@@ -390,8 +390,6 @@
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
     "Line 46: Expected 1 errors",
-    "Line 62: Expected 1 errors",
-    "Line 66: Expected 1 errors",
     "Line 14: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']",
     "Line 15: Unexpected errors ['assert_type(type[?_TypeVarTuple], TypeVarTuple) failed']",
     "Line 16: Unexpected errors ['assert_type(type[?_ParamSpec], ParamSpec) failed']",

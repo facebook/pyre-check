@@ -6432,12 +6432,42 @@
     {
       "code": -2,
       "column": 17,
+      "concise_description": "Expected at least 2 constraints in TypeVar `T`, got 0",
+      "description": "Expected at least 2 constraints in TypeVar `T`, got 0",
+      "line": 62,
+      "name": "invalid-type-var",
+      "stop_column": 19,
+      "stop_line": 62
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected at least 2 constraints in TypeVar `T`, got 1",
+      "description": "Expected at least 2 constraints in TypeVar `T`, got 1",
+      "line": 66,
+      "name": "invalid-type-var",
+      "stop_column": 23,
+      "stop_line": 66
+    },
+    {
+      "code": -2,
+      "column": 17,
       "concise_description": "Expected a type form, got instance of `tuple[type[bytes], type[str]]`",
       "description": "Expected a type form, got instance of `tuple[type[bytes], type[str]]`",
       "line": 73,
       "name": "not-a-type",
       "stop_column": 19,
       "stop_line": 73
+    },
+    {
+      "code": -2,
+      "column": 17,
+      "concise_description": "Expected a type form, got instance of `Literal[3]`",
+      "description": "Expected a type form, got instance of `Literal[3]`",
+      "line": 77,
+      "name": "not-a-type",
+      "stop_column": 27,
+      "stop_line": 77
     },
     {
       "code": -2,

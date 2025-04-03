@@ -680,7 +680,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Type::Quantified(q) => {
                         if !args
                             .last()
-                            .is_some_and(|x| self.is_param_spec_args(x, q, arg_errors))
+                            .is_some_and(|x| self.is_param_spec_args(x, q.clone(), arg_errors))
                             || !keywords
                                 .last()
                                 .is_some_and(|x| self.is_param_spec_kwargs(x, q, arg_errors))

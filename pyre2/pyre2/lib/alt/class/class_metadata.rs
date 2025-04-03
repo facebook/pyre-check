@@ -448,7 +448,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             .collect::<SmallSet<_>>();
         let legacy_map = legacy_tparams
             .iter()
-            .map(|p| (p.quantified, p))
+            .map(|p| (p.quantified.clone(), p))
             .collect::<SmallMap<_, _>>();
 
         let lookup_tparam = |t: &Type| {

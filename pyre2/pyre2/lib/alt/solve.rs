@@ -81,6 +81,7 @@ use crate::types::literal::Lit;
 use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
 use crate::types::quantified::Quantified;
+use crate::types::quantified::QuantifiedInfo;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
@@ -137,7 +138,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Arc<LegacyTypeParameterLookup> {
         match &*self.get_idx(binding.0) {
             Type::Type(box Type::TypeVar(x)) => {
-                let q = Quantified::type_var(self.uniques);
+                let q = Quantified::type_var(
+                    self.uniques,
+                    x.default().cloned(),
+                    x.restriction().clone(),
+                );
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
                     name: x.qname().id().clone(),
                     quantified: q,
@@ -645,13 +650,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::TypeVar(ty_var) => {
                 let q = match seen_type_vars.entry(ty_var.dupe()) {
-                    Entry::Occupied(e) => *e.get(),
+                    Entry::Occupied(e) => e.get().clone(),
                     Entry::Vacant(e) => {
-                        let q = Quantified::type_var(self.uniques);
-                        e.insert(q);
+                        let q = Quantified::type_var(
+                            self.uniques,
+                            ty_var.default().cloned(),
+                            ty_var.restriction().clone(),
+                        );
+                        e.insert(q.clone());
                         tparams.push(TParamInfo {
                             name: ty_var.qname().id().clone(),
-                            quantified: q,
+                            quantified: q.clone(),
                             restriction: Restriction::Unrestricted,
                             default: ty_var.default().cloned(),
                             variance: ty_var.variance(),
@@ -663,13 +672,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::TypeVarTuple(ty_var_tuple) => {
                 let q = match seen_type_var_tuples.entry(ty_var_tuple.dupe()) {
-                    Entry::Occupied(e) => *e.get(),
+                    Entry::Occupied(e) => e.get().clone(),
                     Entry::Vacant(e) => {
                         let q = Quantified::type_var_tuple(self.uniques);
-                        e.insert(q);
+                        e.insert(q.clone());
                         tparams.push(TParamInfo {
                             name: ty_var_tuple.qname().id().clone(),
-                            quantified: q,
+                            quantified: q.clone(),
                             restriction: Restriction::Unrestricted,
                             default: None,
                             variance: Some(Variance::Invariant),
@@ -681,13 +690,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Type::ParamSpec(param_spec) => {
                 let q = match seen_param_specs.entry(param_spec.dupe()) {
-                    Entry::Occupied(e) => *e.get(),
+                    Entry::Occupied(e) => e.get().clone(),
                     Entry::Vacant(e) => {
                         let q = Quantified::param_spec(self.uniques);
-                        e.insert(q);
+                        e.insert(q.clone());
                         tparams.push(TParamInfo {
                             name: param_spec.qname().id().clone(),
-                            quantified: q,
+                            quantified: q.clone(),
                             restriction: Restriction::Unrestricted,
                             default: None,
                             variance: Some(Variance::Invariant),
@@ -884,7 +893,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Some(x) => {
                 fn get_quantified(t: &Type) -> Quantified {
                     match t {
-                        Type::Type(box Type::Quantified(q)) => *q,
+                        Type::Type(box Type::Quantified(q)) => q.clone(),
                         _ => unreachable!(),
                     }
                 }
@@ -1915,8 +1924,55 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             },
             Binding::Type(x) => x.clone(),
             Binding::StrType => self.stdlib.str().to_type(),
-            Binding::TypeParameter(box TypeParameter { unique, kind, .. }) => {
-                Type::type_form(Quantified::new(*unique, *kind).to_type())
+            Binding::TypeParameter(box TypeParameter {
+                name,
+                unique,
+                kind,
+                bound,
+                default,
+                constraints,
+            }) => {
+                let restriction = if let Some((bound_idx, bound_range)) = bound {
+                    let bound_ty =
+                        self.untype(self.get_idx(*bound_idx).arc_clone(), *bound_range, errors);
+                    Restriction::Bound(bound_ty)
+                } else if let Some((constraint_idxs, constraint_range)) = constraints {
+                    if constraint_idxs.len() < 2 {
+                        self.error(
+                            errors,
+                            *constraint_range,
+                            ErrorKind::InvalidTypeVar,
+                            None,
+                            format!(
+                                "Expected at least 2 constraints in TypeVar `{}`, got {}",
+                                name,
+                                constraint_idxs.len(),
+                            ),
+                        );
+                        Restriction::Unrestricted
+                    } else {
+                        let constraint_tys = constraint_idxs.map(|idx| {
+                            self.untype(self.get_idx(*idx).arc_clone(), *constraint_range, errors)
+                        });
+                        Restriction::Constraints(constraint_tys)
+                    }
+                } else {
+                    Restriction::Unrestricted
+                };
+                let default = default.map(|(default_idx, default_range)| {
+                    self.untype(self.get_idx(default_idx).arc_clone(), default_range, errors)
+                });
+                Type::type_form(
+                    Quantified::new(
+                        *unique,
+                        QuantifiedInfo {
+                            kind: *kind,
+                            default,
+                            restriction,
+                        },
+                    )
+                    .to_type(),
+                )
             }
             Binding::Module(m, path, prev) => {
                 let prev = prev
@@ -1954,7 +2010,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 ),
                             );
                         }
-                        Type::type_form(p.quantified.to_type())
+                        Type::type_form(p.quantified.clone().to_type())
                     }
                     LegacyTypeParameterLookup::NotParameter(ty) => ty.clone(),
                 }
@@ -2447,7 +2503,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 format!("Expected a type argument for `{}`", special_form),
             );
         }
-        if let Type::Quantified(quantified) = result {
+        if let Type::Quantified(quantified) = &result {
             if quantified.is_param_spec()
                 && !matches!(
                     type_form_context,

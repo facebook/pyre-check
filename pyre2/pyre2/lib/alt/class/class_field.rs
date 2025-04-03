@@ -710,7 +710,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                         &param.name,
                                     ),
                                 );
-                                Some((*q, q.as_gradual_type()))
+                                Some((q.clone(), q.as_gradual_type()))
                             } else {
                                 None
                             }

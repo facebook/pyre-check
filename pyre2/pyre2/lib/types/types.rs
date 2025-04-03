@@ -160,7 +160,7 @@ impl TParams {
     }
 
     pub fn quantified(&self) -> impl ExactSizeIterator<Item = Quantified> + '_ {
-        self.0.iter().map(|x| x.quantified)
+        self.0.iter().map(|x| x.quantified.clone())
     }
 }
 
@@ -819,7 +819,7 @@ impl Type {
     pub fn for_each_quantified(&self, f: &mut impl FnMut(Quantified)) {
         self.universe(&mut |x| {
             if let Type::Quantified(x) = x {
-                f(*x);
+                f(x.clone());
             }
         })
     }
@@ -1044,7 +1044,7 @@ impl Type {
 
     pub fn as_quantified(&self) -> Option<Quantified> {
         match self {
-            Type::Quantified(q) => Some(*q),
+            Type::Quantified(q) => Some(q.clone()),
             _ => None,
         }
     }

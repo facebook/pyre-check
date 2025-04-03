@@ -21,7 +21,9 @@ use crate::types::types::Type;
 use crate::util::uniques::Unique;
 use crate::util::uniques::UniqueFactory;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, TypeEq, Hash, Visit, Ord, PartialOrd, VisitMut
+)]
 pub struct QuantifiedInfo {
     pub kind: QuantifiedKind,
     pub default: Option<Type>,
@@ -29,12 +31,12 @@ pub struct QuantifiedInfo {
 }
 
 #[derive(
-    Debug, Clone, Copy, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
+    Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, Ord, PartialOrd, Hash
 )]
 pub struct Quantified {
     /// Unique identifier
     unique: Unique,
-    kind: QuantifiedKind,
+    info: Box<QuantifiedInfo>,
 }
 
 #[derive(
@@ -58,7 +60,7 @@ impl QuantifiedKind {
 
 impl Display for Quantified {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
+        match self.info.kind {
             QuantifiedKind::TypeVar => write!(f, "?_TypeVar"),
             QuantifiedKind::ParamSpec => write!(f, "?_ParamSpec"),
             QuantifiedKind::TypeVarTuple => write!(f, "?_TypeVarTuple"),
@@ -67,20 +69,48 @@ impl Display for Quantified {
 }
 
 impl Quantified {
-    pub fn new(unique: Unique, kind: QuantifiedKind) -> Self {
-        Quantified { unique, kind }
+    pub fn new(unique: Unique, info: QuantifiedInfo) -> Self {
+        Quantified {
+            unique,
+            info: Box::new(info),
+        }
     }
 
-    pub fn type_var(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques.fresh(), QuantifiedKind::TypeVar)
+    pub fn type_var(
+        uniques: &UniqueFactory,
+        default: Option<Type>,
+        restriction: Restriction,
+    ) -> Self {
+        Self::new(
+            uniques.fresh(),
+            QuantifiedInfo {
+                kind: QuantifiedKind::TypeVar,
+                restriction,
+                default,
+            },
+        )
     }
 
     pub fn param_spec(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques.fresh(), QuantifiedKind::ParamSpec)
+        Self::new(
+            uniques.fresh(),
+            QuantifiedInfo {
+                kind: QuantifiedKind::ParamSpec,
+                restriction: Restriction::Unrestricted,
+                default: None,
+            },
+        )
     }
 
     pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
-        Quantified::new(uniques.fresh(), QuantifiedKind::TypeVarTuple)
+        Self::new(
+            uniques.fresh(),
+            QuantifiedInfo {
+                kind: QuantifiedKind::TypeVarTuple,
+                restriction: Restriction::Unrestricted,
+                default: None,
+            },
+        )
     }
 
     pub fn to_type(self) -> Type {
@@ -88,7 +118,7 @@ impl Quantified {
     }
 
     pub fn as_value(&self, stdlib: &Stdlib) -> ClassType {
-        match self.kind {
+        match self.info.kind {
             QuantifiedKind::TypeVar => stdlib.type_var(),
             QuantifiedKind::ParamSpec => stdlib.param_spec(),
             QuantifiedKind::TypeVarTuple => stdlib.type_var_tuple(),
@@ -96,19 +126,19 @@ impl Quantified {
     }
 
     pub fn kind(&self) -> QuantifiedKind {
-        self.kind
+        self.info.kind
     }
 
     pub fn is_param_spec(&self) -> bool {
-        matches!(self.kind, QuantifiedKind::ParamSpec)
+        matches!(self.info.kind, QuantifiedKind::ParamSpec)
     }
 
     pub fn is_type_var_tuple(&self) -> bool {
-        matches!(self.kind, QuantifiedKind::TypeVarTuple)
+        matches!(self.info.kind, QuantifiedKind::TypeVarTuple)
     }
 
     pub fn as_gradual_type(&self) -> Type {
         // TODO(stroxler): Look into what it would take to do better when there's an upper-bound on a TypeVar.
-        self.kind.empty_value()
+        self.info.kind.empty_value()
     }
 }

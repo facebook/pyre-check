@@ -280,8 +280,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }));
         params.extend(def.parameters.vararg.iter().map(|x| {
             let ty = get_param_ty(&x.name);
-            if let Type::Args(q) = ty {
-                paramspec_args = Some(q);
+            if let Type::Args(q) = &ty {
+                paramspec_args = Some(q.clone());
             }
             Param::VarArg(Some(x.name.id.clone()), ty)
         }));
@@ -317,8 +317,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 Either::Right(var) => self.solver().force_var(var),
             };
-            if let Type::Kwargs(q) = ty {
-                paramspec_kwargs = Some(q);
+            if let Type::Kwargs(q) = &ty {
+                paramspec_kwargs = Some(q.clone());
             }
             Param::Kwargs(ty)
         }));
@@ -374,7 +374,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 })
                 .collect();
         }
-        let callable = if let Some(q) = paramspec_args
+        let callable = if let Some(q) = &paramspec_args
             && paramspec_args == paramspec_kwargs
         {
             Callable::concatenate(
@@ -386,7 +386,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         _ => None,
                     })
                     .collect(),
-                Type::Quantified(q),
+                Type::Quantified(q.clone()),
                 ret,
             )
         } else {

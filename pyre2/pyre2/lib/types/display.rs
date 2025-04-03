@@ -117,7 +117,8 @@ impl<'a> TypeDisplayContext<'a> {
             };
             if let Some(tparams) = tparams {
                 for tparam in tparams.iter() {
-                    self.quantifieds.insert(tparam.quantified, &tparam.name);
+                    self.quantifieds
+                        .insert(tparam.quantified.clone(), &tparam.name);
                 }
             }
         })
@@ -364,6 +365,7 @@ mod tests {
     use crate::types::class::ClassType;
     use crate::types::literal::Lit;
     use crate::types::quantified::Quantified;
+    use crate::types::quantified::QuantifiedInfo;
     use crate::types::quantified::QuantifiedKind;
     use crate::types::tuple::Tuple;
     use crate::types::type_var::Restriction;
@@ -392,7 +394,14 @@ mod tests {
     fn fake_tparam(uniques: &UniqueFactory, name: &str, kind: QuantifiedKind) -> TParamInfo {
         TParamInfo {
             name: Name::new(name),
-            quantified: Quantified::new(uniques.fresh(), kind),
+            quantified: Quantified::new(
+                uniques.fresh(),
+                QuantifiedInfo {
+                    kind,
+                    restriction: Restriction::Unrestricted,
+                    default: None,
+                },
+            ),
             restriction: Restriction::Unrestricted,
             default: None,
             variance: Some(Variance::Invariant),
