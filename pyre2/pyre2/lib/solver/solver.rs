@@ -605,7 +605,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                 restriction: Restriction::Bound(bound),
                                 ..
                             }) => self.is_subset_eq(bound, t2),
-                            // TODO: handle constraints
+                            Variable::Quantified(QuantifiedInfo {
+                                restriction: Restriction::Constraints(constraints),
+                                ..
+                            }) => constraints
+                                .iter()
+                                .all(|constraint| self.is_subset_eq(constraint, t2)),
                             _ => true,
                         };
                         if satisfies_restrictions {
@@ -629,7 +634,12 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                                 restriction: Restriction::Bound(bound),
                                 ..
                             }) => self.is_subset_eq(t1, bound),
-                            // TODO: handle constraints
+                            Variable::Quantified(QuantifiedInfo {
+                                restriction: Restriction::Constraints(constraints),
+                                ..
+                            }) => constraints
+                                .iter()
+                                .any(|constraint| self.is_subset_eq(t1, constraint)),
                             _ => true,
                         };
                         if satisfies_restrictions {
@@ -645,13 +655,13 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                     _ => false,
                 }
             }
-            (Type::Quantified(q), t2) => {
-                match q.restriction() {
-                    Restriction::Bound(bound) => self.is_subset_eq(&bound, t2),
-                    // TODO: handle constraints
-                    _ => self.is_subset_eq_impl(got, want),
-                }
-            }
+            (Type::Quantified(q), t2) => match q.restriction() {
+                Restriction::Bound(bound) => self.is_subset_eq(&bound, t2),
+                Restriction::Constraints(constraints) => constraints
+                    .iter()
+                    .all(|constraint| self.is_subset_eq(constraint, t2)),
+                Restriction::Unrestricted => self.is_subset_eq_impl(got, want),
+            },
             _ => self.is_subset_eq_impl(got, want),
         }
     }

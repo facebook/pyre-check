@@ -24,3 +24,23 @@ test(B())
 test(C())
  "#,
 );
+
+testcase!(
+    test_generic_constraints,
+    r#"
+class A: ...
+class B(A): ...
+class C(A): ...
+class D(C): ...
+
+def test[T: (B, C)](x: T) -> None:
+    a: A = x  # OK
+    b: B = x  # E: `?T` is not assignable to `B`
+    c: C = x  # E: `?T` is not assignable to `C`
+
+test(A())  # E: Argument `A` is not assignable to parameter `x` with type `@_` in function `test`
+test(B())
+test(C())
+test(D())
+ "#,
+);
