@@ -21,7 +21,6 @@ use crate::module::module_name::ModuleName;
 use crate::types::callable::Function;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
-use crate::types::quantified::Quantified;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
 use crate::types::types::NeverStyle;
@@ -78,7 +77,6 @@ impl ClassInfo {
 #[derive(Debug, Clone, Default)]
 pub struct TypeDisplayContext<'a> {
     classes: SmallMap<&'a Name, ClassInfo>,
-    quantifieds: SmallMap<Quantified, &'a Name>,
 }
 
 impl<'a> TypeDisplayContext<'a> {
@@ -110,17 +108,6 @@ impl<'a> TypeDisplayContext<'a> {
                     Entry::Occupied(mut e) => e.get_mut().update(qname),
                 }
             }
-            let tparams = match t {
-                Type::ClassDef(cls) => Some(cls.tparams()),
-                Type::Forall(forall) => Some(&forall.tparams),
-                _ => None,
-            };
-            if let Some(tparams) = tparams {
-                for tparam in tparams.iter() {
-                    self.quantifieds
-                        .insert(tparam.quantified.clone(), tparam.name());
-                }
-            }
         })
     }
 
@@ -144,13 +131,6 @@ impl<'a> TypeDisplayContext<'a> {
         match self.classes.get(&qname.id()) {
             Some(info) => info.fmt(qname, f),
             None => ClassInfo::qualified().fmt(qname, f), // we should not get here, if we do, be safe
-        }
-    }
-
-    fn fmt_quantified(&self, quantified: &Quantified, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.quantifieds.get(quantified) {
-            Some(name) => write!(f, "{name}"),
-            None => write!(f, "{quantified}"),
         }
     }
 
@@ -291,16 +271,12 @@ impl<'a> TypeDisplayContext<'a> {
             ),
             Type::Module(m) => write!(f, "Module[{m}]"),
             Type::Var(var) => write!(f, "{var}"),
-            Type::Quantified(var) => self.fmt_quantified(var, f),
+            Type::Quantified(var) => write!(f, "{var}"),
             Type::Args(q) => {
-                write!(f, "Args[")?;
-                self.fmt_quantified(q, f)?;
-                write!(f, "]")
+                write!(f, "Args[{q}]")
             }
             Type::Kwargs(q) => {
-                write!(f, "Kwargs[")?;
-                self.fmt_quantified(q, f)?;
-                write!(f, "]")
+                write!(f, "Kwargs[{q}]")
             }
             Type::SpecialForm(x) => write!(f, "{x}"),
             Type::Ellipsis => write!(f, "Ellipsis"),

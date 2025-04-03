@@ -3820,8 +3820,8 @@
     {
       "code": -2,
       "column": 39,
-      "concise_description": "Argument `tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: (() -> S) | None) -> T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`",
-      "description": "Argument `tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: (() -> S) | None) -> T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`",
+      "concise_description": "Argument `tuple[Forall[S, T, (*, converter: (?S) -> ?T, default: ?S | None, default_factory: (() -> ?S) | None) -> ?T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`",
+      "description": "Argument `tuple[Forall[S, T, (*, converter: (?S) -> ?T, default: ?S | None, default_factory: (() -> ?S) | None) -> ?T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`",
       "line": 29,
       "name": "bad-argument-type",
       "stop_column": 53,

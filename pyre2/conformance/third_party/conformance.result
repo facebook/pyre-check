@@ -206,7 +206,7 @@
   ],
   "dataclasses_transform_converter.py": [
     "Line 118: Expected 1 errors",
-    "Line 29: Unexpected errors ['Argument `tuple[Forall[S, T, (*, converter: (S) -> T, default: S | None, default_factory: (() -> S) | None) -> T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`']",
+    "Line 29: Unexpected errors ['Argument `tuple[Forall[S, T, (*, converter: (?S) -> ?T, default: ?S | None, default_factory: (() -> ?S) | None) -> ?T]]` is not assignable to parameter `field_specifiers` with type `tuple[((...) -> Any) | type[Any], ...]` in function `typing.dataclass_transform`']",
     "Line 112: Unexpected errors ['Expected 0 positional arguments, got 5 in function `object.__init__`']",
     "Line 114: Unexpected errors [\"`Literal['f1']` is not assignable to attribute `field0` with type `int`\"]",
     "Line 115: Unexpected errors [\"`Literal['f6']` is not assignable to attribute `field3` with type `ConverterClass`\"]",
