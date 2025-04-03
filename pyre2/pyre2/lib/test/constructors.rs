@@ -73,9 +73,9 @@ class A[T: int]:
     x: T
     def __init__(self, x: T):
         reveal_type(self)  # E: revealed type: Self@A
-        reveal_type(self.x)  # E: revealed type: int
-        self.x = 1  # This shouldn't be allowed
-        self.x = x  # OK  # E: `?_TypeVar` is not assignable to attribute `x` with type `int`
+        reveal_type(self.x)  # E: revealed type: ?T
+        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `?T`
+        self.x = x  # OK
     "#,
 );
 

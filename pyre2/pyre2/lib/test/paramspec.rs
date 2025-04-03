@@ -126,7 +126,7 @@ from typing import Callable, Concatenate, ParamSpec
 P = ParamSpec("P")
 
 def foo(x: P) -> P: ...                           # E: ParamSpec is not allowed in this context. # E: ParamSpec is not allowed in this context.
-def foo(x: Concatenate[int, P]) -> int: ...       # E: Concatenate[int, ?_ParamSpec] is not allowed in this context.
+def foo(x: Concatenate[int, P]) -> int: ...       # E: Concatenate[int, ?P] is not allowed in this context.
 def foo(x: Callable[Concatenate[P, P], int]) -> int: ...  # E: ParamSpec is not allowed in this context.
 def foo(x: list[P]) -> None: ...                  # E: ParamSpec cannot be used for type parameter
 def foo(x: Callable[[int, str], P]) -> None: ...  # E: ParamSpec is not allowed in this context.

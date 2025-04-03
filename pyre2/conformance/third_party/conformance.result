@@ -97,8 +97,8 @@
     "Line 187: Unexpected errors ['Expected to yield a value of type `int`, but a bare `yield` gives `None` instead']"
   ],
   "annotations_methods.py": [
-    "Line 19: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 23: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
+    "Line 19: Unexpected errors ['Expected a callable, got type[?T]']",
+    "Line 23: Unexpected errors ['Expected a callable, got type[?T]']"
   ],
   "annotations_typeexpr.py": [
     "Line 94: Expected 1 errors"
@@ -115,8 +115,8 @@
   ],
   "callables_protocol.py": [],
   "callables_subtyping.py": [
-    "Line 213: Unexpected errors ['`ProtocolWithP[?_ParamSpec]` is not assignable to `(ParamSpec(?_ParamSpec)) -> None`']",
-    "Line 214: Unexpected errors ['`(ParamSpec(?_ParamSpec)) -> None` is not assignable to `ProtocolWithP[?_ParamSpec]`']"
+    "Line 213: Unexpected errors ['`ProtocolWithP[?P]` is not assignable to `(ParamSpec(?P)) -> None`']",
+    "Line 214: Unexpected errors ['`(ParamSpec(?P)) -> None` is not assignable to `ProtocolWithP[?P]`']"
   ],
   "classes_classvar.py": [
     "Line 54: Expected 1 errors"
@@ -135,10 +135,10 @@
     "Line 117: Unexpected errors ['assert_type(Class8[str], Class8[list[str]]) failed']"
   ],
   "constructors_call_type.py": [
-    "Line 63: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 71: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 79: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
-    "Line 80: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
+    "Line 63: Unexpected errors ['Expected a callable, got type[?T]']",
+    "Line 71: Unexpected errors ['Expected a callable, got type[?T1]']",
+    "Line 79: Unexpected errors ['Expected a callable, got type[?T2]']",
+    "Line 80: Unexpected errors ['Expected a callable, got type[?T2]']"
   ],
   "constructors_callable.py": [
     "Line 65: Expected 1 errors",
@@ -300,7 +300,7 @@
     "Line 55: Expected 1 errors",
     "Line 121: Expected 1 errors",
     "Line 191: Expected 1 errors",
-    "Line 34: Unexpected errors ['`+` is not supported between `?_TypeVar` and `?_TypeVar`\\n  TODO: Expr::binop_infer attribute base undefined for type: ?_TypeVar (trying to access __add__)', '`+` is not supported between `?_TypeVar` and `?_TypeVar`\\n  TODO: Expr::binop_infer attribute base undefined for type: ?_TypeVar (trying to access __radd__)']",
+    "Line 34: Unexpected errors ['`+` is not supported between `?AnyStr` and `?AnyStr`\\n  TODO: Expr::binop_infer attribute base undefined for type: ?AnyStr (trying to access __add__)', '`+` is not supported between `?AnyStr` and `?AnyStr`\\n  TODO: Expr::binop_infer attribute base undefined for type: ?AnyStr (trying to access __radd__)']",
     "Line 67: Unexpected errors ['assert_type(MyStr, str) failed']",
     "Line 68: Unexpected errors ['assert_type(MyStr, str) failed', 'Argument `str` is not assignable to parameter `y` with type `MyStr` in function `concat`']"
   ],
@@ -390,10 +390,10 @@
   "generics_syntax_compatibility.py": [],
   "generics_syntax_declarations.py": [
     "Line 46: Expected 1 errors",
-    "Line 14: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']",
-    "Line 15: Unexpected errors ['assert_type(type[?_TypeVarTuple], TypeVarTuple) failed']",
-    "Line 16: Unexpected errors ['assert_type(type[?_ParamSpec], ParamSpec) failed']",
-    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access capitalize)']"
+    "Line 14: Unexpected errors ['assert_type(type[?T], TypeVar) failed']",
+    "Line 15: Unexpected errors ['assert_type(type[?Ts], TypeVarTuple) failed']",
+    "Line 16: Unexpected errors ['assert_type(type[?P], ParamSpec) failed']",
+    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?T (trying to access capitalize)']"
   ],
   "generics_syntax_infer_variance.py": [
     "Line 28: Unexpected errors ['`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`']",
@@ -412,18 +412,18 @@
     "Line 98: Expected 1 errors",
     "Line 66: Unexpected errors ['Found `S`, but it was not the global scope']",
     "Line 67: Unexpected errors ['assert_type(str, int) failed']",
-    "Line 116: Unexpected errors ['assert_type(type[?_TypeVar], TypeVar) failed']"
+    "Line 116: Unexpected errors ['assert_type(type[?T], TypeVar) failed']"
   ],
   "generics_type_erasure.py": [],
   "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
-    "Line 25: Unexpected errors ['`?_TypeVarTuple` is not assignable to attribute `_shape` with type `Unknown`']",
-    "Line 28: Unexpected errors ['Returned type `Unknown` is not assignable to declared return type `?_TypeVarTuple`']",
+    "Line 25: Unexpected errors ['`?Shape` is not assignable to attribute `_shape` with type `Unknown`']",
+    "Line 28: Unexpected errors ['Returned type `Unknown` is not assignable to declared return type `?Shape`']",
     "Line 85: Unexpected errors ['Argument `tuple[float]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`']"
   ],
   "generics_typevartuple_callable.py": [],
   "generics_typevartuple_concat.py": [
-    "Line 56: Unexpected errors ['Returned type `tuple[*tuple[@_, ...], Unknown]` is not assignable to declared return type `tuple[*?_TypeVarTuple, ?_TypeVar]`', 'Cannot index into `tuple[?_TypeVar, *?_TypeVarTuple]`\\n  No matching overload found for function `tuple.__getitem__`, reporting errors for closest overload: `(SupportsIndex) -> Unknown`', 'Argument `slice[int, int, int]` is not assignable to parameter with type `SupportsIndex` in function `tuple.__getitem__`']"
+    "Line 56: Unexpected errors ['Returned type `tuple[*tuple[@_, ...], Unknown]` is not assignable to declared return type `tuple[*?Ts, ?T]`', 'Cannot index into `tuple[?T, *?Ts]`\\n  No matching overload found for function `tuple.__getitem__`, reporting errors for closest overload: `(SupportsIndex) -> Unknown`', 'Argument `slice[int, int, int]` is not assignable to parameter with type `SupportsIndex` in function `tuple.__getitem__`']"
   ],
   "generics_typevartuple_overloads.py": [],
   "generics_typevartuple_specialization.py": [
@@ -439,7 +439,7 @@
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
     "Line 51: Expected 1 errors",
-    "Line 31: Unexpected errors ['Argument `?_TypeVar` is not assignable to parameter with type `Sized` in function `len`', 'Argument `?_TypeVar` is not assignable to parameter with type `Sized` in function `len`']"
+    "Line 31: Unexpected errors ['Argument `?ST` is not assignable to parameter with type `Sized` in function `len`', 'Argument `?ST` is not assignable to parameter with type `Sized` in function `len`']"
   ],
   "generics_variance.py": [
     "Line 77: Expected 1 errors",
@@ -482,7 +482,7 @@
     "Line 120: Expected 1 errors",
     "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed']",
     "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
-    "Line 126: Unexpected errors ['`?_TypeVar` is not assignable to attribute `value` with type `LiteralString`']"
+    "Line 126: Unexpected errors ['`?T` is not assignable to attribute `value` with type `LiteralString`']"
   ],
   "literals_parameterizations.py": [],
   "literals_semantics.py": [],
@@ -529,7 +529,7 @@
     "Line 157: Unexpected errors ['Class member `Mixin7.method1` overrides parent class `Proto7` in an inconsistent manner']"
   ],
   "protocols_generic.py": [
-    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?_TypeVar (trying to access get_parent)']",
+    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?GenericHasParent (trying to access get_parent)']",
     "Line 144: Unexpected errors ['`ConcreteHasProperty1` is not assignable to `HasPropertyProto`']",
     "Line 145: Unexpected errors ['`ConcreteHasProperty2` is not assignable to `HasPropertyProto`']"
   ],
@@ -575,7 +575,7 @@
     "Line 85: Expected 1 errors",
     "Line 92: Expected 1 errors",
     "Line 93: Expected 1 errors",
-    "Line 81: Unexpected errors ['Expected a callable, got type[?_TypeVar]']"
+    "Line 81: Unexpected errors ['Expected a callable, got type[?T]']"
   ],
   "qualifiers_final_annotation.py": [
     "Line 34: Expected 1 errors",
@@ -612,7 +612,7 @@
   "specialtypes_promotions.py": [],
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
-    "Line 39: Unexpected errors ['Expected a callable, got type[?_TypeVar]']",
+    "Line 39: Unexpected errors ['Expected a callable, got type[?U]']",
     "Line 84: Unexpected errors ['assert_type(type, type[Any]) failed']",
     "Line 99: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
     "Line 100: Unexpected errors ['Object of class `type` has no attribute `unknown`']",
@@ -631,7 +631,7 @@
     "Line 166: Unexpected errors ['`type` is not assignable to `(int, int) -> int`']",
     "Line 169: Unexpected errors ['`type` is not assignable to `type[int]`']",
     "Line 170: Unexpected errors ['`type` is not assignable to `type[Any]`']",
-    "Line 175: Unexpected errors ['Returned type `type` is not assignable to declared return type `type[?_TypeVar]`']"
+    "Line 175: Unexpected errors ['Returned type `type` is not assignable to declared return type `type[?T]`']"
   ],
   "tuples_type_compat.py": [
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed']",
