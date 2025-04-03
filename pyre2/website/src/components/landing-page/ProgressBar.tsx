@@ -13,11 +13,13 @@ import * as stylex from '@stylexjs/stylex';
 interface ProgressBarProps {
     durationInSeconds: number;
     maxDurationInSeconds: number;
+    highlight: boolean;
 }
 
 export default function ProgressBar({
     durationInSeconds,
     maxDurationInSeconds,
+    highlight,
 }: ProgressBarProps): React.ReactElement {
     // Calculate the relative percentage width based on the maximum duration
     const relativeWidth = (durationInSeconds / maxDurationInSeconds) * 100;
@@ -26,11 +28,11 @@ export default function ProgressBar({
         <div
             {...stylex.props(styles.progressBar)}
             style={{
-                height: '100%',
+                height: '80%',
                 width: `${relativeWidth}%`,
             }}>
             <div
-                {...stylex.props(styles.fill)}
+                {...stylex.props(styles.fill, highlight && styles.highlight)}
                 style={{ animationDuration: `${durationInSeconds}s` }}
             />
         </div>
@@ -48,17 +50,20 @@ const fillUpKeyframes = stylex.keyframes({
 
 const styles = stylex.create({
     progressBar: {
-        backgroundColor: 'var(--color-background)',
+        backgroundColor: 'var(--light-grey)',
         borderRadius: 30,
         width: '100%',
         overflow: 'hidden',
     },
     fill: {
-        height: '100%',
-        backgroundColor: 'var(--color-secondary)',
+        height: '99%',
+        backgroundColor: 'var(--color-background)',
         borderRadius: 'inherit',
         animationName: fillUpKeyframes,
         animationFillMode: 'forwards',
         animationTimingFunction: 'linear',
     },
+    highlight: {
+        backgroundColor: 'var(--dark-yellow)',
+    }
 });

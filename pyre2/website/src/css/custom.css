@@ -26,6 +26,8 @@
   --color-secondary: #ff7701;
   --color-accent: #ff4300;
   --color-text: #efefef;
+  --dark-yellow: #e59c24;
+  --light-grey: #7f8790;
 }
 
 .docusaurus-highlight-code-line {

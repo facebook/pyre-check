@@ -55,6 +55,7 @@ export default function PerformanceComparisonChart({
                         <ProgressBar
                             durationInSeconds={typechecker.durationInSeconds}
                             maxDurationInSeconds={maxDuration}
+                            highlight={typechecker.typechecker === TypeChecker.PYREFLY}
                         />
                     </div>
                     <span {...stylex.props(styles.duration)}>
@@ -80,6 +81,7 @@ const styles = stylex.create({
     progressBarContainer: {
         flexGrow: 1,
         marginRight: 20,
+        paddingTop: '8px'
     },
     duration: {
         marginLeft: 'auto',
