@@ -89,10 +89,12 @@ impl Class {
         &self.0.tparams
     }
 
+    pub fn tparams_as_targs(&self) -> TArgs {
+        TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect())
+    }
+
     pub fn instance_type(&self) -> Type {
-        let tparams_as_targs =
-            TArgs::new(self.tparams().quantified().map(|q| q.to_type()).collect());
-        ClassType::new(self.clone(), tparams_as_targs).to_type()
+        ClassType::new(self.clone(), self.tparams_as_targs()).to_type()
     }
 
     pub fn self_param(&self) -> Param {

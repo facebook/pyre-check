@@ -406,9 +406,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     /// Creates a type from the class with fresh variables for its type parameters.
     pub fn instantiate_fresh(&self, cls: &Class) -> Type {
-        let qs = cls.tparams().quantified().collect::<Vec<_>>();
-        let targs = TArgs::new(qs.map(|q| Type::Quantified(q.clone())));
-        let promoted_cls = Type::type_form(self.type_of_instance(cls, targs));
+        let promoted_cls = Type::type_form(self.type_of_instance(cls, cls.tparams_as_targs()));
         self.solver()
             .fresh_quantified(cls.tparams(), promoted_cls, self.uniques)
             .1
