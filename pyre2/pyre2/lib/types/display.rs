@@ -397,6 +397,7 @@ mod tests {
             quantified: Quantified::new(
                 uniques.fresh(),
                 QuantifiedInfo {
+                    name: Name::new(name),
                     kind,
                     restriction: Restriction::Unrestricted,
                     default: None,

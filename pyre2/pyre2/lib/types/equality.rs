@@ -352,6 +352,7 @@ mod tests {
             let q = Quantified::new(
                 uniques.fresh(),
                 QuantifiedInfo {
+                    name: Name::new_static("test"),
                     kind: QuantifiedKind::TypeVar,
                     restriction: Restriction::Unrestricted,
                     default: None,

@@ -171,6 +171,7 @@ impl Solver {
                         kind,
                         default,
                         restriction,
+                        ..
                     }) => {
                         if default.is_some() {
                             (*kind, default.clone())
@@ -325,6 +326,7 @@ impl Solver {
             lock.insert(
                 *v,
                 Variable::Quantified(QuantifiedInfo {
+                    name: param.name.clone(),
                     kind: param.quantified.kind(),
                     default: param.default.clone(),
                     restriction: param.restriction.clone(),

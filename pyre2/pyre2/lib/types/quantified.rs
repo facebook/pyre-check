@@ -12,6 +12,7 @@ use parse_display::Display;
 use pyrefly_derive::TypeEq;
 use pyrefly_derive::Visit;
 use pyrefly_derive::VisitMut;
+use ruff_python_ast::name::Name;
 
 use crate::types::callable::ParamList;
 use crate::types::class::ClassType;
@@ -25,6 +26,7 @@ use crate::util::uniques::UniqueFactory;
     Debug, Clone, PartialEq, Eq, TypeEq, Hash, Visit, Ord, PartialOrd, VisitMut
 )]
 pub struct QuantifiedInfo {
+    pub name: Name,
     pub kind: QuantifiedKind,
     pub default: Option<Type>,
     pub restriction: Restriction,
@@ -77,6 +79,7 @@ impl Quantified {
     }
 
     pub fn type_var(
+        name: Name,
         uniques: &UniqueFactory,
         default: Option<Type>,
         restriction: Restriction,
@@ -84,6 +87,7 @@ impl Quantified {
         Self::new(
             uniques.fresh(),
             QuantifiedInfo {
+                name,
                 kind: QuantifiedKind::TypeVar,
                 restriction,
                 default,
@@ -91,10 +95,11 @@ impl Quantified {
         )
     }
 
-    pub fn param_spec(uniques: &UniqueFactory) -> Self {
+    pub fn param_spec(name: Name, uniques: &UniqueFactory) -> Self {
         Self::new(
             uniques.fresh(),
             QuantifiedInfo {
+                name,
                 kind: QuantifiedKind::ParamSpec,
                 restriction: Restriction::Unrestricted,
                 default: None,
@@ -102,10 +107,11 @@ impl Quantified {
         )
     }
 
-    pub fn type_var_tuple(uniques: &UniqueFactory) -> Self {
+    pub fn type_var_tuple(name: Name, uniques: &UniqueFactory) -> Self {
         Self::new(
             uniques.fresh(),
             QuantifiedInfo {
+                name,
                 kind: QuantifiedKind::TypeVarTuple,
                 restriction: Restriction::Unrestricted,
                 default: None,

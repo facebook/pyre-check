@@ -793,8 +793,8 @@ impl<'a> BindingsBuilder<'a> {
             let mut bound_info = None;
             let mut constraint_info = None;
             let kind = match x {
-                TypeParam::TypeVar(x) => {
-                    if let Some(box bound) = &mut x.bound {
+                TypeParam::TypeVar(tv) => {
+                    if let Some(box bound) = &mut tv.bound {
                         if let Expr::Tuple(tuple) = bound {
                             let mut constraints = Vec::new();
                             for constraint in &mut tuple.elts {
@@ -807,7 +807,7 @@ impl<'a> BindingsBuilder<'a> {
                             bound_info = Some((idx, bound.range()));
                         }
                     }
-                    if let Some(box default) = &mut x.default {
+                    if let Some(box default) = &mut tv.default {
                         let idx = self.handle_type_param_constraint(default);
                         default_info = Some((idx, default.range()));
                     }
