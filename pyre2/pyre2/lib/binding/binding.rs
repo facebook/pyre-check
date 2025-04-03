@@ -118,7 +118,7 @@ impl Keyed for KeyClassSynthesizedFields {
 }
 impl Keyed for KeyExport {
     const EXPORTED: bool = true;
-    type Value = Binding;
+    type Value = BindingExport;
     type Answer = Type;
 }
 impl Keyed for KeyFunction {
@@ -973,6 +973,15 @@ impl DisplayWith<Bindings> for Binding {
             Self::SuperInstance(SuperStyle::ImplicitArgs(_, _), _range) => write!(f, "super()"),
             Self::SuperInstance(SuperStyle::Any, _range) => write!(f, "super(Any, Any)"),
         }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BindingExport(pub Binding);
+
+impl DisplayWith<Bindings> for BindingExport {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, ctx: &Bindings) -> fmt::Result {
+        DisplayWith::fmt(&self.0, f, ctx)
     }
 }
 

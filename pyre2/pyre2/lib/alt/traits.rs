@@ -29,6 +29,7 @@ use crate::binding::binding::BindingClassField;
 use crate::binding::binding::BindingClassMetadata;
 use crate::binding::binding::BindingClassSynthesizedFields;
 use crate::binding::binding::BindingExpect;
+use crate::binding::binding::BindingExport;
 use crate::binding::binding::BindingFunction;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
@@ -152,14 +153,14 @@ impl<Ans: LookupAnswer> Solve<Ans> for KeyExpect {
 impl<Ans: LookupAnswer> Solve<Ans> for KeyExport {
     fn solve(
         answers: &AnswersSolver<Ans>,
-        binding: &Binding,
+        binding: &BindingExport,
         errors: &ErrorCollector,
     ) -> Arc<Type> {
-        answers.solve_binding(binding, errors)
+        answers.solve_binding(&binding.0, errors)
     }
 
     fn create_recursive(answers: &AnswersSolver<Ans>, binding: &Self::Value) -> Self::Recursive {
-        answers.create_recursive(binding)
+        answers.create_recursive(&binding.0)
     }
 
     fn promote_recursive(x: Self::Recursive) -> Self::Answer {

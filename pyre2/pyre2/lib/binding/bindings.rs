@@ -38,6 +38,7 @@ use vec1::Vec1;
 use crate::binding::binding::AnnotationTarget;
 use crate::binding::binding::Binding;
 use crate::binding::binding::BindingAnnotation;
+use crate::binding::binding::BindingExport;
 use crate::binding::binding::BindingLegacyTypeParam;
 use crate::binding::binding::BindingYield;
 use crate::binding::binding::BindingYieldFrom;
@@ -346,7 +347,7 @@ impl Bindings {
                 continue;
             }
             let info = last_scope.flow.info.get_hashed(k);
-            let val = match info {
+            let binding = match info {
                 Some(FlowInfo { key, .. }) => {
                     if let Some(ann) = static_info.annot {
                         Binding::AnnotatedType(ann, Box::new(Binding::Forward(*key)))
@@ -367,7 +368,9 @@ impl Bindings {
                 }
             };
             if exported.contains_key_hashed(k) {
-                builder.table.insert(KeyExport(k.into_key().clone()), val);
+                builder
+                    .table
+                    .insert(KeyExport(k.into_key().clone()), BindingExport(binding));
             }
         }
         Self(Arc::new(BindingsInner {
