@@ -4779,23 +4779,16 @@ module HigherOrderCallGraph = struct
               |> List.rev_append parameterized_init_targets
               |> returned_callables
             in
-            (* To avoid false negatives, sometimes we allow all function-typed arguments to be
-               passed directly to the return values, especially for targets with `kind=Decorated`.
-               Example 1 is some calls might be unresolved. Example 2 is when `__init__` methods are
-               stubs. Example 3 is sometimes context managers define stubs instead of actual bodies
-               for `__call__`, where the actual bodies would return the callable that is decorated.
-               However since it is expensive to know if a class is a context manager, we use an
-               approximation below. *)
+            (* To avoid false negatives when analyzing targets with `kind=Decorated`, sometimes
+             * we allow all function-typed arguments to be passed directly to the return values.
+             * - Case 1 is when calls might be unresolved.
+             * - Case 2 is when there exists a stub `__init__` target. The stub target's summary
+             * is considered as passing through.
+             * - Case 3 is when there exists a stub call target. The stub target's summary
+             * is considered as passing through.*)
             let pass_through_arguments =
               let exist_stub_init_targets = not (List.is_empty stub_init_targets) in
-              let exist_stub_call_targets =
-                List.exists stub_call_targets ~f:(fun target ->
-                    match Target.get_regular target with
-                    | Target.Regular.Method
-                        { class_name = _; method_name = "__call__"; kind = Normal } ->
-                        true
-                    | _ -> false)
-              in
+              let exist_stub_call_targets = not (List.is_empty stub_call_targets) in
               if
                 is_decorated_target
                 && (exist_stub_init_targets
