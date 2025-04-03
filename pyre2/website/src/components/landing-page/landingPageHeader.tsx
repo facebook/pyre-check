@@ -32,12 +32,12 @@ export default function LandingPageHeader(): React.ReactElement {
                     <a href="https://pyrefly.org/try/" {...stylex.props(styles.button, typography.p)}> Demo </a>
                     <a href="https://pyrefly.org/en/docs/learn-python-typing/" {...stylex.props(styles.button, typography.p)}> Docs </a>
                 </section>
-                <section {...stylex.props(styles.buttonGroup, {
-                    marginTop: '20px'
-                })}>
+                <section {...stylex.props(styles.buttonGroup,
+                )}>
                     <p {...stylex.props(typography.p, typography.italic)}>Launching Spring 2025</p>
                 </section>
                 <section>
+                    <Firefly />
                     <Firefly />
                     <Firefly />
                     <Firefly />
@@ -134,6 +134,7 @@ const styles = stylex.create({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: '20px'
     },
     button: {
         padding: '0.75rem 1.5rem',

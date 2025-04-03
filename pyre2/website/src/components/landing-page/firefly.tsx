@@ -137,5 +137,13 @@ const styles = stylex.create({
         `,
             animationDelay: '3s',
         },
+        ':nth-of-type(5)': {
+            animation: `
+          ${leftright2} 120s infinite cubic-bezier(0.39, 0, 0.63, 1),
+          ${updown2} 15s infinite cubic-bezier(0.39, 0, 0.63, 1),
+          ${blinking} 5s infinite cubic-bezier(0.39, 0, 0.63, 1)
+        `,
+            animationDelay: '4s',
+        },
     },
 });
