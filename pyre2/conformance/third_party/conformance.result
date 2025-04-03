@@ -437,9 +437,7 @@
   ],
   "generics_typevartuple_unpack.py": [],
   "generics_upper_bound.py": [
-    "Line 24: Expected 1 errors",
-    "Line 51: Expected 1 errors",
-    "Line 31: Unexpected errors ['Argument `?ST` is not assignable to parameter with type `Sized` in function `len`', 'Argument `?ST` is not assignable to parameter with type `Sized` in function `len`']"
+    "Line 24: Expected 1 errors"
   ],
   "generics_variance.py": [
     "Line 77: Expected 1 errors",
@@ -479,10 +477,8 @@
     "Line 106: Unexpected errors [\"Argument `str` is not assignable to parameter `status` with type `Literal['ABORTED', 'MALFORMED']` in function `expects_bad_status`\"]"
   ],
   "literals_literalstring.py": [
-    "Line 120: Expected 1 errors",
     "Line 52: Unexpected errors ['assert_type(str, LiteralString) failed']",
-    "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]",
-    "Line 126: Unexpected errors ['`?T` is not assignable to attribute `value` with type `LiteralString`']"
+    "Line 111: Unexpected errors [\"assert_type(str, Literal['hello']) failed\"]"
   ],
   "literals_parameterizations.py": [],
   "literals_semantics.py": [],
@@ -530,6 +526,8 @@
   ],
   "protocols_generic.py": [
     "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?GenericHasParent (trying to access get_parent)']",
+    "Line 95: Unexpected errors ['Argument `ConcreteHasParent` is not assignable to parameter `n` with type `@_` in function `generic_get_parent`']",
+    "Line 96: Unexpected errors ['assert_type(Any, ConcreteHasParent) failed']",
     "Line 144: Unexpected errors ['`ConcreteHasProperty1` is not assignable to `HasPropertyProto`']",
     "Line 145: Unexpected errors ['`ConcreteHasProperty2` is not assignable to `HasPropertyProto`']"
   ],

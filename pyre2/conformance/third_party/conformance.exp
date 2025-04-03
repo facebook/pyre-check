@@ -7342,26 +7342,6 @@
   "generics_upper_bound.py": [
     {
       "code": -2,
-      "column": 12,
-      "concise_description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "line": 31,
-      "name": "bad-argument-type",
-      "stop_column": 13,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "line": 31,
-      "name": "bad-argument-type",
-      "stop_column": 22,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(list[int], list[int] | set[int]) failed",
       "description": "assert_type(list[int], list[int] | set[int]) failed",
@@ -7379,6 +7359,26 @@
       "name": "bad-argument-type",
       "stop_column": 31,
       "stop_line": 43
+    },
+    {
+      "code": -2,
+      "column": 8,
+      "concise_description": "Argument `Literal[3]` is not assignable to parameter `x` with type `@_` in function `longer`",
+      "description": "Argument `Literal[3]` is not assignable to parameter `x` with type `@_` in function `longer`",
+      "line": 51,
+      "name": "bad-argument-type",
+      "stop_column": 9,
+      "stop_line": 51
+    },
+    {
+      "code": -2,
+      "column": 11,
+      "concise_description": "Argument `Literal[3]` is not assignable to parameter `y` with type `@_` in function `longer`",
+      "description": "Argument `Literal[3]` is not assignable to parameter `y` with type `@_` in function `longer`",
+      "line": 51,
+      "name": "bad-argument-type",
+      "stop_column": 12,
+      "stop_line": 51
     },
     {
       "code": -2,
@@ -7892,21 +7892,21 @@
     {
       "code": -2,
       "column": 22,
-      "concise_description": "`?T` is not assignable to attribute `value` with type `LiteralString`",
-      "description": "`?T` is not assignable to attribute `value` with type `LiteralString`",
-      "line": 126,
-      "name": "bad-assignment",
-      "stop_column": 27,
-      "stop_line": 126
+      "concise_description": "Argument `str` is not assignable to parameter `s` with type `@_` in function `literal_identity`",
+      "description": "Argument `str` is not assignable to parameter `s` with type `@_` in function `literal_identity`",
+      "line": 120,
+      "name": "bad-argument-type",
+      "stop_column": 23,
+      "stop_line": 120
     },
     {
       "code": -2,
-      "column": 41,
-      "concise_description": "`Container[str]` is not assignable to `Container[LiteralString]`",
-      "description": "`Container[str]` is not assignable to `Container[LiteralString]`",
+      "column": 51,
+      "concise_description": "Argument `str` is not assignable to parameter `value` with type `@_` in function `Container.__init__`",
+      "description": "Argument `str` is not assignable to parameter `value` with type `@_` in function `Container.__init__`",
       "line": 134,
-      "name": "bad-assignment",
-      "stop_column": 53,
+      "name": "bad-argument-type",
+      "stop_column": 52,
       "stop_line": 134
     },
     {
@@ -8944,6 +8944,26 @@
       "name": "missing-attribute",
       "stop_column": 24,
       "stop_line": 87
+    },
+    {
+      "code": -2,
+      "column": 29,
+      "concise_description": "Argument `ConcreteHasParent` is not assignable to parameter `n` with type `@_` in function `generic_get_parent`",
+      "description": "Argument `ConcreteHasParent` is not assignable to parameter `n` with type `@_` in function `generic_get_parent`",
+      "line": 95,
+      "name": "bad-argument-type",
+      "stop_column": 48,
+      "stop_line": 95
+    },
+    {
+      "code": -2,
+      "column": 1,
+      "concise_description": "assert_type(Any, ConcreteHasParent) failed",
+      "description": "assert_type(Any, ConcreteHasParent) failed",
+      "line": 96,
+      "name": "assert-type",
+      "stop_column": 39,
+      "stop_line": 96
     },
     {
       "code": -2,

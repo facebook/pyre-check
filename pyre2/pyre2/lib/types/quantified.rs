@@ -131,6 +131,10 @@ impl Quantified {
         self.info.kind
     }
 
+    pub fn restriction(&self) -> Restriction {
+        self.info.restriction.clone()
+    }
+
     pub fn is_param_spec(&self) -> bool {
         matches!(self.info.kind, QuantifiedKind::ParamSpec)
     }

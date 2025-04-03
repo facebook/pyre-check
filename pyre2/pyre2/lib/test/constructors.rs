@@ -65,7 +65,7 @@ class A[T]:
 );
 
 testcase!(
-    bug = "int should not be assignable to type var with upper bound = int; bounded type var should be assignable to itself, but it is not because the T in x: T is different from the default T used to parameterize self",
+    bug = "int should not be assignable to type var with upper bound = int",
     test_bounded_self_in_generic_class,
     r#"
 from typing import reveal_type
@@ -73,8 +73,8 @@ class A[T: int]:
     x: T
     def __init__(self, x: T):
         reveal_type(self)  # E: revealed type: Self@A
-        reveal_type(self.x)  # E: revealed type: ?T
-        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `?T`
+        reveal_type(self.x)  # E: revealed type: int
+        self.x = 1  # Not OK
         self.x = x  # OK
     "#,
 );

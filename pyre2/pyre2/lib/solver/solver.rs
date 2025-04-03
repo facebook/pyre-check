@@ -600,8 +600,18 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         self.is_subset_eq(&t1, t2)
                     }
                     var_type if should_force(&var_type) => {
-                        variables.insert(*v1, Variable::Answer(t2.clone()));
-                        true
+                        let satisfies_restrictions = match &var_type {
+                            Variable::Quantified(QuantifiedInfo {
+                                restriction: Restriction::Bound(bound),
+                                ..
+                            }) => self.is_subset_eq(bound, t2),
+                            // TODO: handle constraints
+                            _ => true,
+                        };
+                        if satisfies_restrictions {
+                            variables.insert(*v1, Variable::Answer(t2.clone()));
+                        }
+                        satisfies_restrictions
                     }
                     _ => false,
                 }
@@ -614,15 +624,32 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
                         self.is_subset_eq(t1, &t2)
                     }
                     var_type if should_force(&var_type) => {
-                        // Note that we promote the type when the var is on the RHS, but not when it's on the
-                        // LHS, so that we infer more general types but leave user-specified types alone.
-                        variables.insert(
-                            *v2,
-                            Variable::Answer(var_type.promote(t1.clone(), self.type_order)),
-                        );
-                        true
+                        let satisfies_restrictions = match &var_type {
+                            Variable::Quantified(QuantifiedInfo {
+                                restriction: Restriction::Bound(bound),
+                                ..
+                            }) => self.is_subset_eq(t1, bound),
+                            // TODO: handle constraints
+                            _ => true,
+                        };
+                        if satisfies_restrictions {
+                            // Note that we promote the type when the var is on the RHS, but not when it's on the
+                            // LHS, so that we infer more general types but leave user-specified types alone.
+                            variables.insert(
+                                *v2,
+                                Variable::Answer(var_type.promote(t1.clone(), self.type_order)),
+                            );
+                        }
+                        satisfies_restrictions
                     }
                     _ => false,
+                }
+            }
+            (Type::Quantified(q), t2) => {
+                match q.restriction() {
+                    Restriction::Bound(bound) => self.is_subset_eq(&bound, t2),
+                    // TODO: handle constraints
+                    _ => self.is_subset_eq_impl(got, want),
                 }
             }
             _ => self.is_subset_eq_impl(got, want),

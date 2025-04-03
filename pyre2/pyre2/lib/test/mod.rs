@@ -21,6 +21,7 @@ mod decorators;
 mod descriptors;
 mod enums;
 mod flow;
+mod generic_restrictions;
 mod imports;
 mod legacy_generic;
 mod literal;
