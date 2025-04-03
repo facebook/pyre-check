@@ -24,7 +24,6 @@ pub enum FindError {
     /// This module could not be found, and we should emit an error
     NotFound(Arc<anyhow::Error>),
     /// This import could not be found, but the user configured it to be ignored
-    #[expect(unused)]
     Ignored,
 }
 

@@ -150,6 +150,13 @@ impl Loader for CheckLoader {
             Ok(path)
         } else if let Some(path) = find_module(module, &self.loader_inputs.site_package_path) {
             Ok(path)
+        } else if self
+            .loader_inputs
+            .ignore_missing_imports_from
+            .iter()
+            .any(|i| module.as_str().starts_with(i))
+        {
+            Err(FindError::Ignored)
         } else {
             Err(FindError::search_path(
                 &self.loader_inputs.search_path,

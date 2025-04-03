@@ -421,7 +421,6 @@ impl ConfigFile {
             .absolutize()
             .with_context(|| format!("Path `{}` cannot be absolutized", config_path.display()))?
             .into_owned();
-        // TODO(connernilsen): fix return type and handle config searching
         let config_str = fs::read_to_string(&config_path)?;
         let mut config = if config_path.file_name() == Some(OsStr::new(&PYPROJECT_FILE_NAME)) {
             Self::parse_pyproject_toml(&config_str)
@@ -462,7 +461,6 @@ impl ConfigFile {
             .map_err(|err| anyhow::Error::msg(err.to_string()))?
             .tool
             .and_then(|c| c.pyrefly);
-        // TODO(connernilsen): we don't want to return a default config here, we should keep searching
         Ok(maybe_config.unwrap_or_else(ConfigFile::default))
     }
 }
