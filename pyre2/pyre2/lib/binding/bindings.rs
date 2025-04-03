@@ -781,20 +781,52 @@ impl<'a> BindingsBuilder<'a> {
         info.annot
     }
 
+    pub fn handle_type_param_constraint(&mut self, x: &mut Expr) -> Idx<Key> {
+        self.ensure_type(x, &mut None);
+        self.table
+            .insert(Key::Anon(x.range()), Binding::Expr(None, x.clone()))
+    }
+
     pub fn type_params(&mut self, x: &mut TypeParams) {
         for x in x.type_params.iter_mut() {
+            let mut default_info = None;
+            let mut bound_info = None;
+            let mut constraint_info = None;
             let kind = match x {
                 TypeParam::TypeVar(x) => {
-                    if let Some(bound) = &mut x.bound {
-                        self.ensure_type(bound, &mut None);
+                    if let Some(box bound) = &mut x.bound {
+                        if let Expr::Tuple(tuple) = bound {
+                            let mut constraints = Vec::new();
+                            for constraint in &mut tuple.elts {
+                                let idx = self.handle_type_param_constraint(constraint);
+                                constraints.push(idx);
+                            }
+                            constraint_info = Some((constraints, bound.range()))
+                        } else {
+                            let idx = self.handle_type_param_constraint(bound);
+                            bound_info = Some((idx, bound.range()));
+                        }
                     }
-                    if let Some(default) = &mut x.default {
-                        self.ensure_type(default, &mut None);
+                    if let Some(box default) = &mut x.default {
+                        let idx = self.handle_type_param_constraint(default);
+                        default_info = Some((idx, default.range()));
                     }
                     QuantifiedKind::TypeVar
                 }
-                TypeParam::ParamSpec(_) => QuantifiedKind::ParamSpec,
-                TypeParam::TypeVarTuple(_) => QuantifiedKind::TypeVarTuple,
+                TypeParam::ParamSpec(x) => {
+                    if let Some(box default) = &mut x.default {
+                        let idx = self.handle_type_param_constraint(default);
+                        default_info = Some((idx, default.range()));
+                    }
+                    QuantifiedKind::ParamSpec
+                }
+                TypeParam::TypeVarTuple(x) => {
+                    if let Some(box default) = &mut x.default {
+                        let idx = self.handle_type_param_constraint(default);
+                        default_info = Some((idx, default.range()));
+                    }
+                    QuantifiedKind::TypeVarTuple
+                }
             };
             let name = x.name();
             self.scopes
@@ -807,10 +839,9 @@ impl<'a> BindingsBuilder<'a> {
                     name: name.id.clone(),
                     unique: self.uniques.fresh(),
                     kind,
-                    // TODO: populate these fields
-                    default: None,
-                    bound: None,
-                    constraints: None,
+                    default: default_info,
+                    bound: bound_info,
+                    constraints: constraint_info,
                 })),
                 None,
             );
