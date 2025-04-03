@@ -15,14 +15,13 @@ line.
 NOTE: this is early in its development, so the options listed here are subject
 to change in name, usage, type, quantity, and structure.
 
-Configurations can be specified in a `pyre.toml` file, with all configuration
-options in the top-level of the document. You can also specify a configuration
-in a `pyproject.toml` under a `[tool.pyrefly]` section.
-
-NOTE: At the moment, configuration finding is not supported. It will be
-implemented in the near future. In the meantime, please explicitly specify your
-configuration with the `-c <config>` or `--config <config>` flags when running
-Pyrefly.
+Configurations can be specified in a [TOML file](https://toml.io/en/) at the root of
+your project (or elsewhere, as long as the `search_path` is correct) named
+`pyrefly.toml`, with all configuration options in the top-level of the document.
+You can also specify a configuration in a `pyproject.toml` under a `[tool.pyrefly]`
+section. Other config names can be used when explicitly passing in the config file
+name with the `--config`/`-c` flag, but they will not be automatically found by
+[Configuration Finding](#configuration-finding).
 
 Both absolute and config-relative paths are supported.
 
@@ -34,6 +33,26 @@ The following is the order in which configuration options are selected:
 2. Environment variable override -- This is the same as `PYRE_<CLI flag name>`
 3. Configuration option
 4. Hard-coded default
+
+# Configuration Finding
+
+In both project checking mode (with no explicit configuration supplied) and
+single-file checking mode, we perform an upward file search to find a
+configuration file. We check each directory from the start location to the
+filesystem root, looking first for `pyrefly.toml` then `pyproject.toml`, in
+the same directory before looking at its parent.
+
+For project checking mode, the start location is the CWD. We do not perform any
+searching if the `--config`/`-c` flag is used. For single-file checking mode,
+the start location is the directory containing the file to be type checked. No
+config flag can be passed into Pyrefly in single file checking mode.
+
+If a `pyrefly.toml` is found, it is parsed and used for type checking, and will
+return an error to the user on invalid types, syntax, or values.
+
+If a `pyproject.toml` is found, Pyrefly will stop searching, even if no `[tool.pyrefly]`
+section is found. The same errors will be returned as when loading a `pyrefly.toml` if
+the config is invalid.
 
 # Configuration Options
 
