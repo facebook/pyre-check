@@ -30,7 +30,7 @@ export default function WhyPyrefly(): React.ReactElement {
 
       {/* Long-term benefits */}
       <WhyPyreflyGridItem
-        title="Codebase clarity"
+        title="Codebase Clarity"
         content="Improve code readability and maintainability with precise type
           annotations"
       />
@@ -40,7 +40,7 @@ export default function WhyPyrefly(): React.ReactElement {
           from 0 to 100"
       />
       <WhyPyreflyGridItem
-        title="Fully featured"
+        title="Fully Featured"
         content=" Actively under development. Follows the typing standards introduced in PEPs 484, 526, 612."
       />
     </div>

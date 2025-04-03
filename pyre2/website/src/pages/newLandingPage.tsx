@@ -41,7 +41,7 @@ export default function NewLandingPage(): React.ReactElement {
             />
             <LandingPageSection
                 id="quotes-section"
-                title="What People Say About Pyrefly"
+                title="Don't just take our word for it"
                 child={<QuotesGrid />}
                 isLastSection={true}
             />
