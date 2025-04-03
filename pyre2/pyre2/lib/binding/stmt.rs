@@ -41,6 +41,7 @@ use crate::graph::index::Idx;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::ruff::ast::Ast;
+use crate::state::loader::FindError;
 use crate::types::alias::resolve_typeshed_alias;
 use crate::types::special_form::SpecialForm;
 use crate::types::types::Type;
@@ -716,8 +717,12 @@ impl<'a> BindingsBuilder<'a> {
             Stmt::Import(x) => {
                 for x in x.names {
                     let m = ModuleName::from_name(&x.name.id);
-                    if let Err(err) = self.lookup.get(m) {
-                        self.error(x.range, err.display(m), ErrorKind::MissingModuleAttribute);
+                    if let Err(FindError::NotFound(err)) = self.lookup.get(m) {
+                        self.error(
+                            x.range,
+                            FindError::display(err, m),
+                            ErrorKind::MissingModuleAttribute,
+                        );
                     }
                     match x.asname {
                         Some(asname) => {
@@ -822,10 +827,15 @@ impl<'a> BindingsBuilder<'a> {
                                 }
                             }
                         }
-                        Err(err) => {
-                            self.error(x.range, err.display(m), ErrorKind::MissingModuleAttribute);
+                        Err(FindError::NotFound(err)) => {
+                            self.error(
+                                x.range,
+                                FindError::display(err, m),
+                                ErrorKind::MissingModuleAttribute,
+                            );
                             self.bind_unimportable_names(&x);
                         }
+                        Err(FindError::Ignored) => self.bind_unimportable_names(&x),
                     }
                 } else {
                     self.error(

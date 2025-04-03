@@ -78,6 +78,7 @@ use crate::module::module_info::ModuleInfo;
 use crate::module::module_name::ModuleName;
 use crate::module::short_identifier::ShortIdentifier;
 use crate::solver::solver::Solver;
+use crate::state::loader::FindError;
 use crate::table;
 use crate::table_for_each;
 use crate::table_try_for_each;
@@ -522,13 +523,14 @@ impl<'a> BindingsBuilder<'a> {
                     );
                 }
             }
-            Err(err) => {
+            Err(FindError::NotFound(err)) => {
                 self.error(
                     TextRange::default(),
-                    err.display(builtins_module),
+                    FindError::display(err, builtins_module),
                     ErrorKind::InternalError,
                 );
             }
+            Err(FindError::Ignored) => (),
         }
     }
 
