@@ -16,9 +16,17 @@ use pyrefly_derive::VisitMut;
 use crate::types::callable::ParamList;
 use crate::types::class::ClassType;
 use crate::types::stdlib::Stdlib;
+use crate::types::type_var::Restriction;
 use crate::types::types::Type;
 use crate::util::uniques::Unique;
 use crate::util::uniques::UniqueFactory;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QuantifiedInfo {
+    pub kind: QuantifiedKind,
+    pub default: Option<Type>,
+    pub restriction: Restriction,
+}
 
 #[derive(
     Debug, Clone, Copy, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash

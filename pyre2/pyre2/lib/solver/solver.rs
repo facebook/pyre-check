@@ -24,6 +24,7 @@ use crate::types::callable::Callable;
 use crate::types::callable::Function;
 use crate::types::callable::Params;
 use crate::types::module::Module;
+use crate::types::quantified::QuantifiedInfo;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::simplify::simplify_tuples;
 use crate::types::simplify::unions;
@@ -49,7 +50,7 @@ enum Variable {
     Contained,
     /// A variable due to generic instantitation, `def f[T](x: T): T` with `f(1)`
     /// The second value is the default value of the type parameter, if one exists
-    Quantified(QuantifiedKind, Option<Type>, Restriction),
+    Quantified(QuantifiedInfo),
     /// A variable caused by recursion, e.g. `x = f(); def f(): return x`.
     /// The second value is the default value of the Var, if one exists.
     Recursive(Option<Type>),
@@ -63,8 +64,16 @@ impl Display for Variable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Variable::Contained => write!(f, "Contained"),
-            Variable::Quantified(k, Some(t), _) => write!(f, "Quantified({k}, default={t})"),
-            Variable::Quantified(k, None, _) => write!(f, "Quantified({k})"),
+            Variable::Quantified(QuantifiedInfo {
+                kind: k,
+                default: Some(t),
+                ..
+            }) => write!(f, "Quantified({k}, default={t})"),
+            Variable::Quantified(QuantifiedInfo {
+                kind: k,
+                default: None,
+                ..
+            }) => write!(f, "Quantified({k})"),
             Variable::Recursive(Some(t)) => write!(f, "Recursive(default={t})"),
             Variable::Recursive(None) => write!(f, "Recursive"),
             Variable::Unwrap => write!(f, "Unwrap"),
@@ -78,7 +87,7 @@ impl Variable {
     /// E.g. `x = 1; while True: x = x` should be `Literal[1]` while
     /// `[1]` should be `List[int]`.
     fn promote<Ans: LookupAnswer>(&self, ty: Type, type_order: TypeOrder<Ans>) -> Type {
-        if matches!(self, Variable::Contained | Variable::Quantified(_, _, _)) {
+        if matches!(self, Variable::Contained | Variable::Quantified(_)) {
             ty.promote_literals(type_order.stdlib())
         } else {
             ty
@@ -158,7 +167,11 @@ impl Solver {
             Variable::Answer(t) => t.clone(),
             _ => {
                 let (kind, default) = match e {
-                    Variable::Quantified(kind, default, restriction) => {
+                    Variable::Quantified(QuantifiedInfo {
+                        kind,
+                        default,
+                        restriction,
+                    }) => {
                         if default.is_some() {
                             (*kind, default.clone())
                         } else if let Restriction::Bound(bound) = restriction {
@@ -311,11 +324,11 @@ impl Solver {
         for (v, param) in vs.iter().zip(params.iter()) {
             lock.insert(
                 *v,
-                Variable::Quantified(
-                    param.quantified.kind(),
-                    param.default.clone(),
-                    param.restriction.clone(),
-                ),
+                Variable::Quantified(QuantifiedInfo {
+                    kind: param.quantified.kind(),
+                    default: param.default.clone(),
+                    restriction: param.restriction.clone(),
+                }),
             );
         }
         (vs, t)
@@ -328,7 +341,7 @@ impl Solver {
         let mut lock = self.variables.write();
         for v in vs {
             let e = lock.get_mut(v).expect(VAR_LEAK);
-            if matches!(*e, Variable::Quantified(_, _, _)) {
+            if matches!(*e, Variable::Quantified(_)) {
                 *e = Variable::Contained;
             }
         }
