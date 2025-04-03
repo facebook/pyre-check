@@ -17,6 +17,7 @@ const typography = stylex.create({
     h6: { fontSize: "1.2rem" },
     p: { fontSize: "1rem" },
     small: { fontSize: "0.833rem" },
+    italic: { fontStyle: "italic" },
 })
 
 export default typography;
