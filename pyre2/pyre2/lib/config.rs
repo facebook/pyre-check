@@ -11,6 +11,8 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::LazyLock;
+use std::sync::Mutex;
 
 use anyhow::anyhow;
 use anyhow::bail;
@@ -18,6 +20,7 @@ use anyhow::Context;
 use itertools::Itertools;
 use path_absolutize::Absolutize;
 use serde::Deserialize;
+use starlark_map::small_map::SmallMap;
 use toml::Table;
 
 use crate::error::kind::ErrorKind;
@@ -28,6 +31,9 @@ use crate::metadata::DEFAULT_PYTHON_PLATFORM;
 use crate::module::module_path::ModulePath;
 
 static PYPROJECT_FILE_NAME: &str = "pyproject.toml";
+
+static INTERPRETER_ENV_REGISTRY: LazyLock<Mutex<SmallMap<String, Option<PythonEnvironment>>>> =
+    LazyLock::new(|| Mutex::new(SmallMap::new()));
 
 pub fn set_if_some<T: Clone>(config_field: &mut T, value: Option<&T>) {
     if let Some(value) = value {
@@ -197,10 +203,13 @@ print(json.dumps({'python_platform': platform, 'python_version': version, 'site_
     }
 
     pub fn get_interpreter_env(interpreter: &str) -> PythonEnvironment {
-        // TODO(connernilsen): cache these results
-        Self::get_env_from_interpreter(interpreter).inspect_err(|e| {
-            tracing::error!("Failed to query interpreter, falling back to default Python environment settings\n{}", e);
-        }).unwrap_or_default()
+        LazyLock::force(&INTERPRETER_ENV_REGISTRY)
+            .lock().unwrap()
+        .entry(interpreter.to_owned()).or_insert_with(move || {
+            Self::get_env_from_interpreter(interpreter).inspect_err(|e| {
+                tracing::error!("Failed to query interpreter, falling back to default Python environment settings\n{}", e);
+            }).ok()
+        }).clone().unwrap_or_default()
     }
 
     pub fn get_runtime_metadata(&self) -> RuntimeMetadata {
