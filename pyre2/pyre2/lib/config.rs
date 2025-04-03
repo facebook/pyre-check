@@ -10,7 +10,9 @@ use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::Command;
 
+use anyhow::anyhow;
 use anyhow::bail;
 use anyhow::Context;
 use itertools::Itertools;
@@ -86,7 +88,6 @@ impl ErrorConfigs {
 
     /// Gets a reference to the `ErrorConfig` for the given path, or returns a reference to
     /// the 'default' error config if none could be found.
-    #[allow(unused)]
     pub fn get(&self, path: &ModulePath) -> &ErrorConfig {
         self.overrides.get(path).unwrap_or(&self.default_config)
     }
@@ -130,6 +131,52 @@ impl PythonEnvironment {
             python_version: Some(python_version),
             site_package_path: Some(site_package_path),
         }
+    }
+
+    #[expect(unused)]
+    fn get_env_from_interpreter(interpreter: &str) -> anyhow::Result<PythonEnvironment> {
+        let script = "\
+import json, site, sys
+platform = sys.platform
+v = sys.version_info
+version = '{}.{}.{}'.format(v.major, v.minor, v.micro)
+packages = site.getsitepackages()
+print(json.dumps({'python_platform': platform, 'python_version': version, 'site_package_path': packages}))
+        ";
+
+        let mut command = Command::new(interpreter);
+        command.arg("-c");
+        command.arg(script);
+
+        let python_info = command.output()?;
+
+        let stdout = String::from_utf8(python_info.stdout).with_context(
+            || format!("while parsing Python interpreter (`{interpreter}`) stdout for environment configuration")
+        )?;
+        if !python_info.status.success() {
+            let stderr = String::from_utf8(python_info.stderr)
+                .unwrap_or("<Failed to parse STDOUT from UTF-8 string>".to_owned());
+            return Err(anyhow::anyhow!(
+                "Unable to query interpreter {} for environment info:\nSTDOUT: {}\nSTDERR: {}",
+                interpreter,
+                stdout,
+                stderr
+            ));
+        }
+
+        let deserialized: PythonEnvironment = serde_json::from_str(&stdout)?;
+
+        deserialized.python_platform.as_ref().ok_or(anyhow!(
+            "Expected `python_platform` from Python interpreter query to be non-empty"
+        ))?;
+        deserialized.python_version.as_ref().ok_or(anyhow!(
+            "Expected `python_version` from Python interpreter query to be non-empty"
+        ))?;
+        deserialized.site_package_path.as_ref().ok_or(anyhow!(
+            "Expected `site_package_path` from Python interpreter query to be non-empty"
+        ))?;
+
+        Ok(deserialized)
     }
 
     pub fn get_default_interpreter() -> String {
