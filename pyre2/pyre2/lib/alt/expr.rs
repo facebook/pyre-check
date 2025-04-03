@@ -272,7 +272,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     "default" => {
                         default = Some(self.expr_untype(
                             &kw.value,
-                            TypeFormContext::TypeVarConstraint,
+                            TypeFormContext::TypeVarDefault,
                             errors,
                         ))
                     }
@@ -393,7 +393,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     "default" => {
                         default = Some(self.expr_untype(
                             &kw.value,
-                            TypeFormContext::TypeVarConstraint,
+                            TypeFormContext::ParamSpecDefault,
                             errors,
                         ));
                     }
@@ -496,7 +496,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     "default" => {
                         default = Some(self.expr_untype(
                             &kw.value,
-                            TypeFormContext::TypeVarConstraint,
+                            TypeFormContext::TypeVarTupleDefault,
                             errors,
                         ));
                     }

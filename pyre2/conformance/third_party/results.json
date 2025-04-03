@@ -3,7 +3,7 @@
   "pass": 41,
   "fail": 92,
   "pass_rate": 0.31,
-  "differences": 471,
+  "differences": 470,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -87,7 +87,7 @@
     "exceptions_context_managers.py": 2,
     "generics_base_class.py": 2,
     "generics_basic.py": 7,
-    "generics_defaults.py": 15,
+    "generics_defaults.py": 14,
     "generics_defaults_referential.py": 11,
     "generics_paramspec_basic.py": 1,
     "generics_paramspec_components.py": 3,

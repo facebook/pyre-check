@@ -121,6 +121,9 @@ pub enum TypeFormContext {
     TupleOrCallableParam,
     /// Scoped type params for functions and classes
     TypeVarConstraint,
+    TypeVarDefault,
+    ParamSpecDefault,
+    TypeVarTupleDefault,
     /// Variable annotation outside of a class definition
     /// Is the variable assigned a value here?
     VarAnnotation(Initialized),
@@ -913,10 +916,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         type_var_tuple_count += 1;
                     }
                     let name = raw_param.name();
+                    let quantified =
+                        get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(name))));
                     params.push(TParamInfo {
-                        quantified: get_quantified(
-                            &self.get(&Key::Definition(ShortIdentifier::new(name))),
-                        ),
+                        quantified,
                         variance: None,
                     });
                 }
@@ -2390,7 +2393,12 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         errors: &ErrorCollector,
     ) -> Type {
         let result = match x {
-            Expr::List(x) if type_form_context == TypeFormContext::TypeArgument => {
+            Expr::List(x)
+                if matches!(
+                    type_form_context,
+                    TypeFormContext::TypeArgument | TypeFormContext::ParamSpecDefault
+                ) =>
+            {
                 let elts: Vec<Param> = x
                     .elts
                     .iter()
@@ -2445,6 +2453,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 | TypeFormContext::TypeArgument
                 | TypeFormContext::TupleOrCallableParam
                 | TypeFormContext::GenericBase
+                | TypeFormContext::TypeVarTupleDefault
         ) && matches!(result, Type::Unpack(_))
         {
             return self.error(

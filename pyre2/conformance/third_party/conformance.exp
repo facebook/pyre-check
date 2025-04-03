@@ -5324,10 +5324,10 @@
     {
       "code": -2,
       "column": 42,
-      "concise_description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
-      "description": "Expected a type form, got instance of `list[type[int] | type[str]]`",
+      "concise_description": "(str, int) is not allowed in this context.",
+      "description": "(str, int) is not allowed in this context.",
       "line": 73,
-      "name": "not-a-type",
+      "name": "invalid-annotation",
       "stop_column": 52,
       "stop_line": 73
     },
@@ -5353,19 +5353,9 @@
     },
     {
       "code": -2,
-      "column": 47,
-      "concise_description": "Unpack is not allowed in this context.",
-      "description": "Unpack is not allowed in this context.",
-      "line": 88,
-      "name": "invalid-annotation",
-      "stop_column": 70,
-      "stop_line": 88
-    },
-    {
-      "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Class_TypeVarTuple[Any]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
-      "description": "assert_type(type[Class_TypeVarTuple[Any]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
+      "concise_description": "assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
+      "description": "assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
       "line": 94,
       "name": "assert-type",
       "stop_column": 76,
@@ -5374,8 +5364,8 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(Class_TypeVarTuple[Any], Class_TypeVarTuple[tuple[str, int]]) failed",
-      "description": "assert_type(Class_TypeVarTuple[Any], Class_TypeVarTuple[tuple[str, int]]) failed",
+      "concise_description": "assert_type(Class_TypeVarTuple[*tuple[str, int]], Class_TypeVarTuple[tuple[str, int]]) failed",
+      "description": "assert_type(Class_TypeVarTuple[*tuple[str, int]], Class_TypeVarTuple[tuple[str, int]]) failed",
       "line": 95,
       "name": "assert-type",
       "stop_column": 64,
@@ -5414,10 +5404,10 @@
     {
       "code": -2,
       "column": 28,
-      "concise_description": "Expected a type form, got instance of `list[type[bool] | type[float]]`",
-      "description": "Expected a type form, got instance of `list[type[bool] | type[float]]`",
+      "concise_description": "(float, bool) is not allowed in this context.",
+      "description": "(float, bool) is not allowed in this context.",
       "line": 145,
-      "name": "not-a-type",
+      "name": "invalid-annotation",
       "stop_column": 41,
       "stop_line": 145
     },
