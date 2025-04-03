@@ -118,7 +118,7 @@ impl<'a> TypeDisplayContext<'a> {
             if let Some(tparams) = tparams {
                 for tparam in tparams.iter() {
                     self.quantifieds
-                        .insert(tparam.quantified.clone(), &tparam.name);
+                        .insert(tparam.quantified.clone(), tparam.name());
                 }
             }
         })
@@ -393,7 +393,6 @@ mod tests {
 
     fn fake_tparam(uniques: &UniqueFactory, name: &str, kind: QuantifiedKind) -> TParamInfo {
         TParamInfo {
-            name: Name::new(name),
             quantified: Quantified::new(
                 uniques.fresh(),
                 QuantifiedInfo {
@@ -403,8 +402,6 @@ mod tests {
                     default: None,
                 },
             ),
-            restriction: Restriction::Unrestricted,
-            default: None,
             variance: Some(Variance::Invariant),
         }
     }

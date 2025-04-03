@@ -127,8 +127,26 @@ impl Quantified {
         }
     }
 
+    pub fn name(&self) -> &Name {
+        &self.info.name
+    }
+
     pub fn kind(&self) -> QuantifiedKind {
         self.info.kind
+    }
+
+    pub fn default(&self) -> Option<&Type> {
+        self.info.default.as_ref()
+    }
+
+    /// Ensure this Quantified has a default.
+    pub fn ensure_default(&mut self) -> bool {
+        if self.info.default.is_none() {
+            self.info.default = Some(Type::any_error());
+            false
+        } else {
+            true
+        }
     }
 
     pub fn restriction(&self) -> Restriction {

@@ -6471,16 +6471,6 @@
     },
     {
       "code": -2,
-      "column": 18,
-      "concise_description": "Expected a type form, got instance of `Literal[3]`",
-      "description": "Expected a type form, got instance of `Literal[3]`",
-      "line": 77,
-      "name": "not-a-type",
-      "stop_column": 19,
-      "stop_line": 77
-    },
-    {
-      "code": -2,
       "column": 23,
       "concise_description": "Could not find name `S`",
       "description": "Could not find name `S`",

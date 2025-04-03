@@ -77,10 +77,7 @@ impl Var {
 /// Bundles together type param info for passing around while building TParams.
 #[derive(Debug, Clone, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TParamInfo {
-    pub name: Name,
     pub quantified: Quantified,
-    pub restriction: Restriction,
-    pub default: Option<Type>,
     /// The variance if known, or None for infer_variance=True or a scoped type parameter
     pub variance: Option<Variance>,
 }
@@ -89,17 +86,27 @@ pub struct TParamInfo {
     Debug, Clone, Visit, VisitMut, TypeEq, PartialEq, Eq, PartialOrd, Ord, Hash
 )]
 pub struct TParam {
-    /// Display name
-    pub name: Name,
     pub quantified: Quantified,
-    pub restriction: Restriction,
-    pub default: Option<Type>,
     pub variance: Variance,
 }
 
 impl Display for TParam {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)
+        write!(f, "{}", self.name())
+    }
+}
+
+impl TParam {
+    pub fn name(&self) -> &Name {
+        self.quantified.name()
+    }
+
+    pub fn default(&self) -> Option<&Type> {
+        self.quantified.default()
+    }
+
+    pub fn restriction(&self) -> Restriction {
+        self.quantified.restriction()
     }
 }
 
@@ -120,21 +127,16 @@ impl TParams {
     pub fn new(info: Vec<TParamInfo>) -> Result<Self, Self> {
         let mut error = false;
         let mut tparams: Vec<TParam> = Vec::with_capacity(info.len());
-        for tparam in info {
-            let default = if tparam.default.is_none()
-                && tparams.last().is_some_and(|p| p.default.is_some())
+        for mut tparam in info {
+            if tparams
+                .last()
+                .is_some_and(|p| p.quantified.default().is_some())
             {
-                // Missing default.
-                error = true;
-                Some(Type::any_error())
-            } else {
-                tparam.default
-            };
+                // Fix missing default.
+                error = !tparam.quantified.ensure_default();
+            }
             tparams.push(TParam {
-                name: tparam.name,
                 quantified: tparam.quantified,
-                restriction: tparam.restriction,
-                default,
                 // Classes set the variance before getting here. For functions and aliases, the variance isn't meaningful;
                 // it doesn't matter what we set it to as long as we make it non-None to indicate that it's not missing.
                 variance: tparam.variance.unwrap_or(Variance::Invariant),

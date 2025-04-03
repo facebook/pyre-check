@@ -145,30 +145,21 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     x.restriction().clone(),
                 );
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
-                    name: x.qname().id().clone(),
                     quantified: q,
-                    restriction: x.restriction().clone(),
-                    default: x.default().cloned(),
                     variance: x.variance(),
                 }))
             }
             Type::Type(box Type::TypeVarTuple(x)) => {
                 let q = Quantified::type_var_tuple(x.qname().id().clone(), self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
-                    name: x.qname().id().clone(),
                     quantified: q,
-                    restriction: Restriction::Unrestricted,
-                    default: None,
                     variance: Some(Variance::Invariant),
                 }))
             }
             Type::Type(box Type::ParamSpec(x)) => {
                 let q = Quantified::param_spec(x.qname().id().clone(), self.uniques);
                 Arc::new(LegacyTypeParameterLookup::Parameter(TParamInfo {
-                    name: x.qname().id().clone(),
                     quantified: q,
-                    restriction: Restriction::Unrestricted,
-                    default: None,
                     variance: Some(Variance::Invariant),
                 }))
             }
@@ -661,10 +652,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         );
                         e.insert(q.clone());
                         tparams.push(TParamInfo {
-                            name: ty_var.qname().id().clone(),
                             quantified: q.clone(),
-                            restriction: Restriction::Unrestricted,
-                            default: ty_var.default().cloned(),
                             variance: ty_var.variance(),
                         });
                         q
@@ -682,10 +670,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         );
                         e.insert(q.clone());
                         tparams.push(TParamInfo {
-                            name: ty_var_tuple.qname().id().clone(),
                             quantified: q.clone(),
-                            restriction: Restriction::Unrestricted,
-                            default: None,
                             variance: Some(Variance::Invariant),
                         });
                         q
@@ -701,10 +686,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             Quantified::param_spec(param_spec.qname().id().clone(), self.uniques);
                         e.insert(q.clone());
                         tparams.push(TParamInfo {
-                            name: param_spec.qname().id().clone(),
                             quantified: q.clone(),
-                            restriction: Restriction::Unrestricted,
-                            default: None,
                             variance: Some(Variance::Invariant),
                         });
                         q
@@ -920,32 +902,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         type_var_tuple_count += 1;
                     }
                     let name = raw_param.name();
-                    let restriction = match raw_param {
-                        TypeParam::TypeVar(tv) => match &tv.bound {
-                            Some(box Expr::Tuple(tup)) => {
-                                Restriction::Constraints(tup.elts.map(|e| {
-                                    self.expr_untype(e, TypeFormContext::TypeVarConstraint, errors)
-                                }))
-                            }
-                            Some(e) => Restriction::Bound(self.expr_untype(
-                                e,
-                                TypeFormContext::TypeVarConstraint,
-                                errors,
-                            )),
-                            None => Restriction::Unrestricted,
-                        },
-                        _ => Restriction::Unrestricted,
-                    };
-                    let default = raw_param
-                        .default()
-                        .map(|e| self.expr_untype(e, TypeFormContext::TypeVarConstraint, errors));
                     params.push(TParamInfo {
-                        name: name.id.clone(),
                         quantified: get_quantified(
                             &self.get(&Key::Definition(ShortIdentifier::new(name))),
                         ),
-                        restriction,
-                        default,
                         variance: None,
                     });
                 }

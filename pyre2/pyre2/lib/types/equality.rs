@@ -367,10 +367,7 @@ mod tests {
             })
             .forall(
                 TParams::new(vec![TParamInfo {
-                    name: Name::new_static("test"),
                     quantified: q,
-                    restriction: Restriction::Unrestricted,
-                    default: None,
                     variance: None,
                 }])
                 .unwrap(),

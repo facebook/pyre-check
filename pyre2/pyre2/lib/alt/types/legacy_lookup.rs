@@ -31,7 +31,7 @@ pub enum LegacyTypeParameterLookup {
 impl Display for LegacyTypeParameterLookup {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Parameter(p) => write!(f, "{}", p.name),
+            Self::Parameter(p) => write!(f, "{}", p.quantified.name()),
             Self::NotParameter(ty) => write!(f, "{ty}"),
         }
     }

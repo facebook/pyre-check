@@ -707,7 +707,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 format!(
                                         "Cannot initialize attribute `{}` to a value that depends on method-scoped type variable `{}`",
                                         name,
-                                        &param.name,
+                                        param.name(),
                                     ),
                                 );
                                 Some((q.clone(), q.as_gradual_type()))

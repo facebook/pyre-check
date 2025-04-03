@@ -326,10 +326,10 @@ impl Solver {
             lock.insert(
                 *v,
                 Variable::Quantified(QuantifiedInfo {
-                    name: param.name.clone(),
+                    name: param.name().clone(),
                     kind: param.quantified.kind(),
-                    default: param.default.clone(),
-                    restriction: param.restriction.clone(),
+                    default: param.default().cloned(),
+                    restriction: param.restriction().clone(),
                 }),
             );
         }

@@ -232,7 +232,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             None,
                             format!(
                                 "Unpacked argument cannot be used for type parameter {}",
-                                param.name
+                                param.name()
                             ),
                         ));
                     }
@@ -260,7 +260,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                 }
                 targ_idx += 1;
-            } else if let Some(default) = &param.default {
+            } else if let Some(default) = param.default() {
                 checked_targs.push(default.clone());
             } else {
                 let only_type_var_tuples_left = tparams
@@ -282,9 +282,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     );
                 }
                 let defaults = tparams.iter().skip(param_idx).map(|x| {
-                    if let Some(default) = &x.default {
+                    if let Some(default) = x.default() {
                         default.clone()
-                    } else if let Restriction::Bound(bound) = &x.restriction {
+                    } else if let Restriction::Bound(bound) = &x.restriction() {
                         bound.clone()
                     } else {
                         match x.quantified.kind() {
@@ -337,9 +337,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 tparams
                     .iter()
                     .map(|x| {
-                        if let Some(default) = &x.default {
+                        if let Some(default) = x.default() {
                             default.clone()
-                        } else if let Restriction::Bound(bound) = &x.restriction {
+                        } else if let Restriction::Bound(bound) = x.restriction() {
                             bound.clone()
                         } else if range.is_some() {
                             Type::any_error()
