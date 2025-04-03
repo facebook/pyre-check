@@ -9,6 +9,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "libs/**/*", "docusaurus.config.ts", "jest.config.js", "__mocks__/**/*"],
+  "include": ["src/**/*", "libs/**/*", "docusaurus.config.ts", "jest.config.ts", "__mocks__/**/*"],
   "exclude": ["node_modules", "build"]
 }
