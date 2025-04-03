@@ -48,19 +48,18 @@ Ts = TypeVarTuple('Ts')
 );
 
 testcase!(
-    bug = "C2 shouldn't give an error here",
     test_type_var_tuple_class_field_and_constructor,
     r#"
 class C1[T]:
-    x: tuple[T]
-    def __init__(self, x: tuple[T]) -> None:
+    x: tuple[T, ...]
+    def __init__(self, x: tuple[T, ...]) -> None:
         self.x = x
-        self.y: T = x
+        self.y: T = x  # E: `tuple[?T, ...]` is not assignable to attribute `y` with type `?T`
 class C2[*Ts]:
     x: tuple[*Ts]
     def __init__(self, x: tuple[*Ts]) -> None:
-        self.x = x  # E: `?Ts` is not assignable to attribute `x` with type `Unknown`
-        self.y: tuple[*Ts] = x  # E: `?Ts` is not assignable to attribute `y` with type `Unknown`
+        self.x = x
+        self.y: tuple[*Ts] = x
 "#,
 );
 

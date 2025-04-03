@@ -318,7 +318,7 @@
     "Line 148: Unexpected errors ['Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
     "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
     "Line 152: Unexpected errors ['Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
-    "Line 166: Unexpected errors ['assert_type((Self) -> Self, (Foo7[int]) -> Foo7[int]) failed']",
+    "Line 166: Unexpected errors ['assert_type(Any, (Foo7[int]) -> Foo7[int]) failed', 'Generic attribute `meth` of class `Foo7` is not visible on the class']",
     "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],
   "generics_defaults_referential.py": [
@@ -417,8 +417,6 @@
   "generics_type_erasure.py": [],
   "generics_typevartuple_args.py": [],
   "generics_typevartuple_basic.py": [
-    "Line 25: Unexpected errors ['`?Shape` is not assignable to attribute `_shape` with type `Unknown`']",
-    "Line 28: Unexpected errors ['Returned type `Unknown` is not assignable to declared return type `?Shape`']",
     "Line 85: Unexpected errors ['Argument `tuple[float]` is not assignable to parameter `arg2` with type `tuple[int]` in function `func2`']"
   ],
   "generics_typevartuple_callable.py": [],

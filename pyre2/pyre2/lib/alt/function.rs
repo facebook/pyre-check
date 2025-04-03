@@ -179,7 +179,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             None
         } else {
             defining_cls.as_ref().map(|cls| {
-                let cls_type = ClassType::new(cls.dupe(), self.create_default_targs(cls, None));
+                let cls_type = ClassType::new(cls.dupe(), cls.tparams_as_targs());
                 Type::SelfType(cls_type)
             })
         };

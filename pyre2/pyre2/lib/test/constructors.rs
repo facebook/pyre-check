@@ -50,7 +50,6 @@ Box[int]("oops")  # E: Argument `Literal['oops']` is not assignable to parameter
 );
 
 testcase!(
-    bug = "Inside __init__, self should be parameterized with the same T as x, instead of defaulting to Unknown",
     test_self_in_generic_class,
     r#"
 from typing import reveal_type
@@ -58,14 +57,13 @@ class A[T]:
     x: T
     def __init__(self, x: T):
         reveal_type(self)  # E: revealed type: Self@A
-        reveal_type(self.x)  # E: revealed type: Unknown
-        self.x = 1  # This shouldn't be allowed
+        reveal_type(self.x)  # E: revealed type: ?T
+        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `?T`
         self.x = x  # OK
     "#,
 );
 
 testcase!(
-    bug = "int should not be assignable to type var with upper bound = int",
     test_bounded_self_in_generic_class,
     r#"
 from typing import reveal_type
@@ -73,9 +71,21 @@ class A[T: int]:
     x: T
     def __init__(self, x: T):
         reveal_type(self)  # E: revealed type: Self@A
-        reveal_type(self.x)  # E: revealed type: int
-        self.x = 1  # Not OK
+        reveal_type(self.x)  # E: revealed type: ?T
+        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `?T`
         self.x = x  # OK
+    "#,
+);
+
+testcase!(
+    test_typing_self_param_in_generic_class,
+    r#"
+from typing import Self, reveal_type
+class A[T]:
+    x: T
+    def __init__(self, other: Self):
+        reveal_type(other.x)  # E: revealed type: ?T
+        self.x = other.x  # OK
     "#,
 );
 

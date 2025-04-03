@@ -209,8 +209,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 {
                     let class = &*self.get_idx(*class_key);
                     if let Some(cls) = &class.0 {
-                        let cls_type =
-                            ClassType::new(cls.dupe(), self.create_default_targs(cls, None));
+                        let cls_type = ClassType::new(cls.dupe(), cls.tparams_as_targs());
                         ty.subst_self_special_form_mut(&Type::SelfType(cls_type));
                     }
                 }

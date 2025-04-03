@@ -5484,11 +5484,21 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type((Self) -> Self, (Foo7[int]) -> Foo7[int]) failed",
-      "description": "assert_type((Self) -> Self, (Foo7[int]) -> Foo7[int]) failed",
+      "concise_description": "assert_type(Any, (Foo7[int]) -> Foo7[int]) failed",
+      "description": "assert_type(Any, (Foo7[int]) -> Foo7[int]) failed",
       "line": 166,
       "name": "assert-type",
       "stop_column": 57,
+      "stop_line": 166
+    },
+    {
+      "code": -2,
+      "column": 13,
+      "concise_description": "Generic attribute `meth` of class `Foo7` is not visible on the class",
+      "description": "Generic attribute `meth` of class `Foo7` is not visible on the class",
+      "line": 166,
+      "name": "missing-attribute",
+      "stop_column": 22,
       "stop_line": 166
     },
     {
@@ -6959,26 +6969,6 @@
     }
   ],
   "generics_typevartuple_basic.py": [
-    {
-      "code": -2,
-      "column": 38,
-      "concise_description": "`?Shape` is not assignable to attribute `_shape` with type `Unknown`",
-      "description": "`?Shape` is not assignable to attribute `_shape` with type `Unknown`",
-      "line": 25,
-      "name": "bad-assignment",
-      "stop_column": 43,
-      "stop_line": 25
-    },
-    {
-      "code": -2,
-      "column": 16,
-      "concise_description": "Returned type `Unknown` is not assignable to declared return type `?Shape`",
-      "description": "Returned type `Unknown` is not assignable to declared return type `?Shape`",
-      "line": 28,
-      "name": "bad-return",
-      "stop_column": 27,
-      "stop_line": 28
-    },
     {
       "code": -2,
       "column": 34,
