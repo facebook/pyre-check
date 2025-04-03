@@ -5,16 +5,24 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-module.exports = {
+import type { Config } from 'jest';
+
+const config: Config = {
     // The test environment to use (in this case, jsdom)
     testEnvironment: 'jsdom',
     // The file extensions to look for when searching for tests
-    testMatch: ['**/*.test.js', '**/*.spec.js'],
+    testMatch: ['**/*.test.ts', '**/*.test.tsx'],
     // The module file extensions to resolve
     moduleFileExtensions: ['js', 'jsx', 'json', 'ts', 'tsx'],
     // The transform configuration
     transform: {
-      '^.+\\.js$': 'babel-jest',
-      '^.+\\.jsx$': 'babel-jest',
+        '^.+\\.jsx?': 'babel-jest',
+        '^.+\\.tsx?': ['ts-jest', {
+            tsconfig: 'tsconfig.json',
+        }]
     },
-  };
+    // Setup files for TypeScript tests
+    preset: 'ts-jest',
+};
+
+export default config;
