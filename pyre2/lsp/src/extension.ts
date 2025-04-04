@@ -50,7 +50,7 @@ export function activate(context: ExtensionContext) {
     // Create the language client and start the client.
     client = new LanguageClient(
         'pyre2',
-        'Pyre2 language server',
+        'Pyrefly language server',
         serverOptions,
         clientOptions
     );
@@ -63,7 +63,7 @@ export function activate(context: ExtensionContext) {
             await client.stop();
             client = new LanguageClient(
                 'pyre2',
-                'Pyre2 language server',
+                'Pyrefly language server',
                 serverOptions,
                 clientOptions
             );

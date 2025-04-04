@@ -38,7 +38,7 @@
         ],
         "commands": [
             {
-                "title": "Restart Pyre2 Client",
+                "title": "Restart Pyrefly Client",
                 "category": "pyre2",
                 "command": "pyre2.restartClient"
             }

@@ -8,7 +8,7 @@
 
 """
 Tools for pulling an upstream typeshed archive from github, cleaning out
-irrelevant data, and producing artifacts that can be bundled into Pyre2 executable.
+irrelevant data, and producing artifacts that can be bundled into Pyrefly executable.
 """
 
 import argparse
@@ -186,7 +186,7 @@ def run(specified_url: str | None, output_dir: pathlib.Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Fetch typeshed from a given URL and trim out files that are not needed for Pyre2 bundling."
+        description="Fetch typeshed from a given URL and trim out files that are not needed for Pyrefly bundling."
     )
     parser.add_argument(
         "-u",

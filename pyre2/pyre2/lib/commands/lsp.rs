@@ -358,7 +358,7 @@ impl<'a> Server<'a> {
                     diags.entry(path.to_owned()).or_default().push(Diagnostic {
                         range: source_range_to_range(e.source_range()),
                         severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-                        source: Some("Pyre2".to_owned()),
+                        source: Some("Pyrefly".to_owned()),
                         message: e.msg().to_owned(),
                         code: Some(lsp_types::NumberOrString::String(
                             e.error_kind().to_name().to_owned(),

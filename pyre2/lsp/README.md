@@ -1,4 +1,4 @@
-# Pyre2 VS Code LSP extension
+# Pyrefly VS Code LSP extension
 
 :warning: **Extension is very work in progress**, please use at your own risk!
 
@@ -29,7 +29,7 @@ Based on a combination of:
 - Select `Run Installed Extension (pyre2)` from the drop down.
 - Run the launch config.
 - By default, stderr of the language server will appear in the output pane of
-  VSCode under "Pyre2 language server".
+  VSCode under "Pyrefly language server".
 - Add `"pyre2.trace.server": "verbose"` to the VSCode config. Then all the LSP
   JSON requests and responses will be logged together with stderr of language
   server in the output pane.
@@ -37,7 +37,7 @@ Based on a combination of:
 ## Installing
 
 - Follow steps in Pre-requisites section.
-- Build the Pyre2 binary with
+- Build the Pyrefly binary with
   `buck2 build pyre2 @fbcode//mode/opt --show-output` or `cargo build` and
   either:
 

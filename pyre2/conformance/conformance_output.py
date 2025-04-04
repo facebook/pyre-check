@@ -244,7 +244,7 @@ def get_conformance_output(directory: str) -> Dict[str, List[Dict[str, Any]]]:
 def get_conformance_output_separate(directory: str) -> Dict[str, List[Dict[str, Any]]]:
     """
     Run minpyre on conformance test suite, parse and group the output by file
-    This function runs Pyre2 separately for each file, which is slower but more robust to failures
+    This function runs Pyrefly separately for each file, which is slower but more robust to failures
     """
     files_to_check = []
     for root, _, files in os.walk(directory):
@@ -303,7 +303,7 @@ def main() -> None:
         "--mode", "-m", choices=["update", "check", "compare"], default="update"
     )
     parser.add_argument(
-        "--separate", action="store_true", help="run Pyre2 separately for each case"
+        "--separate", action="store_true", help="run Pyrefly separately for each case"
     )
     args = parser.parse_args()
     if args.separate:
