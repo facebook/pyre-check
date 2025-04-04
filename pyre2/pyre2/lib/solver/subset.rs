@@ -28,6 +28,7 @@ use crate::types::class::TArgs;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::simplify::unions;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Restriction;
 use crate::types::type_var::Variance;
 use crate::types::types::Forall;
 use crate::types::types::Forallable;
@@ -943,6 +944,21 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::TypeAlias(ta), _) => {
                 self.is_subset_eq_impl(&ta.as_value(self.type_order.stdlib()), want)
             }
+            (Type::Quantified(q), t2) => match q.restriction() {
+                Restriction::Bound(bound) => self.is_subset_eq(bound, t2),
+                Restriction::Constraints(constraints) => constraints
+                    .iter()
+                    .all(|constraint| self.is_subset_eq(constraint, t2)),
+                Restriction::Unrestricted => self.is_subset_eq_impl(
+                    &self
+                        .type_order
+                        .stdlib()
+                        .object_class_type()
+                        .clone()
+                        .to_type(),
+                    want,
+                ),
+            },
             _ => false,
         }
     }

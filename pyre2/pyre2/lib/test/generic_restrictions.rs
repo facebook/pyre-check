@@ -8,6 +8,15 @@
 use crate::testcase;
 
 testcase!(
+    test_quantified_subtyping_no_constraint,
+    r#"
+def test[T](x: T) -> None:
+    y: int = x  # E: `?T` is not assignable to `int`
+    z: object = x  # OK
+ "#,
+);
+
+testcase!(
     test_type_var_tuple_default,
     r#"
 from typing import TypeVarTuple, Unpack, assert_type
@@ -43,6 +52,18 @@ def test2[**P = [str, int]](x: Callable[P, None]) -> Callable[P, None]:
 );
 
 testcase!(
+    test_var_subtype_deadlock,
+    r#"
+from typing import Iterator
+
+def iter_iter[T](x: Iterator[T]) -> Iterator[T]:
+    return iter(x)
+
+iter_iter(iter([1, 2, 3]))
+ "#,
+);
+
+testcase!(
     test_generic_bounds,
     r#"
 class A: ...
@@ -50,8 +71,8 @@ class B(A): ...
 class C(B): ...
 
 def test[T: B](x: T) -> None:
-    a: A = x  # OK  # E: `?T` is not assignable to `A`
-    b: B = x  # OK  # E: `?T` is not assignable to `B`
+    a: A = x  # OK
+    b: B = x  # OK
     c: C = x  # E: `?T` is not assignable to `C`
 
 test(A())  # Not OK
@@ -69,7 +90,7 @@ class C(A): ...
 class D(C): ...
 
 def test[T: (B, C)](x: T) -> None:
-    a: A = x  # OK  # E: `?T` is not assignable to `A`
+    a: A = x  # OK
     b: B = x  # E: `?T` is not assignable to `B`
     c: C = x  # E: `?T` is not assignable to `C`
 
@@ -142,7 +163,6 @@ def func(a: T, b: int) -> T:
 );
 
 testcase!(
-    bug = "bounded quantified <: concrete type",
     test_bounded_typevar_attribute_access,
     r#"
 from typing import TypeVar, assert_type
@@ -151,7 +171,7 @@ class C:
 T = TypeVar('T', bound=C)
 def func(c: T) -> C:
     assert_type(c.x, int)
-    return c  # E: Returned type `?T` is not assignable to declared return type `C`
+    return c
  "#,
 );
 
