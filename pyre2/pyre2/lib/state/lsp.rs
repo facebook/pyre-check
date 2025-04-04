@@ -35,7 +35,7 @@ impl<'a> Transaction<'a> {
         let readable = self.readable();
         let idx = readable.get_bindings(handle)?.key_to_idx(key);
         let ans = readable.get_answers(handle)?;
-        Some(ans.for_display(ans.get_idx(idx)?.arc_clone()))
+        Some(ans.for_display(ans.get_idx(idx)?.arc_clone_ty()))
     }
 
     fn get_type_trace(&self, handle: &Handle, range: TextRange) -> Option<Type> {

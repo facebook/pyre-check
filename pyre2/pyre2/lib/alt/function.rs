@@ -195,8 +195,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let decorators = decorators
             .iter()
             .filter(|k| {
-                let decorator_ty = self.get_idx(**k);
-                match decorator_ty.callee_kind() {
+                let decorator = self.get_idx(**k);
+                match decorator.ty().callee_kind() {
                     Some(CalleeKind::Function(FunctionKind::Overload)) => {
                         is_overload = true;
                         false
@@ -217,7 +217,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         // When the `setter` attribute is accessed on a property, we return the
                         // getter with its kind set to FunctionKind::PropertySetter. See
                         // AnswersSolver::lookup_attr_from_attribute_base for details.
-                        is_property_setter_with_getter = Some(decorator_ty.arc_clone());
+                        is_property_setter_with_getter = Some(decorator.arc_clone_ty());
                         false
                     }
                     Some(CalleeKind::Class(ClassKind::EnumMember)) => {
@@ -324,7 +324,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }));
         let ret = self
             .get(&Key::ReturnType(ShortIdentifier::new(&def.name)))
-            .arc_clone();
+            .arc_clone_ty();
 
         let ret = if def.is_async && !self.is_async_generator(&ret) {
             self.stdlib

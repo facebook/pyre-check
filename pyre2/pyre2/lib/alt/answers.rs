@@ -591,7 +591,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let t = if let Binding::Phi(_, Some(default)) = binding {
             self.get_calculation(*default)
                 .get()
-                .map(|t| t.arc_clone().promote_literals(self.stdlib))
+                .map(|t| t.arc_clone_ty().promote_literals(self.stdlib))
         } else {
             None
         };

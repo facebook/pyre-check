@@ -56,6 +56,7 @@ use crate::types::class::ClassIndex;
 use crate::types::equality::TypeEq;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::types::Type;
+use crate::types::types::TypeInfo;
 use crate::types::types::Var;
 use crate::util::display::commas_iter;
 use crate::util::display::DisplayWith;
@@ -96,7 +97,7 @@ pub trait Keyed: Hash + Eq + Clone + DisplayWith<ModuleInfo> + Debug + Ranged + 
 
 impl Keyed for Key {
     type Value = Binding;
-    type Answer = Type;
+    type Answer = TypeInfo;
 }
 impl Keyed for KeyExpect {
     type Value = BindingExpect;

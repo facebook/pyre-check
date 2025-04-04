@@ -632,19 +632,14 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             // itself depends on a TypeVar.
             return decoratee;
         }
-        let ty_decorator = self.get_idx(decorator);
+        let ty_decorator = self.get_idx(decorator).arc_clone_ty();
         if matches!(&decoratee, Type::ClassDef(_)) {
             // TODO: don't blanket ignore class decorators.
             return decoratee;
         }
         let range = self.bindings().idx_to_key(decorator).range();
-        let call_target = self.as_call_target_or_error(
-            ty_decorator.arc_clone(),
-            CallStyle::FreeForm,
-            range,
-            errors,
-            None,
-        );
+        let call_target =
+            self.as_call_target_or_error(ty_decorator, CallStyle::FreeForm, range, errors, None);
         let arg = CallArg::Type(&decoratee, range);
         self.call_infer(call_target, &[arg], &[], range, errors, None)
     }
@@ -690,7 +685,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     "" => Type::any_error(), // Must already have a parse error
                     _ => self
                         .get(&Key::Usage(ShortIdentifier::expr_name(x)))
-                        .arc_clone(),
+                        .arc_clone_ty(),
                 };
                 self.record_type_trace(x.range(), &ty);
                 TypeInfo::of_ty(ty)
@@ -1001,7 +996,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 let ty_fun = self.expr_infer(&x.func, errors);
                 if matches!(&ty_fun, Type::ClassDef(cls) if cls.has_qname("builtins", "super")) {
                     if is_special_name(&x.func, "super") {
-                        self.get(&Key::SuperInstance(x.range)).arc_clone()
+                        self.get(&Key::SuperInstance(x.range)).arc_clone_ty()
                     } else {
                         // Because we have to construct a binding for super in order to fill in
                         // implicit arguments, we can't handle things like local aliases to super.

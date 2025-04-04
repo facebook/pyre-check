@@ -315,8 +315,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         let mut is_final = false;
         for decorator in decorators {
-            let ty_decorator = self.get_idx(*decorator);
-            match ty_decorator.callee_kind() {
+            let decorator = self.get_idx(*decorator);
+            match decorator.ty().callee_kind() {
                 Some(CalleeKind::Function(FunctionKind::Dataclass(kws))) => {
                     let dataclass_fields = self.get_dataclass_fields(cls, &bases_with_metadata);
                     dataclass_metadata = Some(DataclassMetadata {

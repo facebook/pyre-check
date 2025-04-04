@@ -491,9 +491,12 @@ impl TypeInfo {
         self.ty
     }
 
-    #[expect(dead_code)]
     pub fn arc_clone(self: Arc<Self>) -> Self {
         Arc::unwrap_or_clone(self)
+    }
+
+    pub fn arc_clone_ty(self: Arc<Self>) -> Type {
+        self.arc_clone().into_ty()
     }
 }
 

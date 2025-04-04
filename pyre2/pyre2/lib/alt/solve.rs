@@ -96,6 +96,7 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
+use crate::types::types::TypeInfo;
 use crate::util::prelude::SliceExt;
 use crate::util::visit::VisitMut;
 
@@ -140,7 +141,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         &self,
         binding: &BindingLegacyTypeParam,
     ) -> Arc<LegacyTypeParameterLookup> {
-        match &*self.get_idx(binding.0) {
+        match self.get_idx(binding.0).ty() {
             Type::Type(box Type::TypeVar(x)) => {
                 let q = Quantified::type_var(
                     x.qname().id().clone(),
@@ -918,7 +919,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     let name = raw_param.name();
                     let quantified =
-                        get_quantified(&self.get(&Key::Definition(ShortIdentifier::new(name))));
+                        get_quantified(self.get(&Key::Definition(ShortIdentifier::new(name))).ty());
                     params.push(TParamInfo {
                         quantified,
                         variance: None,
@@ -952,7 +953,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    pub fn solve_binding(&self, binding: &Binding, errors: &ErrorCollector) -> Arc<Type> {
+    pub fn solve_binding(&self, binding: &Binding, errors: &ErrorCollector) -> Arc<TypeInfo> {
         // Special case for forward, as we don't want to re-expand the type
         if let Binding::Forward(fwd) = binding {
             return self.get_idx(*fwd);
@@ -961,15 +962,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         // Replace any solved recursive variables with their answers.
         // We call self.unions() to simplify cases like
         // v = @1 | int, @1 = int.
-        Arc::new(
-            match self
-                .solver()
-                .expand(self.solve_binding_inner(binding, errors))
-            {
-                Type::Union(ts) => self.unions(ts),
-                t => t,
-            },
-        )
+        let type_info = self.binding_to_type_info(binding, errors);
+        // TODO(stroxler): We'll need a different pattern here to preserve attribute narrowing.
+        // Do we also need to *expand* the attribute narrowing types? I'm honestly not sure at this stage.
+        let ty = type_info.into_ty();
+        let ty = match self.solver().expand(ty) {
+            Type::Union(ts) => self.unions(ts),
+            t => t,
+        };
+        Arc::new(TypeInfo::of_ty(ty))
     }
 
     pub fn solve_expectation(
@@ -1055,7 +1056,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             },
             BindingExpect::UnpackedLength(b, range, expect) => {
-                let iterable_ty = self.solve_binding_inner(b, errors);
+                let iterable_ty = self.binding_to_type(b, errors);
                 let iterables = self.iterate(&iterable_ty, *range, errors);
                 for iterable in iterables {
                     match iterable {
@@ -1138,7 +1139,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 self.check_attr_set_with_type(
                     base,
                     &attr.attr.id,
-                    &got,
+                    got.ty(),
                     attr.range,
                     errors,
                     None,
@@ -1190,11 +1191,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let field = match &self.get_idx(field.class).0 {
             None => ClassField::recursive(),
             Some(class) => {
-                let value_ty = self.solve_binding(&field.value, errors);
+                let value = self.solve_binding(&field.value, errors);
                 let annotation = field.annotation.map(|a| self.get_idx(a));
                 self.calculate_class_field(
                     &field.name,
-                    value_ty.as_ref(),
+                    value.ty(),
                     annotation.as_deref().map(|annot| &annot.annotation),
                     &field.initial_value,
                     class,
@@ -1251,7 +1252,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     ) -> Type {
         match style {
             SuperStyle::ExplicitArgs(cls_binding, obj_binding) => {
-                match &*self.get_idx(*cls_binding) {
+                match self.get_idx(*cls_binding).ty() {
                     Type::Any(style) => style.propagate(),
                     cls_type @ Type::ClassDef(cls) => {
                         let make_super_instance = |obj_cls, super_obj: &dyn Fn() -> SuperObj| {
@@ -1274,7 +1275,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                                 }
                             )
                         };
-                        match &*self.get_idx(*obj_binding) {
+                        match self.get_idx(*obj_binding).ty() {
                             Type::Any(style) => style.propagate(),
                             Type::ClassType(obj_cls) => make_super_instance(obj_cls, &|| SuperObj::Instance(obj_cls.clone())),
                             Type::Type(box Type::ClassType(obj_cls)) => make_super_instance(obj_cls, &|| SuperObj::Class(obj_cls.class_object().dupe())),
@@ -1461,7 +1462,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
+    fn binding_to_type_info(&self, binding: &Binding, errors: &ErrorCollector) -> TypeInfo {
+        TypeInfo::of_ty(self.binding_to_type(binding, errors))
+    }
+
+    fn binding_to_type(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
         match binding {
             Binding::Expr(ann, e) => match ann {
                 Some(k) => {
@@ -1568,7 +1573,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if let Some((_, _, return_ty)) = self.decompose_generator(&ty) {
                             self.check_type(
                                 &return_ty,
-                                implicit_return.as_ref(),
+                                implicit_return.ty(),
                                 *range,
                                 errors,
                                 &|| {
@@ -1589,7 +1594,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             );
                         }
                     } else {
-                        self.check_type(&ty, implicit_return.as_ref(), *range, errors, &|| {
+                        self.check_type(&ty, implicit_return.ty(), *range, errors, &|| {
                             TypeCheckContext::of_kind(TypeCheckKind::ImplicitFunctionReturn(
                                 !x.returns.is_empty(),
                             ))
@@ -1597,17 +1602,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     ty
                 } else {
-                    let returns = x.returns.iter().map(|k| self.get_idx(*k).arc_clone());
+                    let returns = x.returns.iter().map(|k| self.get_idx(*k).arc_clone_ty());
                     // TODO: It should always be a no-op to include a `Type::Never` in unions, but
                     // `simple::test_solver_variables` fails if we do, because `solver::unions` does
                     // `is_subset_eq` to force free variables, causing them to be equated to
                     // `Type::Never` instead of becoming `Type::Any`.
-                    let return_ty = if implicit_return.is_never() {
+                    let return_ty = if implicit_return.ty().is_never() {
                         self.unions(returns.collect())
                     } else {
                         self.unions(
                             returns
-                                .chain(iter::once(implicit_return.arc_clone()))
+                                .chain(iter::once(implicit_return.arc_clone_ty()))
                                 .collect(),
                         )
                     };
@@ -1697,10 +1702,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         xs.iter().all(|(last, k)| {
                             let e = self.get_idx(*k);
                             match last {
-                                LastStmt::Expr => e.is_never(),
+                                LastStmt::Expr => e.ty().is_never(),
                                 LastStmt::With(kind) => {
                                     let res = self.context_value_exit(
-                                        &e,
+                                        e.ty(),
                                         *kind,
                                         TextRange::default(),
                                         &ErrorCollector::new(
@@ -1840,7 +1845,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             }
             Binding::ContextValue(ann, e, range, kind) => {
                 let context_manager = self.get_idx(*e);
-                let context_value = self.context_value(&context_manager, *kind, *range, errors);
+                let context_value = self.context_value(context_manager.ty(), *kind, *range, errors);
                 let ty = ann.map(|k| self.get_idx(k));
                 match ty.as_ref().and_then(|x| x.ty().map(|t| (t, &x.target))) {
                     Some((ty, target)) => {
@@ -1854,7 +1859,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::SubscriptValue(box b, x) => {
                 let base = self.expr_infer(&x.value, errors);
                 let slice_ty = self.expr_infer(&x.slice, errors);
-                let value_ty = self.solve_binding_inner(b, errors);
+                let value_ty = self.binding_to_type(b, errors);
                 match (&base, &slice_ty) {
                     (Type::TypedDict(typed_dict), Type::Literal(Lit::String(field_name))) => {
                         if let Some(field) =
@@ -1917,7 +1922,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Binding::UnpackedValue(b, range, pos) => {
-                let iterables = self.iterate(&self.solve_binding_inner(b, errors), *range, errors);
+                let iterables = self.iterate(&self.binding_to_type(b, errors), *range, errors);
                 let mut values = Vec::new();
                 for iterable in iterables {
                     values.push(match iterable {
@@ -1978,7 +1983,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ty
                 }
             },
-            Binding::Forward(k) => self.get_idx(*k).arc_clone(),
+            Binding::Forward(k) => self.get_idx(*k).arc_clone_ty(),
             Binding::Phi(ks, default) => {
                 // We force the default first so that if we hit a recursive case it is already available
                 let default_val = default.map(|x| self.get_idx(x));
@@ -1993,16 +1998,16 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 };
 
                 if ks.len() == 1 {
-                    get_idx(*ks.first().unwrap()).arc_clone()
+                    get_idx(*ks.first().unwrap()).arc_clone_ty()
                 } else {
                     let ts = ks
                         .iter()
                         .filter_map(|k| {
-                            let t: Arc<Type> = get_idx(*k);
+                            let t: Arc<TypeInfo> = get_idx(*k);
                             // Filter out all `@overload`-decorated types except the one that
                             // accumulates all signatures into a Type::Overload.
-                            if matches!(*t, Type::Overload(_)) || !t.is_overload() {
-                                Some(t.arc_clone())
+                            if matches!(t.ty(), Type::Overload(_)) || !t.ty().is_overload() {
+                                Some(t.arc_clone_ty())
                             } else {
                                 None
                             }
@@ -2011,10 +2016,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     self.unions(ts)
                 }
             }
-            Binding::Narrow(k, op, range) => self.narrow(&self.get_idx(*k), op, *range, errors),
+            Binding::Narrow(k, op, range) => self.narrow(self.get_idx(*k).ty(), op, *range, errors),
             Binding::AnnotatedType(ann, val) => match &self.get_idx(*ann).ty() {
                 Some(ty) => (*ty).clone(),
-                None => self.solve_binding_inner(val, errors),
+                None => self.binding_to_type(val, errors),
             },
             Binding::Type(x) => x.clone(),
             Binding::StrType => self.stdlib.str().to_type(),
@@ -2027,8 +2032,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 constraints,
             }) => {
                 let restriction = if let Some((bound_idx, bound_range)) = bound {
-                    let bound_ty =
-                        self.untype(self.get_idx(*bound_idx).arc_clone(), *bound_range, errors);
+                    let bound_ty = self.untype(
+                        self.get_idx(*bound_idx).arc_clone_ty(),
+                        *bound_range,
+                        errors,
+                    );
                     Restriction::Bound(bound_ty)
                 } else if let Some((constraint_idxs, constraint_range)) = constraints {
                     if constraint_idxs.len() < 2 {
@@ -2046,7 +2054,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         Restriction::Unrestricted
                     } else {
                         let constraint_tys = constraint_idxs.map(|idx| {
-                            self.untype(self.get_idx(*idx).arc_clone(), *constraint_range, errors)
+                            self.untype(
+                                self.get_idx(*idx).arc_clone_ty(),
+                                *constraint_range,
+                                errors,
+                            )
                         });
                         Restriction::Constraints(constraint_tys)
                     }
@@ -2085,7 +2097,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::Module(m, path, prev) => {
                 let prev = prev
                     .as_ref()
-                    .and_then(|x| self.get_idx(*x).as_module().cloned());
+                    .and_then(|x| self.get_idx(*x).ty().as_module().cloned());
                 match prev {
                     Some(prev) if prev.path() == path => prev.add_module(*m).to_type(),
                     _ => {
@@ -2191,10 +2203,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 // TODO: check that value is a mapping
                 // TODO: check against duplicate keys (optional)
                 let key_ty = self.expr_infer(mapping_key, errors);
-                let binding_ty = self.get_idx(*binding_key);
+                let binding = self.get_idx(*binding_key);
                 let arg = CallArg::Type(&key_ty, mapping_key.range());
                 self.call_method_or_error(
-                    &binding_ty,
+                    binding.ty(),
                     &dunder::GETITEM,
                     mapping_key.range(),
                     &[arg],
@@ -2206,10 +2218,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::PatternMatchClassPositional(_, idx, key, range) => {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
-                let binding_ty = self.get_idx(*key);
-                let context = || ErrorContext::MatchPositional(binding_ty.as_ref().clone());
+                let binding = self.get_idx(*key);
+                let context = || ErrorContext::MatchPositional(binding.ty().clone());
                 let match_args = self.attr_infer(
-                    &binding_ty,
+                    binding.ty(),
                     &dunder::MATCH_ARGS,
                     *range,
                     errors,
@@ -2220,7 +2232,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         if *idx < ts.len() {
                             if let Some(Type::Literal(Lit::String(box attr_name))) = ts.get(*idx) {
                                 self.attr_infer(
-                                    &binding_ty,
+                                    binding.ty(),
                                     &Name::new(attr_name),
                                     *range,
                                     errors,
@@ -2264,8 +2276,8 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Binding::PatternMatchClassKeyword(_, attr, key) => {
                 // TODO: check that value matches class
                 // TODO: check against duplicate keys (optional)
-                let binding_ty = self.get_idx(*key);
-                self.attr_infer(&binding_ty, &attr.id, attr.range, errors, None)
+                let binding = self.get_idx(*key);
+                self.attr_infer(binding.ty(), &attr.id, attr.range, errors, None)
             }
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
             Binding::LambdaParameter(var) => var.to_type(),
