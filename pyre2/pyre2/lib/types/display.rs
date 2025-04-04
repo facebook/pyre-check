@@ -26,6 +26,7 @@ use crate::types::types::BoundMethod;
 use crate::types::types::NeverStyle;
 use crate::types::types::SuperObj;
 use crate::types::types::Type;
+use crate::types::types::TypeInfo;
 use crate::util::display::append;
 use crate::util::display::commas_iter;
 use crate::util::display::Fmt;
@@ -317,6 +318,12 @@ impl<'a> TypeDisplayContext<'a> {
 impl Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         TypeDisplayContext::new(&[self]).fmt(self, f)
+    }
+}
+
+impl Display for TypeInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        TypeDisplayContext::new(&[self.ty()]).fmt(self.ty(), f)
     }
 }
 
