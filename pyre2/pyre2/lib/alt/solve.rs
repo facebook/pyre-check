@@ -1468,6 +1468,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
 
     fn binding_to_type(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
         match binding {
+            Binding::Forward(k) => self.get_idx(*k).arc_clone_ty(),
             Binding::Expr(ann, e) => match ann {
                 Some(k) => {
                     let annot = self.get_idx(*k);
@@ -1489,6 +1490,161 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
                 None => self.expr(e, None, errors),
             },
+            Binding::Phi(ks, default) => {
+                // We force the default first so that if we hit a recursive case it is already available
+                let default_val = default.map(|x| self.get_idx(x));
+
+                let get_idx = |k: Idx<Key>| {
+                    if Some(k) == *default {
+                        // Just optimise looking up Idx twice
+                        default_val.dupe().unwrap()
+                    } else {
+                        self.get_idx(k)
+                    }
+                };
+
+                if ks.len() == 1 {
+                    get_idx(*ks.first().unwrap()).arc_clone_ty()
+                } else {
+                    let ts = ks
+                        .iter()
+                        .filter_map(|k| {
+                            let t: Arc<TypeInfo> = get_idx(*k);
+                            // Filter out all `@overload`-decorated types except the one that
+                            // accumulates all signatures into a Type::Overload.
+                            if matches!(t.ty(), Type::Overload(_)) || !t.ty().is_overload() {
+                                Some(t.arc_clone_ty())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    self.unions(ts)
+                }
+            }
+            Binding::Narrow(k, op, range) => self.narrow(self.get_idx(*k).ty(), op, *range, errors),
+            Binding::PatternMatchMapping(mapping_key, binding_key) => {
+                // TODO: check that value is a mapping
+                // TODO: check against duplicate keys (optional)
+                let key_ty = self.expr_infer(mapping_key, errors);
+                let binding = self.get_idx(*binding_key);
+                let arg = CallArg::Type(&key_ty, mapping_key.range());
+                self.call_method_or_error(
+                    binding.ty(),
+                    &dunder::GETITEM,
+                    mapping_key.range(),
+                    &[arg],
+                    &[],
+                    errors,
+                    None,
+                )
+            }
+            Binding::PatternMatchClassPositional(_, idx, key, range) => {
+                // TODO: check that value matches class
+                // TODO: check against duplicate keys (optional)
+                let binding = self.get_idx(*key);
+                let context = || ErrorContext::MatchPositional(binding.ty().clone());
+                let match_args = self.attr_infer(
+                    binding.ty(),
+                    &dunder::MATCH_ARGS,
+                    *range,
+                    errors,
+                    Some(&context),
+                );
+                match match_args {
+                    Type::Tuple(Tuple::Concrete(ts)) => {
+                        if *idx < ts.len() {
+                            if let Some(Type::Literal(Lit::String(box attr_name))) = ts.get(*idx) {
+                                self.attr_infer(
+                                    binding.ty(),
+                                    &Name::new(attr_name),
+                                    *range,
+                                    errors,
+                                    Some(&context),
+                                )
+                            } else {
+                                self.error(
+                                    errors,
+                                    *range,
+                                    ErrorKind::MatchError,
+                                    Some(&context),
+                                    format!(
+                                        "Expected literal string in `__match_args__`, got {}",
+                                        ts[*idx]
+                                    ),
+                                )
+                            }
+                        } else {
+                            self.error(
+                                errors,
+                                *range,
+                                ErrorKind::MatchError,
+                                Some(&context),
+                                format!("Index {idx} out of range for `__match_args__`"),
+                            )
+                        }
+                    }
+                    Type::Any(AnyStyle::Error) => match_args,
+                    _ => self.error(
+                        errors,
+                        *range,
+                        ErrorKind::MatchError,
+                        Some(&context),
+                        format!(
+                            "Expected concrete tuple for `__match_args__`, got {}",
+                            match_args
+                        ),
+                    ),
+                }
+            }
+            Binding::PatternMatchClassKeyword(_, attr, key) => {
+                // TODO: check that value matches class
+                // TODO: check against duplicate keys (optional)
+                let binding = self.get_idx(*key);
+                self.attr_infer(binding.ty(), &attr.id, attr.range, errors, None)
+            }
+            Binding::NameAssign(name, annot_key, expr) => {
+                let (has_type_alias_qualifier, ty) = match annot_key.as_ref() {
+                    Some((style, k)) => {
+                        let annot = self.get_idx(*k);
+                        let tcc: &dyn Fn() -> TypeCheckContext = &|| {
+                            TypeCheckContext::of_kind(match style {
+                                AnnotationStyle::Direct => TypeCheckKind::AnnAssign,
+                                AnnotationStyle::Forwarded => {
+                                    TypeCheckKind::AnnotatedName(name.clone())
+                                }
+                            })
+                        };
+                        if annot.annotation.is_final() && *style == AnnotationStyle::Forwarded {
+                            self.error(
+                                errors,
+                                expr.range(),
+                                ErrorKind::BadAssignment,
+                                None,
+                                format!("`{}` is marked final", name),
+                            );
+                        }
+                        let hint = annot.ty().map(|t| (t, tcc));
+                        (
+                            Some(annot.annotation.qualifiers.contains(&Qualifier::TypeAlias)),
+                            self.expr(expr, hint, errors),
+                        )
+                    }
+                    None => (None, self.expr(expr, None, errors)),
+                };
+                match (has_type_alias_qualifier, &ty) {
+                    (Some(true), _) => {
+                        self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, expr, errors)
+                    }
+                    // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
+                    // when there is no annotation, so that `mylist = list` is treated
+                    // like a value assignment rather than a type alias?
+                    (None, Type::Type(_)) => {
+                        self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, expr, errors)
+                    }
+                    _ => ty,
+                }
+            }
             Binding::TypeVar(ann, name, x) => {
                 let ty = Type::type_form(self.typevar_from_call(name.clone(), x, errors).to_type());
                 if let Some(k) = ann
@@ -1983,40 +2139,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     ty
                 }
             },
-            Binding::Forward(k) => self.get_idx(*k).arc_clone_ty(),
-            Binding::Phi(ks, default) => {
-                // We force the default first so that if we hit a recursive case it is already available
-                let default_val = default.map(|x| self.get_idx(x));
-
-                let get_idx = |k: Idx<Key>| {
-                    if Some(k) == *default {
-                        // Just optimise looking up Idx twice
-                        default_val.dupe().unwrap()
-                    } else {
-                        self.get_idx(k)
-                    }
-                };
-
-                if ks.len() == 1 {
-                    get_idx(*ks.first().unwrap()).arc_clone_ty()
-                } else {
-                    let ts = ks
-                        .iter()
-                        .filter_map(|k| {
-                            let t: Arc<TypeInfo> = get_idx(*k);
-                            // Filter out all `@overload`-decorated types except the one that
-                            // accumulates all signatures into a Type::Overload.
-                            if matches!(t.ty(), Type::Overload(_)) || !t.ty().is_overload() {
-                                Some(t.arc_clone_ty())
-                            } else {
-                                None
-                            }
-                        })
-                        .collect::<Vec<_>>();
-                    self.unions(ts)
-                }
-            }
-            Binding::Narrow(k, op, range) => self.narrow(self.get_idx(*k).ty(), op, *range, errors),
             Binding::AnnotatedType(ann, val) => match &self.get_idx(*ann).ty() {
                 Some(ty) => (*ty).clone(),
                 None => self.binding_to_type(val, errors),
@@ -2135,48 +2257,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     LegacyTypeParameterLookup::NotParameter(ty) => ty.clone(),
                 }
             }
-            Binding::NameAssign(name, annot_key, expr) => {
-                let (has_type_alias_qualifier, ty) = match annot_key.as_ref() {
-                    Some((style, k)) => {
-                        let annot = self.get_idx(*k);
-                        let tcc: &dyn Fn() -> TypeCheckContext = &|| {
-                            TypeCheckContext::of_kind(match style {
-                                AnnotationStyle::Direct => TypeCheckKind::AnnAssign,
-                                AnnotationStyle::Forwarded => {
-                                    TypeCheckKind::AnnotatedName(name.clone())
-                                }
-                            })
-                        };
-                        if annot.annotation.is_final() && *style == AnnotationStyle::Forwarded {
-                            self.error(
-                                errors,
-                                expr.range(),
-                                ErrorKind::BadAssignment,
-                                None,
-                                format!("`{}` is marked final", name),
-                            );
-                        }
-                        let hint = annot.ty().map(|t| (t, tcc));
-                        (
-                            Some(annot.annotation.qualifiers.contains(&Qualifier::TypeAlias)),
-                            self.expr(expr, hint, errors),
-                        )
-                    }
-                    None => (None, self.expr(expr, None, errors)),
-                };
-                match (has_type_alias_qualifier, &ty) {
-                    (Some(true), _) => {
-                        self.as_type_alias(name, TypeAliasStyle::LegacyExplicit, ty, expr, errors)
-                    }
-                    // TODO(stroxler, rechen): Do we want to include Type::ClassDef(_)
-                    // when there is no annotation, so that `mylist = list` is treated
-                    // like a value assignment rather than a type alias?
-                    (None, Type::Type(_)) => {
-                        self.as_type_alias(name, TypeAliasStyle::LegacyImplicit, ty, expr, errors)
-                    }
-                    _ => ty,
-                }
-            }
             Binding::ScopedTypeAlias(name, params, expr) => {
                 let ty = self.expr_infer(expr, errors);
                 let ta = self.as_type_alias(name, TypeAliasStyle::Scoped, ty, expr, errors);
@@ -2198,86 +2278,6 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     }
                     _ => ta,
                 }
-            }
-            Binding::PatternMatchMapping(mapping_key, binding_key) => {
-                // TODO: check that value is a mapping
-                // TODO: check against duplicate keys (optional)
-                let key_ty = self.expr_infer(mapping_key, errors);
-                let binding = self.get_idx(*binding_key);
-                let arg = CallArg::Type(&key_ty, mapping_key.range());
-                self.call_method_or_error(
-                    binding.ty(),
-                    &dunder::GETITEM,
-                    mapping_key.range(),
-                    &[arg],
-                    &[],
-                    errors,
-                    None,
-                )
-            }
-            Binding::PatternMatchClassPositional(_, idx, key, range) => {
-                // TODO: check that value matches class
-                // TODO: check against duplicate keys (optional)
-                let binding = self.get_idx(*key);
-                let context = || ErrorContext::MatchPositional(binding.ty().clone());
-                let match_args = self.attr_infer(
-                    binding.ty(),
-                    &dunder::MATCH_ARGS,
-                    *range,
-                    errors,
-                    Some(&context),
-                );
-                match match_args {
-                    Type::Tuple(Tuple::Concrete(ts)) => {
-                        if *idx < ts.len() {
-                            if let Some(Type::Literal(Lit::String(box attr_name))) = ts.get(*idx) {
-                                self.attr_infer(
-                                    binding.ty(),
-                                    &Name::new(attr_name),
-                                    *range,
-                                    errors,
-                                    Some(&context),
-                                )
-                            } else {
-                                self.error(
-                                    errors,
-                                    *range,
-                                    ErrorKind::MatchError,
-                                    Some(&context),
-                                    format!(
-                                        "Expected literal string in `__match_args__`, got {}",
-                                        ts[*idx]
-                                    ),
-                                )
-                            }
-                        } else {
-                            self.error(
-                                errors,
-                                *range,
-                                ErrorKind::MatchError,
-                                Some(&context),
-                                format!("Index {idx} out of range for `__match_args__`"),
-                            )
-                        }
-                    }
-                    Type::Any(AnyStyle::Error) => match_args,
-                    _ => self.error(
-                        errors,
-                        *range,
-                        ErrorKind::MatchError,
-                        Some(&context),
-                        format!(
-                            "Expected concrete tuple for `__match_args__`, got {}",
-                            match_args
-                        ),
-                    ),
-                }
-            }
-            Binding::PatternMatchClassKeyword(_, attr, key) => {
-                // TODO: check that value matches class
-                // TODO: check against duplicate keys (optional)
-                let binding = self.get_idx(*key);
-                self.attr_infer(binding.ty(), &attr.id, attr.range, errors, None)
             }
             Binding::Decorator(expr) => self.expr_infer(expr, errors),
             Binding::LambdaParameter(var) => var.to_type(),
