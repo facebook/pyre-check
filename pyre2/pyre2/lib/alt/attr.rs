@@ -40,6 +40,7 @@ use crate::types::module::Module;
 use crate::types::quantified::Quantified;
 use crate::types::stdlib::Stdlib;
 use crate::types::tuple::Tuple;
+use crate::types::type_var::Restriction;
 use crate::types::types::AnyStyle;
 use crate::types::types::SuperObj;
 use crate::types::types::Type;
@@ -1130,6 +1131,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             Type::SuperInstance(box (cls, obj)) => Some(AttributeBase::SuperInstance(cls, obj)),
+            Type::Quantified(q) if q.is_type_var() => match q.restriction() {
+                Restriction::Bound(bound) => self.as_attribute_base_no_union(bound.clone(), stdlib),
+                // TODO: handle constraints
+                Restriction::Constraints(_) | Restriction::Unrestricted => None,
+            },
             // TODO: check to see which ones should have class representations
             Type::Union(_)
             | Type::SpecialForm(_)

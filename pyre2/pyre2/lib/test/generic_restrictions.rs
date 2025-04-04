@@ -140,3 +140,17 @@ def func(a: T, b: int) -> T:
     return a
  "#,
 );
+
+testcase!(
+    bug = "bounded quantified <: concrete type",
+    test_bounded_typevar_attribute_access,
+    r#"
+from typing import TypeVar, assert_type
+class C:
+    x: int
+T = TypeVar('T', bound=C)
+def func(c: T) -> C:
+    assert_type(c.x, int)
+    return c  # E: Returned type `?T` is not assignable to declared return type `C`
+ "#,
+);

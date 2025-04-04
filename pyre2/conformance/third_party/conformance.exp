@@ -6352,18 +6352,8 @@
     {
       "code": -2,
       "column": 9,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?T (trying to access capitalize)",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: ?T (trying to access capitalize)",
-      "line": 33,
-      "name": "missing-attribute",
-      "stop_column": 21,
-      "stop_line": 33
-    },
-    {
-      "code": -2,
-      "column": 9,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?T (trying to access is_integer)",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: ?T (trying to access is_integer)",
+      "concise_description": "Object of class `str` has no attribute `is_integer`",
+      "description": "Object of class `str` has no attribute `is_integer`",
       "line": 34,
       "name": "missing-attribute",
       "stop_column": 21,
@@ -7260,26 +7250,6 @@
     }
   ],
   "generics_upper_bound.py": [
-    {
-      "code": -2,
-      "column": 12,
-      "concise_description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "line": 31,
-      "name": "bad-argument-type",
-      "stop_column": 13,
-      "stop_line": 31
-    },
-    {
-      "code": -2,
-      "column": 21,
-      "concise_description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "description": "Argument `?ST` is not assignable to parameter with type `Sized` in function `len`",
-      "line": 31,
-      "name": "bad-argument-type",
-      "stop_column": 22,
-      "stop_line": 31
-    },
     {
       "code": -2,
       "column": 1,
@@ -8848,11 +8818,11 @@
     {
       "code": -2,
       "column": 12,
-      "concise_description": "TODO: Expr::attr_infer attribute base undefined for type: ?GenericHasParent (trying to access get_parent)",
-      "description": "TODO: Expr::attr_infer attribute base undefined for type: ?GenericHasParent (trying to access get_parent)",
+      "concise_description": "Returned type `HasParent` is not assignable to declared return type `?GenericHasParent`",
+      "description": "Returned type `HasParent` is not assignable to declared return type `?GenericHasParent`",
       "line": 87,
-      "name": "missing-attribute",
-      "stop_column": 24,
+      "name": "bad-return",
+      "stop_column": 26,
       "stop_line": 87
     },
     {

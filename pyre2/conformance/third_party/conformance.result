@@ -385,8 +385,7 @@
     "Line 46: Expected 1 errors",
     "Line 14: Unexpected errors ['assert_type(type[?T], TypeVar) failed']",
     "Line 15: Unexpected errors ['assert_type(type[?Ts], TypeVarTuple) failed']",
-    "Line 16: Unexpected errors ['assert_type(type[?P], ParamSpec) failed']",
-    "Line 33: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?T (trying to access capitalize)']"
+    "Line 16: Unexpected errors ['assert_type(type[?P], ParamSpec) failed']"
   ],
   "generics_syntax_infer_variance.py": [
     "Line 28: Unexpected errors ['`ShouldBeCovariant1[int]` is not assignable to `ShouldBeCovariant1[float]`']",
@@ -429,8 +428,7 @@
   "generics_typevartuple_unpack.py": [],
   "generics_upper_bound.py": [
     "Line 24: Expected 1 errors",
-    "Line 51: Expected 1 errors",
-    "Line 31: Unexpected errors ['Argument `?ST` is not assignable to parameter with type `Sized` in function `len`', 'Argument `?ST` is not assignable to parameter with type `Sized` in function `len`']"
+    "Line 51: Expected 1 errors"
   ],
   "generics_variance.py": [
     "Line 77: Expected 1 errors",
@@ -519,7 +517,7 @@
     "Line 157: Unexpected errors ['Class member `Mixin7.method1` overrides parent class `Proto7` in an inconsistent manner']"
   ],
   "protocols_generic.py": [
-    "Line 87: Unexpected errors ['TODO: Expr::attr_infer attribute base undefined for type: ?GenericHasParent (trying to access get_parent)']",
+    "Line 87: Unexpected errors ['Returned type `HasParent` is not assignable to declared return type `?GenericHasParent`']",
     "Line 144: Unexpected errors ['`ConcreteHasProperty1` is not assignable to `HasPropertyProto`']",
     "Line 145: Unexpected errors ['`ConcreteHasProperty2` is not assignable to `HasPropertyProto`']"
   ],
