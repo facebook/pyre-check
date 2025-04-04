@@ -57,8 +57,8 @@ class A[T]:
     x: T
     def __init__(self, x: T):
         reveal_type(self)  # E: revealed type: Self@A
-        reveal_type(self.x)  # E: revealed type: ?T
-        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `?T`
+        reveal_type(self.x)  # E: revealed type: TypeVar[T]
+        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `TypeVar[T]`
         self.x = x  # OK
     "#,
 );
@@ -72,8 +72,8 @@ class A[T: int]:
     x: T
     def __init__(self, x: T):
         reveal_type(self)  # E: revealed type: Self@A
-        reveal_type(self.x)  # E: revealed type: ?T
-        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `?T`
+        reveal_type(self.x)  # E: revealed type: TypeVar[T]
+        self.x = 1  # E: `Literal[1]` is not assignable to attribute `x` with type `TypeVar[T]`
         self.x = x  # OK
     "#,
 );
@@ -85,7 +85,7 @@ from typing import Self, reveal_type
 class A[T]:
     x: T
     def __init__(self, other: Self):
-        reveal_type(other.x)  # E: revealed type: ?T
+        reveal_type(other.x)  # E: revealed type: TypeVar[T]
         self.x = other.x  # OK
     "#,
 );

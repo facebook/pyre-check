@@ -54,7 +54,7 @@ def identity[**P, R](x: Callable[P, R]) -> Callable[P, R]:
     return x
 def foo[T](x: T, y: T) -> T:
     return x
-foo2 = identity(foo)  # E: Argument `Forall[T, (x: ?T, y: ?T) -> ?T]` is not assignable to parameter `x` with type `(ParamSpec(@_)) -> @_` in function `identity`
+foo2 = identity(foo)  # E: Argument `Forall[T, (x: TypeVar[T], y: TypeVar[T]) -> TypeVar[T]]` is not assignable to parameter `x` with type `(ParamSpec(@_)) -> @_` in function `identity`
 reveal_type(foo2)  # E: revealed type: (ParamSpec(Unknown)) -> Unknown
 "#,
 );
@@ -126,7 +126,7 @@ from typing import Callable, Concatenate, ParamSpec
 P = ParamSpec("P")
 
 def foo(x: P) -> P: ...                           # E: ParamSpec is not allowed in this context. # E: ParamSpec is not allowed in this context.
-def foo(x: Concatenate[int, P]) -> int: ...       # E: Concatenate[int, ?P] is not allowed in this context.
+def foo(x: Concatenate[int, P]) -> int: ...       # E: Concatenate[int, ParamSpec[P]] is not allowed in this context.
 def foo(x: Callable[Concatenate[P, P], int]) -> int: ...  # E: ParamSpec is not allowed in this context.
 def foo(x: list[P]) -> None: ...                  # E: ParamSpec cannot be used for type parameter
 def foo(x: Callable[[int, str], P]) -> None: ...  # E: ParamSpec is not allowed in this context.
@@ -223,7 +223,7 @@ class Y(Generic[U, P]):
 
 def a(q: int) -> str: ...
 
-reveal_type(Y(a, 1))   # E: revealed type: Y[int, (q: int)]
+reveal_type(Y(a, 1))   # E: revealed type: Y[int, [q: int]]
 reveal_type(Y(a, 1).f) # E: revealed type: (q: int) -> str
 "#,
 );

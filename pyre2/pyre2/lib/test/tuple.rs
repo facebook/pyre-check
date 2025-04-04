@@ -284,7 +284,7 @@ testcase!(
 def f(x: slice) -> None:
     pass
 def g(x: slice[int, int, int]) -> None:
-    f(x) # E: `slice[int, int, int]` is not assignable to parameter `x` with type `slice[Any, TypeVar[_StartT_co], TypeVar[_StartT_co] | TypeVar[_StopT_co]]`
+    f(x) # E: `slice[int, int, int]` is not assignable to parameter `x` with type `slice[Any, TypeVar(_StartT_co, default=Any, covariant), TypeVar(_StartT_co, default=Any, covariant) | TypeVar(_StopT_co, default=TypeVar(_StartT_co, default=Any, covariant), covariant)]`
 "#,
 );
 

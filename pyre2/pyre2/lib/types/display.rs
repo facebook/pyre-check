@@ -21,6 +21,7 @@ use crate::module::module_name::ModuleName;
 use crate::types::callable::Function;
 use crate::types::class::TArgs;
 use crate::types::qname::QName;
+use crate::types::type_var::Restriction;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
 use crate::types::types::NeverStyle;
@@ -166,19 +167,41 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(f, "]")
             }
             Type::TypeVar(t) => {
-                write!(f, "TypeVar[")?;
+                write!(f, "TypeVar(")?;
                 self.fmt_qname(t.qname(), f)?;
-                write!(f, "]")
+                if let Some(default) = t.default() {
+                    write!(f, ", default={default}")?;
+                }
+                match t.restriction() {
+                    Restriction::Unrestricted => {}
+                    Restriction::Bound(bound) => {
+                        write!(f, ", bound={bound}")?;
+                    }
+                    Restriction::Constraints(constraints) => {
+                        write!(f, ", constraints=({})", commas_iter(|| constraints.iter()))?;
+                    }
+                }
+                match t.variance() {
+                    Some(variance) => write!(f, ", {variance}")?,
+                    None => write!(f, ", infer_variance")?,
+                }
+                write!(f, ")")
             }
             Type::TypeVarTuple(t) => {
-                write!(f, "TypeVarTuple[")?;
+                write!(f, "TypeVarTuple(")?;
                 self.fmt_qname(t.qname(), f)?;
-                write!(f, "]")
+                if let Some(default) = t.default() {
+                    write!(f, ", default={default}")?;
+                }
+                write!(f, ")")
             }
             Type::ParamSpec(t) => {
-                write!(f, "ParamSpec[")?;
+                write!(f, "ParamSpec(")?;
                 self.fmt_qname(t.qname(), f)?;
-                write!(f, "]")
+                if let Some(default) = t.default() {
+                    write!(f, ", default={default}")?;
+                }
+                write!(f, ")")
             }
             Type::SelfType(cls) => {
                 write!(f, "Self@")?;
@@ -205,9 +228,9 @@ impl<'a> TypeDisplayContext<'a> {
                 write!(f, "]")
             }
             Type::ParamSpecValue(x) => {
-                write!(f, "(")?;
+                write!(f, "[")?;
                 x.fmt_with_type(f, &|t| self.display(t))?;
-                write!(f, ")")
+                write!(f, "]")
             }
             Type::BoundMethod(box BoundMethod { obj, func }) => {
                 write!(
@@ -471,11 +494,11 @@ mod tests {
 
         assert_eq!(
             Type::Union(vec![t1.to_type(), t2.to_type()]).to_string(),
-            "TypeVar[bar.foo@1:2] | TypeVar[bar.foo@1:3]"
+            "TypeVar(bar.foo@1:2, invariant) | TypeVar(bar.foo@1:3, invariant)"
         );
         assert_eq!(
             Type::Union(vec![t1.to_type(), t3.to_type()]).to_string(),
-            "TypeVar[foo] | TypeVar[qux]"
+            "TypeVar(foo, invariant) | TypeVar(qux, invariant)"
         );
     }
 

@@ -63,6 +63,16 @@ pub enum Variance {
     Invariant,
 }
 
+impl Display for Variance {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Variance::Covariant => write!(f, "covariant"),
+            Variance::Contravariant => write!(f, "contravariant"),
+            Variance::Invariant => write!(f, "invariant"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, TypeEq, Eq, Ord, PartialOrd)]
 struct TypeVarInner {
     qname: QName,

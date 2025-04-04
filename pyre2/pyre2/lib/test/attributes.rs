@@ -733,10 +733,10 @@ class Outer[T]:
         x: T | None = None
 assert_type(Outer[int].Inner, type[Outer.Inner])
 assert_type(Outer.Inner, type[Outer.Inner])
-reveal_type(Outer[int].Inner.x)  # E: revealed type: ?T | None
-reveal_type(Outer.Inner.x)  # E: revealed type: ?T | None
-reveal_type(Outer[int].Inner().x)  # E: revealed type: ?T | None
-reveal_type(Outer.Inner().x)  # E: revealed type: ?T | None
+reveal_type(Outer[int].Inner.x)  # E: revealed type: TypeVar[T] | None
+reveal_type(Outer.Inner.x)  # E: revealed type: TypeVar[T] | None
+reveal_type(Outer[int].Inner().x)  # E: revealed type: TypeVar[T] | None
+reveal_type(Outer.Inner().x)  # E: revealed type: TypeVar[T] | None
    "#,
 );
 
