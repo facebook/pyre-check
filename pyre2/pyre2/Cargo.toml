@@ -10,7 +10,6 @@ license = "MIT"
 build = "build.rs"
 
 [lib]
-name = "pyre2"
 path = "lib/lib.rs"
 
 [[bin]]

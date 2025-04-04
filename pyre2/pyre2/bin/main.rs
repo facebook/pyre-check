@@ -16,20 +16,20 @@ use anyhow::Context as _;
 use clap::Parser;
 use clap::Subcommand;
 use path_absolutize::Absolutize;
-use pyre2::clap_env;
-use pyre2::fs_upward_search::first_match;
-use pyre2::get_args_expanded;
-use pyre2::globs::FilteredGlobs;
-use pyre2::globs::Globs;
-use pyre2::init_thread_pool;
-use pyre2::init_tracing;
-use pyre2::run::BuckCheckArgs;
-use pyre2::run::CheckArgs;
-use pyre2::run::CommandExitStatus;
-use pyre2::run::CommonGlobalArgs;
-use pyre2::run::LspArgs;
-use pyre2::ConfigFile;
-use pyre2::NotifyWatcher;
+use pyrefly::clap_env;
+use pyrefly::fs_upward_search::first_match;
+use pyrefly::get_args_expanded;
+use pyrefly::globs::FilteredGlobs;
+use pyrefly::globs::Globs;
+use pyrefly::init_thread_pool;
+use pyrefly::init_tracing;
+use pyrefly::run::BuckCheckArgs;
+use pyrefly::run::CheckArgs;
+use pyrefly::run::CommandExitStatus;
+use pyrefly::run::CommonGlobalArgs;
+use pyrefly::run::LspArgs;
+use pyrefly::ConfigFile;
+use pyrefly::NotifyWatcher;
 
 #[derive(Debug, Parser)]
 #[command(name = "pyrefly")]
@@ -124,7 +124,7 @@ fn to_exit_code(status: CommandExitStatus) -> ExitCode {
 }
 
 async fn run_check(
-    args: pyre2::run::CheckArgs,
+    args: pyrefly::run::CheckArgs,
     watch: bool,
     files_to_check: FilteredGlobs,
     config_finder: &impl Fn(&Path) -> ConfigFile,
@@ -159,7 +159,7 @@ async fn run_check_on_project(
     watch: bool,
     config: Option<PathBuf>,
     project_excludes: Option<Vec<String>>,
-    args: pyre2::run::CheckArgs,
+    args: pyrefly::run::CheckArgs,
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
     let config = if let Some(explicit_config_path) = config {
@@ -203,7 +203,7 @@ async fn run_check_on_files(
     files_to_check: Globs,
     project_excludes: Option<Vec<String>>,
     watch: bool,
-    args: pyre2::run::CheckArgs,
+    args: pyrefly::run::CheckArgs,
     allow_forget: bool,
 ) -> anyhow::Result<CommandExitStatus> {
     let project_excludes =

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-use pyre2::playground::LanguageServiceState;
+use pyrefly::playground::LanguageServiceState;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
