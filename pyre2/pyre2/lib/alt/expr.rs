@@ -643,18 +643,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         })
     }
 
-    fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
-        self.expr_infer_type_info_with_hint(x, hint, errors)
-            .into_ty()
-    }
-
     fn expr_infer_type_info_with_hint(
         &self,
         x: &Expr,
         hint: Option<&Type>,
         errors: &ErrorCollector,
     ) -> TypeInfo {
-        let ty = match x {
+        match x {
             Expr::Name(x) => {
                 let ty = match x.id.as_str() {
                     "" => Type::any_error(), // Must already have a parse error
@@ -663,7 +658,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         .arc_clone(),
                 };
                 self.record_type_trace(x.range(), &ty);
-                return TypeInfo::of_ty(ty);
+                TypeInfo::of_ty(ty)
             }
             Expr::Attribute(x) => {
                 let obj = self.expr_infer(&x.value, errors);
@@ -677,12 +672,27 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     _ => self.attr_infer(&obj, &x.attr.id, x.range, errors, None),
                 };
                 self.record_type_trace(x.range(), &ty);
-                return TypeInfo::of_ty(ty);
+                TypeInfo::of_ty(ty)
             }
             Expr::Named(x) => {
                 let type_info = self.expr_infer_type_info_with_hint(&x.value, hint, errors);
                 self.record_type_trace(x.range(), type_info.ty());
-                return type_info;
+                type_info
+            }
+            // All other expressions operate at the `Type` level only, so we avoid the overhead of
+            // wrapping and unwrapping `TypeInfo` by computing the result as a `Type` and only wrapping
+            // at the end.
+            _ => TypeInfo::of_ty(self.expr_infer_with_hint(x, hint, errors)),
+        }
+    }
+
+    fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
+        let ty = match x {
+            Expr::Name(..) | Expr::Attribute(..) | Expr::Named(..) => {
+                // These cases are required to preserve attribute narrowing information. But anyone calling
+                // this function only needs the Type, so we can just pull it out.
+                self.expr_infer_type_info_with_hint(x, hint, errors)
+                    .into_ty()
             }
             Expr::If(x) => {
                 // TODO: Support type narrowing
@@ -1253,7 +1263,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ),
         };
         self.record_type_trace(x.range(), &ty);
-        TypeInfo::of_ty(ty)
+        ty
     }
 
     fn expr_infer_with_hint_promote(
