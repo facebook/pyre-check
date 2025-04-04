@@ -72,3 +72,42 @@ test(C())
 test(D())
  "#,
 );
+
+testcase!(
+    test_generic_constraint_with_default,
+    r#"
+class A: ...
+class B(A): ...
+class C(A): ...
+class D(C): ...
+
+def test1[T: (B, C) = A](x: T) -> None:  # E: Expected default `A` of `T` to be one of the following constraints: `B`, `C`
+    pass
+def test2[T: (B, C) = B](x: T) -> None:
+    pass
+def test3[T: (B, C) = C](x: T) -> None:
+    pass
+def test4[T: (B, C) = D](x: T) -> None:  # E: Expected default `D` of `T` to be one of the following constraints: `B`, `C`
+    pass
+ "#,
+);
+
+testcase!(
+    test_generic_bound_with_default,
+    r#"
+from typing import TypeVar
+class A: ...
+class B(A): ...
+class C(A): ...
+class D(C): ...
+
+def test1[T: C = A](x: T) -> None:  # E: Expected default `A` of `T` to be assignable to the upper bound of `C`
+    pass
+def test2[T: C = B](x: T) -> None:  # E: Expected default `B` of `T` to be assignable to the upper bound of `C`
+    pass
+def test3[T: C = C](x: T) -> None:
+    pass
+def test4[T: C = D](x: T) -> None:
+    pass
+ "#,
+);

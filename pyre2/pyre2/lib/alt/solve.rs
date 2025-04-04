@@ -82,6 +82,7 @@ use crate::types::module::Module;
 use crate::types::param_spec::ParamSpec;
 use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedInfo;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
@@ -1347,6 +1348,71 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
+    fn validate_type_var_default(
+        &self,
+        name: &Name,
+        kind: QuantifiedKind,
+        default: &Type,
+        range: TextRange,
+        restriction: &Restriction,
+        errors: &ErrorCollector,
+    ) -> Type {
+        match restriction {
+            // Default must be a subtype of the upper bound
+            Restriction::Bound(bound_ty) => {
+                if self
+                    .solver()
+                    .is_subset_eq(default, bound_ty, self.type_order())
+                {
+                    default.clone()
+                } else {
+                    self.error(
+                        errors,
+                        range,
+                        kind.error_kind(),
+                        None,
+                        format!(
+                            "Expected default `{}` of `{}` to be assignable to the upper bound of `{}`",
+                            default,
+                            name,
+                            bound_ty,
+                        ),
+                    );
+                    Type::any_error()
+                }
+            }
+            Restriction::Constraints(constraints) => {
+                // Default must exactly match one of the constraints
+                if constraints.iter().any(|c| {
+                    self.solver().is_subset_eq(c, default, self.type_order())
+                        && self.solver().is_subset_eq(default, c, self.type_order())
+                }) {
+                    default.clone()
+                } else {
+                    let formatted_constraints = constraints
+                        .iter()
+                        .map(|x| format!("`{}`", x))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    self.error(
+                        errors,
+                        range,
+                        kind.error_kind(),
+                        None,
+                        format!(
+                            "Expected default `{}` of `{}` to be one of the following constraints: {}",
+                            default,
+                            name,
+                            formatted_constraints,
+                        ),
+                    );
+                    Type::any_error()
+                }
+            }
+            Restriction::Unrestricted => default.clone(),
+        }
+    }
+
     fn solve_binding_inner(&self, binding: &Binding, errors: &ErrorCollector) -> Type {
         match binding {
             Binding::Expr(ann, e) => match ann {
@@ -1939,16 +2005,29 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 } else {
                     Restriction::Unrestricted
                 };
-                let default = default.map(|(default_idx, default_range)| {
-                    self.untype(self.get_idx(default_idx).arc_clone(), default_range, errors)
-                });
+                let mut default_ty = None;
+                if let Some((default_idx, default_range)) = default {
+                    let default = self.untype(
+                        self.get_idx(*default_idx).arc_clone(),
+                        *default_range,
+                        errors,
+                    );
+                    default_ty = Some(self.validate_type_var_default(
+                        name,
+                        *kind,
+                        &default,
+                        *default_range,
+                        &restriction,
+                        errors,
+                    ));
+                }
                 Type::type_form(
                     Quantified::new(
                         *unique,
                         QuantifiedInfo {
                             name: name.clone(),
                             kind: *kind,
-                            default,
+                            default: default_ty,
                             restriction,
                         },
                     )
