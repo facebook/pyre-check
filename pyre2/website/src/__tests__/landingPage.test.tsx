@@ -61,7 +61,7 @@ describe('Home page', () => {
 
         // Verify that fireflies are present
         const fireflyElements = document.querySelectorAll('#firefly');
-        expect(fireflyElements.length).toEqual(4);
+        expect(fireflyElements.length).toEqual(5);
 
         // Verify that header is correct
         const header = container.querySelector('header');
@@ -73,11 +73,11 @@ describe('Home page', () => {
         // verify subtitle is correct
         const subtitle = container.querySelector('header p');
         expect(subtitle).toBeInTheDocument();
+        const subtitleText = subtitle?.textContent?.trim();
+        expect(subtitleText).toBe('A faster Python type checker written in Rust');
 
-        const comingSoonLink = subtitle?.querySelector('a');
+        const comingSoonLink = header?.querySelector('a');
         expect(comingSoonLink).toBeInTheDocument();
         expect(comingSoonLink?.getAttribute('href')).toBe('https://github.com/facebook/pyrefly/milestone/1');
-        const subtitleText = subtitle?.textContent?.trim();
-        expect(subtitleText).toBe('Coming soon: A faster Python type checker written in Rust');
     }
 });
