@@ -4367,6 +4367,7 @@ module HigherOrderCallGraph = struct
       let returned_callables call_targets =
         call_targets
         |> List.map ~f:(fun { CallTarget.target; _ } ->
+               log "Fetching returned callables for `%a`" Target.pp_pretty target;
                match Context.get_callee_model target with
                | Some { returned_callables; _ } -> returned_callables
                | None -> CallTarget.Set.bottom)
@@ -4411,8 +4412,20 @@ module HigherOrderCallGraph = struct
 
 
       let validate_target target =
-        let exceed_depth target = Target.depth target > Context.maximum_target_depth in
-        if Target.contain_recursive_target target || exceed_depth target then None else Some target
+        let exceed_depth = Target.depth target > Context.maximum_target_depth in
+        let contain_recursive_target = Target.contain_recursive_target target in
+        if contain_recursive_target || exceed_depth then
+          let () =
+            log
+              "Invalid target: `%a` (contain_recursive_target: `%b`. exceed_depth: `%b`)"
+              Target.pp_pretty_with_kind
+              target
+              contain_recursive_target
+              exceed_depth
+          in
+          None
+        else
+          Some target
 
 
       (* Results of analyzing a certain kind of call targets (e.g., `call_targets` or
@@ -4511,7 +4524,7 @@ module HigherOrderCallGraph = struct
               resolve_decorated_targets callee_targets)
         in
         let create_call_target = function
-          | Some ({ CallTarget.implicit_receiver; _ } as callee_target) :: parameter_targets ->
+          | Some ({ CallTarget.implicit_receiver; _ } as callee_target) :: parameter_targets -> (
               let callee_regular, closure =
                 match CallTarget.target callee_target with
                 | Target.Regular regular -> regular, Target.ParameterMap.empty
@@ -4575,20 +4588,26 @@ module HigherOrderCallGraph = struct
                     false
                 | Unresolved.False -> implicit_receiver
               in
+              let regular_call_target =
+                {
+                  callee_target with
+                  CallTarget.target = Target.Regular callee_regular;
+                  implicit_receiver;
+                }
+              in
               if Target.ParameterMap.is_empty parameters then
                 (* Treat as regular target when (1) no parameter targets exist or (2) we cannot find
                    function bodies, so that the taint analysis can still use
                    `higher_order_parameters`. *)
-                Some
-                  {
-                    callee_target with
-                    CallTarget.target = Target.Regular callee_regular;
-                    implicit_receiver;
-                  }
+                Some regular_call_target
               else
-                Target.Parameterized { regular = callee_regular; parameters }
-                |> validate_target
-                >>| fun target -> { callee_target with CallTarget.target; implicit_receiver }
+                match
+                  validate_target (Target.Parameterized { regular = callee_regular; parameters })
+                with
+                | None ->
+                    (* To avoid false negatives, still create a regular target. *)
+                    Some regular_call_target
+                | Some target -> Some { callee_target with CallTarget.target; implicit_receiver })
           | _ -> None
         in
         (* Treat an empty list as a single element list so that in each result of the cartesian
@@ -4615,6 +4634,8 @@ module HigherOrderCallGraph = struct
           track_apply_call_step FindNonParameterizedTargets (fun () ->
               non_parameterized_targets ~parameterized_targets call_targets_from_callee)
         in
+        List.iter parameterized_targets ~f:(fun { CallTarget.target; _ } ->
+            log "Created parameterized target: `%a`" Target.pp_pretty target);
         let stub_targets =
           List.filter_map call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
               let is_stub =
