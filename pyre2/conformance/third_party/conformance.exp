@@ -5324,26 +5324,6 @@
     {
       "code": -2,
       "column": 1,
-      "concise_description": "assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
-      "description": "assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
-      "line": 94,
-      "name": "assert-type",
-      "stop_column": 76,
-      "stop_line": 94
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class_TypeVarTuple[*tuple[str, int]], Class_TypeVarTuple[tuple[str, int]]) failed",
-      "description": "assert_type(Class_TypeVarTuple[*tuple[str, int]], Class_TypeVarTuple[tuple[str, int]]) failed",
-      "line": 95,
-      "name": "assert-type",
-      "stop_column": 64,
-      "stop_line": 95
-    },
-    {
-      "code": -2,
-      "column": 1,
       "concise_description": "assert_type(Any, int) failed",
       "description": "assert_type(Any, int) failed",
       "line": 127,

@@ -307,8 +307,6 @@
   "generics_defaults.py": [
     "Line 104: Expected 1 errors",
     "Line 111: Expected 1 errors",
-    "Line 94: Unexpected errors ['assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed']",
-    "Line 95: Unexpected errors ['assert_type(Class_TypeVarTuple[*tuple[str, int]], Class_TypeVarTuple[tuple[str, int]]) failed']",
     "Line 127: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 148: Unexpected errors ['A type parameter without a default cannot follow one with a default', 'Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
     "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",

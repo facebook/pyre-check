@@ -10,7 +10,7 @@ use crate::testcase;
 testcase!(
     test_type_var_tuple_default,
     r#"
-from typing import TypeVarTuple, Unpack
+from typing import TypeVarTuple, Unpack, assert_type
 
 Ts1 = TypeVarTuple("Ts1", default=Unpack[tuple[int, int]])
 Ts2 = TypeVarTuple("Ts2", default=int)  # E: Default for TypeVarTuple must be an unpacked tuple form or another TypeVarTuple, got `int`
@@ -19,6 +19,10 @@ def test[*Ts = Unpack[tuple[int, int]]](x: tuple[*Ts]) -> tuple[*Ts]:
     return x
 def test2[*Ts = int](x: tuple[*Ts]) -> tuple[*Ts]:  # E: Default for TypeVarTuple must be an unpacked tuple form or another TypeVarTuple, got `int`
     return x
+
+class C[*Ts = Unpack[tuple[int, int]]]:
+    def foo(self) -> tuple[*Ts]: ...
+assert_type(C().foo(), tuple[int, int])
  "#,
 );
 

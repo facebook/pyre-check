@@ -1357,6 +1357,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         restriction: &Restriction,
         errors: &ErrorCollector,
     ) -> Type {
+        if *default == Type::any_error() {
+            return default.clone();
+        }
         match restriction {
             // Default must be a subtype of the upper bound
             Restriction::Bound(bound_ty) => {
@@ -1423,10 +1426,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 }
             }
             QuantifiedKind::TypeVarTuple => {
-                if default.is_kind_type_var_tuple()
-                    || matches!(default, Type::Unpack(box Type::Tuple(_)))
-                {
+                if default.is_kind_type_var_tuple() {
                     default.clone()
+                } else if let Type::Unpack(box inner @ Type::Tuple(_)) = default {
+                    inner.clone()
                 } else {
                     self.error(
                         errors,
