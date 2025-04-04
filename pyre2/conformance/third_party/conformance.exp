@@ -5323,36 +5323,6 @@
     },
     {
       "code": -2,
-      "column": 42,
-      "concise_description": "(str, int) is not allowed in this context.",
-      "description": "(str, int) is not allowed in this context.",
-      "line": 73,
-      "name": "invalid-annotation",
-      "stop_column": 52,
-      "stop_line": 73
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(type[Class_ParamSpec[Any]], type[Class_ParamSpec[(str, int)]]) failed",
-      "description": "assert_type(type[Class_ParamSpec[Any]], type[Class_ParamSpec[(str, int)]]) failed",
-      "line": 79,
-      "name": "assert-type",
-      "stop_column": 62,
-      "stop_line": 79
-    },
-    {
-      "code": -2,
-      "column": 1,
-      "concise_description": "assert_type(Class_ParamSpec[Any], Class_ParamSpec[(str, int)]) failed",
-      "description": "assert_type(Class_ParamSpec[Any], Class_ParamSpec[(str, int)]) failed",
-      "line": 80,
-      "name": "assert-type",
-      "stop_column": 58,
-      "stop_line": 80
-    },
-    {
-      "code": -2,
       "column": 1,
       "concise_description": "assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
       "description": "assert_type(type[Class_TypeVarTuple[*tuple[str, int]]], type[Class_TypeVarTuple[tuple[str, int]]]) failed",
@@ -5400,16 +5370,6 @@
       "name": "invalid-type-var",
       "stop_column": 11,
       "stop_line": 138
-    },
-    {
-      "code": -2,
-      "column": 28,
-      "concise_description": "(float, bool) is not allowed in this context.",
-      "description": "(float, bool) is not allowed in this context.",
-      "line": 145,
-      "name": "invalid-annotation",
-      "stop_column": 41,
-      "stop_line": 145
     },
     {
       "code": -2,

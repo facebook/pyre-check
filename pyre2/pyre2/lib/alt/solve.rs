@@ -2590,7 +2590,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
         if !matches!(
             type_form_context,
-            TypeFormContext::TypeArgument | TypeFormContext::GenericBase
+            TypeFormContext::TypeArgument
+                | TypeFormContext::GenericBase
+                | TypeFormContext::ParamSpecDefault
         ) && matches!(
             result,
             Type::Concatenate(_, _) | Type::ParamSpecValue(_) | Type::ParamSpec(_)
