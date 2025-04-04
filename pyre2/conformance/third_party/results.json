@@ -3,7 +3,7 @@
   "pass": 41,
   "fail": 92,
   "pass_rate": 0.31,
-  "differences": 463,
+  "differences": 462,
   "passing": [
     "annotations_coroutines.py",
     "callables_protocol.py",
@@ -128,7 +128,7 @@
     "qualifiers_final_annotation.py": 13,
     "qualifiers_final_decorator.py": 7,
     "specialtypes_never.py": 1,
-    "specialtypes_none.py": 2,
+    "specialtypes_none.py": 1,
     "specialtypes_type.py": 21,
     "tuples_type_compat.py": 11,
     "typeddicts_class_syntax.py": 5,

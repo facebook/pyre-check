@@ -594,7 +594,6 @@
     "Line 32: Unexpected errors [\"Returned type `Literal['whatever works']` is not assignable to declared return type `int`\"]"
   ],
   "specialtypes_none.py": [
-    "Line 39: Unexpected errors ['Argument `type[NoneType]` is not assignable to parameter `val1` with type `type[None]` in function `func2`']",
     "Line 40: Unexpected errors ['Argument `type` is not assignable to parameter `val1` with type `type[None]` in function `func2`']"
   ],
   "specialtypes_promotions.py": [],
