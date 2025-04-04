@@ -474,9 +474,12 @@ pub struct TypeInfo {
     pub ty: Type,
 }
 
-#[expect(dead_code)]
 impl TypeInfo {
     pub fn of_ty(ty: Type) -> Self {
+        Self { ty }
+    }
+
+    pub fn with_ty(self, ty: Type) -> Self {
         Self { ty }
     }
 
@@ -488,6 +491,7 @@ impl TypeInfo {
         self.ty
     }
 
+    #[expect(dead_code)]
     pub fn arc_clone(self: Arc<Self>) -> Self {
         Arc::unwrap_or_clone(self)
     }

@@ -54,6 +54,7 @@ use crate::types::type_var_tuple::TypeVarTuple;
 use crate::types::types::AnyStyle;
 use crate::types::types::CalleeKind;
 use crate::types::types::Type;
+use crate::types::types::TypeInfo;
 use crate::util::prelude::SliceExt;
 use crate::util::prelude::VecExt;
 use crate::util::visit::Visit;
@@ -100,7 +101,20 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check: Option<(&Type, &dyn Fn() -> TypeCheckContext)>,
         errors: &ErrorCollector,
     ) -> Type {
-        self.expr_with_separate_check_errors(x, check.map(|(ty, tcc)| (ty, tcc, errors)), errors)
+        self.expr_type_info(x, check, errors).into_ty()
+    }
+
+    pub fn expr_type_info(
+        &self,
+        x: &Expr,
+        check: Option<(&Type, &dyn Fn() -> TypeCheckContext)>,
+        errors: &ErrorCollector,
+    ) -> TypeInfo {
+        self.expr_type_info_with_separate_check_errors(
+            x,
+            check.map(|(ty, tcc)| (ty, tcc, errors)),
+            errors,
+        )
     }
 
     pub fn expr_with_separate_check_errors(
@@ -109,12 +123,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         check: Option<(&Type, &dyn Fn() -> TypeCheckContext, &ErrorCollector)>,
         errors: &ErrorCollector,
     ) -> Type {
+        self.expr_type_info_with_separate_check_errors(x, check, errors)
+            .into_ty()
+    }
+
+    fn expr_type_info_with_separate_check_errors(
+        &self,
+        x: &Expr,
+        check: Option<(&Type, &dyn Fn() -> TypeCheckContext, &ErrorCollector)>,
+        errors: &ErrorCollector,
+    ) -> TypeInfo {
         match check {
             Some((want, tcc, check_errors)) if !want.is_any() => {
-                let got = self.expr_infer_with_hint(x, Some(want), errors);
-                self.check_and_return_type(want, got, x.range(), check_errors, tcc)
+                let got = self.expr_infer_type_info_with_hint(x, Some(want), errors);
+                self.check_and_return_type_info(want, got, x.range(), check_errors, tcc)
             }
-            _ => self.expr_infer(x, errors),
+            _ => self.expr_infer_type_info(x, errors),
         }
     }
 
@@ -534,7 +558,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     pub fn expr_infer(&self, x: &Expr, errors: &ErrorCollector) -> Type {
-        self.expr_infer_with_hint(x, None, errors)
+        self.expr_infer_type_info(x, errors).into_ty()
+    }
+
+    fn expr_infer_type_info(&self, x: &Expr, errors: &ErrorCollector) -> TypeInfo {
+        self.expr_infer_type_info_with_hint(x, None, errors)
     }
 
     pub fn check_isinstance(&self, ty_fun: &Type, x: &ExprCall, errors: &ErrorCollector) {
@@ -616,16 +644,30 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     }
 
     fn expr_infer_with_hint(&self, x: &Expr, hint: Option<&Type>, errors: &ErrorCollector) -> Type {
+        self.expr_infer_type_info_with_hint(x, hint, errors)
+            .into_ty()
+    }
+
+    fn expr_infer_type_info_with_hint(
+        &self,
+        x: &Expr,
+        hint: Option<&Type>,
+        errors: &ErrorCollector,
+    ) -> TypeInfo {
         let ty = match x {
-            Expr::Name(x) => match x.id.as_str() {
-                "" => Type::any_error(), // Must already have a parse error
-                _ => self
-                    .get(&Key::Usage(ShortIdentifier::expr_name(x)))
-                    .arc_clone(),
-            },
+            Expr::Name(x) => {
+                let ty = match x.id.as_str() {
+                    "" => Type::any_error(), // Must already have a parse error
+                    _ => self
+                        .get(&Key::Usage(ShortIdentifier::expr_name(x)))
+                        .arc_clone(),
+                };
+                self.record_type_trace(x.range(), &ty);
+                return TypeInfo::of_ty(ty);
+            }
             Expr::Attribute(x) => {
                 let obj = self.expr_infer(&x.value, errors);
-                match (&obj, x.attr.id.as_str()) {
+                let ty = match (&obj, x.attr.id.as_str()) {
                     (Type::Literal(Lit::Enum(box (_, member, _))), "_name_" | "name") => {
                         Type::Literal(Lit::String(member.as_str().into()))
                     }
@@ -633,9 +675,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         raw_type.clone()
                     }
                     _ => self.attr_infer(&obj, &x.attr.id, x.range, errors, None),
-                }
+                };
+                self.record_type_trace(x.range(), &ty);
+                return TypeInfo::of_ty(ty);
             }
-            Expr::Named(x) => self.expr_infer_with_hint(&x.value, hint, errors),
+            Expr::Named(x) => {
+                let type_info = self.expr_infer_type_info_with_hint(&x.value, hint, errors);
+                self.record_type_trace(x.range(), type_info.ty());
+                return type_info;
+            }
             Expr::If(x) => {
                 // TODO: Support type narrowing
                 let condition_type = self.expr_infer(&x.test, errors);
@@ -1205,7 +1253,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             ),
         };
         self.record_type_trace(x.range(), &ty);
-        ty
+        TypeInfo::of_ty(ty)
     }
 
     fn expr_infer_with_hint_promote(

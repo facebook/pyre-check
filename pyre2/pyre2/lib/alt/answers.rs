@@ -51,6 +51,7 @@ use crate::types::stdlib::Stdlib;
 use crate::types::types::AnyStyle;
 use crate::types::types::NeverStyle;
 use crate::types::types::Type;
+use crate::types::types::TypeInfo;
 use crate::types::types::Var;
 use crate::util::display::DisplayWith;
 use crate::util::display::DisplayWithCtx;
@@ -611,6 +612,22 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     pub fn record_type_trace(&self, loc: TextRange, ty: &Type) {
         if let Some(trace) = &self.current.trace {
             trace.lock().types.insert(loc, Arc::new(ty.clone()));
+        }
+    }
+
+    /// Check if `want` matches `got` returning `want` if the check fails.
+    pub fn check_and_return_type_info(
+        &self,
+        want: &Type,
+        got: TypeInfo,
+        loc: TextRange,
+        errors: &ErrorCollector,
+        tcc: &dyn Fn() -> TypeCheckContext,
+    ) -> TypeInfo {
+        if self.check_type(want, got.ty(), loc, errors, tcc) {
+            got
+        } else {
+            got.with_ty(want.clone())
         }
     }
 
