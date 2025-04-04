@@ -171,6 +171,10 @@ impl Quantified {
         &self.info.restriction
     }
 
+    pub fn is_type_var(&self) -> bool {
+        matches!(self.info.kind, QuantifiedKind::TypeVar)
+    }
+
     pub fn is_param_spec(&self) -> bool {
         matches!(self.info.kind, QuantifiedKind::ParamSpec)
     }

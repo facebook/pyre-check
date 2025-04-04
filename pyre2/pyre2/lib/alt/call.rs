@@ -30,6 +30,7 @@ use crate::types::callable::Function;
 use crate::types::callable::FunctionKind;
 use crate::types::class::ClassType;
 use crate::types::literal::Lit;
+use crate::types::type_var::Restriction;
 use crate::types::typed_dict::TypedDict;
 use crate::types::types::AnyStyle;
 use crate::types::types::BoundMethod;
@@ -191,6 +192,11 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
             Type::Type(box Type::TypedDict(typed_dict)) => {
                 Some(CallTarget::new(Target::TypedDict(*typed_dict)))
             }
+            Type::Quantified(q) if q.is_type_var() => match q.restriction() {
+                Restriction::Bound(bound) => self.as_call_target(bound.clone()),
+                // TODO: handle constraints
+                Restriction::Constraints(_) | Restriction::Unrestricted => None,
+            },
             _ => None,
         }
     }

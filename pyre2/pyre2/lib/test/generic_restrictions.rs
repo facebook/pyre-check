@@ -129,3 +129,14 @@ T3 = TypeVar("T3", bound=C, default=C)
 T4 = TypeVar("T4", bound=C, default=D)
  "#,
 );
+
+testcase!(
+    test_bounded_callable,
+    r#"
+from typing import Callable, TypeVar, assert_type
+T = TypeVar('T', bound=Callable[[int], int])
+def func(a: T, b: int) -> T:
+    assert_type(a(b), int)
+    return a
+ "#,
+);
