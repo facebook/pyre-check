@@ -154,3 +154,17 @@ def func(c: T) -> C:
     return c  # E: Returned type `?T` is not assignable to declared return type `C`
  "#,
 );
+
+testcase!(
+    bug = "Type params with defaults should be instantiated when accessed from the class",
+    test_instantiate_default_typevar,
+    r#"
+from typing import assert_type, Callable, Self
+class C[T = int]:
+    def meth(self, /) -> Self:
+        return self
+    attr: T
+assert_type(C.meth, Callable[[C[int]], C[int]])  # E: assert_type(Any, (C[int]) -> C[int]) failed  # E: Generic attribute `meth` of class `C` is not visible on the class
+assert_type(C.attr, int)  # E: assert_type(Any, int) failed  # E: Instance-only attribute `attr` of class `C` is not visible on the class
+ "#,
+);
