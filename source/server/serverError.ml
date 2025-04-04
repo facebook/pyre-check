@@ -20,10 +20,13 @@ end
 
 let kind_and_message_from_exception = function
   | Buck.Raw.BuckError { buck_command; arguments; description; exit_code; additional_logs } ->
-      (* Buck exit code >=10 are considered internal: https://buck.build/command/exit_codes.html *)
+      (* See fbcode/buck2/app/buck2_client_ctx/src/exit_result.rs *)
       let kind =
         match exit_code with
-        | Some exit_code when exit_code < 10 -> Kind.BuckUser
+        | Some 3 -> Kind.BuckUser
+        | Some 1 ->
+            (* unknown error, treat it as user error to be conservative. *)
+            Kind.BuckUser
         | _ -> Kind.BuckInternal
       in
       let reproduce_message =

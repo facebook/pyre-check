@@ -232,8 +232,12 @@ let on_exception = function
         Log.error "  ...";
         List.iter additional_logs ~f:(Log.error "  %s"));
       let exit_status =
+        (* See fbcode/buck2/app/buck2_client_ctx/src/exit_result.rs *)
         match exit_code with
-        | Some exit_code when exit_code < 10 -> ExitStatus.BuckUserError
+        | Some 3 -> ExitStatus.BuckUserError
+        | Some 1 ->
+            (* unknown error, treat it as user error to be conservative. *)
+            ExitStatus.BuckUserError
         | _ -> ExitStatus.BuckInternalError
       in
       exit_status
