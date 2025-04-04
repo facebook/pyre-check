@@ -1141,7 +1141,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     attr.range,
                     errors,
                     None,
-                    "Answers::solve_binding_inner::CheckAssignTypeToAttribute",
+                    "Answers::solve_expectation::CheckAssignTypeToAttribute",
                 );
             }
             BindingExpect::CheckAssignExprToAttribute(box (attr, value)) => {
@@ -1153,7 +1153,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     attr.range,
                     errors,
                     None,
-                    "Answers::solve_binding_inner::CheckAssignExprToAttribute",
+                    "Answers::solve_expectation::CheckAssignExprToAttribute",
                 );
             }
         }
