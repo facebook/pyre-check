@@ -13,8 +13,11 @@ testcase!(
 from typing import TypeVarTuple, Unpack
 
 Ts1 = TypeVarTuple("Ts1", default=Unpack[tuple[int, int]])
+Ts2 = TypeVarTuple("Ts2", default=int)  # E: Default for TypeVarTuple must be an unpacked tuple form or another TypeVarTuple, got `int`
 
 def test[*Ts = Unpack[tuple[int, int]]](x: tuple[*Ts]) -> tuple[*Ts]:
+    return x
+def test2[*Ts = int](x: tuple[*Ts]) -> tuple[*Ts]:  # E: Default for TypeVarTuple must be an unpacked tuple form or another TypeVarTuple, got `int`
     return x
  "#,
 );
@@ -27,6 +30,7 @@ from typing import ParamSpec, Callable
 
 P1 = ParamSpec("P1", default=...)
 P2 = ParamSpec("P2", default=[str, int])  # E: (str, int) is not allowed in this context.
+P3 = ParamSpec("P3", default=int)  # E: Default for ParamSpec must be a parameter list, `...`, or another ParamSpec, got `int`
 
 def test[**P = ...](x: Callable[P, None]) -> Callable[P, None]:
     return x

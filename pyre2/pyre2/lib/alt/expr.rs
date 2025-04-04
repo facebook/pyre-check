@@ -426,10 +426,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                     "default" => {
-                        default = Some(self.expr_untype(
-                            &kw.value,
-                            TypeFormContext::ParamSpecDefault,
-                            errors,
+                        default = Some((
+                            self.expr_untype(&kw.value, TypeFormContext::ParamSpecDefault, errors),
+                            kw.range(),
                         ));
                     }
                     _ => {
@@ -463,7 +462,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-        ParamSpec::new(name, self.module_info().dupe(), default)
+        let mut default_value = None;
+        if let Some((default_ty, default_range)) = default {
+            default_value = Some(self.validate_type_var_default(
+                &name.id,
+                QuantifiedKind::ParamSpec,
+                &default_ty,
+                default_range,
+                &Restriction::Unrestricted,
+                errors,
+            ));
+        }
+        ParamSpec::new(name, self.module_info().dupe(), default_value)
     }
 
     pub fn typevartuple_from_call(
@@ -529,10 +539,13 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                     "default" => {
-                        default = Some(self.expr_untype(
-                            &kw.value,
-                            TypeFormContext::TypeVarTupleDefault,
-                            errors,
+                        default = Some((
+                            self.expr_untype(
+                                &kw.value,
+                                TypeFormContext::TypeVarTupleDefault,
+                                errors,
+                            ),
+                            kw.range(),
                         ));
                     }
                     _ => {
@@ -565,7 +578,18 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-        TypeVarTuple::new(name, self.module_info().dupe(), default)
+        let mut default_value = None;
+        if let Some((default_ty, default_range)) = default {
+            default_value = Some(self.validate_type_var_default(
+                &name.id,
+                QuantifiedKind::TypeVarTuple,
+                &default_ty,
+                default_range,
+                &Restriction::Unrestricted,
+                errors,
+            ));
+        }
+        TypeVarTuple::new(name, self.module_info().dupe(), default_value)
     }
 
     pub fn expr_infer(&self, x: &Expr, errors: &ErrorCollector) -> Type {

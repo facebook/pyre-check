@@ -1360,12 +1360,10 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         match restriction {
             // Default must be a subtype of the upper bound
             Restriction::Bound(bound_ty) => {
-                if self
+                if !self
                     .solver()
                     .is_subset_eq(default, bound_ty, self.type_order())
                 {
-                    default.clone()
-                } else {
                     self.error(
                         errors,
                         range,
@@ -1378,17 +1376,15 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             bound_ty,
                         ),
                     );
-                    Type::any_error()
+                    return Type::any_error();
                 }
             }
             Restriction::Constraints(constraints) => {
                 // Default must exactly match one of the constraints
-                if constraints.iter().any(|c| {
+                if !constraints.iter().any(|c| {
                     self.solver().is_subset_eq(c, default, self.type_order())
                         && self.solver().is_subset_eq(default, c, self.type_order())
                 }) {
-                    default.clone()
-                } else {
                     let formatted_constraints = constraints
                         .iter()
                         .map(|x| format!("`{}`", x))
@@ -1406,10 +1402,59 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                             formatted_constraints,
                         ),
                     );
+                    return Type::any_error();
+                }
+            }
+            Restriction::Unrestricted => {}
+        };
+        match kind {
+            QuantifiedKind::ParamSpec => {
+                if default.is_kind_param_spec() {
+                    default.clone()
+                } else {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidParamSpec,
+                        None,
+                        format!("Default for ParamSpec must be a parameter list, `...`, or another ParamSpec, got `{}`", default),
+                    );
                     Type::any_error()
                 }
             }
-            Restriction::Unrestricted => default.clone(),
+            QuantifiedKind::TypeVarTuple => {
+                if default.is_kind_type_var_tuple()
+                    || matches!(default, Type::Unpack(box Type::Tuple(_)))
+                {
+                    default.clone()
+                } else {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidTypeVarTuple,
+                        None,
+                        format!("Default for TypeVarTuple must be an unpacked tuple form or another TypeVarTuple, got `{}`", default),
+                    );
+                    Type::any_error()
+                }
+            }
+            QuantifiedKind::TypeVar => {
+                if default.is_kind_param_spec() || default.is_kind_type_var_tuple() {
+                    self.error(
+                        errors,
+                        range,
+                        ErrorKind::InvalidTypeVar,
+                        None,
+                        format!(
+                            "Default for TypeVar may not be a TypeVarTuple or ParamSpec, got `{}`",
+                            default
+                        ),
+                    );
+                    Type::any_error()
+                } else {
+                    default.clone()
+                }
+            }
         }
     }
 
