@@ -438,8 +438,8 @@ pub(in crate::alt::class) struct WithDefiningClass<T> {
 }
 
 impl<T> WithDefiningClass<T> {
-    pub(in crate::alt::class) fn defined_on(&self, cls: &Class) -> bool {
-        self.defining_class == *cls
+    pub(in crate::alt::class) fn defined_on(&self, module: &str, cls: &str) -> bool {
+        self.defining_class.has_qname(module, cls)
     }
 }
 
@@ -1001,7 +1001,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// using the raw callable type).
     pub fn get_dunder_new(&self, cls: &ClassType) -> Option<Type> {
         let new_member = self.get_class_member(cls.class_object(), &dunder::NEW)?;
-        if new_member.defining_class.has_qname("builtins", "object") {
+        if new_member.defined_on("builtins", "object") {
             // The default behavior of `object.__new__` is already baked into our implementation of
             // class construction; we only care about `__new__` if it is overridden.
             None
@@ -1013,9 +1013,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
     /// Get the class's `__init__` method. The second argument controls whether we return an inherited `object.__init__`.
     pub fn get_dunder_init(&self, cls: &ClassType, get_object_init: bool) -> Option<Type> {
         let init_method = self.get_class_member(cls.class_object(), &dunder::INIT)?;
-        if get_object_init
-            || !init_method.defined_on(self.stdlib.object_class_type().class_object())
-        {
+        if get_object_init || !init_method.defined_on("builtins", "object") {
             Arc::unwrap_or_clone(init_method.value).as_special_method_type(cls)
         } else {
             None
@@ -1027,7 +1025,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         let metadata = self.get_metadata_for_class(cls.class_object());
         let metaclass = metadata.metaclass()?;
         let attr = self.get_class_member(metaclass.class_object(), &dunder::CALL)?;
-        if attr.defined_on(self.stdlib.builtins_type().class_object()) {
+        if attr.defined_on("builtins", "type") {
             // The behavior of `type.__call__` is already baked into our implementation of constructors,
             // so we can skip analyzing it at the type level.
             None
