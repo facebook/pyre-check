@@ -908,6 +908,17 @@ impl<'a, Ans: LookupAnswer> Subset<'a, Ans> {
             (Type::Type(_), _) => {
                 self.is_subset_eq(&self.type_order.stdlib().builtins_type().to_type(), want)
             }
+            (
+                Type::ClassType(class),
+                Type::Type(_)
+                | Type::ClassDef(_)
+                | Type::BoundMethod(_)
+                | Type::Callable(_)
+                | Type::Function(_),
+            ) if *class == self.type_order.stdlib().builtins_type() => {
+                // Unparameterized `type` is equivalent to `type[Any]`
+                true
+            }
             (Type::TypeGuard(l), Type::TypeGuard(u)) => {
                 // TypeGuard is covariant
                 self.is_subset_eq(l, u)

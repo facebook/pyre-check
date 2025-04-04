@@ -593,9 +593,7 @@
   "specialtypes_never.py": [
     "Line 32: Unexpected errors [\"Returned type `Literal['whatever works']` is not assignable to declared return type `int`\"]"
   ],
-  "specialtypes_none.py": [
-    "Line 40: Unexpected errors ['Argument `type` is not assignable to parameter `val1` with type `type[None]` in function `func2`']"
-  ],
+  "specialtypes_none.py": [],
   "specialtypes_promotions.py": [],
   "specialtypes_type.py": [
     "Line 70: Expected 1 errors",
@@ -613,12 +611,7 @@
     "Line 152: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TA7, type[type[TypeVar(T, invariant)]]]\"]",
     "Line 156: Unexpected errors [\"Can't apply arguments to non-class, got LegacyExplicitTypeAlias[TA8, type[type[TypeVar(T, invariant)]]]\"]",
     "Line 160: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 161: Unexpected errors ['assert_type(Any, int) failed']",
-    "Line 165: Unexpected errors ['`type` is not assignable to `(...) -> Any`']",
-    "Line 166: Unexpected errors ['`type` is not assignable to `(int, int) -> int`']",
-    "Line 169: Unexpected errors ['`type` is not assignable to `type[int]`']",
-    "Line 170: Unexpected errors ['`type` is not assignable to `type[Any]`']",
-    "Line 175: Unexpected errors ['Returned type `type` is not assignable to declared return type `type[TypeVar[T]]`']"
+    "Line 161: Unexpected errors ['assert_type(Any, int) failed']"
   ],
   "tuples_type_compat.py": [
     "Line 74: Unexpected errors ['assert_type(tuple[int] | tuple[str, str] | tuple[int, *tuple[str, ...], int], tuple[int]) failed']",
