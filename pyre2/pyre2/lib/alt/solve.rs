@@ -84,6 +84,7 @@ use crate::types::quantified::Quantified;
 use crate::types::quantified::QuantifiedInfo;
 use crate::types::quantified::QuantifiedKind;
 use crate::types::tuple::Tuple;
+use crate::types::type_info::TypeInfo;
 use crate::types::type_var::Restriction;
 use crate::types::type_var::TypeVar;
 use crate::types::type_var::Variance;
@@ -96,7 +97,6 @@ use crate::types::types::TParams;
 use crate::types::types::Type;
 use crate::types::types::TypeAlias;
 use crate::types::types::TypeAliasStyle;
-use crate::types::types::TypeInfo;
 use crate::util::prelude::SliceExt;
 use crate::util::visit::VisitMut;
 

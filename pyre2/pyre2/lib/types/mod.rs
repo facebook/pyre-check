@@ -21,6 +21,7 @@ pub mod simplify;
 pub mod special_form;
 pub mod stdlib;
 pub mod tuple;
+pub mod type_info;
 pub mod type_var;
 pub mod type_var_tuple;
 pub mod typed_dict;
