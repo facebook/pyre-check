@@ -7,10 +7,10 @@
 
 // Mock implementation of stylex for testing
 const stylex = {
-  create: () => ({}),
-  props: () => ({}),
-  keyframes: () => ({}),
-  defineVars: () => ({}),
+    create: (): any => ({}),
+    props: (): any => ({}),
+    keyframes: (): any => ({}),
+    defineVars: (): any => ({}),
 };
 
 module.exports = stylex;

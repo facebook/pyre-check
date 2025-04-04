@@ -11,7 +11,7 @@ import { compilerOptions } from './tsconfig.json';
 
 const config: Config.InitialOptions = {
     // The root directory that Jest should scan for tests and modules
-    rootDir: '.',
+    rootDir: 'src/__tests__',
     // The test environment to use (in this case, jsdom)
     testEnvironment: 'jsdom',
     // The file extensions to look for when searching for tests
@@ -32,10 +32,10 @@ const config: Config.InitialOptions = {
     modulePaths: [compilerOptions.baseUrl], // <-- This will be set to 'baseUrl' value
     moduleNameMapper: {
         ...pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/' }),
-        '@theme/Layout': '<rootDir>/__mocks__/themeMock.js',
-        '\\.(css|less|sass|scss)$': '<rootDir>/__mocks__/stylexMock.js',
-        '@stylexjs/stylex': '<rootDir>/__mocks__/stylexMock.js',
-        '@docusaurus/useDocusaurusContext': '<rootDir>/__mocks__/docusaurusContextMock.js'
+        '@theme/Layout': '<rootDir>/__mocks__/themeMock.ts',
+        '\\.(css|less|sass|scss)$': '<rootDir>/__mocks__/stylexMock.ts',
+        '@stylexjs/stylex': '<rootDir>/__mocks__/stylexMock.ts',
+        '@docusaurus/useDocusaurusContext': '<rootDir>/__mocks__/docusaurusContextMock.ts'
     },
     setupFilesAfterEnv: ['@testing-library/jest-dom'],
 };
