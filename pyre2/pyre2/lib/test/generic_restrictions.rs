@@ -76,6 +76,7 @@ test(D())
 testcase!(
     test_generic_constraint_with_default,
     r#"
+from typing import TypeVar
 class A: ...
 class B(A): ...
 class C(A): ...
@@ -89,6 +90,11 @@ def test3[T: (B, C) = C](x: T) -> None:
     pass
 def test4[T: (B, C) = D](x: T) -> None:  # E: Expected default `D` of `T` to be one of the following constraints: `B`, `C`
     pass
+
+T1 = TypeVar("T1", B, C, default=A)  # E: Expected default `A` of `T1` to be one of the following constraints: `B`, `C`
+T2 = TypeVar("T2", B, C, default=B)
+T3 = TypeVar("T3", B, C, default=C)
+T4 = TypeVar("T4", B, C, default=D)  # E: Expected default `D` of `T4` to be one of the following constraints: `B`, `C`
  "#,
 );
 
@@ -109,5 +115,10 @@ def test3[T: C = C](x: T) -> None:
     pass
 def test4[T: C = D](x: T) -> None:
     pass
+
+T1 = TypeVar("T1", bound=C, default=A)  # E: Expected default `A` of `T1` to be assignable to the upper bound of `C`
+T2 = TypeVar("T2", bound=C, default=B)  # E: Expected default `B` of `T2` to be assignable to the upper bound of `C`
+T3 = TypeVar("T3", bound=C, default=C)
+T4 = TypeVar("T4", bound=C, default=D)
  "#,
 );

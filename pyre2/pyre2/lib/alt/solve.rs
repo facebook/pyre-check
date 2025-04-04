@@ -1348,7 +1348,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
         }
     }
 
-    fn validate_type_var_default(
+    pub fn validate_type_var_default(
         &self,
         name: &Name,
         kind: QuantifiedKind,

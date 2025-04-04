@@ -45,6 +45,7 @@ use crate::types::callable::Required;
 use crate::types::lit_int::LitInt;
 use crate::types::literal::Lit;
 use crate::types::param_spec::ParamSpec;
+use crate::types::quantified::QuantifiedKind;
 use crate::types::special_form::SpecialForm;
 use crate::types::tuple::Tuple;
 use crate::types::type_var::Restriction;
@@ -294,10 +295,9 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         }
                     }
                     "default" => {
-                        default = Some(self.expr_untype(
-                            &kw.value,
-                            TypeFormContext::TypeVarDefault,
-                            errors,
+                        default = Some((
+                            self.expr_untype(&kw.value, TypeFormContext::TypeVarDefault, errors),
+                            kw.value.range(),
                         ))
                     }
                     "covariant" => try_set_variance(kw, Some(Variance::Covariant)),
@@ -348,12 +348,23 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                 "Missing `name` argument".to_owned(),
             );
         }
-
+        let restriction = restriction.unwrap_or(Restriction::Unrestricted);
+        let mut default_value = None;
+        if let Some((default_ty, default_range)) = default {
+            default_value = Some(self.validate_type_var_default(
+                &name.id,
+                QuantifiedKind::TypeVar,
+                &default_ty,
+                default_range,
+                &restriction,
+                errors,
+            ));
+        }
         TypeVar::new(
             name,
             self.module_info().dupe(),
-            restriction.unwrap_or(Restriction::Unrestricted),
-            default,
+            restriction,
+            default_value,
             variance.unwrap_or(Some(Variance::Invariant)),
         )
     }
