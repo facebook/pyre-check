@@ -14,6 +14,7 @@ use pyrefly_derive::Visit;
 use pyrefly_derive::VisitMut;
 use ruff_python_ast::name::Name;
 
+use crate::alt::solve::TypeFormContext;
 use crate::error::kind::ErrorKind;
 use crate::types::callable::ParamList;
 use crate::types::class::ClassType;
@@ -65,6 +66,14 @@ impl QuantifiedKind {
             QuantifiedKind::TypeVar => ErrorKind::InvalidTypeVar,
             QuantifiedKind::ParamSpec => ErrorKind::InvalidParamSpec,
             QuantifiedKind::TypeVarTuple => ErrorKind::InvalidTypeVarTuple,
+        }
+    }
+
+    pub fn type_form_context_for_default(self) -> TypeFormContext {
+        match self {
+            QuantifiedKind::TypeVar => TypeFormContext::TypeVarDefault,
+            QuantifiedKind::ParamSpec => TypeFormContext::ParamSpecDefault,
+            QuantifiedKind::TypeVarTuple => TypeFormContext::TypeVarTupleDefault,
         }
     }
 }

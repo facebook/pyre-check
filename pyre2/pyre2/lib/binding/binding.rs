@@ -680,7 +680,7 @@ pub struct TypeParameter {
     pub unique: Unique,
     pub kind: QuantifiedKind,
     pub bound: Option<(Idx<Key>, TextRange)>,
-    pub default: Option<(Idx<Key>, TextRange)>,
+    pub default: Option<Expr>,
     pub constraints: Option<(Vec<Idx<Key>>, TextRange)>,
 }
 

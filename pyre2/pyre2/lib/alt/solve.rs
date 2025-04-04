@@ -2051,17 +2051,17 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                     Restriction::Unrestricted
                 };
                 let mut default_ty = None;
-                if let Some((default_idx, default_range)) = default {
-                    let default = self.untype(
-                        self.get_idx(*default_idx).arc_clone(),
-                        *default_range,
+                if let Some(default_expr) = default {
+                    let default = self.expr_untype(
+                        default_expr,
+                        kind.type_form_context_for_default(),
                         errors,
                     );
                     default_ty = Some(self.validate_type_var_default(
                         name,
                         *kind,
                         &default,
-                        *default_range,
+                        default_expr.range(),
                         &restriction,
                         errors,
                     ));

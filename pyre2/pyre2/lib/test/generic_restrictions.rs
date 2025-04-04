@@ -29,12 +29,12 @@ testcase!(
 from typing import ParamSpec, Callable
 
 P1 = ParamSpec("P1", default=...)
-P2 = ParamSpec("P2", default=[str, int])  # E: (str, int) is not allowed in this context.
+P2 = ParamSpec("P2", default=[str, int])  # E: (str, int) is not allowed in this context.  # E: Default for ParamSpec must be a parameter list, `...`, or another ParamSpec, got `Error`
 P3 = ParamSpec("P3", default=int)  # E: Default for ParamSpec must be a parameter list, `...`, or another ParamSpec, got `int`
 
 def test[**P = ...](x: Callable[P, None]) -> Callable[P, None]:
     return x
-def test2[**P = [str, int]](x: Callable[P, None]) -> Callable[P, None]:  # E: Expected a type form, got instance of `list[type[int] | type[str]]`
+def test2[**P = [str, int]](x: Callable[P, None]) -> Callable[P, None]:  # E: (str, int) is not allowed in this context.  # E: Default for ParamSpec must be a parameter list, `...`, or another ParamSpec, got `Error`
     return x
  "#,
 );

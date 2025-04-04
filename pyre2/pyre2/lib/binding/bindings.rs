@@ -791,7 +791,8 @@ impl<'a> BindingsBuilder<'a> {
 
     pub fn type_params(&mut self, x: &mut TypeParams) {
         for x in x.type_params.iter_mut() {
-            let mut default_info = None;
+            let name = x.name().clone();
+            let mut default = None;
             let mut bound_info = None;
             let mut constraint_info = None;
             let kind = match x {
@@ -809,39 +810,38 @@ impl<'a> BindingsBuilder<'a> {
                             bound_info = Some((idx, bound.range()));
                         }
                     }
-                    if let Some(box default) = &mut tv.default {
-                        let idx = self.handle_type_param_constraint(default);
-                        default_info = Some((idx, default.range()));
+                    if let Some(box default_expr) = &mut tv.default {
+                        self.ensure_type(default_expr, &mut None);
+                        default = Some(default_expr);
                     }
                     QuantifiedKind::TypeVar
                 }
                 TypeParam::ParamSpec(x) => {
-                    if let Some(box default) = &mut x.default {
-                        let idx = self.handle_type_param_constraint(default);
-                        default_info = Some((idx, default.range()));
+                    if let Some(box default_expr) = &mut x.default {
+                        self.ensure_type(default_expr, &mut None);
+                        default = Some(default_expr);
                     }
                     QuantifiedKind::ParamSpec
                 }
                 TypeParam::TypeVarTuple(x) => {
-                    if let Some(box default) = &mut x.default {
-                        let idx = self.handle_type_param_constraint(default);
-                        default_info = Some((idx, default.range()));
+                    if let Some(box default_expr) = &mut x.default {
+                        self.ensure_type(default_expr, &mut None);
+                        default = Some(default_expr);
                     }
                     QuantifiedKind::TypeVarTuple
                 }
             };
-            let name = x.name();
             self.scopes
                 .current_mut()
                 .stat
                 .add(name.id.clone(), name.range, None);
             self.bind_definition(
-                name,
+                &name,
                 Binding::TypeParameter(Box::new(TypeParameter {
                     name: name.id.clone(),
                     unique: self.uniques.fresh(),
                     kind,
-                    default: default_info,
+                    default: default.cloned(),
                     bound: bound_info,
                     constraints: constraint_info,
                 })),
