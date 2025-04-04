@@ -189,7 +189,7 @@ def compare_conformance_output(
 
 
 def get_pyre2_command() -> list[str]:
-    pyre2_path = resources.files(__package__).joinpath("pyre2.exe")
+    pyre2_path = resources.files(__package__).joinpath("pyrefly.exe")
     return [
         str(pyre2_path),
         "check",
