@@ -6,6 +6,7 @@
  */
 
 use std::collections::HashSet;
+use std::iter::once;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -98,12 +99,35 @@ struct Server<'a> {
     send: &'a dyn Fn(Message),
     #[expect(dead_code)] // we'll use it later on
     initialize_params: InitializeParams,
-    search_path: Vec<PathBuf>,
     state: Mutex<State>,
-    config: RuntimeMetadata,
-    loader: LoaderId,
+    configs: SmallMap<PathBuf, Config>,
+    default_config: Config,
     canceled_requests: HashSet<RequestId>,
+}
+
+/// Temporary "configuration": this is all that is necessary to run an LSP at a given root.
+/// TODO(connernilsel): replace with real config logic
+struct Config {
     open_files: Arc<Mutex<SmallMap<PathBuf, (i32, Arc<String>)>>>,
+    runtime_metadata: RuntimeMetadata,
+    search_path: Vec<PathBuf>,
+    loader: LoaderId,
+}
+
+impl Config {
+    fn new(search_path: Vec<PathBuf>, site_package_path: Vec<PathBuf>) -> Self {
+        let open_files = Arc::new(Mutex::new(SmallMap::new()));
+        Self {
+            open_files: open_files.clone(),
+            runtime_metadata: RuntimeMetadata::default(),
+            search_path: search_path.clone(),
+            loader: LoaderId::new(LspLoader {
+                open_files,
+                search_path,
+                site_package_path,
+            }),
+        }
+    }
 }
 
 pub fn run_lsp(
@@ -277,27 +301,42 @@ impl<'a> Server<'a> {
         }
     }
 
+    /// Finds a config for a file path: longest config which is a prefix of the file wins
+    /// TODO(connernilsen): replace with real config logic
+    fn get_config(&self, uri: PathBuf) -> &Config {
+        self.configs
+            .iter()
+            .filter(|(key, _)| uri.starts_with(key))
+            .max_by(|(key1, _), (key2, _)| key2.ancestors().count().cmp(&key1.ancestors().count()))
+            .map_or(&self.default_config, |(_, config)| config)
+    }
+
     fn new(
         send: &'a dyn Fn(Message),
         initialize_params: InitializeParams,
         search_path: Vec<PathBuf>,
         site_package_path: Vec<PathBuf>,
     ) -> Self {
-        let open_files = Arc::new(Mutex::new(SmallMap::new()));
-        let loader = LoaderId::new(LspLoader {
-            open_files: open_files.dupe(),
-            search_path: search_path.clone(),
-            site_package_path,
-        });
+        let mut configs = SmallMap::new();
+        if let Some(capability) = initialize_params.clone().capabilities.workspace
+            && let Some(true) = capability.workspace_folders
+        {
+            if let Some(folders) = initialize_params.clone().workspace_folders {
+                folders.iter().for_each(|x| {
+                    configs.insert(
+                        x.uri.to_file_path().unwrap(),
+                        Config::new(search_path.clone(), site_package_path.clone()),
+                    );
+                });
+            }
+        }
         Self {
             send,
             initialize_params,
-            search_path,
             state: Mutex::new(State::new()),
-            config: RuntimeMetadata::default(),
-            loader,
+            configs,
+            default_config: Config::new(search_path.clone(), site_package_path.clone()),
             canceled_requests: HashSet::new(),
-            open_files,
         }
     }
 
@@ -316,71 +355,76 @@ impl<'a> Server<'a> {
     }
 
     fn validate(&self) -> anyhow::Result<()> {
-        let handles = self
-            .open_files
-            .lock()
-            .keys()
-            .map(|x| {
-                (
-                    Handle::new(
-                        module_from_path(x, &self.search_path),
-                        ModulePath::memory(x.clone()),
-                        self.config.dupe(),
-                        self.loader.dupe(),
-                    ),
-                    Require::Everything,
-                )
-            })
-            .collect::<Vec<_>>();
-
-        let state = self.state.lock();
-        let mut transaction = state.new_committable_transaction(Require::Exports, None);
-        transaction.as_mut().invalidate_memory(
-            self.loader.dupe(),
-            &self.open_files.lock().keys().cloned().collect::<Vec<_>>(),
-        );
-        state.run_with_committing_transaction(transaction, &handles);
-        let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
-        let open_files = self.open_files.lock();
-        for x in open_files.keys() {
-            diags.insert(x.as_path().to_owned(), Vec::new());
-        }
-        // TODO(connernilsen): replace with real error config from config file
-        for e in state
-            .transaction()
-            .readable()
-            .get_loads(handles.iter().map(|(handle, _)| handle))
-            .collect_errors(&ErrorConfigs::default())
-            .shown
-        {
-            if let Some(path) = to_real_path(e.path()) {
-                if open_files.contains_key(path) {
-                    diags.entry(path.to_owned()).or_default().push(Diagnostic {
-                        range: source_range_to_range(e.source_range()),
-                        severity: Some(lsp_types::DiagnosticSeverity::ERROR),
-                        source: Some("Pyrefly".to_owned()),
-                        message: e.msg().to_owned(),
-                        code: Some(lsp_types::NumberOrString::String(
-                            e.error_kind().to_name().to_owned(),
-                        )),
-                        ..Default::default()
-                    });
+        self.configs
+            .values()
+            .chain(once(&self.default_config))
+            .for_each(|config| {
+                let handles = config
+                    .open_files
+                    .lock()
+                    .keys()
+                    .map(|x| {
+                        (
+                            Handle::new(
+                                module_from_path(x, &config.search_path),
+                                ModulePath::memory(x.clone()),
+                                config.runtime_metadata.dupe(),
+                                config.loader.dupe(),
+                            ),
+                            Require::Everything,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                let state = self.state.lock();
+                let mut transaction = state.new_committable_transaction(Require::Exports, None);
+                transaction.as_mut().invalidate_memory(
+                    config.loader.dupe(),
+                    &config.open_files.lock().keys().cloned().collect::<Vec<_>>(),
+                );
+                state.run_with_committing_transaction(transaction, &handles);
+                let mut diags: SmallMap<PathBuf, Vec<Diagnostic>> = SmallMap::new();
+                let open_files = config.open_files.lock();
+                for x in open_files.keys() {
+                    diags.insert(x.as_path().to_owned(), Vec::new());
                 }
-            }
-        }
-        for (path, diags) in diags {
-            let path = std::fs::canonicalize(&path).unwrap_or(path);
-            match Url::from_file_path(&path) {
-                Ok(uri) => self.publish_diagnostics(uri, diags, None),
-                Err(_) => eprint!("Unable to convert path to uri: {path:?}"),
-            }
-        }
+                // TODO(connernilsen): replace with real error config from config file
+                for e in state
+                    .transaction()
+                    .readable()
+                    .get_loads(handles.iter().map(|(handle, _)| handle))
+                    .collect_errors(&ErrorConfigs::default())
+                    .shown
+                {
+                    if let Some(path) = to_real_path(e.path()) {
+                        if open_files.contains_key(path) {
+                            diags.entry(path.to_owned()).or_default().push(Diagnostic {
+                                range: source_range_to_range(e.source_range()),
+                                severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+                                source: Some("Pyrefly".to_owned()),
+                                message: e.msg().to_owned(),
+                                code: Some(lsp_types::NumberOrString::String(
+                                    e.error_kind().to_name().to_owned(),
+                                )),
+                                ..Default::default()
+                            });
+                        }
+                    }
+                }
+                for (path, diags) in diags {
+                    let path = std::fs::canonicalize(&path).unwrap_or(path);
+                    match Url::from_file_path(&path) {
+                        Ok(uri) => self.publish_diagnostics(uri, diags, None),
+                        Err(_) => eprint!("Unable to convert path to uri: {path:?}"),
+                    }
+                }
+            });
         Ok(())
     }
 
     fn did_open(&self, params: DidOpenTextDocumentParams) -> anyhow::Result<()> {
-        self.open_files.lock().insert(
-            params.text_document.uri.to_file_path().unwrap(),
+        let uri = params.text_document.uri.to_file_path().unwrap();
+        self.get_config(uri.clone()).open_files.lock().insert(
+            uri,
             (
                 params.text_document.version,
                 Arc::new(params.text_document.text),
@@ -392,15 +436,18 @@ impl<'a> Server<'a> {
     fn did_change(&self, params: DidChangeTextDocumentParams) -> anyhow::Result<()> {
         // We asked for Sync full, so can just grab all the text from params
         let change = params.content_changes.into_iter().next().unwrap();
-        self.open_files.lock().insert(
-            params.text_document.uri.to_file_path().unwrap(),
-            (params.text_document.version, Arc::new(change.text)),
-        );
+        let uri = params.text_document.uri.to_file_path().unwrap();
+        self.get_config(uri.clone())
+            .open_files
+            .lock()
+            .insert(uri, (params.text_document.version, Arc::new(change.text)));
         self.validate()
     }
 
     fn did_close(&self, params: DidCloseTextDocumentParams) -> anyhow::Result<()> {
-        self.open_files
+        let uri = params.text_document.uri.to_file_path().unwrap();
+        self.get_config(uri.clone())
+            .open_files
             .lock()
             .shift_remove(&params.text_document.uri.to_file_path().unwrap());
         self.publish_diagnostics(params.text_document.uri, Vec::new(), None);
@@ -409,13 +456,19 @@ impl<'a> Server<'a> {
 
     fn make_handle(&self, uri: &Url) -> Handle {
         let path = uri.to_file_path().unwrap();
-        let module = module_from_path(&path, &self.search_path);
-        let module_path = if self.open_files.lock().contains_key(&path) {
+        let config = self.get_config(path.clone());
+        let module = module_from_path(&path, &config.search_path);
+        let module_path = if config.open_files.lock().contains_key(&path) {
             ModulePath::memory(path)
         } else {
             ModulePath::filesystem(path)
         };
-        Handle::new(module, module_path, self.config.dupe(), self.loader.dupe())
+        Handle::new(
+            module,
+            module_path,
+            config.runtime_metadata.dupe(),
+            config.loader.dupe(),
+        )
     }
 
     fn goto_definition(&self, params: GotoDefinitionParams) -> Option<GotoDefinitionResponse> {

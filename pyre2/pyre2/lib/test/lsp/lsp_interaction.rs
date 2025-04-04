@@ -122,17 +122,13 @@ fn run_test_lsp(test_case: TestCase) {
     }
 }
 
-fn get_initialize_params() -> serde_json::Value {
-    serde_json::json!({
+fn get_initialize_params(workspace_folders: Option<Vec<(&str, Url)>>) -> serde_json::Value {
+    let mut params = serde_json::json!({
         "rootPath": "/",
-        "workspaceFolders": [],
         "processId": std::process::id(),
         "trace": "verbose",
         "clientInfo": { "name": "debug" },
         "capabilities": {
-            "workspace": {
-                "workspaceFolders": true,
-            },
             "textDocument": {
                 "publishDiagnostics": {
                     "relatedInformation": true,
@@ -145,15 +141,29 @@ fn get_initialize_params() -> serde_json::Value {
                 },
             },
         },
-    })
+    });
+
+    if let Some(folders) = workspace_folders {
+        params["capabilities"]["workspace"]["workspaceFolders"] = serde_json::json!(true);
+        params["workspaceFolders"] = serde_json::json!(
+            folders
+                .iter()
+                .map(|(name, path)| serde_json::json!({"name": name, "uri": path.to_string()}))
+                .collect::<Vec<_>>()
+        );
+    }
+
+    params
 }
 
-fn get_initialize_messages() -> std::vec::Vec<lsp_server::Message> {
+fn get_initialize_messages(
+    workspace_folders: Option<Vec<(&str, Url)>>,
+) -> std::vec::Vec<lsp_server::Message> {
     vec![
         Message::from(Request {
             id: RequestId::from(1),
             method: "initialize".to_owned(),
-            params: get_initialize_params(),
+            params: get_initialize_params(workspace_folders),
         }),
         Message::from(Notification {
             method: "initialized".to_owned(),
@@ -203,14 +213,13 @@ fn get_test_files_root() -> PathBuf {
 #[test]
 fn test_initialize() {
     run_test_lsp(TestCase {
-        test_messages: get_initialize_messages(),
+        test_messages: get_initialize_messages(None),
         expected_responses: get_initialize_responses(),
     });
 }
 
-#[test]
-fn test_go_to_def() {
-    let mut test_messages = get_initialize_messages();
+fn test_go_to_def(workspace_folders: Option<Vec<(&str, Url)>>) {
+    let mut test_messages = get_initialize_messages(workspace_folders);
     let mut expected_responses = get_initialize_responses();
     let root = get_test_files_root();
 
@@ -254,4 +263,22 @@ fn test_go_to_def() {
         test_messages,
         expected_responses,
     });
+}
+
+#[test]
+fn test_go_to_def_single_root() {
+    test_go_to_def(Some(vec![(
+        "test",
+        Url::from_file_path(get_test_files_root()).unwrap(),
+    )]));
+}
+
+#[test]
+fn test_go_to_def_no_root() {
+    test_go_to_def(Some(vec![]));
+}
+
+#[test]
+fn test_go_to_def_no_folder_capability() {
+    test_go_to_def(None);
 }
