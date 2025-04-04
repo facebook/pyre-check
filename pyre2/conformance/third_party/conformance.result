@@ -309,8 +309,8 @@
     "Line 111: Expected 1 errors",
     "Line 127: Unexpected errors ['assert_type(Any, int) failed']",
     "Line 148: Unexpected errors ['A type parameter without a default cannot follow one with a default', 'Class `Foo6` uses type variables not specified in `Generic` or `Protocol` base']",
-    "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
-    "Line 152: Unexpected errors ['Expected a valid ParamSpec expression', 'Expected a valid ParamSpec expression']",
+    "Line 151: Unexpected errors ['assert_type(type[Foo6[Ellipsis, tuple[str]]], type[Foo6[Ellipsis, tuple[str, (float, bool)]]]) failed', 'Expected a valid ParamSpec expression, got `int`', 'Expected a valid ParamSpec expression, got `int`']",
+    "Line 152: Unexpected errors ['Expected a valid ParamSpec expression, got `int`', 'Expected a valid ParamSpec expression, got `int`']",
     "Line 166: Unexpected errors ['assert_type(Any, (Foo7[int]) -> Foo7[int]) failed', 'Generic attribute `meth` of class `Foo7` is not visible on the class']",
     "Line 167: Unexpected errors ['assert_type(Any, int) failed', 'Instance-only attribute `attr` of class `Foo7` is not visible on the class']"
   ],

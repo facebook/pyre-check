@@ -217,7 +217,7 @@ impl<'a, Ans: LookupAnswer> AnswersSolver<'a, Ans> {
                         range,
                         ErrorKind::InvalidParamSpec,
                         None,
-                        "Expected a valid ParamSpec expression".to_owned(),
+                        format!("Expected a valid ParamSpec expression, got `{arg}`"),
                     );
                     checked_targs.push(Type::Ellipsis);
                 }
