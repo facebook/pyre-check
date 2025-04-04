@@ -267,9 +267,10 @@ pub struct ConfigFile {
     #[serde(default)]
     pub errors: ErrorConfig,
 
-    /// String-prefix-matched names of modules from which import errors should be ignored.
+    /// String-prefix-matched names of modules from which import errors should be ignored
+    /// and the module should always be replaced with `typing.Any`
     #[serde(default)]
-    pub ignore_missing_imports_from: Vec<String>,
+    pub replace_imports_with_any: Vec<String>,
 
     /// Any unknown config items
     #[serde(default, flatten)]
@@ -290,7 +291,7 @@ impl Default for ConfigFile {
             python_interpreter: PythonEnvironment::get_default_interpreter(),
             errors: ErrorConfig::default(),
             extras: Self::default_extras(),
-            ignore_missing_imports_from: Vec::new(),
+            replace_imports_with_any: Vec::new(),
         }
     }
 }
@@ -481,6 +482,7 @@ mod tests {
             python_version = \"1.2.3\"
             site_package_path = [\"venv/lib/python1.2.3/site-packages\"]
             python_interpreter = \"python2\"
+            replace_imports_with_any = [\"fibonacci\"]
             [errors]
             assert-type = true
             bad-return = false
@@ -506,7 +508,7 @@ mod tests {
                     (ErrorKind::AssertType, true),
                     (ErrorKind::BadReturn, false)
                 ])),
-                ignore_missing_imports_from: Vec::new(),
+                replace_imports_with_any: vec!["fibonacci".to_owned()],
             },
         );
     }
@@ -638,7 +640,7 @@ mod tests {
             python_interpreter: PythonEnvironment::get_default_interpreter(),
             errors: ErrorConfig::default(),
             extras: ConfigFile::default_extras(),
-            ignore_missing_imports_from: Vec::new(),
+            replace_imports_with_any: Vec::new(),
         };
 
         let path_str = with_sep("path/to/my/config");

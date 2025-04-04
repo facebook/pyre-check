@@ -134,7 +134,7 @@ pub struct Args {
 struct LoaderInputs {
     search_path: Vec<PathBuf>,
     site_package_path: Vec<PathBuf>,
-    ignore_missing_imports_from: Vec<String>,
+    replace_imports_with_any: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -146,7 +146,7 @@ impl Loader for CheckLoader {
     fn find_import(&self, module: ModuleName) -> Result<ModulePath, FindError> {
         if self
             .loader_inputs
-            .ignore_missing_imports_from
+            .replace_imports_with_any
             .iter()
             .any(|i| module.as_str().starts_with(i))
         {
@@ -243,7 +243,7 @@ impl Handles {
         let key = LoaderInputs {
             search_path: config.search_path.clone(),
             site_package_path: config.site_package_path().to_owned(),
-            ignore_missing_imports_from: config.ignore_missing_imports_from.clone(),
+            replace_imports_with_any: config.replace_imports_with_any.clone(),
         };
         if let Some(loader) = self.loader_factory.get_mut(&key) {
             loader.dupe()
