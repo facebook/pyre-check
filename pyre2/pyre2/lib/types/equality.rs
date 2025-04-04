@@ -348,7 +348,7 @@ mod tests {
         let uniques = UniqueFactory::new();
 
         fn mk_function(uniques: &UniqueFactory) -> Type {
-            let q = Quantified::new(uniques.fresh(), QuantifiedKind::TypeVar);
+            let q = Quantified::new(uniques, QuantifiedKind::TypeVar);
             Forallable::Function(Function {
                 signature: Callable::list(ParamList::everything(), q.to_type()),
                 metadata: FuncMetadata {

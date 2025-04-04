@@ -392,7 +392,7 @@ mod tests {
     fn fake_tparam(uniques: &UniqueFactory, name: &str, kind: QuantifiedKind) -> TParamInfo {
         TParamInfo {
             name: Name::new(name),
-            quantified: Quantified::new(uniques.fresh(), kind),
+            quantified: Quantified::new(uniques, kind),
             restriction: Restriction::Unrestricted,
             default: None,
             variance: Some(Variance::Invariant),
