@@ -93,7 +93,7 @@ module CallGraphAnalysis = struct
           maximum_parameterized_targets_at_call_site;
         }
       ~callable
-      ~previous_model:{ CallGraph.HigherOrderCallGraph.call_graph = previous_call_graph; _ }
+      ~previous_model:_
       ~get_callee_model
     =
     let {
@@ -157,7 +157,9 @@ module CallGraphAnalysis = struct
         |> Target.Set.of_list
       in
       let additional_dependencies =
-        Target.Set.diff (dependencies call_graph) (dependencies previous_call_graph)
+        (* Compare with the original call graph, instead of the higher order call graph from the
+           previous iteration, since these are used to merge with the original dependency graph. *)
+        Target.Set.diff (dependencies call_graph) (dependencies define_call_graph)
         (* It is possible to see additional dependencies that have no definition. If not skipping
            them, in the next iteration we would fail due to not being able to find their
            definitions. *)
