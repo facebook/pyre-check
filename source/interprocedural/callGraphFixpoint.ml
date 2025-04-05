@@ -313,7 +313,13 @@ let compute
     ~pyre_api
     ~callables_to_definitions_map
     ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
-    ~dependency_graph:{ DependencyGraph.dependency_graph; override_targets; _ }
+    ~dependency_graph:
+      {
+        DependencyGraph.dependency_graph;
+        override_targets;
+        callables_to_analyze = original_callables_to_analyze;
+        _;
+      }
     ~override_graph_shared_memory
     ~skip_analysis_targets
     ~decorator_resolution
@@ -323,6 +329,13 @@ let compute
     CallGraph.DecoratorResolution.Results.register_decorator_defines
       ~decorator_resolution
       callables_to_definitions_map
+  in
+  (* Build higher order call graphs only for targets that are reachable, and decorated targets,
+     which are not included in `callables_to_analyze`. *)
+  let callables_to_analyze =
+    List.rev_append
+      (CallGraph.DecoratorResolution.Results.decorated_targets decorator_resolution)
+      original_callables_to_analyze
   in
   let callables_with_call_graphs = CallGraph.SharedMemory.callables define_call_graphs in
   let initial_models_for_callables_with_call_graphs =
@@ -387,8 +400,7 @@ let compute
           maximum_target_depth;
           maximum_parameterized_targets_at_call_site;
         }
-      ~callables_to_analyze:(List.rev_append override_targets callables_with_call_graphs)
-        (* Build higher order call graphs only for targets that have call graphs. *)
+      ~callables_to_analyze
       ~max_iterations:higher_order_call_graph_max_iterations
       ~error_on_max_iterations:false
       ~epoch:Fixpoint.Epoch.initial
@@ -419,7 +431,7 @@ let compute
       ~get_call_graph:(get_model_from_readonly_state ~readonly_state)
       ~json_kind:NewlineDelimitedJson.Kind.HigherOrderCallGraph
       ~filename_prefix:"higher-order-call-graph"
-      ~callables:callables_with_call_graphs
+      ~callables:(analyzed_callables fixpoint)
   in
   log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy ~decorators state;
   {
