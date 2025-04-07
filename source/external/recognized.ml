@@ -27,6 +27,8 @@ let property_decorators =
 
 let classproperty_decorators = String.Set.of_list ["__classproperty__"]
 
+let ignored_decorators_for_higher_order = []
+
 let enumeration_classes = String.Set.of_list ["enum.Enum"; "enum.IntEnum"]
 
 let assert_functions =
