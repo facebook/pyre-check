@@ -2875,7 +2875,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             else
               state
         | _ -> state)
-    | AugmentedAssign _ -> failwith "T191035448"
     | Assign { target = { Node.location; value = target_value } as target; value = Some value; _ }
       -> (
         let target_global_model =
@@ -2933,6 +2932,37 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
               in
               analyze_assignment ~pyre_in_context target taint taint state)
+    | AugmentedAssign ({ target; value; operator } as assign) ->
+        (* Treat x += y as x = x.__iadd__(y) *)
+        let implicit_call = Statement.AugmentedAssign.lower_to_call ~location assign in
+        let callees = get_call_callees ~location ~call:implicit_call in
+        let target_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:target
+        in
+        let value_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
+        in
+        let dunder_method = Statement.AugmentedAssign.dunder_method_name operator in
+        let callee_taint =
+          target_taint
+          |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index dunder_method]
+          |> ForwardState.Tree.add_local_first_field dunder_method
+        in
+        let taint, state =
+          apply_callees_with_arguments_taint
+            ~apply_tito:true
+            ~pyre_in_context
+            ~is_result_used:true
+            ~callee:implicit_call.callee
+            ~call_location:location
+            ~arguments:implicit_call.arguments
+            ~self_taint:(Some target_taint)
+            ~callee_taint:(Some callee_taint)
+            ~arguments_taint:[value_taint]
+            ~state
+            callees
+        in
+        analyze_assignment ~pyre_in_context target taint taint state
     | Assert { test; _ } -> analyze_condition ~pyre_in_context test state
     | Break
     | Class _

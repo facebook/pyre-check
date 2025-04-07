@@ -30,10 +30,12 @@ let parse_define_call_graph =
     ~init:DefineCallGraph.empty
     ~f:(fun call_graph_of_define (location, expression_identifier, callees) ->
       DefineCallGraph.add_callees
-        call_graph_of_define
+        ~debug:false
         ~expression_identifier
         ~location:(parse_call_graph_location location)
-        ~callees)
+        ~statement_for_logging:(Statement.Statement.Pass |> Node.create_with_default_location)
+        ~callees
+        call_graph_of_define)
 
 
 let parse_define_call_graph_for_test =

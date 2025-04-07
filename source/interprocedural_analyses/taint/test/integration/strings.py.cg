@@ -18,6 +18,12 @@ Call dependencies
     "_test_source (fun)", "str.format (method)"
   ],
   "strings.format_tito (fun)": [ "str.format (method)" ],
+  "strings.iadd_lhs_infer_sink (fun)": [
+    "_test_sink (fun)", "str.__add__ (method)"
+  ],
+  "strings.iadd_rhs_infer_sink (fun)": [
+    "_test_sink (fun)", "str.__add__ (method)"
+  ],
   "strings.maybe_lhs (fun)": [
     "_test_sink (fun)", "_test_source (fun)", "strings.concatenate_lhs (fun)"
   ],

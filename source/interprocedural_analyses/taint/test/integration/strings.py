@@ -55,6 +55,17 @@ def through_iadd():
     _test_sink(b)
 
 
+def iadd_lhs_infer_sink(a: str):
+    a += ""
+    _test_sink(a)
+
+
+def iadd_rhs_infer_sink(b: str):
+    a = ""
+    a += b
+    _test_sink(a)
+
+
 def format_tito(x):
     return "a {}".format(x)
 

@@ -30,7 +30,11 @@ module AugmentedAssign : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val lower : location:Location.t -> t -> Expression.t
+  val dunder_method_name : Expression.BinaryOperator.operator -> string
+
+  val lower_to_call : location:Location.t -> t -> Expression.Call.t
+
+  val lower_to_expression : location:Location.t -> t -> Expression.t
 end
 
 module TypeAlias : sig

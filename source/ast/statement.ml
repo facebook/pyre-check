@@ -89,42 +89,47 @@ module AugmentedAssign = struct
         | _ -> Expression.location_insensitive_compare left.value right.value)
 
 
-  let lower ~location { target; operator; value } =
+  let dunder_method_name operator =
+    let open Expression.BinaryOperator in
+    match operator with
+    | Add -> "__iadd__"
+    | Sub -> "__isub__"
+    | Mult -> "__imul__"
+    | MatMult -> "__imatmul__"
+    | Div -> "__itruediv__"
+    | Mod -> "__imod__"
+    | Pow -> "__ipow__"
+    | LShift -> "__ilshift__"
+    | RShift -> "__irshift__"
+    | BitOr -> "__ior__"
+    | BitXor -> "__ixor__"
+    | BitAnd -> "__iand__"
+    | FloorDiv -> "__ifloordiv__"
+
+
+  let lower_to_call ~location { target; operator; value } =
     let open Expression in
-    let open BinaryOperator in
-    let augmented_assign_method = function
-      | Add -> "__iadd__"
-      | Sub -> "__isub__"
-      | Mult -> "__imul__"
-      | MatMult -> "__imatmul__"
-      | Div -> "__itruediv__"
-      | Mod -> "__imod__"
-      | Pow -> "__ipow__"
-      | LShift -> "__ilshift__"
-      | RShift -> "__irshift__"
-      | BitOr -> "__ior__"
-      | BitXor -> "__ixor__"
-      | BitAnd -> "__iand__"
-      | FloorDiv -> "__ifloordiv__"
-    in
     let arguments = [{ Call.Argument.name = None; value }] in
-    Expression.Call
-      {
-        Call.callee =
-          {
-            Node.location;
-            value =
-              Expression.Name
-                (Name.Attribute
-                   {
-                     Name.Attribute.base = target;
-                     attribute = augmented_assign_method operator;
-                     special = true;
-                   });
-          };
-        arguments;
-      }
-    |> Node.create ~location
+    {
+      Call.callee =
+        {
+          Node.location;
+          value =
+            Expression.Name
+              (Name.Attribute
+                 {
+                   Name.Attribute.base = target;
+                   attribute = dunder_method_name operator;
+                   special = true;
+                 });
+        };
+      arguments;
+    }
+
+
+  let lower_to_expression ~location assign =
+    let open Expression in
+    Expression.Call (lower_to_call ~location assign) |> Node.create ~location
 end
 
 module Import = struct

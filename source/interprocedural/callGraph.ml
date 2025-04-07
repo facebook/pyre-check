@@ -1761,6 +1761,13 @@ module LocationCallees = struct
     | Compound map -> `Assoc ["compound", Map.to_json map]
 end
 
+let log ~debug format =
+  if debug then
+    Log.dump format
+  else
+    Log.log ~section:`CallGraph format
+
+
 let call_identifier { Call.callee; _ } =
   match Node.value callee with
   | Name (Name.Attribute { attribute; _ }) -> attribute
@@ -1974,7 +1981,18 @@ module DefineCallGraph = struct
         | None, None -> None)
 
 
-  let add_callees ~expression_identifier ~location ~callees =
+  let add_callees ~debug ~expression_identifier ~location ~statement_for_logging ~callees =
+    let () =
+      log
+        ~debug
+        "Resolved callees at `%a` for expression `%a`:@,%a "
+        Location.pp
+        location
+        Statement.pp
+        statement_for_logging
+        ExpressionCallees.pp
+        callees
+    in
     Location.SerializableMap.update location (function
         | None -> Some (LocationCallees.Map.singleton ~expression_identifier ~callees)
         | Some existing_callees ->
@@ -2790,15 +2808,6 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
 
 let redirect_assignments = function
   | {
-      Node.value = Statement.AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment);
-      location;
-    } ->
-      let call = AugmentedAssign.lower ~location augmented_assignment in
-      {
-        Node.location;
-        value = Statement.Assign { Assign.target; annotation = None; value = Some call };
-      }
-  | {
       Node.value =
         Statement.Assign
           {
@@ -3185,13 +3194,6 @@ let resolve_attribute_access_properties
   let property_targets = List.concat_map ~f:property_targets_of_attribute properties in
   let is_attribute = (not (List.is_empty non_properties)) || List.is_empty attributes in
   { property_targets; is_attribute }
-
-
-let log ~debug format =
-  if debug then
-    Log.dump format
-  else
-    Log.log ~section:`CallGraph format
 
 
 let resolve_regular_callees
@@ -3705,18 +3707,18 @@ module CalleeVisitor = struct
          } as state)
         ({ Node.value; location } as expression)
       =
+      let resolve_callees =
+        resolve_callees ~debug ~pyre_in_context ~callables_to_definitions_map ~override_graph
+      in
       let register_targets ~expression_identifier ?(location = location) callees =
-        log
-          ~debug
-          "Resolved callees at `%a` for expression `%a`:@,%a "
-          Location.pp
-          location
-          Expression.pp
-          expression
-          ExpressionCallees.pp
-          callees;
         callees_at_location :=
-          DefineCallGraph.add_callees ~expression_identifier ~location ~callees !callees_at_location
+          DefineCallGraph.add_callees
+            ~debug
+            ~expression_identifier
+            ~location
+            ~statement_for_logging:(Statement.Expression expression |> Node.create ~location)
+            ~callees
+            !callees_at_location
       in
       let value =
         redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location value
@@ -3724,12 +3726,7 @@ module CalleeVisitor = struct
       let () =
         match value with
         | Expression.Call call ->
-            resolve_callees
-              ~debug
-              ~callables_to_definitions_map
-              ~pyre_in_context
-              ~override_graph
-              ~call
+            resolve_callees ~call
             |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
@@ -3765,12 +3762,7 @@ module CalleeVisitor = struct
                 let call =
                   redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call
                 in
-                resolve_callees
-                  ~debug
-                  ~callables_to_definitions_map
-                  ~pyre_in_context
-                  ~override_graph
-                  ~call
+                resolve_callees ~call
                 |> MissingFlowTypeAnalysis.add_unknown_callee
                      ~missing_flow_type_analysis
                      ~expression
@@ -4101,20 +4093,21 @@ struct
         Ast.Statement.pp
         statement;
       let statement = redirect_assignments statement in
+      let location = Node.location statement in
       match Node.value statement with
       | Statement.Assign { Assign.target; value = Some value; _ } ->
-          CalleeVisitor.visit_expression
-            ~pyre_in_context
-            ~assignment_target:(Some { location = Node.location target })
-            ~context:Context.node_visitor_context
-            ~callees_at_location:Context.callees_at_location
-            target;
           CalleeVisitor.visit_expression
             ~pyre_in_context
             ~assignment_target:None
             ~context:Context.node_visitor_context
             ~callees_at_location:Context.callees_at_location
-            value
+            value;
+          CalleeVisitor.visit_expression
+            ~pyre_in_context
+            ~assignment_target:(Some { location = Node.location target })
+            ~context:Context.node_visitor_context
+            ~callees_at_location:Context.callees_at_location
+            target
       | Statement.Assign { Assign.target; value = None; _ } ->
           CalleeVisitor.visit_expression
             ~pyre_in_context
@@ -4122,6 +4115,44 @@ struct
             ~context:Context.node_visitor_context
             ~callees_at_location:Context.callees_at_location
             target
+      | Statement.AugmentedAssign ({ AugmentedAssign.target; value; _ } as assign) ->
+          CalleeVisitor.visit_expression
+            ~pyre_in_context
+            ~assignment_target:None
+            ~context:Context.node_visitor_context
+            ~callees_at_location:Context.callees_at_location
+            value;
+          CalleeVisitor.visit_expression
+            ~pyre_in_context
+            ~assignment_target:(Some { location = Node.location target })
+            ~context:Context.node_visitor_context
+            ~callees_at_location:Context.callees_at_location
+            target;
+
+          let implicit_call = AugmentedAssign.lower_to_call ~location assign in
+          let { NodeVisitorContext.debug; callables_to_definitions_map; override_graph; _ } =
+            Context.node_visitor_context
+          in
+          let callees =
+            resolve_callees
+              ~debug
+              ~pyre_in_context
+              ~callables_to_definitions_map
+              ~override_graph
+              ~call:implicit_call
+            |> MissingFlowTypeAnalysis.add_unknown_callee
+                 ~missing_flow_type_analysis:Context.node_visitor_context.missing_flow_type_analysis
+                 ~expression:(Expression.Call implicit_call |> Node.create ~location)
+            |> ExpressionCallees.from_call
+          in
+          Context.callees_at_location :=
+            DefineCallGraph.add_callees
+              ~debug
+              ~expression_identifier:(call_identifier implicit_call)
+              ~location
+              ~statement_for_logging:statement
+              ~callees
+              !Context.callees_at_location
       (* Control flow statements should NOT be visited, since they are lowered down during the
          control flow graph building. *)
       | Statement.If _
@@ -5004,7 +5035,10 @@ module HigherOrderCallGraph = struct
                   let strong_update = TaintAccessPath.Path.is_empty path in
                   store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state
               )
-          | AugmentedAssign _ -> state
+          | AugmentedAssign { AugmentedAssign.target; value; _ } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:target in
+              state
           | Assert _ -> state
           | Break
           | Class _

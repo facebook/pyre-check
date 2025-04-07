@@ -366,8 +366,10 @@ module DefineCallGraph : sig
   val empty : t
 
   val add_callees
-    :  expression_identifier:string ->
+    :  debug:bool ->
+    expression_identifier:string ->
     location:Location.t ->
+    statement_for_logging:Statement.t ->
     callees:ExpressionCallees.t ->
     t ->
     t

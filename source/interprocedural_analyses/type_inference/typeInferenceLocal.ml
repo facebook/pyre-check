@@ -904,7 +904,9 @@ module State (Context : Context) = struct
               | None -> resolution))
       | AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assign) ->
           let resolved = forward_expression ~state:{ state with resolution } target in
-          let call = AugmentedAssign.lower ~location:(Node.location statement) augmented_assign in
+          let call =
+            AugmentedAssign.lower_to_expression ~location:(Node.location statement) augmented_assign
+          in
           let lowered_assignment =
             Statement.Assign { Assign.annotation = None; target; value = Some call }
             |> Node.create ~location:(Node.location statement)

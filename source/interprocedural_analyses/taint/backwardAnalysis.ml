@@ -2462,6 +2462,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         taint, false
 
 
+  and clear_target_taint ~fields state target =
+    match Node.value target with
+    | Expression.Tuple items -> List.fold items ~f:(clear_target_taint ~fields) ~init:state
+    | _ -> (
+        match AccessPath.of_expression ~self_variable target with
+        | Some { root; path } ->
+            {
+              taint =
+                BackwardState.assign
+                  ~root
+                  ~path:(path @ fields)
+                  BackwardState.Tree.empty
+                  state.taint;
+            }
+        | None -> state)
+
+
   and analyze_assignment
       ?(weak = false)
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
@@ -2477,26 +2494,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression:target
     in
     let state =
-      let rec clear_taint state target =
-        match Node.value target with
-        | Expression.Tuple items -> List.fold items ~f:clear_taint ~init:state
-        | _ -> (
-            match AccessPath.of_expression ~self_variable target with
-            | Some { root; path } ->
-                {
-                  taint =
-                    BackwardState.assign
-                      ~root
-                      ~path:(path @ fields)
-                      BackwardState.Tree.empty
-                      state.taint;
-                }
-            | None -> state)
-      in
       if weak then (* Weak updates do not remove the taint. *)
         state
       else
-        clear_taint state target
+        clear_target_taint ~fields state target
     in
     analyze_expression ~pyre_in_context ~taint ~state ~expression:value
 
@@ -2508,7 +2509,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
         state
     | Assign { value = None; _ } -> state
-    | AugmentedAssign _ -> failwith "T101299882"
     | Assign { target = { Node.location; value = target_value } as target; value = Some value; _ }
       -> (
         let target_global_model =
@@ -2556,6 +2556,36 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
               join property_call_state attribute_state
           | _ -> analyze_assignment ~pyre_in_context ~target ~value state)
+    | AugmentedAssign ({ target; value; _ } as assign) -> (
+        let target_taint = compute_assignment_taint ~pyre_in_context target state |> fst in
+        let state = clear_target_taint ~fields:[] state target in
+
+        let implicit_call = Statement.AugmentedAssign.lower_to_call ~location assign in
+        let callees = get_call_callees ~location ~call:implicit_call in
+        let { arguments_taint; implicit_argument_taint; state; _ } =
+          apply_callees_and_return_arguments_taint
+            ~apply_tito:true
+            ~pyre_in_context
+            ~callee:implicit_call.callee
+            ~call_location:location
+            ~arguments:implicit_call.arguments
+            ~state
+            ~call_taint:target_taint
+            callees
+        in
+        let value_taint =
+          match arguments_taint with
+          | value_taint :: _ -> value_taint
+          | [] -> failwith "unexpected"
+        in
+        let state =
+          analyze_expression ~pyre_in_context ~taint:value_taint ~state ~expression:value
+        in
+        match implicit_argument_taint with
+        | CallModel.ImplicitArgument.Backward.Callee taint
+        | CalleeBase taint ->
+            analyze_expression ~pyre_in_context ~taint ~state ~expression:target
+        | None -> failwith "unexpected")
     | Assert { test; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression:test
     | Break
