@@ -2299,11 +2299,12 @@ let rec resolve_callees_from_type
     resolve_callees_from_type ~dunder_call
   in
   let callable_type_string =
-    Format.asprintf
-      "callable type %a (i.e., %s)"
-      Type.pp
-      callable_type
-      (Type.show_type_t callable_type)
+    lazy
+      (Format.asprintf
+         "callable type %a (i.e., %s)"
+         Type.pp
+         callable_type
+         (Type.show_type_t callable_type))
   in
   let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   match callable_type with
@@ -2368,7 +2369,7 @@ let rec resolve_callees_from_type
   | Type.Callable { kind = Anonymous; _ } ->
       CallCallees.unresolved
         ~debug
-        ~message:(Format.asprintf "%s has kind `Anonymous`" callable_type_string)
+        ~message:(Format.asprintf "%s has kind `Anonymous`" (Lazy.force callable_type_string))
         ~reason:Unresolved.AnonymousCallableType
         ()
   | Type.Parametric { name = "BoundMethod"; arguments = [Single callable; Single receiver_type] } ->
@@ -2414,7 +2415,9 @@ let rec resolve_callees_from_type
       |> CallCallees.default_to_unresolved
            ~debug
            ~message:
-             (Format.asprintf "Failed to resolve construct callees from %s" callable_type_string)
+             (Format.asprintf
+                "Failed to resolve construct callees from %s"
+                (Lazy.force callable_type_string))
            ~reason:Unresolved.UnknownConstructorCallable
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -2432,7 +2435,7 @@ let rec resolve_callees_from_type
             ~message:
               (Format.asprintf
                  "Resolved `Any` or `Top` when treating %s as callable class"
-                 callable_type_string)
+                 (Lazy.force callable_type_string))
             ~reason:Unresolved.AnyTopCallableClass
             ()
       (* Callable protocol. *)
@@ -2473,7 +2476,10 @@ let rec resolve_callees_from_type
                   ())
           |> CallCallees.default_to_unresolved
                ~debug
-               ~message:(Format.asprintf "Failed to resolve protocol from %s" callable_type_string)
+               ~message:
+                 (Format.asprintf
+                    "Failed to resolve protocol from %s"
+                    (Lazy.force callable_type_string))
                ~reason:Unresolved.UnknownCallableProtocol
       | annotation ->
           if not dunder_call then
@@ -2492,7 +2498,7 @@ let rec resolve_callees_from_type
               ~message:
                 (Format.asprintf
                    "Failed to resolve %s as callable class, protocol, or a non dunder call."
-                   callable_type_string)
+                   (Lazy.force callable_type_string))
               ~reason:Unresolved.UnknownCallableClass
               ())
 
@@ -3204,66 +3210,107 @@ let resolve_regular_callees
     ~return_type
     ~callee
   =
-  let callee_type =
-    CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map callee
+  let maybe_callable_expression =
+    match callee.Node.value with
+    | Expression.Constant _
+    | Expression.BinaryOperator _
+    | Expression.BooleanOperator _
+    | Expression.ComparisonOperator _
+    | Expression.Dictionary _
+    | Expression.DictionaryComprehension _
+    | Expression.FormatString _
+    | Expression.List _
+    | Expression.ListComprehension _
+    | Expression.Set _
+    | Expression.SetComprehension _
+    | Expression.Tuple _
+    | Expression.UnaryOperator _ ->
+        false
+    | _ -> true
   in
-  log
-    ~debug
-    "Checking if `%a` is a callable, resolved type is `%a`"
-    Expression.pp
-    callee
-    Type.pp
-    callee_type;
-  let recognized_callees =
-    resolve_recognized_callees
-      ~debug
-      ~callables_to_definitions_map
-      ~pyre_in_context
-      ~override_graph
-      ~callee
-      ~return_type
-      ~callee_type
-    |> CallCallees.default_to_unresolved
-         ~reason:Unresolved.UnrecognizedCallee
-         ~message:"Unrecognized callee"
-  in
-  if CallCallees.is_partially_resolved recognized_callees then
-    let () = log ~debug "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
-    recognized_callees
+  if not maybe_callable_expression then
+    (* Performance optimization. None of these types can hold callables. *)
+    CallCallees.create ()
   else
-    let callee_kind =
-      CalleeKind.from_callee ~pyre_in_context ~callables_to_definitions_map callee callee_type
+    let callee_type =
+      CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map callee
     in
-    let callees_from_type =
-      resolve_callees_from_type
-        ~debug
-        ~callables_to_definitions_map
-        ~pyre_in_context
-        ~override_graph
-        ~return_type
-        ~callee_kind
-        callee_type
+    let maybe_callable_type =
+      match callee_type with
+      | Type.Bottom
+      | Type.Literal _
+      | Type.NoneType
+      | Type.TypeOperation _ ->
+          false
+      | _ -> true
     in
-    if CallCallees.is_partially_resolved callees_from_type then
-      let () =
-        log ~debug "Resolved callee from its resolved type:@,`%a`" CallCallees.pp callees_from_type
-      in
-      callees_from_type
+    if not maybe_callable_type then
+      (* Performance optimization. None of these types can hold callables. *)
+      CallCallees.create ()
     else
-      resolve_callee_ignoring_decorators
-        ~debug
-        ~pyre_in_context
-        ~callables_to_definitions_map
-        ~override_graph
-        ~return_type
-        callee
-      |> function
-      | Result.Ok call_targets -> CallCallees.create ~call_targets ()
-      | Result.Error reason ->
-          CallCallees.unresolved
-            ~reason:(Unresolved.BypassingDecorators reason)
-            ~message:"Bypassing decorators"
-            ()
+      let () =
+        log
+          ~debug
+          "Checking if `%a` is a callable, resolved type is `%a`"
+          Expression.pp
+          callee
+          Type.pp
+          callee_type
+      in
+      let recognized_callees =
+        resolve_recognized_callees
+          ~debug
+          ~callables_to_definitions_map
+          ~pyre_in_context
+          ~override_graph
+          ~callee
+          ~return_type
+          ~callee_type
+        |> CallCallees.default_to_unresolved
+             ~reason:Unresolved.UnrecognizedCallee
+             ~message:"Unrecognized callee"
+      in
+      if CallCallees.is_partially_resolved recognized_callees then
+        let () = log ~debug "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
+        recognized_callees
+      else
+        let callee_kind =
+          CalleeKind.from_callee ~pyre_in_context ~callables_to_definitions_map callee callee_type
+        in
+        let callees_from_type =
+          resolve_callees_from_type
+            ~debug
+            ~callables_to_definitions_map
+            ~pyre_in_context
+            ~override_graph
+            ~return_type
+            ~callee_kind
+            callee_type
+        in
+        if CallCallees.is_partially_resolved callees_from_type then
+          let () =
+            log
+              ~debug
+              "Resolved callee from its resolved type:@,`%a`"
+              CallCallees.pp
+              callees_from_type
+          in
+          callees_from_type
+        else
+          resolve_callee_ignoring_decorators
+            ~debug
+            ~pyre_in_context
+            ~callables_to_definitions_map
+            ~override_graph
+            ~return_type
+            callee
+          |> function
+          | Result.Ok call_targets -> CallCallees.create ~call_targets ()
+          | Result.Error reason ->
+              CallCallees.unresolved
+                ~reason:(Unresolved.BypassingDecorators reason)
+                ~message:"Bypassing decorators"
+                ()
 
 
 let as_identifier_reference ~define ~pyre_in_context expression =
@@ -5428,54 +5475,54 @@ module DecoratorResolution = struct
     | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
     | Some Target.PropertySetter, _ -> PropertySetterUnsupported
     | Some Target.Decorated, _ -> failwith "unexpected"
-    | _, None -> Undecorated
-    | Some Target.Normal, Some { CallableToDecoratorsMap.decorators; define_location } ->
+    | _, None
+    | Some Target.Normal, Some { CallableToDecoratorsMap.decorators = []; _ } ->
+        Undecorated
+    | ( Some Target.Normal,
+        Some { CallableToDecoratorsMap.decorators = _ :: _ as decorators; define_location } ) ->
         let define_name = Target.define_name_exn callable in
         let callable_name =
           Ast.Expression.create_name_from_reference ~location:define_location define_name
         in
         log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");
-        if List.is_empty decorators then
-          Undecorated
-        else
-          let expression =
-            List.fold
-              decorators
-              ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
-              ~f:create_decorator_call
-          in
-          let call_graph = ref DefineCallGraph.empty in
-          resolve_callees ~call_graph expression;
-          let define =
-            {
-              Define.signature =
-                {
-                  Define.Signature.name = Reference.create ~prefix:define_name "@decorated";
-                  parameters = [];
-                  decorators = [];
-                  return_annotation = None;
-                  async = false;
-                  generator = false;
-                  parent = NestingContext.create_toplevel ();
-                  (* The class owning the method *)
-                  legacy_parent = None;
-                  type_params = [];
-                };
-              captures = [];
-              unbound_names = [];
-              body =
-                [
-                  Statement.Return { Return.is_implicit = false; expression = Some expression }
-                  |> Node.create_with_default_location;
-                ];
-            }
-          in
-          Decorators
-            {
-              define;
-              callable = CallableToDecoratorsMap.redirect_to_decorated ~callable decorators_map;
-              call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph;
-            }
+        let expression =
+          List.fold
+            decorators
+            ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
+            ~f:create_decorator_call
+        in
+        let call_graph = ref DefineCallGraph.empty in
+        resolve_callees ~call_graph expression;
+        let define =
+          {
+            Define.signature =
+              {
+                Define.Signature.name = Reference.create ~prefix:define_name "@decorated";
+                parameters = [];
+                decorators = [];
+                return_annotation = None;
+                async = false;
+                generator = false;
+                parent = NestingContext.create_toplevel ();
+                (* The class owning the method *)
+                legacy_parent = None;
+                type_params = [];
+              };
+            captures = [];
+            unbound_names = [];
+            body =
+              [
+                Statement.Return { Return.is_implicit = false; expression = Some expression }
+                |> Node.create_with_default_location;
+              ];
+          }
+        in
+        Decorators
+          {
+            define;
+            callable = CallableToDecoratorsMap.redirect_to_decorated ~callable decorators_map;
+            call_graph = DefineCallGraph.filter_empty_attribute_access !call_graph;
+          }
 
 
   module Results = struct
