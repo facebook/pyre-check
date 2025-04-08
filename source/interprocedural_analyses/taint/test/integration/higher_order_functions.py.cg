@@ -55,6 +55,10 @@ Call dependencies
   "higher_order_functions.higher_order_method (fun)": [
     "higher_order_functions.higher_order_function (fun)[formal(f, position=0)=higher_order_functions.C.method_to_sink (method)]"
   ],
+  "higher_order_functions.sink_after_apply (fun)": [ "_test_sink (fun)" ],
+  "higher_order_functions.sink_after_apply (fun)[formal(f, position=0)=_test_source (fun)]": [
+    "_test_sink (fun)", "_test_source (fun)"
+  ],
   "higher_order_functions.sink_args (fun)": [
     "_test_sink (fun)", "typing.Iterable.__iter__ (method)",
     "typing.Iterator.__next__ (method)"
@@ -116,5 +120,8 @@ Call dependencies
   "higher_order_functions.test_location (fun)": [
     "higher_order_functions.Callable.__call__ (method)",
     "higher_order_functions.sink_args (fun)"
+  ],
+  "higher_order_functions.test_parameterized_target_in_issue_handle (fun)": [
+    "higher_order_functions.sink_after_apply (fun)[formal(f, position=0)=_test_source (fun)]"
   ]
 }

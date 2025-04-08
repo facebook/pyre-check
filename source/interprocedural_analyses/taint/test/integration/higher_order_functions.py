@@ -75,6 +75,14 @@ def test_apply_source():
     return apply(_test_source, 0)
 
 
+def sink_after_apply(f):
+    _test_sink(f())
+
+
+def test_parameterized_target_in_issue_handle():
+    sink_after_apply(_test_source)
+
+
 def apply_without_return(f, x) -> None:
     f(x)
 

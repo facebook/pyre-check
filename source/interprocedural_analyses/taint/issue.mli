@@ -115,7 +115,7 @@ module Candidates : sig
   val generate_issues
     :  t ->
     taint_configuration:TaintConfiguration.Heap.t ->
-    define_name:Ast.Reference.t ->
+    callable:Interprocedural.Target.t ->
     define:Define.t Node.t ->
     issue IssueHandle.SerializableMap.t
 end

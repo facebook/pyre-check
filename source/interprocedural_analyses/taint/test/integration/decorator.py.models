@@ -2813,7 +2813,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "decorator.with_logging_source.inner",
+    "callable": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
     "callable_line": 94,
     "code": 5002,
     "line": 95,
@@ -2876,7 +2876,7 @@
       "index": 0,
       "parameter": "formal(y)"
     },
-    "master_handle": "decorator.with_logging_source.inner:5002:0:Call|decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]|0|formal(y):9805b08450fa7fb46a30a3712dc712df"
+    "master_handle": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]:5002:0:Call|decorator.with_logging_sink.inner[local($paramet:946bb908be60284787c6547d060b42f9"
   }
 }
 {

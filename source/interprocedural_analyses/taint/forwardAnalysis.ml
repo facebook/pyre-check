@@ -228,7 +228,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     Issue.Candidates.generate_issues
       candidates
       ~taint_configuration:FunctionContext.taint_configuration
-      ~define_name:FunctionContext.define_name
+      ~callable:FunctionContext.callable
       ~define:FunctionContext.definition
 
 

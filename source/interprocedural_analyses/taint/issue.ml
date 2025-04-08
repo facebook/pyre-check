@@ -134,7 +134,7 @@ end
 
 let generate_issues
     ~taint_configuration
-    ~define_name
+    ~callable
     ~define
     { Candidate.flows; key = { location; sink_handle } }
   =
@@ -358,12 +358,7 @@ let generate_issues
       Some
         {
           flow;
-          handle =
-            {
-              code = rule.code;
-              callable = Target.create define_name (Node.value define);
-              sink = sink_handle;
-            };
+          handle = { code = rule.code; callable; sink = sink_handle };
           locations = LocationSet.singleton location;
           define;
         }
@@ -661,7 +656,7 @@ module Candidates = struct
     List.iter new_candidates ~f:(add_candidate candidates)
 
 
-  let generate_issues candidates ~taint_configuration ~define_name ~define =
+  let generate_issues candidates ~taint_configuration ~callable ~define =
     let add_or_merge_issue issues_so_far new_issue =
       IssueHandle.SerializableMap.update
         new_issue.handle
@@ -671,7 +666,7 @@ module Candidates = struct
         issues_so_far
     in
     let accumulate ~key:_ ~data:candidate issues =
-      let new_issues = generate_issues ~taint_configuration ~define_name ~define candidate in
+      let new_issues = generate_issues ~taint_configuration ~callable ~define candidate in
       List.fold new_issues ~init:issues ~f:add_or_merge_issue
     in
     Core.Hashtbl.fold candidates ~f:accumulate ~init:IssueHandle.SerializableMap.empty
