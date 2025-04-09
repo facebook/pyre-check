@@ -831,7 +831,12 @@ let run_taint_analysis
             (Scheduler.Policy.from_configuration_or_default
                scheduler_policies
                Configuration.ScheduleIdentifier.DecoratorResolution
-               ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+               ~default:
+                 (Scheduler.Policy.fixed_chunk_count
+                    ~minimum_chunks_per_worker:1
+                    ~minimum_chunk_size:1
+                    ~preferred_chunks_per_worker:1
+                    ()))
           ~override_graph:override_graph_shared_memory
           ~callables_to_definitions_map:
             (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
