@@ -949,7 +949,12 @@ let run_taint_analysis
             (Scheduler.Policy.from_configuration_or_default
                scheduler_policies
                Configuration.ScheduleIdentifier.HigherOrderCallGraph
-               ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+               ~default:
+                 (Scheduler.Policy.fixed_chunk_size
+                    ~minimum_chunks_per_worker:1
+                    ~minimum_chunk_size:100
+                    ~preferred_chunk_size:30000
+                    ()))
           ~static_analysis_configuration
           ~resolve_module_path:(Some resolve_module_path)
           ~pyre_api
