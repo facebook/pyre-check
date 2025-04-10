@@ -129,7 +129,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             location;
           CallGraph.CallCallees.unresolved
             ~reason:CallGraph.Unresolved.NoRecordInCallGraph
-            ~message:"No record in call graph"
+            ~message:(lazy "No record in call graph")
             ()
     in
     log

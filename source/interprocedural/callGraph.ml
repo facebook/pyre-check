@@ -933,8 +933,10 @@ module CallCallees = struct
 
   (* When `debug` is true, log the message. *)
   let unresolved ?(debug = false) ~reason ~message () =
-    if debug then (* Use `dump` so that the log can also be printed when testing. *)
-      Log.dump "Unresolved call: %s" message;
+    if debug then
+      (* Use `dump` so that the log can also be printed when testing. Use `Lazy.t` to improve
+         performance since `debug` is almost always false in production. *)
+      Log.dump "Unresolved call: %s" (Lazy.force message);
     {
       call_targets = [];
       new_targets = [];
@@ -2298,13 +2300,13 @@ let rec resolve_callees_from_type
   let resolve_callees_from_type ?(dunder_call = dunder_call) =
     resolve_callees_from_type ~dunder_call
   in
-  let callable_type_string =
-    lazy
-      (Format.asprintf
-         "callable type %a (i.e., %s)"
-         Type.pp
-         callable_type
-         (Type.show_type_t callable_type))
+  let pp_callable_type format callable_type =
+    Format.fprintf
+      format
+      "callable type %a (i.e., %s)"
+      Type.pp
+      callable_type
+      (Type.show_type_t callable_type)
   in
   let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   match callable_type with
@@ -2369,7 +2371,7 @@ let rec resolve_callees_from_type
   | Type.Callable { kind = Anonymous; _ } ->
       CallCallees.unresolved
         ~debug
-        ~message:(Format.asprintf "%s has kind `Anonymous`" (Lazy.force callable_type_string))
+        ~message:(lazy (Format.asprintf "%a has kind `Anonymous`" pp_callable_type callable_type))
         ~reason:Unresolved.AnonymousCallableType
         ()
   | Type.Parametric { name = "BoundMethod"; arguments = [Single callable; Single receiver_type] } ->
@@ -2415,9 +2417,11 @@ let rec resolve_callees_from_type
       |> CallCallees.default_to_unresolved
            ~debug
            ~message:
-             (Format.asprintf
-                "Failed to resolve construct callees from %s"
-                (Lazy.force callable_type_string))
+             (lazy
+               (Format.asprintf
+                  "Failed to resolve construct callees from %a"
+                  pp_callable_type
+                  callable_type))
            ~reason:Unresolved.UnknownConstructorCallable
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -2433,9 +2437,11 @@ let rec resolve_callees_from_type
           CallCallees.unresolved
             ~debug
             ~message:
-              (Format.asprintf
-                 "Resolved `Any` or `Top` when treating %s as callable class"
-                 (Lazy.force callable_type_string))
+              (lazy
+                (Format.asprintf
+                   "Resolved `Any` or `Top` when treating %a as callable class"
+                   pp_callable_type
+                   callable_type))
             ~reason:Unresolved.AnyTopCallableClass
             ()
       (* Callable protocol. *)
@@ -2477,9 +2483,11 @@ let rec resolve_callees_from_type
           |> CallCallees.default_to_unresolved
                ~debug
                ~message:
-                 (Format.asprintf
-                    "Failed to resolve protocol from %s"
-                    (Lazy.force callable_type_string))
+                 (lazy
+                   (Format.asprintf
+                      "Failed to resolve protocol from %a"
+                      pp_callable_type
+                      callable_type))
                ~reason:Unresolved.UnknownCallableProtocol
       | annotation ->
           if not dunder_call then
@@ -2496,9 +2504,11 @@ let rec resolve_callees_from_type
             CallCallees.unresolved
               ~debug
               ~message:
-                (Format.asprintf
-                   "Failed to resolve %s as callable class, protocol, or a non dunder call."
-                   (Lazy.force callable_type_string))
+                (lazy
+                  (Format.asprintf
+                     "Failed to resolve %a as callable class, protocol, or a non dunder call."
+                     pp_callable_type
+                     callable_type))
               ~reason:Unresolved.UnknownCallableClass
               ())
 
@@ -3268,7 +3278,7 @@ let resolve_regular_callees
           ~callee_type
         |> CallCallees.default_to_unresolved
              ~reason:Unresolved.UnrecognizedCallee
-             ~message:"Unrecognized callee"
+             ~message:(lazy "Unrecognized callee")
       in
       if CallCallees.is_partially_resolved recognized_callees then
         let () = log ~debug "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
@@ -3309,7 +3319,7 @@ let resolve_regular_callees
           | Result.Error reason ->
               CallCallees.unresolved
                 ~reason:(Unresolved.BypassingDecorators reason)
-                ~message:"Bypassing decorators"
+                ~message:(lazy "Bypassing decorators")
                 ()
 
 

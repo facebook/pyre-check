@@ -1866,7 +1866,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_call
                       (CallCallees.unresolved
                          ~reason:(CallGraph.Unresolved.BypassingDecorators UnknownIdentifierCallee)
-                         ~message:""
+                         ~message:(lazy "")
                          ())) );
              ]
            ();
@@ -2444,7 +2444,7 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_call
                       (CallCallees.unresolved
                          ~reason:(CallGraph.Unresolved.BypassingDecorators CannotFindParentClass)
-                         ~message:""
+                         ~message:(lazy "")
                          ())) );
              ]
            ();

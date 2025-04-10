@@ -208,7 +208,7 @@ module CallCallees : sig
     t
 
   (* When `debug` is true, log the message. *)
-  val unresolved : ?debug:bool -> reason:Unresolved.reason -> message:string -> unit -> t
+  val unresolved : ?debug:bool -> reason:Unresolved.reason -> message:string Lazy.t -> unit -> t
 
   val is_partially_resolved : t -> bool
 
