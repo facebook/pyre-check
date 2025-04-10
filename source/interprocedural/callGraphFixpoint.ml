@@ -288,15 +288,16 @@ let log_decorated_targets_if_no_returned_callables ~scheduler ~scheduler_policy 
       ~inputs:(state |> Fixpoint.State.targets |> List.filter ~f:Target.is_decorated)
       ()
   in
-  Log.info "Top frequent decorators that potentially lead to failing to apply decorators:";
-  let sorted_decorator_counts =
-    decorator_counts
-    |> SerializableStringMap.to_alist
-    |> List.sort ~compare:(fun (_, left_count) (_, right_count) ->
-           Int.compare right_count left_count)
-  in
-  List.take sorted_decorator_counts 10
-  |> List.iter ~f:(fun (decorator, count) -> Log.info "Decorator %s: %d times" decorator count)
+  if not (SerializableStringMap.is_empty decorator_counts) then (
+    Log.info "Top frequent decorators that potentially lead to failing to apply decorators:";
+    let sorted_decorator_counts =
+      decorator_counts
+      |> SerializableStringMap.to_alist
+      |> List.sort ~compare:(fun (_, left_count) (_, right_count) ->
+             Int.compare right_count left_count)
+    in
+    List.take sorted_decorator_counts 10
+    |> List.iter ~f:(fun (decorator, count) -> Log.info "Decorator %s: %d times" decorator count))
 
 
 let compute
