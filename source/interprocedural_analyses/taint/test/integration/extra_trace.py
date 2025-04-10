@@ -112,3 +112,56 @@ def extra_trace_through_override(o: TransformBase):
     source = _test_source()
     source_x = o.transform(source)
     _test_sink(source_x)
+
+
+# ExtraTraceSink is propagated as a sink, while LocalReturn is propagated as tito.
+# That means they can be collapsed differently, given the heuristics for tito and sinks are different.
+# That might lead to a T:LocalReturn tito being present while the T:ExtraTraceSink is missing,
+# which usually means this is a false positive.
+
+def non_deterministic_int() -> int:
+    ...
+
+
+def tito_collapse(x: str) -> str:
+    ...
+
+
+# self[transformed_key] -> TransformX -> LocalReturn
+def tito_transform_attribute(self):
+    if non_deterministic_int() > 10:
+        return transform_x(self['transformed_key'])
+    else:
+        return tito_collapse(self['transformed_key'])
+
+
+# Tito self -> TransformX -> LocalReturn
+# but TransformX:ExtraTraceSink on self[transformed_key]
+def mismatching_tito_extra_sink(self):
+    if non_deterministic_int() > 10:
+        taint = tito_transform_attribute(self)
+    elif non_deterministic_int() > 10:
+        taint = self['a']
+    elif non_deterministic_int() > 10:
+        taint = self['b']
+    elif non_deterministic_int() > 10:
+        taint = self['c']
+    elif non_deterministic_int() > 10:
+        taint = self['d']
+    elif non_deterministic_int() > 10:
+        taint = self['e']
+    elif non_deterministic_int() > 10:
+        taint = self['f']
+    return taint
+
+
+# Tito self -> TransformX -> LocalReturn but no TransformX:ExtraTraceSink
+def transform_tito_with_missing_extra_sink(self):
+    self['transformed_key'] = ''
+    return mismatching_tito_extra_sink(self)
+
+
+def issue_missing_subtrace_due_to_mismatch_tito_extra_sink(arg):
+    x = _test_source()
+    y = transform_tito_with_missing_extra_sink(x)
+    _test_sink(y)

@@ -148,6 +148,78 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "extra_trace.issue_missing_subtrace_due_to_mismatch_tito_extra_sink",
+    "callable_line": 164,
+    "code": 6000,
+    "line": 167,
+    "start": 15,
+    "end": 16,
+    "filename": "extra_trace.py",
+    "message": "[TestSource] may reach [TestSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-via": "transform-tito-depth:4" }
+                ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "model-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito_positions": [ { "line": 166, "start": 47, "end": 48 } ],
+            "origin": { "line": 165, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "TestSink"
+              }
+            ],
+            "origin": { "line": 167, "start": 15, "end": 16 },
+            "call_site": "167:4-167:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:4" },
+      { "via": "obscure:model" },
+      { "always-via": "model-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "model-tito-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "extra_trace.issue_missing_subtrace_due_to_mismatch_tito_extra_sink:6000:0:Call|_test_sink|0|formal(arg):da78b0300e6f0d098688e145e8a39069"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Overrides{extra_trace.OverrideTransform.transform}",
@@ -624,6 +696,72 @@
 {
   "kind": "model",
   "data": {
+    "callable": "extra_trace.mismatching_tito_extra_sink",
+    "filename": "extra_trace.py",
+    "callable_line": 140,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[transformed_key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "transformed_key" }
+                ],
+                "length": 1,
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "call": {
+              "position": { "line": 142, "start": 41, "end": 45 },
+              "resolves_to": [ "extra_trace.tito_transform_attribute" ],
+              "port": "formal(self, position=0)[transformed_key]",
+              "call_site": "142:16-142:46"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "c" },
+              { "first-index": "f" },
+              { "first-index": "d" },
+              { "first-index": "e" },
+              { "first-index": "b" },
+              { "first-index": "a" },
+              { "via": "obscure:model" },
+              { "always-via": "model-broadening" },
+              { "via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito_positions": [ { "line": 142, "start": 41, "end": 45 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "extra_trace.nested_transform_x",
     "filename": "extra_trace.py",
     "callable_line": 33,
@@ -850,6 +988,68 @@
 {
   "kind": "model",
   "data": {
+    "callable": "extra_trace.tito_transform_attribute",
+    "filename": "extra_trace.py",
+    "callable_line": 131,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[transformed_key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
+                ],
+                "kind": "TransformX:ExtraTraceSink"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "transformed_key" }
+            ],
+            "origin": { "line": 133, "start": 27, "end": 50 },
+            "call_site": "133:15-133:51"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[transformed_key]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              },
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "transformed_key" },
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 133, "start": 27, "end": 50 },
+              { "line": 135, "start": 29, "end": 52 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "extra_trace.transform_nested_x_y",
     "filename": "extra_trace.py",
     "callable_line": 87,
@@ -916,6 +1116,44 @@
               { "line": 88, "start": 23, "end": 46 },
               { "line": 88, "start": 42, "end": 45 }
             ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.transform_tito_with_missing_extra_sink",
+    "filename": "extra_trace.py",
+    "callable_line": 159,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              },
+              {
+                "return_paths": { "": 0 },
+                "length": 3,
+                "kind": "TransformX@LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "model-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito_positions": [ { "line": 161, "start": 39, "end": 43 } ],
             "tito": {}
           }
         ]
