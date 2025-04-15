@@ -19,7 +19,7 @@ from typing import Dict, List, Mapping, Optional, Sequence
 
 from typing_extensions import Final
 
-from ...api.connection import PyreConnection, PyreStartError, Error as PyreQueryError
+from ...api.connection import Error as PyreQueryError, PyreConnection, PyreStartError
 from ...client import remote_logger
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator,
@@ -48,7 +48,6 @@ from .get_REST_api_sources import RESTApiSourceGenerator  # noqa
 from .get_undecorated_sources import UndecoratedSourceGenerator  # noqa
 from .model import Model
 from .model_generator import ModelGenerator
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -98,7 +97,7 @@ def _file_exists(path: str) -> str:
 
 
 def _parse_arguments(
-    generator_options: Dict[str, ModelGenerator[Model]]
+    generator_options: Dict[str, ModelGenerator[Model]],
 ) -> GenerationArguments:
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
@@ -178,10 +177,14 @@ def run_from_parsed_arguments(
 
         generated_models: Dict[str, Sequence[Model]] = {}
         for mode in modes:
+            if mode not in generator_options.keys():
+                LOG.error(f"Unknown mode `{mode}`, aborting.")
+                return ExitCode.INTERNAL_ERROR
+
+        for mode in modes:
             LOG.info("Computing models for `%s`", mode)
             if mode not in generator_options.keys():
-                LOG.warning(f"Unknown mode `{mode}`, skipping.")
-                continue
+                raise AssertionError("unreachable")  # checked above.
             start = time.time()
             generated_models[mode] = list(generator_options[mode].generate_models())
             elapsed_time_seconds = time.time() - start
