@@ -284,6 +284,7 @@ module ModelQuery : sig
   (* An arbitrary constraint for functions, methods, attributes or globals. *)
   module Constraint : sig
     type t =
+      | Constant of bool
       | NameConstraint of NameConstraint.t
       | FullyQualifiedNameConstraint of NameConstraint.t
       | AnnotationConstraint of AnnotationConstraint.t

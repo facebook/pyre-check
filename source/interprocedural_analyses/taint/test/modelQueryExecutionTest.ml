@@ -399,6 +399,42 @@ let test_generated_annotations context =
             generation_if_source = false;
           };
       ];
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [Constant true];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:{|
+      def foo(): ...
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [Constant false];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Function { name = "test.foo"; kind = Normal })
+    ~expected:[];
   (* All parameter taint. *)
   assert_generated_annotations
     ~source:{|

@@ -910,6 +910,7 @@ let rec matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value
   | ModelQuery.Constraint.Not query_constraint ->
       not
         (matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value query_constraint)
+  | ModelQuery.Constraint.Constant value -> value
   | ModelQuery.Constraint.NameConstraint name_constraint ->
       matches_name_constraint
         ~name_captures
@@ -1118,6 +1119,8 @@ module CandidateTargetsFromCache = struct
           ~init:Top
           ~f:(fun candidates constraint_ -> meet candidates (from_constraint cache constraint_))
           constraints
+    | ModelQuery.Constraint.Constant false -> Set Target.Set.empty
+    | ModelQuery.Constraint.Constant true
     | ModelQuery.Constraint.Not _
     | ModelQuery.Constraint.NameConstraint _
     | ModelQuery.Constraint.FullyQualifiedNameConstraint _

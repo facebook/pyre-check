@@ -549,6 +549,7 @@ module ModelQuery = struct
   (* An arbitrary constraint for functions, methods, attributes or globals. *)
   module Constraint = struct
     type t =
+      | Constant of bool
       | NameConstraint of NameConstraint.t
       | FullyQualifiedNameConstraint of NameConstraint.t
       | AnnotationConstraint of AnnotationConstraint.t
@@ -563,6 +564,7 @@ module ModelQuery = struct
     [@@deriving equal, show]
 
     let rec contains_read_from_cache = function
+      | Constant _
       | NameConstraint _
       | FullyQualifiedNameConstraint _
       | AnnotationConstraint _

@@ -2021,6 +2021,7 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
 
 let check_invalid_read_form_cache ~path ~location ~constraint_expression where =
   let rec is_valid = function
+    | ModelQuery.Constraint.Constant _
     | ModelQuery.Constraint.NameConstraint _
     | ModelQuery.Constraint.FullyQualifiedNameConstraint _
     | ModelQuery.Constraint.AnnotationConstraint _
@@ -2142,6 +2143,8 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         | Some reference -> parse_constraint_reference ~callee ~reference ~arguments
         | None ->
             Error (model_verification_error ~path ~location (UnsupportedConstraintCallee callee)))
+    | Expression.Constant Constant.True -> Ok (ModelQuery.Constraint.Constant true)
+    | Expression.Constant Constant.False -> Ok (ModelQuery.Constraint.Constant false)
     | _ ->
         Error
           (model_verification_error ~path ~location (UnsupportedConstraint constraint_expression))
