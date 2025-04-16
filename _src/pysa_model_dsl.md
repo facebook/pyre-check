@@ -866,11 +866,11 @@ ModelQuery(
   name = "get_childOf_d1_decorator_sources",
   find = "methods",
   where = [
+    name.equals("__init__"),
     cls.decorator(
       fully_qualified_name.matches("d1"),
       arguments.contains(2)
     ),
-    name.equals("__init__")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -920,13 +920,13 @@ ModelQuery(
   name = "get_parent_of_d1_decorator_sources",
   find = "methods",
   where = [
+    name.equals("__init__"),
     cls.any_child(
       cls.decorator(
         fully_qualified_name.matches("d1"),
         arguments.contains(2)
       )
     ),
-    name.equals("__init__")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -971,6 +971,7 @@ ModelQuery(
   name = "get_transitive_parent_of_d1_decorator_sources",
   find = "attributes",
   where = [
+    name.equals("__init__"),
     cls.any_child(
       cls.decorator(
         fully_qualified_name.matches("d1"),
@@ -978,7 +979,6 @@ ModelQuery(
       ),
       is_transitive=True
     ),
-    name.equals("__init__")
   ],
   ...
 )
@@ -996,6 +996,7 @@ ModelQuery(
   name = "get_transitive_parent_of_d1_decorator_sources",
   find = "attributes",
   where = [
+    name.equals("__init__"),
     cls.any_child(
       cls.decorator(
         fully_qualified_name.matches("d1"),
@@ -1004,7 +1005,6 @@ ModelQuery(
       is_transitive=True,
       includes_self=False
     ),
-    name.equals("__init__")
   ],
   ...
 )
@@ -1037,13 +1037,13 @@ ModelQuery(
   name = "get_children_of_d1_decorator_sources",
   find = "methods",
   where = [
+    name.equals("__init__"),
     cls.any_parent(
       cls.decorator(
         fully_qualified_name.matches("d1"),
         arguments.contains(2)
       )
     ),
-    name.equals("__init__")
   ],
   model = [
     Parameters(TaintSource[Test], where=[
@@ -1135,6 +1135,72 @@ We recommend to always specify both `is_transitive` and `includes_self` to avoid
 confusion.
 
 :::
+
+### `any_overriden_method` clause
+
+The `any_overriden_method` clause is used to model methods that override a
+method that meets the specified constraints.
+
+This clause accept a single argument, which is the constraint on the overriden
+method. It can use any constraints valid for methods, including `AllOf`, `AnyOf`
+and `Not`.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_Foo_bar_overrides",
+  find = "methods",
+  where = [
+    name.equals("bar"),
+    any_overriden_method(
+      cls.name.equals("Foo")
+    )
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+        Not(name.equals("self")),
+        Not(name.equals("a"))
+    ])
+  ]
+)
+```
+
+This will add sources to all methods that override the method `Foo.bar`.
+
+:::tip
+
+This constraint is expensive to compute. To make it faster, we recommend to put
+cheaper constraints before it so it gets short-circuited. For instance,
+`name.equals("bar")` here can be placed before `any_overriden_method` and will
+make model generation faster.
+
+:::
+
+To use multiple constraints inside `any_overriden_method`, use `AllOf`:
+
+```python
+ModelQuery(
+  name = "get_Foo_bar_overrides",
+  find = "methods",
+  where = [
+    name.equals("bar"),
+    any_overriden_method(AllOf(
+      cls.name.equals("Foo"),
+      Decorator(fully_qualified_callee.equals("my_module.my_decorator")),
+    ))
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+        Not(name.equals("self")),
+        Not(name.equals("a"))
+    ])
+  ]
+)
+```
+
+To match all method overrides, use `any_overriden_method(True)`.
+`True` is a constraint that is always met.
 
 ### `Not` clauses
 
