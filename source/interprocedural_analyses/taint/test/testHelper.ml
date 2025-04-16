@@ -732,7 +732,7 @@ let initialize
       ~attribute_targets:(SharedModels.object_targets initial_models)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~decorator_resolution
-      ~skip_analysis_targets:Target.Set.empty
+      ~skip_analysis_targets:(Target.HashSet.create ())
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
@@ -759,7 +759,7 @@ let initialize
       ~call_graph
       ~dependency_graph
       ~override_graph_shared_memory
-      ~skip_analysis_targets:Target.Set.empty
+      ~skip_analysis_targets:(Target.HashSet.create ())
       ~decorator_resolution
       ~decorators:
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
@@ -988,7 +988,11 @@ let end_to_end_integration_test path context =
         ~scheduler_policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
         ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph
-        ~skip_analysis_targets:(SharedModels.skip_analysis ~scheduler initial_models)
+        ~skip_analysis_targets:
+          (initial_models
+          |> SharedModels.skip_analysis ~scheduler
+          |> Target.Set.elements
+          |> Target.HashSet.of_list)
         ~context:
           {
             TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;

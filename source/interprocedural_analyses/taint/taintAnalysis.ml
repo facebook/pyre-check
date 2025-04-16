@@ -856,6 +856,9 @@ let run_taint_analysis
   in
   let attribute_targets = SharedModels.object_targets initial_models in
   let skip_analysis_targets = SharedModels.skip_analysis ~scheduler initial_models in
+  let skip_analysis_targets_hashset =
+    skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
+  in
   let ( ({
            Interprocedural.CallGraph.SharedMemory.whole_program_call_graph =
              original_whole_program_call_graph;
@@ -865,7 +868,7 @@ let run_taint_analysis
     =
     Cache.call_graph
       ~attribute_targets
-      ~skip_analysis_targets
+      ~skip_analysis_targets:skip_analysis_targets_hashset
       ~definitions
       cache
       (fun ~attribute_targets ~skip_analysis_targets ~definitions () ->
@@ -961,7 +964,7 @@ let run_taint_analysis
           ~call_graph:original_call_graphs
           ~dependency_graph:original_dependency_graph
           ~override_graph_shared_memory
-          ~skip_analysis_targets
+          ~skip_analysis_targets:skip_analysis_targets_hashset
           ~decorator_resolution
           ~decorators:
             (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
@@ -1082,7 +1085,7 @@ let run_taint_analysis
       ~scheduler_policy:(Taint.TaintFixpoint.get_scheduler_policy scheduler_policies)
       ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph
-      ~skip_analysis_targets
+      ~skip_analysis_targets:skip_analysis_targets_hashset
       ~context:
         {
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;

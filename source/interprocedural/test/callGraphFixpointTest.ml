@@ -23,7 +23,7 @@ end
 
 let assert_higher_order_call_graph_fixpoint
     ?(max_iterations = 10)
-    ?(skip_analysis_targets = Target.Set.empty)
+    ?(skip_analysis_targets = Target.HashSet.create ())
     ?(maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth)
     ~source
     ~expected
@@ -975,7 +975,7 @@ let test_higher_order_call_graph_fixpoint =
        return foo(g)  # Test skip analysis
   |}
            ~skip_analysis_targets:
-             (Target.Set.of_list
+             (Target.HashSet.of_list
                 [
                   Target.Regular.Function { name = "test.foo"; kind = Normal } |> Target.from_regular;
                 ])
@@ -993,19 +993,23 @@ let test_higher_order_call_graph_fixpoint =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.foo"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "f",
-                                              Target.Regular.Function
-                                                { name = "test.bar.g"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
                                  ]
+                               ~higher_order_parameters:
+                                 (HigherOrderParameterMap.from_list
+                                    [
+                                      {
+                                        index = 0;
+                                        call_targets =
+                                          [
+                                            CallTarget.create_regular
+                                              (Target.Regular.Function
+                                                 { name = "test.bar.g"; kind = Normal });
+                                          ];
+                                        unresolved = CallGraph.Unresolved.False;
+                                      };
+                                    ])
                                ())) );
                    ];
                  returned_callables = [];

@@ -217,6 +217,10 @@ val resolve_method
   method_name:string ->
   t option
 
+(* Define the meaning of `skip_analysis_targets`. We assume `skip_analysis_targets` only contains
+   regular callables. *)
+val should_skip_analysis : skip_analysis_targets:HashSet.t -> t -> bool
+
 module ArtificialTargets : sig
   val format_string : t
 

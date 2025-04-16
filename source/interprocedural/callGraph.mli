@@ -526,6 +526,7 @@ val higher_order_call_graph_of_define
   :  define_call_graph:DefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  skip_analysis_targets:Target.HashSet.t ->
   callable:Target.t option ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
@@ -654,7 +655,7 @@ module SharedMemory : sig
     attribute_targets:Target.Set.t ->
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     decorator_resolution:DecoratorResolution.Results.t ->
-    skip_analysis_targets:Target.Set.t ->
+    skip_analysis_targets:Target.HashSet.t ->
     definitions:Target.t list ->
     create_dependency_for:AllTargetsUseCase.t ->
     call_graphs

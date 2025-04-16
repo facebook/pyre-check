@@ -840,13 +840,10 @@ module Make (Analysis : ANALYSIS) = struct
     state: State.t;
   }
 
-  (* Define the meaning of `skip_analysis_targets`. We assume `skip_analysis_targets` only contains
-     regular callables. *)
   let filter_skip_analysis_targets ~skip_analysis_targets callables =
-    let skip_analysis_target callable =
-      Hash_set.mem skip_analysis_targets (Target.strip_parameters callable)
+    let skip, not_skip =
+      List.partition_tf ~f:(Target.should_skip_analysis ~skip_analysis_targets) callables
     in
-    let skip, not_skip = List.partition_tf ~f:skip_analysis_target callables in
     (* Print less log by grouping targets based on their regular part. *)
     skip
     |> List.map ~f:Target.strip_parameters
@@ -872,9 +869,6 @@ module Make (Analysis : ANALYSIS) = struct
       ~epoch
       ~state
     =
-    let skip_analysis_targets =
-      skip_analysis_targets |> Target.Set.elements |> Target.HashSet.of_list
-    in
     let rec iterate
         ~iteration
         ~dependency_graph

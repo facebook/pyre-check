@@ -73,11 +73,11 @@ val override_graph
 
 val call_graph
   :  attribute_targets:Interprocedural.Target.Set.t ->
-  skip_analysis_targets:Interprocedural.Target.Set.t ->
+  skip_analysis_targets:Interprocedural.Target.HashSet.t ->
   definitions:Interprocedural.Target.t list ->
   t ->
   (attribute_targets:Interprocedural.Target.Set.t ->
-  skip_analysis_targets:Interprocedural.Target.Set.t ->
+  skip_analysis_targets:Interprocedural.Target.HashSet.t ->
   definitions:Interprocedural.Target.t list ->
   unit ->
   Interprocedural.CallGraph.SharedMemory.call_graphs) ->

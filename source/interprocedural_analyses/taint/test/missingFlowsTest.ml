@@ -84,7 +84,11 @@ let assert_fixpoint
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
-      ~skip_analysis_targets:(SharedModels.skip_analysis ~scheduler initial_models)
+      ~skip_analysis_targets:
+        (initial_models
+        |> SharedModels.skip_analysis ~scheduler
+        |> Target.Set.elements
+        |> Target.HashSet.of_list)
       ~context:
         {
           TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;

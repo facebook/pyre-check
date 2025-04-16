@@ -606,6 +606,12 @@ let resolve_method ~pyre_api ~class_type ~method_name =
   | _ -> None
 
 
+(* Define the meaning of `skip_analysis_targets`. We assume `skip_analysis_targets` only contains
+   regular callables. *)
+let should_skip_analysis ~skip_analysis_targets target =
+  target |> strip_parameters |> Core.Hash_set.mem skip_analysis_targets
+
+
 module ArtificialTargets = struct
   let format_string = Object "<format-string>" |> from_regular
 

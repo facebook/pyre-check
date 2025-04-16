@@ -4363,6 +4363,8 @@ module HigherOrderCallGraph = struct
 
     val callables_to_definitions_map : Target.CallablesSharedMemory.ReadOnly.t
 
+    val skip_analysis_targets : Target.HashSet.t
+
     val profiler : CallGraphProfiler.t
 
     val maximum_target_depth : int
@@ -4502,14 +4504,19 @@ module HigherOrderCallGraph = struct
       let validate_target target =
         let exceed_depth = Target.depth target > Context.maximum_target_depth in
         let contain_recursive_target = Target.contain_recursive_target target in
-        if contain_recursive_target || exceed_depth then
+        let skip_analysis =
+          Target.should_skip_analysis ~skip_analysis_targets:Context.skip_analysis_targets target
+        in
+        if contain_recursive_target || exceed_depth || skip_analysis then
           let () =
             log
-              "Invalid target: `%a` (contain_recursive_target: `%b`. exceed_depth: `%b`)"
+              "Invalid target: `%a` (contain_recursive_target: `%b`. exceed_depth: `%b`. \
+               skip_analysis: `%b`)"
               Target.pp_pretty_with_kind
               target
               contain_recursive_target
               exceed_depth
+              skip_analysis
           in
           None
         else
@@ -5235,6 +5242,7 @@ let higher_order_call_graph_of_define
     ~define_call_graph
     ~pyre_api
     ~callables_to_definitions_map
+    ~skip_analysis_targets
     ~callable
     ~qualifier
     ~define
@@ -5264,6 +5272,8 @@ let higher_order_call_graph_of_define
     let callable = callable
 
     let callables_to_definitions_map = callables_to_definitions_map
+
+    let skip_analysis_targets = skip_analysis_targets
 
     let profiler = profiler
 
@@ -5732,7 +5742,7 @@ module SharedMemory = struct
     let attribute_targets = attribute_targets |> Target.Set.elements |> Target.HashSet.of_list in
     let define_call_graphs, whole_program_call_graph =
       let build_call_graph ((define_call_graphs, whole_program_call_graph) as so_far) callable =
-        if Target.Set.mem callable skip_analysis_targets then
+        if Target.should_skip_analysis ~skip_analysis_targets callable then
           so_far
         else
           let callable_call_graph =

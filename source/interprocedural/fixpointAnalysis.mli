@@ -265,7 +265,7 @@ module Make (Analysis : ANALYSIS) : sig
     scheduler_policy:Scheduler.Policy.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
     dependency_graph:DependencyGraph.t ->
-    skip_analysis_targets:Target.Set.t ->
+    skip_analysis_targets:Target.HashSet.t ->
     context:Analysis.context ->
     callables_to_analyze:Target.t list ->
     max_iterations:int ->

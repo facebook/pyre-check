@@ -765,7 +765,7 @@ module CallGraphSharedMemory = struct
 
   let compare_skip_analysis_targets ~previous_skip_analysis_targets ~skip_analysis_targets =
     let is_equal =
-      Interprocedural.Target.Set.equal skip_analysis_targets previous_skip_analysis_targets
+      Interprocedural.Target.HashSet.equal skip_analysis_targets previous_skip_analysis_targets
     in
     if not is_equal then
       Log.info "Detected changes in the skip analysis targets";
@@ -789,7 +789,12 @@ module CallGraphSharedMemory = struct
       (EntryStatus.get Entry.OverrideGraph entry_status)
       SaveLoadSharedMemory.Usage.Used
     && compare_attribute_targets ~previous_attribute_targets ~attribute_targets
-    && compare_skip_analysis_targets ~previous_skip_analysis_targets ~skip_analysis_targets
+    && compare_skip_analysis_targets
+         ~previous_skip_analysis_targets:
+           (previous_skip_analysis_targets
+           |> Interprocedural.Target.Set.elements
+           |> Interprocedural.Target.HashSet.of_list)
+         ~skip_analysis_targets
 
 
   let remove_previous () =

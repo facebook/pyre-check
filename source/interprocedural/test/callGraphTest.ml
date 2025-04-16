@@ -163,6 +163,7 @@ let assert_higher_order_call_graph_of_define
       ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~skip_analysis_targets:(Target.HashSet.create ())
       ~callable:None
       ~qualifier:module_name
       ~define
