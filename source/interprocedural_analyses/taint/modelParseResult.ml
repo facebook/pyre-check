@@ -555,6 +555,7 @@ module ModelQuery = struct
       | AnnotationConstraint of AnnotationConstraint.t
       | ReturnConstraint of AnnotationConstraint.t
       | AnyParameterConstraint of ParameterConstraint.t
+      | AnyOverridenMethod of t
       | ReadFromCache of ReadFromCache.t
       | AnyOf of t list
       | AllOf of t list
@@ -577,7 +578,9 @@ module ModelQuery = struct
       | AnyOf constraints
       | AllOf constraints ->
           List.exists ~f:contains_read_from_cache constraints
-      | Not constraint_ -> contains_read_from_cache constraint_
+      | Not constraint_
+      | AnyOverridenMethod constraint_ ->
+          contains_read_from_cache constraint_
 
 
     let is_read_from_cache = function
@@ -978,6 +981,20 @@ module Modelable = struct
     | Attribute _
     | Global _ ->
         failwith "unexpected use of signature on an attribute or global"
+
+
+  let is_instance_method = function
+    | Callable { signature; _ } -> (
+        match Lazy.force signature with
+        | {
+         Target.CallablesSharedMemory.Signature.method_kind = Some Target.MethodKind.Instance;
+         _;
+        } ->
+            true
+        | _ -> false)
+    | Attribute _
+    | Global _ ->
+        false
 
 
   let class_name = function

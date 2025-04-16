@@ -2035,7 +2035,8 @@ let check_invalid_read_form_cache ~path ~location ~constraint_expression where =
         List.for_all ~f:ModelQuery.Constraint.is_read_from_cache constraints
         || not (ModelQuery.Constraint.contains_read_from_cache (AnyOf constraints))
     | ModelQuery.Constraint.AllOf constraints -> List.for_all ~f:is_valid constraints
-    | ModelQuery.Constraint.Not constraint_ ->
+    | ModelQuery.Constraint.Not constraint_
+    | ModelQuery.Constraint.AnyOverridenMethod constraint_ ->
         not (ModelQuery.Constraint.contains_read_from_cache constraint_)
   in
   if List.for_all ~f:is_valid where then
@@ -2116,6 +2117,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
           >>| fun parameter_constraint ->
           ModelQuery.Constraint.AnyParameterConstraint
             (ModelQuery.ParameterConstraint.AnnotationConstraint parameter_constraint)
+      | ["any_overriden_method"], [{ Call.Argument.value = argument; _ }] ->
+          check_find_in ~callee [ModelQuery.Find.Method]
+          >>= fun () ->
+          parse_constraint argument
+          >>| fun constraint_ -> ModelQuery.Constraint.AnyOverridenMethod constraint_
       | "cls" :: _, _ ->
           check_find ~callee ModelQuery.Find.is_class_member
           >>= fun () ->

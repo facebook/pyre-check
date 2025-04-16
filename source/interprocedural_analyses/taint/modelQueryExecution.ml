@@ -846,6 +846,28 @@ let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
   parents
 
 
+let find_base_methods
+    ~pyre_api
+    ~callables_to_definitions_map
+    { Target.class_name; method_name; kind }
+  =
+  let find_instance_method parent_class =
+    let base_method =
+      Target.Regular (Target.Regular.Method { class_name = parent_class; method_name; kind })
+    in
+    match
+      Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map base_method
+    with
+    | Some
+        { Target.CallablesSharedMemory.Signature.method_kind = Some Target.MethodKind.Instance; _ }
+      ->
+        Some base_method
+    | _ -> None
+  in
+  find_parents ~pyre_api ~is_transitive:true ~includes_self:false class_name
+  |> List.filter_map ~f:find_instance_method
+
+
 let rec class_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures ~name = function
   | ModelQuery.ClassConstraint.AnyOf constraints ->
       List.exists
@@ -897,19 +919,44 @@ let rec class_matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures
                class_constraint)
 
 
-let rec matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value query_constraint =
+let rec matches_constraint
+    ~pyre_api
+    ~callables_to_definitions_map
+    ~class_hierarchy_graph
+    ~name_captures
+    value
+    query_constraint
+  =
   match query_constraint with
   | ModelQuery.Constraint.AnyOf constraints ->
       List.exists
         constraints
-        ~f:(matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value)
+        ~f:
+          (matches_constraint
+             ~pyre_api
+             ~callables_to_definitions_map
+             ~class_hierarchy_graph
+             ~name_captures
+             value)
   | ModelQuery.Constraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value)
+        ~f:
+          (matches_constraint
+             ~pyre_api
+             ~callables_to_definitions_map
+             ~class_hierarchy_graph
+             ~name_captures
+             value)
   | ModelQuery.Constraint.Not query_constraint ->
       not
-        (matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value query_constraint)
+        (matches_constraint
+           ~pyre_api
+           ~callables_to_definitions_map
+           ~class_hierarchy_graph
+           ~name_captures
+           value
+           query_constraint)
   | ModelQuery.Constraint.Constant value -> value
   | ModelQuery.Constraint.NameConstraint name_constraint ->
       matches_name_constraint
@@ -947,6 +994,19 @@ let rec matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures value
                ~name_captures
                ~parameter
                parameter_constraint)
+  | ModelQuery.Constraint.AnyOverridenMethod constraint_ -> (
+      match value |> Modelable.target |> Target.get_regular with
+      | Target.Regular.Method method_name when Modelable.is_instance_method value ->
+          find_base_methods ~pyre_api ~callables_to_definitions_map method_name
+          |> List.exists ~f:(fun base_method ->
+                 matches_constraint
+                   ~pyre_api
+                   ~callables_to_definitions_map
+                   ~class_hierarchy_graph
+                   ~name_captures
+                   (Modelable.create_callable ~pyre_api ~callables_to_definitions_map base_method)
+                   constraint_)
+      | _ -> false)
   | ModelQuery.Constraint.ReadFromCache _ ->
       (* This is handled before matching constraints. *)
       true
@@ -1128,7 +1188,8 @@ module CandidateTargetsFromCache = struct
     | ModelQuery.Constraint.ReturnConstraint _
     | ModelQuery.Constraint.AnyParameterConstraint _
     | ModelQuery.Constraint.AnyDecoratorConstraint _
-    | ModelQuery.Constraint.ClassConstraint _ ->
+    | ModelQuery.Constraint.ClassConstraint _
+    | ModelQuery.Constraint.AnyOverridenMethod _ ->
         Top
 
 
@@ -1184,6 +1245,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let matches_query_constraints
       ~verbose
       ~pyre_api
+      ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~name_captures
       ~modelable
@@ -1192,7 +1254,13 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     let result =
       Modelable.matches_find modelable find
       && List.for_all
-           ~f:(matches_constraint ~pyre_api ~class_hierarchy_graph ~name_captures modelable)
+           ~f:
+             (matches_constraint
+                ~pyre_api
+                ~callables_to_definitions_map
+                ~class_hierarchy_graph
+                ~name_captures
+                modelable)
            where
     in
     let () =
@@ -1209,6 +1277,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let generate_annotations_from_query_on_target
       ~verbose
       ~pyre_api
+      ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~modelable
       ({ ModelQuery.models; _ } as query)
@@ -1218,6 +1287,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       matches_query_constraints
         ~verbose
         ~pyre_api
+        ~callables_to_definitions_map
         ~class_hierarchy_graph
         ~name_captures
         ~modelable
@@ -1236,6 +1306,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let generate_model_from_query_on_target
       ~verbose
       ~pyre_api
+      ~callables_to_definitions_map
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -1247,6 +1318,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       generate_annotations_from_query_on_target
         ~verbose
         ~pyre_api
+        ~callables_to_definitions_map
         ~class_hierarchy_graph
         ~modelable
         query
@@ -1272,8 +1344,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let generate_models_from_query_on_targets
       ~verbose
       ~pyre_api
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
       ~targets
@@ -1285,6 +1357,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         generate_model_from_query_on_target
           ~verbose
           ~pyre_api
+          ~callables_to_definitions_map
           ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
@@ -1317,6 +1390,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         generate_model_from_query_on_target
           ~verbose
           ~pyre_api
+          ~callables_to_definitions_map
           ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
@@ -1376,8 +1450,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let generate_cache_from_query_on_target
       ~verbose
       ~pyre_api
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~initial_cache
       ~target
       ({ ModelQuery.models; name; _ } as query)
@@ -1402,6 +1476,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       matches_query_constraints
         ~verbose
         ~pyre_api
+        ~callables_to_definitions_map
         ~class_hierarchy_graph
         ~name_captures
         ~modelable
@@ -1415,8 +1490,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let generate_cache_from_queries_on_targets
       ~verbose
       ~pyre_api
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~targets
       write_to_cache_queries
     =
@@ -1424,8 +1499,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       generate_cache_from_query_on_target
         ~verbose
         ~pyre_api
-        ~class_hierarchy_graph
         ~callables_to_definitions_map
+        ~class_hierarchy_graph
         ~initial_cache:cache
         ~target
         query
@@ -1439,8 +1514,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~pyre_api
       ~scheduler
       ~scheduler_policies
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~targets
     = function
     | [] -> ReadWriteCache.empty
@@ -1478,8 +1553,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   let generate_models_from_read_cache_queries_on_targets
       ~verbose
       ~pyre_api
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
       ~cache
@@ -1503,8 +1578,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             generate_models_from_query_on_targets
               ~verbose
               ~pyre_api
-              ~class_hierarchy_graph
               ~callables_to_definitions_map
+              ~class_hierarchy_graph
               ~source_sink_filter
               ~stubs
               ~targets:(Target.Set.elements candidates)
@@ -1526,8 +1601,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~pyre_api
       ~scheduler
       ~scheduler_policies
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
       ~targets
@@ -1574,8 +1649,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~pyre_api
       ~scheduler
       ~scheduler_policies
-      ~class_hierarchy_graph
       ~callables_to_definitions_map
+      ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
       ~targets
@@ -1605,8 +1680,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~pyre_api
           ~scheduler
           ~scheduler_policies
-          ~class_hierarchy_graph
           ~callables_to_definitions_map
+          ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
           ~targets
@@ -1635,8 +1710,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~pyre_api
           ~scheduler
           ~scheduler_policies
-          ~class_hierarchy_graph
           ~callables_to_definitions_map
+          ~class_hierarchy_graph
           ~targets
           write_to_cache_queries
       in
@@ -1650,8 +1725,8 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         generate_models_from_read_cache_queries_on_targets
           ~verbose
           ~pyre_api
-          ~class_hierarchy_graph
           ~callables_to_definitions_map
+          ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
           ~cache
@@ -2129,8 +2204,8 @@ let generate_models_from_queries
     ~pyre_api
     ~scheduler
     ~scheduler_policies
-    ~class_hierarchy_graph
     ~callables_to_definitions_map
+    ~class_hierarchy_graph
     ~source_sink_filter
     ~verbose
     ~error_on_unexpected_models
@@ -2162,8 +2237,8 @@ let generate_models_from_queries
         ~pyre_api
         ~scheduler
         ~scheduler_policies
-        ~class_hierarchy_graph
         ~callables_to_definitions_map
+        ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
         ~targets:definitions_and_stubs
@@ -2182,8 +2257,8 @@ let generate_models_from_queries
         ~pyre_api
         ~scheduler
         ~scheduler_policies
-        ~class_hierarchy_graph
         ~callables_to_definitions_map
+        ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
         ~targets:attributes
@@ -2202,8 +2277,8 @@ let generate_models_from_queries
         ~pyre_api
         ~scheduler
         ~scheduler_policies
-        ~class_hierarchy_graph
         ~callables_to_definitions_map
+        ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
         ~targets:globals

@@ -290,6 +290,7 @@ module ModelQuery : sig
       | AnnotationConstraint of AnnotationConstraint.t
       | ReturnConstraint of AnnotationConstraint.t
       | AnyParameterConstraint of ParameterConstraint.t
+      | AnyOverridenMethod of t
       | ReadFromCache of ReadFromCache.t
       | AnyOf of t list
       | AllOf of t list
@@ -470,6 +471,8 @@ module Modelable : sig
   val signature : t -> Interprocedural.Target.CallablesSharedMemory.Signature.t
 
   val class_name : t -> string option
+
+  val is_instance_method : t -> bool
 
   val matches_find : t -> ModelQuery.Find.t -> bool
 

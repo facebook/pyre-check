@@ -1897,6 +1897,110 @@ let test_query_parsing_any_parent context =
   ()
 
 
+let test_query_parsing_any_overriden_method context =
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+      name = "get_foo",
+      find = "methods",
+      where = [
+        any_overriden_method(
+          fully_qualified_name.equals("object.__add__")
+        ),
+      ],
+      model = Returns(TaintSource[Test])
+    )
+    |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
+          name = "get_foo";
+          logging_group_name = None;
+          path = None;
+          where = [AnyOverridenMethod (FullyQualifiedNameConstraint (Equals "object.__add__"))];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+      name = "get_foo",
+      find = "methods",
+      where = [
+        any_overriden_method(AllOf(
+          cls.name.equals("MyClass"),
+          name.equals("method_name")
+        )),
+      ],
+      model = Returns(TaintSource[Test])
+    )
+    |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 12; column = 1 } };
+          name = "get_foo";
+          logging_group_name = None;
+          path = None;
+          where =
+            [
+              AnyOverridenMethod
+                (AllOf
+                   [
+                     ClassConstraint (NameConstraint (Equals "MyClass"));
+                     NameConstraint (Equals "method_name");
+                   ]);
+            ];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_invalid_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+      name = "get_foo",
+      find = "functions",
+      where = [
+        any_overriden_method(True),
+      ],
+      model = Returns(TaintSource[Test])
+    )
+    |}
+    ~expect:
+      "`any_overriden_method` is not a valid constraint for model queries with find clause of kind \
+       `functions`."
+    ();
+  ()
+
+
 let test_query_parsing_find_globals context =
   assert_queries
     ~context
@@ -2708,6 +2812,7 @@ let () =
          "query_parsing_expected_models" >:: test_query_parsing_expected_models;
          "query_parsing_any_child" >:: test_query_parsing_any_child;
          "query_parsing_any_parent" >:: test_query_parsing_any_parent;
+         "query_parsing_any_overriden_method" >:: test_query_parsing_any_overriden_method;
          "query_parsing_find_globals" >:: test_query_parsing_find_globals;
          "query_parsing_cache" >:: test_query_parsing_cache;
          "query_parsing_logging_group" >:: test_query_parsing_logging_group;

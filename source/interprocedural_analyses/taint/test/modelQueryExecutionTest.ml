@@ -59,6 +59,8 @@ let test_generated_annotations context =
       ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~pyre_api
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~class_hierarchy_graph
         ~modelable:
           (ModelQueryExecution.CallableQueryExecutor.make_modelable
@@ -105,6 +107,8 @@ let test_generated_annotations context =
       ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~pyre_api
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~class_hierarchy_graph
         ~modelable:
           (ModelQueryExecution.AttributeQueryExecutor.make_modelable
@@ -150,6 +154,8 @@ let test_generated_annotations context =
       ModelQueryExecution.GlobalVariableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
         ~pyre_api
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~class_hierarchy_graph
         ~modelable:
           (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable
@@ -4880,6 +4886,289 @@ let test_generated_annotations context =
     ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
 
+  (* Test any_overriden_method *)
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+        def bar(self): ...
+      class D(C):
+        def foo(self): ...
+        def bar(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+        def bar(self): ...
+      class D(C):
+        def foo(self): ...
+        def bar(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+        def bar(self): ...
+      class D(C):
+        def foo(self): ...
+        def bar(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+        def bar(self): ...
+      class D(C):
+        def foo(self): ...
+        def bar(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "bar"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+        def bar(self): ...
+      class D(C):
+        def foo(self): ...
+        def bar(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.D"; method_name = "bar"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  (* Only consider instance methods. *)
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        @classmethod
+        def foo(cls): ...
+      class B(A):
+        @classmethod
+        def foo(cls): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        @staticmethod
+        def foo(): ...
+      class B(A):
+        @staticmethod
+        def foo(): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (Constant true)];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (ClassConstraint (NameConstraint (Equals "A")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (ClassConstraint (NameConstraint (Equals "B")))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (AnyOverridenMethod (Constant true))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
+      class A:
+        def foo(self): ...
+      class B(A):
+        def foo(self): ...
+      class C(B):
+        def foo(self): ...
+     |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_foo";
+        logging_group_name = None;
+        path = None;
+        where = [AnyOverridenMethod (AnyOverridenMethod (Constant true))];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Method;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+
   assert_generated_annotations_for_globals
     ~source:{|
       foo = []
@@ -5051,9 +5340,9 @@ let test_generated_cache context =
       ModelQueryExecution.CallableQueryExecutor.generate_cache_from_queries_on_targets
         ~verbose:false
         ~pyre_api
-        ~class_hierarchy_graph
         ~callables_to_definitions_map:
           (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~class_hierarchy_graph
         ~targets:(List.map regular_callables ~f:Target.from_regular)
         queries
     in
