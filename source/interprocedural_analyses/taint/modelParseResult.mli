@@ -106,6 +106,8 @@ module SanitizeAnnotation : sig
         sinks: SanitizeTransform.Sink.t list;
       }
   [@@deriving equal]
+
+  val should_keep : source_sink_filter:SourceSinkFilter.t -> t -> bool
 end
 
 module TaintAnnotation : sig
@@ -133,6 +135,8 @@ module TaintAnnotation : sig
   val from_tito : Sinks.t -> t
 
   val add_cross_repository_anchor : canonical_name:string -> canonical_port:string -> t -> t
+
+  val should_keep : source_sink_filter:SourceSinkFilter.t -> t -> bool
 end
 
 module ModelAnnotation : sig
@@ -340,6 +344,8 @@ module ModelQuery : sig
           canonical_port: FormatString.t;
         }
     [@@deriving show, equal]
+
+    val should_keep : source_sink_filter:SourceSinkFilter.t -> t -> bool
   end
 
   module ExpectedModel : sig
@@ -388,6 +394,8 @@ module ModelQuery : sig
     [@@deriving show, equal]
 
     val is_write_to_cache : t -> bool
+
+    val should_keep : source_sink_filter:SourceSinkFilter.t -> t -> bool
   end
 
   (* `ModelQuery.t` represents a ModelQuery() statement. *)
@@ -407,6 +415,8 @@ module ModelQuery : sig
   val unique_identifier : t -> string
 
   val extract_extends_from_model_queries : t list -> string list
+
+  val should_keep : source_sink_filter:SourceSinkFilter.t -> t -> bool
 end
 
 module NameCaptures : sig

@@ -2214,6 +2214,12 @@ let generate_models_from_queries
     ~stubs
     queries
   =
+  let queries =
+    match source_sink_filter with
+    | Some source_sink_filter ->
+        List.filter ~f:(ModelParseResult.ModelQuery.should_keep ~source_sink_filter) queries
+    | None -> queries
+  in
   let extends_to_classnames =
     ModelParseResult.ModelQuery.extract_extends_from_model_queries queries
   in

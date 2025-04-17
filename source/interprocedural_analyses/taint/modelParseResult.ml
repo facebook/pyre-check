@@ -279,6 +279,23 @@ module SanitizeAnnotation = struct
         @ List.map
             ~f:(fun (SanitizeTransform.Sink.Named name) -> Format.sprintf "TaintSink[%s]" name)
             sinks
+
+
+  let should_keep ~source_sink_filter annotation =
+    let should_keep_source source =
+      SourceSinkFilter.should_keep_source source_sink_filter (Sources.from_sanitized_source source)
+    in
+    let should_keep_sink sink =
+      SourceSinkFilter.should_keep_sink source_sink_filter (Sinks.from_sanitized_sink sink)
+    in
+    match annotation with
+    | AllSources -> true
+    | SpecificSource source -> should_keep_source source
+    | AllSinks -> true
+    | SpecificSink sink -> should_keep_sink sink
+    | AllTito -> true
+    | SpecificTito { sources; sinks } ->
+        List.exists ~f:should_keep_source sources || List.exists ~f:should_keep_sink sinks
 end
 
 module TaintAnnotation = struct
@@ -334,6 +351,15 @@ module TaintAnnotation = struct
               };
           }
     | _ -> annotation
+
+
+  let should_keep ~source_sink_filter = function
+    | Sink { sink; _ } -> SourceSinkFilter.should_keep_sink source_sink_filter sink
+    | Source { source; _ } -> SourceSinkFilter.should_keep_source source_sink_filter source
+    | Tito { tito; _ } -> SourceSinkFilter.should_keep_sink source_sink_filter tito
+    | AddFeatureToArgument _ -> true
+    | Sanitize annotations ->
+        List.exists ~f:(SanitizeAnnotation.should_keep ~source_sink_filter) annotations
 
 
   let pp formatter = function
@@ -646,6 +672,15 @@ module ModelQuery = struct
           canonical_port: FormatString.t;
         }
     [@@deriving show, equal]
+
+    let should_keep ~source_sink_filter = function
+      | TaintAnnotation taint -> TaintAnnotation.should_keep ~source_sink_filter taint
+      | ParametricSourceFromAnnotation { kind; _ } ->
+          SourceSinkFilter.should_keep_source source_sink_filter (Sources.NamedSource kind)
+      | ParametricSinkFromAnnotation { kind; _ } ->
+          SourceSinkFilter.should_keep_sink source_sink_filter (Sinks.NamedSink kind)
+      | CrossRepositoryTaintAnchor { annotation; _ } ->
+          TaintAnnotation.should_keep ~source_sink_filter annotation
   end
 
   module ExpectedModel = struct
@@ -710,6 +745,21 @@ module ModelQuery = struct
     let is_write_to_cache = function
       | WriteToCache _ -> true
       | _ -> false
+
+
+    let should_keep ~source_sink_filter = function
+      | AllParameters { taint; _ }
+      | NamedParameter { taint; _ }
+      | PositionalParameter { taint; _ }
+      | Parameter { taint; _ }
+      | Return taint
+      | CapturedVariables { taint; _ }
+      | Attribute taint
+      | Global taint ->
+          List.exists ~f:(QueryTaintAnnotation.should_keep ~source_sink_filter) taint
+      | Modes _
+      | WriteToCache _ ->
+          true
   end
 
   (* `ModelQuery.t` represents a ModelQuery() statement. *)
@@ -770,6 +820,10 @@ module ModelQuery = struct
       ~f:(fun result model_query -> List.fold ~f:process_constraint ~init:result model_query.where)
       ~init:[]
       model_queries
+
+
+  let should_keep ~source_sink_filter { models; _ } =
+    List.exists ~f:(Model.should_keep ~source_sink_filter) models
 end
 
 (* Store all regular expression captures in name constraints for WriteToCache queries. *)

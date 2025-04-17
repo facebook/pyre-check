@@ -244,3 +244,12 @@ class ClassTest3_Alarm1:
 
     def method2():
         return 0
+
+
+
+def transform_x(x):
+    pass
+
+
+def transform_unused_y(x):
+    pass

@@ -190,3 +190,23 @@ ModelQuery(
     Returns(TaintSource[SourceC]),
   ]
 )
+
+# Test transforms
+ModelQuery(
+  name = "get_transform_x",
+  find = "functions",
+  where = [name.equals("transform_x")],
+  model = [
+    Parameters(TaintInTaintOut[Transform[TransformX]], where=index.equals(0)),
+  ]
+)
+
+# Since TransformY is not present in any rule, no model should be generated.
+ModelQuery(
+  name = "get_transform_unused_y",
+  find = "functions",
+  where = [name.equals("transform_unused_y")],
+  model = [
+    Parameters(TaintInTaintOut[Transform[TransformY]], where=index.equals(0)),
+  ]
+)

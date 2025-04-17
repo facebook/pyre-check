@@ -1965,6 +1965,39 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query.transform_x",
+    "filename": "model_query.py",
+    "callable_line": 250,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "get_transform_x" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.two_parameters",
     "filename": "model_query.py",
     "callable_line": 26,
