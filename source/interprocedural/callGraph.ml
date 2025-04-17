@@ -212,6 +212,8 @@ module CallableToDecoratorsMap = struct
       "click.pass_obj";
       "click.make_pass_decorator";
       "click.decorators.pass_meta_key";
+      "overrides.override";
+      "overrides.overrides";
     ]
     @ Target.class_method_decorators
     @ Target.static_method_decorators
