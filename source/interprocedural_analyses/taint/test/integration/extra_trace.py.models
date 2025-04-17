@@ -237,6 +237,14 @@
           {
             "kinds": [
               {
+                "extra_traces": [
+                  {
+                    "message": "TransformX",
+                    "origin": { "line": 177, "start": 15, "end": 32 },
+                    "leaf_kind": "TransformX:ExtraTraceSink",
+                    "trace_kind": "sink"
+                  }
+                ],
                 "local_features": [
                   { "always-via": "transform-tito-depth:1" }
                 ],

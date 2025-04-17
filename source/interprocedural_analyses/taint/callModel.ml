@@ -53,47 +53,53 @@ module ArgumentMatches = struct
 end
 
 let match_captures ~model ~captures_taint ~location =
-  let collect_capture = function
-    | AccessPath.Root.CapturedVariable { name; _ } as capture ->
-        Some
-          ( ( Node.create
-              (* captured variables are not present at call site, so location of call expression
-                 instead of location of assignment that introduces taint is used *)
-                ~location
-                (Expression.Name (Name.Identifier name)),
-              capture ),
-            ForwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] captures_taint )
-    | _ -> None
-  in
-  let sink_captures, sink_captures_taint =
+  let sink_capture_roots =
     model.Model.backward.sink_taint
     |> BackwardState.roots
-    |> List.filter_map ~f:collect_capture
-    |> List.unzip
+    |> List.filter ~f:AccessPath.Root.is_captured_variable
+    |> AccessPath.Root.Set.of_list
   in
-  let tito_captures, tito_captures_taint =
+  let tito_capture_roots =
     model.Model.backward.taint_in_taint_out
     |> BackwardState.roots
-    |> List.filter_map ~f:collect_capture
-    |> List.unzip
+    |> List.filter ~f:AccessPath.Root.is_captured_variable
+    |> AccessPath.Root.Set.of_list
   in
-  ( sink_captures_taint @ tito_captures_taint,
-    List.map sink_captures ~f:(fun (expression, access_path) ->
-        {
-          ArgumentMatches.argument = expression;
-          generation_source_matches = [];
-          sink_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
-          tito_matches = [];
-          sanitize_matches = [];
-        })
-    @ List.map tito_captures ~f:(fun (expression, access_path) ->
-          {
-            ArgumentMatches.argument = expression;
-            generation_source_matches = [];
-            sink_matches = [];
-            tito_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
-            sanitize_matches = [];
-          }) )
+  let make_taint_with_argument_match capture_root =
+    let name =
+      match capture_root with
+      | AccessPath.Root.CapturedVariable { name; _ } -> name
+      | _ -> failwith "unreachable"
+    in
+    let expression =
+      (* captured variables are not present at call site, so location of call expression instead of
+         location of assignment that introduces taint is used *)
+      Node.create ~location (Expression.Name (Name.Identifier name))
+    in
+    let taint = ForwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] captures_taint in
+    let argument_match =
+      {
+        ArgumentMatches.argument = expression;
+        generation_source_matches = [];
+        sink_matches =
+          (if AccessPath.Root.Set.mem capture_root sink_capture_roots then
+             [{ AccessPath.root = capture_root; actual_path = []; formal_path = [] }]
+          else
+            []);
+        tito_matches =
+          (if AccessPath.Root.Set.mem capture_root tito_capture_roots then
+             [{ AccessPath.root = capture_root; actual_path = []; formal_path = [] }]
+          else
+            []);
+        sanitize_matches = [];
+      }
+    in
+    taint, argument_match
+  in
+  AccessPath.Root.Set.union sink_capture_roots tito_capture_roots
+  |> AccessPath.Root.Set.elements
+  |> List.map ~f:make_taint_with_argument_match
+  |> List.unzip
 
 
 let captures_as_arguments =
