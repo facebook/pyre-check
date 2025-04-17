@@ -345,7 +345,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> sofar)
   end
 
-  let add_extra_traces_for_transforms
+  let add_extra_traces_for_tito_transforms
       ~argument_access_path
       ~named_transforms
       ~sink_trees
@@ -359,11 +359,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~tito_roots
         ~sink_trees
     in
-    ForwardState.Tree.transform
-      ForwardTaint.Self
-      Map
-      ~f:(ForwardTaint.add_extra_traces ~extra_traces)
-      taint
+    if not (ExtraTraceFirstHop.Set.is_bottom extra_traces) then
+      ForwardState.Tree.transform
+        ForwardTaint.Self
+        Map
+        ~f:(ForwardTaint.add_extra_traces ~extra_traces)
+        taint
+    else
+      (* If there are no extra traces, this means we are trying to apply a tito that is a false
+         positive. In that case, we should stop propagating the taint.
+
+         This can happen when the tito should be on a specific path, but was collapsed to the root
+         due to over-approximations, while the sink was not collapsed, and ended up not being
+         propagated. See for instance integration test `transform_tito_with_missing_extra_sink`. *)
+      ForwardState.Tree.bottom
 
 
   let apply_call_target
@@ -476,7 +485,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~f:(Features.BreadcrumbSet.add breadcrumb)
                   taint_to_propagate
               in
-              add_extra_traces_for_transforms
+              add_extra_traces_for_tito_transforms
                 ~argument_access_path
                 ~named_transforms
                 ~sink_trees

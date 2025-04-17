@@ -355,7 +355,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     { arguments_taint; implicit_argument_taint; captures_taint; captures; state }
 
 
-  let add_extra_traces_for_transforms
+  let add_extra_traces_for_tito_transforms
       ~argument_access_path
       ~named_transforms
       ~sink_trees
@@ -369,11 +369,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~tito_roots
         ~sink_trees
     in
-    BackwardState.Tree.transform
-      BackwardTaint.Self
-      Map
-      ~f:(BackwardTaint.add_extra_traces ~extra_traces)
-      taint
+    if not (ExtraTraceFirstHop.Set.is_bottom extra_traces) then
+      BackwardState.Tree.transform
+        BackwardTaint.Self
+        Map
+        ~f:(BackwardTaint.add_extra_traces ~extra_traces)
+        taint
+    else (* See reasoning in `add_extra_traces_for_tito_transforms` of forwardAnalysis.ml *)
+      BackwardState.Tree.bottom
 
 
   let apply_call_target
@@ -530,7 +533,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~f:(Features.BreadcrumbSet.add breadcrumb)
                   taint_to_propagate
               in
-              add_extra_traces_for_transforms
+              add_extra_traces_for_tito_transforms
                 ~argument_access_path:tito_path
                 ~named_transforms
                 ~sink_trees

@@ -161,7 +161,7 @@ def transform_tito_with_missing_extra_sink(self):
     return mismatching_tito_extra_sink(self)
 
 
-def issue_missing_subtrace_due_to_mismatch_tito_extra_sink(arg):
+def no_issue_via_transform_tito_with_missing_extra_sink(arg):
     x = _test_source()
     y = transform_tito_with_missing_extra_sink(x)
     _test_sink(y)
