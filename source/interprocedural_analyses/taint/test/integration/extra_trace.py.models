@@ -220,6 +220,71 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "extra_trace.issue_via_transfom_captured_variable",
+    "callable_line": 170,
+    "code": 6000,
+    "line": 177,
+    "start": 15,
+    "end": 32,
+    "filename": "extra_trace.py",
+    "message": "[TestSource] may reach [TestSink]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-via": "transform-tito-depth:1" }
+                ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "TransformX@TestSource"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" }, { "via": "captured-variable" }
+            ],
+            "tito_positions": [ { "line": 177, "start": 15, "end": 32 } ],
+            "origin": { "line": 171, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "TestSink"
+              }
+            ],
+            "origin": { "line": 177, "start": 15, "end": 32 },
+            "call_site": "177:4-177:33"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "transform-tito-depth:1" },
+      { "always-via": "tito" },
+      { "via": "captured-variable" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "extra_trace.issue_via_transfom_captured_variable:6000:0:Call|_test_sink|0|formal(arg):1cee3d41f2cee8b532be122842d9f72a"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Overrides{extra_trace.OverrideTransform.transform}",
@@ -602,6 +667,41 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
+    "filename": "extra_trace.py",
+    "callable_line": 174,
+    "sinks": [
+      {
+        "port": "captured_variable($local_extra_trace?issue_via_transfom_captured_variable$x)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "TransformX@ExtraTraceSink" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "captured_variable($local_extra_trace?issue_via_transfom_captured_variable$x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "LocalReturn" },
+              { "return_paths": { "": 0 }, "kind": "TransformX@LocalReturn" }
+            ],
+            "local_features": [ { "via": "captured-variable" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "transform_on_captured_variable" ]
   }
 }
 {
