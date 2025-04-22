@@ -2715,15 +2715,13 @@ let extract_tito_and_sink_models
     entry_taint
   =
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
-  let simplify ~shape_breadcrumbs ~limit_breadcrumbs tree =
+  let simplify ~shape_breadcrumbs ~limit_breadcrumbs ~maximum_tree_width tree =
     if apply_broadening then
       tree
       |> BackwardState.Tree.shape
            ~mold_with_return_access_paths:is_constructor
            ~breadcrumbs:shape_breadcrumbs
-      |> BackwardState.Tree.limit_to
-           ~breadcrumbs:limit_breadcrumbs
-           ~width:maximum_model_sink_tree_width
+      |> BackwardState.Tree.limit_to ~breadcrumbs:limit_breadcrumbs ~width:maximum_tree_width
       |> BackwardState.Tree.transform_tito
            Features.ReturnAccessPathTree.Self
            Map
@@ -2797,6 +2795,7 @@ let extract_tito_and_sink_models
         |> simplify
              ~shape_breadcrumbs:(Features.model_tito_shaping_set ())
              ~limit_breadcrumbs:(Features.model_tito_broadening_set ())
+             ~maximum_tree_width:maximum_model_tito_tree_width
         |> add_type_breadcrumbs annotation
       in
       let candidate_tree =
@@ -2808,18 +2807,9 @@ let extract_tito_and_sink_models
               candidate_tree
         | _ -> candidate_tree
       in
-      let candidate_tree =
-        candidate_tree
-        |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
-        |> BackwardState.Tree.add_via_features via_features_to_attach
-      in
-      if apply_broadening then
-        BackwardState.Tree.limit_to
-          ~breadcrumbs:(Features.model_tito_broadening_set ())
-          ~width:maximum_model_tito_tree_width
-          candidate_tree
-      else
-        candidate_tree
+      candidate_tree
+      |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
+      |> BackwardState.Tree.add_via_features via_features_to_attach
     in
     let sink_taint =
       let simplify_sink_taint ~key:sink ~data:sink_tree accumulator =
@@ -2844,6 +2834,7 @@ let extract_tito_and_sink_models
               |> simplify
                    ~shape_breadcrumbs:(Features.model_sink_shaping_set ())
                    ~limit_breadcrumbs:(Features.model_sink_broadening_set ())
+                   ~maximum_tree_width:maximum_model_sink_tree_width
               |> add_type_breadcrumbs annotation
             in
             let sink_tree =
