@@ -137,6 +137,8 @@ class PyreConnection:
         return result
 
     def stop_server(self, ignore_errors: bool = False) -> None:
+        if not self.server_initialized:
+            return
         self._run_pyre_command(["stop"], check=not ignore_errors)
 
     @staticmethod
