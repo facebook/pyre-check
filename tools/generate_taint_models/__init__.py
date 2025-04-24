@@ -47,9 +47,6 @@ from .get_filtered_sources import (  # noqa
     FilteredSourceGenerator as FilteredSourceGenerator,
 )
 from .get_globals import GlobalModelGenerator as GlobalModelGenerator  # noqa
-from .get_graphene_models import (  # noqa
-    GrapheneModelsGenerator as GrapheneModelsGenerator,
-)
 from .get_graphql_sources import (  # noqa
     GraphQLSourceGenerator as GraphQLSourceGenerator,
 )
