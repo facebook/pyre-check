@@ -2789,23 +2789,6 @@ let redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call =
 
 
 let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location = function
-  | Expression.BinaryOperator { BinaryOperator.operator; left; right } ->
-      Expression.Call
-        {
-          Call.callee =
-            {
-              Node.location = Node.location left;
-              value =
-                Expression.Name
-                  (Name.Attribute
-                     {
-                       Name.Attribute.base = left;
-                       attribute = BinaryOperator.binary_operator_method operator;
-                       special = true;
-                     });
-            };
-          arguments = [{ Call.Argument.name = None; value = right }];
-        }
   | Expression.Subscript { Subscript.base; index } ->
       Expression.Call
         {
@@ -3814,7 +3797,14 @@ module CalleeVisitor = struct
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
-        | Expression.BinaryOperator _ -> failwith "T191035448"
+        | Expression.BinaryOperator ({ left; _ } as operator) ->
+            let implicit_call =
+              BinaryOperator.lower_to_call ~callee_location:left.Node.location operator
+            in
+            resolve_callees ~call:implicit_call
+            |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
+            |> ExpressionCallees.from_call
+            |> register_targets ~expression_identifier:(call_identifier implicit_call)
         | Expression.ComparisonOperator comparison -> (
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
@@ -4949,7 +4939,10 @@ module HigherOrderCallGraph = struct
               value
           with
           | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
-          | BinaryOperator _ -> CallTarget.Set.bottom, state
+          | BinaryOperator { left; right; _ } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
+              CallTarget.Set.bottom, state
           | BooleanOperator _ -> CallTarget.Set.bottom, state
           | ComparisonOperator _ -> CallTarget.Set.bottom, state
           | Call ({ callee = _; arguments } as call) ->

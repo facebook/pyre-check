@@ -168,10 +168,7 @@
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
               { "via": "format-string" },
-              { "via": "model-shaping" },
               { "via": "tito" },
-              { "via": "broadening" },
-              { "via": "model-tito-shaping" },
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 57, "start": 15, "end": 23 } ],

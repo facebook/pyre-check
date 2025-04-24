@@ -2011,7 +2011,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               ForwardState.Tree.join taint default_taint, state
           | [] -> taint, state
-          | _ -> failwith "unreachable "
+          | _ -> failwith "unreachable"
         in
         let taint = add_type_breadcrumbs taint in
         taint, state
@@ -2039,93 +2039,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:add_root_taint
         in
         taint, state
-    (* Special case `"{}".format(s)` and `"%s" % (s,)` for Literal String Sinks *)
-    | {
-        callee =
-          {
-            Node.value =
-              Name
-                (Name.Attribute
-                  {
-                    base =
-                      {
-                        Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                        location = value_location;
-                      };
-                    attribute = "__mod__" as function_name;
-                    _;
-                  });
-            _;
-          };
-        arguments;
-      }
-    | {
-        callee =
-          {
-            Node.value =
-              Name
-                (Name.Attribute
-                  {
-                    base =
-                      {
-                        Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                        location = value_location;
-                      };
-                    attribute = "format" as function_name;
-                    _;
-                  });
-            _;
-          };
-        arguments;
-      } ->
-        let nested_expressions = List.map ~f:(fun call_argument -> call_argument.value) arguments in
-        let call_target =
-          CallModel.StringFormatCall.CallTarget.create
-            ~call_targets:callees.call_targets
-            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name function_name)
-        in
-        analyze_joined_string
-          ~pyre_in_context
-          ~state
-          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
-          {
-            CallModel.StringFormatCall.nested_expressions;
-            string_literal = { value; location = value_location };
-            call_target;
-            location;
-          }
-    (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
-    | {
-     callee =
-       { Node.value = Name (Name.Attribute { base = expression; attribute = "__add__"; _ }); _ };
-     arguments =
-       [
-         {
-           Call.Argument.value =
-             {
-               Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
-               location = value_location;
-             };
-           name = None;
-         };
-       ];
-    } ->
-        let call_target =
-          CallModel.StringFormatCall.CallTarget.create
-            ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
-        in
-        analyze_joined_string
-          ~pyre_in_context
-          ~state
-          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
-          {
-            CallModel.StringFormatCall.nested_expressions = [expression];
-            string_literal = { value; location = value_location };
-            call_target;
-            location;
-          }
+    (* Special case `"{}".format(s)` for Literal String Sinks *)
     | {
      callee =
        {
@@ -2138,26 +2052,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      Node.value = Constant (Constant.String { StringLiteral.value; _ });
                      location = value_location;
                    };
-                 attribute = "__add__";
+                 attribute = "format" as function_name;
                  _;
                });
          _;
        };
-     arguments = [{ Call.Argument.value = expression; name = None }];
+     arguments;
     } ->
+        let nested_expressions = List.map ~f:(fun call_argument -> call_argument.value) arguments in
         let call_target =
           CallModel.StringFormatCall.CallTarget.create
             ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name function_name)
         in
         analyze_joined_string
           ~pyre_in_context
           ~state
-          ~breadcrumbs:
-            (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           {
-            CallModel.StringFormatCall.nested_expressions = [expression];
+            CallModel.StringFormatCall.nested_expressions;
             string_literal = { value; location = value_location };
             call_target;
             location;
@@ -2359,6 +2272,149 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     join_analyze_attribute_access_result property_call_result regular_attribute_result
 
 
+  and analyze_binary_operator
+      ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
+      ~location
+      ~state
+      ~is_result_used
+      ({ BinaryOperator.left; _ } as operator)
+    =
+    let implicit_call = BinaryOperator.lower_to_call ~callee_location:left.Node.location operator in
+    let dunder_method = BinaryOperator.binary_operator_method operator.operator in
+    let callees = get_call_callees ~location ~call:implicit_call in
+    match operator with
+    (* Special case `"%s" % (s,)` for Literal String Sinks *)
+    | {
+     BinaryOperator.left =
+       {
+         Node.value = Constant (Constant.String { StringLiteral.value; _ });
+         location = value_location;
+       };
+     right;
+     operator = BinaryOperator.Mod;
+    } ->
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name dunder_method)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~state
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+          {
+            CallModel.StringFormatCall.nested_expressions = [right];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
+    (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
+    | {
+     BinaryOperator.left;
+     right =
+       {
+         Node.value = Constant (Constant.String { StringLiteral.value; _ });
+         location = value_location;
+       };
+     operator = BinaryOperator.Add;
+    } ->
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~state
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
+          {
+            CallModel.StringFormatCall.nested_expressions = [left];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
+    | {
+     BinaryOperator.left =
+       {
+         Node.value = Constant (Constant.String { StringLiteral.value; _ });
+         location = value_location;
+       };
+     right;
+     operator = BinaryOperator.Add;
+    } ->
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~state
+          ~breadcrumbs:
+            (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
+          {
+            CallModel.StringFormatCall.nested_expressions = [right];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
+    | {
+     BinaryOperator.left;
+     right;
+     operator = (BinaryOperator.Add | BinaryOperator.Mod) as operator;
+    }
+      when CallGraph.CallCallees.is_string_method callees ->
+        let breadcrumbs =
+          match operator with
+          | BinaryOperator.Mod -> Features.BreadcrumbSet.singleton (Features.format_string ())
+          | _ -> Features.BreadcrumbSet.empty
+        in
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name dunder_method)
+        in
+        let string_literal, nested_expressions =
+          CallModel.arguments_for_string_format [left; right]
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~state
+          ~breadcrumbs
+          {
+            CallModel.StringFormatCall.nested_expressions;
+            string_literal = { CallModel.StringFormatCall.value = string_literal; location };
+            call_target;
+            location;
+          }
+    | { BinaryOperator.left; right; _ } ->
+        let left_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:left
+        in
+        let right_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:right
+        in
+        let callee_taint =
+          left_taint
+          |> ForwardState.Tree.read [Abstract.TreeDomain.Label.Index dunder_method]
+          |> ForwardState.Tree.add_local_first_field dunder_method
+        in
+        apply_callees_with_arguments_taint
+          ~apply_tito:true
+          ~pyre_in_context
+          ~is_result_used
+          ~callee:implicit_call.callee
+          ~call_location:location
+          ~arguments:implicit_call.arguments
+          ~self_taint:(Some left_taint)
+          ~callee_taint:(Some callee_taint)
+          ~arguments_taint:[right_taint]
+          ~state
+          callees
+
+
   (* If there exists a triggered flow, `call_target` is the responsible callsite. We assume there is
      a call to `call_target` whose arguments are `string_literal` followed by
      `nested_expressions`. *)
@@ -2518,7 +2574,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
-      | BinaryOperator _ -> failwith "T191035448"
+      | BinaryOperator operator ->
+          analyze_binary_operator ~pyre_in_context ~location ~state ~is_result_used operator
       | BooleanOperator { left; operator = _; right } ->
           let left_taint, state =
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left

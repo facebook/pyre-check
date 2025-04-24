@@ -2132,7 +2132,9 @@ module State (Context : Context) = struct
                   }))
       | BinaryOperator operator ->
           let resolved =
-            forward_expression ~resolution (BinaryOperator.override ~location operator)
+            forward_expression
+              ~resolution
+              (BinaryOperator.lower_to_expression ~location ~callee_location:location operator)
           in
           { resolved with errors = resolved.errors }
       | BooleanOperator { BooleanOperator.left; operator; right } -> (

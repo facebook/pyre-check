@@ -159,7 +159,9 @@ and BinaryOperator : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val override : location:Location.t -> t -> Expression.t
+  val lower_to_call : callee_location:Location.t -> t -> Call.t
+
+  val lower_to_expression : location:Location.t -> callee_location:Location.t -> t -> Expression.t
 
   val binary_operator_method : operator -> string
 end

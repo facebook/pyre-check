@@ -404,7 +404,9 @@ and BinaryOperator : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val override : location:Location.t -> t -> Expression.t
+  val lower_to_call : callee_location:Location.t -> t -> Call.t
+
+  val lower_to_expression : location:Location.t -> callee_location:Location.t -> t -> Expression.t
 
   val binary_operator_method : operator -> string
 end = struct
@@ -476,25 +478,27 @@ end = struct
     | FloorDiv -> "__floordiv__"
 
 
-  let override ~location { left; operator; right } =
+  let lower_to_call ~callee_location { left; operator; right } =
     let arguments = [{ Call.Argument.name = None; value = right }] in
-    Expression.Call
-      {
-        Call.callee =
-          {
-            Node.location;
-            value =
-              Expression.Name
-                (Name.Attribute
-                   {
-                     Name.Attribute.base = left;
-                     attribute = binary_operator_method operator;
-                     special = true;
-                   });
-          };
-        arguments;
-      }
-    |> Node.create ~location
+    {
+      Call.callee =
+        {
+          Node.location = callee_location;
+          value =
+            Expression.Name
+              (Name.Attribute
+                 {
+                   Name.Attribute.base = left;
+                   attribute = binary_operator_method operator;
+                   special = true;
+                 });
+        };
+      arguments;
+    }
+
+
+  let lower_to_expression ~location ~callee_location operator =
+    Node.create ~location (Expression.Call (lower_to_call ~callee_location operator))
 end
 
 and Comprehension : sig

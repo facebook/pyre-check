@@ -307,6 +307,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_definition ~define:_ state = state
 
+  let globals_to_constants = function
+    | { Node.value = Expression.Name (Name.Identifier identifier); _ } as value -> (
+        let as_reference = identifier |> Reference.create |> Reference.delocalize in
+        let global_string =
+          Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
+            FunctionContext.global_constants
+            ~cache:true
+            as_reference
+        in
+        match global_string with
+        | Some global_string ->
+            global_string
+            |> (fun string_literal -> Expression.Constant (Constant.String string_literal))
+            |> Node.create ~location:value.location
+        | _ -> value)
+    | value -> value
+
+
   type call_target_result = {
     arguments_taint: BackwardState.Tree.t list;
     implicit_argument_taint: CallModel.ImplicitArgument.Backward.t;
@@ -1878,45 +1896,26 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 Expression.Tuple
                   (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
             }
-    (* Special case `"{}".format(s)` and `"%s" % (s,)` for Literal String Sinks *)
+    (* Special case `"{}".format(s)` for Literal String Sinks *)
     | {
-        callee =
-          {
-            Node.value =
-              Name
-                (Name.Attribute
-                  {
-                    base =
-                      {
-                        Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                        location = value_location;
-                      };
-                    attribute = "__mod__" as function_name;
-                    _;
-                  });
-            _;
-          };
-        arguments;
-      }
-    | {
-        callee =
-          {
-            Node.value =
-              Name
-                (Name.Attribute
-                  {
-                    base =
-                      {
-                        Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                        location = value_location;
-                      };
-                    attribute = "format" as function_name;
-                    _;
-                  });
-            _;
-          };
-        arguments;
-      } ->
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               {
+                 base =
+                   {
+                     Node.value = Constant (Constant.String { StringLiteral.value; _ });
+                     location = value_location;
+                   };
+                 attribute = "format" as function_name;
+                 _;
+               });
+         _;
+       };
+     arguments;
+    } ->
         let arguments_formatted_string =
           List.map ~f:(fun call_argument -> call_argument.value) arguments
         in
@@ -1939,75 +1938,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
     | {
      callee =
-       { Node.value = Name (Name.Attribute { base = expression; attribute = "__add__"; _ }); _ };
-     arguments =
-       [
-         {
-           Call.Argument.value =
-             {
-               Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
-               location = value_location;
-             };
-           name = None;
-         };
-       ];
-    } ->
-        let call_target =
-          CallModel.StringFormatCall.CallTarget.create
-            ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
-        in
-        analyze_joined_string
-          ~pyre_in_context
-          ~taint
-          ~state
-          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
-          {
-            CallModel.StringFormatCall.nested_expressions = [expression];
-            string_literal = { value; location = value_location };
-            call_target;
-            location;
-          }
-    | {
-     callee =
-       {
-         Node.value =
-           Name
-             (Name.Attribute
-               {
-                 base =
-                   {
-                     Node.value = Constant (Constant.String { StringLiteral.value; _ });
-                     location = value_location;
-                   };
-                 attribute = "__add__";
-                 _;
-               });
-         _;
-       };
-     arguments = [{ Call.Argument.value = expression; name = None }];
-    } ->
-        let call_target =
-          CallModel.StringFormatCall.CallTarget.create
-            ~call_targets:callees.call_targets
-            ~default_target:
-              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
-        in
-        analyze_joined_string
-          ~pyre_in_context
-          ~taint
-          ~state
-          ~breadcrumbs:
-            (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
-          {
-            CallModel.StringFormatCall.nested_expressions = [expression];
-            string_literal = { value; location = value_location };
-            call_target;
-            location;
-          }
-    | {
-     callee =
        {
          Node.value =
            Name
@@ -2018,23 +1948,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments;
     }
       when CallGraph.CallCallees.is_string_method callees ->
-        let globals_to_constants = function
-          | { Node.value = Expression.Name (Name.Identifier identifier); _ } as value -> (
-              let as_reference = identifier |> Reference.create |> Reference.delocalize in
-              let global_string =
-                Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
-                  FunctionContext.global_constants
-                  ~cache:true
-                  as_reference
-              in
-              match global_string with
-              | Some global_string ->
-                  global_string
-                  |> (fun string_literal -> Expression.Constant (Constant.String string_literal))
-                  |> Node.create ~location:value.location
-              | _ -> value)
-          | value -> value
-        in
         let breadcrumbs =
           match function_name with
           | "__mod__"
@@ -2106,6 +2019,154 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments
           ~call_taint:taint
           callees
+
+
+  and analyze_binary_operator
+      ~pyre_in_context
+      ~location
+      ~taint
+      ~state
+      ({ BinaryOperator.left; _ } as operator)
+    =
+    let implicit_call = BinaryOperator.lower_to_call ~callee_location:left.Node.location operator in
+    let dunder_method = BinaryOperator.binary_operator_method operator.operator in
+    let callees = get_call_callees ~location ~call:implicit_call in
+    match operator with
+    (* Special case `"%s" % (s,)` for Literal String Sinks *)
+    | {
+     BinaryOperator.left =
+       {
+         Node.value = Constant (Constant.String { StringLiteral.value; _ });
+         location = value_location;
+       };
+     right;
+     operator = BinaryOperator.Mod;
+    } ->
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name dunder_method)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~taint
+          ~state
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+          {
+            CallModel.StringFormatCall.nested_expressions = [right];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
+    (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
+    | {
+     BinaryOperator.left;
+     right =
+       {
+         Node.value = Constant (Constant.String { StringLiteral.value; _ });
+         location = value_location;
+       };
+     operator = BinaryOperator.Add;
+    } ->
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~taint
+          ~state
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
+          {
+            CallModel.StringFormatCall.nested_expressions = [left];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
+    | {
+     BinaryOperator.left =
+       {
+         Node.value = Constant (Constant.String { StringLiteral.value; _ });
+         location = value_location;
+       };
+     right;
+     operator = BinaryOperator.Add;
+    } ->
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:
+              (CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_add)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~taint
+          ~state
+          ~breadcrumbs:
+            (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
+          {
+            CallModel.StringFormatCall.nested_expressions = [right];
+            string_literal = { value; location = value_location };
+            call_target;
+            location;
+          }
+    | {
+     BinaryOperator.left;
+     right;
+     operator = (BinaryOperator.Add | BinaryOperator.Mod) as operator;
+    }
+      when CallGraph.CallCallees.is_string_method callees ->
+        let breadcrumbs =
+          match operator with
+          | BinaryOperator.Mod -> Features.BreadcrumbSet.singleton (Features.format_string ())
+          | _ -> Features.BreadcrumbSet.empty
+        in
+        let substrings = List.map ~f:globals_to_constants [left; right] in
+        let string_literal, substrings = CallModel.arguments_for_string_format substrings in
+        let call_target =
+          CallModel.StringFormatCall.CallTarget.create
+            ~call_targets:callees.call_targets
+            ~default_target:(CallModel.StringFormatCall.CallTarget.from_function_name dunder_method)
+        in
+        analyze_joined_string
+          ~pyre_in_context
+          ~taint
+          ~state
+          ~breadcrumbs
+          {
+            CallModel.StringFormatCall.nested_expressions = substrings;
+            string_literal = { CallModel.StringFormatCall.value = string_literal; location };
+            call_target;
+            location;
+          }
+    | { BinaryOperator.left; right; _ } ->
+        let { arguments_taint; implicit_argument_taint; state; _ } =
+          apply_callees_and_return_arguments_taint
+            ~apply_tito:true
+            ~pyre_in_context
+            ~callee:implicit_call.callee
+            ~call_location:location
+            ~arguments:implicit_call.arguments
+            ~state
+            ~call_taint:taint
+            callees
+        in
+        let state =
+          match arguments_taint with
+          | right_taint :: _ ->
+              analyze_expression ~pyre_in_context ~taint:right_taint ~state ~expression:right
+          | _ -> failwith "unexpected"
+        in
+        let left_taint =
+          match implicit_argument_taint with
+          | CallModel.ImplicitArgument.Backward.Callee taint
+          | CalleeBase taint ->
+              taint
+          | None -> BackwardState.Tree.bottom
+        in
+        analyze_expression ~pyre_in_context ~taint:left_taint ~state ~expression:left
 
 
   and analyze_joined_string
@@ -2258,7 +2319,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
-      | BinaryOperator _ -> failwith "T101299882"
+      | BinaryOperator operator ->
+          analyze_binary_operator ~pyre_in_context ~location ~taint ~state operator
       | BooleanOperator { left; operator = _; right } ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left
@@ -2559,7 +2621,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
               join property_call_state attribute_state
           | _ -> analyze_assignment ~pyre_in_context ~target ~value state)
-    | AugmentedAssign ({ target; value; _ } as assign) -> (
+    | AugmentedAssign ({ target; value; _ } as assign) ->
         let target_taint = compute_assignment_taint ~pyre_in_context target state |> fst in
         let state = clear_target_taint ~fields:[] state target in
 
@@ -2584,11 +2646,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let state =
           analyze_expression ~pyre_in_context ~taint:value_taint ~state ~expression:value
         in
-        match implicit_argument_taint with
-        | CallModel.ImplicitArgument.Backward.Callee taint
-        | CalleeBase taint ->
-            analyze_expression ~pyre_in_context ~taint ~state ~expression:target
-        | None -> failwith "unexpected")
+        let target_taint =
+          match implicit_argument_taint with
+          | CallModel.ImplicitArgument.Backward.Callee taint
+          | CalleeBase taint ->
+              taint
+          | None -> BackwardState.Tree.bottom
+        in
+        analyze_expression ~pyre_in_context ~taint:target_taint ~state ~expression:target
     | Assert { test; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression:test
     | Break
