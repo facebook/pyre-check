@@ -4178,7 +4178,9 @@ struct
             ~callees_at_location:Context.callees_at_location
             target;
 
-          let implicit_call = AugmentedAssign.lower_to_call ~location assign in
+          let implicit_call =
+            AugmentedAssign.lower_to_call ~callee_location:target.Node.location assign
+          in
           let { NodeVisitorContext.debug; callables_to_definitions_map; override_graph; _ } =
             Context.node_visitor_context
           in

@@ -6003,7 +6003,12 @@ module State (Context : Context) = struct
         forward_assignment ~resolution ~location ~target ~annotation ~value
     | AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment) ->
         (* lower augmented assignment to regular assignment *)
-        let call = AugmentedAssign.lower_to_expression ~location augmented_assignment in
+        let call =
+          AugmentedAssign.lower_to_expression
+            ~location
+            ~callee_location:location
+            augmented_assignment
+        in
         forward_assignment ~resolution ~location ~target ~annotation:None ~value:(Some call)
     | TypeAlias { TypeAlias.name; type_params; value } ->
         let type_params_as_variables, type_params_errors =

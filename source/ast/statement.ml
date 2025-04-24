@@ -107,13 +107,13 @@ module AugmentedAssign = struct
     | FloorDiv -> "__ifloordiv__"
 
 
-  let lower_to_call ~location { target; operator; value } =
+  let lower_to_call ~callee_location { target; operator; value } =
     let open Expression in
     let arguments = [{ Call.Argument.name = None; value }] in
     {
       Call.callee =
         {
-          Node.location;
+          Node.location = callee_location;
           value =
             Expression.Name
               (Name.Attribute
@@ -127,9 +127,9 @@ module AugmentedAssign = struct
     }
 
 
-  let lower_to_expression ~location assign =
+  let lower_to_expression ~location ~callee_location assign =
     let open Expression in
-    Expression.Call (lower_to_call ~location assign) |> Node.create ~location
+    Expression.Call (lower_to_call ~callee_location assign) |> Node.create ~location
 end
 
 module Import = struct

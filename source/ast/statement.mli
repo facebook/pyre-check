@@ -32,9 +32,9 @@ module AugmentedAssign : sig
 
   val dunder_method_name : Expression.BinaryOperator.operator -> string
 
-  val lower_to_call : location:Location.t -> t -> Expression.Call.t
+  val lower_to_call : callee_location:Location.t -> t -> Expression.Call.t
 
-  val lower_to_expression : location:Location.t -> t -> Expression.t
+  val lower_to_expression : location:Location.t -> callee_location:Location.t -> t -> Expression.t
 end
 
 module TypeAlias : sig

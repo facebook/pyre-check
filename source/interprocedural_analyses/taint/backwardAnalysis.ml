@@ -2625,7 +2625,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let target_taint = compute_assignment_taint ~pyre_in_context target state |> fst in
         let state = clear_target_taint ~fields:[] state target in
 
-        let implicit_call = Statement.AugmentedAssign.lower_to_call ~location assign in
+        let implicit_call =
+          Statement.AugmentedAssign.lower_to_call ~callee_location:target.Node.location assign
+        in
         let callees = get_call_callees ~location ~call:implicit_call in
         let { arguments_taint; implicit_argument_taint; state; _ } =
           apply_callees_and_return_arguments_taint

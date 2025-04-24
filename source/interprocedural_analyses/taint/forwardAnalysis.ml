@@ -3000,7 +3000,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               analyze_assignment ~pyre_in_context target taint taint state)
     | AugmentedAssign ({ target; value; operator } as assign) ->
         (* Treat x += y as x = x.__iadd__(y) *)
-        let implicit_call = Statement.AugmentedAssign.lower_to_call ~location assign in
+        let implicit_call =
+          Statement.AugmentedAssign.lower_to_call ~callee_location:target.Node.location assign
+        in
         let callees = get_call_callees ~location ~call:implicit_call in
         let target_taint, state =
           analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:target

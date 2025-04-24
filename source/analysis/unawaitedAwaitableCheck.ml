@@ -983,7 +983,12 @@ module State (Context : Context) = struct
     | Statement.Assert { Assert.test; _ } ->
         forward_expression ~resolution ~state ~expression:test |> result_state
     | AugmentedAssign ({ target; _ } as augmented_assignment) ->
-        let lowered_call = AugmentedAssign.lower_to_expression ~location augmented_assignment in
+        let lowered_call =
+          AugmentedAssign.lower_to_expression
+            ~location
+            ~callee_location:location
+            augmented_assignment
+        in
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:lowered_call
         in
