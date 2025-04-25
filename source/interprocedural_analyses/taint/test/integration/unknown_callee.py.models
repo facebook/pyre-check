@@ -74,6 +74,140 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "unknown_callee.test_collapse_source",
+    "callable_line": 15,
+    "code": 5002,
+    "line": 18,
+    "start": 15,
+    "end": 21,
+    "filename": "unknown_callee.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 17, "start": 17, "end": 18 } ],
+            "origin": { "line": 16, "start": 14, "end": 28 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 18, "start": 15, "end": 21 },
+            "call_site": "18:4-18:22"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "b" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "unknown_callee.test_collapse_source:5002:0:Call|_test_sink|0|formal(arg):558f168967d0882bb9baa0b03edfff11"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "unknown_callee.test_issue",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 12,
+    "start": 15,
+    "end": 16,
+    "filename": "unknown_callee.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 11, "start": 17, "end": 18 } ],
+            "origin": { "line": 10, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 12, "start": 15, "end": 16 },
+            "call_site": "12:4-12:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:unknown-callee" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "unknown_callee.test_issue:5002:0:Call|_test_sink|0|formal(arg):e3a31682eb82d7eee054499ad903d1c1"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -405,78 +539,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "unknown_callee.test_collapse_source",
-    "callable_line": 15,
-    "code": 5002,
-    "line": 18,
-    "start": 15,
-    "end": 21,
-    "filename": "unknown_callee.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "b" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [ { "line": 17, "start": 17, "end": 18 } ],
-            "origin": { "line": 16, "start": 14, "end": 28 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 18, "start": 15, "end": 21 },
-            "call_site": "18:4-18:22"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "b" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "broadening" },
-      { "always-via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "unknown_callee.test_collapse_source:5002:0:Call|_test_sink|0|formal(arg):558f168967d0882bb9baa0b03edfff11"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "unknown_callee.test_issue",
@@ -501,68 +563,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "unknown_callee.test_issue",
-    "callable_line": 9,
-    "code": 5002,
-    "line": 12,
-    "start": 15,
-    "end": 16,
-    "filename": "unknown_callee.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 11, "start": 17, "end": 18 } ],
-            "origin": { "line": 10, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 12, "start": 15, "end": 16 },
-            "call_site": "12:4-12:17"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:unknown-callee" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "unknown_callee.test_issue:5002:0:Call|_test_sink|0|formal(arg):e3a31682eb82d7eee054499ad903d1c1"
   }
 }
 {

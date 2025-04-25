@@ -630,6 +630,288 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "via_type_of.test3_alarm1",
+    "callable_line": 100,
+    "code": 5002,
+    "line": 102,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{via_type_of.Test3_C.x}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+            ],
+            "origin": { "line": 102, "start": 15, "end": 18 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 102, "start": 15, "end": 18 },
+            "call_site": "102:4-102:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test3_alarm1:5002:0:Call|_test_sink|0|formal(arg):9cd5545797a33e386c8fc53d1132d606"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm2",
+    "callable_line": 105,
+    "code": 5002,
+    "line": 107,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{via_type_of.Test3_C.y}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-type": "via_type_of.Test3_Foo" }
+            ],
+            "origin": { "line": 107, "start": 15, "end": 18 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 107, "start": 15, "end": 18 },
+            "call_site": "107:4-107:19"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-type": "via_type_of.Test3_Foo" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test3_alarm2:5002:0:Call|_test_sink|0|formal(arg):3c5f52d144592869c5b71e032a5ff6c1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm3",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 112,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{via_type_of.Test3_C.z}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
+            ],
+            "origin": { "line": 112, "start": 15, "end": 18 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 112, "start": 15, "end": 18 },
+            "call_site": "112:4-112:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test3_alarm3:5002:0:Call|_test_sink|0|formal(arg):7d00be1390db8de85c3eb2bd4ef076b7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_type_of.test3_alarm4",
+    "callable_line": 115,
+    "code": 5002,
+    "line": 124,
+    "start": 15,
+    "end": 18,
+    "filename": "via_type_of.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{via_type_of.Test3_C.x}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
+            ],
+            "origin": { "line": 119, "start": 10, "end": 13 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{via_type_of.Test3_C.y}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-type": "via_type_of.Test3_Foo" }
+            ],
+            "origin": { "line": 121, "start": 14, "end": 17 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{via_type_of.Test3_C.z}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
+            ],
+            "origin": { "line": 123, "start": 14, "end": 17 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 15, "end": 18 },
+            "call_site": "124:4-124:19"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via-TheZ-type": "typing.List[typing.List[str]]" },
+      { "via-type": "typing.Dict[str, typing.List[int]]" },
+      { "via-type": "via_type_of.Test3_Foo" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_type_of.test3_alarm4:5002:0:Call|_test_sink|0|formal(arg):07f6d4c9d4378223ae1ed1984792a1bf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "via_type_of.test4_alarm1",
     "callable_line": 134,
     "code": 5002,
@@ -1528,68 +1810,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "via_type_of.test3_alarm1",
-    "callable_line": 100,
-    "code": 5002,
-    "line": 102,
-    "start": 15,
-    "end": 18,
-    "filename": "via_type_of.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{via_type_of.Test3_C.x}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
-            ],
-            "origin": { "line": 102, "start": 15, "end": 18 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 102, "start": 15, "end": 18 },
-            "call_site": "102:4-102:19"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via-type": "typing.Dict[str, typing.List[int]]" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "via_type_of.test3_alarm1:5002:0:Call|_test_sink|0|formal(arg):9cd5545797a33e386c8fc53d1132d606"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm2",
@@ -1615,66 +1835,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "via_type_of.test3_alarm2",
-    "callable_line": 105,
-    "code": 5002,
-    "line": 107,
-    "start": 15,
-    "end": 18,
-    "filename": "via_type_of.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{via_type_of.Test3_C.y}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via-type": "via_type_of.Test3_Foo" }
-            ],
-            "origin": { "line": 107, "start": 15, "end": 18 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 107, "start": 15, "end": 18 },
-            "call_site": "107:4-107:19"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via-type": "via_type_of.Test3_Foo" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "via_type_of.test3_alarm2:5002:0:Call|_test_sink|0|formal(arg):3c5f52d144592869c5b71e032a5ff6c1"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm3",
@@ -1697,68 +1857,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "via_type_of.test3_alarm3",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 112,
-    "start": 15,
-    "end": 18,
-    "filename": "via_type_of.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{via_type_of.Test3_C.z}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
-            ],
-            "origin": { "line": 112, "start": 15, "end": 18 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 112, "start": 15, "end": 18 },
-            "call_site": "112:4-112:19"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "via_type_of.test3_alarm3:5002:0:Call|_test_sink|0|formal(arg):7d00be1390db8de85c3eb2bd4ef076b7"
   }
 }
 {
@@ -1814,104 +1912,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "via_type_of.test3_alarm4",
-    "callable_line": 115,
-    "code": 5002,
-    "line": 124,
-    "start": 15,
-    "end": 18,
-    "filename": "via_type_of.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{via_type_of.Test3_C.x}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
-            ],
-            "origin": { "line": 119, "start": 10, "end": 13 }
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{via_type_of.Test3_C.y}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via-type": "via_type_of.Test3_Foo" }
-            ],
-            "origin": { "line": 121, "start": 14, "end": 17 }
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{via_type_of.Test3_C.z}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
-            ],
-            "origin": { "line": 123, "start": 14, "end": 17 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 124, "start": 15, "end": 18 },
-            "call_site": "124:4-124:19"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "via-TheZ-type": "typing.List[typing.List[str]]" },
-      { "via-type": "typing.Dict[str, typing.List[int]]" },
-      { "via-type": "via_type_of.Test3_Foo" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "via_type_of.test3_alarm4:5002:0:Call|_test_sink|0|formal(arg):07f6d4c9d4378223ae1ed1984792a1bf"
   }
 }
 {

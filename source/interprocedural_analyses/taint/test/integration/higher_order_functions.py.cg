@@ -1,16 +1,26 @@
 @generated
 Call dependencies
 {
+  "higher_order_functions.$toplevel (fun)": [
+    "_test_source (fun)",
+    "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables (fun)[formal(f, position=0)=print (fun)]"
+  ],
   "higher_order_functions.C.method_to_sink (method)": [ "_test_sink (fun)" ],
   "higher_order_functions.C.self_to_sink (method)": [ "_test_sink (fun)" ],
   "higher_order_functions.CallableSource.__call__ (method)": [
     "_test_source (fun)"
+  ],
+  "higher_order_functions.apply (fun)[formal(f, position=0)=_test_sink (fun)]": [
+    "_test_sink (fun)"
   ],
   "higher_order_functions.apply (fun)[formal(f, position=0)=_test_source (fun)]": [
     "_test_source (fun)"
   ],
   "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.has_tito (fun)]": [
     "higher_order_functions.has_tito (fun)"
+  ],
+  "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2 (fun)]": [
+    "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2 (fun)"
   ],
   "higher_order_functions.apply_without_return (fun)[formal(f, position=0)=_test_sink (fun)]": [
     "_test_sink (fun)"
@@ -97,6 +107,32 @@ Call dependencies
     "_test_sink (fun)",
     "higher_order_functions.conditional_apply (fun)[formal(f, position=0)=_test_source (fun), formal(g, position=1)=higher_order_functions.safe (fun)]",
     "higher_order_functions.conditional_apply (fun)[formal(f, position=0)=higher_order_functions.safe (fun), formal(g, position=1)=_test_source (fun)]"
+  ],
+  "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables (fun)": [
+    "_test_source (fun)",
+    "higher_order_functions.apply (fun)[formal(f, position=0)=_test_sink (fun)]",
+    "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2 (fun)]",
+    "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar (fun)]",
+    "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo (fun)]"
+  ],
+  "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables (fun)[formal(f, position=0)=print (fun)]": [
+    "_test_source (fun)",
+    "higher_order_functions.apply (fun)[formal(f, position=0)=_test_sink (fun)]",
+    "higher_order_functions.apply (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2 (fun)]",
+    "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar (fun)]",
+    "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo (fun)]"
+  ],
+  "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)": [
+    "_test_sink (fun)"
+  ],
+  "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar (fun)]": [
+    "_test_sink (fun)"
+  ],
+  "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper (fun)[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo (fun)]": [
+    "_test_sink (fun)"
+  ],
+  "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2 (fun)": [
+    "_test_sink (fun)"
   ],
   "higher_order_functions.test_higher_order_function (fun)": [
     "_test_source (fun)",

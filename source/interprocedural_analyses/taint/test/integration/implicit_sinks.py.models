@@ -423,6 +423,78 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.string_literal_arguments_sink",
+    "callable_line": 92,
+    "code": 1337,
+    "line": 95,
+    "start": 8,
+    "end": 39,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "format-string" },
+              { "via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 95, "start": 37, "end": 38 },
+              { "line": 99, "start": 8, "end": 9 }
+            ],
+            "origin": { "line": 93, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "str.format", "port": "leaf:return" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 95, "start": 8, "end": 39 }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<str.__add__>}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 99, "start": 12, "end": 23 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via": "format-string" },
+      { "via": "string_concat_lhs" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle": "implicit_sinks.string_literal_arguments_sink:1337:0:LiteralStringSink|Test:e3c1e392051508a7ea531e0005723cc2"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -658,77 +730,5 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "implicit_sinks.string_literal_arguments_sink",
-    "callable_line": 92,
-    "code": 1337,
-    "line": 95,
-    "start": 8,
-    "end": 39,
-    "filename": "implicit_sinks.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "via": "format-string" },
-              { "via": "string_concat_lhs" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 95, "start": 37, "end": 38 },
-              { "line": 99, "start": 8, "end": 9 }
-            ],
-            "origin": { "line": 93, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "str.format", "port": "leaf:return" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 95, "start": 8, "end": 39 }
-          },
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{<str.__add__>}", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 99, "start": 12, "end": 23 }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "via": "format-string" },
-      { "via": "string_concat_lhs" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle": "implicit_sinks.string_literal_arguments_sink:1337:0:LiteralStringSink|Test:e3c1e392051508a7ea531e0005723cc2"
   }
 }

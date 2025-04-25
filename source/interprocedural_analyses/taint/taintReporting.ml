@@ -41,19 +41,16 @@ let has_significant_summary ~fixpoint_state ~trace_kind ~port:root ~path ~callee
       | None -> false)
 
 
-let issues_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph issues =
-  let issue_to_json issue =
-    let json =
-      Issue.to_json
-        ~taint_configuration
-        ~expand_overrides:(Some override_graph)
-        ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-        ~resolve_module_path
-        issue
-    in
-    { NewlineDelimitedJson.Line.kind = Issue; data = json }
+let issue_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph issue =
+  let json =
+    Issue.to_json
+      ~taint_configuration
+      ~expand_overrides:(Some override_graph)
+      ~is_valid_callee:(has_significant_summary ~fixpoint_state)
+      ~resolve_module_path
+      issue
   in
-  List.map ~f:issue_to_json issues
+  { NewlineDelimitedJson.Line.kind = Issue; data = json }
 
 
 let statistics ~model_verification_errors =
@@ -63,16 +60,45 @@ let statistics ~model_verification_errors =
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
 
+let merge_issues_ignoring_callable_parameters issues =
+  (* We deduplicate issues in the following cases.
+   * - Case 1: If `foo` has an issue with a non-parameterized sink callable `bar`, then there may
+   * exist the same issue in `foo` with a parameterized `bar`.
+   * - Case 2: If `foo` has an issue, then there may exist the same issue in a parameterized `foo`,
+   * with exactly the same sink handle.
+   * - Case 3: Derived from Case 1 and 2 -- if `foo` has an issue with a non-parameterized sink
+   * callable `bar`, then there may exist the same issue in any parameterized `foo` with a
+   * parameterized `bar`.
+   * We realize the deduplication by using the "canonical" versions of the issue handles. *)
+  let group_by_stripped_handle map issue =
+    let issue =
+      { issue with Issue.handle = IssueHandle.strip_all_callable_parameters issue.Issue.handle }
+    in
+    IssueHandle.SerializableMap.update
+      issue.Issue.handle
+      (function
+        | None -> Some [issue]
+        | Some existing_issue -> Some (issue :: existing_issue))
+      map
+  in
+  issues
+  |> List.fold ~init:IssueHandle.SerializableMap.empty ~f:group_by_stripped_handle
+  |> IssueHandle.SerializableMap.data
+  |> List.filter_map ~f:(function
+         | [] -> None
+         | [issue] -> Some issue
+         | head :: tail ->
+             (* Merge various sink traces and use a canonical issue handle. *)
+             Some (Algorithms.fold_balanced tail ~f:Issue.join ~init:head))
+
+
 let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callables ~fixpoint_state =
   let extract_errors ~fixpoint_state callables =
-    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-    List.map
-      ~f:(fun callable ->
-        callable
-        |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
-        |> IssueHandle.SerializableMap.data
-        |> List.map ~f:(Issue.to_error ~taint_configuration))
-      callables
+    callables
+    |> List.map ~f:(fun callable ->
+           callable
+           |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
+           |> IssueHandle.SerializableMap.data)
     |> List.concat_no_order
   in
   let scheduler_policy =
@@ -86,6 +112,7 @@ let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callable
            ~preferred_chunk_size:2500
            ())
   in
+  let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
   Scheduler.map_reduce
     scheduler
     ~policy:scheduler_policy
@@ -95,57 +122,22 @@ let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callable
     ~inputs:callables
     ()
   |> List.concat_no_order
+  |> merge_issues_ignoring_callable_parameters
+  |> List.map ~f:(Issue.to_error ~taint_configuration)
 
 
-let externalize
-    ~taint_configuration
-    ~fixpoint_state
-    ~resolve_module_path
-    ~resolve_callable_location
-    ~override_graph
-    callable
-    result
-    model
-  =
-  let issues =
-    issues_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph result
-  in
-  if not (Model.should_externalize model) then
-    issues
-  else
-    {
-      NewlineDelimitedJson.Line.kind = Model;
-      data =
-        Model.to_json
-          ~expand_overrides:(Some override_graph)
-          ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-          ~resolve_module_path:(Some resolve_module_path)
-          ~resolve_callable_location:(Some resolve_callable_location)
-          ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
-          callable
-          model;
-    }
-    :: issues
+module Result = struct
+  type t =
+    | Model of Target.t
+    | Issue of Issue.t
+
+  let fetch_model callable =
+    (* For better performance, fetch the model only when map-reducing, instead of storing the model
+       in `Model`. *)
+    Model callable
 
 
-let fetch_and_externalize
-    ~taint_configuration
-    ~fixpoint_state
-    ~resolve_module_path
-    ~resolve_callable_location
-    ~override_graph
-    ~sorted
-    ~dump_override_models
-    callable
-  =
-  if Target.is_override callable && not dump_override_models then
-    []
-  else
-    let model =
-      callable
-      |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
-      |> Option.value ~default:Model.empty_model
-    in
+  let fetch_issues ~fixpoint_state ~sorted callable =
     let issues =
       callable
       |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
@@ -159,16 +151,91 @@ let fetch_and_externalize
       else
         issues
     in
-    let issues = List.map ~f:snd issues in
-    externalize
+    List.map ~f:snd issues
+
+
+  let should_not_fetch ~dump_override_models callable =
+    Target.is_override callable && not dump_override_models
+
+
+  let fetch ~fixpoint_state ~sorted ~dump_override_models callables =
+    let callables =
+      List.filter
+        ~f:(fun callable -> not (should_not_fetch ~dump_override_models callable))
+        callables
+    in
+    let models = List.map ~f:fetch_model callables in
+    let issues =
+      callables
+      |> List.map ~f:(fetch_issues ~fixpoint_state ~sorted)
+      |> List.concat_no_order
+      |> merge_issues_ignoring_callable_parameters
+      |> List.map ~f:(fun issue -> Issue issue)
+    in
+    List.rev_append models issues
+
+
+  let to_newline_delimited_json
       ~taint_configuration
       ~fixpoint_state
       ~resolve_module_path
       ~resolve_callable_location
       ~override_graph
-      callable
-      issues
-      model
+    = function
+    | Model callable ->
+        let model =
+          callable
+          |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
+          |> Option.value ~default:Model.empty_model
+        in
+        if not (Model.should_externalize model) then
+          []
+        else
+          [
+            {
+              NewlineDelimitedJson.Line.kind = Model;
+              data =
+                Model.to_json
+                  ~expand_overrides:(Some override_graph)
+                  ~is_valid_callee:(has_significant_summary ~fixpoint_state)
+                  ~resolve_module_path:(Some resolve_module_path)
+                  ~resolve_callable_location:(Some resolve_callable_location)
+                  ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
+                  callable
+                  model;
+            };
+          ]
+    | Issue issue ->
+        [
+          issue_to_json
+            ~taint_configuration
+            ~fixpoint_state
+            ~resolve_module_path
+            ~override_graph
+            issue;
+        ]
+end
+
+let fetch_and_externalize
+    ~taint_configuration
+    ~fixpoint_state
+    ~resolve_module_path
+    ~resolve_callable_location
+    ~override_graph
+    ~dump_override_models
+    callables
+  =
+  callables
+  |> Result.fetch ~fixpoint_state ~sorted:false ~dump_override_models
+  |> List.map
+       ~f:
+         (Result.to_newline_delimited_json
+            ~taint_configuration
+            ~fixpoint_state
+            ~resolve_module_path
+            ~resolve_callable_location
+            ~override_graph)
+  |> List.concat_no_order
 
 
 let save_results_to_directory
@@ -202,33 +269,39 @@ let save_results_to_directory
     Out_channel.create (PyrePath.absolute path)
   in
   let save_models () =
-    let model_to_json callable =
-      let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-      fetch_and_externalize
-        ~taint_configuration
-        ~fixpoint_state
-        ~resolve_module_path
-        ~resolve_callable_location
-        ~override_graph
-        ~sorted:false
-        ~dump_override_models:false
-        callable
+    let results =
+      callables
+      |> Target.Set.elements
+      |> Result.fetch ~fixpoint_state ~sorted:false ~dump_override_models:false
     in
+    let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     match output_format with
     | Configuration.TaintOutputFormat.Json ->
         NewlineDelimitedJson.write_file
           ~path:(PyrePath.append result_directory ~element:"taint-output.json")
           ~configuration:(`Assoc ["repo", `String root])
-          ~to_json_lines:model_to_json
-          (Target.Set.elements callables)
+          ~to_json_lines:
+            (Result.to_newline_delimited_json
+               ~taint_configuration
+               ~fixpoint_state
+               ~resolve_module_path
+               ~resolve_callable_location
+               ~override_graph)
+          results
     | Configuration.TaintOutputFormat.ShardedJson ->
         NewlineDelimitedJson.write_sharded_files
           ~scheduler
           ~directory:result_directory
           ~filename_prefix:"taint-output"
           ~configuration:(`Assoc ["repo", `String root])
-          ~to_json_lines:model_to_json
-          (Target.Set.elements callables)
+          ~to_json_lines:
+            (Result.to_newline_delimited_json
+               ~taint_configuration
+               ~fixpoint_state
+               ~resolve_module_path
+               ~resolve_callable_location
+               ~override_graph)
+          results
   in
   let remove_existing_models () =
     NewlineDelimitedJson.remove_sharded_files

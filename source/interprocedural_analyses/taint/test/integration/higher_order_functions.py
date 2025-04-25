@@ -165,3 +165,34 @@ def test_callable_class_to_perfect_tito():
 
     c = CallableSource()
     return perfect_tito(c)  # Expecting no taint since we see the body of perfect_tito
+
+
+def test_duplicate_issues_in_different_parameterized_callables(f, flag: bool):
+    def sink_wrapper(f, arg):
+        _test_sink(arg)
+
+    def foo(x: str) -> None:
+        return
+
+    def bar(x: str) -> None:
+        return
+
+    x = foo
+    if flag:
+        x = bar
+
+    sink_wrapper(
+        x, _test_source()
+    )  # Expect one issue instead of two, due to sharing the same traces
+
+    def sink_wrapper2(arg):
+        _test_sink(arg)
+
+    y = _test_sink
+    if flag:
+        y = sink_wrapper2
+    apply(y, _test_source())  # Expect one issue but two sink traces
+
+
+# Expect no issues due to duplicating issues with the non-parameterized root callable
+test_duplicate_issues_in_different_parameterized_callables(print, _test_source())

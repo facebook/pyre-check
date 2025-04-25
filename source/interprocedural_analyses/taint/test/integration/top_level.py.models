@@ -5,64 +5,6 @@
     "callable": "top_level.$toplevel",
     "callable_line": 1,
     "code": 5002,
-    "line": 9,
-    "start": 11,
-    "end": 12,
-    "filename": "top_level.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 8, "start": 4, "end": 18 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 9, "start": 11, "end": 12 },
-            "call_site": "9:0-9:13"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "top_level.$toplevel:5002:0:Call|_test_sink|0|formal(arg):b42fca11b7ca7b29d2700571455a4452"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "top_level.$toplevel",
-    "callable_line": 1,
-    "code": 5002,
     "line": 17,
     "start": 4,
     "end": 5,
@@ -118,6 +60,64 @@
       "parameter": "formal(x)"
     },
     "master_handle": "top_level.$toplevel:5002:0:Call|top_level.foo|0|formal(x):cafe6a91686adfadae5252ac54487cc6"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "top_level.$toplevel",
+    "callable_line": 1,
+    "code": 5002,
+    "line": 9,
+    "start": 11,
+    "end": 12,
+    "filename": "top_level.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 8, "start": 4, "end": 18 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 9, "start": 11, "end": 12 },
+            "call_site": "9:0-9:13"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "top_level.$toplevel:5002:0:Call|_test_sink|0|formal(arg):b42fca11b7ca7b29d2700571455a4452"
   }
 }
 {

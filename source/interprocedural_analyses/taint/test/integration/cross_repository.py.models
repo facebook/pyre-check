@@ -2,6 +2,69 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "cross_repository.cross_repository_source",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 10,
+    "start": 15,
+    "end": 31,
+    "filename": "cross_repository.py",
+    "message": "Data from [UserControlled] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
+                  }
+                ],
+                "length": 2,
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 9, "start": 28, "end": 44 },
+            "call_site": "9:0-10:32"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 10, "start": 15, "end": 31 },
+            "call_site": "10:4-10:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "crtex" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "cross_repository.cross_repository_source:5002:0:Call|_test_sink|0|formal(arg):ac21fdbf72127ac5c56bafd9b43a351b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "cross_repository.test",
     "callable_line": 21,
     "code": 5002,
@@ -467,69 +530,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "cross_repository.cross_repository_source",
-    "callable_line": 9,
-    "code": 5002,
-    "line": 10,
-    "start": 15,
-    "end": 31,
-    "filename": "cross_repository.py",
-    "message": "Data from [UserControlled] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySource",
-                    "port": "producer:1:formal(0)"
-                  }
-                ],
-                "length": 2,
-                "kind": "UserControlled"
-              }
-            ],
-            "origin": { "line": 9, "start": 28, "end": 44 },
-            "call_site": "9:0-10:32"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 10, "start": 15, "end": 31 },
-            "call_site": "10:4-10:32"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "crtex" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "cross_repository.cross_repository_source:5002:0:Call|_test_sink|0|formal(arg):ac21fdbf72127ac5c56bafd9b43a351b"
   }
 }
 {

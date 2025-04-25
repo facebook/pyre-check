@@ -1016,32 +1016,27 @@ let end_to_end_integration_test path context =
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in
-    let serialize_model callable =
-      let callables_to_definitions_map =
-        Target.CallablesSharedMemory.read_only callables_to_definitions_map
-      in
-      TaintReporting.fetch_and_externalize
-        ~taint_configuration
-        ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
-        ~resolve_module_path
-        ~resolve_callable_location:
-          (Target.CallablesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
-        ~override_graph:override_graph_shared_memory_read_only
-        ~sorted:true
-        ~dump_override_models:true
-        callable
-      |> List.map ~f:NewlineDelimitedJson.Line.to_json
-      |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
-      |> String.concat ~sep:""
-    in
 
     let divergent_files =
       [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
     in
     let serialized_models =
-      List.rev_append (TaintFixpoint.SharedModels.targets initial_models) callables_to_analyze
+      let callables_to_definitions_map =
+        Target.CallablesSharedMemory.read_only callables_to_definitions_map
+      in
+      callables_to_analyze
+      |> List.rev_append (TaintFixpoint.SharedModels.targets initial_models)
       |> List.dedup_and_sort ~compare:Target.compare
-      |> List.map ~f:serialize_model
+      |> TaintReporting.fetch_and_externalize
+           ~taint_configuration
+           ~fixpoint_state:(TaintFixpoint.State.read_only fixpoint.TaintFixpoint.state)
+           ~resolve_module_path
+           ~resolve_callable_location:
+             (Target.CallablesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
+           ~override_graph:override_graph_shared_memory_read_only
+           ~dump_override_models:true
+      |> List.map ~f:NewlineDelimitedJson.Line.to_json
+      |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in

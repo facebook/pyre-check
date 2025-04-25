@@ -2,6 +2,378 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "model_query_transitive_extends.test1_alarm1",
+    "callable_line": 67,
+    "code": 5002,
+    "line": 68,
+    "start": 15,
+    "end": 26,
+    "filename": "model_query_transitive_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C.attribute}",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 68, "start": 15, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 68, "start": 15, "end": 26 },
+            "call_site": "68:4-68:27"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_transitive_extends.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d7076c5599d9346cb254702aca62ca8a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_transitive_extends.test1_alarm2",
+    "callable_line": 71,
+    "code": 5002,
+    "line": 72,
+    "start": 15,
+    "end": 25,
+    "filename": "model_query_transitive_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 72, "start": 15, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 72, "start": 15, "end": 25 },
+            "call_site": "72:4-72:26"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_transitive_extends.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):0dba02726232ed3eb66caff54e15ece8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_transitive_extends.test1_alarm3",
+    "callable_line": 75,
+    "code": 5002,
+    "line": 76,
+    "start": 15,
+    "end": 26,
+    "filename": "model_query_transitive_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C.attribute}",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C2.attribute}",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 76, "start": 15, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 76, "start": 15, "end": 26 },
+            "call_site": "76:4-76:27"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_transitive_extends.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):79cf0abf6a62591d8d4547fb1a0a4f4b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_transitive_extends.test1_alarm4",
+    "callable_line": 79,
+    "code": 5002,
+    "line": 80,
+    "start": 15,
+    "end": 25,
+    "filename": "model_query_transitive_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C2.instance}",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 80, "start": 15, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 80, "start": 15, "end": 25 },
+            "call_site": "80:4-80:26"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_transitive_extends.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):4e1e9120bee89ad21dafd2b91c82331d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_transitive_extends.test1_alarm5",
+    "callable_line": 83,
+    "code": 5002,
+    "line": 84,
+    "start": 15,
+    "end": 26,
+    "filename": "model_query_transitive_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C.attribute}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 84, "start": 15, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 84, "start": 15, "end": 26 },
+            "call_site": "84:4-84:27"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_transitive_extends.test1_alarm5:5002:0:Call|_test_sink|0|formal(arg):35e29f46c439f3c7e95542f60de3cc0c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_transitive_extends.test1_alarm6",
+    "callable_line": 87,
+    "code": 5002,
+    "line": 88,
+    "start": 15,
+    "end": 25,
+    "filename": "model_query_transitive_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 88, "start": 15, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 88, "start": 15, "end": 25 },
+            "call_site": "88:4-88:26"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_transitive_extends.test1_alarm6:5002:0:Call|_test_sink|0|formal(arg):8f20433d2d79bad30ba257a0ffc3dc2f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "model_query_transitive_extends.test2_alarm1",
     "callable_line": 99,
     "code": 5002,
@@ -298,68 +670,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_transitive_extends.test1_alarm1",
-    "callable_line": 67,
-    "code": 5002,
-    "line": 68,
-    "start": 15,
-    "end": 26,
-    "filename": "model_query_transitive_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.attribute}",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 68, "start": 15, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 68, "start": 15, "end": 26 },
-            "call_site": "68:4-68:27"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_transitive_extends.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d7076c5599d9346cb254702aca62ca8a"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm2",
@@ -383,68 +693,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_transitive_extends.test1_alarm2",
-    "callable_line": 71,
-    "code": 5002,
-    "line": 72,
-    "start": 15,
-    "end": 25,
-    "filename": "model_query_transitive_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 72, "start": 15, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 72, "start": 15, "end": 25 },
-            "call_site": "72:4-72:26"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_transitive_extends.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):0dba02726232ed3eb66caff54e15ece8"
   }
 }
 {
@@ -474,72 +722,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_transitive_extends.test1_alarm3",
-    "callable_line": 75,
-    "code": 5002,
-    "line": 76,
-    "start": 15,
-    "end": 26,
-    "filename": "model_query_transitive_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.attribute}",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C2.attribute}",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C1.attribute}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 76, "start": 15, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 76, "start": 15, "end": 26 },
-            "call_site": "76:4-76:27"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_transitive_extends.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):79cf0abf6a62591d8d4547fb1a0a4f4b"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm4",
@@ -563,72 +745,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_transitive_extends.test1_alarm4",
-    "callable_line": 79,
-    "code": 5002,
-    "line": 80,
-    "start": 15,
-    "end": 25,
-    "filename": "model_query_transitive_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C2.instance}",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C1.instance}",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 80, "start": 15, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 80, "start": 15, "end": 25 },
-            "call_site": "80:4-80:26"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_transitive_extends.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):4e1e9120bee89ad21dafd2b91c82331d"
   }
 }
 {
@@ -658,64 +774,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_transitive_extends.test1_alarm5",
-    "callable_line": 83,
-    "code": 5002,
-    "line": 84,
-    "start": 15,
-    "end": 26,
-    "filename": "model_query_transitive_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.attribute}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 84, "start": 15, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 84, "start": 15, "end": 26 },
-            "call_site": "84:4-84:27"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_transitive_extends.test1_alarm5:5002:0:Call|_test_sink|0|formal(arg):35e29f46c439f3c7e95542f60de3cc0c"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm6",
@@ -739,64 +797,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_transitive_extends.test1_alarm6",
-    "callable_line": 87,
-    "code": 5002,
-    "line": 88,
-    "start": 15,
-    "end": 25,
-    "filename": "model_query_transitive_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query_transitive_extends.Test1_C.instance}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 88, "start": 15, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 88, "start": 15, "end": 25 },
-            "call_site": "88:4-88:26"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_transitive_extends.test1_alarm6:5002:0:Call|_test_sink|0|formal(arg):8f20433d2d79bad30ba257a0ffc3dc2f"
   }
 }
 {

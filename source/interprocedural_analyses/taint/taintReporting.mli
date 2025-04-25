@@ -7,26 +7,14 @@
 
 open Interprocedural
 
-val externalize
-  :  taint_configuration:TaintConfiguration.Heap.t ->
-  fixpoint_state:TaintFixpoint.State.ReadOnly.t ->
-  resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
-  resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
-  override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
-  Target.t ->
-  Issue.t list ->
-  Model.t ->
-  NewlineDelimitedJson.Line.t list
-
 val fetch_and_externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
   fixpoint_state:TaintFixpoint.State.ReadOnly.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
-  sorted:bool ->
   dump_override_models:bool ->
-  Target.t ->
+  Target.t list ->
   NewlineDelimitedJson.Line.t list
 
 val produce_errors

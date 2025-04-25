@@ -2,6 +2,74 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dataclass_taint.bad_is_tainted",
+    "callable_line": 17,
+    "code": 5002,
+    "line": 19,
+    "start": 15,
+    "end": 22,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
+            "origin": { "line": 18, "start": 28, "end": 42 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 19, "start": 15, "end": 22 },
+            "call_site": "19:4-19:23"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dataclass_taint.bad_is_tainted:5002:0:Call|_test_sink|0|formal(arg):a576244e9a2a485090237d4b1205ee6d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dataclass_taint.issue_in_dataclass_constructor",
     "callable_line": 38,
     "code": 5002,
@@ -150,6 +218,64 @@
     "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
     "callable_line": 95,
     "code": 5002,
+    "line": 105,
+    "start": 4,
+    "end": 25,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 105, "start": 28, "end": 42 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 105, "start": 4, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+      "index": 0
+    },
+    "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Global|Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}|0:b81b9304aded9021a85d4fbe1e787a51"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
+    "callable_line": 95,
+    "code": 5002,
     "line": 99,
     "start": 51,
     "end": 65,
@@ -202,64 +328,6 @@
       "parameter": "formal(bad)"
     },
     "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__|1|formal(bad):2f7989bea29b0339ab8a203e62db91c0"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
-    "callable_line": 95,
-    "code": 5002,
-    "line": 105,
-    "start": 4,
-    "end": 25,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 105, "start": 28, "end": 42 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 105, "start": 4, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
-      "index": 0
-    },
-    "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Global|Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}|0:b81b9304aded9021a85d4fbe1e787a51"
   }
 }
 {
@@ -327,6 +395,188 @@
       "parameter": "formal(bad)"
     },
     "master_handle": "dataclass_taint.test_class_attr_model_tainted_in_constructor:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__|1|formal(bad):4a7785b5b0dc31c99f8d25cf5234a82f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_dataclass_parameter_path",
+    "callable_line": 145,
+    "code": 5002,
+    "line": 146,
+    "start": 15,
+    "end": 21,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [UserControlled] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "dataclass_taint.test_dataclass_parameter_path",
+                    "port": "leaf:dc[*]"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "bad" }
+            ],
+            "origin": { "line": 145, "start": 34, "end": 47 },
+            "call_site": "145:0-146:22"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 146, "start": 15, "end": 21 },
+            "call_site": "146:4-146:22"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "bad" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dataclass_taint.test_dataclass_parameter_path:5002:0:Call|_test_sink|0|formal(arg):013258f6542b6ba9be26a2a1b967ab37"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_dataclass_with_other_source",
+    "callable_line": 84,
+    "code": 5002,
+    "line": 85,
+    "start": 15,
+    "end": 30,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 85, "start": 15, "end": 30 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 85, "start": 15, "end": 30 },
+            "call_site": "85:4-85:31"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dataclass_taint.test_dataclass_with_other_source:5002:0:Call|_test_sink|0|formal(arg):8dc1aba82fdce0b57ee34191013425bb"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_dataclass_with_source",
+    "callable_line": 72,
+    "code": 5002,
+    "line": 73,
+    "start": 15,
+    "end": 30,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{dataclass_taint.DataClassWithSource.tainted}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 73, "start": 15, "end": 30 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 73, "start": 15, "end": 30 },
+            "call_site": "73:4-73:31"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dataclass_taint.test_dataclass_with_source:5002:0:Call|_test_sink|0|formal(arg):7562e5836e6feb38f926ee37c2912468"
   }
 }
 {
@@ -887,74 +1137,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "dataclass_taint.bad_is_tainted",
-    "callable_line": 17,
-    "code": 5002,
-    "line": 19,
-    "start": 15,
-    "end": 22,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
-            ],
-            "tito_positions": [ { "line": 18, "start": 28, "end": 42 } ],
-            "origin": { "line": 18, "start": 28, "end": 42 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 19, "start": 15, "end": 22 },
-            "call_site": "19:4-19:23"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "dataclass_taint.bad_is_tainted:5002:0:Call|_test_sink|0|formal(arg):a576244e9a2a485090237d4b1205ee6d"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.benign_is_untainted",
@@ -1066,72 +1248,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "dataclass_taint.test_dataclass_parameter_path",
-    "callable_line": 145,
-    "code": 5002,
-    "line": 146,
-    "start": 15,
-    "end": 21,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [UserControlled] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "dataclass_taint.test_dataclass_parameter_path",
-                    "port": "leaf:dc[*]"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-field" }, { "first-field": "bad" }
-            ],
-            "origin": { "line": 145, "start": 34, "end": 47 },
-            "call_site": "145:0-146:22"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 146, "start": 15, "end": 21 },
-            "call_site": "146:4-146:22"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-field" },
-      { "first-field": "bad" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "dataclass_taint.test_dataclass_parameter_path:5002:0:Call|_test_sink|0|formal(arg):013258f6542b6ba9be26a2a1b967ab37"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_dataclass_positional_parameter",
@@ -1224,64 +1340,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "dataclass_taint.test_dataclass_with_other_source",
-    "callable_line": 84,
-    "code": 5002,
-    "line": 85,
-    "start": 15,
-    "end": 30,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 85, "start": 15, "end": 30 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 85, "start": 15, "end": 30 },
-            "call_site": "85:4-85:31"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "dataclass_taint.test_dataclass_with_other_source:5002:0:Call|_test_sink|0|formal(arg):8dc1aba82fdce0b57ee34191013425bb"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_source",
@@ -1321,64 +1379,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dataclass_taint.test_dataclass_with_source",
-    "callable_line": 72,
-    "code": 5002,
-    "line": 73,
-    "start": 15,
-    "end": 30,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{dataclass_taint.DataClassWithSource.tainted}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 73, "start": 15, "end": 30 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 73, "start": 15, "end": 30 },
-            "call_site": "73:4-73:31"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "dataclass_taint.test_dataclass_with_source:5002:0:Call|_test_sink|0|formal(arg):7562e5836e6feb38f926ee37c2912468"
   }
 }
 {

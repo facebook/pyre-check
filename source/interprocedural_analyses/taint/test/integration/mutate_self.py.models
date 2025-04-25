@@ -2,6 +2,382 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "mutate_self.Base.isssue_mutates_foo",
+    "callable_line": 30,
+    "code": 5002,
+    "line": 32,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 31, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "31:8-31:26"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 32, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "32:8-32:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.isssue_mutates_foo:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b946d9a2987e3e0211786f4a7be9221a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_and_returns",
+    "callable_line": 44,
+    "code": 5002,
+    "line": 45,
+    "start": 8,
+    "end": 38,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 45, "start": 8, "end": 38 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_and_returns" ],
+              "port": "result[foo]"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 45, "start": 8, "end": 38 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "45:8-45:49"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_and_returns:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):d6e28ff5628052adeb984f175c21ca4c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_self_annotation",
+    "callable_line": 51,
+    "code": 5002,
+    "line": 53,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 52, "start": 8, "end": 12 },
+              "resolves_to": [
+                "mutate_self.Base.mutates_foo_self_annotation"
+              ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "52:8-52:42"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 53, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "53:8-53:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_foo_self_annotation:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b36f750e0faacc83c8fca47726423dc7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_self_typevar",
+    "callable_line": 59,
+    "code": 5002,
+    "line": 61,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 60, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_self_typevar" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "60:8-60:39"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 61, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "61:8-61:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_foo_self_typevar:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b3891c1a0ac4a8d18b09dd450d8d9cf6"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "mutate_self.Base.issue_mutates_foo_with_hop",
+    "callable_line": 35,
+    "code": 5002,
+    "line": 37,
+    "start": 8,
+    "end": 12,
+    "filename": "mutate_self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 36, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.mutates_foo_with_hop" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "36:8-36:35"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 37, "start": 8, "end": 12 },
+              "resolves_to": [ "mutate_self.Base.foo_sink" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "37:8-37:23"
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "mutate_self.Base.foo_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "mutate_self.Base.issue_mutates_foo_with_hop:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):e288cad994f851ea1ec8e39ae7049835"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "mutate_self.issue_mutates_foo_and_returns_instance",
     "callable_line": 72,
     "code": 5002,
@@ -549,81 +925,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "mutate_self.Base.isssue_mutates_foo",
-    "callable_line": 30,
-    "code": 5002,
-    "line": 32,
-    "start": 8,
-    "end": 12,
-    "filename": "mutate_self.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 31, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.mutates_foo" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "31:8-31:26"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 32, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.foo_sink" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "32:8-32:23"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "mutate_self.Base.foo_sink",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "mutate_self.Base.isssue_mutates_foo:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b946d9a2987e3e0211786f4a7be9221a"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "mutate_self.Base.issue_mutates_and_returns",
@@ -681,80 +982,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "mutate_self.Base.issue_mutates_and_returns",
-    "callable_line": 44,
-    "code": 5002,
-    "line": 45,
-    "start": 8,
-    "end": 38,
-    "filename": "mutate_self.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 45, "start": 8, "end": 38 },
-              "resolves_to": [ "mutate_self.Base.mutates_foo_and_returns" ],
-              "port": "result[foo]"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 45, "start": 8, "end": 38 },
-              "resolves_to": [ "mutate_self.Base.foo_sink" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "45:8-45:49"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "mutate_self.Base.foo_sink",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "mutate_self.Base.issue_mutates_and_returns:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):d6e28ff5628052adeb984f175c21ca4c"
   }
 }
 {
@@ -841,83 +1068,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "mutate_self.Base.issue_mutates_foo_self_annotation",
-    "callable_line": 51,
-    "code": 5002,
-    "line": 53,
-    "start": 8,
-    "end": 12,
-    "filename": "mutate_self.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 52, "start": 8, "end": 12 },
-              "resolves_to": [
-                "mutate_self.Base.mutates_foo_self_annotation"
-              ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "52:8-52:42"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 53, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.foo_sink" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "53:8-53:23"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "mutate_self.Base.foo_sink",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "mutate_self.Base.issue_mutates_foo_self_annotation:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b36f750e0faacc83c8fca47726423dc7"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "mutate_self.Base.issue_mutates_foo_self_typevar",
@@ -999,81 +1149,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "mutate_self.Base.issue_mutates_foo_self_typevar",
-    "callable_line": 59,
-    "code": 5002,
-    "line": 61,
-    "start": 8,
-    "end": 12,
-    "filename": "mutate_self.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 60, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.mutates_foo_self_typevar" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "60:8-60:39"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 61, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.foo_sink" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "61:8-61:23"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "mutate_self.Base.foo_sink",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "mutate_self.Base.issue_mutates_foo_self_typevar:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):b3891c1a0ac4a8d18b09dd450d8d9cf6"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "mutate_self.Base.issue_mutates_foo_with_hop",
@@ -1152,81 +1227,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "mutate_self.Base.issue_mutates_foo_with_hop",
-    "callable_line": 35,
-    "code": 5002,
-    "line": 37,
-    "start": 8,
-    "end": 12,
-    "filename": "mutate_self.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 36, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.mutates_foo_with_hop" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "36:8-36:35"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 37, "start": 8, "end": 12 },
-              "resolves_to": [ "mutate_self.Base.foo_sink" ],
-              "port": "formal(self, position=0)[foo]",
-              "call_site": "37:8-37:23"
-            },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": true
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "mutate_self.Base.foo_sink",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "mutate_self.Base.issue_mutates_foo_with_hop:5002:0:Call|mutate_self.Base.foo_sink|0|formal(self):e288cad994f851ea1ec8e39ae7049835"
   }
 }
 {

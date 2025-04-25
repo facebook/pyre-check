@@ -70,7 +70,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "higher_order_functions.sink_after_apply[formal(f, position=0)=_test_source]",
+    "callable": "higher_order_functions.sink_after_apply",
     "callable_line": 78,
     "code": 5002,
     "line": 79,
@@ -122,7 +122,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.sink_after_apply[formal(f, position=0)=_test_source]:5002:0:Call|_test_sink|0|formal(arg):375edfe48d0b4e9094225cdba19400e7"
+    "master_handle": "higher_order_functions.sink_after_apply:5002:0:Call|_test_sink|0|formal(arg):5daf33f5493a95607586f9ec167031a1"
   }
 }
 {
@@ -183,11 +183,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]",
+      "callee": "higher_order_functions.apply_without_return",
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle": "higher_order_functions.test_apply_without_return:5002:0:Call|higher_order_functions.apply_without_return[formal(f, position=0)=_test_sink]|0|formal(x):214296acac21d5147cadc254c5cdba07"
+    "master_handle": "higher_order_functions.test_apply_without_return:5002:0:Call|higher_order_functions.apply_without_return|0|formal(x):2f75e294c7d85a7b7a4bc90497186aa6"
   }
 }
 {
@@ -453,6 +453,172 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables",
+    "callable_line": 170,
+    "code": 5002,
+    "line": 185,
+    "start": 11,
+    "end": 25,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 185, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 185, "start": 11, "end": 25 },
+              "resolves_to": [
+                "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar]"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "184:4-186:5"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 185, "start": 11, "end": 25 },
+              "resolves_to": [
+                "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo]"
+              ],
+              "port": "formal(arg, position=1)",
+              "call_site": "184:4-186:5"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables:5002:0:Call|higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper|0|formal(arg):244e040fe62baff666a8085cb7be9c4a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables",
+    "callable_line": 170,
+    "code": 5002,
+    "line": 194,
+    "start": 13,
+    "end": 27,
+    "filename": "higher_order_functions.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 194, "start": 13, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 194, "start": 13, "end": 27 },
+              "resolves_to": [
+                "higher_order_functions.apply[formal(f, position=0)=_test_sink]"
+              ],
+              "port": "formal(x, position=1)",
+              "call_site": "194:4-194:28"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 194, "start": 13, "end": 27 },
+              "resolves_to": [
+                "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2]"
+              ],
+              "port": "formal(x, position=1)",
+              "call_site": "194:4-194:28"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.apply",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables:5002:0:Call|higher_order_functions.apply|0|formal(x):a3caf38493952aece655e0fd3492c526"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "higher_order_functions.test_higher_order_function",
     "callable_line": 21,
     "code": 5002,
@@ -508,11 +674,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+      "callee": "higher_order_functions.higher_order_function",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_higher_order_function:5002:0:Call|higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.goes_to_sink]|0|formal(arg):42fa0119ce5722349e9ed2f47d5db19a"
+    "master_handle": "higher_order_functions.test_higher_order_function:5002:0:Call|higher_order_functions.higher_order_function|0|formal(arg):15bf9f2b0410774fe6eaf1ed9644a41d"
   }
 }
 {
@@ -573,11 +739,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]",
+      "callee": "higher_order_functions.higher_order_function_and_sink",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.higher_order_function_and_sink[formal(f, position=0)=higher_order_functions.goes_to_sink]|0|formal(arg):24365d856ece9ae5ad09327bd61d3b6a"
+    "master_handle": "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.higher_order_function_and_sink|0|formal(arg):d3ea6391f3b3696fd17aaaef375a6ba4"
   }
 }
 {
@@ -990,6 +1156,53 @@
 {
   "kind": "model",
   "data": {
+    "callable": "higher_order_functions.apply[formal(f, position=0)=_test_sink]",
+    "filename": "higher_order_functions.py",
+    "callable_line": 60,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 61, "start": 13, "end": 14 },
+            "call_site": "61:11-61:15"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 61, "start": 13, "end": 14 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.apply[formal(f, position=0)=_test_source]",
     "filename": "higher_order_functions.py",
     "callable_line": 60,
@@ -1056,6 +1269,38 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 61, "start": 13, "end": 14 } ],
             "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.apply[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2]",
+    "filename": "higher_order_functions.py",
+    "callable_line": 60,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 61, "start": 13, "end": 14 },
+              "resolves_to": [
+                "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2"
+              ],
+              "port": "formal(arg, position=0)",
+              "call_site": "61:11-61:15"
+            }
           }
         ]
       }
@@ -1807,6 +2052,110 @@
               "port": "formal(x, position=3)",
               "call_site": "144:4-144:49"
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+    "filename": "higher_order_functions.py",
+    "callable_line": 171,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 172, "start": 19, "end": 22 },
+            "call_site": "172:8-172:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+    "filename": "higher_order_functions.py",
+    "callable_line": 188,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 189, "start": 19, "end": 22 },
+            "call_site": "189:8-189:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar]",
+    "filename": "higher_order_functions.py",
+    "callable_line": 171,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 172, "start": 19, "end": 22 },
+            "call_site": "172:8-172:23"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper[formal(f, position=0)=higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo]",
+    "filename": "higher_order_functions.py",
+    "callable_line": 171,
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 172, "start": 19, "end": 22 },
+            "call_site": "172:8-172:23"
           }
         ]
       }

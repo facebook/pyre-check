@@ -5,6 +5,78 @@
     "callable": "overrides.testB",
     "callable_line": 109,
     "code": 5002,
+    "line": 111,
+    "start": 14,
+    "end": 15,
+    "filename": "overrides.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 110, "start": 8, "end": 19 },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 111, "start": 14, "end": 15 },
+              "resolves_to": [ "overrides.D.methodA" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "111:4-111:16"
+            },
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overrides.C.methodA",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testB",
+    "callable_line": 109,
+    "code": 5002,
     "line": 112,
     "start": 20,
     "end": 21,
@@ -75,10 +147,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "overrides.testB",
-    "callable_line": 109,
+    "callable": "overrides.testBase",
+    "callable_line": 77,
     "code": 5002,
-    "line": 111,
+    "line": 79,
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
@@ -99,11 +171,11 @@
               }
             ],
             "call": {
-              "position": { "line": 110, "start": 8, "end": 19 },
+              "position": { "line": 78, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
-            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false
           }
         ]
@@ -121,12 +193,12 @@
               }
             ],
             "call": {
-              "position": { "line": 111, "start": 14, "end": 15 },
-              "resolves_to": [ "overrides.D.methodA" ],
+              "position": { "line": 79, "start": 14, "end": 15 },
+              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
               "port": "formal(arg, position=1)",
-              "call_site": "111:4-111:16"
+              "call_site": "79:4-79:16"
             },
-            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false
           }
         ]
@@ -137,11 +209,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "overrides.C.methodA",
+      "callee": "overrides.Base.methodA",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
+    "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
   }
 }
 {
@@ -215,78 +287,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "overrides.testBase",
-    "callable_line": 77,
-    "code": 5002,
-    "line": 79,
-    "start": 14,
-    "end": 15,
-    "filename": "overrides.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 78, "start": 8, "end": 19 },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 79, "start": 14, "end": 15 },
-              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
-              "port": "formal(arg, position=1)",
-              "call_site": "79:4-79:16"
-            },
-            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "overrides.Base.methodA",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
   }
 }
 {

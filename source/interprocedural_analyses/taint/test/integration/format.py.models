@@ -2,6 +2,64 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "format.issue_in_format",
+    "callable_line": 30,
+    "code": 5002,
+    "line": 32,
+    "start": 25,
+    "end": 30,
+    "filename": "format.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 12, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 32, "start": 25, "end": 30 },
+            "call_site": "32:14-32:31"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "format.issue_in_format:5002:0:Call|_test_sink|0|formal(arg):40a4eb44494f7e5de24f3521ab803c1a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "format.issue_in_format_specifier",
     "callable_line": 44,
     "code": 5002,
@@ -309,64 +367,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "format.issue_in_format",
-    "callable_line": 30,
-    "code": 5002,
-    "line": 32,
-    "start": 25,
-    "end": 30,
-    "filename": "format.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 31, "start": 12, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 32, "start": 25, "end": 30 },
-            "call_site": "32:14-32:31"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "format.issue_in_format:5002:0:Call|_test_sink|0|formal(arg):40a4eb44494f7e5de24f3521ab803c1a"
   }
 }
 {

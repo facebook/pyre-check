@@ -36,6 +36,8 @@ type t = {
 
 val canonical_location : t -> Location.WithModule.t
 
+val join : t -> t -> t
+
 val to_json
   :  taint_configuration:TaintConfiguration.Heap.t ->
   expand_overrides:OverrideGraph.SharedMemory.ReadOnly.t option ->

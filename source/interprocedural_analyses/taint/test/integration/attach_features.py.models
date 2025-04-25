@@ -1,5 +1,126 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "attach_features.attach_to_parameter_source",
+    "callable_line": 86,
+    "code": 5002,
+    "line": 87,
+    "start": 15,
+    "end": 16,
+    "filename": "attach_features.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  {
+                    "name": "attach_features.attach_to_parameter_source",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 86, "start": 31, "end": 32 },
+            "call_site": "86:0-87:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 87, "start": 15, "end": 16 },
+            "call_site": "87:4-87:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_sink" }, { "always-via": "string_concat_lhs" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "attach_features.attach_to_parameter_source:5002:0:Call|_test_sink|0|formal(arg):92e1680eb4d2eff3787dd7e4bdefa475"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "attach_features.attach_to_returned_sink",
+    "callable_line": 62,
+    "code": 5002,
+    "line": 64,
+    "start": 4,
+    "end": 12,
+    "filename": "attach_features.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 63, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  {
+                    "name": "attach_features.attach_to_returned_sink",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "origin": { "line": 64, "start": 4, "end": 12 }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "string_concat_lhs" }
+    ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "attach_features.attach_to_returned_sink:5002:0:Return:8218e4adbc4250811127e266f8a13911"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -142,68 +263,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "attach_features.attach_to_parameter_source",
-    "callable_line": 86,
-    "code": 5002,
-    "line": 87,
-    "start": 15,
-    "end": 16,
-    "filename": "attach_features.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "string_concat_lhs" } ],
-                "leaves": [
-                  {
-                    "name": "attach_features.attach_to_parameter_source",
-                    "port": "leaf:x"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 86, "start": 31, "end": 32 },
-            "call_site": "86:0-87:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 87, "start": 15, "end": 16 },
-            "call_site": "87:4-87:17"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_sink" }, { "always-via": "string_concat_lhs" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "attach_features.attach_to_parameter_source:5002:0:Call|_test_sink|0|formal(arg):92e1680eb4d2eff3787dd7e4bdefa475"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_to_returned_sink",
@@ -248,65 +307,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "attach_features.attach_to_returned_sink",
-    "callable_line": 62,
-    "code": 5002,
-    "line": 64,
-    "start": 4,
-    "end": 12,
-    "filename": "attach_features.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 63, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "string_concat_lhs" } ],
-                "leaves": [
-                  {
-                    "name": "attach_features.attach_to_returned_sink",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": { "line": 64, "start": 4, "end": 12 }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "string_concat_lhs" }
-    ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "attach_features.attach_to_returned_sink:5002:0:Return:8218e4adbc4250811127e266f8a13911"
   }
 }
 {

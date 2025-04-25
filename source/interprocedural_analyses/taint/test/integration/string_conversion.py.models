@@ -525,6 +525,143 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression",
+    "callable_line": 71,
+    "code": 5001,
+    "line": 73,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "tainted" }
+                ],
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": { "line": 73, "start": 12, "end": 13 },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 73, "start": 9, "end": 15 },
+            "call_site": "73:4-73:16"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "string_conversion.multiple_targets_for_single_expression:5001:0:Call|eval|0|formal(arg):b9cc3c511ddc86e7475a252fa462eadc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression_2",
+    "callable_line": 98,
+    "code": 5001,
+    "line": 99,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{string_conversion.C.g}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": { "line": 99, "start": 12, "end": 13 },
+              "resolves_to": [ "string_conversion.C.__str__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 99, "start": 9, "end": 15 },
+            "call_site": "99:4-99:16"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "format-string" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(arg):48ad7e71c84860b5b46b69082a1926f4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "string_conversion.optional_str",
     "callable_line": 191,
     "code": 5001,
@@ -1537,78 +1674,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "string_conversion.multiple_targets_for_single_expression",
-    "callable_line": 71,
-    "code": 5001,
-    "line": 73,
-    "start": 9,
-    "end": 15,
-    "filename": "string_conversion.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" }, { "first-index": "tainted" }
-                ],
-                "leaves": [
-                  {
-                    "name": "Obj{django.http.Request.GET}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "length": 1,
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "format-string" } ],
-            "call": {
-              "position": { "line": 73, "start": 12, "end": 13 },
-              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 73, "start": 9, "end": 15 },
-            "call_site": "73:4-73:16"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "tainted" },
-      { "always-via": "format-string" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "string_conversion.multiple_targets_for_single_expression:5001:0:Call|eval|0|formal(arg):b9cc3c511ddc86e7475a252fa462eadc"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
@@ -1637,71 +1702,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "string_conversion.multiple_targets_for_single_expression_2",
-    "callable_line": 98,
-    "code": 5001,
-    "line": 99,
-    "start": 9,
-    "end": 15,
-    "filename": "string_conversion.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{string_conversion.C.g}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "length": 1,
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "format-string" } ],
-            "call": {
-              "position": { "line": 99, "start": 12, "end": 13 },
-              "resolves_to": [ "string_conversion.C.__str__" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 99, "start": 9, "end": 15 },
-            "call_site": "99:4-99:16"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "format-string" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(arg):48ad7e71c84860b5b46b69082a1926f4"
   }
 }
 {

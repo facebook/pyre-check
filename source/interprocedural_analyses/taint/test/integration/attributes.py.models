@@ -118,6 +118,122 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "attributes.test_attribute_union_source",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 78,
+    "start": 15,
+    "end": 22,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{attributes.Token.token}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 15, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 15, "end": 22 },
+            "call_site": "78:4-78:23"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "attributes.test_attribute_union_source:5002:0:Call|_test_sink|0|formal(arg):3e7e5ecb5638879f3585847c1274f5e1"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.test_attribute_union_source",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 80,
+    "start": 19,
+    "end": 26,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{attributes.Token.token}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 80, "start": 19, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 80, "start": 19, "end": 26 },
+            "call_site": "80:8-80:27"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "attributes.test_attribute_union_source:5002:0:Call|_test_sink|1|formal(arg):a2bd11fa9758293fdf005fbfa793a61a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "attributes.test_attribute_via_dunder_dict",
     "callable_line": 65,
     "code": 5002,
@@ -249,6 +365,71 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|1|formal(arg):da5fc540abbf310d75dd68aa49edc906"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "attributes.test_issue_with_text_key_of_dictionary",
+    "callable_line": 101,
+    "code": 5002,
+    "line": 102,
+    "start": 15,
+    "end": 35,
+    "filename": "attributes.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{attributes.C.dictionary}",
+                    "port": "leaf:return[text]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "text" }
+            ],
+            "origin": { "line": 102, "start": 15, "end": 27 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 102, "start": 15, "end": 35 },
+            "call_site": "102:4-102:36"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "text" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "attributes.test_issue_with_text_key_of_dictionary:5002:0:Call|_test_sink|0|formal(arg):07aaa6860d20d5f97b7ef18d4f0ad4f6"
   }
 }
 {
@@ -716,122 +897,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "attributes.test_attribute_union_source",
-    "callable_line": 77,
-    "code": 5002,
-    "line": 78,
-    "start": 15,
-    "end": 22,
-    "filename": "attributes.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{attributes.Token.token}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 78, "start": 15, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 78, "start": 15, "end": 22 },
-            "call_site": "78:4-78:23"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "attributes.test_attribute_union_source:5002:0:Call|_test_sink|0|formal(arg):3e7e5ecb5638879f3585847c1274f5e1"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "attributes.test_attribute_union_source",
-    "callable_line": 77,
-    "code": 5002,
-    "line": 80,
-    "start": 19,
-    "end": 26,
-    "filename": "attributes.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{attributes.Token.token}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 80, "start": 19, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 80, "start": 19, "end": 26 },
-            "call_site": "80:8-80:27"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "attributes.test_attribute_union_source:5002:0:Call|_test_sink|1|formal(arg):a2bd11fa9758293fdf005fbfa793a61a"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_backwards",
@@ -988,71 +1053,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "attributes.test_issue_with_text_key_of_dictionary",
-    "callable_line": 101,
-    "code": 5002,
-    "line": 102,
-    "start": 15,
-    "end": 35,
-    "filename": "attributes.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{attributes.C.dictionary}",
-                    "port": "leaf:return[text]"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "text" }
-            ],
-            "origin": { "line": 102, "start": 15, "end": 27 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 102, "start": 15, "end": 35 },
-            "call_site": "102:4-102:36"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "text" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "attributes.test_issue_with_text_key_of_dictionary:5002:0:Call|_test_sink|0|formal(arg):07aaa6860d20d5f97b7ef18d4f0ad4f6"
   }
 }
 {

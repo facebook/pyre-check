@@ -45,6 +45,15 @@ module Sink = struct
     | _ -> compare left right
 
 
+  let strip_callee_parameters = function
+    | Call ({ callee; _ } as call) -> Call { call with callee = Target.strip_parameters callee }
+    | Global ({ callee; _ } as global) ->
+        Global { global with callee = Target.strip_parameters callee }
+    | StringFormat ({ callee; _ } as string_format) ->
+        StringFormat { string_format with callee = Target.strip_parameters callee }
+    | sink -> sink
+
+
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
     let root =
       (* Ignore extra information in the parameter in order to group issues together. *)
@@ -104,6 +113,14 @@ module T = struct
     sink: Sink.t;
   }
   [@@deriving compare, equal, hash, sexp, show]
+
+  let strip_all_callable_parameters ({ callable; sink; _ } as handle) =
+    {
+      handle with
+      callable = Target.strip_parameters callable;
+      sink = Sink.strip_callee_parameters sink;
+    }
+
 
   let deterministic_compare
       { callable = left_callable; code = left_code; sink = left_sink }

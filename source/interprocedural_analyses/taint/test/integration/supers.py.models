@@ -2,6 +2,80 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "supers.B.g1",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 42,
+    "start": 19,
+    "end": 31,
+    "filename": "supers.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 42, "start": 19, "end": 31 },
+              "resolves_to": [ "supers.A.f3" ],
+              "port": "result"
+            },
+            "caller_interval": [ { "lower": 3, "upper": 6 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 42, "start": 19, "end": 31 },
+              "resolves_to": [ "supers.A.f2" ],
+              "port": "formal(x, position=1)",
+              "call_site": "42:8-42:32"
+            },
+            "caller_interval": [ { "lower": 3, "upper": 6 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "supers.A.f2",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "supers.B.g1:5002:0:Call|supers.A.f2|0|formal(x):bca647bf5e2ed5af745949c32f12e179"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "supers.B.g4",
     "callable_line": 52,
     "code": 5002,
@@ -901,80 +975,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "supers.B.g1",
-    "callable_line": 39,
-    "code": 5002,
-    "line": 42,
-    "start": 19,
-    "end": 31,
-    "filename": "supers.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 42, "start": 19, "end": 31 },
-              "resolves_to": [ "supers.A.f3" ],
-              "port": "result"
-            },
-            "caller_interval": [ { "lower": 3, "upper": 6 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 11 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 42, "start": 19, "end": 31 },
-              "resolves_to": [ "supers.A.f2" ],
-              "port": "formal(x, position=1)",
-              "call_site": "42:8-42:32"
-            },
-            "caller_interval": [ { "lower": 3, "upper": 6 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 11 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "supers.A.f2",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "supers.B.g1:5002:0:Call|supers.A.f2|0|formal(x):bca647bf5e2ed5af745949c32f12e179"
   }
 }
 {

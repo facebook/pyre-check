@@ -655,75 +655,6 @@
     "callable": "private_variables.test_private_attribute_sink_models",
     "callable_line": 132,
     "code": 5002,
-    "line": 138,
-    "start": 49,
-    "end": 63,
-    "filename": "private_variables.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 138, "start": 49, "end": 63 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 138, "start": 49, "end": 63 },
-              "resolves_to": [
-                "private_variables.PrivateAttributeSinkModels.set_model_query"
-              ],
-              "port": "formal(value, position=1)",
-              "call_site": "138:4-138:64"
-            },
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "private_variables.PrivateAttributeSinkModels.set_model_query",
-      "index": 0,
-      "parameter": "formal(value)"
-    },
-    "master_handle": "private_variables.test_private_attribute_sink_models:5002:0:Call|private_variables.PrivateAttributeSinkModels.set_model_query|0|formal(value):fc56b4ac77425c23dfa7b954b9b76796"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "private_variables.test_private_attribute_sink_models",
-    "callable_line": 132,
-    "code": 5002,
     "line": 136,
     "start": 53,
     "end": 67,
@@ -785,6 +716,75 @@
       "parameter": "formal(value)"
     },
     "master_handle": "private_variables.test_private_attribute_sink_models:5002:0:Call|private_variables.PrivateAttributeSinkModels.set_model_unmangled|0|formal(value):a76f9f6a184d57961e97a9b5d51a8c9e"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "private_variables.test_private_attribute_sink_models",
+    "callable_line": 132,
+    "code": 5002,
+    "line": 138,
+    "start": 49,
+    "end": 63,
+    "filename": "private_variables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 138, "start": 49, "end": 63 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 138, "start": 49, "end": 63 },
+              "resolves_to": [
+                "private_variables.PrivateAttributeSinkModels.set_model_query"
+              ],
+              "port": "formal(value, position=1)",
+              "call_site": "138:4-138:64"
+            },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "private_variables.PrivateAttributeSinkModels.set_model_query",
+      "index": 0,
+      "parameter": "formal(value)"
+    },
+    "master_handle": "private_variables.test_private_attribute_sink_models:5002:0:Call|private_variables.PrivateAttributeSinkModels.set_model_query|0|formal(value):fc56b4ac77425c23dfa7b954b9b76796"
   }
 }
 {

@@ -127,6 +127,72 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "locals.source_parameter_to_sink",
+    "callable_line": 28,
+    "code": 5002,
+    "line": 29,
+    "start": 15,
+    "end": 28,
+    "filename": "locals.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "locals.source_parameter_to_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "x" }
+            ],
+            "origin": { "line": 28, "start": 29, "end": 30 },
+            "call_site": "28:0-30:29"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 29, "start": 15, "end": 28 },
+            "call_site": "29:4-29:29"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "x" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "locals.source_parameter_to_sink:5002:0:Call|_test_sink|0|formal(arg):2b5c4e9505cceda2f46c9f4bb0fbf18e"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -214,71 +280,5 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "locals.source_parameter_to_sink",
-    "callable_line": 28,
-    "code": 5002,
-    "line": 29,
-    "start": 15,
-    "end": 28,
-    "filename": "locals.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "locals.source_parameter_to_sink",
-                    "port": "leaf:x"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "x" }
-            ],
-            "origin": { "line": 28, "start": 29, "end": 30 },
-            "call_site": "28:0-30:29"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 29, "start": 15, "end": 28 },
-            "call_site": "29:4-29:29"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "x" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "locals.source_parameter_to_sink:5002:0:Call|_test_sink|0|formal(arg):2b5c4e9505cceda2f46c9f4bb0fbf18e"
   }
 }

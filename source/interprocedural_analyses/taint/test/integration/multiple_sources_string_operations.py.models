@@ -626,6 +626,138 @@
     "callable": "multiple_sources_string_operations.string_operations",
     "callable_line": 27,
     "code": 4324,
+    "line": 31,
+    "start": 17,
+    "end": 32,
+    "filename": "multiple_sources_string_operations.py",
+    "message": "User controlled data flows into potential SQL strings",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_string_operations.user_controlled_input",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 31, "start": 17, "end": 32 } ],
+            "origin": { "line": 29, "start": 27, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source StringMayBeSQL",
+                    "origin": { "line": 28, "start": 17, "end": 25 },
+                    "leaf_kind": "StringMayBeSQL",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
+                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
+              }
+            ],
+            "origin": { "line": 31, "start": 4, "end": 33 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "StringFormat",
+      "callee": "str.format",
+      "index": 0,
+      "parameter_index": 2
+    },
+    "master_handle": "multiple_sources_string_operations.string_operations:4324:0:StringFormat|str.format|0|2:c6b2881eeb7fe9f65aec6ab6729c3850"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources_string_operations.string_operations",
+    "callable_line": 27,
+    "code": 4324,
+    "line": 32,
+    "start": 22,
+    "end": 37,
+    "filename": "multiple_sources_string_operations.py",
+    "message": "User controlled data flows into potential SQL strings",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_string_operations.user_controlled_input",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 32, "start": 22, "end": 37 } ],
+            "origin": { "line": 29, "start": 27, "end": 50 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source StringMayBeSQL",
+                    "origin": { "line": 28, "start": 17, "end": 25 },
+                    "leaf_kind": "StringMayBeSQL",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
+                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
+              }
+            ],
+            "origin": { "line": 32, "start": 4, "end": 38 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "StringFormat",
+      "callee": "str.format",
+      "index": 1,
+      "parameter_index": 2
+    },
+    "master_handle": "multiple_sources_string_operations.string_operations:4324:0:StringFormat|str.format|1|2:63dc60126a6d6c233d9a68c1e36dd3c8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "multiple_sources_string_operations.string_operations",
+    "callable_line": 27,
+    "code": 4324,
     "line": 34,
     "start": 12,
     "end": 27,
@@ -813,138 +945,6 @@
       "parameter_index": 2
     },
     "master_handle": "multiple_sources_string_operations.string_operations:4324:0:StringFormat|str.__mod__|0|2:849e739384e8c28c176b7f284d6e454d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
-    "code": 4324,
-    "line": 31,
-    "start": 17,
-    "end": 32,
-    "filename": "multiple_sources_string_operations.py",
-    "message": "User controlled data flows into potential SQL strings",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.user_controlled_input",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 31, "start": 17, "end": 32 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 28, "start": 17, "end": 25 },
-                    "leaf_kind": "StringMayBeSQL",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
-              }
-            ],
-            "origin": { "line": 31, "start": 4, "end": 33 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "StringFormat",
-      "callee": "str.format",
-      "index": 0,
-      "parameter_index": 2
-    },
-    "master_handle": "multiple_sources_string_operations.string_operations:4324:0:StringFormat|str.format|0|2:c6b2881eeb7fe9f65aec6ab6729c3850"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "multiple_sources_string_operations.string_operations",
-    "callable_line": 27,
-    "code": 4324,
-    "line": 32,
-    "start": 22,
-    "end": 37,
-    "filename": "multiple_sources_string_operations.py",
-    "message": "User controlled data flows into potential SQL strings",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations.user_controlled_input",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 32, "start": 22, "end": 37 } ],
-            "origin": { "line": 29, "start": 27, "end": 50 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 28, "start": 17, "end": 25 },
-                    "leaf_kind": "StringMayBeSQL",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [ { "name": "str.format", "port": "leaf:**" } ],
-                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
-              }
-            ],
-            "origin": { "line": 32, "start": 4, "end": 38 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "StringFormat",
-      "callee": "str.format",
-      "index": 1,
-      "parameter_index": 2
-    },
-    "master_handle": "multiple_sources_string_operations.string_operations:4324:0:StringFormat|str.format|1|2:63dc60126a6d6c233d9a68c1e36dd3c8"
   }
 }
 {

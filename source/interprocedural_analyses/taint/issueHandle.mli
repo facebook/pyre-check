@@ -43,6 +43,8 @@ type t = {
 }
 [@@deriving compare, equal, show]
 
+val strip_all_callable_parameters : t -> t
+
 val deterministic_compare : t -> t -> int
 
 val master_handle : t -> string
