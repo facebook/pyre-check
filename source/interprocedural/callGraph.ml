@@ -5015,6 +5015,8 @@ module HigherOrderCallGraph = struct
                         result_targets = result_property_targets;
                       }
                         =
+                        (* Since properties can be decorated, we need to get the "inlined"
+                           properties. *)
                         resolve_decorated_targets property_targets
                       in
                       Context.output_define_call_graph :=
@@ -5032,9 +5034,12 @@ module HigherOrderCallGraph = struct
                                   decorated_property_targets;
                             }
                           !Context.output_define_call_graph;
-                      CallTarget.Set.join
-                        (CallTarget.Set.of_list result_callable_targets)
-                        (CallTarget.Set.of_list result_property_targets))
+                      (* TODO(T222400916): We need to simulate the call to the property targets (by
+                         calling `analyze_callee_targets`), which can return callables. *)
+                      (* We should NOT return the property targets here. If method `A.foo` is a
+                         property, then accessing the property `A().foo` means calling the getter,
+                         but the result of the access is not the getter itself. *)
+                      CallTarget.Set.of_list result_callable_targets)
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               callables, state

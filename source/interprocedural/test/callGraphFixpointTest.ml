@@ -1535,13 +1535,7 @@ let test_higher_order_call_graph_fixpoint =
                                      ()) );
                             ]) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       ~implicit_receiver:true
-                       (Target.Regular.Method
-                          { class_name = "test.A"; method_name = "name"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
                {
                  Expected.callable =
@@ -1567,14 +1561,7 @@ let test_higher_order_call_graph_fixpoint =
                                ~is_attribute:false
                                ())) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       ~implicit_receiver:true
-                       (* TODO: This should be `test.foo`. *)
-                       (Target.Regular.Method
-                          { class_name = "test.A"; method_name = "name"; kind = Normal });
-                   ];
+                 returned_callables = [ (* TODO(T222400916): This should be `test.foo`. *) ];
                };
              ]
            ();
@@ -1632,13 +1619,7 @@ let test_higher_order_call_graph_fixpoint =
                                      ()) );
                             ]) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       ~implicit_receiver:true
-                       (Target.Regular.Method
-                          { class_name = "test.A"; method_name = "name"; kind = Normal });
-                   ];
+                 returned_callables = [ (* TODO(T222400916): This should be `test.foo`. *) ];
                };
                {
                  Expected.callable =
@@ -1664,14 +1645,7 @@ let test_higher_order_call_graph_fixpoint =
                                ~is_attribute:false
                                ())) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       ~implicit_receiver:true
-                       (* TODO: This should be `test.foo`. *)
-                       (Target.Regular.Method
-                          { class_name = "test.A"; method_name = "name"; kind = Normal });
-                   ];
+                 returned_callables = [ (* TODO(T222400916): This should be `test.foo`. *) ];
                };
              ]
            ();
@@ -2000,22 +1974,8 @@ let test_higher_order_call_graph_fixpoint =
                             (CallCallees.create
                                ~call_targets:
                                  [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.bar"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "f",
-                                              Target.Regular.Method
-                                                {
-                                                  class_name = "test.A";
-                                                  method_name = "foo";
-                                                  kind = Normal;
-                                                }
-                                              |> Target.from_regular );
-                                          ]);
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
                                  ]
                                ())) );
                      ( "9:6-9:11",
