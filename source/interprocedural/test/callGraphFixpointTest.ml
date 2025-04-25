@@ -1972,6 +1972,75 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     class A():
+       @property
+       def foo(self) -> int:
+         return 0
+     def bar(f):
+       return
+     def main(a: A):
+       x = a.foo  # Test not propagating property targets
+       return bar(x)
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "10:9-10:15",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create
+                                     (create_parameterized_target
+                                        ~regular:
+                                          (Target.Regular.Function
+                                             { name = "test.bar"; kind = Normal })
+                                        ~parameters:
+                                          [
+                                            ( create_positional_parameter 0 "f",
+                                              Target.Regular.Method
+                                                {
+                                                  class_name = "test.A";
+                                                  method_name = "foo";
+                                                  kind = Normal;
+                                                }
+                                              |> Target.from_regular );
+                                          ]);
+                                 ]
+                               ())) );
+                     ( "9:6-9:11",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~property_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     ~implicit_receiver:true
+                                     ~return_type:(Some ReturnType.integer)
+                                     (Target.Regular.Method
+                                        {
+                                          class_name = "test.A";
+                                          method_name = "foo";
+                                          kind = Normal;
+                                        });
+                                 ]
+                               ~is_attribute:false
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
