@@ -1531,6 +1531,124 @@
 {
   "kind": "model",
   "data": {
+    "callable": "decorator.StringWrapper.__add__",
+    "filename": "decorator.py",
+    "callable_line": 388,
+    "sinks": [
+      {
+        "port": "formal(other, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 390, "start": 19, "end": 24 },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false,
+            "call_site": "390:8-390:25"
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 389, "start": 19, "end": 23 },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false,
+            "call_site": "389:8-389:24"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(other, position=1)[value]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[value]": 3 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 391, "start": 29, "end": 53 },
+              { "line": 391, "start": 42, "end": 53 }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[value]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[value]": 3 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 391, "start": 29, "end": 39 },
+              { "line": 391, "start": 29, "end": 53 }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.StringWrapper.__init__",
+    "filename": "decorator.py",
+    "callable_line": 384,
+    "tito": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[value]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
     "filename": "decorator.py",
     "callable_line": 285,
@@ -1794,6 +1912,25 @@
   "kind": "model",
   "data": {
     "callable": "decorator.no_op_decorator",
+    "filename": "decorator.py",
+    "callable_line": 303,
+    "tito": [
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.no_op_decorator[formal(f, position=0)=decorator.StringWrapper.__add__]",
     "filename": "decorator.py",
     "callable_line": 303,
     "tito": [

@@ -378,3 +378,19 @@ def sink_via_conditional_decorator_factory(x: str) -> None:
 
 def issue_via_conditional_decorator_factory():
     sink_via_conditional_decorator_factory(_test_source())
+
+
+class StringWrapper:
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    @no_op_decorator
+    def __add__(self, other: "StringWrapper") -> "StringWrapper":
+        _test_sink(self)
+        _test_sink(other)
+        return StringWrapper(self.value + other.value)
+
+
+def issue_str_wrapper():
+    x = StringWrapper(_test_source())
+    x + StringWrapper("")
