@@ -12,7 +12,6 @@ from ...api import query
 from ...api.connection import PyreConnection
 from ...api.query import ClassHierarchy
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
@@ -48,28 +47,6 @@ def get_all_subclasses_from_pyre(
         return result
     else:
         LOG.debug(f"Did not find class hierarchy for {targets}")
-        return None
-
-
-def get_all_subclass_defines_from_pyre(
-    targets: Iterable[str],
-    pyre_connection: PyreConnection,
-    transitive: bool = False,
-    pyre_cache: Optional[query.PyreCache] = None,
-) -> Optional[Dict[str, List[query.Define]]]:
-    subclasses = get_all_subclasses_from_pyre(
-        targets,
-        pyre_connection=pyre_connection,
-        transitive=transitive,
-        pyre_cache=pyre_cache,
-    )
-
-    if subclasses is not None:
-        return {
-            target: query.defines(pyre_connection, subclasses[target], batch_size=500)
-            for target in subclasses.keys()
-        }
-    else:
         return None
 
 
