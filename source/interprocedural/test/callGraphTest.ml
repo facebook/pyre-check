@@ -7735,18 +7735,6 @@ let test_higher_order_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.foo.bar"; kind = Normal });
-                             CallTarget.create
-                               (create_parameterized_target
-                                  ~regular:
-                                    (Target.Regular.Function
-                                       { name = "test.foo.bar"; kind = Normal })
-                                  ~parameters:
-                                    [
-                                      ( AccessPath.Root.Variable "$local_test?foo$baz",
-                                        Target.Regular.Function
-                                          { name = "test.foo.baz"; kind = Normal }
-                                        |> Target.from_regular );
-                                    ]);
                            ]
                          ())) );
                ( "9:4-9:9",
@@ -7757,6 +7745,18 @@ let test_higher_order_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                (Target.Regular.Function { name = "test.foo.baz"; kind = Normal });
+                             CallTarget.create
+                               (create_parameterized_target
+                                  ~regular:
+                                    (Target.Regular.Function
+                                       { name = "test.foo.baz"; kind = Normal })
+                                  ~parameters:
+                                    [
+                                      ( AccessPath.Root.Variable "$local_test?foo$bar",
+                                        Target.Regular.Function
+                                          { name = "test.foo.bar"; kind = Normal }
+                                        |> Target.from_regular );
+                                    ]);
                            ]
                          ())) );
              ]

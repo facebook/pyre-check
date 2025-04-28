@@ -4717,7 +4717,8 @@ module HigherOrderCallGraph = struct
                    ~message_when_exceeding_limit:
                      "Avoid generating parameterized targets when analyzing call"
               |> Option.value ~default:[]
-              |> List.filter_map ~f:create_call_target)
+              |> List.filter_map ~f:create_call_target
+              |> List.dedup_and_sort ~compare:CallTarget.compare)
         in
         let non_parameterized_targets =
           track_apply_call_step FindNonParameterizedTargets (fun () ->
@@ -5163,17 +5164,20 @@ module HigherOrderCallGraph = struct
                              "Avoid generating parameterized targets when analyzing `Define` \
                               statement"
                       |> Option.value ~default:[]
-                      |> List.filter_map ~f:(fun parameters_targets ->
-                             Target.Parameterized
-                               {
-                                 regular = regular_target;
-                                 parameters =
-                                   parameters_targets
-                                   |> List.zip_exn parameters_roots
-                                   |> Target.ParameterMap.of_alist_exn;
-                               }
-                             |> validate_target
-                             >>| CallTarget.create)
+                      |> List.map ~f:(fun parameters_targets ->
+                             match
+                               validate_target
+                                 (Target.Parameterized
+                                    {
+                                      regular = regular_target;
+                                      parameters =
+                                        parameters_targets
+                                        |> List.zip_exn parameters_roots
+                                        |> Target.ParameterMap.of_alist_exn;
+                                    })
+                             with
+                             | Some parameterized -> CallTarget.create parameterized
+                             | None -> CallTarget.create_regular regular_target)
                       |> CallTarget.Set.of_list
                 | _ ->
                     regular_target
