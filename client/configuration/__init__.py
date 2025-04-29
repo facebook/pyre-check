@@ -16,6 +16,8 @@ from .configuration import (  # noqa: F401
     Configuration,
     create_configuration,
     create_overridden_configuration,
+    merge_partial_configurations,
+    PartialConfiguration,
 )
 from .exceptions import InvalidConfiguration, InvalidPythonVersion  # noqa: F401
 from .platform_aware import PlatformAware  # noqa: F401
