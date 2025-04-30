@@ -903,6 +903,26 @@ let end_to_end_integration_test path context =
       in
       create_expected_and_actual_files ~suffix:".cg" actual
     in
+    let create_higher_order_call_graph_files call_graph_fixpoint_state =
+      let content =
+        call_graph_fixpoint_state.CallGraphFixpoint.fixpoint
+        |> CallGraphFixpoint.analyzed_callables
+        |> List.dedup_and_sort ~compare:Target.compare
+        |> List.filter_map ~f:(fun callable ->
+               match CallGraphFixpoint.get_model call_graph_fixpoint_state callable with
+               | Some call_graph when not (CallGraph.HigherOrderCallGraph.is_empty call_graph) ->
+                   let json =
+                     `Assoc
+                       (("callable", `String (Target.show_pretty callable))
+                       :: CallGraph.HigherOrderCallGraph.to_json_alist call_graph)
+                   in
+                   Some (Yojson.Safe.pretty_to_string json)
+               | _ -> None)
+        |> String.concat ~sep:"\n"
+      in
+      let actual = Format.asprintf "@%s\nHigher order call graphs\n%s" "generated" content in
+      create_expected_and_actual_files ~suffix:".hofcg" actual
+    in
     let create_overrides_files overrides =
       let actual =
         Format.asprintf
@@ -1018,7 +1038,11 @@ let end_to_end_integration_test path context =
     in
 
     let divergent_files =
-      [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
+      [
+        create_call_graph_files whole_program_call_graph;
+        create_higher_order_call_graph_files call_graph_fixpoint_state;
+        create_overrides_files override_graph_heap;
+      ]
     in
     let serialized_models =
       let callables_to_definitions_map =

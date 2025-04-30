@@ -1,0 +1,123 @@
+@generated
+Higher order call graphs
+{
+  "callable": "multi_subkind.issue",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:17": {
+      "multi_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "multi_subkind.multi_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "31:13-31:23": {
+      "source_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "multi_subkind.source_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "31:4-31:23": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "30:13-30:23": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "multi_subkind.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "30:4-30:23": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multi_subkind.multi_sink",
+  "returned_callables": [],
+  "calls": {
+    "25:11-25:17": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "25:4-25:18": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "multi_subkind.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "24:11-24:17": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "24:4-24:18": {
+      "sink_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "multi_subkind.sink_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

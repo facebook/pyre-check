@@ -1,0 +1,283 @@
+@generated
+Higher order call graphs
+{
+  "callable": "implicit_sources.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "63:13-63:16": {
+      "$local_implicit_sources$END": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.END}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "63:7-63:11": {
+      "$local_implicit_sources$BODY": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.BODY}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "63:0-63:5": {
+      "$local_implicit_sources$START": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.START}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "36:0-36:14": {
+      "$local_implicit_sources$GOOGLE_API_KEY": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.GOOGLE_API_KEY}", "index": 0 }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sources.bar_dot_format",
+  "returned_callables": [],
+  "calls": {
+    "25:11-25:55": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sources.bar_format_strings",
+  "returned_callables": [],
+  "calls": {
+    "15:14-15:29": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "15:11-15:47": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sources.bar_percent_format",
+  "returned_callables": [],
+  "calls": {
+    "20:11-20:52": {
+      "__mod__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__mod__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sources.string_literal_arguments_source",
+  "returned_callables": [],
+  "calls": {
+    "61:15-61:28": {
+      "__add__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "59:15-59:35": {
+      "__mod__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "58:9-58:15": {
+      "__ne__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__ne__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__eq__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "57:15-57:44": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "56:7-56:13": {
+      "__ne__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__ne__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sources.string_source_top_level",
+  "returned_callables": [],
+  "calls": {
+    "40:21-40:35": {
+      "$local_implicit_sources$GOOGLE_API_KEY": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.GOOGLE_API_KEY}", "index": 0 }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "implicit_sources.toplevel_simultaneous_assignment",
+  "returned_callables": [],
+  "calls": {
+    "66:26-66:29": {
+      "$local_implicit_sources$END": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.END}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "66:19-66:23": {
+      "$local_implicit_sources$BODY": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.BODY}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "66:11-66:29": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "66:11-66:23": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "66:11-66:16": {
+      "$local_implicit_sources$START": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{implicit_sources.START}", "index": 0 }
+          ]
+        }
+      }
+    }
+  }
+}

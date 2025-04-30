@@ -1,0 +1,452 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query_parameters_viatypeof.test1_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "16:4-16:23": {
+      "test1_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test1_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "15:13-15:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test1_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "21:4-21:23": {
+      "test1_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test1_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "20:31-20:45": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test1_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "26:4-26:25": {
+      "test1_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test1_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "25:13-25:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test1_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:25": {
+      "test1_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test1_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "47:4-47:19": {
+      "f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f1",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "46:13-46:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:19": {
+      "f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f1",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "51:24-51:38": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "57:4-57:21": {
+      "f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f1",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "56:17-56:31": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "62:4-62:19": {
+      "f2": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f2",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "61:13-61:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_alarm5",
+  "returned_callables": [],
+  "calls": {
+    "67:4-67:19": {
+      "f2": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f2",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "66:29-66:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_alarm6",
+  "returned_callables": [],
+  "calls": {
+    "72:4-72:21": {
+      "f2": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f2",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    },
+    "71:15-71:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "76:4-76:21": {
+      "f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f1",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test2_noalarm2",
+  "returned_callables": [],
+  "calls": {
+    "80:17-80:26": {
+      "Test2_T": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "80:4-80:27": {
+      "f2": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.Test2_C.f2",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "model_query_parameters_viatypeof.Test2_C"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test3_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "89:4-89:23": {
+      "test3_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test3_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "88:13-88:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test3_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "94:4-94:23": {
+      "test3_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test3_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "93:31-93:45": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test3_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "99:4-99:25": {
+      "test3_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test3_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "98:13-98:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_parameters_viatypeof.test3_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "103:4-103:25": {
+      "test3_f1": {
+        "call": {
+          "calls": [
+            {
+              "target": "model_query_parameters_viatypeof.test3_f1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,163 @@
+@generated
+Higher order call graphs
+{
+  "callable": "parametric_models.f_and_g_to_test",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:11": {
+      "sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "parametric_models.sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "28:12-28:15": {
+      "g": {
+        "call": {
+          "calls": [
+            {
+              "target": "parametric_models.g",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "26:12-26:15": {
+      "f": {
+        "call": {
+          "calls": [
+            {
+              "target": "parametric_models.f",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "25:7-25:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "parametric_models.inferred_sink",
+  "returned_callables": [],
+  "calls": {
+    "45:8-45:25": {
+      "sink_subkind_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "parametric_models.sink_subkind_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "43:8-43:25": {
+      "sink_subkind_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "parametric_models.sink_subkind_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "42:7-42:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "parametric_models.test_to_subkind_sink",
+  "returned_callables": [],
+  "calls": {
+    "50:4-50:20": {
+      "inferred_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "parametric_models.inferred_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "49:8-49:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

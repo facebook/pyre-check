@@ -1,0 +1,2182 @@
+@generated
+Higher order call graphs
+{
+  "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "165:55-165:65": {
+      "b_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "165:11-165:66": {
+      "multiple_titos_different_input_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "165:4-165:67": {
+      "b_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "164:55-164:65": {
+      "a_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "164:11-164:66": {
+      "multiple_titos_different_input_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "164:4-164:67": {
+      "a_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_paths",
+  "returned_callables": [],
+  "calls": {
+    "140:48-140:58": {
+      "b_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "140:11-140:59": {
+      "multiple_titos_different_input_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_input_paths",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "140:4-140:60": {
+      "b_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "139:48-139:58": {
+      "a_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "139:11-139:59": {
+      "multiple_titos_different_input_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_input_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "139:4-139:60": {
+      "a_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.issue_multiple_titos_different_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "115:49-115:59": {
+      "b_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "115:11-115:60": {
+      "multiple_titos_different_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_output_paths",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "115:4-115:61": {
+      "b_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "114:49-114:59": {
+      "a_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "114:11-114:60": {
+      "multiple_titos_different_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "114:4-114:61": {
+      "a_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path",
+  "returned_callables": [],
+  "calls": {
+    "90:36-90:46": {
+      "b_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "90:11-90:47": {
+      "multiple_titos_same_path": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_same_path",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "90:4-90:48": {
+      "b_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "89:36-89:46": {
+      "a_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "89:11-89:47": {
+      "multiple_titos_same_path": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_same_path",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "89:4-89:48": {
+      "a_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform",
+  "returned_callables": [],
+  "calls": {
+    "198:51-198:61": {
+      "b_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "198:11-198:62": {
+      "multiple_titos_same_path_with_transform": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_same_path_with_transform",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "198:4-198:63": {
+      "b_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.b_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "197:51-197:61": {
+      "a_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "197:11-197:62": {
+      "multiple_titos_same_path_with_transform": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_same_path_with_transform",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "197:4-197:63": {
+      "a_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.a_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "158:12-158:58": {
+      "multiple_titos_different_input_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "157:13-157:24": {
+      "range": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "range.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "157:8-157:24": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "range.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "range"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.loop_multiple_titos_different_input_paths",
+  "returned_callables": [],
+  "calls": {
+    "133:12-133:51": {
+      "multiple_titos_different_input_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_input_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "132:13-132:24": {
+      "range": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "range.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "132:8-132:24": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "range.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "range"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.loop_multiple_titos_different_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "108:12-108:52": {
+      "multiple_titos_different_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_different_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "107:13-107:24": {
+      "range": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "range.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "107:8-107:24": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "range.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "range"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.loop_multiple_titos_same_path",
+  "returned_callables": [],
+  "calls": {
+    "83:12-83:39": {
+      "multiple_titos_same_path": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.multiple_titos_same_path",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "82:13-82:24": {
+      "range": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "range.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "82:8-82:24": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "range.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "range"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.multiple_titos_different_input_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "153:67-153:73": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "153:51-153:74": {
+      "sanitize_sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "153:33-153:75": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "153:21-153:76": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "151:47-151:53": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "151:21-151:54": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "150:9-150:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "149:39-149:45": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "149:21-149:46": {
+      "sanitize_source_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "148:9-148:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "147:51-147:57": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "147:33-147:58": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "147:21-147:59": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "146:9-146:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "145:21-145:27": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "144:7-144:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.multiple_titos_different_input_paths",
+  "returned_callables": [],
+  "calls": {
+    "128:61-128:67": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "128:45-128:68": {
+      "sanitize_sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "128:27-128:69": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "128:15-128:70": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "126:41-126:47": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "126:15-126:48": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "125:9-125:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "124:33-124:39": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "124:15-124:40": {
+      "sanitize_source_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "123:9-123:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "122:45-122:51": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "122:27-122:52": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "122:15-122:53": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "121:9-121:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "120:15-120:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "119:7-119:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.multiple_titos_different_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "103:39-103:57": {
+      "sanitize_sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "103:21-103:58": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "101:21-101:49": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "100:9-100:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "99:21-99:41": {
+      "sanitize_source_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "98:9-98:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "97:33-97:53": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "97:21-97:54": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "96:9-96:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "94:7-94:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.multiple_titos_same_path",
+  "returned_callables": [],
+  "calls": {
+    "76:33-76:51": {
+      "sanitize_sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_b",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "76:15-76:52": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "74:41-74:61": {
+      "sanitize_source_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_b",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "74:15-74:62": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "73:9-73:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "72:27-72:45": {
+      "sanitize_sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "72:15-72:46": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "71:9-71:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "70:15-70:43": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "69:9-69:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "68:15-68:35": {
+      "sanitize_source_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "67:9-67:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "66:27-66:47": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "66:15-66:48": {
+      "add_feature": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.add_feature",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "65:9-65:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "63:7-63:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.multiple_titos_same_path_different_collapse_depth",
+  "returned_callables": [],
+  "calls": {
+    "174:34-174:62": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "174:15-174:63": {
+      "tito_collapse_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.tito_collapse_zero",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "172:33-172:53": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "172:15-172:54": {
+      "tito_collapse_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.tito_collapse_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "171:9-171:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "170:15-170:36": {
+      "tito_collapse_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.tito_collapse_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "169:7-169:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.multiple_titos_same_path_with_transform",
+  "returned_callables": [],
+  "calls": {
+    "193:41-193:55": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.transform_y",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "193:15-193:56": {
+      "sanitize_sink_a_depth_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "191:15-191:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "190:9-190:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "189:33-189:47": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.transform_x",
+              "index": 2,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "189:15-189:48": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 2,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "188:9-188:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "187:27-187:47": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "187:15-187:48": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.transform_x",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "186:9-186:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "185:15-185:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "184:9-184:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "183:15-183:35": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "182:9-182:14": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "180:7-180:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.sanitize_sink_a_depth_two",
+  "returned_callables": [],
+  "calls": {
+    "35:11-35:29": {
+      "sanitize_sink_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_sink_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.sanitize_source_a_depth_two",
+  "returned_callables": [],
+  "calls": {
+    "32:11-32:31": {
+      "sanitize_source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.sanitize_source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_tito_shaping.tito_collapse_one",
+  "returned_callables": [],
+  "calls": {
+    "57:11-57:27": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "57:11-57:22": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "57:11-57:17": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "56:8-56:41": {
+      "tito_collapse_one_append_a_b_c": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_tito_shaping.tito_collapse_one_append_a_b_c",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

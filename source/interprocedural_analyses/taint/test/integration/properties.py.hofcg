@@ -1,0 +1,1160 @@
+@generated
+Higher order call graphs
+{
+  "callable": "properties.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "137:4-137:31": {
+      "TypeVar": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
+      }
+    },
+    "137:0-137:1": {
+      "$local_properties$T": {
+        "identifier": {
+          "globals": [ { "target": "Obj{properties.T}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.CollidePropertySetterName.collided_property.setter",
+  "returned_callables": [],
+  "calls": {
+    "249:12-249:22": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "properties.CollidePropertySetterName.foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.CollidePropertySetterName"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.function_with_nested_properties.my_property",
+  "returned_callables": [],
+  "calls": {
+    "228:8-228:13": {
+      "foo": {
+        "call": {
+          "calls": [
+            { "target": "properties.foo", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.function_with_nested_properties.my_property@setter",
+  "returned_callables": [],
+  "calls": {
+    "234:8-234:13": {
+      "bar": {
+        "call": {
+          "calls": [
+            { "target": "properties.bar", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "233:19-233:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "233:8-233:34": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.property_setter_in_constructor",
+  "returned_callables": [],
+  "calls": {
+    "161:4-161:30": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "160:15-160:20": {
+      "x": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.PropertySetterInConstructor.x",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "160:4-160:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "159:38-159:52": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "159:10-159:53": {
+      "PropertySetterInConstructor": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.PropertySetterInConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.sets_tainted_value",
+  "returned_callables": [],
+  "calls": {
+    "95:20-95:34": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "95:4-95:17": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.setters_are_simulated",
+  "returned_callables": [],
+  "calls": {
+    "117:15-117:18": {
+      "p": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.SetterMutatesValue.p",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "117:4-117:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "115:10-115:24": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "115:4-115:7": {
+      "p": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.SetterMutatesValue.p@setter",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "114:15-114:18": {
+      "p": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.SetterMutatesValue.p",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "114:4-114:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "112:8-112:28": {
+      "SetterMutatesValue": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.SetterMutatesValue.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_getattr_on_property",
+  "returned_callables": [],
+  "calls": {
+    "213:15-213:44": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.TaintedGetterAndSetter.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      },
+      "getattr": {
+        "call": {
+          "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        }
+      }
+    },
+    "213:4-213:45": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_issue_in_class_property",
+  "returned_callables": [],
+  "calls": {
+    "128:15-128:46": {
+      "my_class_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.ClassProperty.my_class_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "128:4-128:47": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_property_callable",
+  "returned_callables": [],
+  "calls": {
+    "186:25-186:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "186:11-186:40": {
+      "attribute": {
+        "call": {
+          "calls": [
+            {
+              "target": "properties.PropertyCallableReturn.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "implicit_dunder_call": true,
+              "return_type": [],
+              "receiver_class": "properties.PropertyCallableReturn"
+            }
+          ]
+        }
+      }
+    },
+    "185:27-185:41": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "185:10-185:42": {
+      "PropertyCallable": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.PropertyCallable.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_type_variable_properties_are_resolved",
+  "returned_callables": [],
+  "calls": {
+    "141:11-141:24": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.Class.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            },
+            {
+              "target": "properties.Class2.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_union_property_attribute_sink",
+  "returned_callables": [],
+  "calls": {
+    "209:15-209:30": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.TaintedGetterAndSetter.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            },
+            {
+              "target": "Overrides{properties.DerivedTaintedSetter.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "209:4-209:31": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "208:14-208:33": {
+      "RegularAttribute": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.RegularAttribute.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "206:14-206:38": {
+      "TaintedGetterAndSetter": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "205:7-205:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_union_property_attribute_source",
+  "returned_callables": [],
+  "calls": {
+    "200:11-200:26": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.TaintedGetterAndSetter.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            },
+            {
+              "target": "Overrides{properties.DerivedTaintedSetter.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "199:31-199:45": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "199:14-199:46": {
+      "RegularAttribute": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.RegularAttribute.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "197:14-197:38": {
+      "TaintedGetterAndSetter": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "196:7-196:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.Class.uses_other",
+  "returned_callables": [],
+  "calls": {
+    "29:19-29:36": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.Class.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.Class.uses_property",
+  "returned_callables": [],
+  "calls": {
+    "21:15-21:31": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.Class.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "20:23-20:37": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.Class.uses_property_but_no_tito_taint",
+  "returned_callables": [],
+  "calls": {
+    "25:15-25:31": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.Class.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "24:25-24:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.ClassProperty.my_class_property@decorated",
+  "returned_callables": [],
+  "calls": {
+    "123:4-124:17": {
+      "my_class_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.ClassProperty.my_class_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      },
+      "ClassProperty": { "attribute_access": { "is_attribute": true } }
+    },
+    "122:5-122:22": {
+      "__classproperty__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.CollidePropertySetterName.collided_property",
+  "returned_callables": [],
+  "calls": {
+    "251:8-251:17": {
+      "$local_properties?CollidePropertySetterName?collided_property$setter": {
+        "call": {
+          "calls": [
+            {
+              "target": "properties.CollidePropertySetterName.collided_property.setter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.CollidePropertySetterName.collided_property@setter",
+  "returned_callables": [],
+  "calls": {
+    "255:8-255:18": {
+      "bar": {
+        "call": {
+          "calls": [
+            {
+              "target": "properties.CollidePropertySetterName.bar",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.CollidePropertySetterName"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.Derived.uses_property",
+  "returned_callables": [],
+  "calls": {
+    "37:15-37:31": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.Class.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "36:23-36:37": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.Derived.uses_property_but_no_tito_taint",
+  "returned_callables": [],
+  "calls": {
+    "41:15-41:31": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.Class.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "40:25-40:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.DerivedTaintedSetter.my_property@setter",
+  "returned_callables": [],
+  "calls": {
+    "81:8-81:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.OtherDerived.my_property",
+  "returned_callables": [],
+  "calls": {
+    "47:15-47:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.OtherDerived.uses_property_but_no_tito_taint",
+  "returned_callables": [],
+  "calls": {
+    "51:15-51:31": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.OtherDerived.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "50:25-50:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.PropertyCallable.attribute",
+  "returned_callables": [],
+  "calls": {
+    "181:38-181:52": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "181:15-181:53": {
+      "PropertyCallableReturn": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "properties.PropertyCallableReturn.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "180:8-180:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.PropertyCallableReturn.__call__",
+  "returned_callables": [],
+  "calls": {
+    "170:8-170:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "169:8-169:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.PropertySetterInConstructor.__init__",
+  "returned_callables": [],
+  "calls": {
+    "147:8-147:14": {
+      "x": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.PropertySetterInConstructor.x@setter",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.PropertySetterTitoModel.test_obscure_property",
+  "returned_callables": [],
+  "calls": {
+    "281:8-281:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "280:32-280:46": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "280:8-280:29": {
+      "obscure_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.PropertySetterTitoModel.obscure_property@setter",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.PropertySetterTitoModel.test_tito_property",
+  "returned_callables": [],
+  "calls": {
+    "269:19-269:35": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.PropertySetterTitoModel.my_property",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "269:8-269:36": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "268:27-268:41": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "268:8-268:24": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "properties.PropertySetterTitoModel.my_property@setter",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.TaintedGetterAndSetter.my_property",
+  "returned_callables": [],
+  "calls": {
+    "60:8-60:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.TaintedGetterAndSetter.uses_property",
+  "returned_callables": [],
+  "calls": {
+    "68:15-68:31": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.TaintedGetterAndSetter.my_property}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "properties.TaintedGetterAndSetter.writes_to_property",
+  "returned_callables": [],
+  "calls": {
+    "71:27-71:41": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "71:8-71:24": {
+      "my_property": {
+        "attribute_access": {
+          "properties": [
+            {
+              "target": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

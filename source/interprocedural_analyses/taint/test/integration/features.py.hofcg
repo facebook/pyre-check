@@ -1,0 +1,445 @@
+@generated
+Higher order call graphs
+{
+  "callable": "features.async_issue_bools",
+  "returned_callables": [],
+  "calls": {
+    "95:4-95:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "94:17-94:39": {
+      "async_tuple_of_bools": {
+        "call": {
+          "calls": [
+            {
+              "target": "features.async_tuple_of_bools",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.async_tuple_of_bools",
+  "returned_callables": [],
+  "calls": {
+    "90:27-90:41": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "90:11-90:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_from_tuple",
+  "returned_callables": [],
+  "calls": {
+    "79:4-79:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "78:11-78:34": {
+      "return_tuple_of_bools": {
+        "call": {
+          "calls": [
+            {
+              "target": "features.return_tuple_of_bools",
+              "index": 0,
+              "return_type": [ "float", "integer", "boolean" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_via_bool",
+  "returned_callables": [],
+  "calls": {
+    "60:4-60:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "59:8-59:15": {
+      "bool": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 0,
+              "return_type": [ "float", "integer", "boolean" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ]
+            }
+          ]
+        }
+      }
+    },
+    "58:8-58:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_via_equality",
+  "returned_callables": [],
+  "calls": {
+    "70:4-70:31": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "69:22-69:36": {
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "object"
+            }
+          ]
+        }
+      }
+    },
+    "68:8-68:32": {
+      "returns_tainted_object": {
+        "call": {
+          "calls": [
+            {
+              "target": "features.returns_tainted_object",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.issue_via_in",
+  "returned_callables": [],
+  "calls": {
+    "105:4-105:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "104:4-104:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "103:8-103:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.no_always_when_calling_setitem",
+  "returned_callables": [],
+  "calls": {
+    "121:4-121:21": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "features.SetItemClass.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "features.SetItemClass"
+            }
+          ]
+        }
+      }
+    },
+    "120:8-120:22": {
+      "SetItemClass": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "119:8-119:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.return_tuple_of_bools",
+  "returned_callables": [],
+  "calls": {
+    "74:27-74:41": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "74:11-74:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.returns_tainted_object",
+  "returned_callables": [],
+  "calls": {
+    "64:11-64:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_constructor",
+  "returned_callables": [],
+  "calls": {
+    "46:11-46:17": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 0,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_len",
+  "returned_callables": [],
+  "calls": {
+    "23:11-23:17": {
+      "len": {
+        "call": {
+          "calls": [
+            {
+              "target": "features.len",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_min_left",
+  "returned_callables": [],
+  "calls": {
+    "27:11-27:21": {
+      "min": {
+        "call": {
+          "calls": [
+            { "target": "features.min", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_min_or_not",
+  "returned_callables": [],
+  "calls": {
+    "40:15-40:28": {
+      "min": {
+        "call": {
+          "calls": [
+            { "target": "features.min", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_min_right",
+  "returned_callables": [],
+  "calls": {
+    "31:11-31:20": {
+      "min": {
+        "call": {
+          "calls": [
+            { "target": "features.min", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_named",
+  "returned_callables": [],
+  "calls": {
+    "35:11-35:35": {
+      "named": {
+        "call": {
+          "calls": [
+            { "target": "features.named", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_via_optional",
+  "returned_callables": [],
+  "calls": {
+    "54:11-54:29": {
+      "optional_scalar": {
+        "call": {
+          "calls": [
+            {
+              "target": "features.optional_scalar",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "features.tito_with_tuple",
+  "returned_callables": [],
+  "calls": {
+    "84:30-84:43": {
+      "min": {
+        "call": {
+          "calls": [
+            { "target": "features.min", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "84:15-84:28": {
+      "min": {
+        "call": {
+          "calls": [
+            { "target": "features.min", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

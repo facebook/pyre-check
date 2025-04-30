@@ -1,0 +1,1328 @@
+@generated
+Higher order call graphs
+{
+  "callable": "constructors.test_both_new_and_init_callgraph",
+  "returned_callables": [],
+  "calls": {
+    "75:4-75:20": {
+      "BothNewAndInit": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "constructors.BothNewAndInit.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.BothNewAndInit.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_class_stub",
+  "returned_callables": [],
+  "calls": {
+    "115:25-115:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "115:15-115:40": {
+      "ClassStub": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "115:4-115:41": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_construction",
+  "returned_callables": [],
+  "calls": {
+    "33:4-33:43": {
+      "async_get_authenticated_user": {
+        "call": {
+          "calls": [
+            {
+              "target": "constructors.SomeAPI.async_get_authenticated_user",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.SomeAPI"
+            }
+          ]
+        }
+      }
+    },
+    "32:52-32:61": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__getitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "32:41-32:50": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "32:15-32:62": {
+      "from_default_keys": {
+        "call": {
+          "calls": [
+            {
+              "target": "constructors.SomeAPI.from_default_keys",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.SomeAPI",
+              "is_class_method": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_constructor_with_source_model",
+  "returned_callables": [],
+  "calls": {
+    "125:4-125:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "124:8-124:36": {
+      "ConstructorWithSourceModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ConstructorWithSourceModel.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "123:15-123:43": {
+      "ConstructorWithSourceModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ConstructorWithSourceModel.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "123:4-123:44": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_constructor_with_tito_model",
+  "returned_callables": [],
+  "calls": {
+    "141:51-141:65": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "141:15-141:66": {
+      "DerivedConstructorWithTitoModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.DerivedConstructorWithTitoModel.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "141:4-141:67": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "140:47-140:61": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "140:15-140:66": {
+      "DerivedConstructorWithTitoModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.DerivedConstructorWithTitoModel.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "140:4-140:67": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "139:15-139:54": {
+      "DerivedConstructorWithTitoModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.DerivedConstructorWithTitoModel.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "139:4-139:55": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_constructor_with_tito_model_query",
+  "returned_callables": [],
+  "calls": {
+    "157:52-157:66": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "157:15-157:67": {
+      "DerivedConstructorTitoModelQuery": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.DerivedConstructorTitoModelQuery.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "157:4-157:70": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "156:48-156:62": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "156:15-156:67": {
+      "DerivedConstructorTitoModelQuery": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.DerivedConstructorTitoModelQuery.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "156:4-156:70": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "155:15-155:55": {
+      "DerivedConstructorTitoModelQuery": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.DerivedConstructorTitoModelQuery.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "155:4-155:58": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_init_model",
+  "returned_callables": [],
+  "calls": {
+    "96:38-96:52": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "96:15-96:53": {
+      "InitWithModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.InitWithModel.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "96:4-96:54": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "95:34-95:48": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "95:15-95:49": {
+      "InitWithModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.InitWithModel.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "95:4-95:50": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_new_model",
+  "returned_callables": [],
+  "calls": {
+    "106:37-106:51": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "106:15-106:52": {
+      "NewWithModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "constructors.NewWithModel.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "106:4-106:53": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "105:33-105:47": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "105:15-105:48": {
+      "NewWithModel": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "constructors.NewWithModel.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "105:4-105:49": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_new_thing",
+  "returned_callables": [],
+  "calls": {
+    "61:21-61:35": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "61:8-61:36": {
+      "ChildWithNew": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "constructors.ChildWithNew.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ParentWithInit.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_parent_with_no_constructor",
+  "returned_callables": [],
+  "calls": {
+    "186:43-186:57": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "186:15-186:58": {
+      "ParentWithNoConstructor": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ParentWithNoConstructor.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "186:4-186:59": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "185:39-185:53": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "185:15-185:58": {
+      "ParentWithNoConstructor": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ParentWithNoConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "185:4-185:59": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_parent_with_obscure_constructor",
+  "returned_callables": [],
+  "calls": {
+    "172:48-172:62": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "172:15-172:63": {
+      "ParentWithObscureConstructor": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ParentWithObscureConstructor.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "172:4-172:64": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "171:44-171:58": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "171:15-171:63": {
+      "ParentWithObscureConstructor": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.ParentWithObscureConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "171:4-171:64": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.test_source_in_constructor",
+  "returned_callables": [],
+  "calls": {
+    "46:4-46:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "45:4-45:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "44:8-44:29": {
+      "SourceInConstructor": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.SourceInConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.BaseConstructor.__init__",
+  "returned_callables": [],
+  "calls": {
+    "80:17-80:31": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.BothNewAndInit.__init__",
+  "returned_callables": [],
+  "calls": {
+    "71:8-71:28": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.BothNewAndInit.__new__",
+  "returned_callables": [],
+  "calls": {
+    "67:18-67:32": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "66:14-66:50": {
+      "__new__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ]
+        }
+      }
+    },
+    "66:14-66:40": {
+      "super": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "super.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.ChildWithNew.__new__",
+  "returned_callables": [],
+  "calls": {
+    "57:15-57:34": {
+      "__new__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ]
+        }
+      }
+    },
+    "56:8-56:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.DerivedConstructor.__init__",
+  "returned_callables": [],
+  "calls": {
+    "85:8-85:26": {
+      "__init__": {
+        "call": {
+          "calls": [
+            {
+              "target": "constructors.BaseConstructor.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.BaseConstructor"
+            }
+          ]
+        }
+      }
+    },
+    "85:8-85:15": {
+      "super": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "super.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.DerivedConstructorTitoModelQuery.__init__",
+  "returned_callables": [],
+  "calls": {
+    "151:8-151:30": {
+      "__init__": {
+        "call": {
+          "calls": [
+            {
+              "target": "constructors.ConstructorTitoModelQuery.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.ConstructorTitoModelQuery"
+            }
+          ]
+        }
+      }
+    },
+    "151:8-151:15": {
+      "super": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "super.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.DerivedConstructorWithTitoModel.__init__",
+  "returned_callables": [],
+  "calls": {
+    "135:8-135:27": {
+      "__init__": {
+        "call": {
+          "calls": [
+            {
+              "target": "constructors.ConstructorWithTitoModel.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.ConstructorWithTitoModel"
+            }
+          ]
+        }
+      }
+    },
+    "135:8-135:15": {
+      "super": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "super.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.ParentWithNoConstructor.__init__",
+  "returned_callables": [],
+  "calls": {
+    "181:8-181:30": {
+      "__init__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.NoConstructor"
+            }
+          ]
+        }
+      }
+    },
+    "181:8-181:15": {
+      "super": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "super.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.ParentWithObscureConstructor.__init__",
+  "returned_callables": [],
+  "calls": {
+    "167:8-167:30": {
+      "__init__": {
+        "call": {
+          "calls": [
+            {
+              "target": "constructors.ConstructorObscure.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "constructors.ConstructorObscure"
+            }
+          ]
+        }
+      }
+    },
+    "167:8-167:15": {
+      "super": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "super.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SanitizeReturn.__init__",
+  "returned_callables": [],
+  "calls": {
+    "205:19-205:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SanitizeSingleTraceSource.__init__",
+  "returned_callables": [],
+  "calls": {
+    "193:19-193:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SanitizeTitoKindSpecific.__init__",
+  "returned_callables": [],
+  "calls": {
+    "199:19-199:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SomeAPI.$class_toplevel",
+  "returned_callables": [],
+  "calls": {
+    "12:34-12:38": {
+      "SomeAPI": { "attribute_access": { "is_attribute": true } },
+      "HOST": { "attribute_access": { "is_attribute": true } },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "12:23-12:50": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SomeAPI.async_get_authenticated_user",
+  "returned_callables": [],
+  "calls": {
+    "23:8-23:35": {
+      "eval": {
+        "call": {
+          "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SomeAPI.from_default_keys",
+  "returned_callables": [],
+  "calls": {
+    "20:15-20:51": {
+      "$parameter$cls": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "constructors.SomeAPI.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "constructors.SourceInConstructor.__init__",
+  "returned_callables": [],
+  "calls": {
+    "39:17-39:31": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

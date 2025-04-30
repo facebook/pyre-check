@@ -503,6 +503,10 @@ module HigherOrderCallGraph : sig
     callables:Target.t list ->
     unit
 
+  val is_empty : t -> bool
+
+  val to_json_alist : t -> (string * Yojson.Safe.t) list
+
   module State : sig
     type t
 

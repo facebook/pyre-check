@@ -1,0 +1,4278 @@
+@generated
+Higher order call graphs
+{
+  "callable": "taint_broadening.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "313:4-313:16": {
+      "TypeVar": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
+      }
+    },
+    "313:0-313:1": {
+      "$local_taint_broadening$T": {
+        "identifier": {
+          "globals": [ { "target": "Obj{taint_broadening.T}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.issue_collapse",
+  "returned_callables": [],
+  "calls": {
+    "38:4-38:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "37:14-37:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_collapse_sink_width",
+  "returned_callables": [],
+  "calls": {
+    "112:19-112:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "112:8-112:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 29, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "111:19-111:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "111:8-111:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 28, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "110:19-110:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "110:8-110:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 27, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "109:19-109:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "109:8-109:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 26, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "108:19-108:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "108:8-108:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 25, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "107:19-107:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "107:8-107:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 24, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "106:19-106:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "106:8-106:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 23, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "105:19-105:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "105:8-105:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 22, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "104:19-104:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "104:8-104:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 21, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "103:19-103:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "103:8-103:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 20, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "102:19-102:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "102:8-102:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 19, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "101:19-101:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "101:8-101:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 18, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "100:19-100:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "100:8-100:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 17, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "99:19-99:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "99:8-99:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 16, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "98:19-98:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "98:8-98:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 15, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "96:19-96:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "96:8-96:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 14, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "95:19-95:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "95:8-95:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 13, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "94:19-94:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "94:8-94:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 12, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "93:19-93:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "93:8-93:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 11, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "92:19-92:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "92:8-92:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 10, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "91:19-91:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "91:8-91:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 9, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "90:19-90:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "90:8-90:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "89:19-89:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "89:8-89:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "88:19-88:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "88:8-88:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "87:19-87:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "87:8-87:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "86:19-86:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "86:8-86:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "85:19-85:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "85:8-85:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "84:19-84:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "84:8-84:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "83:19-83:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "83:8-83:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "82:19-82:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "82:8-82:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_collapse_source_width",
+  "returned_callables": [],
+  "calls": {
+    "74:26-74:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 29, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "74:8-74:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 29,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "73:26-73:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 28, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "73:8-73:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 28,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "72:26-72:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 27, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "72:8-72:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 27,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "71:26-71:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 26, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "71:8-71:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 26,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "70:26-70:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 25, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "70:8-70:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 25,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "69:26-69:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 24, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "69:8-69:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 24,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "68:25-68:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 23, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "68:8-68:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 23,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "67:25-67:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 22, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "67:8-67:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 22,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "66:25-66:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 21, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "66:8-66:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 21,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "65:25-65:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 20, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "65:8-65:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 20,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "64:25-64:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 19, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "64:8-64:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 19,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "63:25-63:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 18, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "63:8-63:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 18,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "62:25-62:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 17, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "62:8-62:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 17,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "61:25-61:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 16, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "61:8-61:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 16,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "60:25-60:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 15, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "60:8-60:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 15,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "58:26-58:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 14, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "58:8-58:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 14,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "57:26-57:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 13, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "57:8-57:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 13,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "56:26-56:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 12, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "56:8-56:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 12,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "55:26-55:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 11, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "55:8-55:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 11,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "54:26-54:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 10, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "54:8-54:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "53:26-53:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 9, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "53:8-53:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "52:25-52:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "52:8-52:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "51:25-51:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "51:8-51:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "50:25-50:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "50:8-50:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "49:25-49:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "49:8-49:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "48:25-48:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "48:8-48:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "47:25-47:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "47:8-47:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "46:25-46:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "46:8-46:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "45:25-45:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "45:8-45:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "44:25-44:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "44:8-44:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_no_collapse_sink_width",
+  "returned_callables": [],
+  "calls": {
+    "392:19-392:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "392:8-392:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 29, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "391:19-391:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "391:8-391:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 28, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "390:19-390:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "390:8-390:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 27, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "389:19-389:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "389:8-389:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 26, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "388:19-388:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "388:8-388:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 25, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "387:19-387:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "387:8-387:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 24, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "386:19-386:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "386:8-386:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 23, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "385:19-385:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "385:8-385:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 22, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "384:19-384:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "384:8-384:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 21, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "383:19-383:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "383:8-383:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 20, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "382:19-382:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "382:8-382:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 19, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "381:19-381:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "381:8-381:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 18, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "380:19-380:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "380:8-380:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 17, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "379:19-379:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "379:8-379:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 16, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "378:19-378:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "378:8-378:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 15, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "376:19-376:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "376:8-376:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 14, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "375:19-375:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "375:8-375:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 13, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "374:19-374:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "374:8-374:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 12, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "373:19-373:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "373:8-373:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 11, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "372:19-372:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "372:8-372:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 10, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "371:19-371:37": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "371:8-371:38": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 9, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "370:19-370:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "370:8-370:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "369:19-369:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "369:8-369:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "368:19-368:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "368:8-368:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "367:19-367:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "367:8-367:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "366:19-366:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "366:8-366:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "365:19-365:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "365:8-365:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "364:19-364:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "364:8-364:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "363:19-363:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "363:8-363:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "362:19-362:36": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "362:8-362:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_no_collapse_sink_width@decorated",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_sink_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "360:0-392:38": {
+      "model_broadening_no_collapse_sink_width": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "taint_broadening.model_broadening_no_collapse_sink_width",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "359:1-359:22": {
+      "skip_model_broadening": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_sink_width]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_no_collapse_source_width",
+  "returned_callables": [],
+  "calls": {
+    "355:26-355:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 29, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "355:8-355:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 29,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "354:26-354:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 28, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "354:8-354:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 28,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "353:26-353:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 27, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "353:8-353:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 27,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "352:26-352:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 26, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "352:8-352:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 26,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "351:26-351:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 25, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "351:8-351:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 25,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "350:26-350:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 24, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "350:8-350:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 24,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "349:25-349:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 23, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "349:8-349:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 23,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "348:25-348:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 22, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "348:8-348:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 22,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "347:25-347:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 21, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "347:8-347:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 21,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "346:25-346:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 20, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "346:8-346:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 20,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "345:25-345:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 19, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "345:8-345:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 19,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "344:25-344:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 18, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "344:8-344:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 18,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "343:25-343:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 17, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "343:8-343:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 17,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "342:25-342:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 16, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "342:8-342:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 16,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "341:25-341:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 15, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "341:8-341:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 15,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "339:26-339:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 14, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "339:8-339:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 14,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "338:26-338:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 13, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "338:8-338:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 13,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "337:26-337:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 12, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "337:8-337:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 12,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "336:26-336:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 11, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "336:8-336:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 11,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "335:26-335:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 10, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "335:8-335:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "334:26-334:40": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 9, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "334:8-334:40": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "333:25-333:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "333:8-333:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "332:25-332:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "332:8-332:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "331:25-331:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "331:8-331:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "330:25-330:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "330:8-330:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "329:25-329:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "329:8-329:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "328:25-328:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "328:8-328:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "327:25-327:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "327:8-327:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "326:25-326:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "326:8-326:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "325:25-325:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "325:8-325:39": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_no_collapse_source_width@decorated",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_source_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "322:0-356:17": {
+      "model_broadening_no_collapse_source_width": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "taint_broadening.model_broadening_no_collapse_source_width",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "321:1-321:22": {
+      "skip_model_broadening": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_source_width]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_sink_no_collapse_depth",
+  "returned_callables": [],
+  "calls": {
+    "140:19-140:53": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "140:19-140:48": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "140:19-140:43": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "140:19-140:38": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "140:19-140:33": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "140:8-140:54": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "138:19-138:53": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "138:19-138:48": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "138:19-138:43": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "138:19-138:38": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "138:19-138:33": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "138:8-138:54": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.model_broadening_source_no_collapse_depth",
+  "returned_callables": [],
+  "calls": {
+    "120:42-120:56": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "120:8-120:56": {
+      "__setitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "120:8-120:34": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "120:8-120:29": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "120:8-120:24": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "120:8-120:19": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__getitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "118:42-118:56": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "118:8-118:56": {
+      "__setitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "118:8-118:34": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "118:8-118:29": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "118:8-118:24": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "118:8-118:19": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.random_tito",
+  "returned_callables": [],
+  "calls": {
+    "209:9-209:23": {
+      "__ne__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "207:9-207:23": {
+      "__ne__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "205:7-205:21": {
+      "__ne__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.recursive_sink_parent",
+  "returned_callables": [],
+  "calls": {
+    "154:8-154:23": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "152:8-152:41": {
+      "recursive_sink_parent": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.recursive_sink_parent",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.recursive_sink_parent_attribute",
+  "returned_callables": [],
+  "calls": {
+    "161:8-161:33": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "159:8-159:51": {
+      "recursive_sink_parent_attribute": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.recursive_sink_parent_attribute",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.sink_a",
+  "returned_callables": [],
+  "calls": {
+    "15:15-15:29": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "15:4-15:30": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.sink_taint_widening_collapse_depth",
+  "returned_callables": [],
+  "calls": {
+    "146:20-146:34": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "145:19-145:33": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "145:8-145:34": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "144:13-144:27": {
+      "range": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "range.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "144:8-144:27": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "range.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "range"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.source_taint_widening_collapse_depth",
+  "returned_callables": [],
+  "calls": {
+    "129:36-129:50": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "128:13-128:27": {
+      "range": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "range.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "128:8-128:27": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "range.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "range"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.test_different_tito_broadenings",
+  "returned_callables": [],
+  "calls": {
+    "251:23-251:34": {
+      "keys": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Mapping.keys",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "251:13-251:35": {
+      "join": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.join",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "250:8-252:11": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 1 } ]
+        }
+      }
+    },
+    "249:4-253:5": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "248:11-248:63": {
+      "tito_broaden_input_paths_but_not_output_path": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.tito_broaden_input_paths_but_not_output_path",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "245:23-245:33": {
+      "keys": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Mapping.keys",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "245:13-245:34": {
+      "join": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.join",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "244:8-246:11": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "243:4-247:5": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "242:10-242:53": {
+      "tito_broaden_input_and_output_paths": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.tito_broaden_input_and_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "241:13-241:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_broaden_input_and_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "178:4-178:33": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "177:4-177:33": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "176:4-176:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "175:4-175:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "174:4-174:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "173:4-173:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "172:4-172:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "171:4-171:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "170:4-170:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "169:4-169:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "168:4-168:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_broaden_input_paths_but_not_output_path",
+  "returned_callables": [],
+  "calls": {
+    "197:4-197:33": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "196:4-196:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "195:4-195:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "194:4-194:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "193:4-193:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "192:4-192:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "191:4-191:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "190:4-190:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "189:4-189:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "188:4-188:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_broaden_output_paths_but_not_input_path",
+  "returned_callables": [],
+  "calls": {
+    "233:20-233:53": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 14,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "233:4-233:53": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 14,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "232:20-232:53": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 13,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "232:4-232:53": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 13,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "231:20-231:53": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 12,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "231:4-231:53": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 12,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "230:20-230:53": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 11,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "230:4-230:53": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 11,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "229:20-229:53": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 10,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "229:4-229:53": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "228:20-228:53": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 9,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "228:4-228:53": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "227:19-227:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 8,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "227:4-227:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "226:19-226:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 7,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "226:4-226:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "225:19-225:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 6,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "225:4-225:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "224:19-224:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 5,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "224:4-224:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "223:19-223:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 4,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "223:4-223:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "222:19-222:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 3,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "222:4-222:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "221:19-221:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 2,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "221:4-221:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "220:19-220:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "220:4-220:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "219:19-219:52": {
+      "random_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.random_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "219:4-219:52": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_collapse_issue",
+  "returned_callables": [],
+  "calls": {
+    "22:15-22:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "22:4-22:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "21:8-21:15": {
+      "tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "20:14-20:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_collapse_sink",
+  "returned_callables": [],
+  "calls": {
+    "27:15-27:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "27:4-27:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "26:8-26:23": {
+      "tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_collapse_source",
+  "returned_callables": [],
+  "calls": {
+    "32:11-32:18": {
+      "tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "31:14-31:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_no_broadening_input_and_output_paths",
+  "returned_callables": [],
+  "calls": {
+    "410:4-410:33": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "409:4-409:33": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "408:4-408:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "407:4-407:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "406:4-406:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "405:4-405:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "404:4-404:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "403:4-403:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "402:4-402:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "401:4-401:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "400:4-400:31": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.tito_no_broadening_input_and_output_paths@decorated",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "396:0-411:17": {
+      "tito_no_broadening_input_and_output_paths": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "395:1-395:22": {
+      "skip_model_broadening": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.tito_no_broadening_input_and_output_paths]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_sink_width]",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_sink_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.model_broadening_no_collapse_source_width]",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.model_broadening_no_collapse_source_width",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "taint_broadening.skip_model_broadening[formal(f, position=0)=taint_broadening.tito_no_broadening_input_and_output_paths]",
+  "returned_callables": [
+    {
+      "target": "taint_broadening.tito_no_broadening_input_and_output_paths",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}

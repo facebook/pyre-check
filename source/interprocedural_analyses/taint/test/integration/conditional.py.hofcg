@@ -1,0 +1,40 @@
+@generated
+Higher order call graphs
+{
+  "callable": "conditional.issue1",
+  "returned_callables": [],
+  "calls": {
+    "23:8-23:30": {
+      "some_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "conditional.some_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "conditional.issue2",
+  "returned_callables": [],
+  "calls": {
+    "29:8-29:28": {
+      "some_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "conditional.some_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

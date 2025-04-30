@@ -1,0 +1,580 @@
+@generated
+Higher order call graphs
+{
+  "callable": "nested_callables.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "61:0-61:1": {
+      "$local_nested_callables$g": {
+        "identifier": {
+          "globals": [ { "target": "Obj{nested_callables.g}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_parameter_in_inner_scope_sink",
+  "returned_callables": [],
+  "calls": {
+    "99:4-99:11": {
+      "$local_nested_callables?access_parameter_in_inner_scope_sink$inner": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_parameter_in_inner_scope_sink.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_parameter_in_inner_scope_sink.inner",
+  "returned_callables": [],
+  "calls": {
+    "97:8-97:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_parameter_in_inner_scope_tito",
+  "returned_callables": [],
+  "calls": {
+    "110:11-110:18": {
+      "$local_nested_callables?access_parameter_in_inner_scope_tito$inner": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_parameter_in_inner_scope_tito.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_variables_in_outer_scope_issue",
+  "returned_callables": [],
+  "calls": {
+    "79:4-79:11": {
+      "$local_nested_callables?access_variables_in_outer_scope_issue$inner": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_variables_in_outer_scope_issue.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "74:8-74:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_variables_in_outer_scope_issue.inner",
+  "returned_callables": [],
+  "calls": {
+    "77:19-77:20": {
+      "$local_nested_callables?access_variables_in_outer_scope_issue$x": {
+        "identifier": {
+          "nonlocals": [
+            {
+              "target": "Obj{nested_callables.access_variables_in_outer_scope_issue.x}",
+              "index": 0
+            }
+          ]
+        }
+      }
+    },
+    "77:8-77:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_variables_in_outer_scope_source",
+  "returned_callables": [],
+  "calls": {
+    "88:11-88:18": {
+      "$local_nested_callables?access_variables_in_outer_scope_source$inner": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_variables_in_outer_scope_source.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "83:8-83:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.access_variables_in_outer_scope_source.inner",
+  "returned_callables": [],
+  "calls": {
+    "86:15-86:16": {
+      "$local_nested_callables?access_variables_in_outer_scope_source$x": {
+        "identifier": {
+          "nonlocals": [
+            {
+              "target": "Obj{nested_callables.access_variables_in_outer_scope_source.x}",
+              "index": 0
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.call_outer",
+  "returned_callables": [],
+  "calls": {
+    "28:10-28:24": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "28:4-28:25": {
+      "outer": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.outer",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.duplicate_function",
+  "returned_callables": [],
+  "calls": {
+    "58:4-58:9": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.foo",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.foo.inner",
+  "returned_callables": [],
+  "calls": {
+    "14:8-14:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "13:12-13:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.foo.inner_with_model",
+  "returned_callables": [],
+  "calls": {
+    "17:15-17:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.nested_global_function",
+  "returned_callables": [],
+  "calls": {
+    "70:11-70:28": {
+      "$local_nested_callables?nested_global_function$g": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.nested_global_function.g",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.nested_global_function.g",
+  "returned_callables": [],
+  "calls": {
+    "68:15-68:20": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.outer",
+  "returned_callables": [],
+  "calls": {
+    "24:11-24:19": {
+      "$local_nested_callables?outer$inner": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.outer.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.outer.inner",
+  "returned_callables": [],
+  "calls": {
+    "22:8-22:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.outer_calling_other_function",
+  "returned_callables": [],
+  "calls": {
+    "39:4-39:35": {
+      "$local_nested_callables?outer_calling_other_function$inner_calling_other_function": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.outer_calling_other_function.inner_calling_other_function",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.outer_calling_other_function.inner_calling_other_function",
+  "returned_callables": [],
+  "calls": {
+    "37:8-37:20": {
+      "some_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.some_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.parameter_function",
+  "returned_callables": [],
+  "calls": {
+    "50:11-50:30": {
+      "$local_nested_callables?parameter_function$add": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.parameter_function.add",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.parameter_function.add",
+  "returned_callables": [],
+  "calls": {
+    "48:19-48:24": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.some_sink",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.test_access_parameter_in_inner_scope_sink",
+  "returned_callables": [],
+  "calls": {
+    "103:41-103:55": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "103:4-103:56": {
+      "access_parameter_in_inner_scope_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_parameter_in_inner_scope_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.test_access_parameter_in_inner_scope_tito",
+  "returned_callables": [],
+  "calls": {
+    "114:52-114:66": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "114:15-114:67": {
+      "access_parameter_in_inner_scope_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_parameter_in_inner_scope_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "114:4-114:68": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.test_access_variables_in_outer_scope_source",
+  "returned_callables": [],
+  "calls": {
+    "92:15-92:55": {
+      "access_variables_in_outer_scope_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.access_variables_in_outer_scope_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "92:4-92:56": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.test_mutation_of_class",
+  "returned_callables": [],
+  "calls": {
+    "128:4-128:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "127:4-127:12": {
+      "$local_nested_callables?test_mutation_of_class$set_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "nested_callables.test_mutation_of_class.set_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "123:8-123:11": {
+      "A": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "nested_callables.test_mutation_of_class.set_a",
+  "returned_callables": [],
+  "calls": {
+    "125:14-125:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

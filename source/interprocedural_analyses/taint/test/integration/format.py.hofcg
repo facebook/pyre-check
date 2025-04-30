@@ -1,0 +1,335 @@
+@generated
+Higher order call graphs
+{
+  "callable": "format.issue_in_format",
+  "returned_callables": [],
+  "calls": {
+    "32:14-32:31": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "32:11-32:40": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "31:12-31:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.issue_in_format_specifier",
+  "returned_callables": [],
+  "calls": {
+    "46:25-46:39": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "46:14-46:40": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "46:12-46:41": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 1 } ],
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "46:7-46:12": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "46:4-46:43": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.sink_in_format",
+  "returned_callables": [],
+  "calls": {
+    "27:7-27:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "27:4-27:31": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.sink_in_format_specifier",
+  "returned_callables": [],
+  "calls": {
+    "41:14-41:34": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "41:12-41:35": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 1 } ],
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "41:4-41:37": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.sink_via_format",
+  "returned_callables": [],
+  "calls": {
+    "23:15-23:23": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "23:4-23:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.source_in_format",
+  "returned_callables": [],
+  "calls": {
+    "15:14-15:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "15:11-15:37": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.source_in_format_specifier",
+  "returned_callables": [],
+  "calls": {
+    "37:21-37:35": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "37:19-37:36": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 1 } ],
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "37:14-37:19": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "37:11-37:38": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.source_via_format",
+  "returned_callables": [],
+  "calls": {
+    "11:11-11:28": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "10:12-10:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "format.tito_via_format",
+  "returned_callables": [],
+  "calls": {
+    "19:11-19:44": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}

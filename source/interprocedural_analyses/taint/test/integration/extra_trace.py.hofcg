@@ -1,0 +1,1089 @@
+@generated
+Higher order call graphs
+{
+  "callable": "extra_trace.branch_tito_backward",
+  "returned_callables": [],
+  "calls": {
+    "71:4-71:20": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "70:15-70:31": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "68:15-68:38": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.branch_tito_forward",
+  "returned_callables": [],
+  "calls": {
+    "62:13-62:28": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "61:13-61:35": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "59:13-59:35": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "57:9-57:23": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.double_nested_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "38:11-38:34": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.extra_trace_sink_as_origin",
+  "returned_callables": [],
+  "calls": {
+    "98:4-98:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "97:15-97:34": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "96:13-96:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.extra_trace_through_override",
+  "returned_callables": [],
+  "calls": {
+    "114:4-114:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "113:15-113:34": {
+      "transform": {
+        "call": {
+          "calls": [
+            {
+              "target": "Overrides{extra_trace.TransformBase.transform}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "extra_trace.TransformBase"
+            }
+          ]
+        }
+      }
+    },
+    "112:13-112:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.issue_via_transfom_captured_variable",
+  "returned_callables": [],
+  "calls": {
+    "177:15-177:32": {
+      "$local_extra_trace?issue_via_transfom_captured_variable$nested_function": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.issue_via_transfom_captured_variable.nested_function",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "177:4-177:33": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "171:8-171:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.issue_via_transfom_captured_variable.nested_function",
+  "returned_callables": [],
+  "calls": {
+    "175:15-175:16": {
+      "$local_extra_trace?issue_via_transfom_captured_variable$x": {
+        "identifier": {
+          "nonlocals": [
+            {
+              "target": "Obj{extra_trace.issue_via_transfom_captured_variable.x}",
+              "index": 0
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.loop_tito_backward",
+  "returned_callables": [],
+  "calls": {
+    "84:4-84:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "83:14-83:30": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.loop_tito_forward",
+  "returned_callables": [],
+  "calls": {
+    "77:13-77:28": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "75:9-75:23": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.mismatching_tito_extra_sink",
+  "returned_callables": [],
+  "calls": {
+    "154:16-154:25": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "153:9-153:37": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "153:9-153:32": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 6,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 6,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "152:16-152:25": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "151:9-151:37": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "151:9-151:32": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 5,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 5,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "150:16-150:25": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "149:9-149:37": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "149:9-149:32": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 4,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 4,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "148:16-148:25": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "147:9-147:37": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "147:9-147:32": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 3,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 3,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "146:16-146:25": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "145:9-145:37": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "145:9-145:32": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 2,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 2,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "144:16-144:25": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "143:9-143:37": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "143:9-143:32": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 1,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 1,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "142:16-142:46": {
+      "tito_transform_attribute": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.tito_transform_attribute",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "141:7-141:35": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "141:7-141:30": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.nested_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "34:11-34:27": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.no_issue_via_transform_tito_with_missing_extra_sink",
+  "returned_callables": [],
+  "calls": {
+    "167:4-167:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "166:8-166:49": {
+      "transform_tito_with_missing_extra_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_tito_with_missing_extra_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "165:8-165:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.sequential_tito_backward",
+  "returned_callables": [],
+  "calls": {
+    "53:4-53:20": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "52:11-52:29": {
+      "transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "51:11-51:21": {
+      "tito": {
+        "call": {
+          "calls": [
+            { "target": "extra_trace.tito", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "50:11-50:34": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.sequential_tito_forward",
+  "returned_callables": [],
+  "calls": {
+    "45:9-45:25": {
+      "transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "44:9-44:17": {
+      "tito": {
+        "call": {
+          "calls": [
+            { "target": "extra_trace.tito", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "43:9-43:31": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "42:9-42:23": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.source_transform_nested_x_y",
+  "returned_callables": [],
+  "calls": {
+    "92:32-92:46": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "92:11-92:47": {
+      "transform_nested_x_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_nested_x_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.tito_transform_attribute",
+  "returned_callables": [],
+  "calls": {
+    "135:29-135:52": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "135:15-135:53": {
+      "tito_collapse": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.tito_collapse",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "133:27-133:50": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "133:15-133:51": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "132:7-132:35": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "132:7-132:30": {
+      "non_deterministic_int": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            },
+            {
+              "target": "extra_trace.non_deterministic_int",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.transform_nested_x_y",
+  "returned_callables": [],
+  "calls": {
+    "88:23-88:46": {
+      "nested_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.nested_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "88:11-88:47": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.transform_tito_with_missing_extra_sink",
+  "returned_callables": [],
+  "calls": {
+    "161:11-161:44": {
+      "mismatching_tito_extra_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.mismatching_tito_extra_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "160:4-160:32": {
+      "__setitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.transform_yz",
+  "returned_callables": [],
+  "calls": {
+    "29:11-29:28": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "28:11-28:21": {
+      "tito": {
+        "call": {
+          "calls": [
+            { "target": "extra_trace.tito", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "27:11-27:28": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "26:11-26:20": {
+      "tito": {
+        "call": {
+          "calls": [
+            { "target": "extra_trace.tito", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "extra_trace.OverrideTransform.transform",
+  "returned_callables": [],
+  "calls": {
+    "108:15-108:31": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "extra_trace.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

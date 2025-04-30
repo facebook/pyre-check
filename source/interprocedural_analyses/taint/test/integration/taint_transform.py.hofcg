@@ -1,0 +1,3345 @@
+@generated
+Higher order call graphs
+{
+  "callable": "taint_transform.a_sanitize_b_to_x_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "461:4-461:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "460:11-460:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "459:12-459:39": {
+      "source_a_sanitize_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a_sanitize_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_sanitize_b_to_xb_issue",
+  "returned_callables": [],
+  "calls": {
+    "466:4-466:38": {
+      "sink_taint_with_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_taint_with_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "465:12-465:39": {
+      "source_a_sanitize_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a_sanitize_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_sanitize_b_x_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "478:4-478:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "477:12-477:51": {
+      "source_a_sanitize_b_transform_x_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a_sanitize_b_transform_x_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "83:4-83:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "82:12-82:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_sanitize_a_to_x_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "341:4-341:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "340:12-340:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "339:11-339:40": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "338:12-338:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_sanitize_a_x_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "353:4-353:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "352:11-352:45": {
+      "sanitize_a_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "351:12-351:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_sanitize_a_yzb_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "371:4-371:42": {
+      "sanitize_a_to_y_to_z_to_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_to_y_to_z_to_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "370:12-370:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_sanitize_b_to_x_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "437:4-437:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "436:12-436:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "435:11-435:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "434:12-434:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_sanitize_b_x_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "449:4-449:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "448:11-448:45": {
+      "sanitize_b_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_b_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "447:12-447:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_sanitize_a_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "331:4-331:46": {
+      "transform_x_sanitize_a_sink_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_a_sink_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "330:12-330:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_sanitize_a_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "304:4-304:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "303:11-303:45": {
+      "transform_x_sanitize_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "302:12-302:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_sanitize_b_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "407:4-407:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "406:11-406:45": {
+      "transform_x_sanitize_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "405:12-405:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "89:4-89:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "88:11-88:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "87:12-87:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_to_sanitize_a_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "315:4-315:33": {
+      "sanitize_a_sink_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_sink_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "314:11-314:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "313:12-313:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_to_sanitize_a_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "292:4-292:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "291:12-291:40": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "290:11-290:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "289:12-289:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_to_sanitize_b_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "395:4-395:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "394:12-394:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "393:11-393:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "392:12-392:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_x_to_x_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "96:4-96:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "95:12-95:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "94:11-94:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "93:12-93:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_y_to_z_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "121:4-121:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "120:12-120:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "119:11-119:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "118:12-118:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_y_zb_issue",
+  "returned_callables": [],
+  "calls": {
+    "222:4-222:37": {
+      "sink_taint_with_transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_taint_with_transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "221:11-221:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "220:12-220:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_yz_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "204:4-204:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "203:11-203:40": {
+      "tito_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "202:12-202:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_yz_to_d_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "210:4-210:16": {
+      "sink_d": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_d",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "209:11-209:40": {
+      "tito_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "208:12-208:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_yzb_issue",
+  "returned_callables": [],
+  "calls": {
+    "176:4-176:39": {
+      "sink_taint_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_taint_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "175:12-175:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_to_z_to_y_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "114:4-114:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "113:12-113:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "112:11-112:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "111:12-111:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.a_x_sanitize_b_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "419:4-419:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "418:12-418:51": {
+      "source_a_transform_x_sanitize_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a_transform_x_sanitize_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.ax_to_sanitize_a_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "320:4-320:34": {
+      "sanitize_a_sink_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_sink_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "319:12-319:36": {
+      "taint_with_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.taint_with_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.ax_to_zb_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "227:4-227:38": {
+      "sink_taint_with_transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_taint_with_transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "226:12-226:44": {
+      "taint_with_transform_x_obscure": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.taint_with_transform_x_obscure",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.axy_to_sanitize_a_yzb_issue",
+  "returned_callables": [],
+  "calls": {
+    "376:4-376:42": {
+      "sanitize_a_to_y_to_z_to_b_taint": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_to_y_to_z_to_b_taint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "375:12-375:37": {
+      "taint_with_transform_yx": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.taint_with_transform_yx",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.ay_to_z_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "198:4-198:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "197:11-197:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "196:12-196:43": {
+      "source_taint_with_transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_taint_with_transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.ay_to_zb_issue",
+  "returned_callables": [],
+  "calls": {
+    "192:4-192:38": {
+      "sink_taint_with_transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_taint_with_transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "191:12-191:43": {
+      "source_taint_with_transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_taint_with_transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.ayz_to_b_issue",
+  "returned_callables": [],
+  "calls": {
+    "171:4-171:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "170:12-170:47": {
+      "source_taint_via_tito_tranform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_taint_via_tito_tranform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.c_to_d_issue",
+  "returned_callables": [],
+  "calls": {
+    "101:4-101:17": {
+      "sink_d": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_d",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "100:12-100:22": {
+      "source_c": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_c",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.c_to_sanitize_c_to_d_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "282:4-282:16": {
+      "sink_d": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_d",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "281:11-281:40": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "280:12-280:22": {
+      "source_c": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_c",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.c_to_sanitize_d_to_d_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "385:4-385:16": {
+      "sink_d": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_d",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "384:11-384:38": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "383:12-383:22": {
+      "source_c": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_c",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.c_to_x_to_d_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "107:4-107:16": {
+      "sink_d": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_d",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "106:11-106:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "105:12-105:22": {
+      "source_c": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_c",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.c_to_yz_to_b_no_issue",
+  "returned_callables": [],
+  "calls": {
+    "216:4-216:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "215:11-215:40": {
+      "tito_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "214:12-214:22": {
+      "source_c": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_c",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.issue_with_repeated_transforms",
+  "returned_callables": [],
+  "calls": {
+    "232:4-232:39": {
+      "sink_taint_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_taint_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "231:12-231:37": {
+      "taint_with_transform_yx": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.taint_with_transform_yx",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.nested_tito_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "154:12-154:38": {
+      "tito_with_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_issue_transform_x_tito_global_sanitize_b",
+  "returned_callables": [],
+  "calls": {
+    "511:4-511:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "510:11-510:52": {
+      "transform_x_tito_global_sanitize_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_tito_global_sanitize_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "509:12-509:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_issue_transform_x_tito_sanitize_b",
+  "returned_callables": [],
+  "calls": {
+    "491:4-491:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "490:11-490:45": {
+      "transform_x_tito_sanitize_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_tito_sanitize_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "489:12-489:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_issue_transform_x_tito_sanitize_b_all_parameters",
+  "returned_callables": [],
+  "calls": {
+    "501:4-501:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "500:11-500:60": {
+      "transform_x_tito_sanitize_b_all_parameters": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_tito_sanitize_b_all_parameters",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "499:12-499:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_issue_transform_x_tito_sanitize_return",
+  "returned_callables": [],
+  "calls": {
+    "521:4-521:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "520:11-520:50": {
+      "transform_x_tito_sanitize_return": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_tito_sanitize_return",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "519:12-519:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_sink_taint_with_transform_y",
+  "returned_callables": [],
+  "calls": {
+    "133:4-133:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "132:12-132:28": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_source_taint_with_transform_z",
+  "returned_callables": [],
+  "calls": {
+    "70:11-70:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "69:12-69:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.no_source_taint_with_transform_zx",
+  "returned_callables": [],
+  "calls": {
+    "77:12-77:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "76:11-76:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "75:12-75:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_a_sink_b_taint",
+  "returned_callables": [],
+  "calls": {
+    "309:4-309:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "308:12-308:39": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_a_to_y_to_z_to_b_taint",
+  "returned_callables": [],
+  "calls": {
+    "366:4-366:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "365:12-365:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "364:11-364:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "363:12-363:39": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_a_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "265:11-265:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "264:12-264:39": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_a_transform_x_sanitize_c_transform_y",
+  "returned_callables": [],
+  "calls": {
+    "272:12-272:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "271:11-271:40": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "270:12-270:39": {
+      "sanitize_a_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_a_transform_x_sink_b_no_taint",
+  "returned_callables": [],
+  "calls": {
+    "359:4-359:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "358:11-358:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "357:12-357:39": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_a_transform_x_tito",
+  "returned_callables": [],
+  "calls": {
+    "346:11-346:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "345:12-345:39": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sanitize_b_transform_x_tito",
+  "returned_callables": [],
+  "calls": {
+    "442:11-442:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "441:12-441:37": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sink_taint_via_tito_transform_yz",
+  "returned_callables": [],
+  "calls": {
+    "166:4-166:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "165:12-165:39": {
+      "tito_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sink_taint_with_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "126:4-126:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "125:12-125:28": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sink_taint_with_transform_yz",
+  "returned_callables": [],
+  "calls": {
+    "139:4-139:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "138:11-138:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "137:12-137:28": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.sink_taint_with_transform_z",
+  "returned_callables": [],
+  "calls": {
+    "187:4-187:17": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "186:12-186:28": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.source_a_sanitize_b_taint",
+  "returned_callables": [],
+  "calls": {
+    "454:11-454:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "453:12-453:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.source_a_sanitize_b_transform_x_taint",
+  "returned_callables": [],
+  "calls": {
+    "472:12-472:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "471:11-471:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "470:12-470:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.source_a_transform_x_sanitize_b_taint",
+  "returned_callables": [],
+  "calls": {
+    "413:12-413:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "412:11-412:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "411:12-411:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.source_a_transform_y_transform_z_sanitize_b_no_taint",
+  "returned_callables": [],
+  "calls": {
+    "426:12-426:39": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "425:12-425:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "424:11-424:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "423:12-423:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.source_taint_via_tito_tranform_yz",
+  "returned_callables": [],
+  "calls": {
+    "160:11-160:40": {
+      "tito_with_transform_yz": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_yz",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "159:12-159:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.source_taint_with_transform_y",
+  "returned_callables": [],
+  "calls": {
+    "181:11-181:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "180:12-180:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.taint_with_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "37:11-37:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "36:12-36:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.taint_with_transform_x_obscure",
+  "returned_callables": [],
+  "calls": {
+    "47:11-47:37": {
+      "transform_x_obscure": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_obscure",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "46:12-46:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.taint_with_transform_x_skip_obscure",
+  "returned_callables": [],
+  "calls": {
+    "57:11-57:42": {
+      "transform_x_skip_obscure": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_skip_obscure",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "56:12-56:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.taint_with_transform_yx",
+  "returned_callables": [],
+  "calls": {
+    "64:12-64:29": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "63:11-63:29": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "62:12-62:22": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.test_infinite_loop",
+  "returned_callables": [],
+  "calls": {
+    "238:12-238:36": {
+      "tito_with_transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.tito_with_transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "236:8-236:18": {
+      "source_a": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.source_a",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_sink_sanitizer_1",
+  "returned_callables": [],
+  "calls": {
+    "553:11-553:38": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "552:12-552:44": {
+      "sanitize_b_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_b_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_sink_sanitizer_2",
+  "returned_callables": [],
+  "calls": {
+    "559:11-559:45": {
+      "sanitize_b_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_b_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "558:12-558:37": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_sink_sanitizer_3",
+  "returned_callables": [],
+  "calls": {
+    "565:11-565:38": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "564:12-564:44": {
+      "transform_x_sanitize_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_sink_sanitizer_4",
+  "returned_callables": [],
+  "calls": {
+    "571:11-571:45": {
+      "transform_x_sanitize_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "570:12-570:37": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_source_sanitizer_1",
+  "returned_callables": [],
+  "calls": {
+    "529:11-529:40": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "528:12-528:44": {
+      "sanitize_a_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_source_sanitizer_2",
+  "returned_callables": [],
+  "calls": {
+    "535:11-535:45": {
+      "sanitize_a_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "534:12-534:39": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_source_sanitizer_3",
+  "returned_callables": [],
+  "calls": {
+    "541:11-541:40": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "540:12-540:44": {
+      "transform_x_sanitize_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_source_sanitizer_4",
+  "returned_callables": [],
+  "calls": {
+    "547:11-547:45": {
+      "transform_x_sanitize_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x_sanitize_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "546:12-546:39": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_source_sink_sanitizers_mixed_1",
+  "returned_callables": [],
+  "calls": {
+    "585:12-585:46": {
+      "transform_y_sanitize_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y_sanitize_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "584:12-584:38": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "583:11-583:40": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "582:12-582:44": {
+      "sanitize_a_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_propagation_source_sink_sanitizers_mixed_2",
+  "returned_callables": [],
+  "calls": {
+    "593:12-593:39": {
+      "sanitize_sink_d_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_d_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "592:12-592:45": {
+      "sanitize_a_transform_x_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_a_transform_x_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "591:11-591:45": {
+      "transform_y_sanitize_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y_sanitize_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "590:12-590:39": {
+      "sanitize_source_c_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_c_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_with_transform_x",
+  "returned_callables": [],
+  "calls": {
+    "143:12-143:28": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.tito_with_transform_yz",
+  "returned_callables": [],
+  "calls": {
+    "149:11-149:29": {
+      "transform_z": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_z",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "148:12-148:28": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_sanitize_a_sink_b_taint",
+  "returned_callables": [],
+  "calls": {
+    "326:4-326:16": {
+      "sink_b": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sink_b",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "325:11-325:40": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "324:12-324:28": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_sanitize_a_tito",
+  "returned_callables": [],
+  "calls": {
+    "297:11-297:40": {
+      "sanitize_source_a_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_source_a_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "296:12-296:28": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_sanitize_all",
+  "returned_callables": [],
+  "calls": {
+    "603:10-603:26": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "602:10-602:27": {
+      "sanitize_all": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_all",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_sanitize_b_tito",
+  "returned_callables": [],
+  "calls": {
+    "400:11-400:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "399:12-399:28": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_tito_global_sanitize_b",
+  "returned_callables": [],
+  "calls": {
+    "505:11-505:25": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_tito_sanitize_b",
+  "returned_callables": [],
+  "calls": {
+    "485:11-485:25": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_tito_sanitize_b_all_parameters",
+  "returned_callables": [],
+  "calls": {
+    "495:11-495:25": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_x_tito_sanitize_return",
+  "returned_callables": [],
+  "calls": {
+    "515:11-515:25": {
+      "transform_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "taint_transform.transform_y_sanitize_b_tito",
+  "returned_callables": [],
+  "calls": {
+    "577:11-577:38": {
+      "sanitize_sink_b_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.sanitize_sink_b_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "576:12-576:28": {
+      "transform_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "taint_transform.transform_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

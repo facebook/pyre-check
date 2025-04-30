@@ -1,0 +1,640 @@
+@generated
+Higher order call graphs
+{
+  "callable": "entrypoint.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "82:4-82:10": {
+      "main": {
+        "call": {
+          "calls": [
+            { "target": "entrypoint.main", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "81:3-81:25": {
+      "__ne__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__ne__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "8:0-8:4": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyEntrypoint",
+  "returned_callables": [],
+  "calls": {
+    "12:19-12:22": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.entrypoint_into_lambda",
+  "returned_callables": [],
+  "calls": {
+    "65:4-65:38": {
+      "$local_entrypoint?entrypoint_into_lambda$lambda_entrypoint_with_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:22": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "63:8-63:12": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated",
+  "returned_callables": [],
+  "calls": {
+    "62:4-63:22": {
+      "lambda_entrypoint_with_decorator": {
+        "attribute_access": { "is_attribute": true }
+      },
+      "entrypoint_into_lambda": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "entrypoint.entrypoint_into_lambda",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "61:5-61:17": {
+      "MyEntrypoint": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.MyEntrypoint",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.function_entrypoint_with_decorator",
+  "returned_callables": [],
+  "calls": {
+    "57:4-57:18": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "57:4-57:8": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.function_entrypoint_with_decorator@decorated",
+  "returned_callables": [],
+  "calls": {
+    "56:0-57:18": {
+      "function_entrypoint_with_decorator": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "entrypoint.function_entrypoint_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "55:1-55:13": {
+      "MyEntrypoint": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.function_entrypoint_with_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.get_these",
+  "returned_callables": [],
+  "calls": {
+    "72:4-72:16": {
+      "nested_run": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.nested_run",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "71:4-71:37": {
+      "leak_globals_by_transitive_call": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.leak_globals_by_transitive_call",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "70:4-70:32": {
+      "leak_globals_by_passing_in": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.leak_globals_by_passing_in",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "69:4-69:24": {
+      "immediate_examples": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.immediate_examples",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.immediate_examples",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:18": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "32:4-32:8": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.leak_globals_by_passing_in",
+  "returned_callables": [],
+  "calls": {
+    "48:43-48:47": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    },
+    "48:4-48:48": {
+      "transitive_call_with_globals_passed_in": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.transitive_call_with_globals_passed_in",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.leak_globals_by_transitive_call",
+  "returned_callables": [],
+  "calls": {
+    "52:4-52:39": {
+      "transitive_call_accessing_globals": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.transitive_call_accessing_globals",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.main",
+  "returned_callables": [],
+  "calls": {
+    "78:4-78:40": {
+      "some_entrypoint_function": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.MyClass.some_entrypoint_function",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "entrypoint.MyClass"
+            }
+          ]
+        }
+      }
+    },
+    "78:4-78:13": {
+      "MyClass": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "77:4-77:32": {
+      "this_one_shouldnt_be_found": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.this_one_shouldnt_be_found",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "76:4-76:15": {
+      "get_these": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.get_these",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.nested_run",
+  "returned_callables": [],
+  "calls": {
+    "28:4-28:18": {
+      "$local_entrypoint?nested_run$do_the_thing": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.nested_run.do_the_thing",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.nested_run.do_the_thing",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:22": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "26:8-26:12": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.this_one_shouldnt_be_found",
+  "returned_callables": [],
+  "calls": {
+    "36:4-36:18": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "36:4-36:8": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.transitive_call_accessing_globals",
+  "returned_callables": [],
+  "calls": {
+    "44:4-44:18": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "44:4-44:8": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.transitive_call_with_globals_passed_in",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:24": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyClass.method_entrypoint_with_decorator",
+  "returned_callables": [],
+  "calls": {
+    "21:8-21:22": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "21:8-21:12": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyClass.method_entrypoint_with_decorator@decorated",
+  "returned_callables": [],
+  "calls": {
+    "19:5-19:17": {
+      "MyEntrypoint": {
+        "call": {
+          "calls": [
+            {
+              "target": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.MyClass.method_entrypoint_with_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyClass.some_entrypoint_function",
+  "returned_callables": [],
+  "calls": {
+    "17:8-17:22": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "17:8-17:12": {
+      "$local_entrypoint$glob": {
+        "identifier": {
+          "globals": [ { "target": "Obj{entrypoint.glob}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.function_entrypoint_with_decorator]",
+  "returned_callables": [],
+  "calls": {
+    "12:19-12:22": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.MyClass.method_entrypoint_with_decorator]",
+  "returned_callables": [],
+  "calls": {
+    "12:19-12:22": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}

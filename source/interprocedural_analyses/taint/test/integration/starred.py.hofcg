@@ -1,0 +1,41 @@
+@generated
+Higher order call graphs
+{
+  "callable": "starred.sink",
+  "returned_callables": [],
+  "calls": {
+    "11:4-11:20": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "starred.test",
+  "returned_callables": [],
+  "calls": {
+    "16:4-16:15": {
+      "sink": {
+        "call": {
+          "calls": [
+            { "target": "starred.sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "15:21-15:35": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+@generated
+Higher order call graphs
+{
+  "callable": "return_sinks.not_propagate_returned_sink_to_arg",
+  "returned_callables": [],
+  "calls": {
+    "34:4-34:35": {
+      "sink_on_return_and_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "return_sinks.sink_on_return_and_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "return_sinks.propagate_returned_sink_to_arg",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:32": {
+      "sink_on_return_and_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "return_sinks.sink_on_return_and_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "return_sinks.sink_on_return_not_propagated_to_arg",
+  "returned_callables": [],
+  "calls": {
+    "16:10-16:26": {
+      "sink_on_return": {
+        "call": {
+          "calls": [
+            {
+              "target": "return_sinks.sink_on_return",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "return_sinks.sink_on_return_not_propagated_to_return",
+  "returned_callables": [],
+  "calls": {
+    "21:11-21:27": {
+      "sink_on_return": {
+        "call": {
+          "calls": [
+            {
+              "target": "return_sinks.sink_on_return",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1418 @@
+@generated
+Higher order call graphs
+{
+  "callable": "lambda.lambda_sink",
+  "returned_callables": [],
+  "calls": {
+    "68:23-68:36": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "68:9-68:40": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "68:4-68:41": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.lambda_source",
+  "returned_callables": [],
+  "calls": {
+    "59:36-59:50": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "59:30-59:34": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "59:16-59:51": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "59:11-59:52": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_filter_lambda",
+  "returned_callables": [],
+  "calls": {
+    "55:53-55:67": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "55:37-55:50": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "55:20-55:69": {
+      "filter": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 7,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "filter.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "55:15-55:70": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 6,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "52:15-52:31": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "52:15-52:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "52:4-52:32": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "51:15-51:31": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "51:15-51:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "51:4-51:32": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "50:15-50:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "50:4-50:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "49:52-49:66": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "49:37-49:43": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "49:20-49:82": {
+      "filter": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 5,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "filter.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "49:15-49:83": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 4,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "47:15-47:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "47:4-47:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "46:15-46:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "46:4-46:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "45:15-45:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "45:4-45:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "44:49-44:63": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "44:37-44:43": {
+      "__ne__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "44:20-44:68": {
+      "filter": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 3,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "filter.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "44:15-44:69": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "42:15-42:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "42:4-42:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "41:15-41:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "41:4-41:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "40:46-40:60": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "40:37-40:43": {
+      "__ne__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "40:20-40:62": {
+      "filter": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "filter.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "40:15-40:63": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_lambda_sink",
+  "returned_callables": [],
+  "calls": {
+    "72:16-72:30": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "72:4-72:31": {
+      "lambda_sink": {
+        "call": {
+          "calls": [
+            { "target": "lambda.lambda_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_lambda_source",
+  "returned_callables": [],
+  "calls": {
+    "63:15-63:30": {
+      "lambda_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "lambda.lambda_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "63:4-63:31": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "lambda.test_map_lambda",
+  "returned_callables": [],
+  "calls": {
+    "36:50-36:64": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "36:34-36:47": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 11, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "36:20-36:66": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 13,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "36:15-36:67": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 12,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "33:15-33:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "33:4-33:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 10, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "32:34-32:48": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "32:20-32:59": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 11,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "32:15-32:60": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 10,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "30:15-30:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "30:4-30:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 9, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "29:49-29:63": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "29:34-29:40": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "29:20-29:79": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 9,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "29:15-29:80": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 8,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "27:15-27:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "27:4-27:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "26:49-26:63": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "26:34-26:40": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "26:20-26:79": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 7,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "26:15-26:80": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 6,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "24:15-24:31": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__getitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "24:15-24:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "24:4-24:32": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "23:15-23:31": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      }
+    },
+    "23:15-23:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "23:4-23:32": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "22:15-22:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "22:4-22:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "21:58-21:72": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "21:20-21:74": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 5,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "21:15-21:75": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 4,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "19:15-19:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "19:4-19:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "18:15-18:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "18:4-18:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "17:15-17:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "17:4-17:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "16:41-16:55": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "16:20-16:60": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 3,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "16:15-16:61": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "14:15-14:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "14:4-14:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "13:15-13:26": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "13:4-13:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "12:38-12:52": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "12:20-12:54": {
+      "map": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "map.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ],
+          "higher_order_parameters": [
+            {
+              "unresolved": [ "LambdaArgument" ],
+              "parameter_index": 0,
+              "calls": []
+            }
+          ]
+        }
+      }
+    },
+    "12:15-12:55": {
+      "list": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "list.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

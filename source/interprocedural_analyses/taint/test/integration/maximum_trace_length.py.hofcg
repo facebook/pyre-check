@@ -1,0 +1,294 @@
+@generated
+Higher order call graphs
+{
+  "callable": "maximum_trace_length.issue_source_one_sink_one",
+  "returned_callables": [],
+  "calls": {
+    "44:22-44:43": {
+      "source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "44:4-44:44": {
+      "sink_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_one_sink_two",
+  "returned_callables": [],
+  "calls": {
+    "54:22-54:43": {
+      "source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "54:4-54:44": {
+      "sink_distance_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_one_sink_zero",
+  "returned_callables": [],
+  "calls": {
+    "40:23-40:44": {
+      "source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "40:4-40:45": {
+      "sink_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_two_sink_one",
+  "returned_callables": [],
+  "calls": {
+    "49:22-49:43": {
+      "source_distance_two": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_two",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "49:4-49:44": {
+      "sink_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.issue_source_zero_sink_zero",
+  "returned_callables": [],
+  "calls": {
+    "36:23-36:45": {
+      "source_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "36:4-36:46": {
+      "sink_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.multi_sink",
+  "returned_callables": [],
+  "calls": {
+    "59:4-59:24": {
+      "sink_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "58:8-58:23": {
+      "_tito": {
+        "call": {
+          "calls": [ { "target": "_tito", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.sink_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "27:4-27:25": {
+      "sink_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.sink_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:24": {
+      "sink_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.sink_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.sink_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "23:4-23:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "14:11-14:33": {
+      "source_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.source_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "19:11-19:32": {
+      "source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "maximum_trace_length.source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "maximum_trace_length.source_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "10:11-10:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

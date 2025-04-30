@@ -1,0 +1,360 @@
+@generated
+Higher order call graphs
+{
+  "callable": "multiple_sources_with_filters.first_source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "20:11-20:39": {
+      "first_source_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.first_source_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.first_source_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "17:11-17:25": {
+      "first_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.first_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.second_source_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "26:11-26:40": {
+      "second_source_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.second_source_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "23:11-23:26": {
+      "second_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.sink_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "41:4-41:25": {
+      "sink_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.sink_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.sink_distance_zero",
+  "returned_callables": [],
+  "calls": {
+    "38:15-38:29": {
+      "first_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.first_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "38:4-38:33": {
+      "multi_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.multi_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.test_first_source_one_second_source_one",
+  "returned_callables": [],
+  "calls": {
+    "32:45-32:74": {
+      "second_source_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "32:15-32:43": {
+      "first_source_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.first_source_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "32:4-32:75": {
+      "multi_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.multi_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.test_first_source_two_second_source_two",
+  "returned_callables": [],
+  "calls": {
+    "35:44-35:72": {
+      "second_source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "35:15-35:42": {
+      "first_source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.first_source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "35:4-35:73": {
+      "multi_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.multi_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.test_first_source_zero_second_source_zero",
+  "returned_callables": [],
+  "calls": {
+    "29:31-29:46": {
+      "second_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "29:15-29:29": {
+      "first_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.first_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "29:4-29:47": {
+      "multi_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.multi_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.test_sink_distance_one",
+  "returned_callables": [],
+  "calls": {
+    "44:23-44:38": {
+      "second_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "44:4-44:39": {
+      "sink_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.sink_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.test_sink_distance_one_second_source_two",
+  "returned_callables": [],
+  "calls": {
+    "50:23-50:51": {
+      "second_source_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "50:4-50:52": {
+      "sink_distance_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.sink_distance_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_with_filters.test_sink_distance_two",
+  "returned_callables": [],
+  "calls": {
+    "47:22-47:37": {
+      "second_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.second_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "47:4-47:38": {
+      "sink_distance_one": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_with_filters.sink_distance_one",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

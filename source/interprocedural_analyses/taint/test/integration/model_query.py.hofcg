@@ -1,0 +1,482 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query.alarm_1",
+  "returned_callables": [],
+  "calls": {
+    "129:15-129:26": {
+      "attribute": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass1.attribute}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "129:4-129:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_10",
+  "returned_callables": [],
+  "calls": {
+    "174:15-174:29": {
+      "foo_instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass5.foo_instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "174:4-174:30": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_11",
+  "returned_callables": [],
+  "calls": {
+    "179:15-179:30": {
+      "foo_attribute": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass6.foo_attribute}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "179:4-179:31": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_12",
+  "returned_callables": [],
+  "calls": {
+    "184:15-184:29": {
+      "foo_instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass6.foo_instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "184:4-184:30": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_2",
+  "returned_callables": [],
+  "calls": {
+    "134:15-134:25": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass1.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "134:4-134:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_3",
+  "returned_callables": [],
+  "calls": {
+    "139:15-139:26": {
+      "attribute": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass2.attribute}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "139:4-139:27": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_4",
+  "returned_callables": [],
+  "calls": {
+    "144:15-144:25": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass2.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "144:4-144:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_5",
+  "returned_callables": [],
+  "calls": {
+    "149:4-149:15": {
+      "attribute": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass3.attribute}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_6",
+  "returned_callables": [],
+  "calls": {
+    "154:17-154:31": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "154:4-154:14": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass3.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_7",
+  "returned_callables": [],
+  "calls": {
+    "159:11-159:22": {
+      "attribute": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass4.attribute}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_8",
+  "returned_callables": [],
+  "calls": {
+    "164:15-164:25": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass4.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "164:4-164:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.alarm_9",
+  "returned_callables": [],
+  "calls": {
+    "169:15-169:30": {
+      "foo_attribute": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass5.foo_attribute}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "169:4-169:31": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.no_alarm_1",
+  "returned_callables": [],
+  "calls": {
+    "189:4-189:35": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "188:4-188:36": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.no_alarm_2",
+  "returned_callables": [],
+  "calls": {
+    "194:4-194:35": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "193:4-193:35": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass1.__init__",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:21": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass1.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass2.__init__",
+  "returned_callables": [],
+  "calls": {
+    "82:8-82:21": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass2.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass3.__init__",
+  "returned_callables": [],
+  "calls": {
+    "89:8-89:21": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass3.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass4.__init__",
+  "returned_callables": [],
+  "calls": {
+    "96:8-96:21": {
+      "instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass4.instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass5.__init__",
+  "returned_callables": [],
+  "calls": {
+    "103:8-103:25": {
+      "foo_instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass5.foo_instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query.AttributeTestClass6.__init__",
+  "returned_callables": [],
+  "calls": {
+    "110:8-110:25": {
+      "foo_instance": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{model_query.AttributeTestClass6.foo_instance}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}

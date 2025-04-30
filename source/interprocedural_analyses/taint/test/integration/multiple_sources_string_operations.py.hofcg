@@ -1,0 +1,2014 @@
+@generated
+Higher order call graphs
+{
+  "callable": "multiple_sources_string_operations.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "45:0-45:12": {
+      "$local_multiple_sources_string_operations$global_query": {
+        "identifier": {
+          "globals": [
+            {
+              "target": "Obj{multiple_sources_string_operations.global_query}",
+              "index": 1
+            }
+          ]
+        }
+      }
+    },
+    "16:0-16:12": {
+      "$local_multiple_sources_string_operations$global_query": {
+        "identifier": {
+          "globals": [
+            {
+              "target": "Obj{multiple_sources_string_operations.global_query}",
+              "index": 0
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_issue",
+  "returned_callables": [],
+  "calls": {
+    "64:31-64:32": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "64:7-64:12": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "64:4-64:34": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 1 } ]
+        }
+      }
+    },
+    "62:7-62:12": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "62:4-62:31": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "61:22-61:45": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_issue_string_literal",
+  "returned_callables": [],
+  "calls": {
+    "50:4-50:30": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "49:22-49:45": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_issue_with_multiple_triggered_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "103:4-103:72": {
+      "format_string_multiple_triggered_user_controlled": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "102:4-102:72": {
+      "format_string_multiple_triggered_user_controlled": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "101:22-101:45": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_issue_with_triggered_sql",
+  "returned_callables": [],
+  "calls": {
+    "93:4-93:38": {
+      "format_string_triggered_sql": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.format_string_triggered_sql",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_issue_with_triggered_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "83:4-83:60": {
+      "format_string_triggered_user_controlled": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.format_string_triggered_user_controlled",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "82:22-82:45": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_multiple_issues_string_literal",
+  "returned_callables": [],
+  "calls": {
+    "56:4-56:30": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 1 } ]
+        }
+      }
+    },
+    "55:4-55:30": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "54:22-54:45": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "97:4-97:27": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_no_issue_when_single_sink_parameter",
+  "returned_callables": [],
+  "calls": {
+    "73:7-73:8": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "73:4-73:10": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "71:12-71:35": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "68:7-68:13": {
+      "__ne__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__ne__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_triggered_sql",
+  "returned_callables": [],
+  "calls": {
+    "88:4-88:29": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "87:22-87:45": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.format_string_triggered_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "78:7-78:12": {
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "78:4-78:19": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.nested_stradd_and_fstring",
+  "returned_callables": [],
+  "calls": {
+    "109:22-109:27": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      },
+      "$__str__$": {
+        "string_format": {
+          "stringify": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "109:19-109:29": {
+      "$__str__$": {
+        "string_format": {
+          "f-string": [ { "target": "Obj{<format-string>}", "index": 0 } ]
+        }
+      }
+    },
+    "109:11-109:29": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "107:13-107:36": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.stradd_tito_triggered_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "123:8-123:19": {
+      "tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "123:4-123:19": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "122:13-122:36": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
+  "returned_callables": [],
+  "calls": {
+    "114:4-114:13": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "113:13-113:36": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.string_operations",
+  "returned_callables": [],
+  "calls": {
+    "42:4-42:64": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "39:4-39:40": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "39:4-39:16": {
+      "$local_multiple_sources_string_operations$global_query": {
+        "identifier": {
+          "globals": [
+            {
+              "target": "Obj{multiple_sources_string_operations.global_query}",
+              "index": 0
+            }
+          ]
+        }
+      }
+    },
+    "37:4-37:27": {
+      "__mod__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__mod__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "35:4-35:27": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "34:4-34:27": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "32:4-32:38": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "31:4-31:33": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "29:27-29:50": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.test_large_string_add",
+  "returned_callables": [],
+  "calls": {
+    "185:18-185:24": {
+      "__mul__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__mul__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "185:14-185:25": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 5,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "185:10-185:26": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 19,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "183:10-183:17": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 18,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "181:10-181:26": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__str__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "179:10-179:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 17,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "177:18-177:23": {
+      "__mul__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__mul__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "177:14-177:24": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 4,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "177:10-177:25": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 16,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "175:10-175:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 15,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "173:10-173:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 14,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "171:18-171:24": {
+      "__mul__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__mul__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "171:14-171:25": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 3,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "171:10-171:26": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 13,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "169:10-169:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 12,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "167:10-167:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 11,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "165:18-165:23": {
+      "__mul__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__mul__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "165:14-165:24": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 2,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "165:10-165:25": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "163:18-163:25": {
+      "__mul__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__mul__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "163:14-163:26": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 1,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "163:10-163:27": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "161:10-161:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "159:18-159:25": {
+      "__mul__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__mul__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "159:14-159:26": {
+      "int": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "int.__new__",
+              "index": 0,
+              "return_type": [ "float", "integer" ],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer" ]
+            }
+          ]
+        }
+      }
+    },
+    "159:10-159:27": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "157:10-157:18": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "float"
+            }
+          ]
+        }
+      }
+    },
+    "155:10-155:23": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__str__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "153:10-153:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "151:10-151:25": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "149:10-149:25": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "147:10-147:25": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "145:10-145:23": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "143:10-143:16": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "object.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    },
+    "141:10-141:22": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__str__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "139:10-139:21": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-185:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 46,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-184:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 45,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-183:17": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 44,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-182:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 43,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-181:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 42,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-180:27": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 41,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-179:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 40,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-178:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 39,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-177:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 38,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-176:30": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 37,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-175:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 36,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-174:34": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 35,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-173:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 34,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-172:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 33,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-171:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 32,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-170:51": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 31,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-169:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 30,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-168:31": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 29,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-167:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 28,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-166:20": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 27,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-165:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 26,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-164:40": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 25,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-163:27": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 24,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-162:37": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 23,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-161:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 22,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-160:39": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 21,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-159:27": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 20,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-158:33": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 19,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-157:18": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 18,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-156:33": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 17,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-155:23": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 16,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-154:32": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 15,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-153:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 14,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-152:34": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 13,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-151:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 12,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-150:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 11,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-149:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 10,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-148:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 9,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-147:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 8,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-146:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 7,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-145:23": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 6,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-144:24": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-143:16": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-142:26": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-141:22": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-140:23": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "138:8-139:21": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations",
+  "returned_callables": [],
+  "calls": {
+    "24:8-24:52": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "23:31-23:54": {
+      "user_controlled_input": {
+        "call": {
+          "calls": [
+            {
+              "target": "multiple_sources_string_operations.user_controlled_input",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

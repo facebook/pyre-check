@@ -1,0 +1,63 @@
+@generated
+Higher order call graphs
+{
+  "callable": "function_class.test",
+  "returned_callables": [],
+  "calls": {
+    "15:4-15:7": {
+      "A": {
+        "call": {
+          "calls": [
+            {
+              "target": "function_class.test",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "function_class.test.A.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "15:4-15:5": {
+      "test": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "function_class.test",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      },
+      "A": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "function_class.test",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}

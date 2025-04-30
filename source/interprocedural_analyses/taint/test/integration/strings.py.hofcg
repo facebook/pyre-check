@@ -1,0 +1,449 @@
+@generated
+Higher order call graphs
+{
+  "callable": "strings.bad_1",
+  "returned_callables": [],
+  "calls": {
+    "19:4-19:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "18:24-18:38": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "18:8-18:39": {
+      "concatenate_lhs": {
+        "call": {
+          "calls": [
+            {
+              "target": "strings.concatenate_lhs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.bad_2",
+  "returned_callables": [],
+  "calls": {
+    "24:4-24:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "23:24-23:38": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "23:8-23:39": {
+      "concatenate_rhs": {
+        "call": {
+          "calls": [
+            {
+              "target": "strings.concatenate_rhs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.concatenate_lhs",
+  "returned_callables": [],
+  "calls": {
+    "10:11-10:23": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.concatenate_rhs",
+  "returned_callables": [],
+  "calls": {
+    "14:11-14:23": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.either",
+  "returned_callables": [],
+  "calls": {
+    "32:4-32:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "31:28-31:42": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "31:12-31:43": {
+      "concatenate_rhs": {
+        "call": {
+          "calls": [
+            {
+              "target": "strings.concatenate_rhs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "29:28-29:42": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "29:12-29:43": {
+      "concatenate_lhs": {
+        "call": {
+          "calls": [
+            {
+              "target": "strings.concatenate_lhs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.format_sink",
+  "returned_callables": [],
+  "calls": {
+    "80:4-80:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "79:8-79:24": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.format_source",
+  "returned_callables": [],
+  "calls": {
+    "75:11-75:27": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "74:8-74:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.format_tito",
+  "returned_callables": [],
+  "calls": {
+    "70:11-70:27": {
+      "format": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.format",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.iadd_lhs_infer_sink",
+  "returned_callables": [],
+  "calls": {
+    "60:4-60:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "59:4-59:11": {
+      "__iadd__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.iadd_rhs_infer_sink",
+  "returned_callables": [],
+  "calls": {
+    "66:4-66:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "65:4-65:10": {
+      "__iadd__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.maybe_lhs",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "39:12-39:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "37:28-37:42": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "37:12-37:43": {
+      "concatenate_lhs": {
+        "call": {
+          "calls": [
+            {
+              "target": "strings.concatenate_lhs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.maybe_rhs",
+  "returned_callables": [],
+  "calls": {
+    "48:4-48:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "47:28-47:42": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "47:12-47:43": {
+      "concatenate_rhs": {
+        "call": {
+          "calls": [
+            {
+              "target": "strings.concatenate_rhs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "45:12-45:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "strings.through_iadd",
+  "returned_callables": [],
+  "calls": {
+    "55:4-55:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "54:4-54:10": {
+      "__iadd__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "52:8-52:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

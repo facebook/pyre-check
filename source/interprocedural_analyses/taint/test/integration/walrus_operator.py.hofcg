@@ -1,0 +1,26 @@
+@generated
+Higher order call graphs
+{
+  "callable": "walrus_operator.walrus_operator_forward",
+  "returned_callables": [],
+  "calls": {
+    "12:10-12:24": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "10:10-10:24": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,732 @@
+@generated
+Higher order call graphs
+{
+  "callable": "via_value_of.attach_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "100:4-100:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.attach_to_source",
+  "returned_callables": [],
+  "calls": {
+    "92:11-92:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.meta",
+  "returned_callables": [],
+  "calls": {
+    "39:11-39:47": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.meta_named",
+  "returned_callables": [],
+  "calls": {
+    "43:11-43:57": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.meta_sink",
+  "returned_callables": [],
+  "calls": {
+    "72:4-72:39": {
+      "sink_via_value_of": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.sink_via_value_of",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.meta_sink_args",
+  "returned_callables": [],
+  "calls": {
+    "76:4-76:42": {
+      "sink_via_value_of": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.sink_via_value_of",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.meta_sink_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "80:4-80:53": {
+      "sink_via_value_of": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.sink_via_value_of",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.meta_sink_positional_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "84:4-84:42": {
+      "sink_via_value_of": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.sink_via_value_of",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_args_kwargs_parameter",
+  "returned_callables": [],
+  "calls": {
+    "140:11-140:55": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_args_parameter",
+  "returned_callables": [],
+  "calls": {
+    "129:11-129:45": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_attach_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "104:4-104:49": {
+      "attach_to_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.attach_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_attach_to_source",
+  "returned_callables": [],
+  "calls": {
+    "96:11-96:49": {
+      "attach_to_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.attach_to_source",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_backwards_tito",
+  "returned_callables": [],
+  "calls": {
+    "68:11-68:42": {
+      "tito": {
+        "call": {
+          "calls": [
+            { "target": "via_value_of.tito", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_bool",
+  "returned_callables": [],
+  "calls": {
+    "27:11-27:43": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_enums",
+  "returned_callables": [],
+  "calls": {
+    "31:11-31:48": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_kwargs_parameter",
+  "returned_callables": [],
+  "calls": {
+    "134:11-134:48": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_missing",
+  "returned_callables": [],
+  "calls": {
+    "35:11-35:38": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_named_kwargs_parameter",
+  "returned_callables": [],
+  "calls": {
+    "150:11-150:60": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_numerals",
+  "returned_callables": [],
+  "calls": {
+    "23:11-23:39": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_positional_kwargs_parameter",
+  "returned_callables": [],
+  "calls": {
+    "145:11-145:53": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_return_including_name",
+  "returned_callables": [],
+  "calls": {
+    "112:11-112:51": {
+      "return_including_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_including_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_return_second_parameter",
+  "returned_callables": [],
+  "calls": {
+    "120:11-120:44": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_return_second_parameter_keyword",
+  "returned_callables": [],
+  "calls": {
+    "124:11-124:57": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_return_via_keyword_only",
+  "returned_callables": [],
+  "calls": {
+    "210:11-210:48": {
+      "return_via_keyword_only": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_keyword_only",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_sink",
+  "returned_callables": [],
+  "calls": {
+    "64:11-64:47": {
+      "sink_via_value_of": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.sink_via_value_of",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_sinks_do_not_propagate",
+  "returned_callables": [],
+  "calls": {
+    "88:4-88:41": {
+      "meta_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.meta_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_string_literals",
+  "returned_callables": [],
+  "calls": {
+    "19:11-19:41": {
+      "return_via_parameter_name": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_parameter_name",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_tito",
+  "returned_callables": [],
+  "calls": {
+    "55:13-55:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "55:8-55:38": {
+      "tito": {
+        "call": {
+          "calls": [
+            { "target": "via_value_of.tito", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_named_args",
+  "returned_callables": [],
+  "calls": {
+    "155:11-155:55": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_named_args_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "196:11-196:65": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_named_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "160:11-160:58": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_args",
+  "returned_callables": [],
+  "calls": {
+    "165:11-165:51": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "170:11-170:54": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_named_args1",
+  "returned_callables": [],
+  "calls": {
+    "175:11-175:58": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_named_args2",
+  "returned_callables": [],
+  "calls": {
+    "180:11-180:61": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_named_args_kwargs1",
+  "returned_callables": [],
+  "calls": {
+    "202:11-202:68": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_named_kwargs1",
+  "returned_callables": [],
+  "calls": {
+    "185:11-185:61": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_unknown_positional_named_kwargs2",
+  "returned_callables": [],
+  "calls": {
+    "190:11-190:64": {
+      "return_via_second_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "via_value_of.return_via_second_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "via_value_of.test_via_value_of_does_not_propagate",
+  "returned_callables": [],
+  "calls": {
+    "47:11-47:23": {
+      "meta": {
+        "call": {
+          "calls": [
+            { "target": "via_value_of.meta", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

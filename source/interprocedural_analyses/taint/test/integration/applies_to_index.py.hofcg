@@ -1,0 +1,232 @@
+@generated
+Higher order call graphs
+{
+  "callable": "applies_to_index.issue_only_with_a_key",
+  "returned_callables": [],
+  "calls": {
+    "51:15-51:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "51:4-51:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "50:15-50:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "50:4-50:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "49:8-49:31": {
+      "only_applies_to_a_key": {
+        "call": {
+          "calls": [
+            {
+              "target": "applies_to_index.only_applies_to_a_key",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "applies_to_index.issue_only_with_first",
+  "returned_callables": [],
+  "calls": {
+    "24:4-24:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "23:4-23:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "22:22-22:45": {
+      "only_applies_to_first": {
+        "call": {
+          "calls": [
+            {
+              "target": "applies_to_index.only_applies_to_first",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "applies_to_index.issue_only_with_nested_first",
+  "returned_callables": [],
+  "calls": {
+    "41:11-41:35": {
+      "only_applies_to_nested": {
+        "call": {
+          "calls": [
+            {
+              "target": "applies_to_index.only_applies_to_nested",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "40:4-40:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "39:4-39:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "38:4-38:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "37:4-37:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "34:20-34:44": {
+      "only_applies_to_nested": {
+        "call": {
+          "calls": [
+            {
+              "target": "applies_to_index.only_applies_to_nested",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "applies_to_index.issue_only_with_second",
+  "returned_callables": [],
+  "calls": {
+    "30:4-30:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "29:4-29:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "28:22-28:46": {
+      "only_applies_to_second": {
+        "call": {
+          "calls": [
+            {
+              "target": "applies_to_index.only_applies_to_second",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "applies_to_index.issue_with_member",
+  "returned_callables": [],
+  "calls": {
+    "61:4-61:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "60:4-60:19": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "59:8-59:34": {
+      "only_applies_to_a_member": {
+        "call": {
+          "calls": [
+            {
+              "target": "applies_to_index.only_applies_to_a_member",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

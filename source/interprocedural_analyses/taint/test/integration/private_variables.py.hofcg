@@ -1,0 +1,1521 @@
+@generated
+Higher order call graphs
+{
+  "callable": "private_variables.test_access_from_other_class",
+  "returned_callables": [],
+  "calls": {
+    "86:43-86:57": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "86:28-86:58": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "86:4-86:59": {
+      "private_into_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Other.private_into_sink",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_bypass_private",
+  "returned_callables": [],
+  "calls": {
+    "74:29-74:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "74:15-74:44": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 3,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "74:4-74:53": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "73:30-73:44": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "73:15-73:45": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "73:4-73:54": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "71:29-71:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "71:15-71:44": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "71:4-71:60": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "70:30-70:44": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "70:15-70:45": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "70:4-70:61": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_expand_subexpression",
+  "returned_callables": [],
+  "calls": {
+    "51:58-51:72": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "51:43-51:73": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "51:33-51:41": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "51:4-51:75": {
+      "expand_subexpression": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.expand_subexpression",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ]
+        }
+      }
+    },
+    "50:48-50:62": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "50:33-50:63": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "50:4-50:65": {
+      "expand_subexpression": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.expand_subexpression",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_getattr",
+  "returned_callables": [],
+  "calls": {
+    "66:29-66:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "66:15-66:62": {
+      "getattr_invalid": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.getattr_invalid",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "66:15-66:44": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 5,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "66:4-66:63": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "64:29-64:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "64:15-64:62": {
+      "getattr_private": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.getattr_private",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "64:15-64:44": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 4,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "64:4-64:63": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "62:29-62:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "62:15-62:61": {
+      "getattr_public": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.getattr_public",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "62:15-62:44": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 3,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "62:4-62:62": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "60:30-60:44": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "60:15-60:63": {
+      "getattr_invalid": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.getattr_invalid",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "60:15-60:45": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "60:4-60:64": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "58:30-58:44": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "58:15-58:63": {
+      "getattr_private": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.getattr_private",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "58:15-58:45": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "58:4-58:64": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "56:30-56:44": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "56:15-56:62": {
+      "getattr_public": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.getattr_public",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "56:15-56:45": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "56:4-56:63": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_private_attribute_sink_models",
+  "returned_callables": [],
+  "calls": {
+    "138:49-138:63": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "138:4-138:64": {
+      "set_model_query": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.PrivateAttributeSinkModels.set_model_query",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.PrivateAttributeSinkModels"
+            }
+          ]
+        }
+      }
+    },
+    "138:4-138:32": {
+      "PrivateAttributeSinkModels": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.PrivateAttributeSinkModels.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "136:53-136:67": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "136:4-136:68": {
+      "set_model_unmangled": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.PrivateAttributeSinkModels"
+            }
+          ]
+        }
+      }
+    },
+    "136:4-136:32": {
+      "PrivateAttributeSinkModels": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.PrivateAttributeSinkModels.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "134:51-134:65": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "134:4-134:66": {
+      "set_model_mangled": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.PrivateAttributeSinkModels.set_model_mangled",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.PrivateAttributeSinkModels"
+            }
+          ]
+        }
+      }
+    },
+    "134:4-134:32": {
+      "PrivateAttributeSinkModels": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.PrivateAttributeSinkModels.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_private_attribute_source_models",
+  "returned_callables": [],
+  "calls": {
+    "112:15-112:63": {
+      "get_model_query": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.PrivateAttributeSourceModels.get_model_query",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.PrivateAttributeSourceModels"
+            }
+          ]
+        }
+      }
+    },
+    "112:15-112:45": {
+      "PrivateAttributeSourceModels": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.PrivateAttributeSourceModels.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "112:4-112:64": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "110:15-110:67": {
+      "get_model_unmangled": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.PrivateAttributeSourceModels.get_model_unmangled",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.PrivateAttributeSourceModels"
+            }
+          ]
+        }
+      }
+    },
+    "110:15-110:45": {
+      "PrivateAttributeSourceModels": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.PrivateAttributeSourceModels.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "110:4-110:68": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "108:15-108:65": {
+      "get_model_mangled": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.PrivateAttributeSourceModels.get_model_mangled",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.PrivateAttributeSourceModels"
+            }
+          ]
+        }
+      }
+    },
+    "108:15-108:45": {
+      "PrivateAttributeSourceModels": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.PrivateAttributeSourceModels.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "108:4-108:66": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_private_public_different",
+  "returned_callables": [],
+  "calls": {
+    "46:18-46:32": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "46:4-46:52": {
+      "public_into_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.public_into_sink",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "46:4-46:33": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 3,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "45:18-45:32": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "45:4-45:53": {
+      "private_into_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.private_into_sink",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "45:4-45:33": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "44:19-44:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "44:4-44:53": {
+      "public_into_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.public_into_sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "44:4-44:34": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "43:19-43:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "43:4-43:54": {
+      "private_into_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.private_into_sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "43:4-43:34": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.test_simple",
+  "returned_callables": [],
+  "calls": {
+    "39:19-39:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "39:4-39:54": {
+      "private_into_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "private_variables.Simple.private_into_sink",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "private_variables.Simple"
+            }
+          ]
+        }
+      }
+    },
+    "39:4-39:34": {
+      "Simple": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "private_variables.Simple.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Other.private_into_sink",
+  "returned_callables": [],
+  "calls": {
+    "82:8-82:29": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSinkModels.__init__",
+  "returned_callables": [],
+  "calls": {
+    "120:8-120:26": {
+      "_PrivateAttributeSinkModels__model_query": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "119:8-119:30": {
+      "_PrivateAttributeSinkModels__model_unmangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "118:8-118:28": {
+      "_PrivateAttributeSinkModels__model_mangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSinkModels.set_model_mangled",
+  "returned_callables": [],
+  "calls": {
+    "123:8-123:28": {
+      "_PrivateAttributeSinkModels__model_mangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSinkModels.set_model_query",
+  "returned_callables": [],
+  "calls": {
+    "129:8-129:26": {
+      "_PrivateAttributeSinkModels__model_query": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_query}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
+  "returned_callables": [],
+  "calls": {
+    "126:8-126:30": {
+      "_PrivateAttributeSinkModels__model_unmangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSourceModels.__init__",
+  "returned_callables": [],
+  "calls": {
+    "94:8-94:26": {
+      "_PrivateAttributeSourceModels__model_query": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "93:8-93:30": {
+      "_PrivateAttributeSourceModels__model_unmangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "92:8-92:28": {
+      "_PrivateAttributeSourceModels__model_mangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSourceModels.get_model_mangled",
+  "returned_callables": [],
+  "calls": {
+    "97:15-97:35": {
+      "_PrivateAttributeSourceModels__model_mangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSourceModels.get_model_query",
+  "returned_callables": [],
+  "calls": {
+    "103:15-103:33": {
+      "_PrivateAttributeSourceModels__model_query": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.PrivateAttributeSourceModels.get_model_unmangled",
+  "returned_callables": [],
+  "calls": {
+    "100:15-100:37": {
+      "_PrivateAttributeSourceModels__model_unmangled": {
+        "attribute_access": {
+          "globals": [
+            {
+              "target": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
+              "index": 0
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Simple.expand_subexpression",
+  "returned_callables": [],
+  "calls": {
+    "24:19-24:28": {
+      "__getitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    },
+    "24:8-24:37": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Simple.getattr_invalid",
+  "returned_callables": [],
+  "calls": {
+    "35:15-35:39": {
+      "getattr": {
+        "call": {
+          "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Simple.getattr_private",
+  "returned_callables": [],
+  "calls": {
+    "30:15-30:46": {
+      "getattr": {
+        "call": {
+          "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Simple.getattr_public",
+  "returned_callables": [],
+  "calls": {
+    "27:15-27:37": {
+      "getattr": {
+        "call": {
+          "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Simple.private_into_sink",
+  "returned_callables": [],
+  "calls": {
+    "16:8-16:32": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "private_variables.Simple.public_into_sink",
+  "returned_callables": [],
+  "calls": {
+    "19:8-19:30": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

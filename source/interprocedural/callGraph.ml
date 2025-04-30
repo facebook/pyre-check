@@ -1468,13 +1468,12 @@ module IdentifierCallees = struct
 
 
   let to_json { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
-    `Assoc
-      [
-        "globals", `List (List.map ~f:CallTarget.to_json global_targets);
-        "nonlocals", `List (List.map ~f:CallTarget.to_json nonlocal_targets);
-        "callables", `List (List.map ~f:CallTarget.to_json callable_targets);
-        "decorated_targets", `List (List.map ~f:CallTarget.to_json decorated_targets);
-      ]
+    []
+    |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
+    |> JsonHelper.add_list "nonlocals" nonlocal_targets CallTarget.to_json
+    |> JsonHelper.add_list "callables" callable_targets CallTarget.to_json
+    |> JsonHelper.add_list "decorated_targets" decorated_targets CallTarget.to_json
+    |> fun bindings -> `Assoc (List.rev bindings)
 
 
   let redirect_to_decorated ~decorators ({ callable_targets; _ } as identifier_callees) =
@@ -4261,20 +4260,25 @@ module HigherOrderCallGraph = struct
     }
 
 
+  let is_empty { returned_callables; call_graph } =
+    CallTarget.Set.is_bottom returned_callables && DefineCallGraph.is_empty call_graph
+
+
+  let to_json_alist { returned_callables; call_graph } =
+    let returned_callables =
+      returned_callables |> CallTarget.Set.elements |> List.map ~f:CallTarget.to_json
+    in
+    ["returned_callables", `List returned_callables; "calls", DefineCallGraph.to_json call_graph]
+
+
   include MakeSaveCallGraph (struct
     type nonrec t = t
 
     let name = "higher order call graphs"
 
-    let is_empty { returned_callables; call_graph } =
-      CallTarget.Set.is_bottom returned_callables && DefineCallGraph.is_empty call_graph
+    let is_empty = is_empty
 
-
-    let to_json_alist { returned_callables; call_graph } =
-      let returned_callables =
-        returned_callables |> CallTarget.Set.elements |> List.map ~f:CallTarget.to_json
-      in
-      ["returned_callables", `List returned_callables; "calls", DefineCallGraph.to_json call_graph]
+    let to_json_alist = to_json_alist
   end)
 
   module State = struct

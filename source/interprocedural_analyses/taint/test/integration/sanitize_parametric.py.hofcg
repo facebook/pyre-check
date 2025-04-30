@@ -1,0 +1,180 @@
+@generated
+Higher order call graphs
+{
+  "callable": "sanitize_parametric.partial_issue_sanitize",
+  "returned_callables": [],
+  "calls": {
+    "51:4-51:26": {
+      "partial_issue_sinks": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.partial_issue_sinks",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "50:8-50:31": {
+      "partial_issue_sources": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.partial_issue_sources",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_parametric.partial_issue_sinks",
+  "returned_callables": [],
+  "calls": {
+    "44:8-44:19": {
+      "a_sink_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.a_sink_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "43:12-43:37": {
+      "sanitize_a_source_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.sanitize_a_source_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "41:8-41:19": {
+      "a_sink_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.a_sink_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "40:7-40:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "sanitize_parametric.partial_issue_sources",
+  "returned_callables": [],
+  "calls": {
+    "36:15-36:27": {
+      "a_source_y": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.a_source_y",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "34:15-34:38": {
+      "sanitize_a_sink_tito": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.sanitize_a_sink_tito",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "33:12-33:24": {
+      "a_source_x": {
+        "call": {
+          "calls": [
+            {
+              "target": "sanitize_parametric.a_source_x",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "32:7-32:12": {
+      "__le__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__le__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__gt__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__gt__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

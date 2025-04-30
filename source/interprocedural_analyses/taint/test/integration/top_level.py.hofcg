@@ -1,0 +1,87 @@
+@generated
+Higher order call graphs
+{
+  "callable": "top_level.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "17:4-17:5": {
+      "$local_top_level$y": {
+        "identifier": {
+          "globals": [ { "target": "Obj{top_level.y}", "index": 1 } ]
+        }
+      }
+    },
+    "17:0-17:6": {
+      "foo": {
+        "call": {
+          "calls": [
+            { "target": "top_level.foo", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "16:4-16:18": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "16:0-16:1": {
+      "$local_top_level$y": {
+        "identifier": {
+          "globals": [ { "target": "Obj{top_level.y}", "index": 0 } ]
+        }
+      }
+    },
+    "9:11-9:12": {
+      "$local_top_level$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{top_level.x}", "index": 1 } ]
+        }
+      }
+    },
+    "9:0-9:13": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "8:4-8:18": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "8:0-8:1": {
+      "$local_top_level$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{top_level.x}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "top_level.foo",
+  "returned_callables": [],
+  "calls": {
+    "13:4-13:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

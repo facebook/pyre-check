@@ -1,0 +1,212 @@
+@generated
+Higher order call graphs
+{
+  "callable": "model_query_return_annotation_extends.test1_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "32:11-32:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test1_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "36:11-36:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test1_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "40:11-40:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test1_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "44:11-44:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test1_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "48:11-48:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test3_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "102:11-102:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test3_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "106:11-106:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test3_alarm3",
+  "returned_callables": [],
+  "calls": {
+    "110:11-110:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test3_alarm4",
+  "returned_callables": [],
+  "calls": {
+    "114:11-114:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.test3_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "118:11-118:25": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.Test2.test2_alarm1",
+  "returned_callables": [],
+  "calls": {
+    "75:15-75:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.Test2.test2_alarm2",
+  "returned_callables": [],
+  "calls": {
+    "78:15-78:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.Test2.test2_noalarm1",
+  "returned_callables": [],
+  "calls": {
+    "69:15-69:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "model_query_return_annotation_extends.Test2.test2_noalarm2",
+  "returned_callables": [],
+  "calls": {
+    "72:15-72:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

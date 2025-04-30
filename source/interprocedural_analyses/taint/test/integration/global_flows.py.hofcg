@@ -1,0 +1,397 @@
+@generated
+Higher order call graphs
+{
+  "callable": "global_flows.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "76:0-76:7": {
+      "$local_global_flows$tainted": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{global_flows.tainted}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "61:0-61:1": {
+      "$local_global_flows$l": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.l}", "index": 0 } ]
+        }
+      }
+    },
+    "17:0-17:1": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.append_argument",
+  "returned_callables": [],
+  "calls": {
+    "69:4-69:17": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.MyList.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "global_flows.MyList"
+            }
+          ]
+        }
+      }
+    },
+    "69:4-69:5": {
+      "$local_global_flows$l": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.l}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.append_directly",
+  "returned_callables": [],
+  "calls": {
+    "65:13-65:27": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "65:4-65:28": {
+      "append": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.MyList.append",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "global_flows.MyList"
+            }
+          ]
+        }
+      }
+    },
+    "65:4-65:5": {
+      "$local_global_flows$l": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.l}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.append_indirectly",
+  "returned_callables": [],
+  "calls": {
+    "73:20-73:34": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "73:4-73:35": {
+      "append_argument": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.append_argument",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.global_source",
+  "returned_callables": [],
+  "calls": {
+    "80:15-80:22": {
+      "$local_global_flows$tainted": {
+        "identifier": {
+          "globals": [
+            { "target": "Obj{global_flows.tainted}", "index": 0 }
+          ]
+        }
+      }
+    },
+    "80:4-80:23": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.indirectly_update_x_arg1",
+  "returned_callables": [],
+  "calls": {
+    "37:16-37:17": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    },
+    "37:4-37:23": {
+      "update_arg1": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.update_arg1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.indirectly_update_x_arg2",
+  "returned_callables": [],
+  "calls": {
+    "49:21-49:22": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    },
+    "49:4-49:23": {
+      "update_arg2": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.update_arg2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.unaffected_x_at_arg1",
+  "returned_callables": [],
+  "calls": {
+    "25:16-25:17": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    },
+    "25:4-25:40": {
+      "update_arg1": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.update_arg1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.unaffected_x_at_arg2",
+  "returned_callables": [],
+  "calls": {
+    "33:38-33:39": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    },
+    "33:4-33:40": {
+      "update_arg2": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.update_arg2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.update_x_at_arg1",
+  "returned_callables": [],
+  "calls": {
+    "21:19-21:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "21:16-21:17": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    },
+    "21:4-21:34": {
+      "update_arg1": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.update_arg1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.update_x_at_arg2",
+  "returned_callables": [],
+  "calls": {
+    "29:32-29:33": {
+      "$local_global_flows$x": {
+        "identifier": {
+          "globals": [ { "target": "Obj{global_flows.x}", "index": 0 } ]
+        }
+      }
+    },
+    "29:16-29:30": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "29:4-29:34": {
+      "update_arg2": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.update_arg2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.x_not_tainted",
+  "returned_callables": [],
+  "calls": {
+    "45:4-45:31": {
+      "indirectly_update_x_arg1": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.indirectly_update_x_arg1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.x_tainted_indirectly_arg1",
+  "returned_callables": [],
+  "calls": {
+    "41:29-41:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "41:4-41:44": {
+      "indirectly_update_x_arg1": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.indirectly_update_x_arg1",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "global_flows.x_tainted_indirectly_arg2",
+  "returned_callables": [],
+  "calls": {
+    "53:29-53:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "53:4-53:44": {
+      "indirectly_update_x_arg2": {
+        "call": {
+          "calls": [
+            {
+              "target": "global_flows.indirectly_update_x_arg2",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

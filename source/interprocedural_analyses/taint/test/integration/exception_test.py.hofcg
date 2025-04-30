@@ -1,0 +1,319 @@
+@generated
+Higher order call graphs
+{
+  "callable": "exception_test.none_throws",
+  "returned_callables": [],
+  "calls": {
+    "27:14-27:31": {
+      "Exception": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_before_try_to_finally",
+  "returned_callables": [],
+  "calls": {
+    "43:8-43:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "41:15-41:29": {
+      "none_throws": {
+        "call": {
+          "calls": [
+            {
+              "target": "exception_test.none_throws",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "39:8-39:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_caught_exception",
+  "returned_callables": [],
+  "calls": {
+    "22:15-22:22": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "BaseException.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "Exception"
+            }
+          ]
+        }
+      }
+    },
+    "21:11-21:20": {
+      "isinstance": {
+        "call": {
+          "calls": [
+            {
+              "target": "isinstance",
+              "index": 0,
+              "return_type": [ "float", "integer", "boolean" ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_constructed_exception",
+  "returned_callables": [],
+  "calls": {
+    "15:11-15:18": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "BaseException.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "Exception"
+            }
+          ]
+        }
+      }
+    },
+    "14:9-14:29": {
+      "Exception": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "BaseException.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_except_to_finally",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "61:12-61:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "59:15-59:29": {
+      "none_throws": {
+        "call": {
+          "calls": [
+            {
+              "target": "exception_test.none_throws",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_parameter_flow",
+  "returned_callables": [],
+  "calls": {
+    "10:11-10:18": {
+      "__str__": {
+        "call": {
+          "calls": [
+            {
+              "target": "BaseException.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "Exception"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_return_finally",
+  "returned_callables": [],
+  "calls": {
+    "70:15-70:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "68:8-68:21": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_return_overrides_finally",
+  "returned_callables": [],
+  "calls": {
+    "84:15-84:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_return_twice_finally",
+  "returned_callables": [],
+  "calls": {
+    "77:15-77:29": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_sink_in_finally",
+  "returned_callables": [],
+  "calls": {
+    "35:8-35:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "33:15-33:29": {
+      "none_throws": {
+        "call": {
+          "calls": [
+            {
+              "target": "exception_test.none_throws",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "exception_test.test_within_try_to_finally",
+  "returned_callables": [],
+  "calls": {
+    "53:8-53:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "50:15-50:29": {
+      "none_throws": {
+        "call": {
+          "calls": [
+            {
+              "target": "exception_test.none_throws",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "49:12-49:26": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}

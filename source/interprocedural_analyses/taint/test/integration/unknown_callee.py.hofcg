@@ -1,0 +1,157 @@
+@generated
+Higher order call graphs
+{
+  "callable": "unknown_callee.should_collapse_depth_zero",
+  "returned_callables": [],
+  "calls": {
+    "27:11-27:24": {
+      "method": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "unknown_callee.test_collapse_depth",
+  "returned_callables": [],
+  "calls": {
+    "33:15-33:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "33:4-33:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "32:8-32:40": {
+      "should_collapse_depth_zero": {
+        "call": {
+          "calls": [
+            {
+              "target": "unknown_callee.should_collapse_depth_zero",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "31:14-31:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "unknown_callee.test_collapse_source",
+  "returned_callables": [],
+  "calls": {
+    "18:15-18:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "18:4-18:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "17:8-17:19": {
+      "method": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "16:14-16:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "unknown_callee.test_issue",
+  "returned_callables": [],
+  "calls": {
+    "12:4-12:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "11:8-11:19": {
+      "method": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "10:8-10:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "unknown_callee.test_sink_collapse",
+  "returned_callables": [],
+  "calls": {
+    "23:15-23:21": {
+      "__getitem__": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    },
+    "23:4-23:22": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "22:8-22:21": {
+      "method": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+        }
+      }
+    }
+  }
+}

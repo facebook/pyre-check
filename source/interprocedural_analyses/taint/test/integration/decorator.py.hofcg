@@ -1,0 +1,3668 @@
+@generated
+Higher order call graphs
+{
+  "callable": "decorator.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "300:4-300:16": {
+      "TypeVar": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
+      }
+    },
+    "300:0-300:1": {
+      "$local_decorator$T": {
+        "identifier": {
+          "globals": [ { "target": "Obj{decorator.T}", "index": 0 } ]
+        }
+      }
+    },
+    "174:7-174:32": {
+      "TypeVar": {
+        "call": {
+          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+        }
+      }
+    },
+    "174:0-174:4": {
+      "$local_decorator$TFoo": {
+        "identifier": {
+          "globals": [ { "target": "Obj{decorator.TFoo}", "index": 0 } ]
+        }
+      }
+    },
+    "14:4-14:31": {
+      "ParameterSpecification": {
+        "call": {
+          "calls": [
+            {
+              "target": "pyre_extensions.ParameterSpecification",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "14:0-14:1": {
+      "$local_decorator$P": {
+        "identifier": {
+          "globals": [ { "target": "Obj{decorator.P}", "index": 0 } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator._strip_first_parameter_",
+  "returned_callables": [
+    {
+      "target": "decorator._strip_first_parameter_.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator._strip_first_parameter_.inner",
+  "returned_callables": [],
+  "calls": {
+    "286:8-286:29": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.conditional_decorator_factory",
+  "returned_callables": [
+    {
+      "target": "decorator.conditional_decorator_factory.add_sink",
+      "index": 0,
+      "return_type": []
+    },
+    {
+      "target": "decorator.conditional_decorator_factory.identity",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.conditional_decorator_factory.add_sink",
+  "returned_callables": [
+    {
+      "target": "decorator.conditional_decorator_factory.add_sink.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.conditional_decorator_factory.add_sink.inner",
+  "returned_callables": [],
+  "calls": {
+    "362:16-362:20": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "361:16-361:29": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.conditional_no_op_decorator_factory",
+  "returned_callables": [
+    {
+      "target": "decorator.conditional_no_op_decorator_factory.inner_false",
+      "index": 0,
+      "return_type": []
+    },
+    {
+      "target": "decorator.conditional_no_op_decorator_factory.inner_true",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.decorated",
+  "returned_callables": [],
+  "calls": {
+    "293:4-293:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.decorated@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "292:0-293:25": {
+      "decorated": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "291:1-291:24": {
+      "_strip_first_parameter_": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator._strip_first_parameter_[formal(f, position=0)=decorator.decorated]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.discard_second_parameter_non_inlineable",
+  "returned_callables": [
+    {
+      "target": "decorator.discard_second_parameter_inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "243:11-243:41": {
+      "discard_second_parameter_inner": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.discard_second_parameter_inner",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo",
+  "returned_callables": [],
+  "calls": {
+    "27:4-27:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "26:0-27:12": {
+      "foo": {
+        "attribute_access": {
+          "callables": [
+            { "target": "decorator.foo", "index": 0, "return_type": [] }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "25:1-25:13": {
+      "with_logging": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging[formal(f, position=0)=decorator.foo]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_args_kwargs",
+  "returned_callables": [],
+  "calls": {
+    "70:4-70:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_args_kwargs@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "69:0-70:12": {
+      "foo_args_kwargs": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_args_kwargs",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "68:1-68:25": {
+      "with_logging_args_kwargs": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs[formal(f, position=0)=decorator.foo_args_kwargs]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_args_kwargs_with_sink",
+  "returned_callables": [],
+  "calls": {
+    "82:4-82:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_args_kwargs_with_sink@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "81:0-82:17": {
+      "foo_args_kwargs_with_sink": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_args_kwargs_with_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "80:1-80:33": {
+      "with_logging_args_kwargs_no_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.foo_args_kwargs_with_sink]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_async",
+  "returned_callables": [],
+  "calls": {
+    "57:4-57:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_async@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "56:0-57:12": {
+      "foo_async": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_async",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "55:1-55:19": {
+      "with_logging_async": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_async[formal(f, position=0)=decorator.foo_async]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_log_first_parameter",
+  "returned_callables": [],
+  "calls": {
+    "145:4-145:15": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_log_first_parameter@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "144:0-145:15": {
+      "foo_log_first_parameter": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_log_first_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "143:1-143:29": {
+      "with_logging_first_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_first_parameter[formal(f, position=0)=decorator.foo_log_first_parameter]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_using_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "127:4-127:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_using_decorator_factory@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "126:0-127:12": {
+      "foo_using_decorator_factory": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_using_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "125:1-125:32": {
+      "with_named_logger": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_named_logger",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      },
+      "decorator.with_named_logger(\"foo_logger\")": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_named_logger._inner_decorator[formal(f, position=0)=decorator.foo_using_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_with_helper_function",
+  "returned_callables": [],
+  "calls": {
+    "171:4-171:15": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_with_helper_function@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "170:0-171:15": {
+      "foo_with_helper_function": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_with_helper_function",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "169:1-169:30": {
+      "with_logging_helper_functions": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_helper_functions[formal(f, position=0)=decorator.foo_with_helper_function]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_with_shady_decorators",
+  "returned_callables": [],
+  "calls": {
+    "110:4-110:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_with_shady_decorators@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "109:0-110:12": {
+      "foo_with_shady_decorators": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_with_shady_decorators",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "108:1-108:15": {
+      "fails_to_apply": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.foo_with_shady_decorators]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "107:1-107:18": {
+      "with_logging_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_sink[formal(callable, position=0)=decorator.foo_with_shady_decorators]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "106:1-106:15": {
+      "fails_to_apply": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "105:1-105:20": {
+      "with_logging_source": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_source[formal(callable, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "104:1-104:15": {
+      "fails_to_apply": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_with_sink",
+  "returned_callables": [],
+  "calls": {
+    "40:4-40:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    },
+    "39:4-39:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.foo_with_sink@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "38:0-40:12": {
+      "foo_with_sink": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.foo_with_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "37:1-37:21": {
+      "with_logging_no_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_no_sink[formal(f, position=0)=decorator.foo_with_sink]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.issue_str_wrapper",
+  "returned_callables": [],
+  "calls": {
+    "396:8-396:25": {
+      "StringWrapper": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "decorator.StringWrapper.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "396:4-396:25": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.StringWrapper.__add__@decorated",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "decorator.StringWrapper"
+            }
+          ]
+        }
+      }
+    },
+    "395:22-395:36": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "395:8-395:37": {
+      "StringWrapper": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "decorator.StringWrapper.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.issue_via_conditional_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "380:43-380:57": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "380:4-380:58": {
+      "sink_via_conditional_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.sink_via_conditional_decorator_factory",
+              "index": 0,
+              "return_type": []
+            },
+            {
+              "target": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.issue_via_conditional_no_op_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "354:49-354:63": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "354:4-354:64": {
+      "sink_via_conditional_no_op_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.sink_via_conditional_no_op_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.issue_via_no_op_decorator",
+  "returned_callables": [],
+  "calls": {
+    "313:29-313:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "313:4-313:44": {
+      "sink_via_no_op_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.sink_via_no_op_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.issue_via_no_op_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "331:37-331:51": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "331:4-331:52": {
+      "sink_via_no_op_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.sink_via_no_op_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.issue_via_trivial_decorator",
+  "returned_callables": [],
+  "calls": {
+    "279:31-279:45": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "279:4-279:46": {
+      "sink_via_trivial_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.main",
+  "returned_callables": [],
+  "calls": {
+    "231:8-231:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 14, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "230:4-232:5": {
+      "some_class_method": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "228:47-228:61": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 13, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "228:38-228:43": {
+      "Foo": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 5,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 5,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "228:4-228:62": {
+      "self_has_generic_type": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "228:4-228:9": {
+      "Foo": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 4,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 4,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "225:16-225:30": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 12, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "225:4-225:31": {
+      "bar": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "225:4-225:9": {
+      "Foo": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 3,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 3,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "223:19-223:33": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 11, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "223:12-223:17": {
+      "Foo": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 2,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 2,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "223:4-223:34": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+              "index": 2,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "222:16-222:30": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 10, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "222:4-222:31": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "222:4-222:9": {
+      "Foo": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 1,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 1,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "221:14-221:28": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 9, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "221:4-221:29": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "221:4-221:9": {
+      "Foo": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "219:29-219:43": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 8, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "219:4-219:53": {
+      "foo_with_helper_function": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "217:28-217:42": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 7, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "217:4-217:52": {
+      "foo_log_first_parameter": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "215:32-215:46": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 6, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "215:4-215:47": {
+      "foo_using_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "213:4-213:38": {
+      "foo_with_shady_decorators": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "211:39-211:53": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 5, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "211:4-211:54": {
+      "foo_args_kwargs_with_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+              "index": 1,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "209:30-209:44": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 4, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "209:4-209:48": {
+      "foo_args_kwargs_with_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "206:22-206:36": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 3, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "206:4-206:37": {
+      "foo_args_kwargs": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "204:20-204:34": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 2, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "204:10-204:35": {
+      "foo_async": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "203:18-203:32": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "203:4-203:33": {
+      "foo_with_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "202:8-202:22": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "202:4-202:23": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.no_op_decorator_factory",
+  "returned_callables": [
+    {
+      "target": "decorator.no_op_decorator_factory.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.second_parameter_source_inlineable_decorator",
+  "returned_callables": [],
+  "calls": {
+    "260:4-260:20": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.second_parameter_source_inlineable_decorator@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "259:0-260:20": {
+      "second_parameter_source_inlineable_decorator": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.second_parameter_source_inlineable_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "258:1-258:18": {
+      "trivial_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.trivial_decorator[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
+  "returned_callables": [],
+  "calls": {
+    "270:4-270:11": {
+      "$local_decorator?second_parameter_source_inlineable_decorator_with_inner$inner": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.second_parameter_source_inlineable_decorator_with_inner.inner",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "264:0-270:11": {
+      "second_parameter_source_inlineable_decorator_with_inner": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.second_parameter_source_inlineable_decorator_with_inner",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "263:1-263:18": {
+      "trivial_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.trivial_decorator[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner.inner",
+  "returned_callables": [],
+  "calls": {
+    "268:8-268:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
+  "returned_callables": [],
+  "calls": {
+    "248:4-248:20": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.second_parameter_source_with_non_inlineable_decorator@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.discard_second_parameter_inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "247:0-248:20": {
+      "second_parameter_source_with_non_inlineable_decorator": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.second_parameter_source_with_non_inlineable_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "246:1-246:40": {
+      "discard_second_parameter_non_inlineable": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.discard_second_parameter_non_inlineable[formal(f, position=0)=decorator.second_parameter_source_with_non_inlineable_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_conditional_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "376:4-376:12": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_conditional_decorator_factory@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_conditional_decorator_factory",
+      "index": 0,
+      "return_type": []
+    },
+    {
+      "target": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "375:0-376:12": {
+      "sink_via_conditional_decorator_factory": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.sink_via_conditional_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "374:1-374:36": {
+      "decorator.conditional_decorator_factory(True)": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.conditional_decorator_factory.add_sink[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            },
+            {
+              "target": "decorator.conditional_decorator_factory.identity[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      },
+      "conditional_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.conditional_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_conditional_no_op_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "350:4-350:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_conditional_no_op_decorator_factory@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_conditional_no_op_decorator_factory",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "349:0-350:17": {
+      "sink_via_conditional_no_op_decorator_factory": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.sink_via_conditional_no_op_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "348:1-348:43": {
+      "decorator.conditional_no_op_decorator_factory(False)": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.conditional_no_op_decorator_factory.inner_false[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            },
+            {
+              "target": "decorator.conditional_no_op_decorator_factory.inner_true[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      },
+      "conditional_no_op_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.conditional_no_op_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_no_op_decorator",
+  "returned_callables": [],
+  "calls": {
+    "309:4-309:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_no_op_decorator@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_no_op_decorator",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "308:0-309:17": {
+      "sink_via_no_op_decorator": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.sink_via_no_op_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "307:1-307:16": {
+      "no_op_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.no_op_decorator[formal(f, position=0)=decorator.sink_via_no_op_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_no_op_decorator_factory",
+  "returned_callables": [],
+  "calls": {
+    "327:4-327:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_no_op_decorator_factory@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_no_op_decorator_factory",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "326:0-327:17": {
+      "sink_via_no_op_decorator_factory": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.sink_via_no_op_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "325:1-325:30": {
+      "no_op_decorator_factory": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.no_op_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      },
+      "decorator.no_op_decorator_factory(True)": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.no_op_decorator_factory.inner[formal(f, position=0)=decorator.sink_via_no_op_decorator_factory]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_trivial_decorator",
+  "returned_callables": [],
+  "calls": {
+    "275:4-275:17": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.sink_via_trivial_decorator@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "274:0-275:17": {
+      "sink_via_trivial_decorator": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.sink_via_trivial_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    },
+    "273:1-273:18": {
+      "trivial_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.trivial_decorator[formal(f, position=0)=decorator.sink_via_trivial_decorator]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.trivial_decorator",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.trivial_decorator.inner",
+  "returned_callables": [],
+  "calls": {
+    "253:8-253:26": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.using_decorated",
+  "returned_callables": [],
+  "calls": {
+    "297:4-297:29": {
+      "decorated": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging.inner",
+  "returned_callables": [],
+  "calls": {
+    "20:8-20:12": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "19:8-19:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs.inner",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:26": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "62:8-62:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:26": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_async",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_async.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_async.inner",
+  "returned_callables": [],
+  "calls": {
+    "50:12-50:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "48:27-48:31": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_first_parameter",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_first_parameter.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_first_parameter.inner",
+  "returned_callables": [],
+  "calls": {
+    "138:8-138:43": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "135:12-135:39": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "134:11-134:32": {
+      "__ne__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__ne__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_helper_functions",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_helper_functions.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_helper_functions.after",
+  "returned_callables": [],
+  "calls": {
+    "164:8-164:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "163:8-163:30": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_helper_functions.before",
+  "returned_callables": [],
+  "calls": {
+    "160:8-160:29": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_helper_functions.inner",
+  "returned_callables": [],
+  "calls": {
+    "157:12-157:28": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    },
+    "156:15-156:24": {
+      "isinstance": {
+        "call": {
+          "calls": [
+            {
+              "target": "isinstance",
+              "index": 0,
+              "return_type": [ "float", "integer", "boolean" ]
+            }
+          ]
+        }
+      }
+    },
+    "155:12-155:34": {
+      "$local_decorator?with_logging_helper_functions$after": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_helper_functions.after",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "154:18-154:36": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "153:12-153:35": {
+      "$local_decorator?with_logging_helper_functions$before": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_helper_functions.before",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_no_sink",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_no_sink.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_no_sink.inner",
+  "returned_callables": [],
+  "calls": {
+    "32:8-32:12": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_sink",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_sink.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_sink.inner",
+  "returned_callables": [],
+  "calls": {
+    "88:8-88:19": {
+      "$parameter$callable": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "87:8-87:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_source",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_source.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_source.inner",
+  "returned_callables": [],
+  "calls": {
+    "95:21-95:35": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "95:17-95:35": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "95:8-95:36": {
+      "$parameter$callable": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_named_logger",
+  "returned_callables": [
+    {
+      "target": "decorator.with_named_logger._inner_decorator",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_named_logger._inner_decorator",
+  "returned_callables": [
+    {
+      "target": "decorator.with_named_logger._inner_decorator.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_named_logger._inner_decorator.inner",
+  "returned_callables": [],
+  "calls": {
+    "118:12-118:30": {
+      "$parameter$f": {
+        "call": {
+          "unresolved": [
+            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          ]
+        }
+      }
+    },
+    "117:12-117:28": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "116:12-116:45": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.bar",
+  "returned_callables": [],
+  "calls": {
+    "189:8-189:16": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.bar@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "187:5-187:29": {
+      "with_logging_args_kwargs": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs[formal(f, position=0)=decorator.Foo.bar]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "186:5-186:37": {
+      "with_logging_args_kwargs_no_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.foo",
+  "returned_callables": [],
+  "calls": {
+    "184:8-184:27": {
+      "sink_method": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.Foo.sink_method",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "decorator.Foo"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.foo@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "182:5-182:37": {
+      "with_logging_args_kwargs_no_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.foo]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.self_has_generic_type",
+  "returned_callables": [],
+  "calls": {
+    "193:8-193:22": {
+      "bar": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.self_has_generic_type@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "191:5-191:37": {
+      "with_logging_args_kwargs_no_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.self_has_generic_type]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.sink_method",
+  "returned_callables": [],
+  "calls": {
+    "180:8-180:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "179:8-179:16": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.some_class_method",
+  "returned_callables": [],
+  "calls": {
+    "198:8-198:28": {
+      "sink_method": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.Foo.sink_method",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "decorator.Foo"
+            }
+          ]
+        }
+      }
+    },
+    "198:8-198:13": {
+      "$parameter$cls": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "object.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.Foo.some_class_method@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "196:5-196:37": {
+      "with_logging_args_kwargs_no_sink": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.some_class_method]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.StringWrapper.__add__",
+  "returned_callables": [],
+  "calls": {
+    "391:29-391:53": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "391:15-391:54": {
+      "StringWrapper": {
+        "call": {
+          "new_calls": [
+            {
+              "target": "object.__new__",
+              "index": 0,
+              "return_type": [],
+              "is_static_method": true
+            }
+          ],
+          "init_calls": [
+            {
+              "target": "decorator.StringWrapper.__init__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "390:8-390:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 1, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "389:8-389:24": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.StringWrapper.__add__@decorated",
+  "returned_callables": [
+    {
+      "target": "decorator.StringWrapper.__add__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "387:5-387:20": {
+      "no_op_decorator": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.no_op_decorator[formal(f, position=0)=decorator.StringWrapper.__add__]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator._strip_first_parameter_[formal(f, position=0)=decorator.decorated]",
+  "returned_callables": [
+    {
+      "target": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator._strip_first_parameter_.inner[local($parameter$f)=decorator.decorated]",
+  "returned_callables": [],
+  "calls": {
+    "286:8-286:29": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.decorated",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.conditional_decorator_factory.add_sink[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory]",
+  "returned_callables": [
+    {
+      "target": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.conditional_decorator_factory.add_sink.inner[local($parameter$f)=decorator.sink_via_conditional_decorator_factory]",
+  "returned_callables": [],
+  "calls": {
+    "362:16-362:20": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.sink_via_conditional_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "361:16-361:29": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.conditional_decorator_factory.identity[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory]",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_conditional_decorator_factory",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.conditional_no_op_decorator_factory.inner_false[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory]",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_conditional_no_op_decorator_factory",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.conditional_no_op_decorator_factory.inner_true[formal(f, position=0)=decorator.sink_via_conditional_no_op_decorator_factory]",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_conditional_no_op_decorator_factory",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.discard_second_parameter_non_inlineable[formal(f, position=0)=decorator.second_parameter_source_with_non_inlineable_decorator]",
+  "returned_callables": [
+    {
+      "target": "decorator.discard_second_parameter_inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "243:11-243:41": {
+      "discard_second_parameter_inner": {
+        "attribute_access": {
+          "callables": [
+            {
+              "target": "decorator.discard_second_parameter_inner",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "is_attribute": true
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.foo_with_shady_decorators]",
+  "returned_callables": [
+    {
+      "target": "decorator.foo_with_shady_decorators",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_source.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.fails_to_apply[formal(f, position=0)=decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.no_op_decorator[formal(f, position=0)=decorator.sink_via_no_op_decorator]",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_no_op_decorator",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.no_op_decorator[formal(f, position=0)=decorator.StringWrapper.__add__]",
+  "returned_callables": [
+    {
+      "target": "decorator.StringWrapper.__add__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.no_op_decorator_factory.inner[formal(f, position=0)=decorator.sink_via_no_op_decorator_factory]",
+  "returned_callables": [
+    {
+      "target": "decorator.sink_via_no_op_decorator_factory",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.trivial_decorator[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator]",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.trivial_decorator[formal(f, position=0)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.second_parameter_source_inlineable_decorator_with_inner]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.trivial_decorator[formal(f, position=0)=decorator.sink_via_trivial_decorator]",
+  "returned_callables": [
+    {
+      "target": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.trivial_decorator.inner[local($parameter$f)=decorator.sink_via_trivial_decorator]",
+  "returned_callables": [],
+  "calls": {
+    "253:8-253:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.sink_via_trivial_decorator",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging[formal(f, position=0)=decorator.foo]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging.inner[local($parameter$f)=decorator.foo]",
+  "returned_callables": [],
+  "calls": {
+    "20:8-20:12": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            { "target": "decorator.foo", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "19:8-19:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs[formal(f, position=0)=decorator.foo_args_kwargs]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs[formal(f, position=0)=decorator.Foo.bar]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.foo_args_kwargs]",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_args_kwargs",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "62:8-62:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
+  "returned_callables": [],
+  "calls": {
+    "63:8-63:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            { "target": "decorator.Foo.bar", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "62:8-62:26": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.foo_args_kwargs_with_sink]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.foo]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.self_has_generic_type]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.Foo.some_class_method]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink[formal(f, position=0)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.foo_args_kwargs_with_sink]",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_args_kwargs_with_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.foo]",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            { "target": "decorator.Foo.foo", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.self_has_generic_type]",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.Foo.self_has_generic_type",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.Foo.some_class_method]",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.Foo.some_class_method",
+              "index": 0,
+              "return_type": [],
+              "is_class_method": true
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_args_kwargs_no_sink.inner[local($parameter$f)=decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]]",
+  "returned_callables": [],
+  "calls": {
+    "75:8-75:26": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_args_kwargs.inner[local($parameter$f)=decorator.Foo.bar]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_async[formal(f, position=0)=decorator.foo_async]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_async.inner[local($parameter$f)=decorator.foo_async]",
+  "returned_callables": [],
+  "calls": {
+    "50:12-50:25": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "48:27-48:31": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_async",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_first_parameter[formal(f, position=0)=decorator.foo_log_first_parameter]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_first_parameter.inner[local($parameter$f)=decorator.foo_log_first_parameter]",
+  "returned_callables": [],
+  "calls": {
+    "138:8-138:43": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_log_first_parameter",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "135:12-135:39": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "134:11-134:32": {
+      "__ne__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__ne__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      },
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "int.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "int"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_helper_functions[formal(f, position=0)=decorator.foo_with_helper_function]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_helper_functions.inner[local($parameter$f)=decorator.foo_with_helper_function]",
+  "returned_callables": [],
+  "calls": {
+    "157:12-157:28": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    },
+    "156:15-156:24": {
+      "isinstance": {
+        "call": {
+          "calls": [
+            {
+              "target": "isinstance",
+              "index": 0,
+              "return_type": [ "float", "integer", "boolean" ]
+            }
+          ]
+        }
+      }
+    },
+    "155:12-155:34": {
+      "$local_decorator?with_logging_helper_functions$after": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_helper_functions.after",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "154:18-154:36": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_with_helper_function",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "153:12-153:35": {
+      "$local_decorator?with_logging_helper_functions$before": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_helper_functions.before",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_no_sink[formal(f, position=0)=decorator.foo_with_sink]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_no_sink.inner[local($parameter$f)=decorator.foo_with_sink]",
+  "returned_callables": [],
+  "calls": {
+    "32:8-32:12": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_with_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_sink[formal(callable, position=0)=decorator.foo_with_shady_decorators]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+  "returned_callables": [],
+  "calls": {
+    "88:8-88:19": {
+      "$parameter$callable": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_with_shady_decorators",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "87:8-87:21": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_logging_source[formal(callable, position=0)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_logging_source.inner[local($parameter$callable)=decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]]",
+  "returned_callables": [],
+  "calls": {
+    "95:21-95:35": {
+      "_test_source": {
+        "call": {
+          "calls": [
+            { "target": "_test_source", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "95:17-95:35": {
+      "__add__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__add__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "95:8-95:36": {
+      "$parameter$callable": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.with_logging_sink.inner[local($parameter$callable)=decorator.foo_with_shady_decorators]",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
+  "callable": "decorator.with_named_logger._inner_decorator[formal(f, position=0)=decorator.foo_using_decorator_factory]",
+  "returned_callables": [
+    {
+      "target": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "decorator.with_named_logger._inner_decorator.inner[local($parameter$f)=decorator.foo_using_decorator_factory]",
+  "returned_callables": [],
+  "calls": {
+    "118:12-118:30": {
+      "$parameter$f": {
+        "call": {
+          "calls": [
+            {
+              "target": "decorator.foo_using_decorator_factory",
+              "index": 0,
+              "return_type": []
+            }
+          ]
+        }
+      }
+    },
+    "117:12-117:28": {
+      "_test_sink": {
+        "call": {
+          "calls": [
+            { "target": "_test_sink", "index": 0, "return_type": [] }
+          ]
+        }
+      }
+    },
+    "116:12-116:45": {
+      "print": {
+        "call": {
+          "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+        }
+      }
+    }
+  }
+}
