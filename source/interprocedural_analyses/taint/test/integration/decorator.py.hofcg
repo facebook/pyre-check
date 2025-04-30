@@ -3152,7 +3152,13 @@ Higher order call graphs
       "$parameter$f": {
         "call": {
           "calls": [
-            { "target": "decorator.Foo.bar", "index": 0, "return_type": [] }
+            { "target": "decorator.Foo.bar", "index": 0, "return_type": [] },
+            {
+              "target": "decorator.Foo.bar",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
           ]
         }
       }
@@ -3250,7 +3256,13 @@ Higher order call graphs
       "$parameter$f": {
         "call": {
           "calls": [
-            { "target": "decorator.Foo.foo", "index": 0, "return_type": [] }
+            { "target": "decorator.Foo.foo", "index": 0, "return_type": [] },
+            {
+              "target": "decorator.Foo.foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            }
           ]
         }
       }
@@ -3268,6 +3280,12 @@ Higher order call graphs
             {
               "target": "decorator.Foo.self_has_generic_type",
               "index": 0,
+              "return_type": []
+            },
+            {
+              "target": "decorator.Foo.self_has_generic_type",
+              "index": 0,
+              "implicit_receiver": true,
               "return_type": []
             }
           ]
@@ -3287,6 +3305,13 @@ Higher order call graphs
             {
               "target": "decorator.Foo.some_class_method",
               "index": 0,
+              "return_type": [],
+              "is_class_method": true
+            },
+            {
+              "target": "decorator.Foo.some_class_method",
+              "index": 0,
+              "implicit_receiver": true,
               "return_type": [],
               "is_class_method": true
             }

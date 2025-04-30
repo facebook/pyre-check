@@ -119,6 +119,8 @@ let assert_call_graph_of_define
 let assert_higher_order_call_graph_of_define
     ?(object_targets = [])
     ?(initial_state = CallGraph.HigherOrderCallGraph.State.empty)
+    ?(maximum_parameterized_targets_at_call_site =
+      Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site)
     ~source
     ~define_name
     ~expected_call_graph
@@ -144,9 +146,6 @@ let assert_higher_order_call_graph_of_define
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
   let maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth in
-  let maximum_parameterized_targets_at_call_site =
-    Some Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site
-  in
   let define_call_graph, callables_to_definitions_map =
     compute_define_call_graph
       ~maximum_target_depth
@@ -171,7 +170,7 @@ let assert_higher_order_call_graph_of_define
       ~get_callee_model:(fun _ -> None)
       ~profiler:CallGraphProfiler.disabled
       ~maximum_target_depth
-      ~maximum_parameterized_targets_at_call_site
+      ~maximum_parameterized_targets_at_call_site:(Some maximum_parameterized_targets_at_call_site)
     |> HigherOrderCallGraphForTest.from_actual
   in
   Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
@@ -7758,6 +7757,76 @@ let test_higher_order_call_graph_of_define =
                                         |> Target.from_regular );
                                     ]);
                            ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo(f):
+       return f
+     def bar():
+       return
+     def baz():
+       return
+     def main(flag: bool):
+       x = bar
+       if flag:
+         x = baz
+       return foo(x)  # Test limiting the number of parameterized call targets
+  |}
+           ~define_name:"test.main"
+           ~maximum_parameterized_targets_at_call_site:1
+           ~expected_call_graph:
+             [
+               ( "9:6-9:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+               ( "11:8-11:11",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                           ]
+                         ())) );
+               ( "12:9-12:15",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.baz"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
                          ())) );
              ]
            ~expected_returned_callables:[]

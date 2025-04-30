@@ -4883,10 +4883,16 @@ module HigherOrderCallGraph = struct
                 ~call_callees:
                   {
                     original_call_callees with
-                    call_targets = parameterized_call_targets;
+                    call_targets =
+                      parameterized_call_targets
+                      |> List.rev_append non_parameterized_call_targets
+                      |> List.dedup_and_sort ~compare:CallTarget.compare;
                     decorated_targets =
                       List.rev_append decorated_init_targets decorated_call_targets;
-                    init_targets = parameterized_init_targets;
+                    init_targets =
+                      parameterized_init_targets
+                      |> List.rev_append non_parameterized_init_targets
+                      |> List.dedup_and_sort ~compare:CallTarget.compare;
                     higher_order_parameters;
                     unresolved;
                   }
