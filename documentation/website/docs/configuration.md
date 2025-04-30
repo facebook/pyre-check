@@ -104,7 +104,7 @@ When Pyre is run incrementally, you can control the Pyre's *server* working in t
 - `stop`: Stop the Pyre server.
 - `restart`: Restart the Pyre server.
 - `servers`: List all currently running Pyre servers.
-- `kill`: In case somethign goes wrong and the server becomes unresponsivbe `kill` will attempt to terminate any processes.
+- `kill`: In case something goes wrong and the server becomes unresponsive, `kill` will attempt to terminate any processes.
 - `rage`: Print server logs for debugging or for context when reporting server errors.
 
 ### Commonly Used Flags
