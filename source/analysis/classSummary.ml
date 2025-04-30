@@ -343,7 +343,7 @@ module ClassAttributes = struct
                                              value = Name (Name.Identifier "typing");
                                            };
                                          attribute = "Union";
-                                         special = false;
+                                         origin = None;
                                        });
                               };
                             index;
@@ -760,7 +760,7 @@ module ClassAttributes = struct
                                        base =
                                          { Node.location; value = Name (Name.Identifier "typing") };
                                        attribute = "Type";
-                                       special = false;
+                                       origin = None;
                                      });
                             };
                           index = from_reference ~location:Location.any name;
@@ -782,7 +782,7 @@ module ClassAttributes = struct
                                      base =
                                        { Node.location; value = Name (Name.Identifier "typing") };
                                      attribute = "ClassVar";
-                                     special = false;
+                                     origin = None;
                                    });
                           };
                         index = meta_annotation;

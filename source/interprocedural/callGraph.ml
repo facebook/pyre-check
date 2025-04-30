@@ -2695,7 +2695,14 @@ let resolve_callee_from_defining_expression
 let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expression =
   let string_callee =
     Node.create_with_default_location
-      (Expression.Name (Name.Attribute { base = expression; attribute = "__str__"; special = true }))
+      (Expression.Name
+         (Name.Attribute
+            {
+              base = expression;
+              attribute = "__str__";
+              origin =
+                Some { Node.location = Node.location expression; value = Origin.ForTypeChecking };
+            }))
   in
   try
     match
@@ -2718,13 +2725,20 @@ let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expres
 let transform_special_calls
     ~pyre_in_context
     ~callables_to_definitions_map
-    { Call.callee; arguments }
+    ~location:call_location
+    { Call.callee = { Node.location = callee_location; _ } as callee; arguments }
   =
-  let attribute_access base method_name =
+  let attribute_access ~base ~method_name ~origin =
     {
       Node.value =
-        Expression.Name (Name.Attribute { base; attribute = method_name; special = true });
-      location = Node.location callee;
+        Expression.Name
+          (Name.Attribute
+             {
+               base;
+               attribute = method_name;
+               origin = Some { Node.location = call_location; value = origin };
+             });
+      location = callee_location;
     }
   in
   match Node.value callee, arguments with
@@ -2733,19 +2747,33 @@ let transform_special_calls
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
       let callee =
         attribute_access
-          value
-          (resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value)
+          ~base:value
+          ~method_name:(resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value)
+          ~origin:Origin.StrCall
       in
       Some { Call.callee; arguments = [] }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
       (* Only handle `iter` with a single argument here. *)
-      Some { Call.callee = attribute_access value "__iter__"; arguments = [] }
+      Some
+        {
+          Call.callee = attribute_access ~base:value ~method_name:"__iter__" ~origin:Origin.IterCall;
+          arguments = [];
+        }
   | Name (Name.Identifier "next"), [{ Call.Argument.value; _ }] ->
       (* Only handle `next` with a single argument here. *)
-      Some { Call.callee = attribute_access value "__next__"; arguments = [] }
+      Some
+        {
+          Call.callee = attribute_access ~base:value ~method_name:"__next__" ~origin:Origin.NextCall;
+          arguments = [];
+        }
   | Name (Name.Identifier "anext"), [{ Call.Argument.value; _ }] ->
       (* Only handle `anext` with a single argument here. *)
-      Some { Call.callee = attribute_access value "__anext__"; arguments = [] }
+      Some
+        {
+          Call.callee =
+            attribute_access ~base:value ~method_name:"__anext__" ~origin:Origin.NextCall;
+          arguments = [];
+        }
   | ( Expression.Name
         (Name.Attribute
           {
@@ -2775,16 +2803,20 @@ let transform_special_calls
           arguments =
             List.map process_arguments ~f:(fun value -> { Call.Argument.value; name = None });
         }
-  | _ -> SpecialCallResolution.redirect ~pyre_in_context { Call.callee; arguments }
+  | _ ->
+      SpecialCallResolution.redirect
+        ~pyre_in_context
+        ~location:call_location
+        { Call.callee; arguments }
 
 
-let redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call =
-  match transform_special_calls ~pyre_in_context ~callables_to_definitions_map call with
+let redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~location call =
+  match transform_special_calls ~pyre_in_context ~callables_to_definitions_map ~location call with
   | Some call -> call
   | None ->
       (* Rewrite certain calls using the same logic used in the type checker.
        * This should be sound for most analyses. *)
-      PyrePysaEnvironment.InContext.redirect_special_calls pyre_in_context call
+      PyrePysaEnvironment.InContext.redirect_special_calls pyre_in_context ~location call
 
 
 let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location = function
@@ -2794,13 +2826,21 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
           callee =
             {
               Node.value =
-                Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                Expression.Name
+                  (Name.Attribute
+                     {
+                       base;
+                       attribute = "__getitem__";
+                       origin = Some { Node.location; value = Origin.SubscriptGetItem };
+                     });
               location = Node.location base;
             };
           arguments = [{ Call.Argument.value = index; name = None }];
         }
   | Expression.Call call ->
-      let call = redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call in
+      let call =
+        redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~location call
+      in
       Expression.Call call
   | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | expression -> expression
@@ -2834,7 +2874,13 @@ let redirect_assignments = function
                     callee =
                       {
                         value =
-                          Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                          Name
+                            (Name.Attribute
+                               {
+                                 base;
+                                 attribute = "__setitem__";
+                                 origin = Some { Node.location; value = Origin.SubscriptSetItem };
+                               });
                         location;
                       };
                     arguments = [index_argument; value_argument];
@@ -3358,11 +3404,11 @@ let resolve_attribute_access_global_targets
     ~base_type_info
     ~base
     ~attribute
-    ~special
+    ~origin
   =
   let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
   let expression =
-    Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+    Expression.Name (Name.Attribute { Name.Attribute.base; attribute; origin })
     |> Node.create_with_default_location
   in
   match as_identifier_reference ~define ~pyre_in_context expression with
@@ -3605,7 +3651,7 @@ let resolve_attribute_access
     ~attribute_targets
     ~base
     ~attribute
-    ~special
+    ~origin
     ~setter
   =
   let base_type_info =
@@ -3638,7 +3684,7 @@ let resolve_attribute_access
       ~base_type_info
       ~base
       ~attribute
-      ~special
+      ~origin
     |> List.map ~f:Target.create_object
     (* Use a hashset here for faster lookups. *)
     |> List.filter ~f:(Hash_set.mem attribute_targets)
@@ -3647,7 +3693,7 @@ let resolve_attribute_access
   in
 
   let callable_targets =
-    Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+    Expression.Name (Name.Attribute { Name.Attribute.base; attribute; origin })
     |> Node.create_with_default_location
     |> resolve_callable_targets_from_global_identifiers ~define:define_name ~pyre_in_context
   in
@@ -3771,7 +3817,7 @@ module CalleeVisitor = struct
             |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
-        | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
+        | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; origin }) ->
             let setter =
               match assignment_target with
               | Some { AssignmentTarget.location = assignment_target_location } ->
@@ -3787,7 +3833,7 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base
               ~attribute
-              ~special
+              ~origin
               ~setter
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -3798,17 +3844,26 @@ module CalleeVisitor = struct
             |> ignore
         | Expression.BinaryOperator ({ left; _ } as operator) ->
             let implicit_call =
-              BinaryOperator.lower_to_call ~callee_location:left.Node.location operator
+              BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location operator
             in
             resolve_callees ~call:implicit_call
             |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier implicit_call)
-        | Expression.ComparisonOperator comparison -> (
-            match ComparisonOperator.override ~location comparison with
+        | Expression.ComparisonOperator ({ left; _ } as comparison) -> (
+            match
+              ComparisonOperator.lower_to_expression
+                ~location
+                ~callee_location:left.location
+                comparison
+            with
             | Some { Node.value = Expression.Call call; _ } ->
                 let call =
-                  redirect_special_calls ~pyre_in_context ~callables_to_definitions_map call
+                  redirect_special_calls
+                    ~pyre_in_context
+                    ~callables_to_definitions_map
+                    ~location
+                    call
                 in
                 resolve_callees ~call
                 |> MissingFlowTypeAnalysis.add_unknown_callee
@@ -3852,7 +3907,16 @@ module CalleeVisitor = struct
                             Node.value =
                               Expression.Name
                                 (Name.Attribute
-                                   { base = expression; attribute = method_name; special = false });
+                                   {
+                                     base = expression;
+                                     attribute = method_name;
+                                     origin =
+                                       Some
+                                         {
+                                           Node.location = expression_location;
+                                           value = Origin.FormatStringImplicitStr;
+                                         };
+                                   });
                             location = expression_location;
                           }
                         in
@@ -3912,7 +3976,7 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base
               ~attribute
-              ~special:false
+              ~origin:(Some { Node.location; value = Origin.GetAttrConstantLiteral })
               ~setter:false
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -3954,7 +4018,7 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base:self
               ~attribute
-              ~special:true
+              ~origin:(Some { Node.location; value = Origin.SetAttrConstantLiteral })
               ~setter:true
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -4178,7 +4242,7 @@ struct
             target;
 
           let implicit_call =
-            AugmentedAssign.lower_to_call ~callee_location:target.Node.location assign
+            AugmentedAssign.lower_to_call ~location ~callee_location:target.Node.location assign
           in
           let { NodeVisitorContext.debug; callables_to_definitions_map; override_graph; _ } =
             Context.node_visitor_context
@@ -4998,7 +5062,7 @@ module HigherOrderCallGraph = struct
                 State.get (State.create_root_from_identifier identifier) state
               in
               CallTarget.Set.join global_callables callables_from_variable, state
-          | Name (Name.Attribute { base = _; attribute; special = _ }) ->
+          | Name (Name.Attribute { base = _; attribute; origin = _ }) ->
               let callables =
                 Context.input_define_call_graph
                 |> DefineCallGraph.resolve_attribute_access ~location ~attribute

@@ -3828,10 +3828,10 @@ let test_call_graph_of_define =
                    (ExpressionCallees.from_string_format
                       (StringFormatCallees.from_stringify_targets
                          [
-                           (* TODO(T112761296): Wrong call resolution *)
                            CallTarget.create_regular
-                             (Target.Regular.Function
-                                { name = "BaseException.__str__"; kind = Normal });
+                             ~implicit_receiver:true
+                             (Target.Regular.Method
+                                { class_name = "object"; method_name = "__str__"; kind = Normal });
                            CallTarget.create_regular
                              ~implicit_receiver:true
                              ~receiver_class:"str"
@@ -3904,13 +3904,22 @@ let test_call_graph_of_define =
                           ExpressionCallees.from_string_format
                             (StringFormatCallees.from_stringify_targets
                                [
-                                 (* TODO(T112761296): Probably wrong call resolution *)
                                  CallTarget.create_regular
-                                   (Target.Regular.Function
-                                      { name = "object.__str__"; kind = Normal });
+                                   ~implicit_receiver:true
+                                   (Target.Regular.Method
+                                      {
+                                        class_name = "object";
+                                        method_name = "__str__";
+                                        kind = Normal;
+                                      });
                                  CallTarget.create_regular
-                                   (Target.Regular.Function
-                                      { name = "test.A.__str__"; kind = Normal });
+                                   ~implicit_receiver:true
+                                   (Target.Regular.Method
+                                      {
+                                        class_name = "test.A";
+                                        method_name = "__str__";
+                                        kind = Normal;
+                                      });
                                ]) );
                         ( "__class__",
                           ExpressionCallees.from_attribute_access
@@ -4012,6 +4021,7 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~implicit_receiver:true
+                               ~receiver_class:"Exception"
                                (Target.Regular.Method
                                   {
                                     class_name = "BaseException";
@@ -4028,6 +4038,7 @@ let test_call_graph_of_define =
                            [
                              CallTarget.create_regular
                                ~implicit_receiver:true
+                               ~receiver_class:"str"
                                (Target.Regular.Method
                                   { class_name = "str"; method_name = "__add__"; kind = Normal });
                            ]

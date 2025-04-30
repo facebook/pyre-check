@@ -594,7 +594,7 @@ let test_find_narrowest_spanning_symbol context =
                           Node.create_with_default_location
                             (Expression.Name (Name.Identifier "$parameter$self"));
                         attribute = "foo";
-                        special = false;
+                        origin = None;
                       })));
          cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
@@ -828,7 +828,7 @@ let test_find_narrowest_spanning_symbol context =
                        Node.create_with_default_location
                          (Expression.Name (Name.Identifier "$parameter$my_dictionary"));
                      attribute = "__getitem__";
-                     special = false;
+                     origin = None;
                    })
              |> Node.create_with_default_location);
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
@@ -877,7 +877,7 @@ let test_find_narrowest_spanning_symbol context =
                        Node.create_with_default_location
                          (Expression.Name (Name.Identifier "$parameter$foo"));
                      attribute = "my_attribute";
-                     special = false;
+                     origin = None;
                    })
              |> Node.create_with_default_location);
          cfg_data = { define_name = !&"test.main"; node_id = 4; statement_index = 0 };
@@ -908,7 +908,7 @@ let test_find_narrowest_spanning_symbol context =
                        Node.create_with_default_location
                          (Expression.Name (Name.Identifier "$parameter$foo"));
                      attribute = "my_attribute";
-                     special = false;
+                     origin = None;
                    })
              |> Node.create_with_default_location);
          cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
@@ -940,7 +940,7 @@ let test_find_narrowest_spanning_symbol context =
                        Node.create_with_default_location
                          (Expression.Name (Name.Identifier "$parameter$foo"));
                      attribute = "other_attribute";
-                     special = false;
+                     origin = None;
                    })
              |> Node.create_with_default_location);
          cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
@@ -995,7 +995,7 @@ let test_find_narrowest_spanning_symbol context =
                        Node.create_with_default_location
                          (Expression.Name (Name.Identifier "$parameter$xs"));
                      attribute = "append";
-                     special = false;
+                     origin = None;
                    })
              |> Node.create_with_default_location);
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
@@ -3053,7 +3053,7 @@ let test_lookup_expression context =
                   base =
                     Node.create_with_default_location (Expression.Name (Name.Identifier "test"));
                   attribute = "foo";
-                  special = false;
+                  origin = None;
                 })
           |> Node.create_with_default_location),
         Type.Callable
@@ -3246,7 +3246,7 @@ let test_coverage_gaps_in_module context =
                           Node.create_with_default_location
                             (Expression.Name (Name.Identifier "test"));
                         attribute = "foo";
-                        special = false;
+                        origin = None;
                       })
                 |> Node.create_with_default_location);
             type_ =
@@ -3454,7 +3454,7 @@ let test_coverage_gaps_in_module context =
                           Expression.Name (Name.Identifier "test")
                           |> Node.create_with_default_location;
                         attribute = "foo";
-                        special = false;
+                        origin = None;
                       })
                 |> Node.create_with_default_location);
             type_ =

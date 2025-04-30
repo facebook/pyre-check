@@ -32,7 +32,7 @@ module AugmentedAssign : sig
 
   val dunder_method_name : Expression.BinaryOperator.operator -> string
 
-  val lower_to_call : callee_location:Location.t -> t -> Expression.Call.t
+  val lower_to_call : location:Location.t -> callee_location:Location.t -> t -> Expression.Call.t
 
   val lower_to_expression : location:Location.t -> callee_location:Location.t -> t -> Expression.t
 end
@@ -101,19 +101,17 @@ end
 module rec Assert : sig
   module Origin : sig
     type t =
-      | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
-      | Match
+      | Match of { true_branch: bool }
+      | TryHandler
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
-
-    val location_insensitive_compare : t -> t -> int
   end
 
   type t = {
     test: Expression.t;
     message: Expression.t option;
-    origin: Origin.t;
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -485,7 +483,7 @@ and Statement : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val assume : ?origin:Assert.Origin.t -> Expression.t -> t
+  val assume : origin:Assert.Origin.t Node.t option -> Expression.t -> t
 
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 end

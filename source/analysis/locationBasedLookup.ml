@@ -781,8 +781,8 @@ module SymbolSelection = struct
         (* Prefer the expression `foo` over the invisible `foo.__dunder_method__`, since the user
            probably intends the former. *)
         match Node.value left, Node.value right with
-        | Expression.Name (Name.Attribute { special = true; _ }), _ -> 1
-        | _, Expression.Name (Name.Attribute { special = true; _ }) -> -1
+        | Expression.Name (Name.Attribute { origin = Some _; _ }), _ -> 1
+        | _, Expression.Name (Name.Attribute { origin = Some _; _ }) -> -1
         | _ -> (
             (* Prefer names over any other types of expressions. This is useful for if-conditions,
                where we synthesize asserts for `foo` and `not foo`, having the same location

@@ -295,7 +295,7 @@ let errors_from_not_found
                   | ( Some operator_name,
                       Some
                         {
-                          Node.value = Expression.Name (Attribute { special = true; _ });
+                          Node.value = Expression.Name (Attribute { origin = Some _; _ });
                           location = callee_location;
                         } ) ->
                       let left_operand, right_operand =
@@ -1685,8 +1685,7 @@ module State (Context : Context) = struct
       ~has_default
     =
     let global_resolution = Resolution.global_resolution resolution in
-    let name = Name.Attribute { base; special; attribute } in
-    let reference = name_to_reference name in
+    let reference = name_to_reference (Name.Attribute { base; attribute; origin = None }) in
     let access_as_attribute () =
       let find_attribute
           ({ Type.type_for_lookup; accessed_through_class; class_name; accessed_through_readonly }
@@ -1982,7 +1981,7 @@ module State (Context : Context) = struct
       in
       List.fold conditions ~init:(resolution, errors) ~f:(fun (resolution, errors) condition ->
           let resolution, new_errors =
-            let post_resolution, errors = forward_assert ~resolution condition in
+            let post_resolution, errors = forward_assert ~origin:None ~resolution condition in
             resolution_or_default post_resolution ~default:resolution, errors
           in
           resolution, List.append new_errors errors)
@@ -2603,7 +2602,7 @@ module State (Context : Context) = struct
           } ->
           let resolution, resolved_callee, errors, resolved_base =
             let resolution, assume_errors =
-              let post_resolution, errors = forward_assert ~resolution expression in
+              let post_resolution, errors = forward_assert ~origin:None ~resolution expression in
               resolution_or_default post_resolution ~default:resolution, errors
             in
             let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
@@ -2644,7 +2643,9 @@ module State (Context : Context) = struct
           } ->
           let resolution, resolved_callee, errors, resolved_base =
             let resolution, assume_errors =
-              let post_resolution, errors = forward_assert ~resolution (negate expression) in
+              let post_resolution, errors =
+                forward_assert ~origin:None ~resolution (negate expression)
+              in
               resolution_or_default post_resolution ~default:resolution, errors
             in
             let { Resolved.resolution; resolved; errors = callee_errors; base = resolved_base; _ } =
@@ -2713,7 +2714,9 @@ module State (Context : Context) = struct
                 resolved_annotation = None;
               })
       | Call call ->
-          let { Call.callee; arguments } = AnnotatedCall.redirect_special_calls ~resolution call in
+          let { Call.callee; arguments } =
+            AnnotatedCall.redirect_special_calls ~resolution ~location call
+          in
           let {
             Resolved.errors = callee_errors;
             resolved = resolved_callee;
@@ -2894,7 +2897,11 @@ module State (Context : Context) = struct
                             value =
                               Expression.Name
                                 (Name.Attribute
-                                   { base = right; attribute = "__contains__"; special = true });
+                                   {
+                                     base = right;
+                                     attribute = "__contains__";
+                                     origin = Some { Node.location; value = Origin.InContains };
+                                   });
                           };
                       }
                   in
@@ -2925,7 +2932,11 @@ module State (Context : Context) = struct
                                 value =
                                   Expression.Name
                                     (Name.Attribute
-                                       { base = right; attribute = "__iter__"; special = true });
+                                       {
+                                         base = right;
+                                         attribute = "__iter__";
+                                         origin = Some { Node.location; value = Origin.InIter };
+                                       });
                               };
                             resolved;
                           }
@@ -2980,7 +2991,11 @@ module State (Context : Context) = struct
                           value =
                             Expression.Name
                               (Name.Attribute
-                                 { base = right; attribute = "__getitem__"; special = true });
+                                 {
+                                   base = right;
+                                   attribute = "__getitem__";
+                                   origin = Some { Node.location; value = Origin.InGetItem };
+                                 });
                         }
                       in
                       let call =
@@ -3016,7 +3031,12 @@ module State (Context : Context) = struct
                                     value =
                                       Name
                                         (Name.Attribute
-                                           { base = getitem; attribute = "__eq__"; special = true });
+                                           {
+                                             base = getitem;
+                                             attribute = "__eq__";
+                                             origin =
+                                               Some { Node.location; value = Origin.InGetItemEq };
+                                           });
                                   };
                                 arguments = [{ Call.Argument.name = None; value = left }];
                               };
@@ -3093,7 +3113,9 @@ module State (Context : Context) = struct
           { resolution; errors; resolved; resolved_annotation = None; base = None }
       | ComparisonOperator ({ ComparisonOperator.left; right; _ } as operator) -> (
           let operator = { operator with left } in
-          match ComparisonOperator.override ~location operator with
+          match
+            ComparisonOperator.lower_to_expression ~location ~callee_location:location operator
+          with
           | Some expression ->
               let resolved = forward_expression ~resolution expression in
               { resolved with errors = resolved.errors }
@@ -3422,7 +3444,7 @@ module State (Context : Context) = struct
           }
       | Name (Name.Identifier identifier) ->
           forward_reference ~resolution ~location ~errors:[] (Reference.create identifier)
-      | Name (Name.Attribute { base; attribute; special } as name) -> (
+      | Name (Name.Attribute { base; attribute; origin } as name) -> (
           (*
            * Attribute accesses are recursively resolved by stripping mames off
            * of the end and then trying
@@ -3480,7 +3502,7 @@ module State (Context : Context) = struct
                 ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
                 ~location
                 ~base
-                ~special
+                ~special:(Option.is_some origin)
                 ~attribute
                 ~has_default:false)
       | Constant Constant.NoneLiteral ->
@@ -3568,7 +3590,13 @@ module State (Context : Context) = struct
                 callee =
                   {
                     Node.value =
-                      Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                      Name
+                        (Name.Attribute
+                           {
+                             base;
+                             attribute = "__getitem__";
+                             origin = Some { Node.location; value = Origin.SubscriptGetItem };
+                           });
                     location = Node.location base;
                   };
                 arguments = [{ Call.Argument.value = index; name = None }];
@@ -3723,7 +3751,7 @@ module State (Context : Context) = struct
           in
           { resolution; errors; resolved; resolved_annotation = None; base = None }
       | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
-          match UnaryOperator.override operator with
+          match UnaryOperator.lower_to_expression ~location ~callee_location:location operator with
           | Some expression -> forward_expression ~resolution expression
           | None ->
               let resolved = forward_expression ~resolution operand in
@@ -4282,7 +4310,7 @@ module State (Context : Context) = struct
                     {
                       base = { Node.location = _; value = Name (Name.Identifier "typing") };
                       attribute = "is_typeddict";
-                      special = false;
+                      origin = None;
                     });
               _;
             };
@@ -4324,7 +4352,7 @@ module State (Context : Context) = struct
                                 base =
                                   { Node.location = _; value = Name (Name.Identifier "typing") };
                                 attribute = "is_typeddict";
-                                special = false;
+                                origin = None;
                               });
                         _;
                       };
@@ -4633,7 +4661,7 @@ module State (Context : Context) = struct
     | _ -> Value resolution
 
 
-  and forward_assert ?(origin = Assert.Origin.Assertion) ~resolution test =
+  and forward_assert ~origin ~resolution test =
     let { Resolved.resolution; errors; _ } = forward_expression ~resolution test in
     let resolution = refine_resolution_for_assert ~resolution test in
     (* Ignore type errors from the [assert (not foo)] in the else-branch because it's the same [foo]
@@ -4643,8 +4671,8 @@ module State (Context : Context) = struct
        ignore all else-branch assertion errors. *)
     let errors =
       match origin with
-      | Assert.Origin.If { true_branch = false; _ }
-      | Assert.Origin.While { true_branch = false; _ } ->
+      | Some { Node.value = Assert.Origin.If { true_branch = false }; _ }
+      | Some { Node.value = Assert.Origin.While { true_branch = false }; _ } ->
           []
       | _ -> errors
     in
@@ -4807,7 +4835,12 @@ module State (Context : Context) = struct
                 in
                 Node.create_with_default_location
                   (Expression.Name
-                     (Name.Attribute { base; attribute = "__getitem__"; special = true }))
+                     (Name.Attribute
+                        {
+                          base;
+                          attribute = "__getitem__";
+                          origin = Some { Node.location; value = Origin.ForTypeChecking };
+                        }))
               in
               Resolution.resolve_expression_to_type
                 resolution
@@ -5631,7 +5664,13 @@ module State (Context : Context) = struct
           let setitem_callee_expression =
             {
               Node.value =
-                Expression.Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                Expression.Name
+                  (Name.Attribute
+                     {
+                       base;
+                       attribute = "__setitem__";
+                       origin = Some { Node.location; value = Origin.SubscriptSetItem };
+                     });
               Node.location;
             }
           in
@@ -5971,7 +6010,7 @@ module State (Context : Context) = struct
                         {
                           base = Type.expression enumeration_type;
                           attribute = member_name;
-                          special = false;
+                          origin = None;
                         }))
               in
               let { Resolved.resolved = resolved_member_type; _ } =
@@ -6103,7 +6142,7 @@ module State (Context : Context) = struct
     | Expression
         { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
-        forward_assert ~resolution test
+        forward_assert ~origin:None ~resolution test
     | Expression expression ->
         let { Resolved.resolution; resolved; errors; _ } =
           forward_expression ~resolution expression
@@ -7707,7 +7746,7 @@ module State (Context : Context) = struct
                                Expression.Name (create_name ~location parent)
                                |> Node.create ~location;
                              attribute = "__init_subclass__";
-                             special = false;
+                             origin = None;
                            });
                   };
                 arguments = init_subclass_arguments;

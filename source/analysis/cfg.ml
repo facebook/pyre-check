@@ -30,8 +30,8 @@ module MatchTranslate = struct
 
   let create_name ~location name = Expression.Name name |> Node.create ~location
 
-  let create_attribute_name ~location ~base ~attribute =
-    create_name ~location (Name.Attribute { base; attribute; special = false })
+  let create_attribute_name ~location ~base ~attribute ~origin =
+    create_name ~location (Name.Attribute { base; attribute; origin })
 
 
   let create_identifier_name ~location name = create_name ~location (Name.Identifier name)
@@ -121,6 +121,7 @@ module MatchTranslate = struct
       ~location
       ~base:(create_identifier_name ~location "typing")
       ~attribute:"Sequence"
+      ~origin:None
 
 
   let create_typing_mapping ~location =
@@ -128,6 +129,7 @@ module MatchTranslate = struct
       ~location
       ~base:(create_identifier_name ~location "typing")
       ~attribute:"Mapping"
+      ~origin:None
 
 
   let is_special_builtin_for_class_pattern cls =
@@ -174,13 +176,23 @@ module MatchTranslate = struct
               create_subscript_index
                 ~location
                 ~sequence:
-                  (create_attribute_name ~location ~base:subject ~attribute:"__match_args__")
+                  (create_attribute_name
+                     ~location
+                     ~base:subject
+                     ~attribute:"__match_args__"
+                     ~origin:(Some { Node.location; value = Origin.MatchClassArgs }))
                 ~index
             in
             pattern_to_condition ~subject:(create_getattr ~location subject attribute)
         in
         let of_attribute_pattern attribute =
-          pattern_to_condition ~subject:(create_attribute_name ~location ~base:subject ~attribute)
+          pattern_to_condition
+            ~subject:
+              (create_attribute_name
+                 ~location
+                 ~base:subject
+                 ~attribute
+                 ~origin:(Some { Node.location; value = Origin.MatchClassAttribute attribute }))
         in
         create_isinstance
           ~location
@@ -487,7 +499,7 @@ let create define =
         Node.connect_option orelse join;
         Node.connect split join;
         create statements jumps join
-    | { Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); _ }
+    | { Ast.Node.value = Statement.If ({ If.test; body; orelse; _ } as conditional); location }
       :: statements ->
         (* -> [split] -> [body]
          *       |          |
@@ -499,19 +511,25 @@ let create define =
         let body_node =
           let body_statements =
             let test = Expression.normalize test in
-            Statement.assume ~origin:(Assert.Origin.If { true_branch = true }) test :: body
+            Statement.assume
+              ~origin:(Some { Ast.Node.location; value = Assert.Origin.If { true_branch = true } })
+              test
+            :: body
           in
           create body_statements jumps split
         in
         Node.connect_option body_node join;
         let orelse_statements =
           let test = Expression.negate test |> Expression.normalize in
-          Statement.assume ~origin:(Assert.Origin.If { true_branch = false }) test :: orelse
+          Statement.assume
+            ~origin:(Some { Ast.Node.location; value = Assert.Origin.If { true_branch = false } })
+            test
+          :: orelse
         in
         let orelse = create orelse_statements jumps split in
         Node.connect_option orelse join;
         create statements jumps join
-    | { Ast.Node.value = Match { subject; cases }; _ } :: statements ->
+    | { Ast.Node.value = Match { subject; cases }; location } :: statements ->
         (* The final else is optionally connected to the join node if it is refutable.
          *
          *  predecessor -> [else 1] -> [else 2] -> ... -> [else n-1] -> [else n]
@@ -529,14 +547,32 @@ let create define =
           let test = MatchTranslate.to_condition ~subject ~case in
           let case_node =
             let test = Expression.normalize test in
-            Node.empty graph (Node.Block [Statement.assume ~origin:Assert.Origin.Match test])
+            Node.empty
+              graph
+              (Node.Block
+                 [
+                   Statement.assume
+                     ~origin:
+                       (Some
+                          { Ast.Node.location; value = Assert.Origin.Match { true_branch = true } })
+                     test;
+                 ])
           in
           Node.connect predecessor case_node;
           let case_node = create case.body jumps case_node in
           Node.connect_option case_node join;
           let else_node =
             let test = Expression.negate test |> Expression.normalize in
-            Node.empty graph (Node.Block [Statement.assume ~origin:Assert.Origin.Match test])
+            Node.empty
+              graph
+              (Node.Block
+                 [
+                   Statement.assume
+                     ~origin:
+                       (Some
+                          { Ast.Node.location; value = Assert.Origin.Match { true_branch = false } })
+                     test;
+                 ])
           in
           Node.connect predecessor else_node;
           else_node
@@ -621,7 +657,7 @@ let create define =
         let preamble = With.preamble block in
         Node.connect predecessor split;
         create (preamble @ body) jumps split >>= create statements jumps
-    | { Ast.Node.value = While ({ While.test; body; orelse } as loop); _ } :: statements ->
+    | { Ast.Node.value = While ({ While.test; body; orelse } as loop); location } :: statements ->
         (*       _____________
          *       v           |
          *  -> [split] -> [body]
@@ -635,7 +671,11 @@ let create define =
         let body =
           let body_statements =
             let test = Expression.normalize test in
-            Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) test :: body
+            Statement.assume
+              ~origin:
+                (Some { Ast.Node.location; value = Assert.Origin.While { true_branch = true } })
+              test
+            :: body
           in
           create body_statements loop_jumps split
         in
@@ -643,7 +683,11 @@ let create define =
         let orelse =
           let orelse_statements =
             let test = Expression.negate test |> Expression.normalize in
-            Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) test :: orelse
+            Statement.assume
+              ~origin:
+                (Some { Ast.Node.location; value = Assert.Origin.While { true_branch = false } })
+              test
+            :: orelse
           in
           create orelse_statements jumps split
         in
@@ -669,11 +713,15 @@ let create define =
               node
         in
         match statement with
-        | { Ast.Node.value = Assert { Assert.test; origin = Assert.Origin.Assertion; _ }; _ }
+        | { Ast.Node.value = Assert { Assert.test; origin = None; _ }; _ }
           when Expression.is_false test ->
             Node.connect node jumps.error;
             None
-        | { Ast.Node.value = Assert { Assert.test; origin = Assert.Origin.While _; _ }; _ }
+        | {
+         Ast.Node.value =
+           Assert { Assert.test; origin = Some { Ast.Node.value = Assert.Origin.While _; _ }; _ };
+         _;
+        }
           when Expression.is_false test ->
             None
         | { Ast.Node.value = Break; _ } ->

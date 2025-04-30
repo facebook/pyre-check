@@ -378,14 +378,14 @@ let assert_defined_locals source expected _context =
        use a dummy origin. *)
     let with_dummy_assert_origin = function
       | { Node.value = Statement.Assert assert_; _ } as statement ->
-          { statement with Node.value = Statement.Assert { assert_ with origin = Assertion } }
+          { statement with Node.value = Statement.Assert { assert_ with origin = None } }
       | other -> other
     in
     (* Parsing `foo().__enter__` makes it have `special=false`. Just set it directly. *)
     let make_dunder_attribute_special = function
       | Expression.Name
           (Attribute ({ attribute = "__enter__" | "__next__" | "__iter__"; _ } as attribute)) ->
-          Expression.Name (Attribute { attribute with special = true })
+          Expression.Name (Attribute { attribute with origin = Some ~+Origin.ForTypeChecking })
       | other -> other
     in
     with_dummy_assert_origin statement

@@ -94,11 +94,7 @@ let resolve_assignment ({ resolve_statement; _ } as resolution) assign =
 
 let resolve_assertion ({ resolve_statement; _ } as resolution) ~asserted_expression =
   Statement.Statement.Assert
-    {
-      Statement.Assert.test = asserted_expression;
-      message = None;
-      origin = Ast.Statement.Assert.Origin.Assertion;
-    }
+    { Statement.Assert.test = asserted_expression; message = None; origin = None }
   |> Ast.Node.create_with_default_location
   |> resolve_statement ~resolution
   |> function

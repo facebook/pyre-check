@@ -3206,7 +3206,7 @@ module Variable = struct
                           {
                             base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                             attribute = "ParameterSpecification";
-                            special = false;
+                            origin = None;
                           });
                     _;
                   };
@@ -3231,7 +3231,7 @@ module Variable = struct
                                 _;
                               };
                             attribute = "ParamSpec";
-                            special = false;
+                            origin = None;
                           });
                     _;
                   };
@@ -3260,7 +3260,7 @@ module Variable = struct
                              _;
                            };
                          attribute = "TypeVarTuple";
-                         special = false;
+                         origin = None;
                        });
                  _;
                };
@@ -3926,7 +3926,7 @@ module ToExpression = struct
           | EnumerationMember { enumeration_type; member_name } ->
               Expression.Name
                 (Attribute
-                   { base = expression enumeration_type; attribute = member_name; special = false })
+                   { base = expression enumeration_type; attribute = member_name; origin = None })
         in
         subscript "typing_extensions.Literal" [Node.create ~location literal]
     | NoneType -> Expression.Constant Constant.NoneLiteral
@@ -3945,7 +3945,7 @@ module ToExpression = struct
     | ParamSpecComponent { component; variable_name; _ } ->
         let attribute = PrettyPrinting.Variable.ParamSpec.Components.component_name component in
         Expression.Name
-          (Attribute { base = expression (Primitive variable_name); attribute; special = false })
+          (Attribute { base = expression (Primitive variable_name); attribute; origin = None })
     | Primitive name -> create_name name
     | PyreReadOnly type_ -> subscript "pyre_extensions.PyreReadOnly" [expression type_]
     | RecursiveType { name; _ } -> create_name name
@@ -4652,7 +4652,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
                              {
                                base = { Node.value = Name (Name.Identifier "typing"); location };
                                attribute = "Callable";
-                               special = false;
+                               origin = None;
                              });
                     }
                 | _ -> base)

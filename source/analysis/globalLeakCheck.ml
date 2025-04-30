@@ -414,7 +414,7 @@ module State (Context : Context) = struct
         }
 
 
-  and forward_assignment_target ~resolution ({ Node.value; _ } as expression) =
+  and forward_assignment_target ~resolution ({ Node.value; location } as expression) =
     let forward_assignment_target = forward_assignment_target ~resolution in
     let expression_type () = Resolution.resolve_expression_to_type resolution expression in
     match value with
@@ -459,8 +459,7 @@ module State (Context : Context) = struct
           }
         in
         List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
-    | Expression.Slice slice ->
-        Slice.lowered ~location:(Node.location expression) slice |> forward_expression ~resolution
+    | Expression.Slice slice -> Slice.lowered ~location slice |> forward_expression ~resolution
     | Expression.Subscript { Subscript.base; index } ->
         (* Construct a synthetic __setitem__ call. This call isn't exactly correct, because the
            arity should be 2 instead of 1 (we don't have an actual expression for the second
@@ -475,7 +474,13 @@ module State (Context : Context) = struct
                   callee =
                     {
                       Node.value =
-                        Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                        Name
+                          (Name.Attribute
+                             {
+                               base;
+                               attribute = "__setitem__";
+                               origin = Some { Node.location; value = Origin.SubscriptSetItem };
+                             });
                       location = Node.location base;
                     };
                   arguments = [{ Call.Argument.value = index; name = None }];
@@ -508,13 +513,13 @@ module State (Context : Context) = struct
         empty_result
 
 
-  and forward_assert ~resolution ?(origin = Assert.Origin.Assertion) test =
+  and forward_assert ~resolution ~origin test =
     (* Ignore global errors from the [assert (not foo)] in the else-branch because it's the same
        [foo] as in the true-branch. We can either ignore it here or de-duplicate it in the error
        map. We ignore it here instead. *)
     match origin with
-    | Assert.Origin.If { true_branch = false; _ }
-    | Assert.Origin.While { true_branch = false; _ } ->
+    | Some { Node.value = Assert.Origin.If { true_branch = false }; _ }
+    | Some { Node.value = Assert.Origin.While { true_branch = false }; _ } ->
         empty_result
     | _ -> forward_expression ~resolution test
 

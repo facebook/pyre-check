@@ -44,7 +44,7 @@ let test_assert_locations =
                         Assert.test =
                           node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "a"));
                         message = None;
-                        origin = Assert.Origin.Assertion;
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -76,7 +76,7 @@ let test_assert_locations =
                                      (Expression.Name (Name.Identifier "b"));
                                });
                         message = None;
-                        origin = Assert.Origin.Assertion;
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -97,7 +97,7 @@ let test_assert_locations =
                                ~start:(1, 10)
                                ~stop:(1, 11)
                                (Expression.Name (Name.Identifier "b")));
-                        origin = Assert.Origin.Assertion;
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -135,7 +135,7 @@ let test_assert_locations =
                                ~stop:(1, 30)
                                (Expression.Constant
                                   (Constant.String (StringLiteral.create "b or c"))));
-                        origin = Assert.Origin.Assertion;
+                        origin = None;
                       });
                ];
       ]
@@ -442,7 +442,7 @@ let test_call_locations =
                                               ~stop:(1, 1)
                                               (Expression.Name (Name.Identifier "a"));
                                           attribute = "__getitem__";
-                                          special = false;
+                                          origin = None;
                                         }));
                               arguments =
                                 [
@@ -2225,10 +2225,10 @@ let test_name_locations =
                                                  ~stop:(1, 1)
                                                  (Expression.Name (Name.Identifier "a"));
                                              attribute = "b";
-                                             special = false;
+                                             origin = None;
                                            }));
                                  attribute = "c";
-                                 special = false;
+                                 origin = None;
                                }))));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2252,7 +2252,7 @@ let test_name_locations =
                                      ~stop:(1, 3)
                                      (Expression.Name (Name.Identifier "a"));
                                  attribute = "b";
-                                 special = false;
+                                 origin = None;
                                }))));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2276,7 +2276,7 @@ let test_name_locations =
                                      ~stop:(1, 2)
                                      (Expression.Name (Name.Identifier "a"));
                                  attribute = "b";
-                                 special = false;
+                                 origin = None;
                                }))));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2300,7 +2300,7 @@ let test_name_locations =
                                      ~stop:(1, 1)
                                      (Expression.Name (Name.Identifier "a"));
                                  attribute = "b";
-                                 special = false;
+                                 origin = None;
                                }))));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2342,7 +2342,7 @@ let test_name_locations =
                                             ];
                                         });
                                  attribute = "b";
-                                 special = false;
+                                 origin = None;
                                }))));
                ];
       ]

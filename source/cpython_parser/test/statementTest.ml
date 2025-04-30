@@ -155,30 +155,19 @@ let test_assert_delete =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "assert a"
-             ~expected:
-               [
-                 +Statement.Assert
-                    { Assert.test = !"a"; message = None; origin = Assert.Origin.Assertion };
-               ];
+             ~expected:[+Statement.Assert { Assert.test = !"a"; message = None; origin = None }];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "assert a, b"
              ~expected:
-               [
-                 +Statement.Assert
-                    { Assert.test = !"a"; message = Some !"b"; origin = Assert.Origin.Assertion };
-               ];
+               [+Statement.Assert { Assert.test = !"a"; message = Some !"b"; origin = None }];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "assert (a, b)"
              ~expected:
                [
                  +Statement.Assert
-                    {
-                      Assert.test = +Expression.Tuple [!"a"; !"b"];
-                      message = None;
-                      origin = Assert.Origin.Assertion;
-                    };
+                    { Assert.test = +Expression.Tuple [!"a"; !"b"]; message = None; origin = None };
                ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -197,7 +186,7 @@ let test_assert_delete =
                       message =
                         Some
                           (+Expression.Constant (Constant.String (StringLiteral.create "b or c")));
-                      origin = Assert.Origin.Assertion;
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -477,7 +466,7 @@ let test_for_while_if =
                       For.target =
                         +Expression.Name
                            (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+                              { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       iterator = !"c";
                       body = [+Statement.Expression !"d"];
                       orelse = [];
@@ -1482,7 +1471,7 @@ let test_define =
                                              index = +Expression.Constant (Constant.Integer 0);
                                            };
                                       attribute = "y";
-                                      special = false;
+                                      origin = None;
                                     });
                             ];
                           return_annotation = None;
@@ -2718,7 +2707,7 @@ let test_assign =
                       Assign.target =
                         +Expression.Name
                            (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+                              { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       annotation = None;
                       value = Some (+Expression.Constant (Constant.Integer 1));
                     };
@@ -2733,7 +2722,7 @@ let test_assign =
                       Assign.target =
                         +Expression.Name
                            (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+                              { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       annotation = Some !"int";
                       value = Some (+Expression.Constant (Constant.Integer 1));
                     };
@@ -2748,7 +2737,7 @@ let test_assign =
                       Assign.target =
                         +Expression.Name
                            (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+                              { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       annotation =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       value = Some (+Expression.Constant (Constant.Integer 1));
@@ -2786,7 +2775,7 @@ let test_assign =
                                           Name.Attribute.base =
                                             +Expression.Call { Call.callee = !"a"; arguments = [] };
                                           attribute = "foo";
-                                          special = false;
+                                          origin = None;
                                         });
                                 arguments = [];
                               });
@@ -2832,7 +2821,7 @@ let test_assign =
                       AugmentedAssign.target =
                         +Expression.Name
                            (Name.Attribute
-                              { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+                              { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       operator = BinaryOperator.Add;
                       value = +Expression.Constant (Constant.Integer 1);
                     };

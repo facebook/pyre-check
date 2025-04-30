@@ -1089,7 +1089,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
     =
     match callee.Node.value with
-    | Expression.Name (Name.Attribute { base; attribute; special }) ->
+    | Expression.Name (Name.Attribute { base; attribute; origin }) ->
         (* If we are already analyzing a call of a property, then ignore properties
          * to avoid infinite recursion. *)
         let resolve_properties = not is_property_call in
@@ -1102,7 +1102,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~resolve_properties
             ~base
             ~attribute
-            ~special
+            ~origin
         in
         { self_taint = Some base_taint; callee_taint = Some attribute_taint; state }
     | _ ->
@@ -1539,7 +1539,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~location
                     ~base
                     ~attribute
-                    ~special:false
+                    ~origin:None
                 in
                 let taint =
                   taint
@@ -1649,7 +1649,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |>> add_type_breadcrumbs
     | {
      callee =
-       { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; special = true }); _ };
+       { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; origin = Some _ }); _ };
      arguments = [];
     } ->
         let taint, state =
@@ -1771,7 +1771,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let state =
           analyze_assignment
             ~pyre_in_context
-            (Expression.Name (Name.Attribute { base = self; attribute; special = true })
+            (Expression.Name
+               (Name.Attribute
+                  {
+                    base = self;
+                    attribute;
+                    origin = Some { Node.location; value = Origin.SetAttrConstantLiteral };
+                  })
             |> Node.create ~location)
             taint
             taint
@@ -1797,7 +1803,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        ];
     } ->
         let attribute_expression =
-          Expression.Name (Name.Attribute { base; attribute; special = false })
+          Expression.Name
+            (Name.Attribute
+               {
+                 base;
+                 attribute;
+                 origin = Some { Node.location; value = Origin.GetAttrConstantLiteral };
+               })
           |> Node.create ~location
         in
         let attribute_taint, state =
@@ -2177,10 +2189,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~resolve_properties
       ~base
       ~attribute
-      ~special
+      ~origin
     =
     let expression =
-      Expression.Name (Name.Attribute { base; attribute; special }) |> Node.create ~location
+      Expression.Name (Name.Attribute { base; attribute; origin }) |> Node.create ~location
     in
     let base_taint, state =
       analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:base
@@ -2279,7 +2291,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~is_result_used
       ({ BinaryOperator.left; _ } as operator)
     =
-    let implicit_call = BinaryOperator.lower_to_call ~callee_location:left.Node.location operator in
+    let implicit_call =
+      BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location operator
+    in
     let dunder_method = BinaryOperator.binary_operator_method operator.operator in
     let callees = get_call_callees ~location ~call:implicit_call in
     match operator with
@@ -2467,7 +2481,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let callee_from_method_name method_name =
           {
             Node.value =
-              Expression.Name (Name.Attribute { base; attribute = method_name; special = false });
+              Expression.Name
+                (Name.Attribute
+                   {
+                     base;
+                     attribute = method_name;
+                     origin =
+                       Some
+                         { Node.location = call_location; value = Origin.FormatStringImplicitStr };
+                   });
             location = call_location;
           }
         in
@@ -2585,7 +2607,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           ForwardState.Tree.join left_taint right_taint, state
       | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match ComparisonOperator.override ~location comparison with
+          match
+            ComparisonOperator.lower_to_expression
+              ~location
+              ~callee_location:left.Node.location
+              comparison
+          with
           | Some override ->
               analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:override
           | None ->
@@ -2689,7 +2716,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
-      | Name (Name.Attribute { base; attribute; special }) ->
+      | Name (Name.Attribute { base; attribute; origin }) ->
           let { attribute_taint; state; _ } =
             analyze_attribute_access
               ~pyre_in_context
@@ -2699,7 +2726,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~location
               ~base
               ~attribute
-              ~special
+              ~origin
           in
           attribute_taint, state
       | Set set ->
@@ -3001,7 +3028,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | AugmentedAssign ({ target; value; operator } as assign) ->
         (* Treat x += y as x = x.__iadd__(y) *)
         let implicit_call =
-          Statement.AugmentedAssign.lower_to_call ~callee_location:target.Node.location assign
+          Statement.AugmentedAssign.lower_to_call
+            ~location
+            ~callee_location:target.Node.location
+            assign
         in
         let callees = get_call_callees ~location ~call:implicit_call in
         let target_taint, state =

@@ -276,7 +276,11 @@ and ComparisonOperator : sig
 
   val pp_comparison_operator : Format.formatter -> operator -> unit
 
-  val override : location:Location.t -> t -> Expression.t option
+  val lower_to_expression
+    :  location:Location.t ->
+    callee_location:Location.t ->
+    t ->
+    Expression.t option
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -330,13 +334,13 @@ end = struct
       | NotIn -> "not in")
 
 
-  let override ~location { left; operator; right } =
+  let lower_to_expression ~location ~callee_location { left; operator; right } =
     let left, right =
       match operator with
       | In -> right, left
       | _ -> left, right
     in
-    let operator =
+    let dunder_method =
       match operator with
       | Equals -> Some "__eq__"
       | GreaterThan -> Some "__gt__"
@@ -350,17 +354,22 @@ end = struct
       | In -> None
       | NotIn -> None
     in
-    operator
-    >>| fun name ->
+    dunder_method
+    >>| fun dunder_method ->
     let arguments = [{ Call.Argument.name = None; value = right }] in
     Expression.Call
       {
         Call.callee =
           {
-            Node.location;
+            Node.location = callee_location;
             value =
               Expression.Name
-                (Name.Attribute { Name.Attribute.base = left; attribute = name; special = true });
+                (Name.Attribute
+                   {
+                     Name.Attribute.base = left;
+                     attribute = dunder_method;
+                     origin = Some { Node.location; value = Origin.ComparisonOperator operator };
+                   });
           };
         arguments;
       }
@@ -404,7 +413,7 @@ and BinaryOperator : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val lower_to_call : callee_location:Location.t -> t -> Call.t
+  val lower_to_call : location:Location.t -> callee_location:Location.t -> t -> Call.t
 
   val lower_to_expression : location:Location.t -> callee_location:Location.t -> t -> Expression.t
 
@@ -478,7 +487,7 @@ end = struct
     | FloorDiv -> "__floordiv__"
 
 
-  let lower_to_call ~callee_location { left; operator; right } =
+  let lower_to_call ~location ~callee_location { left; operator; right } =
     let arguments = [{ Call.Argument.name = None; value = right }] in
     {
       Call.callee =
@@ -490,7 +499,7 @@ end = struct
                  {
                    Name.Attribute.base = left;
                    attribute = binary_operator_method operator;
-                   special = true;
+                   origin = Some { Node.location; value = Origin.BinaryOperator operator };
                  });
         };
       arguments;
@@ -498,7 +507,7 @@ end = struct
 
 
   let lower_to_expression ~location ~callee_location operator =
-    Node.create ~location (Expression.Call (lower_to_call ~callee_location operator))
+    Node.create ~location (Expression.Call (lower_to_call ~location ~callee_location operator))
 end
 
 and Comprehension : sig
@@ -681,7 +690,13 @@ and Name : sig
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      special: bool;
+      (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
+         turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
+         reason for lowering it.
+
+         We could store the full original expression but this could lead to a cyclic dependency
+         between Statement and Expression. *)
+      origin: Origin.t Node.t option;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -701,17 +716,15 @@ end = struct
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      special: bool;
+      origin: Origin.t Node.t option;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
+      (* We ignore locations, but also the origin. *)
       match Expression.location_insensitive_compare left.base right.base with
       | x when not (Int.equal x 0) -> x
-      | _ -> (
-          match [%compare: Identifier.t] left.attribute right.attribute with
-          | x when not (Int.equal x 0) -> x
-          | _ -> Bool.compare left.special right.special)
+      | _ -> [%compare: Identifier.t] left.attribute right.attribute
   end
 
   type t =
@@ -955,7 +968,11 @@ and UnaryOperator : sig
 
   val pp_unary_operator : Format.formatter -> operator -> unit
 
-  val override : t -> Expression.t option
+  val lower_to_expression
+    :  location:Location.t ->
+    callee_location:Location.t ->
+    t ->
+    Expression.t option
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -983,7 +1000,7 @@ end = struct
       | Positive -> "+")
 
 
-  let override { operator; operand = { Node.location; _ } as operand } =
+  let lower_to_expression ~location ~callee_location { operator; operand } =
     (match operator with
     | Invert -> Some "__invert__"
     | Negative -> Some "__neg__"
@@ -994,10 +1011,15 @@ end = struct
       {
         Call.callee =
           {
-            Node.location;
+            Node.location = callee_location;
             value =
               Expression.Name
-                (Name.Attribute { Name.Attribute.base = operand; attribute = name; special = true });
+                (Name.Attribute
+                   {
+                     Name.Attribute.base = operand;
+                     attribute = name;
+                     origin = Some { Node.location; value = Origin.UnaryOperator operator };
+                   });
           };
         arguments = [];
       }
@@ -1074,6 +1096,77 @@ end = struct
     | TypeVarTuple left_name, TypeVarTuple right_name ->
         [%compare: Identifier.t] left_name right_name
     | _ -> -1
+end
+
+and Origin : sig
+  (* During the analysis, we create artificial nodes that were not present
+   * in the original code. This type is used to describe the original node
+   * that originated the artificial node. *)
+  type t =
+    | ComparisonOperator of ComparisonOperator.operator
+    | BinaryOperator of BinaryOperator.operator
+    | UnaryOperator of UnaryOperator.operator
+    | AugmentedAssign of BinaryOperator.operator
+    | SubscriptSetItem
+    | SubscriptGetItem
+    | ForIter (* __iter__ call for a for loop *)
+    | ForNext (* __next__ call for a for loop *)
+    | GeneratorIter (* __iter__ call for a generator *)
+    | GeneratorNext (* __next__ call for a generator *)
+    | With (* __enter__ call for a with statement *)
+    | InContains (* e in l can be turned into l.__contains__(e) *)
+    | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
+    | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | NamedTupleConstructorAssignment of string
+    | DataclassField
+    | MatchClassAttribute of string
+    | MatchClassArgs
+    | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
+    | ReprCall (* repr(x) is turned into x.__repr__() *)
+    | AbsCall (* abs(x) is turned into x.__abs__() *)
+    | IterCall (* iter(x) is turned into x.__iter__() *)
+    | NextCall (* next(x) is turned into x.__next__() *)
+    | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
+    | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
+    | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
+    | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | ForTestPurpose (* AST node created when running tests *)
+    | ForTypeChecking (* AST node created internally during a type check of an expression *)
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+end = struct
+  type t =
+    | ComparisonOperator of ComparisonOperator.operator
+    | BinaryOperator of BinaryOperator.operator
+    | UnaryOperator of UnaryOperator.operator
+    | AugmentedAssign of BinaryOperator.operator
+    | SubscriptSetItem
+    | SubscriptGetItem
+    | ForIter (* __iter__ call for a for loop *)
+    | ForNext (* __next__ call for a for loop *)
+    | GeneratorIter (* __iter__ call for a generator *)
+    | GeneratorNext (* __next__ call for a generator *)
+    | With (* __enter__ call for a with statement *)
+    | InContains (* e in l can be turned into l.__contains__(e) *)
+    | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
+    | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | NamedTupleConstructorAssignment of string
+    | DataclassField
+    | MatchClassAttribute of string
+    | MatchClassArgs
+    | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
+    | ReprCall (* repr(x) is turned into x.__repr__() *)
+    | AbsCall (* abs(x) is turned into x.__abs__() *)
+    | IterCall (* iter(x) is turned into x.__iter__() *)
+    | NextCall (* next(x) is turned into x.__next__() *)
+    | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
+    | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
+    | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
+    | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | ForTestPurpose (* AST node created when running tests *)
+    | ForTypeChecking (* AST node created internally during a type check of an expression *)
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 end
 
 and Expression : sig
@@ -1827,8 +1920,8 @@ module Mapper = struct
 
   let default_map_name ~mapper = function
     | Name.Identifier _ as identifier -> identifier
-    | Name.Attribute { Name.Attribute.base; attribute; special } ->
-        Name.Attribute { Name.Attribute.base = map ~mapper base; attribute; special }
+    | Name.Attribute { Name.Attribute.base; attribute; origin } ->
+        Name.Attribute { Name.Attribute.base = map ~mapper base; attribute; origin }
 
 
   let default_map_name_node ~mapper ~location name =
@@ -2502,7 +2595,7 @@ module Folder = struct
 
   let default_fold_name ~folder ~state = function
     | Name.Identifier _ -> state
-    | Name.Attribute { Name.Attribute.base; attribute = _; special = _ } -> fold ~folder ~state base
+    | Name.Attribute { Name.Attribute.base; attribute = _; origin = _ } -> fold ~folder ~state base
 
 
   let default_fold_slice ~folder ~state { Slice.start; stop; step } =
@@ -2754,7 +2847,7 @@ let create_name_from_identifiers identifiers =
     | { Node.location; value = identifier } :: rest ->
         Name
           (Name.Attribute
-             { Name.Attribute.base = create rest; attribute = identifier; special = false })
+             { Name.Attribute.base = create rest; attribute = identifier; origin = None })
         |> Node.create ~location
   in
   match create (List.rev identifiers) with
@@ -2779,7 +2872,7 @@ let create_name_from_reference ~location reference =
     | identifier :: rest ->
         Name
           (Name.Attribute
-             { Name.Attribute.base = create rest; attribute = identifier; special = false })
+             { Name.Attribute.base = create rest; attribute = identifier; origin = None })
         |> Node.create ~location
   in
   match create (List.rev (Reference.as_list reference)) with
@@ -2850,13 +2943,13 @@ let rec sanitized ({ Node.value; location } as expression) =
   match value with
   | Name (Name.Identifier identifier) ->
       Name (Name.Identifier (Identifier.sanitized identifier)) |> Node.create ~location
-  | Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
+  | Name (Name.Attribute { Name.Attribute.base; attribute; origin }) ->
       Name
         (Name.Attribute
            {
              Name.Attribute.base = sanitized base;
              attribute = Identifier.sanitized attribute;
-             special;
+             origin;
            })
       |> Node.create ~location
   | Call { Call.callee; arguments } ->
@@ -2906,7 +2999,7 @@ let rec delocalize ({ Node.value; location } as expression) =
           in
           Name
             (Name.Attribute
-               { Name.Attribute.base = qualifier; attribute = sanitized; special = false })
+               { Name.Attribute.base = qualifier; attribute = sanitized; origin = None })
         else (
           Log.debug "Unable to extract qualifier from %s" identifier;
           Name (Name.Identifier sanitized))

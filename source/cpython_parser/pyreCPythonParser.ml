@@ -439,7 +439,7 @@ let expression =
   let constant ~location ~value ~kind:_ = Expression.Constant value |> Node.create ~location in
   let attribute ~location ~value ~attr ~ctx:() =
     Expression.Name
-      (Name.Attribute { Name.Attribute.base = value; attribute = attr; special = false })
+      (Name.Attribute { Name.Attribute.base = value; attribute = attr; origin = None })
     |> Node.create ~location
   in
   let subscript ~location ~value ~slice ~ctx:() =
@@ -1048,10 +1048,7 @@ let statement =
     ]
   in
   let assert_ ~location ~test ~msg ~context:_ =
-    [
-      Statement.Assert { Assert.test; message = msg; origin = Assert.Origin.Assertion }
-      |> Node.create ~location;
-    ]
+    [Statement.Assert { Assert.test; message = msg; origin = None } |> Node.create ~location]
   in
   let import ~location ~names ~context:_ =
     [Statement.Import { Import.imports = names; from = None } |> Node.create ~location]

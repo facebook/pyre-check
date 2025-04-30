@@ -212,7 +212,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = true }))
                (+Expression.Constant Constant.True);
              !!"body";
            ])
@@ -223,7 +223,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = false }))
                (+Expression.Constant Constant.False);
              !!"orelse";
            ])
@@ -247,7 +247,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = true }))
                (+Expression.Constant Constant.True);
              !!"body";
            ])
@@ -258,7 +258,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = false }))
                (+Expression.Constant Constant.False);
            ])
         [4]
@@ -285,7 +285,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = true }))
                (+Expression.Constant Constant.True);
              !!"first";
              !!"second";
@@ -297,7 +297,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = false }))
                (+Expression.Constant Constant.False);
              +Statement.Pass;
            ])
@@ -326,7 +326,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = true }))
                (+Expression.Constant Constant.True);
              !!"first";
              !!"second";
@@ -338,7 +338,7 @@ let test_if _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = false }))
                (+Expression.Constant Constant.False);
              !!"orelse";
            ])
@@ -357,13 +357,17 @@ let test_match _ =
     }
   in
   let expected_refutable_case_pass_block =
-    Node.Block [Statement.assume ~origin:Assert.Origin.Match !"guard"; !!"refutable_body"]
+    Node.Block
+      [
+        Statement.assume ~origin:(Some ~+(Assert.Origin.Match { true_branch = true })) !"guard";
+        !!"refutable_body";
+      ]
   in
   let expected_refutable_case_fail_block =
     Node.Block
       [
         Statement.assume
-          ~origin:Assert.Origin.Match
+          ~origin:(Some ~+(Assert.Origin.Match { true_branch = false }))
           (+Expression.UnaryOperator { operator = UnaryOperator.Not; operand = !"guard" });
       ]
   in
@@ -388,12 +392,19 @@ let test_match _ =
   let expected_irrefutable_case_pass_block =
     Node.Block
       [
-        Statement.assume ~origin:Assert.Origin.Match (+Expression.Constant Constant.True);
+        Statement.assume
+          ~origin:(Some ~+(Assert.Origin.Match { true_branch = true }))
+          (+Expression.Constant Constant.True);
         !!"irrefutable_body";
       ]
   in
   let expected_irrefutable_case_fail_block =
-    Node.Block [Statement.assume ~origin:Assert.Origin.Match (+Expression.Constant Constant.False)]
+    Node.Block
+      [
+        Statement.assume
+          ~origin:(Some ~+(Assert.Origin.Match { true_branch = false }))
+          (+Expression.Constant Constant.False);
+      ]
   in
   assert_cfg
     [+Statement.Match { Match.subject = !"x"; cases = [refutable_case; irrefutable_case] }]
@@ -500,11 +511,7 @@ let test_raise _ =
 let test_assert_false _ =
   let error =
     +Statement.Assert
-       {
-         Assert.test = +Expression.Constant Constant.False;
-         message = None;
-         origin = Assert.Origin.Assertion;
-       }
+       { Assert.test = +Expression.Constant Constant.False; message = None; origin = None }
   in
   assert_cfg
     [error]
@@ -929,7 +936,11 @@ let test_with _ =
                       Call.callee =
                         +Expression.Name
                            (Name.Attribute
-                              { base = !"item"; attribute = "__enter__"; special = true });
+                              {
+                                base = !"item";
+                                attribute = "__enter__";
+                                origin = Some ~+Origin.With;
+                              });
                       arguments = [];
                     });
              !!"body";
@@ -956,14 +967,18 @@ let test_while _ =
       node
         6
         (Node.Block
-           [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x; !!"body"])
+           [
+             Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = true })) x;
+             !!"body";
+           ])
         [4]
         [4];
       node
         7
         (Node.Block
            [
-             Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x; !!"orelse";
+             Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = false })) not_x;
+             !!"orelse";
            ])
         [4]
         [5];
@@ -985,7 +1000,8 @@ let test_while _ =
       node 5 Node.Join [9; 12] [1];
       node
         6
-        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x])
+        (Node.Block
+           [Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = true })) x])
         [4]
         [7];
       node 7 (Node.If conditional) [6] [9; 10];
@@ -995,7 +1011,7 @@ let test_while _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = true }))
                (+Expression.Constant Constant.True);
              +Statement.Break;
            ])
@@ -1006,7 +1022,7 @@ let test_while _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = false }))
                (+Expression.Constant Constant.False);
            ])
         [7]
@@ -1016,7 +1032,8 @@ let test_while _ =
         12
         (Node.Block
            [
-             Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x; !!"orelse";
+             Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = false })) not_x;
+             !!"orelse";
            ])
         [4]
         [5];
@@ -1038,7 +1055,8 @@ let test_while _ =
       node 5 Node.Join [12] [1];
       node
         6
-        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x])
+        (Node.Block
+           [Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = true })) x])
         [4]
         [7];
       node 7 (Node.If conditional) [6] [9; 10];
@@ -1048,7 +1066,7 @@ let test_while _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = true }))
                (+Expression.Constant Constant.True);
              +Statement.Continue;
            ])
@@ -1059,7 +1077,7 @@ let test_while _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.If { true_branch = false }))
                (+Expression.Constant Constant.False);
            ])
         [7]
@@ -1069,7 +1087,8 @@ let test_while _ =
         12
         (Node.Block
            [
-             Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x; !!"orelse";
+             Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = false })) not_x;
+             !!"orelse";
            ])
         [4]
         [5];
@@ -1091,7 +1110,8 @@ let test_while _ =
       node 5 Node.Join [12] [1];
       node
         6
-        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x])
+        (Node.Block
+           [Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = true })) x])
         [4]
         [7];
       node 7 (Node.While inner) [6; 9] [9; 10];
@@ -1099,18 +1119,23 @@ let test_while _ =
       node
         9
         (Node.Block
-           [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x; !!"body"])
+           [
+             Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = true })) x;
+             !!"body";
+           ])
         [7]
         [7];
       node
         10
-        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x])
+        (Node.Block
+           [Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = false })) not_x])
         [7]
         [8];
       node 11 (Node.Block [+Statement.Continue]) [8] [4];
       node
         12
-        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x])
+        (Node.Block
+           [Statement.assume ~origin:(Some ~+(Assert.Origin.While { true_branch = false })) not_x])
         [4]
         [5];
     ]
@@ -1134,7 +1159,7 @@ let test_while_true _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.While { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.While { true_branch = true }))
                (+Expression.Constant Constant.True);
              !!"body";
            ])
@@ -1145,7 +1170,7 @@ let test_while_true _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.While { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.While { true_branch = false }))
                (+Expression.Constant Constant.False);
            ])
         [4]
@@ -1172,7 +1197,7 @@ let test_while_true _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.While { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.While { true_branch = true }))
                (+Expression.Constant Constant.True);
              +Statement.Break;
            ])
@@ -1183,7 +1208,7 @@ let test_while_true _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.While { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.While { true_branch = false }))
                (+Expression.Constant Constant.False);
            ])
         [4]
@@ -1210,7 +1235,7 @@ let test_while_false _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.While { true_branch = true })
+               ~origin:(Some ~+(Assert.Origin.While { true_branch = true }))
                (+Expression.Constant Constant.False);
            ])
         [4]
@@ -1220,7 +1245,7 @@ let test_while_false _ =
         (Node.Block
            [
              Statement.assume
-               ~origin:(Assert.Origin.While { true_branch = false })
+               ~origin:(Some ~+(Assert.Origin.While { true_branch = false }))
                (+Expression.Constant Constant.True);
              !!"orelse";
            ])

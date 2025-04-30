@@ -68,7 +68,12 @@ let rec coerce_special_methods { Node.location; value } =
         Node.location;
         value =
           Expression.Name
-            (Name.Attribute { name with base = coerce_special_methods base; special = true });
+            (Name.Attribute
+               {
+                 name with
+                 base = coerce_special_methods base;
+                 origin = Some { Node.location; value = Origin.ForTestPurpose };
+               });
       }
   | Call { callee; arguments } ->
       { Node.location; value = Call { callee = coerce_special_methods callee; arguments } }
@@ -135,10 +140,10 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
           Source.TypecheckFlags.parse ~qualifier (String.split source ~on:'\n')
         in
         let source = Source.create ~typecheck_flags ~relative:handle statements in
-        let coerce_special_methods =
-          if coerce_special_methods then coerce_special_methods_source else Fn.id
+        let source =
+          if coerce_special_methods then coerce_special_methods_source source else source
         in
-        source |> coerce_special_methods
+        source
     | Result.Error { PyreCPythonParser.Error.line; column; message; _ } ->
         let error =
           Format.asprintf

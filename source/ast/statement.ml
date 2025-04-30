@@ -107,7 +107,7 @@ module AugmentedAssign = struct
     | FloorDiv -> "__ifloordiv__"
 
 
-  let lower_to_call ~callee_location { target; operator; value } =
+  let lower_to_call ~location ~callee_location { target; operator; value } =
     let open Expression in
     let arguments = [{ Call.Argument.name = None; value }] in
     {
@@ -120,7 +120,7 @@ module AugmentedAssign = struct
                  {
                    Name.Attribute.base = target;
                    attribute = dunder_method_name operator;
-                   special = true;
+                   origin = Some { Node.location; value = Origin.AugmentedAssign operator };
                  });
         };
       arguments;
@@ -129,7 +129,7 @@ module AugmentedAssign = struct
 
   let lower_to_expression ~location ~callee_location assign =
     let open Expression in
-    Expression.Call (lower_to_call ~callee_location assign) |> Node.create ~location
+    Expression.Call (lower_to_call ~location ~callee_location assign) |> Node.create ~location
 end
 
 module Import = struct
@@ -238,19 +238,17 @@ end
 module rec Assert : sig
   module Origin : sig
     type t =
-      | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
-      | Match
+      | Match of { true_branch: bool }
+      | TryHandler
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
-
-    val location_insensitive_compare : t -> t -> int
   end
 
   type t = {
     test: Expression.t;
     message: Expression.t option;
-    origin: Origin.t;
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -258,38 +256,25 @@ module rec Assert : sig
 end = struct
   module Origin = struct
     type t =
-      | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
-      | Match
+      | Match of { true_branch: bool }
+      | TryHandler
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
-
-    let location_insensitive_compare left right : int =
-      match left, right with
-      | Assertion, Assertion -> 0
-      | If left, If right -> Bool.compare left.true_branch right.true_branch
-      | Match, Match -> 0
-      | While left, While right -> Bool.compare left.true_branch right.true_branch
-      | Assertion, _ -> -1
-      | If _, _ -> -1
-      | Match, _ -> -1
-      | While _, _ -> 1
   end
 
   type t = {
     test: Expression.t;
     message: Expression.t option;
-    origin: Origin.t;
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
+    (* We ignore locations, but also the origin. *)
     match Expression.location_insensitive_compare left.test right.test with
     | x when not (Int.equal x 0) -> x
-    | _ -> (
-        match Option.compare Expression.location_insensitive_compare left.message right.message with
-        | x when not (Int.equal x 0) -> x
-        | _ -> Origin.location_insensitive_compare left.origin right.origin)
+    | _ -> Option.compare Expression.location_insensitive_compare left.message right.message
 end
 
 and Class : sig
@@ -1144,14 +1129,20 @@ end = struct
                                                 {
                                                   Name.Attribute.base;
                                                   attribute = iterator;
-                                                  special = true;
+                                                  origin =
+                                                    Some
+                                                      {
+                                                        Node.location = iterator_location;
+                                                        value = Origin.ForIter;
+                                                      };
                                                 });
                                        };
                                      arguments = [];
                                    };
                              };
                            attribute = next;
-                           special = true;
+                           origin =
+                             Some { Node.location = iterator_location; value = Origin.ForNext };
                          });
                 };
               arguments = [];
@@ -1471,7 +1462,7 @@ end = struct
                         };
                   };
                 message = None;
-                origin = Assert.Origin.Assertion;
+                origin = Some { Node.location; value = Assert.Origin.TryHandler };
               };
         };
       ]
@@ -1593,7 +1584,7 @@ end = struct
                              {
                                Name.Attribute.base = expression;
                                attribute = call_name;
-                               special = true;
+                               origin = Some { Node.location; value = Origin.With };
                              });
                     };
                   arguments = [];
@@ -1642,7 +1633,7 @@ and Statement : sig
 
   type t = statement Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val assume : ?origin:Assert.Origin.t -> Expression.t -> t
+  val assume : origin:Assert.Origin.t Node.t option -> Expression.t -> t
 
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 
@@ -1728,7 +1719,7 @@ end = struct
     Node.location_insensitive_compare location_insensitive_compare_statement left right
 
 
-  let assume ?(origin = Assert.Origin.Assertion) ({ Node.location; _ } as test) =
+  let assume ~origin ({ Node.location; _ } as test) =
     { Node.location; value = Statement.Assert { Assert.test; message = None; origin } }
 
 
@@ -1758,7 +1749,7 @@ end = struct
                              {
                                Name.Attribute.base = iterator;
                                attribute = "__aiter__";
-                               special = true;
+                               origin = Some { Node.location; value = Origin.GeneratorIter };
                              });
                     };
                   arguments = [];
@@ -1776,7 +1767,11 @@ end = struct
                     value =
                       Expression.Name
                         (Name.Attribute
-                           { Name.Attribute.base = aiter; attribute = "__anext__"; special = true });
+                           {
+                             Name.Attribute.base = aiter;
+                             attribute = "__anext__";
+                             origin = Some { Node.location; value = Origin.GeneratorNext };
+                           });
                   };
                 arguments = [];
               };
@@ -1798,7 +1793,7 @@ end = struct
                              {
                                Name.Attribute.base = iterator;
                                attribute = "__iter__";
-                               special = true;
+                               origin = Some { Node.location; value = Origin.GeneratorIter };
                              });
                     };
                   arguments = [];
@@ -1816,7 +1811,11 @@ end = struct
                     value =
                       Expression.Name
                         (Name.Attribute
-                           { Name.Attribute.base = iter; attribute = "__next__"; special = true });
+                           {
+                             Name.Attribute.base = iter;
+                             attribute = "__next__";
+                             origin = Some { Node.location; value = Origin.GeneratorNext };
+                           });
                   };
                 arguments = [];
               };

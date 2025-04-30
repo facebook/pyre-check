@@ -10,17 +10,23 @@
 open Ast
 open Expression
 
-let attribute_access ~location base method_name =
+let attribute_access ~location ~base ~method_name ~origin =
   {
     Node.location;
-    value = Expression.Name (Name.Attribute { base; attribute = method_name; special = true });
+    value = Expression.Name (Name.Attribute { base; attribute = method_name; origin });
   }
 
 
 let resolve_stringify_call ~resolution expression =
   let string_callee =
     Node.create_with_default_location
-      (Expression.Name (Name.Attribute { base = expression; attribute = "__str__"; special = true }))
+      (Expression.Name
+         (Name.Attribute
+            {
+              base = expression;
+              attribute = "__str__";
+              origin = Some { Node.location = Location.any; value = Origin.ForTypeChecking };
+            }))
   in
 
   try
@@ -34,16 +40,39 @@ let resolve_stringify_call ~resolution expression =
 
 let redirect_special_calls
     ~resolution
-    ({ Call.callee = { Node.location; value }; arguments } as call)
+    ~location:call_location
+    ({ Call.callee = { Node.location = callee_location; value }; arguments } as call)
   =
   match value, arguments with
   (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
-      let callee = attribute_access value (resolve_stringify_call ~resolution value) ~location in
+      let callee =
+        attribute_access
+          ~location:callee_location
+          ~base:value
+          ~method_name:(resolve_stringify_call ~resolution value)
+          ~origin:(Some { Node.location = call_location; value = Origin.StrCall })
+      in
       { Call.callee; arguments = [] }
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
-      { Call.callee = attribute_access value "__abs__" ~location; arguments = [] }
+      {
+        Call.callee =
+          attribute_access
+            ~location:callee_location
+            ~base:value
+            ~method_name:"__abs__"
+            ~origin:(Some { Node.location = call_location; value = Origin.AbsCall });
+        arguments = [];
+      }
   | Name (Name.Identifier "repr"), [{ Call.Argument.value; _ }] ->
-      { Call.callee = attribute_access value "__repr__" ~location; arguments = [] }
+      {
+        Call.callee =
+          attribute_access
+            ~location:callee_location
+            ~base:value
+            ~method_name:"__repr__"
+            ~origin:(Some { Node.location = call_location; value = Origin.ReprCall });
+        arguments = [];
+      }
   | _ -> call

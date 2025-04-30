@@ -49,7 +49,7 @@ let test_assert_locations _ =
            {
              Assert.test = node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "a"));
              message = None;
-             origin = Assert.Origin.Assertion;
+             origin = None;
            });
     ];
   assert_source_locations
@@ -73,7 +73,7 @@ let test_assert_locations _ =
                         node ~start:(1, 12) ~stop:(1, 13) (Expression.Name (Name.Identifier "b"));
                     });
              message = None;
-             origin = Assert.Origin.Assertion;
+             origin = None;
            });
     ];
   assert_source_locations
@@ -87,7 +87,7 @@ let test_assert_locations _ =
              Assert.test = node ~start:(1, 7) ~stop:(1, 8) (Expression.Name (Name.Identifier "a"));
              message =
                Some (node ~start:(1, 10) ~stop:(1, 11) (Expression.Name (Name.Identifier "b")));
-             origin = Assert.Origin.Assertion;
+             origin = None;
            });
     ];
   assert_source_locations
@@ -116,7 +116,7 @@ let test_assert_locations _ =
                     ~start:(1, 22)
                     ~stop:(1, 30)
                     (Expression.Constant (Constant.String (StringLiteral.create "b or c"))));
-             origin = Assert.Origin.Assertion;
+             origin = None;
            });
     ]
 
@@ -382,7 +382,7 @@ let test_call_locations _ =
                                    ~stop:(1, 1)
                                    (Expression.Name (Name.Identifier "a"));
                                attribute = "__getitem__";
-                               special = false;
+                               origin = None;
                              }));
                    arguments =
                      [
@@ -1898,10 +1898,10 @@ let test_name_locations _ =
                                       ~stop:(1, 1)
                                       (Expression.Name (Name.Identifier "a"));
                                   attribute = "b";
-                                  special = false;
+                                  origin = None;
                                 }));
                       attribute = "c";
-                      special = false;
+                      origin = None;
                     }))));
     ];
   assert_source_locations
@@ -1920,7 +1920,7 @@ let test_name_locations _ =
                       Name.Attribute.base =
                         node ~start:(1, 2) ~stop:(1, 3) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
-                      special = false;
+                      origin = None;
                     }))));
     ];
   assert_source_locations
@@ -1939,7 +1939,7 @@ let test_name_locations _ =
                       Name.Attribute.base =
                         node ~start:(1, 1) ~stop:(1, 2) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
-                      special = false;
+                      origin = None;
                     }))));
     ];
   assert_source_locations
@@ -1961,7 +1961,7 @@ let test_name_locations _ =
                       Name.Attribute.base =
                         node ~start:(2, 0) ~stop:(2, 1) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
-                      special = false;
+                      origin = None;
                     }))));
     ];
   assert_source_locations
@@ -1980,7 +1980,7 @@ let test_name_locations _ =
                       Name.Attribute.base =
                         node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
                       attribute = "b";
-                      special = false;
+                      origin = None;
                     }))));
     ];
   assert_source_locations
@@ -2020,7 +2020,7 @@ let test_name_locations _ =
                                  ];
                              });
                       attribute = "b";
-                      special = false;
+                      origin = None;
                     }))));
     ]
 

@@ -9,6 +9,7 @@ open Ast
 
 val redirect
   :  pyre_in_context:Analysis.PyrePysaEnvironment.InContext.t ->
+  location:Location.t ->
   Expression.Call.t ->
   Expression.Call.t option
 

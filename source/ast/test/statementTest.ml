@@ -447,7 +447,7 @@ let test_try_block_preamble _ =
                       };
                 };
               message = None;
-              origin = Assert.Origin.Assertion;
+              origin = Some { Node.location = ~@"4:7-4:14"; value = Assert.Origin.TryHandler };
             };
       };
     ];
@@ -533,14 +533,20 @@ let test_for_loop_preamble _ =
                                                                 location = ~@"1:9-1:10";
                                                               };
                                                             attribute = "__iter__";
-                                                            special = true;
+                                                            origin =
+                                                              Some
+                                                                {
+                                                                  Node.location = ~@"1:9-1:10";
+                                                                  value = Origin.ForIter;
+                                                                };
                                                           });
                                                  };
                                                arguments = [];
                                              };
                                        };
                                      attribute = "__next__";
-                                     special = true;
+                                     origin =
+                                       Some { Node.location = ~@"1:9-1:10"; value = Origin.ForNext };
                                    });
                           };
                         arguments = [];
@@ -599,14 +605,24 @@ let test_for_loop_preamble _ =
                                                                       location = ~@"3:2-3:4";
                                                                     };
                                                                   attribute = "__aiter__";
-                                                                  special = true;
+                                                                  origin =
+                                                                    Some
+                                                                      {
+                                                                        Node.location = ~@"3:2-3:4";
+                                                                        value = Origin.ForIter;
+                                                                      };
                                                                 });
                                                        };
                                                      arguments = [];
                                                    };
                                              };
                                            attribute = "__anext__";
-                                           special = true;
+                                           origin =
+                                             Some
+                                               {
+                                                 Node.location = ~@"3:2-3:4";
+                                                 value = Origin.ForNext;
+                                               };
                                          });
                                 };
                               arguments = [];
@@ -623,13 +639,9 @@ let test_for_loop_preamble _ =
 
 let test_assume _ =
   assert_equal
-    (Statement.assume (+Expression.Constant Constant.True))
+    (Statement.assume ~origin:None (+Expression.Constant Constant.True))
     (+Statement.Assert
-        {
-          Assert.test = +Expression.Constant Constant.True;
-          message = None;
-          origin = Assert.Origin.Assertion;
-        })
+        { Assert.test = +Expression.Constant Constant.True; message = None; origin = None })
 
 
 let test_pp _ =
@@ -958,7 +970,7 @@ let test_decorator_from_expression context =
   assert_decorator
     (+Expression.Name
         (Name.Attribute
-           { Name.Attribute.base = +Expression.List []; attribute = "b"; special = false }))
+           { Name.Attribute.base = +Expression.List []; attribute = "b"; origin = None }))
     ~expected:None;
   assert_decorator
     (+Expression.Call { Call.callee = +Expression.List [!"a"]; arguments = [] })

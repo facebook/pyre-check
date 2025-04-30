@@ -10,4 +10,8 @@ open Ast
 (* Redirect a call to `str(e)` to the proper method for any expression `e` *)
 val resolve_stringify_call : resolution:Resolution.t -> Expression.t -> string
 
-val redirect_special_calls : resolution:Resolution.t -> Expression.Call.t -> Expression.Call.t
+val redirect_special_calls
+  :  resolution:Resolution.t ->
+  location:Location.t ->
+  Expression.Call.t ->
+  Expression.Call.t

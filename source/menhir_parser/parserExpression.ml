@@ -172,7 +172,6 @@ and Name : sig
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      special: bool;
     }
   end
 
@@ -184,7 +183,6 @@ end = struct
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      special: bool;
     }
   end
 

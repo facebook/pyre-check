@@ -229,7 +229,7 @@ let test_pp _ =
                   {
                     Name.Attribute.base = +Expression.Name (Name.Identifier "a");
                     attribute = "__getitem__";
-                    special = false;
+                    origin = None;
                   });
           arguments =
             [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
@@ -260,12 +260,12 @@ let test_pp _ =
                             {
                               Name.Attribute.base = +Expression.Name (Name.Identifier "a");
                               attribute = "b";
-                              special = false;
+                              origin = None;
                             });
                     index = +Expression.Constant (Constant.Integer 1);
                   };
              attribute = "c";
-             special = false;
+             origin = None;
            }))
     "a.b[1].c";
   assert_pp_equal
@@ -344,14 +344,14 @@ let test_delocalize _ =
            {
              Name.Attribute.base = !"qualifier";
              attribute = "$local_qualifier$variable";
-             special = true;
+             origin = None;
            }))
     (+Expression.Name
         (Name.Attribute
            {
              Name.Attribute.base = !"qualifier";
              attribute = "$local_qualifier$variable";
-             special = true;
+             origin = None;
            }));
 
   let assert_delocalize_qualified source expected =
@@ -367,11 +367,11 @@ let test_delocalize _ =
            {
              Name.Attribute.base = !"qualifier";
              attribute = "$local_qualifier$variable";
-             special = true;
+             origin = None;
            }))
     (+Expression.Name
         (Name.Attribute
-           { Name.Attribute.base = !"qualifier"; attribute = "variable"; special = true }))
+           { Name.Attribute.base = !"qualifier"; attribute = "variable"; origin = None }))
 
 
 let test_comparison_operator_override _ =
@@ -388,7 +388,7 @@ let test_comparison_operator_override _ =
         | _ -> "None")
       ~cmp:(Option.equal (fun left right -> Expression.location_insensitive_compare left right = 0))
       (expected >>| parse_single_expression ~coerce_special_methods:true)
-      (ComparisonOperator.override ~location operator)
+      (ComparisonOperator.lower_to_expression ~location ~callee_location:location operator)
   in
   assert_override "a < b" (Some "a.__lt__(b)");
   assert_override "a == b" (Some "a.__eq__(b)");
@@ -450,7 +450,7 @@ let test_exists_in_list _ =
             {
               Name.Attribute.base = !"qualifier";
               attribute = "$local_qualifier$property";
-              special = false;
+              origin = None;
             });
     ]
     ~match_prefix:false
@@ -473,10 +473,10 @@ let test_create_name _ =
                    {
                      Name.Attribute.base = ~+(Expression.Name (Name.Identifier "a"));
                      attribute = "b";
-                     special = false;
+                     origin = None;
                    }));
          attribute = "c";
-         special = false;
+         origin = None;
        });
   let assert_create raw_string expected =
     assert_equal expected (create_name ~location:Location.any raw_string)
@@ -492,10 +492,10 @@ let test_create_name _ =
                    {
                      Name.Attribute.base = ~+(Expression.Name (Name.Identifier "a"));
                      attribute = "b";
-                     special = false;
+                     origin = None;
                    }));
          attribute = "c";
-         special = false;
+         origin = None;
        })
 
 
@@ -516,10 +516,10 @@ let test_name_to_identifiers _ =
                    {
                      Name.Attribute.base = ~+(Expression.Name (Name.Identifier "a"));
                      attribute = "b";
-                     special = false;
+                     origin = None;
                    }));
          attribute = "c";
-         special = false;
+         origin = None;
        })
     (Some ["a"; "b"; "c"]);
   assert_name_to_identifiers
@@ -531,10 +531,10 @@ let test_name_to_identifiers _ =
                    {
                      Name.Attribute.base = ~+(Expression.Constant (Constant.Integer 1));
                      attribute = "b";
-                     special = false;
+                     origin = None;
                    }));
          attribute = "c";
-         special = false;
+         origin = None;
        })
     None
 
@@ -553,10 +553,10 @@ let test_name_to_reference _ =
                    {
                      Name.Attribute.base = ~+(Expression.Name (Name.Identifier "a"));
                      attribute = "b";
-                     special = false;
+                     origin = None;
                    }));
          attribute = "c";
-         special = false;
+         origin = None;
        })
     (Some !&"a.b.c");
   assert_name_to_reference
@@ -568,10 +568,10 @@ let test_name_to_reference _ =
                    {
                      Name.Attribute.base = ~+(Expression.Constant (Constant.Integer 1));
                      attribute = "b";
-                     special = false;
+                     origin = None;
                    }));
          attribute = "c";
-         special = false;
+         origin = None;
        })
     None
 
@@ -586,11 +586,11 @@ let test_name_equals _ =
   assert_name_equals
     "a.b"
     (Name.Attribute
-       { Name.Attribute.base = create_base (Name.Identifier "a"); attribute = "b"; special = false });
+       { Name.Attribute.base = create_base (Name.Identifier "a"); attribute = "b"; origin = None });
   assert_name_not_equals
     "a.b.c"
     (Name.Attribute
-       { Name.Attribute.base = create_base (Name.Identifier "a"); attribute = "b"; special = false });
+       { Name.Attribute.base = create_base (Name.Identifier "a"); attribute = "b"; origin = None });
   assert_name_not_equals "a" (Name.Identifier "b");
   assert_name_not_equals "a.b" (Name.Identifier "a");
   assert_name_not_equals "" (Name.Identifier "a")
@@ -726,7 +726,7 @@ let test_default_folder context =
   assert_count !"x" ~expected:0;
   assert_count
     (+Expression.Name
-        (Name.Attribute { Name.Attribute.base = integer 1; attribute = "x"; special = false }))
+        (Name.Attribute { Name.Attribute.base = integer 1; attribute = "x"; origin = None }))
     ~expected:1;
   assert_count (+Expression.Set [integer 1; integer 2]) ~expected:3;
   assert_count
@@ -941,10 +941,10 @@ let test_default_mapper context =
   assert_transformed !"x" ~expected:!"x";
   assert_transformed
     (+Expression.Name
-        (Name.Attribute { Name.Attribute.base = integer 1; attribute = "x"; special = false }))
+        (Name.Attribute { Name.Attribute.base = integer 1; attribute = "x"; origin = None }))
     ~expected:
       (+Expression.Name
-          (Name.Attribute { Name.Attribute.base = integer 2; attribute = "x"; special = false }));
+          (Name.Attribute { Name.Attribute.base = integer 2; attribute = "x"; origin = None }));
   assert_transformed
     (+Expression.Set [integer 1; integer 2])
     ~expected:(+Expression.Set [integer 2; integer 3]);

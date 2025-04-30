@@ -71,13 +71,13 @@ let test_attribute =
              "a.b"
              ~expected:
                (+Expression.Name
-                   (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false }));
+                   (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; origin = None }));
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a  .  b"
              ~expected:
                (+Expression.Name
-                   (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false }));
+                   (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; origin = None }));
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a.b.c"
@@ -88,9 +88,9 @@ let test_attribute =
                         Name.Attribute.base =
                           +Expression.Name
                              (Name.Attribute
-                                { Name.Attribute.base = !"a"; attribute = "b"; special = false });
+                                { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                         attribute = "c";
-                        special = false;
+                        origin = None;
                       }));
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -101,7 +101,7 @@ let test_attribute =
                       {
                         Name.Attribute.base = +Expression.Constant (Constant.Float 1.0);
                         attribute = "b";
-                        special = false;
+                        origin = None;
                       }));
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a.async";
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a.1";
@@ -1603,7 +1603,7 @@ let test_binary_operators =
                      right =
                        +Expression.Name
                           (Name.Attribute
-                             { Name.Attribute.base = !"y"; attribute = "z"; special = false });
+                             { Name.Attribute.base = !"y"; attribute = "z"; origin = None });
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1712,7 +1712,7 @@ let test_call =
                      Call.callee =
                        +Expression.Name
                           (Name.Attribute
-                             { Name.Attribute.base = !"a"; attribute = "foo"; special = false });
+                             { Name.Attribute.base = !"a"; attribute = "foo"; origin = None });
                      arguments = [{ Call.Argument.name = None; value = !"x" }];
                    });
         labeled_test_case __FUNCTION__ __LINE__
@@ -1813,7 +1813,7 @@ let test_subscript =
                              {
                                Name.Attribute.base = !"a";
                                attribute = "__getitem__";
-                               special = false;
+                               origin = None;
                              });
                      arguments = [{ Call.Argument.name = None; value = !"b" }];
                    });
@@ -1852,7 +1852,7 @@ let test_subscript =
                         Name.Attribute.base =
                           +Expression.Subscript { Subscript.base = !"a"; index = !"b" };
                         attribute = "c";
-                        special = false;
+                        origin = None;
                       }));
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed

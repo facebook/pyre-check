@@ -38,11 +38,12 @@ Call dependencies
     "_test_source (fun)"
   ],
   "string_conversion.function_call_target_1 (fun)": [
-    "BaseException.__str__ (fun)", "str.__str__ (method)"
+    "object.__str__ (method)", "str.__str__ (method)"
   ],
   "string_conversion.function_call_target_2 (fun)": [
-    "object.__class__ (method)", "string_conversion.B.__str__ (fun)",
-    "string_conversion.C.__str__ (fun)"
+    "object.__class__ (method)", "object.__str__ (method)",
+    "string_conversion.B.__str__ (method)",
+    "string_conversion.C.__str__ (method)"
   ],
   "string_conversion.implicit_repr (fun)": [
     "eval (fun)", "object.__init__ (method)", "object.__new__ (method)",

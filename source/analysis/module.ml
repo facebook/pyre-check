@@ -270,7 +270,7 @@ module Metadata = struct
                                       _;
                                     };
                                   attribute = "Any";
-                                  special = false;
+                                  origin = None;
                                 } );
                         _;
                       } ) ->

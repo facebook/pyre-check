@@ -126,7 +126,11 @@ and ComparisonOperator : sig
 
   val pp_comparison_operator : Format.formatter -> operator -> unit
 
-  val override : location:Location.t -> t -> Expression.t option
+  val lower_to_expression
+    :  location:Location.t ->
+    callee_location:Location.t ->
+    t ->
+    Expression.t option
 
   val location_insensitive_compare : t -> t -> int
 end
@@ -159,7 +163,7 @@ and BinaryOperator : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val lower_to_call : callee_location:Location.t -> t -> Call.t
+  val lower_to_call : location:Location.t -> callee_location:Location.t -> t -> Call.t
 
   val lower_to_expression : location:Location.t -> callee_location:Location.t -> t -> Expression.t
 
@@ -234,7 +238,7 @@ and Name : sig
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      special: bool;
+      origin: Origin.t Node.t option;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -347,7 +351,11 @@ and UnaryOperator : sig
 
   val pp_unary_operator : Format.formatter -> operator -> unit
 
-  val override : t -> Expression.t option
+  val lower_to_expression
+    :  location:Location.t ->
+    callee_location:Location.t ->
+    t ->
+    Expression.t option
 end
 
 and WalrusOperator : sig
@@ -376,6 +384,44 @@ and TypeParam : sig
   type t = type_param Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+end
+
+and Origin : sig
+  (* During the analysis, we create artificial nodes that were not present
+   * in the original code. This type is used to describe the original node
+   * that originated the artificial node. *)
+  type t =
+    | ComparisonOperator of ComparisonOperator.operator
+    | BinaryOperator of BinaryOperator.operator
+    | UnaryOperator of UnaryOperator.operator
+    | AugmentedAssign of BinaryOperator.operator
+    | SubscriptSetItem
+    | SubscriptGetItem
+    | ForIter (* __iter__ call for a for loop *)
+    | ForNext (* __next__ call for a for loop *)
+    | GeneratorIter (* __iter__ call for a generator *)
+    | GeneratorNext (* __next__ call for a generator *)
+    | With (* __enter__ call for a with statement *)
+    | InContains (* e in l can be turned into l.__contains__(e) *)
+    | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
+    | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | NamedTupleConstructorAssignment of string
+    | DataclassField
+    | MatchClassAttribute of string
+    | MatchClassArgs
+    | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
+    | ReprCall (* repr(x) is turned into x.__repr__() *)
+    | AbsCall (* abs(x) is turned into x.__abs__() *)
+    | IterCall (* iter(x) is turned into x.__iter__() *)
+    | NextCall (* next(x) is turned into x.__next__() *)
+    | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
+    | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
+    | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
+    | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | ForTestPurpose (* AST node created when running tests *)
+    | ForTypeChecking (* AST node created internally during a type check of an expression *)
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 end
 
 and Expression : sig

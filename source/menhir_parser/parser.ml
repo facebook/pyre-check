@@ -349,10 +349,14 @@ module ParserToAst = struct
             generators = List.map ~f:convert_generator generators;
           }
         |> Node.create ~location
-    | Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
+    | Name (Name.Attribute { Name.Attribute.base; attribute }) ->
         AstExpression.Expression.Name
           (AstExpression.Name.Attribute
-             { AstExpression.Name.Attribute.base = convert_expression base; attribute; special })
+             {
+               AstExpression.Name.Attribute.base = convert_expression base;
+               attribute;
+               origin = None;
+             })
         |> Node.create ~location
     | Name (Name.Identifier name) ->
         AstExpression.Expression.Name (AstExpression.Name.Identifier name) |> Node.create ~location
@@ -448,7 +452,7 @@ module ParserToAst = struct
             {
               AstStatement.Assert.test = convert_expression test;
               message = message >>| convert_expression;
-              origin = AstStatement.Assert.Origin.Assertion;
+              origin = None;
             }
       | AugmentedAssign { AugmentedAssign.target; operator; value } ->
           AstStatement.Statement.AugmentedAssign

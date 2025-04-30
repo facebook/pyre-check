@@ -2751,7 +2751,7 @@ let expand_named_tuples
                       {
                         base = { Node.value = Name (Name.Identifier "typing"); location };
                         attribute = "NamedTuple";
-                        special = false;
+                        origin = None;
                       })),
               Parameter.create ~location ~name:"cls" () )
           else
@@ -2780,7 +2780,12 @@ let expand_named_tuples
                                {
                                  base = Node.create (Expression.Name (Identifier "self")) ~location;
                                  attribute = name;
-                                 special = false;
+                                 origin =
+                                   Some
+                                     {
+                                       Node.location;
+                                       value = Origin.NamedTupleConstructorAssignment name;
+                                     };
                                }));
                      annotation = None;
                      value = Some (Node.create (Expression.Name (Identifier name)) ~location);
@@ -3448,7 +3453,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                                value = Name (Name.Identifier "typing");
                                              };
                                            attribute = "Dict";
-                                           special = false;
+                                           origin = None;
                                          });
                                 };
                               index =
@@ -3484,7 +3489,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                               value = Name (Name.Identifier "typing");
                                             };
                                           attribute = "Any";
-                                          special = false;
+                                          origin = None;
                                         });
                                })
                       | Some
@@ -3519,7 +3524,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                                value = Name (Name.Identifier "typing");
                                              };
                                            attribute = "Tuple";
-                                           special = false;
+                                           origin = None;
                                          });
                                 };
                               index =
@@ -3555,7 +3560,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                               value = Name (Name.Identifier "typing");
                                             };
                                           attribute = "Any";
-                                          special = false;
+                                          origin = None;
                                         });
                                })
                       | Some
@@ -3790,7 +3795,7 @@ let replace_union_shorthand_in_annotation_expression =
                       {
                         base = { Node.value = Name (Name.Identifier "typing"); _ };
                         attribute = "Union";
-                        special = false;
+                        origin = None;
                       });
                 _;
               };
@@ -3822,7 +3827,7 @@ let replace_union_shorthand_in_annotation_expression =
                          {
                            base = { Node.location; value = Name (Name.Identifier "typing") };
                            attribute = "Union";
-                           special = false;
+                           origin = None;
                          });
                 };
               index;
@@ -4252,7 +4257,7 @@ let expand_pytorch_register_buffer
                     {
                       base = Node.create ~location (Expression.Name (Name.Identifier "torch"));
                       attribute = "Tensor";
-                      special = false;
+                      origin = None;
                     }))
             |> Option.some_if (not (is_none initial_value))
           in
@@ -4269,7 +4274,7 @@ let expand_pytorch_register_buffer
                               base =
                                 Node.create ~location (Expression.Name (Name.Identifier "self"));
                               attribute = attribute_name;
-                              special = false;
+                              origin = None;
                             }));
                   annotation;
                   value = Some initial_value;
@@ -4394,7 +4399,7 @@ let add_dataclass_keyword_only_specifiers
                          Expression.Name (Name.Identifier "dataclasses")
                          |> Node.create_with_default_location;
                        attribute = "field";
-                       special = false;
+                       origin = Some { Node.location; value = Origin.DataclassField };
                      })
                 |> Node.create_with_default_location
               in
@@ -4677,7 +4682,7 @@ module SelfType = struct
                              base =
                                Node.create ~location (Expression.Name (Name.Identifier "typing"));
                              attribute = "TypeVar";
-                             special = false;
+                             origin = None;
                            }));
                  arguments =
                    [

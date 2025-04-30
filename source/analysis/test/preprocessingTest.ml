@@ -431,7 +431,7 @@ let test_expand_string_annotation_preserves_locations =
                    base =
                      { Node.location = location (1, 5) (1, 10); value = Name (Identifier "test") };
                    attribute = "Foo";
-                   special = false;
+                   origin = None;
                  });
         }
         (Preprocessing.expand_strings_in_annotation_expression
@@ -2476,7 +2476,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                  {
                                                    base = +Expression.Name (Name.Identifier "self");
                                                    attribute = "some_attribute";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                     };
                                ];
@@ -2540,7 +2540,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                  {
                                                    base = +Expression.Name (Name.Identifier "Foo");
                                                    attribute = "Foo";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                       value =
                                         Some
@@ -2551,7 +2551,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                      +Expression.Name
                                                         (Name.Identifier "$parameter$self");
                                                    attribute = "some_attribute";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                     };
                                ];
@@ -2612,7 +2612,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                  {
                                                    base = +Expression.Name (Name.Identifier "self");
                                                    attribute = "some_attribute";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                     };
                                ];
@@ -2630,7 +2630,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                           {
                             base = +Expression.Name (Name.Identifier "Foo");
                             attribute = "Foo";
-                            special = false;
+                            origin = None;
                           });
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
@@ -2683,7 +2683,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                  {
                                                    base = +Expression.Name (Name.Identifier "Foo");
                                                    attribute = "Foo";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                       value =
                                         Some
@@ -2694,7 +2694,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                      +Expression.Name
                                                         (Name.Identifier "$parameter$self");
                                                    attribute = "some_attribute";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                     };
                                ];
@@ -2755,7 +2755,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                  {
                                                    base = +Expression.Name (Name.Identifier "self");
                                                    attribute = "some_attribute";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                     };
                                ];
@@ -2773,7 +2773,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                           {
                             base = +Expression.Name (Name.Identifier "NotFoo");
                             attribute = "Foo";
-                            special = false;
+                            origin = None;
                           });
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
@@ -2827,7 +2827,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    base =
                                                      +Expression.Name (Name.Identifier "NotFoo");
                                                    attribute = "Foo";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                       value =
                                         Some
@@ -2838,7 +2838,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                      +Expression.Name
                                                         (Name.Identifier "$parameter$self");
                                                    attribute = "some_attribute";
-                                                   special = false;
+                                                   origin = None;
                                                  }));
                                     };
                                ];
@@ -5438,7 +5438,7 @@ let test_populate_captures =
                  in
                  Node.create ~location:(location start stop) (Expression.Name (Name.Identifier "P")));
               attribute;
-              special = false;
+              origin = None;
             }))
   in
   test_list

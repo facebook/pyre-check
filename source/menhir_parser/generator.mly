@@ -1509,7 +1509,7 @@ expression:
       {
         Node.location;
         value = Expression.Name (
-          Name.Attribute { Name.Attribute.base = expression; attribute = snd identifier; special = false }
+          Name.Attribute { Name.Attribute.base = expression; attribute = snd identifier }
         )
       }
     }
