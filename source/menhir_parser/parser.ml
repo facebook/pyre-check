@@ -298,6 +298,7 @@ module ParserToAst = struct
           {
             AstExpression.Call.callee = convert_expression callee;
             arguments = List.map ~f:convert_argument arguments;
+            origin = None;
           }
         |> Node.create ~location
     | ComparisonOperator { ComparisonOperator.left; operator; right } ->

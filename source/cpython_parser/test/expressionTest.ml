@@ -1630,7 +1630,7 @@ let test_call =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "foo()"
-             ~expected:(+Expression.Call { Call.callee = !"foo"; arguments = [] });
+             ~expected:(+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "foo(x)"
@@ -1639,6 +1639,7 @@ let test_call =
                    {
                      Call.callee = !"foo";
                      arguments = [{ Call.Argument.name = None; value = !"x" }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1648,6 +1649,7 @@ let test_call =
                    {
                      Call.callee = !"foo";
                      arguments = [{ Call.Argument.name = None; value = !"x" }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1657,6 +1659,7 @@ let test_call =
                    {
                      Call.callee = !"foo";
                      arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1666,6 +1669,7 @@ let test_call =
                    {
                      Call.callee = !"foo";
                      arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1679,6 +1683,7 @@ let test_call =
                          { Call.Argument.name = None; value = !"x" };
                          { Call.Argument.name = None; value = !"y" };
                        ];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1689,6 +1694,7 @@ let test_call =
                      Call.callee = !"foo";
                      arguments =
                        [{ Call.Argument.name = None; value = +Expression.Tuple [!"x"; !"y"] }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1702,6 +1708,7 @@ let test_call =
                          { Call.Argument.name = None; value = !"x" };
                          { Call.Argument.name = Some (+"y"); value = !"z" };
                        ];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1714,6 +1721,7 @@ let test_call =
                           (Name.Attribute
                              { Name.Attribute.base = !"a"; attribute = "foo"; origin = None });
                      arguments = [{ Call.Argument.name = None; value = !"x" }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1741,6 +1749,7 @@ let test_call =
                            value = +Expression.Starred (Starred.Twice !"kwargs");
                          };
                        ];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1754,6 +1763,7 @@ let test_call =
                           {
                             Call.callee = !"foo";
                             arguments = [{ Call.Argument.name = None; value = !"x" }];
+                            origin = None;
                           };
                      right = !"y";
                    });
@@ -1768,6 +1778,7 @@ let test_call =
                           {
                             Call.callee = !"foo";
                             arguments = [{ Call.Argument.name = None; value = !"x" }];
+                            origin = None;
                           };
                      operator = ComparisonOperator.GreaterThan;
                      right = !"y";
@@ -1784,6 +1795,7 @@ let test_call =
                           {
                             Call.callee = !"foo";
                             arguments = [{ Call.Argument.name = None; value = !"x" }];
+                            origin = None;
                           };
                    });
       ]
@@ -1816,6 +1828,7 @@ let test_subscript =
                                origin = None;
                              });
                      arguments = [{ Call.Argument.name = None; value = !"b" }];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed

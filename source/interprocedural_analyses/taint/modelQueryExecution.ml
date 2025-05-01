@@ -1795,6 +1795,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                           _;
                         };
                       ];
+                    origin = _;
                   };
               _;
             } ->

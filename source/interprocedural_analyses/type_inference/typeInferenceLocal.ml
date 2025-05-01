@@ -602,6 +602,7 @@ module State (Context : Context) = struct
                         _;
                       };
                     arguments = [{ Call.Argument.value = key; _ }; { Call.Argument.value; _ }];
+                    origin = _;
                   };
               _;
             }
@@ -633,6 +634,7 @@ module State (Context : Context) = struct
                         _;
                       };
                     arguments = [{ Call.Argument.value; _ }];
+                    origin = _;
                   };
               _;
             }
@@ -808,7 +810,7 @@ module State (Context : Context) = struct
           | _ -> None)
       | _ -> None
     in
-    let propagate resolution { Call.callee; arguments } =
+    let propagate resolution { Call.callee; arguments; origin = _ } =
       callee
       |> callable_from_expression
       >>= callable_parameters
@@ -853,6 +855,7 @@ module State (Context : Context) = struct
                   _;
                 };
               arguments = [{ Call.Argument.value; _ }];
+              origin = _;
             } ->
             let resolution =
               forward_expression ~state value

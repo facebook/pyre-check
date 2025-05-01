@@ -131,6 +131,7 @@ let parse_access_path ~path ~location expression =
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
           arguments = [];
+          origin = _;
         } ->
         parse_model_labels base
         >>| fun base -> TaintPath.Path (base @ [ModelLabel.TreeLabel AccessPath.dictionary_keys])
@@ -138,6 +139,7 @@ let parse_access_path ~path ~location expression =
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "all"; _ }); _ };
           arguments = [];
+          origin = _;
         } ->
         parse_model_labels base
         >>| fun base -> TaintPath.Path (base @ [ModelLabel.TreeLabel TreeLabel.AnyIndex])
@@ -146,6 +148,7 @@ let parse_access_path ~path ~location expression =
           callee =
             { Node.value = Name (Name.Attribute { base; attribute = "parameter_name"; _ }); _ };
           arguments = [];
+          origin = _;
         } ->
         parse_model_labels base >>| fun base -> TaintPath.Path (base @ [ModelLabel.ParameterName])
     | Expression.Call
@@ -153,6 +156,7 @@ let parse_access_path ~path ~location expression =
           callee =
             { Node.value = Name (Name.Attribute { base; attribute = "all_static_fields"; _ }); _ };
           arguments = [];
+          origin = _;
         } -> (
         parse_model_labels base
         >>= function
@@ -1703,6 +1707,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
                   _;
                 };
               arguments = [{ Call.Argument.value = argument; _ }];
+              origin = _;
             };
         _;
       } -> (
@@ -1775,6 +1780,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
                           _;
                         };
                       ];
+                    origin = _;
                   };
               _;
             };
@@ -1797,6 +1803,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
                         _;
                       };
                     arguments = [_];
+                    origin = _;
                   };
               _;
             } as expression;
@@ -1919,7 +1926,11 @@ let rec parse_decorator_constraint
   in
   match value with
   | Expression.Call
-      { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } -> (
+      {
+        Call.callee = { Node.value = Expression.Name callee_name; _ } as callee;
+        arguments;
+        origin = _;
+      } -> (
       match Ast.Expression.name_to_identifiers callee_name with
       | Some reference -> parse_constraint_reference ~callee ~reference ~arguments
       | None ->
@@ -2005,7 +2016,11 @@ let rec parse_class_constraint ~path ~location ({ Node.value; _ } as constraint_
   in
   match value with
   | Expression.Call
-      { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } -> (
+      {
+        Call.callee = { Node.value = Expression.Name callee_name; _ } as callee;
+        arguments;
+        origin = _;
+      } -> (
       match Ast.Expression.name_to_identifiers callee_name with
       | Some reference -> parse_constraint_reference ~callee ~reference ~arguments
       | None ->
@@ -2144,7 +2159,11 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
     in
     match value with
     | Expression.Call
-        { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } -> (
+        {
+          Call.callee = { Node.value = Expression.Name callee_name; _ } as callee;
+          arguments;
+          origin = _;
+        } -> (
         match Ast.Expression.name_to_identifiers callee_name with
         | Some reference -> parse_constraint_reference ~callee ~reference ~arguments
         | None ->
@@ -2206,7 +2225,11 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
     in
     match value with
     | Expression.Call
-        { Call.callee = { Node.value = Expression.Name callee_name; _ } as callee; arguments } -> (
+        {
+          Call.callee = { Node.value = Expression.Name callee_name; _ } as callee;
+          arguments;
+          origin = _;
+        } -> (
         match Ast.Expression.name_to_identifiers callee_name with
         | Some reference -> parse_constraint_reference ~callee ~reference ~arguments
         | None ->
@@ -2264,6 +2287,7 @@ let parse_model_clause
                     value = { Node.value = Expression.Name (Name.Identifier kind); _ };
                   };
                 ];
+              origin = _;
             } -> (
             match parametric_annotation with
             | "ParametricSourceFromAnnotation" ->
@@ -2362,6 +2386,7 @@ let parse_model_clause
         {
           Call.callee = { Node.value = Name (Name.Identifier "Returns"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2370,6 +2395,7 @@ let parse_model_clause
         {
           Call.callee = { Node.value = Name (Name.Identifier "CapturedVariables"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2387,6 +2413,7 @@ let parse_model_clause
                 value = { Node.value = Expression.Constant Constant.True; _ };
               };
             ];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2396,6 +2423,7 @@ let parse_model_clause
         {
           Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_attribute
         >>= fun () ->
@@ -2405,6 +2433,7 @@ let parse_model_clause
         {
           Call.callee = { Node.value = Name (Name.Identifier "GlobalModel"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_global
         >>= fun () ->
@@ -2420,6 +2449,7 @@ let parse_model_clause
                 _;
               };
             ];
+          origin = _;
         } ->
         let parse_mode mode =
           match mode with
@@ -2466,6 +2496,7 @@ let parse_model_clause
               };
               { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
             ];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2482,6 +2513,7 @@ let parse_model_clause
               };
               { Call.Argument.value = taint; name = Some { Node.value = "taint"; _ } };
             ];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2491,6 +2523,7 @@ let parse_model_clause
         {
           Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2504,6 +2537,7 @@ let parse_model_clause
               { Call.Argument.value = taint; _ };
               { Call.Argument.name = Some { Node.value = "exclude"; _ }; value = excludes };
             ];
+          origin = _;
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2528,6 +2562,7 @@ let parse_model_clause
         {
           Call.callee = { Node.value = Name (Name.Identifier "Parameters"); _ } as callee;
           arguments;
+          origin = _;
         } -> (
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
@@ -2550,7 +2585,11 @@ let parse_model_clause
                  ~location
                  (InvalidModelQueryClauseArguments { callee; arguments })))
     | Expression.Call
-        { Call.callee = { Node.value = Name (Name.Identifier "WriteToCache"); _ }; arguments } ->
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "WriteToCache"); _ };
+          arguments;
+          origin = _;
+        } ->
         parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~arguments
     | _ ->
         Error
@@ -3131,7 +3170,11 @@ let parse_decorator_annotations
   in
   let create_function_call ~location callee arguments =
     Ast.Expression.Expression.Call
-      { callee = { Node.location; value = Name (Name.Identifier callee) }; arguments }
+      {
+        callee = { Node.location; value = Name (Name.Identifier callee) };
+        arguments;
+        origin = None;
+      }
     |> Node.create ~location
   in
   let parse_sanitize_annotations ~location ~original_expression arguments =
@@ -3464,6 +3507,7 @@ let create_model_from_signature
           {
             callee = { Node.location; value = Name (Name.Identifier "CapturedVariables") };
             arguments = Option.value ~default:[] arguments;
+            origin = None;
           }
         |> Node.create ~location
       in
@@ -4039,6 +4083,7 @@ let rec parse_statement
              {
                Call.callee = { Node.value = Expression.Name (Name.Identifier "ModelQuery"); _ };
                arguments;
+               origin = _;
              };
          _;
        };

@@ -246,6 +246,7 @@ module State (Context : Context) = struct
               };
               { Call.Argument.value; _ };
             ];
+          origin = _;
         }
     | Call
         {
@@ -264,6 +265,7 @@ module State (Context : Context) = struct
               };
               { Call.Argument.value; _ };
             ];
+          origin = _;
         } ->
         (* Adds special casing for `<anything>.__setattr__(...)` and `setattr(...)` to error if the
            first argument (the object) has a reachable global or a mutation occurs in the third
@@ -290,7 +292,7 @@ module State (Context : Context) = struct
         let { errors = base_errors; reachable_globals } = forward_expression base in
         let { errors = index_errors; _ } = forward_expression index in
         { errors = base_errors @ index_errors; reachable_globals }
-    | Call { callee; arguments } ->
+    | Call { callee; arguments; origin = _ } ->
         let { errors; _ } = forward_expression callee in
         let reachable_globals =
           let resolved_expression_type = expression_type () in
@@ -465,6 +467,7 @@ module State (Context : Context) = struct
            arity should be 2 instead of 1 (we don't have an actual expression for the second
            argument, which is coming from the RHS of assignment). But globalLeakCheck doesn't care
            about arity so this works. *)
+        let origin = Some { Node.location; value = Origin.SubscriptSetItem } in
         let synthetic_setitem_expression =
           {
             expression with
@@ -473,17 +476,11 @@ module State (Context : Context) = struct
                 {
                   callee =
                     {
-                      Node.value =
-                        Name
-                          (Name.Attribute
-                             {
-                               base;
-                               attribute = "__setitem__";
-                               origin = Some { Node.location; value = Origin.SubscriptSetItem };
-                             });
+                      Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; origin });
                       location = Node.location base;
                     };
                   arguments = [{ Call.Argument.value = index; name = None }];
+                  origin;
                 };
           }
         in

@@ -119,6 +119,7 @@ let test_expression_return_raise =
                         {
                           Call.callee = !"foo";
                           arguments = [{ Call.Argument.name = None; value = !"x" }];
+                          origin = None;
                         });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -1410,6 +1411,7 @@ let test_define =
                                        { Call.Argument.name = Some ~+"a"; value = !"b" };
                                        { Call.Argument.name = Some ~+"c"; value = !"d" };
                                      ];
+                                   origin = None;
                                  };
                             ];
                           return_annotation = None;
@@ -2773,11 +2775,13 @@ let test_assign =
                                      (Name.Attribute
                                         {
                                           Name.Attribute.base =
-                                            +Expression.Call { Call.callee = !"a"; arguments = [] };
+                                            +Expression.Call
+                                               { Call.callee = !"a"; arguments = []; origin = None };
                                           attribute = "foo";
                                           origin = None;
                                         });
                                 arguments = [];
+                                origin = None;
                               });
                     };
                ];

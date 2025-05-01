@@ -361,7 +361,12 @@ let rec parse_request_exn query =
             Expression
               {
                 Node.value =
-                  Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier name); _ };
+                      arguments;
+                      origin = _;
+                    };
                 _;
               };
           _;

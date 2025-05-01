@@ -41,38 +41,35 @@ let resolve_stringify_call ~resolution expression =
 let redirect_special_calls
     ~resolution
     ~location:call_location
-    ({ Call.callee = { Node.location = callee_location; value }; arguments } as call)
+    ({ Call.callee = { Node.location = callee_location; value }; arguments; origin = _ } as call)
   =
   match value, arguments with
   (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
+      let origin = Some { Node.location = call_location; value = Origin.StrCall } in
       let callee =
         attribute_access
           ~location:callee_location
           ~base:value
           ~method_name:(resolve_stringify_call ~resolution value)
-          ~origin:(Some { Node.location = call_location; value = Origin.StrCall })
+          ~origin
       in
-      { Call.callee; arguments = [] }
+      { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
+      let origin = Some { Node.location = call_location; value = Origin.AbsCall } in
       {
         Call.callee =
-          attribute_access
-            ~location:callee_location
-            ~base:value
-            ~method_name:"__abs__"
-            ~origin:(Some { Node.location = call_location; value = Origin.AbsCall });
+          attribute_access ~location:callee_location ~base:value ~method_name:"__abs__" ~origin;
         arguments = [];
+        origin;
       }
   | Name (Name.Identifier "repr"), [{ Call.Argument.value; _ }] ->
+      let origin = Some { Node.location = call_location; value = Origin.ReprCall } in
       {
         Call.callee =
-          attribute_access
-            ~location:callee_location
-            ~base:value
-            ~method_name:"__repr__"
-            ~origin:(Some { Node.location = call_location; value = Origin.ReprCall });
+          attribute_access ~location:callee_location ~base:value ~method_name:"__repr__" ~origin;
         arguments = [];
+        origin;
       }
   | _ -> call

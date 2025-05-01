@@ -233,6 +233,7 @@ let test_pp _ =
                   });
           arguments =
             [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
+          origin = None;
         })
     "a.__getitem__(1)";
   assert_pp_equal
@@ -651,6 +652,7 @@ let test_default_folder context =
               { Call.Argument.name = None; value = integer 2 };
               { Call.Argument.name = None; value = integer 3 };
             ];
+          origin = None;
         })
     ~expected:6;
   assert_count
@@ -799,6 +801,7 @@ let test_default_mapper context =
               { Call.Argument.name = None; value = integer 2 };
               { Call.Argument.name = None; value = integer 3 };
             ];
+          origin = None;
         })
     ~expected:
       (+Expression.Call
@@ -809,6 +812,7 @@ let test_default_mapper context =
                 { Call.Argument.name = None; value = integer 3 };
                 { Call.Argument.name = None; value = integer 4 };
               ];
+            origin = None;
           });
   assert_transformed
     (+Expression.ComparisonOperator

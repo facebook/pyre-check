@@ -3126,6 +3126,7 @@ let test_lookup_expression context =
                        |> Node.create_with_default_location;
                    };
                  ];
+               origin = None;
              }
           |> Node.create_with_default_location),
         NoneType );
@@ -3419,6 +3420,7 @@ let test_coverage_gaps_in_module context =
                             ~location:
                               { start = { line = 6; column = 4 }; stop = { line = 6; column = 5 } };
                      arguments = [];
+                     origin = None;
                    }
                 |> Node.create
                      ~location:{ start = { line = 6; column = 4 }; stop = { line = 6; column = 7 } }

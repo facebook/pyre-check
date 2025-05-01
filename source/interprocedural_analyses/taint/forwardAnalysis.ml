@@ -910,7 +910,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         new_return_taint, state
       else
         let call_expression =
-          Expression.Call { Call.callee; arguments } |> Node.create ~location:call_location
+          Expression.Call
+            {
+              Call.callee;
+              arguments;
+              origin = Some { Node.location = call_location; value = Origin.ImplicitInitCall };
+            }
+          |> Node.create ~location:call_location
         in
         List.map init_targets ~f:(fun target ->
             apply_call_target
@@ -1576,15 +1582,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~is_result_used
       ~callee
       ~arguments
+      ~origin
     =
-    let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
+    let callees = get_call_callees ~location ~call:{ Call.callee; arguments; origin } in
 
     let add_type_breadcrumbs taint =
       let type_breadcrumbs = CallModel.type_breadcrumbs_of_calls callees.call_targets in
       taint |> ForwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     in
 
-    match { Call.callee; arguments } with
+    match { Call.callee; arguments; origin } with
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
      arguments =
@@ -1594,6 +1601,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            name = None;
          };
        ];
+     origin = _;
     } ->
         let _, state =
           analyze_expression
@@ -1644,6 +1652,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
      arguments = [];
+     origin = _;
     } ->
         analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
         |>> add_type_breadcrumbs
@@ -1651,6 +1660,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      callee =
        { Node.value = Name (Name.Attribute { base; attribute = "__iter__"; origin = Some _ }); _ };
      arguments = [];
+     origin = _;
     } ->
         let taint, state =
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
@@ -1670,6 +1680,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments =
        [{ Call.Argument.value = index; name = None }; { Call.Argument.value; name = None }] as
        arguments;
+     origin = _;
     } ->
         let is_dict_setitem = CallGraph.CallCallees.is_mapping_method callees in
         let is_sequence_setitem = CallGraph.CallCallees.is_sequence_method callees in
@@ -1764,6 +1775,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
          { Call.Argument.value = assigned_value; name = None };
        ];
+     origin = _;
     } ->
         let taint, state =
           analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:assigned_value
@@ -1801,6 +1813,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
          { Call.Argument.value = default; name = _ };
        ];
+     origin = _;
     } ->
         let attribute_expression =
           Expression.Name
@@ -1825,7 +1838,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ForwardState.Tree.join attribute_taint default_taint, state
     (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to
        a[*]'s taint, second index with b[*]'s taint, etc. *)
-    | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
+    | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists; origin = _ }
+      ->
         let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
           let index_name = Abstract.TreeDomain.Label.Index (string_of_int index) in
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:value
@@ -1845,6 +1859,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments;
+     origin = _;
     }
       when String.equal "asyncio" (Name.last name) ->
         analyze_expression
@@ -1863,6 +1878,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ };
      arguments = [];
+     origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
         analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
@@ -1871,6 +1887,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
      arguments = [];
+     origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
         analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
@@ -1891,6 +1908,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        };
      arguments =
        [{ Call.Argument.value = { Node.value = Expression.Dictionary entries; _ }; name = None }];
+     origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees
            && Option.is_some (Dictionary.string_literal_keys entries) ->
@@ -1949,6 +1967,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            name = None;
          };
        ];
+     origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
         let taint =
@@ -1972,6 +1991,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ };
      arguments = [];
+     origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
         let taint, state =
@@ -1998,6 +2018,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          name = None;
        }
        :: (([] | [_]) as optional_arguments);
+     origin = _;
     }
       when CallGraph.CallCallees.is_mapping_method callees ->
         let index = Abstract.TreeDomain.Label.Index index in
@@ -2028,7 +2049,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let taint = add_type_breadcrumbs taint in
         taint, state
     (* `locals()` is a dictionary from all local names -> values. *)
-    | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
+    | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = []; origin = _ }
+      ->
         let add_root_taint locals_taint root =
           let path_of_root =
             match root with
@@ -2070,6 +2092,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments;
+     origin = _;
     } ->
         let nested_expressions = List.map ~f:(fun call_argument -> call_argument.value) arguments in
         let call_target =
@@ -2097,6 +2120,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments;
+     origin = _;
     }
       when CallGraph.CallCallees.is_string_method callees ->
         let breadcrumbs =
@@ -2129,7 +2153,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             call_target;
             location;
           }
-    | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
+    | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments; origin = _ }
+      -> (
         match arguments with
         | [_; Call.Argument.{ value = object_; _ }] ->
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:object_
@@ -2141,6 +2166,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
      arguments = [{ Call.Argument.value = expression; _ }];
+     origin = _;
     } ->
         let taint, _ =
           analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
@@ -2158,6 +2184,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | {
      callee = { Node.value = Expression.Name (Name.Identifier "reveal_type"); _ };
      arguments = [{ Call.Argument.value = expression; _ }];
+     origin = _;
     } ->
         let location =
           Node.location callee |> Location.with_module ~module_reference:FunctionContext.qualifier
@@ -2627,8 +2654,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 |> ForwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ())
               in
               taint, state)
-      | Call { callee; arguments } ->
-          analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments
+      | Call { callee; arguments; origin } ->
+          analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments ~origin
       | Constant (Constant.String { StringLiteral.value; _ }) ->
           let call_target =
             CallGraph.CallTarget.create Interprocedural.Target.ArtificialTargets.str_literal
@@ -2851,6 +2878,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments = [{ Call.Argument.value = argument_value; _ }];
+          origin = _;
         } ->
         let index = AccessPath.get_index argument_value in
         analyze_assignment

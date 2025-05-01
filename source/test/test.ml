@@ -75,8 +75,8 @@ let rec coerce_special_methods { Node.location; value } =
                  origin = Some { Node.location; value = Origin.ForTestPurpose };
                });
       }
-  | Call { callee; arguments } ->
-      { Node.location; value = Call { callee = coerce_special_methods callee; arguments } }
+  | Call { callee; arguments; origin } ->
+      { Node.location; value = Call { callee = coerce_special_methods callee; arguments; origin } }
   | _ -> { Node.location; value }
 
 

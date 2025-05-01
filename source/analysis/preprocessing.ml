@@ -145,12 +145,13 @@ let transform_string_annotation_expression_after_qualification ~relative =
               (* Don't transform arguments in Literals. *)
               value
           | _ -> Expression.Subscript { base; index = transform_expression index })
-      | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
+      | Expression.Call { callee; arguments = variable_name :: remaining_arguments; origin }
         when is_type_variable_definition callee ->
           Expression.Call
             {
               callee;
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
+              origin;
             }
       | List elements -> List (List.map elements ~f:transform_expression)
       | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
@@ -218,12 +219,14 @@ let transform_string_annotation_expression_before_qualification ~qualifier ~scop
           {
             callee = { Node.value = Expression.Name name; _ } as callee;
             arguments = variable_name :: remaining_arguments;
+            origin;
           }
         when is_type_variable_definition name ->
           Expression.Call
             {
               callee;
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
+              origin;
             }
       | List elements -> List (List.map elements ~f:transform_expression)
       | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
@@ -363,9 +366,10 @@ let transform_annotations
       in
       let value =
         match Node.value expression with
-        | Expression.Call { callee = { Node.value = Expression.Name name; _ } as callee; arguments }
+        | Expression.Call
+            { callee = { Node.value = Expression.Name name; _ } as callee; arguments; origin }
           when is_cast name ->
-            Expression.Call { callee; arguments = transform_arguments arguments }
+            Expression.Call { callee; arguments = transform_arguments arguments; origin }
         | value -> value
       in
       { expression with Node.value }
@@ -596,7 +600,7 @@ module Qualify = struct
             qualify_expression ~qualify_strings ~scope index
           in
           Subscript { Subscript.base = qualified_base; index = qualified_index }
-      | Call { callee; arguments } ->
+      | Call { callee; arguments; origin } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let arguments =
             match arguments with
@@ -622,7 +626,7 @@ module Qualify = struct
             | arguments ->
                 List.map ~f:(qualify_argument ~qualify_strings:DoNotQualify ~scope) arguments
           in
-          Expression.Call { callee; arguments }
+          Expression.Call { callee; arguments; origin }
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           ComparisonOperator
             {
@@ -1846,7 +1850,8 @@ let replace_platform_specific_code ~sys_platform source =
                   | Some platform_string ->
                       if String.equal sys_platform platform_string then orelse else body
                   | _ -> [statement])
-              | Call { callee; arguments = [{ Call.Argument.value = expression; _ }] } -> (
+              | Call { callee; arguments = [{ Call.Argument.value = expression; _ }]; origin = _ }
+                -> (
                   match get_platform_string "sys.platform.startswith" callee expression with
                   | Some platform_string ->
                       if String.is_prefix ~prefix:platform_string sys_platform then
@@ -1860,7 +1865,12 @@ let replace_platform_specific_code ~sys_platform source =
                     operand =
                       {
                         Node.value =
-                          Call { callee; arguments = [{ Call.Argument.value = expression; _ }] };
+                          Call
+                            {
+                              callee;
+                              arguments = [{ Call.Argument.value = expression; _ }];
+                              origin = _;
+                            };
                         _;
                       };
                   } -> (
@@ -2201,6 +2211,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                               _;
                             };
                           ];
+                        origin = _;
                       };
                   _;
                 };
@@ -2258,6 +2269,7 @@ let replace_lazy_import ?(is_lazy_import = default_is_lazy_import) source =
                               _;
                             };
                           ];
+                        origin = _;
                       };
                   _;
                 };
@@ -2437,6 +2449,7 @@ let expand_typed_dictionary_declarations
                                _;
                              }
                           :: argument_tail;
+                        origin = _;
                       };
                   _;
                 };
@@ -2547,7 +2560,8 @@ let expand_named_tuples
       match expression with
       | {
        Node.location;
-       value = Expression.Call { callee = { Node.value = Name callee_name; _ }; arguments };
+       value =
+         Expression.Call { callee = { Node.value = Name callee_name; _ }; arguments; origin = _ };
       }
         when is_named_tuple callee_name ->
           let should_rename_invalid_attributes =
@@ -3044,6 +3058,7 @@ let expand_new_types ({ Source.statements; module_path = { ModulePath.qualifier;
                             };
                             base_argument;
                           ];
+                        origin = _;
                       };
                   _;
                 };
@@ -3176,7 +3191,7 @@ module AccessCollector = struct
     | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index
-    | Call { Call.callee; arguments } ->
+    | Call { Call.callee; arguments; origin = _ } ->
         let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
             from_expression collected value)
@@ -3903,16 +3918,16 @@ let replace_union_shorthand source =
       in
       let value =
         match Node.value expression with
-        | Expression.Call { callee; arguments = value_argument :: type_argument :: rest }
+        | Expression.Call { callee; arguments = value_argument :: type_argument :: rest; origin }
         (* Note: Union shorthand expansion happens before qualification *)
           when name_is ~name:"assert_type" callee ->
             let arguments = value_argument :: transform_argument type_argument :: rest in
-            Expression.Call { callee; arguments }
-        | Expression.Call { callee; arguments }
+            Expression.Call { callee; arguments; origin }
+        | Expression.Call { callee; arguments; origin }
           when name_is ~name:"isinstance" callee || name_is ~name:"issubclass" callee ->
             let arguments = List.map ~f:transform_argument arguments in
-            Expression.Call { callee; arguments }
-        | Expression.Call { callee; arguments } when name_is ~name:"TypeVar" callee ->
+            Expression.Call { callee; arguments; origin }
+        | Expression.Call { callee; arguments; origin } when name_is ~name:"TypeVar" callee ->
             let arguments =
               List.map
                 ~f:(fun argument ->
@@ -3921,7 +3936,7 @@ let replace_union_shorthand source =
                   | _ -> argument)
                 arguments
             in
-            Expression.Call { callee; arguments }
+            Expression.Call { callee; arguments; origin }
         | value -> value
       in
       { expression with Node.value }
@@ -4137,6 +4152,7 @@ let expand_import_python_calls ({ Source.module_path = { ModulePath.qualifier; _
                           _;
                         };
                       ];
+                    origin = _;
                   };
               location;
             } ->
@@ -4175,6 +4191,7 @@ let expand_import_python_calls ({ Source.module_path = { ModulePath.qualifier; _
                         _;
                       }
                       :: imports;
+                    origin = _;
                   };
               _;
             } ->
@@ -4245,6 +4262,7 @@ let expand_pytorch_register_buffer
                     }
                     :: { value = initial_value; _ }
                     :: ([] | [{ name = Some { Node.value = "persistent"; _ }; _ }]);
+                  origin;
                 };
             location;
           }
@@ -4274,7 +4292,7 @@ let expand_pytorch_register_buffer
                               base =
                                 Node.create ~location (Expression.Name (Name.Identifier "self"));
                               attribute = attribute_name;
-                              origin = None;
+                              origin;
                             }));
                   annotation;
                   value = Some initial_value;
@@ -4369,7 +4387,7 @@ let add_dataclass_keyword_only_specifiers
           | {
            value =
              Expression.Call
-               { callee = { value = Expression.Name callee_name; _ } as callee; arguments };
+               { callee = { value = Expression.Name callee_name; _ } as callee; arguments; origin };
            _;
           }
             when is_dataclass_field callee_name ->
@@ -4379,7 +4397,7 @@ let add_dataclass_keyword_only_specifiers
                 else
                   keyword_only_argument :: arguments
               in
-              let expression = Expression.Call { callee; arguments } in
+              let expression = Expression.Call { callee; arguments; origin } in
               { expression_node with value = expression }
           | { value; _ } ->
               let arguments =
@@ -4391,6 +4409,7 @@ let add_dataclass_keyword_only_specifiers
                   };
                 ]
               in
+              let origin = Some { Node.location; value = Origin.DataclassImplicitField } in
               let callee =
                 Expression.Name
                   (Name.Attribute
@@ -4399,11 +4418,11 @@ let add_dataclass_keyword_only_specifiers
                          Expression.Name (Name.Identifier "dataclasses")
                          |> Node.create_with_default_location;
                        attribute = "field";
-                       origin = Some { Node.location; value = Origin.DataclassField };
+                       origin;
                      })
                 |> Node.create_with_default_location
               in
-              { expression_node with value = Expression.Call { callee; arguments } }
+              { expression_node with value = Expression.Call { callee; arguments; origin } }
         in
         {
           statement_node with
@@ -4704,8 +4723,9 @@ module SelfType = struct
                               nesting_context);
                      };
                    ];
+                 origin = Some { Node.location; value = Origin.SelfImplicitTypeVar };
                }
-            |> Node.create_with_default_location);
+            |> Node.create ~location);
         annotation = None;
       }
     |> Node.create_with_default_location
@@ -4769,7 +4789,7 @@ let expand_enum_functional_syntax
                 Expression.Constant
                   (Constant.String
                     { StringLiteral.value = attribute_name; kind = StringLiteral.String });
-              _;
+              location;
             } ->
               let target =
                 Expression.Name (Name.Identifier attribute_name) |> Node.create ~location
@@ -4779,6 +4799,9 @@ let expand_enum_functional_syntax
                   {
                     callee = Reference.create "enum.auto" |> from_reference ~location;
                     arguments = [];
+                    origin =
+                      Some
+                        { Node.location; value = Origin.FunctionalEnumImplicitAuto attribute_name };
                   }
                 |> Node.create ~location
               in
@@ -4837,6 +4860,7 @@ let expand_enum_functional_syntax
                             _;
                           };
                         ];
+                      origin = _;
                     };
                 _;
               };

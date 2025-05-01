@@ -139,11 +139,12 @@ module Make (Transformer : Transformer) = struct
                 operator;
                 right = transform_expression right;
               }
-        | Call { Call.callee; arguments } ->
+        | Call { Call.callee; arguments; origin } ->
             Call
               {
                 Call.callee = transform_expression callee;
                 arguments = transform_arguments arguments;
+                origin;
               }
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator

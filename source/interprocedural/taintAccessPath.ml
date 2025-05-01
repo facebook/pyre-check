@@ -443,6 +443,7 @@ let of_expression ~self_variable expression =
             {
               Call.callee = { Node.value = Name (Name.Identifier "super"); _ };
               arguments = [_; { Call.Argument.name = None; value = argument }];
+              origin = _;
             };
         _;
       } ->
@@ -450,7 +451,12 @@ let of_expression ~self_variable expression =
         of_expression path argument
     | {
         Node.value =
-          Call { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments = [] };
+          Call
+            {
+              Call.callee = { Node.value = Name (Name.Identifier "super"); _ };
+              arguments = [];
+              origin = _;
+            };
         _;
       } ->
         self_variable >>| fun self_variable -> { root = self_variable; path }

@@ -621,7 +621,16 @@ let apply_dataclass_transforms_to_table
             | "factory" ->
                 let { Node.location; _ } = value in
                 Some
-                  { Node.value = Expression.Call { Call.callee = value; arguments = [] }; location }
+                  {
+                    Node.value =
+                      Expression.Call
+                        {
+                          Call.callee = value;
+                          arguments = [];
+                          origin = Some { Node.location; value = Origin.DataclassImplicitDefault };
+                        };
+                    location;
+                  }
             | _ -> None
           in
           match initialized with

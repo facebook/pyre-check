@@ -3110,7 +3110,7 @@ module Variable = struct
 
     let parse expression ~target =
       match expression with
-      | { Node.value = Expression.Call { callee; arguments = _arg :: arguments }; _ }
+      | { Node.value = Expression.Call { callee; arguments = _arg :: arguments; origin = _ }; _ }
         when name_is ~name:"typing.TypeVar" callee ->
           let constraints =
             let explicits =
@@ -3182,6 +3182,7 @@ module Variable = struct
              callee;
              arguments =
                [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+             origin = _;
            };
        _;
       }
@@ -3212,6 +3213,7 @@ module Variable = struct
                   };
                 arguments =
                   [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+                origin = _;
               };
           _;
         }
@@ -3237,6 +3239,7 @@ module Variable = struct
                   };
                 arguments =
                   [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+                origin = _;
               };
           _;
         } ->
@@ -3266,6 +3269,7 @@ module Variable = struct
                };
              arguments =
                [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
+             origin = _;
            };
        _;
       } ->
@@ -3827,7 +3831,11 @@ module ToExpression = struct
               name @ annotation @ default
             in
             Expression.Call
-              { callee = Node.create ~location (Expression.Name (Name.Identifier kind)); arguments }
+              {
+                callee = Node.create ~location (Expression.Name (Name.Identifier kind));
+                arguments;
+                origin = None;
+              }
             |> Node.create ~location
           in
           match parameter with
@@ -3847,6 +3855,7 @@ module ToExpression = struct
                     concatenation_to_expressions concatenation
                     |> List.map ~f:(fun annotation ->
                            { Call.Argument.name = None; value = annotation });
+                  origin = None;
                 }
               |> Node.create ~location
         in
@@ -4542,7 +4551,8 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
   in
   let extract_parameter index parameter =
     match Node.value parameter with
-    | Expression.Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments } -> (
+    | Expression.Call
+        { callee = { Node.value = Name (Name.Identifier name); _ }; arguments; origin = _ } -> (
         let arguments =
           List.map arguments ~f:(fun { Call.Argument.value; _ } -> Node.value value)
         in
@@ -4683,7 +4693,8 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
       let modifiers, implementation_signature, overload_signatures =
         let get_from_base base implementation_argument overloads_argument =
           match Node.value base with
-          | Expression.Call { callee; arguments } when name_is ~name:"typing.Callable" callee ->
+          | Expression.Call { callee; arguments; origin = _ }
+            when name_is ~name:"typing.Callable" callee ->
               Some arguments, implementation_argument, overloads_argument
           | Name
               (Name.Attribute

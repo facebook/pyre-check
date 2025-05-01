@@ -515,7 +515,7 @@ module State (Context : Context) = struct
     | _ -> state
 
 
-  and forward_call ~resolution ~state ~location ({ Call.callee; arguments } as call) =
+  and forward_call ~resolution ~state ~location ({ Call.callee; arguments; origin = _ } as call) =
     let forward_arguments
         { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee }
       =
@@ -693,6 +693,7 @@ module State (Context : Context) = struct
           callee = { Node.value = Name (Name.Attribute { attribute = "__setitem__"; base; _ }); _ };
           arguments =
             [{ Call.Argument.value = index; _ }; { Call.Argument.value = value_expression; _ }];
+          origin = _;
         } ->
         {
           state = forward_setitem ~resolution ~state ~base ~index ~value_expression;

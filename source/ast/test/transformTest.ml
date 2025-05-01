@@ -616,11 +616,13 @@ let test_transform_in_statement _ =
         {
           Call.callee = { Node.value = Name (Identifier given_callee_name); location };
           arguments = argument :: _;
+          origin;
         } ->
         Expression.Call
           {
             Call.callee = { Node.value = Name (Identifier given_callee_name); location };
             arguments = [argument];
+            origin;
           }
     | expression -> expression
   in
@@ -663,11 +665,13 @@ let test_transform_in_expression _ =
         {
           Call.callee = { Node.value = Name (Identifier given_callee_name); location };
           arguments = argument :: _;
+          origin;
         } ->
         Expression.Call
           {
             Call.callee = { Node.value = Name (Identifier given_callee_name); location };
             arguments = [argument];
+            origin;
           }
     | expression -> expression
   in
@@ -755,6 +759,7 @@ let test_sanitize_statement _ =
                         Call.callee = !"print";
                         arguments =
                           [{ Call.Argument.name = None; value = !"$local_test?foo?bar$my_kwargs" }];
+                        origin = None;
                       });
                +Statement.Return
                   {
@@ -765,6 +770,7 @@ let test_sanitize_statement _ =
                             {
                               Call.callee = !"$local_test?foo$baz";
                               arguments = [{ Call.Argument.name = None; value = !"$parameter$a" }];
+                              origin = None;
                             });
                   };
              ];
@@ -818,6 +824,7 @@ let test_sanitize_statement _ =
                       {
                         Call.callee = !"print";
                         arguments = [{ Call.Argument.name = None; value = !"my_kwargs" }];
+                        origin = None;
                       });
                +Statement.Return
                   {
@@ -828,6 +835,7 @@ let test_sanitize_statement _ =
                             {
                               Call.callee = !"baz";
                               arguments = [{ Call.Argument.name = None; value = !"a" }];
+                              origin = None;
                             });
                   };
              ];
@@ -873,6 +881,7 @@ let test_map_location _ =
                 location = parse_location "1:2-5:6";
               };
             arguments = [];
+            origin = None;
           };
       location = parse_location "1:2-7:8";
     }
@@ -887,6 +896,7 @@ let test_map_location _ =
                 location = parse_location "2:3-6:7";
               };
             arguments = [];
+            origin = None;
           };
       location = parse_location "2:3-8:9";
     };

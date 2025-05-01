@@ -395,6 +395,7 @@ let test_call_locations _ =
                              (Expression.Name (Name.Identifier "argument"));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -432,6 +433,7 @@ let test_call_locations _ =
                                 ]);
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -467,6 +469,7 @@ let test_call_locations _ =
                              (Expression.Name (Name.Identifier "arg2"));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -503,6 +506,7 @@ let test_call_locations _ =
                                       (Expression.Name (Name.Identifier "arg1"));
                                 };
                               ];
+                            origin = None;
                           });
                    arguments =
                      [
@@ -515,6 +519,7 @@ let test_call_locations _ =
                              (Expression.Name (Name.Identifier "arg2"));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -551,6 +556,7 @@ let test_call_locations _ =
                                       (Expression.Name (Name.Identifier "arg1"));
                                 };
                               ];
+                            origin = None;
                           });
                    arguments =
                      [
@@ -563,6 +569,7 @@ let test_call_locations _ =
                              (Expression.Name (Name.Identifier "arg2"));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -624,6 +631,7 @@ let test_call_locations _ =
                                       (Expression.Name (Name.Identifier "kwargs")))));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -659,6 +667,7 @@ let test_call_locations _ =
                              (Expression.Constant (Constant.Integer 2));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -694,6 +703,7 @@ let test_call_locations _ =
                              (Expression.Constant (Constant.Integer 2));
                        };
                      ];
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -2018,6 +2028,7 @@ let test_name_locations _ =
                                          (Expression.Name (Name.Identifier "arg"));
                                    };
                                  ];
+                               origin = None;
                              });
                       attribute = "b";
                       origin = None;

@@ -455,6 +455,7 @@ let test_call_locations =
                                         (Expression.Name (Name.Identifier "argument"));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -497,6 +498,7 @@ let test_call_locations =
                                            ]);
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -537,6 +539,7 @@ let test_call_locations =
                                         (Expression.Name (Name.Identifier "arg2"));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -575,6 +578,7 @@ let test_call_locations =
                                                  (Expression.Name (Name.Identifier "arg1"));
                                            };
                                          ];
+                                       origin = None;
                                      });
                               arguments =
                                 [
@@ -587,6 +591,7 @@ let test_call_locations =
                                         (Expression.Name (Name.Identifier "arg2"));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -625,6 +630,7 @@ let test_call_locations =
                                                  (Expression.Name (Name.Identifier "arg1"));
                                            };
                                          ];
+                                       origin = None;
                                      });
                               arguments =
                                 [
@@ -637,6 +643,7 @@ let test_call_locations =
                                         (Expression.Name (Name.Identifier "arg2"));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -703,6 +710,7 @@ let test_call_locations =
                                                  (Expression.Name (Name.Identifier "kwargs")))));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -744,6 +752,7 @@ let test_call_locations =
                                         (Expression.Constant (Constant.Integer 2));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -785,6 +794,7 @@ let test_call_locations =
                                         (Expression.Constant (Constant.Integer 2));
                                   };
                                 ];
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2340,6 +2350,7 @@ let test_name_locations =
                                                     (Expression.Name (Name.Identifier "arg"));
                                               };
                                             ];
+                                          origin = None;
                                         });
                                  attribute = "b";
                                  origin = None;

@@ -197,6 +197,10 @@ and Call : sig
   type t = {
     callee: Expression.t;
     arguments: Argument.t list;
+    (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
+       turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
+       reason for lowering it. *)
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -242,10 +246,12 @@ end = struct
   type t = {
     callee: Expression.t;
     arguments: Argument.t list;
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
+    (* We ignore locations, but also the origin. *)
     match Expression.location_insensitive_compare left.callee right.callee with
     | x when not (Int.equal x 0) -> x
     | _ -> List.compare Argument.location_insensitive_compare left.arguments right.arguments
@@ -357,6 +363,7 @@ end = struct
     dunder_method
     >>| fun dunder_method ->
     let arguments = [{ Call.Argument.name = None; value = right }] in
+    let origin = Some { Node.location; value = Origin.ComparisonOperator operator } in
     Expression.Call
       {
         Call.callee =
@@ -364,14 +371,10 @@ end = struct
             Node.location = callee_location;
             value =
               Expression.Name
-                (Name.Attribute
-                   {
-                     Name.Attribute.base = left;
-                     attribute = dunder_method;
-                     origin = Some { Node.location; value = Origin.ComparisonOperator operator };
-                   });
+                (Name.Attribute { Name.Attribute.base = left; attribute = dunder_method; origin });
           };
         arguments;
+        origin;
       }
     |> Node.create ~location
 
@@ -489,6 +492,7 @@ end = struct
 
   let lower_to_call ~location ~callee_location { left; operator; right } =
     let arguments = [{ Call.Argument.name = None; value = right }] in
+    let origin = Some { Node.location; value = Origin.BinaryOperator operator } in
     {
       Call.callee =
         {
@@ -496,13 +500,10 @@ end = struct
           value =
             Expression.Name
               (Name.Attribute
-                 {
-                   Name.Attribute.base = left;
-                   attribute = binary_operator_method operator;
-                   origin = Some { Node.location; value = Origin.BinaryOperator operator };
-                 });
+                 { Name.Attribute.base = left; attribute = binary_operator_method operator; origin });
         };
       arguments;
+      origin;
     }
 
 
@@ -863,6 +864,7 @@ end = struct
             { Call.Argument.value = default_none stop; name = None };
             { Call.Argument.value = default_none step; name = None };
           ];
+        origin = Some { Node.location; value = Origin.Slice };
       }
     |> Node.create ~location
 end
@@ -1007,6 +1009,7 @@ end = struct
     | Not -> None
     | Positive -> Some "__pos__")
     >>| fun name ->
+    let origin = Some { Node.location; value = Origin.UnaryOperator operator } in
     Expression.Call
       {
         Call.callee =
@@ -1014,14 +1017,10 @@ end = struct
             Node.location = callee_location;
             value =
               Expression.Name
-                (Name.Attribute
-                   {
-                     Name.Attribute.base = operand;
-                     attribute = name;
-                     origin = Some { Node.location; value = Origin.UnaryOperator operator };
-                   });
+                (Name.Attribute { Name.Attribute.base = operand; attribute = name; origin });
           };
         arguments = [];
+        origin;
       }
     |> Node.create ~location
 
@@ -1118,15 +1117,29 @@ and Origin : sig
     | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
     | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
     | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | Slice (* 1:2 is turned into slice(1,2,None) *)
+    | TryHandlerIsInstance (* try..except X as e is turned into assert(isinstance(X, e)) *)
     | NamedTupleConstructorAssignment of string
-    | DataclassField
-    | MatchClassAttribute of string
-    | MatchClassArgs
+    | DataclassImplicitField
+    | DataclassImplicitDefault
+    | MatchClassArgs of int
+    | MatchClassGetAttr of int
+    | MatchClassKeywordAttribute of string
+    | MatchClassIsInstance
+    | MatchMappingRest of string
+    | MatchMappingIsInstance
+    | MatchSequenceRest of string
+    | MatchSequenceIsInstance
     | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
     | ReprCall (* repr(x) is turned into x.__repr__() *)
     | AbsCall (* abs(x) is turned into x.__abs__() *)
     | IterCall (* iter(x) is turned into x.__iter__() *)
     | NextCall (* next(x) is turned into x.__next__() *)
+    | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
+    | SelfImplicitTypeVar
+    | FunctionalEnumImplicitAuto of string
+    | DecoratorInlining
+    | ForDecoratedTarget
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
@@ -1151,15 +1164,29 @@ end = struct
     | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
     | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
     | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | Slice (* 1:2 is turned into slice(1,2,None) *)
+    | TryHandlerIsInstance (* try..except X as e is turned into assert(isinstance(X, e)) *)
     | NamedTupleConstructorAssignment of string
-    | DataclassField
-    | MatchClassAttribute of string
-    | MatchClassArgs
+    | DataclassImplicitField
+    | DataclassImplicitDefault
+    | MatchClassArgs of int
+    | MatchClassGetAttr of int
+    | MatchClassKeywordAttribute of string
+    | MatchClassIsInstance
+    | MatchMappingRest of string
+    | MatchMappingIsInstance
+    | MatchSequenceRest of string
+    | MatchSequenceIsInstance
     | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
     | ReprCall (* repr(x) is turned into x.__repr__() *)
     | AbsCall (* abs(x) is turned into x.__abs__() *)
     | IterCall (* iter(x) is turned into x.__iter__() *)
     | NextCall (* next(x) is turned into x.__next__() *)
+    | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
+    | SelfImplicitTypeVar
+    | FunctionalEnumImplicitAuto of string
+    | DecoratorInlining
+    | ForDecoratedTarget
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
@@ -1524,7 +1551,7 @@ end = struct
             operator
             pp_expression_t
             right
-      | Call { Call.callee; arguments } ->
+      | Call { Call.callee; arguments; origin = _ } ->
           Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
       | FormatString substrings ->
           let pp_substring formatter = function
@@ -1835,8 +1862,12 @@ module Mapper = struct
       (Expression.BooleanOperator (default_map_boolean_operator ~mapper boolean_operator))
 
 
-  let default_map_call ~mapper { Call.callee; arguments } =
-    { Call.callee = map ~mapper callee; arguments = default_map_arguments ~mapper arguments }
+  let default_map_call ~mapper { Call.callee; arguments; origin } =
+    {
+      Call.callee = map ~mapper callee;
+      arguments = default_map_arguments ~mapper arguments;
+      origin;
+    }
 
 
   let default_map_call_node ~mapper ~location call =
@@ -2550,7 +2581,7 @@ module Folder = struct
     fold ~folder ~state right
 
 
-  let default_fold_call ~folder ~state { Call.callee; arguments } =
+  let default_fold_call ~folder ~state { Call.callee; arguments; origin = _ } =
     let state = fold ~folder ~state callee in
     default_fold_arguments ~folder ~state arguments
 
@@ -2952,7 +2983,7 @@ let rec sanitized ({ Node.value; location } as expression) =
              origin;
            })
       |> Node.create ~location
-  | Call { Call.callee; arguments } ->
+  | Call { Call.callee; arguments; origin } ->
       let sanitize_argument { Call.Argument.name; value } =
         let name =
           match name with
@@ -2962,7 +2993,12 @@ let rec sanitized ({ Node.value; location } as expression) =
         in
         { Call.Argument.name; value = sanitized value }
       in
-      Call { Call.callee = sanitized callee; arguments = List.map ~f:sanitize_argument arguments }
+      Call
+        {
+          Call.callee = sanitized callee;
+          arguments = List.map ~f:sanitize_argument arguments;
+          origin;
+        }
       |> Node.create ~location
   | _ -> expression
 
@@ -2979,12 +3015,16 @@ let rec delocalize ({ Node.value; location } as expression) =
             stop = Option.map ~f:delocalize stop;
             step = Option.map ~f:delocalize step;
           }
-    | Call { Call.callee; arguments } ->
+    | Call { Call.callee; arguments; origin } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
           { argument with Call.Argument.value = delocalize value }
         in
         Call
-          { Call.callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+          {
+            Call.callee = delocalize callee;
+            arguments = List.map ~f:delocalize_argument arguments;
+            origin;
+          }
     | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_$" ->
         let sanitized = Identifier.sanitized identifier in
         Name (Name.Identifier sanitized)
@@ -3094,7 +3134,11 @@ let exists_in_list ?(match_prefix = false) ~expression_list target_string =
 
 
 let arguments_location
-    { Call.callee = { Node.location = { Location.stop = callee_end; _ }; _ }; arguments }
+    {
+      Call.callee = { Node.location = { Location.stop = callee_end; _ }; _ };
+      arguments;
+      origin = _;
+    }
   =
   match List.rev arguments with
   | [] ->

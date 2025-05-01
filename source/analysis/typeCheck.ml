@@ -2220,8 +2220,12 @@ module State (Context : Context) = struct
                   in
                   forward_right (Some not_none_left)
               | _, _ -> forward_right (Some resolved_left)))
-      | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments }
-        -> (
+      | Call
+          {
+            callee = { Node.value = Name (Name.Identifier "super"); _ } as callee;
+            arguments;
+            origin = _;
+          } -> (
           let superclass { ClassSuccessorMetadataEnvironment.successors; _ } =
             match successors with
             | Some successors ->
@@ -2258,6 +2262,7 @@ module State (Context : Context) = struct
           {
             callee = { Node.value = Name (Name.Identifier "type"); _ };
             arguments = [{ Call.Argument.value; _ }];
+            origin = _;
           } ->
           (* Resolve `type()` calls. *)
           let resolved = resolve_expression_type ~resolution value |> Type.class_type in
@@ -2301,6 +2306,7 @@ module State (Context : Context) = struct
                         } );
               };
             arguments = [{ Call.Argument.value; _ }];
+            origin = _;
           } ->
           (* Special case reveal_type(). *)
           let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
@@ -2339,6 +2345,7 @@ module State (Context : Context) = struct
               };
             arguments =
               [{ Call.Argument.value; _ }; { Call.Argument.value = expected_annotation; _ }];
+            origin = _;
           } ->
           let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
             forward_expression ~resolution value
@@ -2382,6 +2389,7 @@ module State (Context : Context) = struct
                         } );
               };
             arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
+            origin = _;
           } ->
           let resolution, cast_annotation_type, value_type, errors =
             resolve_cast ~resolution ~cast_annotation value
@@ -2431,6 +2439,7 @@ module State (Context : Context) = struct
                         } );
               };
             arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
+            origin = _;
           } ->
           let resolution, cast_annotation_type, value_type, errors =
             resolve_cast ~resolution ~cast_annotation value
@@ -2480,6 +2489,7 @@ module State (Context : Context) = struct
             callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
             arguments =
               [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
+            origin = _;
           } ->
           let { Resolved.resolved; _ } = forward_expression ~resolution callee in
           let callables =
@@ -2599,6 +2609,7 @@ module State (Context : Context) = struct
             arguments =
               ( [{ Call.Argument.value = expression; _ }]
               | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
+            origin = _;
           } ->
           let resolution, resolved_callee, errors, resolved_base =
             let resolution, assume_errors =
@@ -2640,6 +2651,7 @@ module State (Context : Context) = struct
             arguments =
               ( [{ Call.Argument.value = expression; _ }]
               | [{ Call.Argument.value = expression; _ }; _] ) as arguments;
+            origin = _;
           } ->
           let resolution, resolved_callee, errors, resolved_base =
             let resolution, assume_errors =
@@ -2679,6 +2691,7 @@ module State (Context : Context) = struct
               { Call.Argument.value = base; _ }
               :: { Call.Argument.value = attribute_expression; _ }
               :: (([] | [_]) as default_argument);
+            origin = _;
           } -> (
           let ({ Resolved.errors; resolution; _ } as base_resolved) =
             forward_expression ~resolution base
@@ -2714,7 +2727,7 @@ module State (Context : Context) = struct
                 resolved_annotation = None;
               })
       | Call call ->
-          let { Call.callee; arguments } =
+          let { Call.callee; arguments; origin = _ } =
             AnnotatedCall.redirect_special_calls ~resolution ~location call
           in
           let {
@@ -3017,6 +3030,7 @@ module State (Context : Context) = struct
                                           };
                                       };
                                     ];
+                                  origin = Some { Node.location; value = Origin.InGetItem };
                                 };
                           }
                         in
@@ -3039,6 +3053,7 @@ module State (Context : Context) = struct
                                            });
                                   };
                                 arguments = [{ Call.Argument.name = None; value = left }];
+                                origin = Some { Node.location; value = Origin.InGetItemEq };
                               };
                         }
                       in
@@ -3584,22 +3599,17 @@ module State (Context : Context) = struct
           (* The python runtime will treat `base[index]` (when not inside an assignment target) as
              `base.__getitem__(index)`. Besides the tuple special case above, we typecheck all other
              subscripts like this. *)
+          let origin = Some { Node.location; value = Origin.SubscriptGetItem } in
           let synthetic_getitem_call =
             Expression.Call
               {
                 callee =
                   {
-                    Node.value =
-                      Name
-                        (Name.Attribute
-                           {
-                             base;
-                             attribute = "__getitem__";
-                             origin = Some { Node.location; value = Origin.SubscriptGetItem };
-                           });
+                    Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; origin });
                     location = Node.location base;
                   };
                 arguments = [{ Call.Argument.value = index; name = None }];
+                origin;
               }
           in
           let ({ Resolved.errors; _ } as resolved) =
@@ -4131,6 +4141,7 @@ module State (Context : Context) = struct
                   {
                     callee = { Node.value = Name (Name.Identifier "type"); _ };
                     arguments = [{ Call.Argument.name = None; value = refinement_target }];
+                    origin = _;
                   };
               _;
             };
@@ -4146,6 +4157,7 @@ module State (Context : Context) = struct
                   {
                     callee = { Node.value = Name (Name.Identifier "type"); _ };
                     arguments = [{ Call.Argument.name = None; value = refinement_target }];
+                    origin = _;
                   };
               _;
             };
@@ -4160,6 +4172,7 @@ module State (Context : Context) = struct
               { Call.Argument.name = None; value = refinement_target };
               { Call.Argument.name = None; value = annotation_expression };
             ];
+          origin = _;
         } -> (
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4174,6 +4187,7 @@ module State (Context : Context) = struct
               { Call.Argument.name = None; value = refinement_target };
               { Call.Argument.name = None; value = annotation_expression };
             ];
+          origin = _;
         } -> (
         (* Handle issubclass(x, y) like isinstance(x, type[y]) - using a generic type in isinstance
            isn't legal at runtime, but Pyre can handle it statically to achieve the desired
@@ -4193,6 +4207,7 @@ module State (Context : Context) = struct
                   {
                     callee = { Node.value = Name (Name.Identifier "type"); _ };
                     arguments = [{ Call.Argument.name = None; value }];
+                    origin = _;
                   };
               _;
             };
@@ -4208,6 +4223,7 @@ module State (Context : Context) = struct
                   {
                     callee = { Node.value = Name (Name.Identifier "type"); _ };
                     arguments = [{ Call.Argument.name = None; value }];
+                    origin = _;
                   };
               _;
             };
@@ -4228,6 +4244,7 @@ module State (Context : Context) = struct
                         { Call.Argument.name = None; value };
                         { Call.Argument.name = None; value = annotation_expression };
                       ];
+                    origin = _;
                   };
               _;
             };
@@ -4239,6 +4256,7 @@ module State (Context : Context) = struct
         {
           callee = { Node.value = Name (Name.Identifier "callable"); _ };
           arguments = [{ Call.Argument.name = None; value = refinement_target }];
+          origin = _;
         } -> begin
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4276,6 +4294,7 @@ module State (Context : Context) = struct
                   {
                     callee = { Node.value = Name (Name.Identifier "callable"); _ };
                     arguments = [{ Call.Argument.name = None; value = refinement_target }];
+                    origin = _;
                   };
               _;
             };
@@ -4315,6 +4334,7 @@ module State (Context : Context) = struct
               _;
             };
           arguments = [{ value = refinement_target; _ }];
+          origin = _;
         } -> begin
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4357,6 +4377,7 @@ module State (Context : Context) = struct
                         _;
                       };
                     arguments = [{ value = refinement_target; _ }];
+                    origin = _;
                   };
               _;
             };
@@ -4556,6 +4577,7 @@ module State (Context : Context) = struct
         {
           callee = { Node.value = Name (Name.Identifier "all"); _ };
           arguments = [{ Call.Argument.name = None; value = refinement_target }];
+          origin = _;
         } -> begin
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4857,6 +4879,7 @@ module State (Context : Context) = struct
                               name = None;
                             };
                           ];
+                        origin = Some { Node.location; value = Origin.ForTypeChecking };
                       }))
             in
             match getitem_type with
@@ -6140,7 +6163,11 @@ module State (Context : Context) = struct
         in
         Value resolution, errors
     | Expression
-        { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
+        {
+          Node.value =
+            Call { callee; arguments = { Call.Argument.value = test; _ } :: _; origin = _ };
+          _;
+        }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
         forward_assert ~origin:None ~resolution test
     | Expression expression ->
@@ -7746,10 +7773,12 @@ module State (Context : Context) = struct
                                Expression.Name (create_name ~location parent)
                                |> Node.create ~location;
                              attribute = "__init_subclass__";
+                             (* should be Origin.ForTypeChecking, but that breaks some tests. *)
                              origin = None;
                            });
                   };
                 arguments = init_subclass_arguments;
+                origin = None;
               }
             |> Node.create ~location
           in

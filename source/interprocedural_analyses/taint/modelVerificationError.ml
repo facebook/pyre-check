@@ -349,7 +349,7 @@ let description error =
         callee
         Expression.pp
         (Node.create_with_default_location
-           (Expression.Expression.Call { Expression.Call.callee; arguments }))
+           (Expression.Expression.Call { Expression.Call.callee; arguments; origin = None }))
   | InvalidTaintAnnotation { taint_annotation; reason } ->
       Format.asprintf
         "`%s` is an invalid taint annotation: %s"

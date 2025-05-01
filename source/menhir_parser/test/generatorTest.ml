@@ -137,6 +137,7 @@ let test_lexer =
                           { Call.Argument.name = None; value = !"a" };
                           { Call.Argument.name = Some ~+"file"; value = !"b" };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -346,7 +347,7 @@ let test_await =
                       operator = BinaryOperator.Add;
                       left =
                         +Expression.Await
-                           (+Expression.Call { Call.callee = !"foo"; arguments = [] });
+                           (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
                       right = +Expression.Constant (Constant.Integer 1);
                     });
            ];
@@ -360,7 +361,7 @@ let test_await =
                       operator = BinaryOperator.Mult;
                       left =
                         +Expression.Await
-                           (+Expression.Call { Call.callee = !"foo"; arguments = [] });
+                           (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
                       right = +Expression.Constant (Constant.Integer 2);
                     });
            ];
@@ -453,6 +454,7 @@ let test_name =
                             value = +Expression.Constant (Constant.Integer 1);
                           };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3584,7 +3586,10 @@ let test_call =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "foo()"
-           [+Statement.Expression (+Expression.Call { Call.callee = !"foo"; arguments = [] })];
+           [
+             +Statement.Expression
+                (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "foo(a for a in [])"
@@ -3613,6 +3618,7 @@ let test_call =
                                  };
                           };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3643,6 +3649,7 @@ let test_call =
                                  };
                           };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3664,6 +3671,7 @@ let test_call =
                             value = +Expression.Constant (Constant.Integer 2);
                           };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3686,6 +3694,7 @@ let test_call =
                                  ];
                           };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3705,6 +3714,7 @@ let test_call =
                           };
                           { Call.Argument.name = None; value = +Expression.Tuple [!"a"; !"b"] };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3719,6 +3729,7 @@ let test_call =
                            (Name.Attribute
                               { Name.Attribute.base = !"a"; attribute = "foo"; origin = None });
                       arguments = [{ Call.Argument.name = None; value = !"x" }];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3744,6 +3755,7 @@ let test_call =
                             value = +Expression.Constant (Constant.Integer 2);
                           };
                         ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3773,6 +3785,7 @@ let test_call =
                             value = +Expression.Starred (Starred.Twice !"kwargs");
                           };
                         ];
+                      origin = None;
                     });
            ];
     ]
@@ -4632,11 +4645,13 @@ let test_assign =
                                  (Name.Attribute
                                     {
                                       Name.Attribute.base =
-                                        +Expression.Call { Call.callee = !"a"; arguments = [] };
+                                        +Expression.Call
+                                           { Call.callee = !"a"; arguments = []; origin = None };
                                       attribute = "foo";
                                       origin = None;
                                     });
                             arguments = [];
+                            origin = None;
                           });
                 };
            ];
@@ -4964,6 +4979,7 @@ let test_if =
                                     { Call.Argument.name = None; value = !"x" };
                                     { Call.Argument.name = None; value = !"int" };
                                   ];
+                                origin = None;
                               };
                          operator = BooleanOperator.And;
                          right =
@@ -4997,6 +5013,7 @@ let test_if =
                                      {
                                        Call.callee = !"foo";
                                        arguments = [{ Call.Argument.name = None; value = !"x" }];
+                                       origin = None;
                                      };
                                 operator = ComparisonOperator.GreaterThan;
                                 right = +Expression.Constant (Constant.Integer 0);

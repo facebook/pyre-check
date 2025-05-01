@@ -98,7 +98,7 @@ module Binding = struct
     | Expression.Subscript { Subscript.base; index } ->
         let sofar = of_expression sofar base in
         of_expression sofar index
-    | Expression.Call { Call.callee; arguments } ->
+    | Expression.Call { Call.callee; arguments; origin = _ } ->
         let sofar =
           List.fold arguments ~init:sofar ~f:(fun sofar { Call.Argument.value; _ } ->
               of_expression sofar value)

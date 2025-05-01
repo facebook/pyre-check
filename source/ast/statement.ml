@@ -110,6 +110,7 @@ module AugmentedAssign = struct
   let lower_to_call ~location ~callee_location { target; operator; value } =
     let open Expression in
     let arguments = [{ Call.Argument.name = None; value }] in
+    let origin = Some { Node.location; value = Origin.AugmentedAssign operator } in
     {
       Call.callee =
         {
@@ -117,13 +118,10 @@ module AugmentedAssign = struct
           value =
             Expression.Name
               (Name.Attribute
-                 {
-                   Name.Attribute.base = target;
-                   attribute = dunder_method_name operator;
-                   origin = Some { Node.location; value = Origin.AugmentedAssign operator };
-                 });
+                 { Name.Attribute.base = target; attribute = dunder_method_name operator; origin });
         };
       arguments;
+      origin;
     }
 
 
@@ -213,7 +211,7 @@ module Decorator = struct
     | Some arguments ->
         Node.create
           ~location
-          (Expression.Expression.Call { Expression.Call.callee = name; arguments })
+          (Expression.Expression.Call { Expression.Call.callee = name; arguments; origin = None })
     | None -> name
 
 
@@ -224,7 +222,7 @@ module Decorator = struct
         match name_to_reference name with
         | Some reference -> Some { name = Node.create ~location reference; arguments = None }
         | None -> None)
-    | Expression.Call { Call.callee = { Node.value; location }; arguments } -> (
+    | Expression.Call { Call.callee = { Node.value; location }; arguments; origin = _ } -> (
         match value with
         | Expression.Name name -> (
             match name_to_reference name with
@@ -1105,6 +1103,8 @@ end = struct
     let value =
       let value =
         let create_call base iterator next =
+          let iter_origin = Some { Node.location = iterator_location; value = Origin.ForIter } in
+          let next_origin = Some { Node.location = iterator_location; value = Origin.ForNext } in
           Expression.Call
             {
               Call.callee =
@@ -1129,23 +1129,19 @@ end = struct
                                                 {
                                                   Name.Attribute.base;
                                                   attribute = iterator;
-                                                  origin =
-                                                    Some
-                                                      {
-                                                        Node.location = iterator_location;
-                                                        value = Origin.ForIter;
-                                                      };
+                                                  origin = iter_origin;
                                                 });
                                        };
                                      arguments = [];
+                                     origin = iter_origin;
                                    };
                              };
                            attribute = next;
-                           origin =
-                             Some { Node.location = iterator_location; value = Origin.ForNext };
+                           origin = next_origin;
                          });
                 };
               arguments = [];
+              origin = next_origin;
             }
         in
         if async then
@@ -1459,6 +1455,7 @@ end = struct
                               { Call.Argument.name = None; value = target };
                               { Call.Argument.name = None; value = annotation };
                             ];
+                          origin = Some { Node.location; value = Origin.TryHandlerIsInstance };
                         };
                   };
                 message = None;
@@ -1570,6 +1567,7 @@ end = struct
       let open Expression in
       let enter_call =
         let create_call call_name =
+          let origin = Some { Node.location; value = Origin.With } in
           {
             Node.location;
             value =
@@ -1581,13 +1579,10 @@ end = struct
                       value =
                         Expression.Name
                           (Name.Attribute
-                             {
-                               Name.Attribute.base = expression;
-                               attribute = call_name;
-                               origin = Some { Node.location; value = Origin.With };
-                             });
+                             { Name.Attribute.base = expression; attribute = call_name; origin });
                     };
                   arguments = [];
+                  origin;
                 };
           }
         in
@@ -1732,6 +1727,8 @@ end = struct
       }
     =
     let open Expression in
+    let iter_origin = Some { Node.location; value = Origin.GeneratorIter } in
+    let next_origin = Some { Node.location; value = Origin.GeneratorNext } in
     let value =
       if async then
         let aiter =
@@ -1749,10 +1746,11 @@ end = struct
                              {
                                Name.Attribute.base = iterator;
                                attribute = "__aiter__";
-                               origin = Some { Node.location; value = Origin.GeneratorIter };
+                               origin = iter_origin;
                              });
                     };
                   arguments = [];
+                  origin = iter_origin;
                 };
           }
         in
@@ -1770,10 +1768,11 @@ end = struct
                            {
                              Name.Attribute.base = aiter;
                              attribute = "__anext__";
-                             origin = Some { Node.location; value = Origin.GeneratorNext };
+                             origin = next_origin;
                            });
                   };
                 arguments = [];
+                origin = next_origin;
               };
         }
         |> fun target -> Node.create ~location (Expression.Await target)
@@ -1793,10 +1792,11 @@ end = struct
                              {
                                Name.Attribute.base = iterator;
                                attribute = "__iter__";
-                               origin = Some { Node.location; value = Origin.GeneratorIter };
+                               origin = iter_origin;
                              });
                     };
                   arguments = [];
+                  origin = iter_origin;
                 };
           }
         in
@@ -1814,10 +1814,11 @@ end = struct
                            {
                              Name.Attribute.base = iter;
                              attribute = "__next__";
-                             origin = Some { Node.location; value = Origin.GeneratorNext };
+                             origin = next_origin;
                            });
                   };
                 arguments = [];
+                origin = next_origin;
               };
         }
     in
@@ -2152,7 +2153,7 @@ let is_generator statements =
     | Expression.BooleanOperator { BooleanOperator.left; right; _ }
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         is_expression_generator left || is_expression_generator right
-    | Expression.Call { Call.callee; arguments } ->
+    | Expression.Call { Call.callee; arguments; origin = _ } ->
         is_expression_generator callee
         || List.exists arguments ~f:(fun { Call.Argument.value; _ } ->
                is_expression_generator value)

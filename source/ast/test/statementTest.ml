@@ -444,6 +444,8 @@ let test_try_block_preamble _ =
                                 };
                             };
                           ];
+                        origin =
+                          Some { Node.location = ~@"4:7-4:14"; value = Origin.TryHandlerIsInstance };
                       };
                 };
               message = None;
@@ -542,6 +544,12 @@ let test_for_loop_preamble _ =
                                                           });
                                                  };
                                                arguments = [];
+                                               origin =
+                                                 Some
+                                                   {
+                                                     Node.location = ~@"1:9-1:10";
+                                                     value = Origin.ForIter;
+                                                   };
                                              };
                                        };
                                      attribute = "__next__";
@@ -550,6 +558,7 @@ let test_for_loop_preamble _ =
                                    });
                           };
                         arguments = [];
+                        origin = Some { Node.location = ~@"1:9-1:10"; value = Origin.ForNext };
                       };
                   location = ~@"1:4-1:10";
                 };
@@ -614,6 +623,12 @@ let test_for_loop_preamble _ =
                                                                 });
                                                        };
                                                      arguments = [];
+                                                     origin =
+                                                       Some
+                                                         {
+                                                           Node.location = ~@"3:2-3:4";
+                                                           value = Origin.ForIter;
+                                                         };
                                                    };
                                              };
                                            attribute = "__anext__";
@@ -626,6 +641,7 @@ let test_for_loop_preamble _ =
                                          });
                                 };
                               arguments = [];
+                              origin = Some { Node.location = ~@"3:2-3:4"; value = Origin.ForNext };
                             };
                         location = ~@"2:10-3:4";
                       };
@@ -949,14 +965,18 @@ let test_decorator_from_expression context =
   assert_decorator !"a" ~expected:(Some (decorator "a"));
   assert_decorator !"a.b" ~expected:(Some (decorator "a.b"));
   assert_decorator
-    (+Expression.Call { Call.callee = !"a"; arguments = [] })
+    (+Expression.Call { Call.callee = !"a"; arguments = []; origin = None })
     ~expected:(Some (decorator "a" ~arguments:[]));
   assert_decorator
-    (+Expression.Call { Call.callee = !"a.b"; arguments = [] })
+    (+Expression.Call { Call.callee = !"a.b"; arguments = []; origin = None })
     ~expected:(Some (decorator "a.b" ~arguments:[]));
   assert_decorator
     (+Expression.Call
-        { Call.callee = !"a"; arguments = [{ Call.Argument.name = None; value = !"b" }] })
+        {
+          Call.callee = !"a";
+          arguments = [{ Call.Argument.name = None; value = !"b" }];
+          origin = None;
+        })
     ~expected:(Some (decorator "a" ~arguments:[{ Call.Argument.name = None; value = !"b" }]));
 
   assert_decorator (+Expression.Tuple []) ~expected:None;
@@ -973,7 +993,7 @@ let test_decorator_from_expression context =
            { Name.Attribute.base = +Expression.List []; attribute = "b"; origin = None }))
     ~expected:None;
   assert_decorator
-    (+Expression.Call { Call.callee = +Expression.List [!"a"]; arguments = [] })
+    (+Expression.Call { Call.callee = +Expression.List [!"a"]; arguments = []; origin = None })
     ~expected:None;
   ()
 

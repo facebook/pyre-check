@@ -101,7 +101,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
           visit_expression left;
           visit_expression right
-      | Call { Call.callee; arguments } ->
+      | Call { Call.callee; arguments; origin = _ } ->
           visit_expression callee;
           let visit_argument { Call.Argument.value; name } =
             name

@@ -421,8 +421,9 @@ Higher order call graphs
         "string_format": {
           "stringify": [
             {
-              "target": "BaseException.__str__",
+              "target": "object.__str__",
               "index": 0,
+              "implicit_receiver": true,
               "return_type": []
             },
             {
@@ -474,11 +475,25 @@ Higher order call graphs
             {
               "target": "string_conversion.B.__str__",
               "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            },
+            {
+              "target": "object.__str__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": []
+            },
+            {
+              "target": "object.__str__",
+              "index": 0,
+              "implicit_receiver": true,
               "return_type": []
             },
             {
               "target": "string_conversion.C.__str__",
               "index": 0,
+              "implicit_receiver": true,
               "return_type": []
             }
           ]

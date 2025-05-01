@@ -95,6 +95,7 @@ and Call : sig
   type t = {
     callee: Expression.t;
     arguments: Argument.t list;
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -406,15 +407,29 @@ and Origin : sig
     | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
     | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
     | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
+    | Slice (* 1:2 is turned into slice(1,2,None) *)
+    | TryHandlerIsInstance (* try..except X as e is turned into assert(isinstance(X, e)) *)
     | NamedTupleConstructorAssignment of string
-    | DataclassField
-    | MatchClassAttribute of string
-    | MatchClassArgs
+    | DataclassImplicitField
+    | DataclassImplicitDefault
+    | MatchClassArgs of int
+    | MatchClassGetAttr of int
+    | MatchClassKeywordAttribute of string
+    | MatchClassIsInstance
+    | MatchMappingRest of string
+    | MatchMappingIsInstance
+    | MatchSequenceRest of string
+    | MatchSequenceIsInstance
     | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
     | ReprCall (* repr(x) is turned into x.__repr__() *)
     | AbsCall (* abs(x) is turned into x.__abs__() *)
     | IterCall (* iter(x) is turned into x.__iter__() *)
     | NextCall (* next(x) is turned into x.__next__() *)
+    | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
+    | SelfImplicitTypeVar
+    | FunctionalEnumImplicitAuto of string
+    | DecoratorInlining
+    | ForDecoratedTarget
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)

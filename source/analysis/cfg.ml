@@ -30,7 +30,7 @@ module MatchTranslate = struct
 
   let create_name ~location name = Expression.Name name |> Node.create ~location
 
-  let create_attribute_name ~location ~base ~attribute ~origin =
+  let create_attribute_name ~location ~origin ~base ~attribute =
     create_name ~location (Name.Attribute { base; attribute; origin })
 
 
@@ -66,8 +66,8 @@ module MatchTranslate = struct
           ~key:(create_constant ~location (Constant.Integer index))
 
 
-  let create_call ~location ~callee ~arguments =
-    Expression.Call { callee; arguments } |> Node.create ~location
+  let create_call ~location ~origin ~callee ~arguments =
+    Expression.Call { callee; arguments; origin } |> Node.create ~location
 
 
   let create_slice ~location ~lower ~upper =
@@ -80,9 +80,10 @@ module MatchTranslate = struct
     |> Node.create ~location
 
 
-  let create_isinstance ~location object_expression type_expression =
+  let create_isinstance ~location ~origin object_expression type_expression =
     create_call
       ~location
+      ~origin
       ~callee:(create_identifier_name ~location "isinstance")
       ~arguments:
         [
@@ -91,9 +92,10 @@ module MatchTranslate = struct
         ]
 
 
-  let create_getattr ~location base attribute =
+  let create_getattr ~location ~origin base attribute =
     create_call
       ~location
+      ~origin
       ~callee:(create_identifier_name ~location "getattr")
       ~arguments:
         [
@@ -102,16 +104,18 @@ module MatchTranslate = struct
         ]
 
 
-  let create_list ~location expression =
+  let create_list ~location ~origin expression =
     create_call
       ~location
+      ~origin
       ~callee:(create_identifier_name ~location "list")
       ~arguments:[{ Call.Argument.value = expression; name = None }]
 
 
-  let create_dict ~location expression =
+  let create_dict ~location ~origin expression =
     create_call
       ~location
+      ~origin
       ~callee:(create_identifier_name ~location "dict")
       ~arguments:[{ Call.Argument.value = expression; name = None }]
 
@@ -119,17 +123,17 @@ module MatchTranslate = struct
   let create_typing_sequence ~location =
     create_attribute_name
       ~location
+      ~origin:None
       ~base:(create_identifier_name ~location "typing")
       ~attribute:"Sequence"
-      ~origin:None
 
 
   let create_typing_mapping ~location =
     create_attribute_name
       ~location
+      ~origin:None
       ~base:(create_identifier_name ~location "typing")
       ~attribute:"Mapping"
-      ~origin:None
 
 
   let is_special_builtin_for_class_pattern cls =
@@ -180,10 +184,16 @@ module MatchTranslate = struct
                      ~location
                      ~base:subject
                      ~attribute:"__match_args__"
-                     ~origin:(Some { Node.location; value = Origin.MatchClassArgs }))
+                     ~origin:(Some { Node.location; value = Origin.MatchClassArgs index }))
                 ~index
             in
-            pattern_to_condition ~subject:(create_getattr ~location subject attribute)
+            pattern_to_condition
+              ~subject:
+                (create_getattr
+                   ~location
+                   ~origin:(Some { Node.location; value = Origin.MatchClassGetAttr index })
+                   subject
+                   attribute)
         in
         let of_attribute_pattern attribute =
           pattern_to_condition
@@ -192,10 +202,12 @@ module MatchTranslate = struct
                  ~location
                  ~base:subject
                  ~attribute
-                 ~origin:(Some { Node.location; value = Origin.MatchClassAttribute attribute }))
+                 ~origin:
+                   (Some { Node.location; value = Origin.MatchClassKeywordAttribute attribute }))
         in
         create_isinstance
           ~location
+          ~origin:(Some { Node.location; value = Origin.MatchClassIsInstance })
           subject
           (create_name ~location:(Node.location class_name) (Node.value class_name))
         :: List.mapi ~f:of_positional_pattern patterns
@@ -210,10 +222,19 @@ module MatchTranslate = struct
           (* Translation is not semantic here: in the runtime, "keys" that are matched would be
              removed from rest. We can skip doing that, as none of the current analyses are affected
              by it. *)
-          let value = create_dict ~location subject in
+          let value =
+            create_dict
+              ~location
+              ~origin:(Some { Node.location; value = Origin.MatchMappingRest rest })
+              subject
+          in
           boolean_expression_capture ~location ~target ~value
         in
-        create_isinstance ~location subject (create_typing_mapping ~location)
+        create_isinstance
+          ~location
+          ~origin:(Some { Node.location; value = Origin.MatchMappingIsInstance })
+          subject
+          (create_typing_mapping ~location)
         :: List.map2_exn keys patterns ~f:of_key_pattern
         @ (Option.map rest ~f:of_rest |> Option.to_list)
         |> List.reduce_exn ~f:(fun left right -> create_boolean_and ~location ~left ~right)
@@ -243,7 +264,9 @@ module MatchTranslate = struct
               ~location
               ~container:subject
               ~key:(create_slice ~location ~lower ~upper)
-            |> create_list ~location
+            |> create_list
+                 ~origin:(Some { Node.location; value = Origin.MatchSequenceRest rest })
+                 ~location
           in
           boolean_expression_capture ~location ~target ~value
         in
@@ -255,7 +278,11 @@ module MatchTranslate = struct
             ~subject:
               (create_subscript_index ~location ~sequence:subject ~index:(index - suffix_length))
         in
-        create_isinstance ~location subject (create_typing_sequence ~location)
+        create_isinstance
+          ~origin:(Some { Node.location; value = Origin.MatchSequenceIsInstance })
+          ~location
+          subject
+          (create_typing_sequence ~location)
         :: List.mapi prefix ~f:of_prefix_pattern
         @ (Option.map rest ~f:of_rest |> Option.to_list)
         @ List.mapi suffix ~f:of_suffix_pattern

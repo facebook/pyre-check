@@ -418,7 +418,7 @@ let expression =
         arguments
       |> List.map ~f:fst
     in
-    Expression.Call { Call.callee = func; arguments } |> Node.create ~location
+    Expression.Call { Call.callee = func; arguments; origin = None } |> Node.create ~location
   in
   let formatted_value ~location ~value ~conversion:_ ~format_spec =
     Expression.FormatString [Substring.Format { format_spec; value }] |> Node.create ~location

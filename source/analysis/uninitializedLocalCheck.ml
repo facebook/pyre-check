@@ -76,7 +76,7 @@ module AccessCollector = struct
     | Subscript { Subscript.base; index } ->
         let collected = from_expression collected base in
         from_expression collected index
-    | Call { Call.callee; arguments } ->
+    | Call { Call.callee; arguments; origin = _ } ->
         let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
             from_expression collected value)
