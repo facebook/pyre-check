@@ -1416,12 +1416,6 @@ Higher order call graphs
               "target": "higher_order_functions.C.method_to_sink",
               "index": 0,
               "return_type": []
-            },
-            {
-              "target": "higher_order_functions.C.method_to_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
             }
           ]
         }
@@ -1440,12 +1434,6 @@ Higher order call graphs
             {
               "target": "higher_order_functions.C.self_to_sink",
               "index": 0,
-              "return_type": []
-            },
-            {
-              "target": "higher_order_functions.C.self_to_sink",
-              "index": 0,
-              "implicit_receiver": true,
               "return_type": []
             }
           ]

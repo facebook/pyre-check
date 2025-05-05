@@ -4598,7 +4598,10 @@ module HigherOrderCallGraph = struct
           parameterized_targets: CallTarget.t list;
           (* The sublist of the input call target list that are of `kind=Decorated`. *)
           decorated_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are not transformed above. *)
+          (* The sublist of the input call target list that are not transformed above. We create
+             these regular targets when (1) no parameter targets exist or (2) we cannot find
+             function bodies of the callee, so that the taint analysis can still use
+             `higher_order_parameters`. *)
           non_parameterized_targets: CallTarget.t list;
           (* The sublist of the input call target list that are stubs. *)
           stub_targets: Target.t list;
@@ -4610,6 +4613,7 @@ module HigherOrderCallGraph = struct
           ~call
           ~arguments
           ~unresolved
+          ~override_implicit_receiver
           ~argument_callees
           ~track_apply_call_step_name
           callee_targets
@@ -4685,8 +4689,25 @@ module HigherOrderCallGraph = struct
           track_apply_call_step ComputeCalleeTargets (fun () ->
               resolve_decorated_targets callee_targets)
         in
+        let recompute_implicit_receiver ({ CallTarget.implicit_receiver; _ } as callee_target) =
+          if not override_implicit_receiver then
+            implicit_receiver
+          else
+            match unresolved with
+            | Unresolved.True _ ->
+                (* Since the original call graphs cannot find the callees, the callee must be
+                   discovered by higher order call graph building. Since it is unclear whether the
+                   callee is always a function or a method under any context, the arguments must be
+                   explicit, unless the callee is a bound method, which is not yet handled. *)
+                log
+                  "Setting `implicit_receiver` to false for callee target `%a`"
+                  CallTarget.pp
+                  callee_target;
+                false
+            | Unresolved.False -> implicit_receiver
+        in
         let create_call_target = function
-          | Some ({ CallTarget.implicit_receiver; _ } as callee_target) :: parameter_targets -> (
+          | Some callee_target :: parameter_targets ->
               let callee_regular, closure =
                 match CallTarget.target callee_target with
                 | Target.Regular regular -> regular, Target.ParameterMap.empty
@@ -4735,41 +4756,17 @@ module HigherOrderCallGraph = struct
                      closure
               in
               log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
-              let implicit_receiver =
-                match unresolved with
-                | Unresolved.True _ ->
-                    (* Since the original call graphs cannot find the callees, the callee must be
-                       discovered by higher order call graph building. Since it is unclear whether
-                       the callee is always a function or a method under any context, the arguments
-                       must be explicit, unless the callee is a bound method, which is not yet
-                       handled. *)
-                    log
-                      "Setting `implicit_receiver` to false for callee target `%a`"
-                      CallTarget.pp
-                      callee_target;
-                    false
-                | Unresolved.False -> implicit_receiver
-              in
-              let regular_call_target =
+              if Target.ParameterMap.is_empty parameters then
+                None
+              else
+                Target.Parameterized { regular = callee_regular; parameters }
+                |> validate_target
+                >>| fun target ->
                 {
                   callee_target with
-                  CallTarget.target = Target.Regular callee_regular;
-                  implicit_receiver;
+                  CallTarget.target;
+                  implicit_receiver = recompute_implicit_receiver callee_target;
                 }
-              in
-              if Target.ParameterMap.is_empty parameters then
-                (* Treat as regular target when (1) no parameter targets exist or (2) we cannot find
-                   function bodies, so that the taint analysis can still use
-                   `higher_order_parameters`. *)
-                Some regular_call_target
-              else
-                match
-                  validate_target (Target.Parameterized { regular = callee_regular; parameters })
-                with
-                | None ->
-                    (* To avoid false negatives, still create a regular target. *)
-                    Some regular_call_target
-                | Some target -> Some { callee_target with CallTarget.target; implicit_receiver })
           | _ -> None
         in
         (* Treat an empty list as a single element list so that in each result of the cartesian
@@ -4795,7 +4792,13 @@ module HigherOrderCallGraph = struct
         in
         let non_parameterized_targets =
           track_apply_call_step FindNonParameterizedTargets (fun () ->
-              non_parameterized_targets ~parameterized_targets call_targets_from_callee)
+              call_targets_from_callee
+              |> non_parameterized_targets ~parameterized_targets
+              |> List.map ~f:(fun call_target ->
+                     {
+                       call_target with
+                       CallTarget.implicit_receiver = recompute_implicit_receiver call_target;
+                     }))
         in
         List.iter parameterized_targets ~f:(fun { CallTarget.target; _ } ->
             log "Created parameterized target: `%a`" Target.pp_pretty target);
@@ -4890,23 +4893,50 @@ module HigherOrderCallGraph = struct
           track_apply_call_step AnalyzeArguments (fun () ->
               List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state)
         in
-        let {
-          AnalyzeCalleeResult.parameterized_targets = parameterized_call_targets;
-          decorated_targets = decorated_call_targets;
-          non_parameterized_targets = non_parameterized_call_targets;
-          stub_targets = stub_call_targets;
-        }
+        let ( parameterized_call_targets,
+              decorated_call_targets,
+              non_parameterized_call_targets,
+              stub_call_targets )
           =
-          callee_return_values
-          |> CallTarget.Set.elements
-          |> List.rev_append original_call_targets
-          |> analyze_callee_targets
-               ~location
-               ~call
-               ~arguments
-               ~unresolved
-               ~argument_callees
-               ~track_apply_call_step_name:"call_targets"
+          let {
+            AnalyzeCalleeResult.parameterized_targets = parameterized_callee_return_targets;
+            decorated_targets = decorated_callee_return_targets;
+            non_parameterized_targets = non_parameterized_callee_return_targets;
+            stub_targets = stub_callee_return_targets;
+          }
+            =
+            callee_return_values
+            |> CallTarget.Set.elements
+            |> analyze_callee_targets
+                 ~location
+                 ~call
+                 ~arguments
+                 ~unresolved
+                 ~override_implicit_receiver:true
+                 ~argument_callees
+                 ~track_apply_call_step_name:"callee_return_targets"
+          in
+          let {
+            AnalyzeCalleeResult.parameterized_targets = parameterized_call_targets;
+            decorated_targets = decorated_call_targets;
+            non_parameterized_targets = non_parameterized_call_targets;
+            stub_targets = stub_call_targets;
+          }
+            =
+            analyze_callee_targets
+              ~location
+              ~call
+              ~arguments
+              ~unresolved
+              ~override_implicit_receiver:false
+              ~argument_callees
+              ~track_apply_call_step_name:"call_targets"
+              original_call_targets
+          in
+          ( List.rev_append parameterized_callee_return_targets parameterized_call_targets,
+            List.rev_append decorated_callee_return_targets decorated_call_targets,
+            List.rev_append non_parameterized_callee_return_targets non_parameterized_call_targets,
+            List.rev_append stub_callee_return_targets stub_call_targets )
         in
         let {
           AnalyzeCalleeResult.parameterized_targets = parameterized_init_targets;
@@ -4920,19 +4950,10 @@ module HigherOrderCallGraph = struct
             ~call
             ~arguments
             ~unresolved
+            ~override_implicit_receiver:false
             ~argument_callees
             ~track_apply_call_step_name:"init_targets"
             original_init_targets
-        in
-        (* Unset `unresolved` when the original call graph building cannot resolve callees under
-           cases like `f()` or `f`. *)
-        let unresolved =
-          match unresolved with
-          | Unresolved.True (BypassingDecorators UnknownIdentifierCallee)
-          | Unresolved.True (BypassingDecorators UnknownCallCallee)
-            when not (List.is_empty parameterized_call_targets) ->
-              Unresolved.False
-          | _ -> unresolved
         in
         (* Discard higher order parameters only if each original target is parameterized. *)
         let higher_order_parameters =
@@ -4944,6 +4965,26 @@ module HigherOrderCallGraph = struct
           else
             higher_order_parameters
         in
+        let new_call_targets =
+          parameterized_call_targets
+          |> List.rev_append non_parameterized_call_targets
+          |> List.dedup_and_sort ~compare:CallTarget.compare
+        in
+        let new_init_targets =
+          parameterized_init_targets
+          |> List.rev_append non_parameterized_init_targets
+          |> List.dedup_and_sort ~compare:CallTarget.compare
+        in
+        (* Unset `unresolved` when the original call graph building cannot resolve callees under
+           cases like `f()` or `f`. *)
+        let new_unresolved =
+          match unresolved with
+          | Unresolved.True (BypassingDecorators UnknownIdentifierCallee)
+          | Unresolved.True (BypassingDecorators UnknownCallCallee)
+            when not (CallTarget.Set.is_bottom callee_return_values) ->
+              Unresolved.False
+          | _ -> unresolved
+        in
         track_apply_call_step StoreCallCallees (fun () ->
             Context.output_define_call_graph :=
               DefineCallGraph.set_call_callees
@@ -4952,25 +4993,19 @@ module HigherOrderCallGraph = struct
                 ~call_callees:
                   {
                     original_call_callees with
-                    call_targets =
-                      parameterized_call_targets
-                      |> List.rev_append non_parameterized_call_targets
-                      |> List.dedup_and_sort ~compare:CallTarget.compare;
+                    call_targets = new_call_targets;
                     decorated_targets =
-                      List.rev_append decorated_init_targets decorated_call_targets;
-                    init_targets =
-                      parameterized_init_targets
-                      |> List.rev_append non_parameterized_init_targets
+                      decorated_call_targets
+                      |> List.rev_append decorated_init_targets
                       |> List.dedup_and_sort ~compare:CallTarget.compare;
+                    init_targets = new_init_targets;
                     higher_order_parameters;
-                    unresolved;
+                    unresolved = new_unresolved;
                   }
                 !Context.output_define_call_graph);
         track_apply_call_step FetchReturnedCallables (fun () ->
             let returned_callables_from_call =
-              parameterized_call_targets
-              |> List.rev_append parameterized_init_targets
-              |> returned_callables
+              new_call_targets |> List.rev_append new_init_targets |> returned_callables
             in
             (* To avoid false negatives when analyzing targets with `kind=Decorated`, sometimes
              * we allow all function-typed arguments to be passed directly to the return values.
@@ -4982,12 +5017,24 @@ module HigherOrderCallGraph = struct
             let pass_through_arguments =
               let exist_stub_init_targets = not (List.is_empty stub_init_targets) in
               let exist_stub_call_targets = not (List.is_empty stub_call_targets) in
-              if
+              let should_pass_through =
                 is_decorated_target
                 && (exist_stub_init_targets
                    || Unresolved.is_unresolved unresolved
                    || exist_stub_call_targets)
-              then
+              in
+              if should_pass_through then
+                let () =
+                  log
+                    "Passing through arguments due to `is_decorated_target`: %b, \
+                     `exist_stub_init_targets`: %b, `exist_stub_call_targets`: %b, `unresolved`: \
+                     %a"
+                    is_decorated_target
+                    exist_stub_init_targets
+                    exist_stub_call_targets
+                    Unresolved.pp
+                    unresolved
+                in
                 Algorithms.fold_balanced
                   ~f:CallTarget.Set.join
                   ~init:CallTarget.Set.bottom

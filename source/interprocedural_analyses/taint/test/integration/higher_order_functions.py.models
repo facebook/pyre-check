@@ -747,69 +747,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "higher_order_functions.test_higher_order_method",
-    "callable_line": 37,
-    "code": 5002,
-    "line": 38,
-    "start": 29,
-    "end": 43,
-    "filename": "higher_order_functions.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 38, "start": 29, "end": 43 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 3,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 38, "start": 29, "end": 43 },
-              "resolves_to": [ "higher_order_functions.higher_order_method" ],
-              "port": "formal(arg, position=1)",
-              "call_site": "38:4-38:44"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "higher_order_functions.higher_order_method",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "higher_order_functions.test_higher_order_method:5002:0:Call|higher_order_functions.higher_order_method|0|formal(arg):bb12423a5f50e40b60294e8804787996"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -1700,36 +1637,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink]",
-    "filename": "higher_order_functions.py",
-    "callable_line": 17,
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 18, "start": 6, "end": 9 },
-              "resolves_to": [ "higher_order_functions.C.method_to_sink" ],
-              "port": "formal(arg, position=1)",
-              "call_site": "18:4-18:10"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.self_to_sink]",
     "filename": "higher_order_functions.py",
     "callable_line": 17,
@@ -1847,38 +1754,6 @@
               "resolves_to": [ "higher_order_functions.goes_to_sink" ],
               "port": "formal(arg, position=0)",
               "call_site": "47:4-47:10"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "higher_order_functions.higher_order_method",
-    "filename": "higher_order_functions.py",
-    "callable_line": 33,
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 34, "start": 44, "end": 47 },
-              "resolves_to": [
-                "higher_order_functions.higher_order_function[formal(f, position=0)=higher_order_functions.C.method_to_sink]"
-              ],
-              "port": "formal(arg, position=1)",
-              "call_site": "34:4-34:48"
             }
           }
         ]
