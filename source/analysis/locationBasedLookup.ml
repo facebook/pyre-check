@@ -151,7 +151,8 @@ module ExpressionTypes = struct
           add_special_case_type_information expression;
           state
       | Visit.Reference { Node.value = reference; location } ->
-          store_coverage_data_for_expression (Ast.Expression.from_reference ~location reference);
+          store_coverage_data_for_expression
+            (Ast.Expression.from_reference ~location ~create_origin:(fun _ -> None) reference);
           state
       | _ -> state
 
@@ -250,6 +251,7 @@ module ExpressionTypes = struct
             precondition_visit
               (Ast.Expression.from_reference
                  ~location:(Define.name_location ~body_location:statement.location define)
+                 ~create_origin:(fun _ -> None)
                  name);
             List.iter parameters ~f:visit_parameter;
             List.iter decorators ~f:postcondition_visit;
@@ -262,7 +264,8 @@ module ExpressionTypes = struct
                 | None -> Reference.empty
               in
               let create_qualified_expression ~location =
-                Reference.combine qualifier name |> Ast.Expression.from_reference ~location
+                Reference.combine qualifier name
+                |> Ast.Expression.from_reference ~location ~create_origin:(fun _ -> None)
               in
               precondition_visit (create_qualified_expression ~location:import_location)
             in
@@ -270,6 +273,7 @@ module ExpressionTypes = struct
         | Class ({ Class.name; _ } as class_) ->
             from_reference
               ~location:(Class.name_location ~body_location:(Node.location statement) class_)
+              ~create_origin:(fun _ -> None)
               name
             |> store_type_annotation
         | _ -> visit_statement ~state statement
@@ -722,6 +726,7 @@ module SymbolSelection = struct
               let define_name =
                 Ast.Expression.from_reference
                   ~location:(Define.name_location ~body_location:statement.location define)
+                  ~create_origin:(fun _ -> None)
                   name
               in
               visit_using_precondition_info define_name;
@@ -738,14 +743,16 @@ module SymbolSelection = struct
                   | None -> Reference.empty
                 in
                 let create_qualified_expression ~location =
-                  Reference.combine qualifier name |> Ast.Expression.from_reference ~location
+                  Reference.combine qualifier name
+                  |> Ast.Expression.from_reference ~location ~create_origin:(fun _ -> None)
                 in
                 create_qualified_expression ~location:import_location
                 |> visit_using_precondition_info
               in
               let visit_from = function
                 | Some { Node.value = from; location } ->
-                    visit_using_precondition_info (Ast.Expression.from_reference ~location from)
+                    visit_using_precondition_info
+                      (Ast.Expression.from_reference ~location ~create_origin:(fun _ -> None) from)
                 | None -> ()
               in
               List.iter imports ~f:visit_import;
@@ -781,8 +788,12 @@ module SymbolSelection = struct
         (* Prefer the expression `foo` over the invisible `foo.__dunder_method__`, since the user
            probably intends the former. *)
         match Node.value left, Node.value right with
-        | Expression.Name (Name.Attribute { origin = Some _; _ }), _ -> 1
-        | _, Expression.Name (Name.Attribute { origin = Some _; _ }) -> -1
+        | Expression.Name (Name.Attribute { origin = Some { Node.value = origin; _ }; _ }), _
+          when Origin.is_dunder_method origin ->
+            1
+        | _, Expression.Name (Name.Attribute { origin = Some { Node.value = origin; _ }; _ })
+          when Origin.is_dunder_method origin ->
+            -1
         | _ -> (
             (* Prefer names over any other types of expressions. This is useful for if-conditions,
                where we synthesize asserts for `foo` and `not foo`, having the same location

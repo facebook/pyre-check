@@ -624,7 +624,10 @@ module ModelQueries = struct
           | [] -> (
               (* Fall back for anything else. *)
               let annotation =
-                Ast.Expression.from_reference name ~location:Ast.Location.any
+                Ast.Expression.from_reference
+                  name
+                  ~location:Ast.Location.any
+                  ~create_origin:(fun _ -> None)
                 |> ReadOnly.resolve_expression_to_type_info read_only
               in
               match TypeInfo.Unit.annotation annotation with

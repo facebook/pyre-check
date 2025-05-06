@@ -3180,7 +3180,8 @@ let parse_decorator_annotations
   let parse_sanitize_annotations ~location ~original_expression arguments =
     (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
     let synthetic_sanitize_annotation =
-      Ast.Expression.subscript "Sanitize" arguments ~location |> Node.create ~location
+      Ast.Expression.subscript ~create_origin:(fun _ -> None) "Sanitize" arguments ~location
+      |> Node.create ~location
     in
     parse_annotations
       ~path
@@ -3330,7 +3331,11 @@ let parse_decorator_annotations
         | sanitizer -> Ok (Model.Sanitizers.from_global sanitizer))
   in
   let parse_decorator_annotation
-      { Decorator.name = { Node.value = name; location = decorator_location }; arguments }
+      {
+        Decorator.name = { Node.value = name; location = decorator_location };
+        arguments;
+        original_expression = _;
+      }
     =
     let name = Reference.show name in
     let original_expression =
@@ -4023,10 +4028,17 @@ let rec parse_statement
           | Expression.Subscript { index; _ } -> Some [{ Call.Argument.value = index; name = None }]
           | _ -> None
         in
+        let decorator_name = Node.create_with_default_location (Reference.create "Sanitize") in
         let decorator =
           {
-            Decorator.name = Node.create_with_default_location (Reference.create "Sanitize");
+            Decorator.name = decorator_name;
             arguments;
+            original_expression =
+              Decorator.create_original_expression
+                ~create_origin_for_reference:(fun _ -> None)
+                ~call_origin:None
+                ~name:decorator_name
+                ~arguments;
           }
         in
         [

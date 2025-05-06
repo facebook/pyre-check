@@ -122,7 +122,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             "Could not find callees for `%a` at `%a:%a` in the call graph. This is most likely \
              dead code."
             Expression.pp
-            (Node.create_with_default_location (Expression.Call call) |> Ast.Expression.delocalize)
+            (Node.create_with_default_location (Expression.Call call)
+            |> Ast.Expression.delocalize ~create_origin:(fun _ -> None))
             Reference.pp
             FunctionContext.qualifier
             Location.pp

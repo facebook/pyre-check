@@ -1847,7 +1847,10 @@ module State (Context : Context) = struct
                 let { name; attribute_path; _ } =
                   partition_name
                     ~resolution
-                    (create_name_from_reference ~location:Location.any reference)
+                    (create_name_from_reference
+                       ~location:Location.any
+                       ~create_origin:(fun _ -> None)
+                       reference)
                 in
                 Resolution.get_local_with_attributes
                   resolution
@@ -3513,11 +3516,16 @@ module State (Context : Context) = struct
                 else
                   errors, resolved_base
               in
+              let special =
+                match origin with
+                | Some { Node.value = origin; _ } -> Origin.is_dunder_method origin
+                | _ -> false
+              in
               resolve_attribute_access
                 ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
                 ~location
                 ~base
-                ~special:(Option.is_some origin)
+                ~special
                 ~attribute
                 ~has_default:false)
       | Constant Constant.NoneLiteral ->
@@ -4329,7 +4337,7 @@ module State (Context : Context) = struct
                     {
                       base = { Node.location = _; value = Name (Name.Identifier "typing") };
                       attribute = "is_typeddict";
-                      origin = None;
+                      origin = _;
                     });
               _;
             };
@@ -4372,7 +4380,7 @@ module State (Context : Context) = struct
                                 base =
                                   { Node.location = _; value = Name (Name.Identifier "typing") };
                                 attribute = "is_typeddict";
-                                origin = None;
+                                origin = _;
                               });
                         _;
                       };
@@ -6015,7 +6023,11 @@ module State (Context : Context) = struct
 
 
   and resolve_reference_type ~resolution reference =
-    from_reference ~location:Location.any reference |> resolve_expression_type ~resolution
+    from_reference
+      ~location:Location.any
+      ~create_origin:(fun _ -> Some Origin.ForTypeChecking)
+      reference
+    |> resolve_expression_type ~resolution
 
 
   and emit_invalid_enumeration_literal_errors ~resolution ~location ~errors annotation =
@@ -6826,7 +6838,11 @@ module State (Context : Context) = struct
           | None -> None
           | Some decorator ->
               let has_suffix
-                  { Ast.Statement.Decorator.name = { Node.value = name; _ }; arguments }
+                  {
+                    Ast.Statement.Decorator.name = { Node.value = name; _ };
+                    arguments;
+                    original_expression = _;
+                  }
                   suffix
                 =
                 Option.is_none arguments && String.equal (Reference.last name) suffix
@@ -7512,8 +7528,8 @@ module State (Context : Context) = struct
             in
             Type.Variable.ParamSpec.of_component_annotations
               ~get_param_spec
-              ~args_annotation:(delocalize args_annotation)
-              ~kwargs_annotation:(delocalize kwargs_annotation)
+              ~args_annotation:(delocalize ~create_origin:(fun _ -> None) args_annotation)
+              ~kwargs_annotation:(delocalize ~create_origin:(fun _ -> None) kwargs_annotation)
           in
           let possible_param_spec =
             let possible_param_spec_global =
@@ -7770,7 +7786,8 @@ module State (Context : Context) = struct
                         (Name.Attribute
                            {
                              base =
-                               Expression.Name (create_name ~location parent)
+                               Expression.Name
+                                 (create_name ~location ~create_origin:(fun _ -> None) parent)
                                |> Node.create ~location;
                              attribute = "__init_subclass__";
                              (* should be Origin.ForTypeChecking, but that breaks some tests. *)
@@ -9088,7 +9105,12 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               | None ->
                   let { Node.location; _ } = decorator in
                   make_error ~location (CouldNotResolve decorator)
-              | Some { Decorator.name = { Node.location; value = name }; arguments } -> (
+              | Some
+                  {
+                    Decorator.name = { Node.location; value = name };
+                    arguments;
+                    original_expression = _;
+                  } -> (
                   match reason with
                   | CouldNotResolve -> make_error ~location (CouldNotResolve decorator)
                   | CouldNotResolveArgument { argument_index } ->

@@ -88,6 +88,7 @@ module Decorator : sig
   type t = {
     name: Reference.t Node.t;
     arguments: Expression.Call.Argument.t list option;
+    original_expression: Expression.t;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -96,6 +97,13 @@ module Decorator : sig
   val to_expression : t -> Expression.t
 
   val from_expression : Expression.t -> t option
+
+  val create_original_expression
+    :  create_origin_for_reference:(string list -> Expression.Origin.t option) ->
+    call_origin:Expression.Origin.t option ->
+    name:Reference.t Node.t ->
+    arguments:Expression.Call.Argument.t list option ->
+    Expression.t
 end
 
 module rec Assert : sig

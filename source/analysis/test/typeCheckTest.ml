@@ -295,7 +295,10 @@ let test_check_annotation =
             stop = { line = 1; column = 1 + String.length variable_name };
           }
         in
-        let value = Expression.Expression.Name (Expression.create_name ~location variable_name) in
+        let value =
+          Expression.Expression.Name
+            (Expression.create_name ~location ~create_origin:(fun _ -> None) variable_name)
+        in
         Node.create ~location value
       in
       State.parse_and_check_annotation ~resolution expression |> fst |> AnalysisError.deduplicate

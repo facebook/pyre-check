@@ -876,8 +876,7 @@ let test_map_location _ =
           {
             Call.callee =
               {
-                Node.value =
-                  Expression.Name (create_name ~location:(parse_location "1:2-3:4") "foo");
+                Node.value = Expression.Name (Name.Identifier "foo");
                 location = parse_location "1:2-5:6";
               };
             arguments = [];
@@ -891,8 +890,7 @@ let test_map_location _ =
           {
             Call.callee =
               {
-                Node.value =
-                  Expression.Name (create_name ~location:(parse_location "2:3-4:5") "foo");
+                Node.value = Expression.Name (Name.Identifier "foo");
                 location = parse_location "2:3-6:7";
               };
             arguments = [];

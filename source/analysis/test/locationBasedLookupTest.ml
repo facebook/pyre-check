@@ -220,11 +220,7 @@ let test_narrowest_match _ =
   (* Pick `my_dictionary` over `my_dictionary.__getitem__` even though they have the same "location"
      range. *)
   assert_narrowest
-    [
-      "my_dictionary['foo']", "5:2-5:24";
-      "my_dictionary.__getitem__", "5:2-5:15";
-      "my_dictionary", "5:2-5:15";
-    ]
+    ["my_dictionary['foo']", "5:2-5:24"; "my_dictionary", "5:2-5:15"]
     (Some "my_dictionary");
   (* For if-statements, the assertion `if foo.bar:` is desugared into two assert statements:
 

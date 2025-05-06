@@ -57,7 +57,10 @@ let callable_body =
         target =
           Node.create_with_default_location
             (Expression.Name
-               (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
+               (Ast.Expression.create_name
+                  ~location:Location.any
+                  ~create_origin:(fun _ -> None)
+                  "typing.Callable.__call__"));
         annotation = Some (Type.expression Type.object_primitive);
         value = Some (Node.create_with_default_location (Expression.Constant Constant.NoneLiteral));
       };
@@ -66,7 +69,10 @@ let callable_body =
         target =
           Node.create_with_default_location
             (Expression.Name
-               (Ast.Expression.create_name ~location:Location.any "typing.Callable.__qualname__"));
+               (Ast.Expression.create_name
+                  ~location:Location.any
+                  ~create_origin:(fun _ -> None)
+                  "typing.Callable.__qualname__"));
         annotation = Some (Type.expression Type.string);
         value =
           Some

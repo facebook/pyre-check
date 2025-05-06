@@ -134,7 +134,10 @@ let extract_options
 
 let dataclass_options ~first_matching_class_decorator class_summary =
   let field_specifiers =
-    [Reference.create "dataclasses.field" |> Ast.Expression.from_reference ~location:Location.any]
+    [
+      Reference.create "dataclasses.field"
+      |> Ast.Expression.from_reference ~location:Location.any ~create_origin:(fun _ -> None);
+    ]
   in
   first_matching_class_decorator ~names:["dataclasses.dataclass"; "dataclass"] class_summary
   >>| extract_options
@@ -357,6 +360,12 @@ let options_from_custom_dataclass_transform_base_class_or_metaclass
         {
           Decorator.name = Node.create_with_default_location name;
           arguments = Some init_subclass_arguments;
+          original_expression =
+            Decorator.create_original_expression
+              ~create_origin_for_reference:(fun _ -> None)
+              ~call_origin:None
+              ~name:(Node.create_with_default_location name)
+              ~arguments:(Some init_subclass_arguments);
         }
       in
       dataclass_transform_options_from_decorator

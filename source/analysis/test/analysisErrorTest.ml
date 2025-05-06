@@ -973,7 +973,7 @@ let test_description _ =
            self_argument =
              "$local_test$my_object"
              |> Reference.create
-             |> Expression.from_reference ~location:Location.any;
+             |> Expression.from_reference ~location:Location.any ~create_origin:(fun _ -> None);
            self_argument_type = Type.PyreReadOnly.create (Type.Primitive "test.Foo");
            method_name = !&"test.Foo.my_method";
          })

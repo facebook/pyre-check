@@ -685,7 +685,11 @@ let test_compound =
 
 
 let decorator ?arguments name =
-  Decorator.to_expression { Decorator.name = Node.create_with_default_location !&name; arguments }
+  Decorator.create_original_expression
+    ~create_origin_for_reference:(fun _ -> None)
+    ~call_origin:None
+    ~name:(Node.create_with_default_location !&name)
+    ~arguments
 
 
 let test_define =

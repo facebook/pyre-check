@@ -834,7 +834,10 @@ let rec process_request_exn
           { Base.name; annotation; kind; final }
         in
         parse_and_validate
-          (Expression.from_reference ~location:Location.any annotation)
+          (Expression.from_reference
+             ~location:Location.any
+             ~create_origin:(fun _ -> None)
+             annotation)
           ~raise_if_missing_arguments:false
         |> Type.split
         |> fst

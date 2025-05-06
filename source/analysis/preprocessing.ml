@@ -417,6 +417,8 @@ module Qualify = struct
 
   let is_qualified = String.is_prefix ~prefix:"$"
 
+  let create_qualification_origin identifiers = Some (Origin.Qualification identifiers)
+
   let qualify_if_needed ~qualifier name =
     if Reference.is_strict_prefix ~prefix:qualifier name then
       name
@@ -489,7 +491,8 @@ module Qualify = struct
 
   let qualify_identifier_name ~location ~scope:{ aliases; _ } identifier =
     match Map.find aliases identifier with
-    | Some { name; _ } -> create_name_from_reference ~location name
+    | Some { name; _ } ->
+        create_name_from_reference ~location ~create_origin:create_qualification_origin name
     | _ -> Name.Identifier identifier
 
 
@@ -1069,7 +1072,11 @@ module Qualify = struct
               | Some { name } ->
                   Node.create
                     ~location
-                    (Expression.Name (create_name_from_reference ~location name)))
+                    (Expression.Name
+                       (create_name_from_reference
+                          ~location
+                          ~create_origin:create_qualification_origin
+                          name)))
           | Expression.Name (Attribute attribute as name) ->
               let value =
                 if is_class_toplevel then
@@ -1077,7 +1084,9 @@ module Qualify = struct
                   | Some reference ->
                       let qualifier = NestingContext.to_qualifier ~module_name parent in
                       qualify_if_needed ~qualifier reference
-                      |> create_name_from_reference ~location
+                      |> create_name_from_reference
+                           ~location
+                           ~create_origin:create_qualification_origin
                       |> fun name -> Expression.Name name
                   | None ->
                       let { Name.Attribute.base; _ } = attribute in
@@ -2396,8 +2405,7 @@ let expand_typed_dictionary_declarations
                   Node.create
                     ~location
                     (Expression.Name
-                       (create_name
-                          ~location
+                       (Name.Identifier
                           (* Note: Cannot use `Type.TypedDictionary.class_name` because Type is not
                              available here. *)
                           "NonTotalTypedDictionary"));
@@ -2414,7 +2422,7 @@ let expand_typed_dictionary_declarations
                           value =
                             Node.create
                               ~location
-                              (Expression.Name (create_name ~location "TypedDictionary"));
+                              (Expression.Name (Name.Identifier "TypedDictionary"));
                         };
                       ]
                      @ other_base_classes
@@ -2520,7 +2528,7 @@ let expand_typed_dictionary_declarations
                   {
                     Call.Argument.name = None;
                     value =
-                      Expression.Name (create_name ~location "NonTotalTypedDictionary")
+                      Expression.Name (Name.Identifier "NonTotalTypedDictionary")
                       |> Node.create ~location;
                   }
             | None -> Some base
@@ -2582,7 +2590,8 @@ let expand_named_tuples
             List.find_map arguments ~f:extract_rename_argument |> Option.value ~default:false
           in
           let any_annotation =
-            Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
+            Expression.Name (create_name ~location ~create_origin:(fun _ -> None) "typing.Any")
+            |> Node.create ~location
           in
           let attribute_default_values =
             let extract_default_values argument =
@@ -2693,14 +2702,19 @@ let expand_named_tuples
         |> node
       in
       let fields_annotation =
-        let create_name name = Expression.Name (create_name ~location name) |> node in
+        let create_origin _ = None in
+        let create_name name =
+          Expression.Name (create_name ~location ~create_origin name) |> node
+        in
         let tuple_members =
           match List.length attributes with
           | 0 -> [Expression.Tuple [] |> node]
           | l -> List.init l ~f:(fun _ -> create_name "str")
         in
-        let tuple_annotation = subscript "typing.Tuple" ~location tuple_members |> node in
-        subscript "typing.ClassVar" ~location [tuple_annotation] |> node
+        let tuple_annotation =
+          subscript "typing.Tuple" ~location ~create_origin tuple_members |> node
+        in
+        subscript "typing.ClassVar" ~location ~create_origin [tuple_annotation] |> node
       in
       Statement.Assign
         {
@@ -2722,7 +2736,8 @@ let expand_named_tuples
                 Expression.Subscript
                   {
                     base =
-                      Reference.create "typing.Final" |> Ast.Expression.from_reference ~location;
+                      Reference.create "typing.Final"
+                      |> Ast.Expression.from_reference ~location ~create_origin:(fun _ -> None);
                     index = annotation;
                   };
             }
@@ -2834,7 +2849,11 @@ let expand_named_tuples
     let tuple_base ~location =
       {
         Call.Argument.name = None;
-        value = { Node.location; value = Name (create_name ~location "typing.NamedTuple") };
+        value =
+          {
+            Node.location;
+            value = Name (create_name ~location ~create_origin:(fun _ -> None) "typing.NamedTuple");
+          };
       }
     in
     let value =
@@ -2890,7 +2909,9 @@ let expand_named_tuples
                   in
                   let annotation =
                     let any =
-                      Expression.Name (create_name ~location "typing.Any") |> Node.create ~location
+                      Expression.Name
+                        (create_name ~location ~create_origin:(fun _ -> None) "typing.Any")
+                      |> Node.create ~location
                     in
                     Option.value annotation ~default:any
                   in
@@ -3086,7 +3107,10 @@ let expand_sqlalchemy_declarative_base
               Node.create
                 ~location
                 (Expression.Name
-                   (create_name ~location "sqlalchemy.ext.declarative.DeclarativeMeta"));
+                   (create_name
+                      ~location
+                      ~create_origin:(fun _ -> None)
+                      "sqlalchemy.ext.declarative.DeclarativeMeta"));
           }
         in
         Statement.Class
@@ -3810,7 +3834,7 @@ let replace_union_shorthand_in_annotation_expression =
                       {
                         base = { Node.value = Name (Name.Identifier "typing"); _ };
                         attribute = "Union";
-                        origin = None;
+                        origin = _;
                       });
                 _;
               };
@@ -4488,7 +4512,10 @@ module SelfType = struct
   let replace_self_type_with ~qualifier ~scopes ~synthetic_type_variable =
     let map_name ~mapper:_ name =
       if is_self ~qualifier ~scopes name then
-        create_name_from_reference ~location:Location.any synthetic_type_variable
+        create_name_from_reference
+          ~location:Location.any
+          ~create_origin:(fun _ -> None)
+          synthetic_type_variable
       else
         name
     in
@@ -4626,9 +4653,13 @@ module SelfType = struct
         in
         let self_or_class_parameter =
           let annotation =
-            let variable_annotation = from_reference ~location self_type_variable_reference in
+            let create_origin _ = None in
+            let variable_annotation =
+              from_reference ~location ~create_origin self_type_variable_reference
+            in
             if Define.Signature.is_class_method signature then
-              subscript ~location "typing.Type" [variable_annotation] |> Node.create ~location
+              subscript ~location ~create_origin "typing.Type" [variable_annotation]
+              |> Node.create ~location
             else
               variable_annotation
           in
@@ -4637,7 +4668,11 @@ module SelfType = struct
             | { Parameter.annotation = Some _readonly_self_or_class_parameter; _ } ->
                 (* The user wrote `self: PyreReadOnly[Self]` or `cls: PyreReadOnly[Type[Self]]`. So,
                    wrap the synthesized type in `PyreReadOnly`. *)
-                subscript ~location "pyre_extensions.PyreReadOnly" [annotation]
+                subscript
+                  ~location
+                  ~create_origin:(fun _ -> None)
+                  "pyre_extensions.PyreReadOnly"
+                  [annotation]
                 |> Node.create ~location
             | _ -> annotation
           in
@@ -4718,6 +4753,7 @@ module SelfType = struct
                        value =
                          from_reference
                            ~location:Location.any
+                           ~create_origin:(fun _ -> None)
                            (NestingContext.to_qualifier
                               ~module_name:Reference.empty
                               nesting_context);
@@ -4797,11 +4833,19 @@ let expand_enum_functional_syntax
               let value =
                 Expression.Call
                   {
-                    callee = Reference.create "enum.auto" |> from_reference ~location;
+                    callee =
+                      Reference.create "enum.auto"
+                      |> from_reference
+                           ~create_origin:(fun attributes ->
+                             Some (Origin.FunctionalEnumImplicitAuto attributes))
+                           ~location;
                     arguments = [];
                     origin =
                       Some
-                        { Node.location; value = Origin.FunctionalEnumImplicitAuto attribute_name };
+                        {
+                          Node.location;
+                          value = Origin.FunctionalEnumImplicitAuto [attribute_name];
+                        };
                   }
                 |> Node.create ~location
               in

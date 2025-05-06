@@ -29,7 +29,10 @@ let test_expression _ =
   let open Expression in
   let assert_expression reference expression =
     let expected = Expression.Name expression |> Node.create_with_default_location in
-    let actual = Reference.create reference |> from_reference ~location:Location.any in
+    let actual =
+      Reference.create reference
+      |> from_reference ~location:Location.any ~create_origin:(fun _ -> None)
+    in
     assert_equal ~printer:Expression.show expected actual
   in
   assert_expression "a" (Name.Identifier "a");
@@ -55,7 +58,10 @@ let test_name _ =
   let open Expression in
   let assert_create_name_expression reference expression =
     let expected = Expression.Name expression |> node in
-    let actual = Reference.create reference |> from_reference ~location:Location.any in
+    let actual =
+      Reference.create reference
+      |> from_reference ~location:Location.any ~create_origin:(fun _ -> None)
+    in
     assert_equal ~printer:Expression.show expected actual
   in
   assert_create_name_expression "a" (Name.Identifier "a");

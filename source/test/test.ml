@@ -437,11 +437,15 @@ let assert_type_equal = OUnit2.assert_equal ~printer:Type.show ~cmp:Type.equal
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
 
-let ( ! ) name = +Expression.Expression.Name (Expression.create_name ~location:Location.any name)
+let ( ! ) name =
+  +Expression.Expression.Name
+     (Expression.create_name ~location:Location.any ~create_origin:(fun _ -> None) name)
+
 
 let ( !! ) name =
   +Statement.Expression
-     (+Expression.Expression.Name (Expression.create_name ~location:Location.any name))
+     (+Expression.Expression.Name
+         (Expression.create_name ~location:Location.any ~create_origin:(fun _ -> None) name))
 
 
 let ( !& ) name = Reference.create name

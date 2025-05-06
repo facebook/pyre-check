@@ -481,7 +481,10 @@ module ClassAttributes = struct
       in
       legacy_parent
       >>= fun parent ->
-      Attribute.name ~parent (Expression.from_reference ~location name) >>= inspect_decorators
+      Attribute.name
+        ~parent
+        (Expression.from_reference ~location ~create_origin:(fun _ -> None) name)
+      >>= inspect_decorators
   end
 
   (* Bias towards the right (previously occuring map in the `|> merge other_map` flow), but
@@ -703,7 +706,9 @@ module ClassAttributes = struct
           match value with
           | Statement.Define ({ Define.signature = { name = target; _ } as signature; _ } as define)
             ->
-              Attribute.name (Expression.from_reference ~location target) ~parent:parent_name
+              Attribute.name
+                (Expression.from_reference ~location ~create_origin:(fun _ -> None) target)
+                ~parent:parent_name
               >>| (fun name ->
                     let attribute =
                       match Identifier.SerializableMap.find_opt name map with
@@ -763,7 +768,11 @@ module ClassAttributes = struct
                                        origin = None;
                                      });
                             };
-                          index = from_reference ~location:Location.any name;
+                          index =
+                            from_reference
+                              ~location:Location.any
+                              ~create_origin:(fun _ -> None)
+                              name;
                         };
                   }
                 in

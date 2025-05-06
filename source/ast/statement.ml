@@ -193,6 +193,8 @@ module Decorator = struct
   type t = {
     name: Reference.t Node.t;
     arguments: Expression.Call.Argument.t list option;
+    (* We preserve the original expression, since it might have metadata (cf `origin` attribute) *)
+    original_expression: Expression.t;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -205,32 +207,54 @@ module Decorator = struct
           right.arguments
 
 
-  let to_expression { name = { Node.value = name; location }; arguments } =
-    let name = Expression.from_reference ~location name in
-    match arguments with
-    | Some arguments ->
-        Node.create
-          ~location
-          (Expression.Expression.Call { Expression.Call.callee = name; arguments; origin = None })
-    | None -> name
+  let to_expression { original_expression; _ } = original_expression
 
-
-  let from_expression { Node.value; location } =
+  let from_expression ({ Node.value; location } as original_expression) =
     let open Expression in
     match value with
     | Expression.Name name -> (
         match name_to_reference name with
-        | Some reference -> Some { name = Node.create ~location reference; arguments = None }
+        | Some reference ->
+            Some { name = Node.create ~location reference; arguments = None; original_expression }
         | None -> None)
     | Expression.Call { Call.callee = { Node.value; location }; arguments; origin = _ } -> (
         match value with
         | Expression.Name name -> (
             match name_to_reference name with
             | Some reference ->
-                Some { name = Node.create ~location reference; arguments = Some arguments }
+                Some
+                  {
+                    name = Node.create ~location reference;
+                    arguments = Some arguments;
+                    original_expression;
+                  }
             | None -> None)
         | _ -> None)
     | _ -> None
+
+
+  (* In some cases, we need to create an "artificial" decorator that doesn't exist in the original
+     AST. This is a helper to create the original expression. *)
+  let create_original_expression
+      ~create_origin_for_reference
+      ~call_origin
+      ~name:{ Node.location; value = name }
+      ~arguments
+    =
+    let name =
+      Expression.from_reference ~location ~create_origin:create_origin_for_reference name
+    in
+    match arguments with
+    | Some arguments ->
+        Node.create
+          ~location
+          (Expression.Expression.Call
+             {
+               Expression.Call.callee = name;
+               arguments;
+               origin = call_origin >>| Node.create ~location;
+             })
+    | None -> name
 end
 
 module rec Assert : sig
@@ -404,7 +428,12 @@ end = struct
     let open Expression in
     let is_frozen_dataclass decorator =
       match Decorator.from_expression decorator with
-      | Some { Decorator.name = { Node.value = name; _ }; arguments = Some arguments }
+      | Some
+          {
+            Decorator.name = { Node.value = name; _ };
+            arguments = Some arguments;
+            original_expression = _;
+          }
         when Reference.equal name (Reference.create "dataclasses.dataclass") ->
           let has_frozen_argument Call.Argument.{ name; value } =
             match name, value with
@@ -1472,10 +1501,18 @@ end = struct
             let exception_group_type =
               match annotation with
               | { Node.value = Expression.Tuple _; _ } ->
-                  Node.create ~location (subscript "typing.Union" [annotation] ~location)
+                  Node.create
+                    ~location
+                    (subscript ~create_origin:(fun _ -> None) "typing.Union" [annotation] ~location)
               | _ -> annotation
             in
-            Node.create ~location (subscript "ExceptionGroup" [exception_group_type] ~location)
+            Node.create
+              ~location
+              (subscript
+                 ~create_origin:(fun _ -> None)
+                 "ExceptionGroup"
+                 [exception_group_type]
+                 ~location)
           else
             annotation
         in

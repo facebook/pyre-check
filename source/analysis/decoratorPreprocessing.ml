@@ -353,7 +353,9 @@ let rec requalify_define ~old_qualifier ~new_qualifier ~relative_path define =
 
 let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }; _ } =
   let name_expression name =
-    Expression.Name (create_name ~location name) |> Node.create ~location
+    Expression.Name
+      (create_name ~location ~create_origin:(fun _ -> Some Origin.DecoratorInlining) name)
+    |> Node.create ~location
   in
   let argument_value =
     if String.is_prefix ~prefix:"**" name then
@@ -373,7 +375,11 @@ let create_function_call ~should_await ~location ~callee_name arguments =
     Expression.Call
       {
         callee =
-          Expression.Name (create_name_from_reference ~location callee_name)
+          Expression.Name
+            (create_name_from_reference
+               ~location
+               ~create_origin:(fun _ -> Some Origin.DecoratorInlining)
+               callee_name)
           |> Node.create ~location;
         arguments;
         origin = Some { Node.location; value = Origin.DecoratorInlining };
@@ -396,10 +402,14 @@ let set_first_parameter_type
     when not (Define.is_static_method original_define) ->
       let new_annotation =
         if Define.is_class_method original_define then
-          subscript ~location "typing.Type" [from_reference ~location parent]
+          subscript
+            ~location
+            ~create_origin:(fun _ -> None)
+            "typing.Type"
+            [from_reference ~location ~create_origin:(fun _ -> None) parent]
           |> Node.create ~location
         else
-          from_reference ~location parent
+          from_reference ~location ~create_origin:(fun _ -> None) parent
       in
       {
         define with
@@ -517,7 +527,10 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
     {
       target =
         Expression.Name
-          (create_name_from_reference ~location (Reference.create args_local_variable_name))
+          (create_name_from_reference
+             ~location
+             ~create_origin:(fun _ -> Some Origin.DecoratorInlining)
+             (Reference.create args_local_variable_name))
         |> Node.create ~location;
       annotation = None;
       value = Some (Expression.Tuple elements |> Node.create ~location);
@@ -553,7 +566,10 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
     {
       target =
         Expression.Name
-          (create_name_from_reference ~location (Reference.create kwargs_local_variable_name))
+          (create_name_from_reference
+             ~location
+             ~create_origin:(fun _ -> Some Origin.DecoratorInlining)
+             (Reference.create kwargs_local_variable_name))
         |> Node.create ~location;
       annotation = None;
       value = Some (Expression.Dictionary entries |> Node.create ~location);
@@ -1032,6 +1048,7 @@ let inline_decorators_for_define ~get_source ~location ~relative_path define =
         {
           Decorator.name = { Node.value = decorator_name; location = decorator_call_location };
           arguments;
+          original_expression = _;
         } ->
         find_decorator_body ~get_source decorator_name
         >>= extract_decorator_data

@@ -328,7 +328,7 @@ let test_delocalize _ =
       ~printer:Expression.show
       ~cmp:location_insensitive_equal
       expected
-      (delocalize source)
+      (delocalize ~create_origin:(fun _ -> None) source)
   in
   assert_delocalized !"constant" !"constant";
   assert_delocalized !"$local_qualifier$variable" !"qualifier.variable";
@@ -460,8 +460,12 @@ let test_exists_in_list _ =
 
 let test_create_name _ =
   let assert_create_from_identifiers identifiers expected =
-    let identifier_nodes = List.map ~f:Node.create_with_default_location identifiers in
-    assert_equal expected (create_name_from_identifiers identifier_nodes)
+    assert_equal
+      expected
+      (create_name_from_identifiers
+         ~location:Location.any
+         ~create_origin:(fun _ -> None)
+         identifiers)
   in
   assert_create_from_identifiers ["a"] (Name.Identifier "a");
   assert_create_from_identifiers
@@ -480,7 +484,9 @@ let test_create_name _ =
          origin = None;
        });
   let assert_create raw_string expected =
-    assert_equal expected (create_name ~location:Location.any raw_string)
+    assert_equal
+      expected
+      (create_name ~location:Location.any ~create_origin:(fun _ -> None) raw_string)
   in
   assert_create "a" (Name.Identifier "a");
   assert_create

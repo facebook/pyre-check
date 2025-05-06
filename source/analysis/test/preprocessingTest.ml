@@ -2279,14 +2279,14 @@ let test_qualify_ast =
       @@ assert_qualify_pattern
            (+Match.Pattern.MatchClass
                {
-                 class_name = +Ast.Expression.create_name ~location:Location.any "a";
+                 class_name = +Ast.Expression.Name.Identifier "a";
                  patterns = [];
                  keyword_attributes = [];
                  keyword_patterns = [];
                })
            (+Match.Pattern.MatchClass
                {
-                 class_name = +Ast.Expression.create_name ~location:Location.any "b";
+                 class_name = +Ast.Expression.Name.Identifier "b";
                  patterns = [];
                  keyword_attributes = [];
                  keyword_patterns = [];
@@ -2295,14 +2295,14 @@ let test_qualify_ast =
       @@ assert_qualify_pattern
            (+Match.Pattern.MatchClass
                {
-                 class_name = +Ast.Expression.create_name ~location:Location.any "x";
+                 class_name = +Ast.Expression.Name.Identifier "x";
                  patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
                  keyword_attributes = [];
                  keyword_patterns = [];
                })
            (+Match.Pattern.MatchClass
                {
-                 class_name = +Ast.Expression.create_name ~location:Location.any "x";
+                 class_name = +Ast.Expression.Name.Identifier "x";
                  patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
                  keyword_attributes = [];
                  keyword_patterns = [];
@@ -2311,14 +2311,14 @@ let test_qualify_ast =
       @@ assert_qualify_pattern
            (+Match.Pattern.MatchClass
                {
-                 class_name = +Ast.Expression.create_name ~location:Location.any "x";
+                 class_name = +Ast.Expression.Name.Identifier "x";
                  patterns = [];
                  keyword_attributes = ["a"];
                  keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
                })
            (+Match.Pattern.MatchClass
                {
-                 class_name = +Ast.Expression.create_name ~location:Location.any "x";
+                 class_name = +Ast.Expression.Name.Identifier "x";
                  patterns = [];
                  keyword_attributes = ["a"];
                  keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
@@ -5371,7 +5371,11 @@ let test_populate_captures =
          {
            Subscript.base =
              Node.create
-               (Expression.Name (create_name ~location:(location start stop) "typing.Tuple"))
+               (Expression.Name
+                  (create_name
+                     ~location:(location start stop)
+                     ~create_origin:(fun _ -> None)
+                     "typing.Tuple"))
                ~location:(location start stop);
            index =
              Node.create
@@ -5392,7 +5396,11 @@ let test_populate_captures =
          {
            base =
              Node.create
-               (Expression.Name (create_name ~location:(location start stop) "typing.Dict"))
+               (Expression.Name
+                  (create_name
+                     ~location:(location start stop)
+                     ~create_origin:(fun _ -> None)
+                     "typing.Dict"))
                ~location:(location start stop);
            index =
              Node.create
@@ -5400,7 +5408,11 @@ let test_populate_captures =
                (Expression.Tuple
                   [
                     Node.create
-                      (Expression.Name (create_name ~location:(location start stop) "str"))
+                      (Expression.Name
+                         (create_name
+                            ~location:(location start stop)
+                            ~create_origin:(fun _ -> None)
+                            "str"))
                       ~location:(location start stop);
                     value_annotation;
                   ]);
@@ -5408,13 +5420,12 @@ let test_populate_captures =
       ~location:(location start stop)
   in
   let int_annotation start stop =
-    Node.create
-      (Expression.Name (create_name ~location:(location start stop) "int"))
-      ~location:(location start stop)
+    Node.create (Expression.Name (Name.Identifier "int")) ~location:(location start stop)
   in
   let any_annotation start stop =
     Node.create
-      (Expression.Name (create_name ~location:(location start stop) "typing.Any"))
+      (Expression.Name
+         (create_name ~location:(location start stop) ~create_origin:(fun _ -> None) "typing.Any"))
       ~location:(location start stop)
   in
   let tuple_int_annotation (start, stop) (int_start, int_stop) =

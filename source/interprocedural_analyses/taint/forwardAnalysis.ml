@@ -130,7 +130,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           Format.asprintf
             "Could not find callees for `%a` at `%a:%a` in the call graph."
             Expression.pp
-            (Node.create_with_default_location (Expression.Call call) |> Ast.Expression.delocalize)
+            (Node.create_with_default_location (Expression.Call call)
+            |> Ast.Expression.delocalize ~create_origin:(fun _ -> None))
             Reference.pp
             FunctionContext.qualifier
             Location.pp

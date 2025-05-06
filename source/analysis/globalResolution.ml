@@ -334,7 +334,7 @@ let parse_reference ?(allow_untracked = false) resolution reference =
   let validation =
     if allow_untracked then AttributeResolution.NoValidation else ValidatePrimitives
   in
-  Expression.from_reference ~location:Location.any reference
+  Expression.from_reference ~location:Location.any ~create_origin:(fun _ -> None) reference
   |> parse_annotation resolution ~validation
 
 

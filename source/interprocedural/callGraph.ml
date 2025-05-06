@@ -3740,7 +3740,9 @@ module MissingFlowTypeAnalysis = struct
             Location.pp
             location
             Expression.pp
-            (callee |> Node.create_with_default_location |> Ast.Expression.delocalize)
+            (callee
+            |> Node.create_with_default_location
+            |> Ast.Expression.delocalize ~create_origin:(fun _ -> None))
         in
         let call_target =
           {
@@ -5614,7 +5616,10 @@ module DecoratorResolution = struct
         (Expression.Call
            {
              Call.callee =
-               Ast.Expression.delocalize decorator
+               Ast.Expression.delocalize
+                 ~create_origin:(fun attributes ->
+                   Some (Origin.ForDecoratedTargetCallee attributes))
+                 decorator
                (* TODO: `decorator` might be a local variable whose definition should be included
                   here, in order to resolve its callee. *);
              arguments = [{ Call.Argument.name = None; value = previous_argument }];
@@ -5636,7 +5641,10 @@ module DecoratorResolution = struct
         Some { CallableToDecoratorsMap.decorators = _ :: _ as decorators; define_location } ) ->
         let define_name = Target.define_name_exn callable in
         let callable_name =
-          Ast.Expression.create_name_from_reference ~location:define_location define_name
+          Ast.Expression.create_name_from_reference
+            ~location:define_location
+            ~create_origin:(fun attributes -> Some (Origin.ForDecoratedTargetCallee attributes))
+            define_name
         in
         log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");
         let expression =

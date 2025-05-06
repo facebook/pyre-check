@@ -93,6 +93,18 @@ let test_first_matching_decorator =
     in
     assert_logic expected
   in
+  let make_decorator ~name ~arguments =
+    {
+      Decorator.name = + !&name;
+      arguments;
+      original_expression =
+        Decorator.create_original_expression
+          ~create_origin_for_reference:(fun _ -> None)
+          ~call_origin:None
+          ~name:(+ !&name)
+          ~arguments;
+    }
+  in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -105,7 +117,7 @@ let test_first_matching_decorator =
         pass
     |}
            "decorator"
-           (Some { name = + !&"decorator"; arguments = None });
+           (Some (make_decorator ~name:"decorator" ~arguments:None));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_first_matching_decorator
            {|
@@ -132,7 +144,7 @@ let test_first_matching_decorator =
         pass
     |}
            "decorator.a.b"
-           (Some { Decorator.name = + !&"decorator.a.b"; arguments = None });
+           (Some (make_decorator ~name:"decorator.a.b" ~arguments:None));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_first_matching_decorator
            {|
@@ -152,15 +164,20 @@ let test_first_matching_decorator =
     |}
            "decorator"
            (Some
-              {
-                Decorator.name = + !&"decorator";
-                arguments =
-                  Some
-                    [
-                      { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
-                      { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
-                    ];
-              });
+              (make_decorator
+                 ~name:"decorator"
+                 ~arguments:
+                   (Some
+                      [
+                        {
+                          Argument.name = Some ~+"a";
+                          value = +Expression.Name (Name.Identifier "b");
+                        };
+                        {
+                          Argument.name = Some ~+"c";
+                          value = +Expression.Name (Name.Identifier "d");
+                        };
+                      ])));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_first_matching_decorator
            {|
@@ -171,12 +188,16 @@ let test_first_matching_decorator =
     |}
            "decorator"
            (Some
-              {
-                Decorator.name = + !&"decorator";
-                arguments =
-                  Some
-                    [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
-              });
+              (make_decorator
+                 ~name:"decorator"
+                 ~arguments:
+                   (Some
+                      [
+                        {
+                          Argument.name = Some ~+"a";
+                          value = +Expression.Name (Name.Identifier "b");
+                        };
+                      ])));
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_first_matching_decorator
            (* `enum` imports `ABCMeta` from `abc`. *)
@@ -187,7 +208,7 @@ let test_first_matching_decorator =
         pass
     |}
            "abc.ABCMeta"
-           (Some { name = + !&"abc.ABCMeta"; arguments = None });
+           (Some (make_decorator ~name:"abc.ABCMeta" ~arguments:None));
     ]
 
 

@@ -48,7 +48,18 @@ let test_is_method _ =
     (Define.is_method (define ~module_name:!&"foo" ~parent:(NestingContext.create_toplevel ())))
 
 
-let decorator ?arguments name = { Decorator.name = + !&name; arguments }
+let decorator ?arguments name =
+  {
+    Decorator.name = + !&name;
+    arguments;
+    original_expression =
+      Decorator.create_original_expression
+        ~create_origin_for_reference:(fun _ -> None)
+        ~call_origin:None
+        ~name:(+ !&name)
+        ~arguments;
+  }
+
 
 let test_is_classmethod _ =
   let define name decorators =

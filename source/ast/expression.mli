@@ -396,6 +396,7 @@ and Origin : sig
     | BinaryOperator of BinaryOperator.operator
     | UnaryOperator of UnaryOperator.operator
     | AugmentedAssign of BinaryOperator.operator
+    | Qualification of string list
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter (* __iter__ call for a for loop *)
@@ -427,9 +428,10 @@ and Origin : sig
     | NextCall (* next(x) is turned into x.__next__() *)
     | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
     | SelfImplicitTypeVar
-    | FunctionalEnumImplicitAuto of string
+    | FunctionalEnumImplicitAuto of string list
     | DecoratorInlining
     | ForDecoratedTarget
+    | ForDecoratedTargetCallee of string list
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
@@ -437,6 +439,8 @@ and Origin : sig
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val is_dunder_method : t -> bool
 end
 
 and Expression : sig
@@ -685,13 +689,29 @@ val is_false : t -> bool
 
 val is_none : t -> bool
 
-val create_name_from_identifiers : Identifier.t Node.t list -> Name.t
+val create_name_from_identifiers
+  :  location:Location.t ->
+  create_origin:(string list -> Origin.t option) ->
+  Identifier.t list ->
+  Name.t
 
-val create_name : location:Location.t -> string -> Name.t
+val create_name
+  :  location:Location.t ->
+  create_origin:(string list -> Origin.t option) ->
+  string ->
+  Name.t
 
-val create_name_from_reference : location:Location.t -> Reference.t -> Name.t
+val create_name_from_reference
+  :  location:Location.t ->
+  create_origin:(string list -> Origin.t option) ->
+  Reference.t ->
+  Name.t
 
-val from_reference : location:Location.t -> Reference.t -> t
+val from_reference
+  :  location:Location.t ->
+  create_origin:(string list -> Origin.t option) ->
+  Reference.t ->
+  t
 
 val name_to_identifiers : Name.t -> Identifier.t list option
 
@@ -709,7 +729,7 @@ val name_is : name:string -> t -> bool
 
 val sanitized : t -> t
 
-val delocalize : t -> t
+val delocalize : create_origin:(string list -> Origin.t option) -> t -> t
 
 val delocalize_qualified : t -> t
 
@@ -721,7 +741,12 @@ val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> b
 
 val arguments_location : Call.t -> Location.t
 
-val subscript : string -> expression Node.t list -> location:Location.t -> expression
+val subscript
+  :  string ->
+  expression Node.t list ->
+  location:Location.t ->
+  create_origin:(string list -> Origin.t option) ->
+  expression
 
 val is_dunder_attribute : string -> bool
 
@@ -738,3 +763,5 @@ val inverse_operator : string -> string option
 val is_operator : string -> bool
 
 val operator_name_to_symbol : string -> string option
+
+val remove_origins : t -> t

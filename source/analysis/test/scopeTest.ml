@@ -770,8 +770,7 @@ let test_define_local_bindings _ =
                   (Some
                      (Node.create
                         ~location:(location (5, 9) (5, 17))
-                        (Expression.Expression.Name
-                           (Expression.create_name "KeyError" ~location:(location (5, 9) (5, 17)))))))
+                        (Expression.Expression.Name (Expression.Name.Identifier "KeyError")))))
                (location (5, 21) (6, 4))) );
         ( "z",
           Some

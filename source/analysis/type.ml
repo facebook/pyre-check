@@ -1884,10 +1884,12 @@ module OrderedTypes = struct
             Expression.Name
               (create_name
                  ~location
+                 ~create_origin:(fun _ -> None)
                  (Format.asprintf "%a" PrettyPrinting.Variable.TypeVarTuple.pp_concise variadic))
         | UnboundedElements annotation ->
             Ast.Expression.subscript
               ~location
+              ~create_origin:(fun _ -> None)
               "typing.Tuple"
               [
                 expression annotation; Expression.Constant Constant.Ellipsis |> Node.create ~location;
@@ -1895,7 +1897,9 @@ module OrderedTypes = struct
       in
       Expression.Subscript
         {
-          base = Expression.Name (create_name ~location "typing.Unpack") |> Node.create ~location;
+          base =
+            Expression.Name (create_name ~location ~create_origin:(fun _ -> None) "typing.Unpack")
+            |> Node.create ~location;
           index = index_value |> Node.create ~location;
         }
       |> Node.create ~location
@@ -2006,7 +2010,8 @@ module OrderedTypes = struct
     let unpacked =
       let location = Location.any in
       let wrapped_in_tuple =
-        subscript ~location "typing.Tuple" [annotation] |> Node.create ~location
+        subscript ~location ~create_origin:(fun _ -> None) "typing.Tuple" [annotation]
+        |> Node.create ~location
       in
       match parse_annotation wrapped_in_tuple with
       | Tuple (Concatenation concatenation) -> Some concatenation
@@ -3207,7 +3212,7 @@ module Variable = struct
                           {
                             base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                             attribute = "ParameterSpecification";
-                            origin = None;
+                            origin = _;
                           });
                     _;
                   };
@@ -3233,7 +3238,7 @@ module Variable = struct
                                 _;
                               };
                             attribute = "ParamSpec";
-                            origin = None;
+                            origin = _;
                           });
                     _;
                   };
@@ -3263,7 +3268,7 @@ module Variable = struct
                              _;
                            };
                          attribute = "TypeVarTuple";
-                         origin = None;
+                         origin = _;
                        });
                  _;
                };
@@ -3798,7 +3803,7 @@ module ToExpression = struct
 
   let subscript = subscript ~location
 
-  let create_name name = Expression.Name (create_name ~location name)
+  let create_name name = Expression.Name (create_name ~location ~create_origin:(fun _ -> None) name)
 
   let rec callable_parameters_expression = function
     | Record.Callable.Defined parameters ->
@@ -3882,6 +3887,7 @@ module ToExpression = struct
       | Concatenation concatenation -> concatenation_to_expressions concatenation
       | Concrete arguments -> List.map ~f:expression arguments
     in
+    let subscript = subscript ~create_origin:(fun _ -> None) in
     match annotation with
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (

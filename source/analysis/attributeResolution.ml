@@ -1337,8 +1337,10 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           let res =
             Type.Variable.ParamSpec.of_component_annotations
               ~get_param_spec
-              ~args_annotation:(Expression.delocalize args_annotation)
-              ~kwargs_annotation:(Expression.delocalize kwargs_annotation)
+              ~args_annotation:
+                (Expression.delocalize ~create_origin:(fun _ -> None) args_annotation)
+              ~kwargs_annotation:
+                (Expression.delocalize ~create_origin:(fun _ -> None) kwargs_annotation)
           in
           match res with
           | Some res -> Some res
@@ -1452,7 +1454,10 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           let metaclass_of_bases =
             let explicit_bases =
               let base_to_class base_expression =
-                delocalize base_expression |> parse_annotation |> Type.split |> fst
+                delocalize ~create_origin:(fun _ -> None) base_expression
+                |> parse_annotation
+                |> Type.split
+                |> fst
               in
               base_classes
               |> List.map ~f:base_to_class
@@ -3556,7 +3561,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
         in
         match Decorator.from_expression decorator with
         | None -> make_error CouldNotResolve
-        | Some { Decorator.name; arguments } -> (
+        | Some { Decorator.name; arguments; original_expression = _ } -> (
             let name = Node.value name |> Reference.delocalize in
             let decorator = resolve_exports name in
             let simple_decorator_name =
@@ -4070,7 +4075,8 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
               target_location = location;
             } ->
             let location = Location.strip_module location in
-            Ast.Expression.Expression.Name (Expression.create_name_from_reference ~location name)
+            Ast.Expression.Expression.Name
+              (Expression.create_name_from_reference ~location ~create_origin:(fun _ -> None) name)
             |> Node.create ~location
             |> self#parse_annotation
                  ~validation:ValidatePrimitives

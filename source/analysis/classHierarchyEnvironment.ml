@@ -95,7 +95,7 @@ module IncomingDataComputation = struct
     (* For some reason, this function parses `base_expression` into type with `allow_untracked` set
        to true, which is not the case for other invocations of parse_annotation within this file. *)
     let extract_supertype base_expression =
-      let value = delocalize base_expression in
+      let value = delocalize ~create_origin:(fun _ -> None) base_expression in
       match Node.value value with
       | Expression.Subscript _
       | Name _ -> (

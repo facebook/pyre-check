@@ -523,7 +523,8 @@ module State (Context : Context) = struct
       | _ ->
           let is_special_function =
             match Node.value callee with
-            | Expression.Name (Name.Attribute { origin = Some _; _ }) -> true
+            | Expression.Name (Name.Attribute { origin = Some { Node.value = origin; _ }; _ }) ->
+                Origin.is_dunder_method origin
             | _ -> false
           in
           let forward_argument

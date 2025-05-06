@@ -1106,6 +1106,7 @@ and Origin : sig
     | BinaryOperator of BinaryOperator.operator
     | UnaryOperator of UnaryOperator.operator
     | AugmentedAssign of BinaryOperator.operator
+    | Qualification of string list
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter (* __iter__ call for a for loop *)
@@ -1137,9 +1138,10 @@ and Origin : sig
     | NextCall (* next(x) is turned into x.__next__() *)
     | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
     | SelfImplicitTypeVar
-    | FunctionalEnumImplicitAuto of string
+    | FunctionalEnumImplicitAuto of string list
     | DecoratorInlining
     | ForDecoratedTarget
+    | ForDecoratedTargetCallee of string list
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
@@ -1147,12 +1149,15 @@ and Origin : sig
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val is_dunder_method : t -> bool
 end = struct
   type t =
     | ComparisonOperator of ComparisonOperator.operator
     | BinaryOperator of BinaryOperator.operator
     | UnaryOperator of UnaryOperator.operator
     | AugmentedAssign of BinaryOperator.operator
+    | Qualification of string list
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter (* __iter__ call for a for loop *)
@@ -1184,9 +1189,10 @@ end = struct
     | NextCall (* next(x) is turned into x.__next__() *)
     | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
     | SelfImplicitTypeVar
-    | FunctionalEnumImplicitAuto of string
+    | FunctionalEnumImplicitAuto of string list
     | DecoratorInlining
     | ForDecoratedTarget
+    | ForDecoratedTargetCallee of string list
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
@@ -1194,6 +1200,32 @@ end = struct
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let is_dunder_method = function
+    | ComparisonOperator _
+    | BinaryOperator _
+    | UnaryOperator _
+    | AugmentedAssign _
+    | SubscriptSetItem
+    | SubscriptGetItem
+    | ForIter
+    | ForNext
+    | GeneratorIter
+    | GeneratorNext
+    | With
+    | InContains
+    | InIter
+    | InGetItem
+    | InGetItemEq
+    | StrCall
+    | ReprCall
+    | AbsCall
+    | IterCall
+    | NextCall
+    | ImplicitInitCall
+    | FormatStringImplicitStr ->
+        true
+    | _ -> false
 end
 
 and Expression : sig
@@ -2870,15 +2902,18 @@ let is_none { Node.value; _ } =
   | _ -> false
 
 
-let create_name_from_identifiers identifiers =
+let create_name_from_identifiers ~location ~create_origin identifiers =
   let rec create = function
     | [] -> failwith "Name must have non-zero identifiers."
-    | [{ Node.location; value = identifier }] ->
-        Name (Name.Identifier identifier) |> Node.create ~location
-    | { Node.location; value = identifier } :: rest ->
+    | [identifier] -> Name (Name.Identifier identifier) |> Node.create ~location
+    | identifier :: rest as current_identifiers ->
         Name
           (Name.Attribute
-             { Name.Attribute.base = create rest; attribute = identifier; origin = None })
+             {
+               Name.Attribute.base = create rest;
+               attribute = identifier;
+               origin = current_identifiers |> create_origin >>| Node.create ~location;
+             })
         |> Node.create ~location
   in
   match create (List.rev identifiers) with
@@ -2886,24 +2921,28 @@ let create_name_from_identifiers identifiers =
   | _ -> failwith "Impossible."
 
 
-let create_name ~location name =
-  let identifier_names name =
+let create_name ~location ~create_origin name =
+  let identifiers =
     if String.equal name "..." then
       [name]
     else
       String.split ~on:'.' name
   in
-  identifier_names name |> List.map ~f:(Node.create ~location) |> create_name_from_identifiers
+  create_name_from_identifiers ~location ~create_origin identifiers
 
 
-let create_name_from_reference ~location reference =
+let create_name_from_reference ~location ~create_origin reference =
   let rec create = function
     | [] -> Name (Name.Identifier "") |> Node.create ~location
     | [identifier] -> Name (Name.Identifier identifier) |> Node.create ~location
-    | identifier :: rest ->
+    | identifier :: rest as current_reference ->
         Name
           (Name.Attribute
-             { Name.Attribute.base = create rest; attribute = identifier; origin = None })
+             {
+               Name.Attribute.base = create rest;
+               attribute = identifier;
+               origin = current_reference |> create_origin >>| Node.create ~location;
+             })
         |> Node.create ~location
   in
   match create (List.rev (Reference.as_list reference)) with
@@ -2911,8 +2950,10 @@ let create_name_from_reference ~location reference =
   | _ -> failwith "Impossible."
 
 
-let from_reference ~location reference =
-  create_name_from_reference ~location reference |> (fun name -> Name name) |> Node.create ~location
+let from_reference ~location ~create_origin reference =
+  create_name_from_reference ~location ~create_origin reference
+  |> (fun name -> Name name)
+  |> Node.create ~location
 
 
 let name_to_identifiers name =
@@ -3003,7 +3044,8 @@ let rec sanitized ({ Node.value; location } as expression) =
   | _ -> expression
 
 
-let rec delocalize ({ Node.value; location } as expression) =
+let rec delocalize ~create_origin ({ Node.value; location } as expression) =
+  let delocalize = delocalize ~create_origin in
   let value =
     match value with
     | Subscript { Subscript.base; index } ->
@@ -3034,12 +3076,16 @@ let rec delocalize ({ Node.value; location } as expression) =
           let qualifier =
             Str.matched_group 1 identifier
             |> String.substr_replace_all ~pattern:"?" ~with_:"."
-            |> create_name ~location
+            |> create_name ~location ~create_origin
             |> fun name -> Name name |> Node.create ~location
           in
           Name
             (Name.Attribute
-               { Name.Attribute.base = qualifier; attribute = sanitized; origin = None })
+               {
+                 Name.Attribute.base = qualifier;
+                 attribute = sanitized;
+                 origin = create_origin [identifier] >>| Node.create ~location;
+               })
         else (
           Log.debug "Unable to extract qualifier from %s" identifier;
           Name (Name.Identifier sanitized))
@@ -3153,8 +3199,8 @@ let arguments_location
       }
 
 
-let subscript base indices ~location =
-  let create_name name = Name (create_name ~location name) in
+let subscript base indices ~location ~create_origin =
+  let create_name name = Name (create_name ~location ~create_origin name) in
   let index =
     match indices with
     | [index] -> index
@@ -3234,3 +3280,23 @@ let operator_name_to_symbol = function
   | "__xor__" -> Some "^"
   | "__or__" -> Some "|"
   | _ -> None
+
+
+let remove_origins expression =
+  let map_name ~mapper = function
+    | Name.Identifier _ as identifier -> identifier
+    | Name.Attribute { Name.Attribute.base; attribute; origin = _ } ->
+        Name.Attribute { Name.Attribute.base = Mapper.map ~mapper base; attribute; origin = None }
+  in
+  let map_call ~mapper { Call.callee; arguments; origin = _ } =
+    {
+      Call.callee = Mapper.map ~mapper callee;
+      arguments =
+        List.map
+          ~f:(fun { Call.Argument.name; value } ->
+            { Call.Argument.name; value = Mapper.map ~mapper value })
+          arguments;
+      origin = None;
+    }
+  in
+  Mapper.map ~mapper:(Mapper.create_transformer ~map_name ~map_call ()) expression
