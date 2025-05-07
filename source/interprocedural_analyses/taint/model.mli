@@ -61,6 +61,8 @@ module Mode : sig
     | SkipModelBroadening
     | InferSelfTito (* Infer taint propagation from arguments to `self` for all methods. *)
     | InferArgumentTito (* Infer taint propagation between arguments. *)
+    | CalledWhenParameter
+      (* When a callable is passed as parameters at any call site, always treat as being called. *)
   [@@deriving show, compare, equal]
 
   val from_string : string -> t option

@@ -346,6 +346,8 @@ module Mode = struct
     | SkipModelBroadening
     | InferSelfTito (* Infer taint propagation from arguments to `self` for all methods. *)
     | InferArgumentTito (* Infer taint propagation between arguments. *)
+    | CalledWhenParameter
+      (* When a callable is passed as parameters at any call site, always treat as being called. *)
   [@@deriving compare, equal]
 
   let pp formatter = function
@@ -360,6 +362,7 @@ module Mode = struct
     | SkipModelBroadening -> Format.fprintf formatter "SkipModelBroadening"
     | InferSelfTito -> Format.fprintf formatter "InferSelfTito"
     | InferArgumentTito -> Format.fprintf formatter "InferArgumentTito"
+    | CalledWhenParameter -> Format.fprintf formatter "CalledWhenParameter"
 
 
   let show = Format.asprintf "%a" pp
@@ -376,6 +379,7 @@ module Mode = struct
     | "IgnoreDecorator" -> Some IgnoreDecorator
     | "SkipModelBroadening" -> Some SkipModelBroadening
     | "AnalyzeAllOverrides" -> Some AnalyzeAllOverrides
+    | "CalledWhenParameter" -> Some CalledWhenParameter
     | "InferSelfTito" -> Some InferSelfTito
     | "InferArgumentTito" -> Some InferArgumentTito
     | _ -> None

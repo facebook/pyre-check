@@ -3018,6 +3018,7 @@ end = struct
           | ["SkipDecoratorWhenInlining"]
           | ["SkipOverrides"]
           | ["AnalyzeAllOverrides"]
+          | ["CalledWhenParameter"]
           | ["Entrypoint"]
           | ["SkipObscure"]
           | ["IgnoreDecorator"]
@@ -3901,6 +3902,8 @@ let rec parse_statement
           | "SkipOverrides" -> Some (Either.Second (decorator_with_name "SkipOverrides"))
           | "AnalyzeAllOverrides" ->
               Some (Either.Second (decorator_with_name "AnalyzeAllOverrides"))
+          | "CalledWhenParameter" ->
+              Some (Either.Second (decorator_with_name "CalledWhenParameter"))
           | "Entrypoint" -> Some (Either.Second (decorator_with_name "Entrypoint"))
           | "SkipModelBroadening" ->
               Some (Either.Second (decorator_with_name "SkipModelBroadening"))
