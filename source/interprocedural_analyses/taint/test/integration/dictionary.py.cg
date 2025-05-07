@@ -45,9 +45,10 @@ Call dependencies
   "dictionary.dict_get_foo (fun)": [ "dict.get (method)" ],
   "dictionary.dict_get_foo_with_default (fun)": [ "dict.get (method)" ],
   "dictionary.dict_getitem_mutate (fun)": [
-    "dict.__getitem__ (method)", "object.__new__ (method)",
-    "range.__init__ (method)", "range.__iter__ (method)",
-    "str.__add__ (method)", "typing.Iterator.__next__ (method)"
+    "dict.__getitem__ (method)", "dict.__setitem__ (method)",
+    "object.__new__ (method)", "range.__init__ (method)",
+    "range.__iter__ (method)", "str.__add__ (method)",
+    "typing.Iterator.__next__ (method)"
   ],
   "dictionary.dict_only_key_of_parameter_sink (fun)": [
     "_test_sink (fun)", "dict.__getitem__ (method)",

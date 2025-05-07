@@ -414,7 +414,7 @@ Higher order call graphs
   "callable": "dictionary.dict_getitem_mutate",
   "returned_callables": [],
   "calls": {
-    "549:11-549:15": {
+    "548:11-548:15": {
       "__getitem__": {
         "call": {
           "calls": [
@@ -429,7 +429,20 @@ Higher order call graphs
         }
       }
     },
-    "548:4-548:13": {
+    "547:4-547:13": {
+      "__setitem__": {
+        "call": {
+          "calls": [
+            {
+              "target": "dict.__setitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
+            }
+          ]
+        }
+      },
       "__iadd__": {
         "call": {
           "calls": [
@@ -444,17 +457,10 @@ Higher order call graphs
         }
       }
     },
-    "548:4-548:8": {
+    "547:4-547:8": {
       "__getitem__": {
         "call": {
           "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            },
             {
               "target": "dict.__getitem__",
               "index": 0,
@@ -2824,7 +2830,7 @@ Higher order call graphs
   "callable": "dictionary.test_dict_getitem_mutate",
   "returned_callables": [],
   "calls": {
-    "553:35-553:49": {
+    "552:35-552:49": {
       "_test_source": {
         "call": {
           "calls": [
@@ -2833,7 +2839,7 @@ Higher order call graphs
         }
       }
     },
-    "553:15-553:53": {
+    "552:15-552:53": {
       "dict_getitem_mutate": {
         "call": {
           "calls": [
@@ -2846,7 +2852,7 @@ Higher order call graphs
         }
       }
     },
-    "553:4-553:54": {
+    "552:4-552:54": {
       "_test_sink": {
         "call": {
           "calls": [

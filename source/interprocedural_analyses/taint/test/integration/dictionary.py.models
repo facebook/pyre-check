@@ -1354,6 +1354,71 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.test_dict_getitem_mutate",
+    "callable_line": 551,
+    "code": 5002,
+    "line": 552,
+    "start": 15,
+    "end": 53,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 552, "start": 35, "end": 49 } ],
+            "origin": { "line": 552, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 552, "start": 15, "end": 53 },
+            "call_site": "552:4-552:54"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.test_dict_getitem_mutate:5002:0:Call|_test_sink|0|formal(arg):88bd1dfcc2555054f4499efe79675052"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.test_dict_multiple_targets",
     "callable_line": 534,
     "code": 5002,
@@ -2581,6 +2646,38 @@
               { "has": "first-index" }, { "first-index": "foo" }
             ],
             "tito_positions": [ { "line": 520, "start": 11, "end": 12 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.dict_getitem_mutate",
+    "filename": "dictionary.py",
+    "callable_line": 545,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 547, "start": 12, "end": 13 } ],
             "tito": {}
           }
         ]

@@ -544,7 +544,6 @@ def test_dict_multiple_targets() -> None:
 
 def dict_getitem_mutate(x: str, j: int) -> str:
     d: Dict[int, str] = {i: "" for i in range(10)}
-    # TODO(T201163025): False negative
     d[j] += x
     return d[j]
 

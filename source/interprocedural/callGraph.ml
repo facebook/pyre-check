@@ -2849,31 +2849,38 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
   | expression -> expression
 
 
-let redirect_assignments = function
-  | {
-      Node.value = Statement.AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment);
-      location;
+let redirect_assignments statement =
+  let statement =
+    (* Note that there are cases where we perform two consecutive redirects.
+     * For instance, for `d[j] += x` *)
+    match statement with
+    | {
+     Node.value = Statement.AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment);
+     location;
     } ->
-      let call =
-        AugmentedAssign.lower_to_expression
-          ~location
-          ~callee_location:target.Node.location
-          augmented_assignment
-      in
-      {
-        Node.location;
-        value = Statement.Assign { Assign.target; annotation = None; value = Some call };
-      }
+        let call =
+          AugmentedAssign.lower_to_expression
+            ~location
+            ~callee_location:target.Node.location
+            augmented_assignment
+        in
+        {
+          Node.location;
+          value = Statement.Assign { Assign.target; annotation = None; value = Some call };
+        }
+    | _ -> statement
+  in
+  match statement with
   | {
-      Node.value =
-        Statement.Assign
-          {
-            Assign.target = { Node.value = Expression.Subscript { base; index }; _ };
-            value = Some value_expression;
-            _;
-          };
-      location;
-    } ->
+   Node.value =
+     Statement.Assign
+       {
+         Assign.target = { Node.value = Expression.Subscript { base; index }; _ };
+         value = Some value_expression;
+         _;
+       };
+   location;
+  } ->
       (* TODO(T187636576): For now, we translate assignments such as `d[a] = b` into
          `d.__setitem__(a, b)`. Unfortunately, this won't work for multi-target assignments such as
          `x, y[a], z = w`. In the future, we should implement proper logic to handle those. *)
