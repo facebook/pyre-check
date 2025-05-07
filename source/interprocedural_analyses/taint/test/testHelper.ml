@@ -721,6 +721,12 @@ let initialize
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       definitions
   in
+  let skip_analysis_targets =
+    initial_models
+    |> SharedModels.skip_analysis ~scheduler
+    |> Target.Set.elements
+    |> Target.HashSet.of_list
+  in
   let ({ CallGraph.SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
     CallGraph.SharedMemory.build_whole_program_call_graph
       ~scheduler
@@ -732,7 +738,7 @@ let initialize
       ~attribute_targets:(SharedModels.object_targets initial_models)
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~decorator_resolution
-      ~skip_analysis_targets:(Target.HashSet.create ())
+      ~skip_analysis_targets
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
@@ -759,7 +765,8 @@ let initialize
       ~call_graph
       ~dependency_graph
       ~override_graph_shared_memory
-      ~skip_analysis_targets:(Target.HashSet.create ())
+      ~skip_analysis_targets
+      ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
       ~decorator_resolution
       ~decorators:
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)

@@ -24,6 +24,7 @@ end
 let assert_higher_order_call_graph_fixpoint
     ?(max_iterations = 10)
     ?(skip_analysis_targets = Target.HashSet.create ())
+    ?(called_when_parameter = Target.HashSet.create ())
     ?(maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth)
     ~source
     ~expected
@@ -113,6 +114,7 @@ let assert_higher_order_call_graph_fixpoint
       ~dependency_graph
       ~override_graph_shared_memory
       ~skip_analysis_targets
+      ~called_when_parameter
       ~decorator_resolution
       ~decorators:
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
@@ -1995,6 +1997,67 @@ let test_higher_order_call_graph_fixpoint =
                                         });
                                  ]
                                ~is_attribute:false
+                               ())) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def foo():
+       return
+     def bar(f):
+       return
+     def main():
+       return bar(foo)  # Test treating parameters as being called
+  |}
+           ~called_when_parameter:
+             ([Target.Regular.Function { name = "test.foo"; kind = Normal } |> Target.from_regular]
+             |> Target.HashSet.of_list)
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "7:9-7:17",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_call
+                            (CallCallees.create
+                               ~call_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                                 ]
+                               ~higher_order_parameters:
+                                 (HigherOrderParameterMap.from_list
+                                    [
+                                      {
+                                        index = 0;
+                                        call_targets =
+                                          [
+                                            CallTarget.create_regular
+                                              (Target.Regular.Function
+                                                 { name = "test.foo"; kind = Normal });
+                                          ];
+                                        unresolved = CallGraph.Unresolved.False;
+                                      };
+                                    ])
+                               ())) );
+                     ( "7:13-7:16",
+                       LocationCallees.Singleton
+                         (ExpressionCallees.from_attribute_access
+                            (AttributeAccessCallees.create
+                               ~callable_targets:
+                                 [
+                                   CallTarget.create_regular
+                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                                 ]
                                ())) );
                    ];
                  returned_callables = [];

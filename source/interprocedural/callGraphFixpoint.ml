@@ -329,6 +329,7 @@ let compute
       }
     ~override_graph_shared_memory
     ~skip_analysis_targets
+    ~called_when_parameter
     ~decorator_resolution
     ~decorators
   =
@@ -405,7 +406,7 @@ let compute
           callables_to_definitions_map =
             Target.CallablesSharedMemory.read_only callables_to_definitions_map;
           skip_analysis_targets;
-          called_when_parameter = Target.HashSet.create ();
+          called_when_parameter;
           maximum_target_depth;
           maximum_parameterized_targets_at_call_site;
         }

@@ -965,6 +965,7 @@ let run_taint_analysis
           ~dependency_graph:original_dependency_graph
           ~override_graph_shared_memory
           ~skip_analysis_targets:skip_analysis_targets_hashset
+          ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
           ~decorator_resolution
           ~decorators:
             (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only

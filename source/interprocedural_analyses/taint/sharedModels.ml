@@ -56,6 +56,12 @@ let skip_analysis ~scheduler models =
   models |> targets_with_mode ~scheduler ~mode:Model.Mode.SkipAnalysis |> Target.Set.of_list
 
 
+let called_when_parameter ~scheduler models =
+  models
+  |> targets_with_mode ~scheduler ~mode:Model.Mode.CalledWhenParameter
+  |> Target.HashSet.of_list
+
+
 let entrypoints ~scheduler models = targets_with_mode ~scheduler ~mode:Model.Mode.Entrypoint models
 
 let object_targets models =

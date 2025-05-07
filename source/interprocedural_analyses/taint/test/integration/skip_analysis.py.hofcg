@@ -1,30 +1,6 @@
 @generated
 Higher order call graphs
 {
-  "callable": "skip_analysis.$toplevel",
-  "returned_callables": [],
-  "calls": {
-    "27:11-27:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "27:0-27:26": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    }
-  }
-}
-{
   "callable": "skip_analysis.no_issue_due_to_skip",
   "returned_callables": [],
   "calls": {
@@ -94,45 +70,6 @@ Higher order call graphs
         "call": {
           "calls": [
             { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    }
-  }
-}
-{
-  "callable": "skip_analysis.SkipMe.taint_here",
-  "returned_callables": [],
-  "calls": {
-    "13:8-13:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    }
-  }
-}
-{
-  "callable": "skip_analysis.SkipTopLevel.$class_toplevel",
-  "returned_callables": [],
-  "calls": {
-    "32:15-32:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "32:4-32:30": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
           ]
         }
       }
