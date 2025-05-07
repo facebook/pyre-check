@@ -531,6 +531,7 @@ val higher_order_call_graph_of_define
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   skip_analysis_targets:Target.HashSet.t ->
+  called_when_parameter:Target.HashSet.t ->
   callable:Target.t option ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->

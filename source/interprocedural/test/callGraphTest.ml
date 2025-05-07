@@ -119,8 +119,10 @@ let assert_call_graph_of_define
 let assert_higher_order_call_graph_of_define
     ?(object_targets = [])
     ?(initial_state = CallGraph.HigherOrderCallGraph.State.empty)
+    ?(called_when_parameter = Target.HashSet.create ())
     ?(maximum_parameterized_targets_at_call_site =
       Configuration.StaticAnalysis.default_maximum_parameterized_targets_at_call_site)
+    ?callable
     ~source
     ~define_name
     ~expected_call_graph
@@ -163,7 +165,8 @@ let assert_higher_order_call_graph_of_define
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
       ~skip_analysis_targets:(Target.HashSet.create ())
-      ~callable:None
+      ~called_when_parameter
+      ~callable
       ~qualifier:module_name
       ~define
       ~initial_state
@@ -7838,6 +7841,101 @@ let test_higher_order_call_graph_of_define =
                                   unresolved = CallGraph.Unresolved.False;
                                 };
                               ])
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo(f):
+       return f
+     def bar():
+       return
+     def main():
+       foo(bar)  # Test keeping higher order parameters
+  |}
+           ~define_name:"test.main"
+           ~called_when_parameter:
+             ([Target.Regular.Function { name = "test.bar"; kind = Normal } |> Target.from_regular]
+             |> Target.HashSet.of_list)
+           ~expected_call_graph:
+             [
+               ( "7:2-7:10",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [
+                                {
+                                  index = 0;
+                                  call_targets =
+                                    [
+                                      CallTarget.create_regular
+                                        (Target.Regular.Function
+                                           { name = "test.bar"; kind = Normal });
+                                    ];
+                                  unresolved = CallGraph.Unresolved.False;
+                                };
+                              ])
+                         ())) );
+               ( "7:6-7:9",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_attribute_access
+                      (AttributeAccessCallees.create
+                         ~callable_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                           ]
+                         ())) );
+             ]
+           ~expected_returned_callables:[]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_of_define
+           ~source:
+             {|
+     def foo(f):
+       ...  # We don't create parameterized targets for stubs
+     def bar():
+       return
+     def baz(f):
+       foo(f)  # Test creating additional higher order parameters
+     def main():
+       baz(bar)
+  |}
+           ~define_name:"test.baz"
+           ~callable:
+             (create_parameterized_target
+                ~regular:(Target.Regular.Function { name = "test.baz"; kind = Normal })
+                ~parameters:
+                  [
+                    ( create_positional_parameter 0 "f",
+                      Target.Regular.Function { name = "test.bar"; kind = Normal }
+                      |> Target.from_regular );
+                  ])
+           ~expected_call_graph:
+             [
+               ( "7:2-7:8",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create_regular
+                               (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ~higher_order_parameters:
+                           (HigherOrderParameterMap.from_list
+                              [ (* TODO(T223511074): Expect `bar` here. *) ])
                          ())) );
              ]
            ~expected_returned_callables:[]

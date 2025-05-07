@@ -14,6 +14,7 @@ module CallGraphAnalysis = struct
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
       skip_analysis_targets: Target.HashSet.t;
+      called_when_parameter: Target.HashSet.t;
       maximum_target_depth: int;
       maximum_parameterized_targets_at_call_site: int option;
     }
@@ -91,6 +92,7 @@ module CallGraphAnalysis = struct
           define_call_graphs;
           callables_to_definitions_map;
           skip_analysis_targets;
+          called_when_parameter;
           maximum_target_depth;
           maximum_parameterized_targets_at_call_site;
         }
@@ -139,6 +141,7 @@ module CallGraphAnalysis = struct
               ~pyre_api
               ~callables_to_definitions_map
               ~skip_analysis_targets
+              ~called_when_parameter
               ~callable:(Some callable)
               ~qualifier
               ~define
@@ -402,6 +405,7 @@ let compute
           callables_to_definitions_map =
             Target.CallablesSharedMemory.read_only callables_to_definitions_map;
           skip_analysis_targets;
+          called_when_parameter = Target.HashSet.create ();
           maximum_target_depth;
           maximum_parameterized_targets_at_call_site;
         }

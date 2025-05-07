@@ -4397,6 +4397,8 @@ module HigherOrderCallGraph = struct
 
     val skip_analysis_targets : Target.HashSet.t
 
+    val called_when_parameter : Target.HashSet.t
+
     val profiler : CallGraphProfiler.t
 
     val maximum_target_depth : int
@@ -4796,10 +4798,10 @@ module HigherOrderCallGraph = struct
             ~argument:None
             ~f
         in
-        let analyze_arguments
+        let analyze_argument
             ~higher_order_parameters
             index
-            state_so_far
+            (state_so_far, additional_higher_order_parameters)
             { Call.Argument.value = argument; _ }
           =
           let callees, new_state =
@@ -4810,18 +4812,50 @@ module HigherOrderCallGraph = struct
             | Some { HigherOrderParameter.call_targets; _ } -> call_targets
             | None -> []
           in
-          let callees =
+          let partition_called_when_parameter =
+            CallTarget.Set.fold
+              CallTarget.Set.Element
+              ~init:(CallTarget.Set.bottom, CallTarget.Set.bottom)
+              ~f:(fun call_target (called_when_parameter, not_called_when_parameter) ->
+                let is_called_when_parameter =
+                  call_target
+                  |> CallTarget.target
+                  |> Target.strip_parameters
+                  |> Core.Hash_set.mem Context.called_when_parameter
+                in
+                if is_called_when_parameter then
+                  CallTarget.Set.add call_target called_when_parameter, not_called_when_parameter
+                else
+                  called_when_parameter, CallTarget.Set.add call_target not_called_when_parameter)
+          in
+          let called_when_parameter, not_called_when_parameter =
             call_targets_from_higher_order_parameters
             |> CallTarget.Set.of_list
             |> CallTarget.Set.join callees
+            |> partition_called_when_parameter
           in
           log
-            "Finished analyzing argument `%a`: %a"
+            "Finished analyzing argument `%a` -- called_when_parameter: %a. \
+             not_called_when_parameter: %a"
             Expression.pp
             argument
             CallTarget.Set.pp
-            callees;
-          new_state, callees
+            called_when_parameter
+            CallTarget.Set.pp
+            not_called_when_parameter;
+          let additional_higher_order_parameters =
+            if CallTarget.Set.is_bottom called_when_parameter then
+              additional_higher_order_parameters
+            else
+              HigherOrderParameterMap.add
+                additional_higher_order_parameters
+                {
+                  HigherOrderParameter.call_targets = CallTarget.Set.elements called_when_parameter;
+                  index;
+                  unresolved = Unresolved.False;
+                }
+          in
+          (new_state, additional_higher_order_parameters), not_called_when_parameter
         in
         let ({
                CallCallees.call_targets = original_call_targets;
@@ -4854,9 +4888,12 @@ module HigherOrderCallGraph = struct
         let callee_return_values, state =
           analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
         in
-        let state, argument_callees =
+        let (state, additional_higher_order_parameters), argument_callees_not_called_when_parameter =
           track_apply_call_step AnalyzeArguments (fun () ->
-              List.fold_mapi arguments ~f:(analyze_arguments ~higher_order_parameters) ~init:state)
+              List.fold_mapi
+                arguments
+                ~f:(analyze_argument ~higher_order_parameters)
+                ~init:(state, HigherOrderParameterMap.empty))
         in
         let ( parameterized_call_targets,
               decorated_call_targets,
@@ -4878,7 +4915,7 @@ module HigherOrderCallGraph = struct
                  ~arguments
                  ~unresolved
                  ~override_implicit_receiver:true
-                 ~argument_callees
+                 ~argument_callees:argument_callees_not_called_when_parameter
                  ~track_apply_call_step_name:"callee_return_targets"
           in
           let {
@@ -4894,7 +4931,7 @@ module HigherOrderCallGraph = struct
               ~arguments
               ~unresolved
               ~override_implicit_receiver:false
-              ~argument_callees
+              ~argument_callees:argument_callees_not_called_when_parameter
               ~track_apply_call_step_name:"call_targets"
               original_call_targets
           in
@@ -4916,19 +4953,20 @@ module HigherOrderCallGraph = struct
             ~arguments
             ~unresolved
             ~override_implicit_receiver:false
-            ~argument_callees
+            ~argument_callees:argument_callees_not_called_when_parameter
             ~track_apply_call_step_name:"init_targets"
             original_init_targets
         in
-        (* Discard higher order parameters only if each original target is parameterized. *)
+        (* Discard higher order parameters only if each original target is parameterized, except for
+           the targets that must be treated as being called. *)
         let higher_order_parameters =
           if
             List.is_empty non_parameterized_call_targets
             && List.is_empty non_parameterized_init_targets
           then
-            HigherOrderParameterMap.empty
+            additional_higher_order_parameters
           else
-            higher_order_parameters
+            HigherOrderParameterMap.join higher_order_parameters additional_higher_order_parameters
         in
         let new_call_targets =
           parameterized_call_targets
@@ -5003,7 +5041,7 @@ module HigherOrderCallGraph = struct
                 Algorithms.fold_balanced
                   ~f:CallTarget.Set.join
                   ~init:CallTarget.Set.bottom
-                  argument_callees
+                  argument_callees_not_called_when_parameter
               else
                 CallTarget.Set.bottom
             in
@@ -5460,6 +5498,7 @@ let higher_order_call_graph_of_define
     ~pyre_api
     ~callables_to_definitions_map
     ~skip_analysis_targets
+    ~called_when_parameter
     ~callable
     ~qualifier
     ~define
@@ -5491,6 +5530,8 @@ let higher_order_call_graph_of_define
     let callables_to_definitions_map = callables_to_definitions_map
 
     let skip_analysis_targets = skip_analysis_targets
+
+    let called_when_parameter = called_when_parameter
 
     let profiler = profiler
 
