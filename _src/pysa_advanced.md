@@ -804,6 +804,19 @@ def BaseClass.method(self): ...
 
 Decorator `@AnalyzeAllOverrides` is often used to reduce false negatives, by analyzing all overrides of some selected methods. This offers a more fine-grained option than tweaking `--maximum-overrides-to-analyze` for all methods. Adding decorator `@AnalyzeAllOverrides` to some selected methods is faster than using a large threshold of maximum overrides for all methods, but achieves better precision than using a small threshold.
 
+## Force to treat a callable as being called when passed as parameters
+
+We allow the usage of decorator `@CalledWhenParameter` to force treating the callable as being called, when the callable is passed as a parameter. An example is:
+```python
+@CalledWhenParameter
+def foo(): ...
+def bar(f):
+  f()
+def main():
+  bar(foo) # We would treat `foo` as being called here.
+```
+This is useful for reducing false negatives. By default, the higher order call graph building would always create a parameterized callable `bar[f=foo]` (i.e., a version of `bar` where `f` is instantiated as `foo`) at the call site in `main`. Hence, `foo` would no longer get called if the higher order call graph building is limited in knowing that `foo` is eventually called in `bar`. This may lead to false negatives.
+
 ## Limit the trace length for better signal and performance
 
 By default, Pysa will find all flows from sources to sinks matching a rule.
