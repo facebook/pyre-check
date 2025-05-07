@@ -459,12 +459,6 @@ Higher order call graphs
               "index": 0,
               "implicit_receiver": true,
               "return_type": []
-            },
-            {
-              "target": "object.__class__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
             }
           ]
         }
@@ -1193,6 +1187,14 @@ Higher order call graphs
       }
     },
     "64:14-64:25": {
+      "__getitem__": {
+        "attribute_access": {
+          "globals": [
+            { "target": "Obj{django.http.Request.GET}", "index": 1 }
+          ],
+          "is_attribute": true
+        }
+      },
       "GET": {
         "attribute_access": {
           "globals": [

@@ -615,8 +615,12 @@ Higher order call graphs
     "12:19-12:22": {
       "$parameter$f": {
         "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          "calls": [
+            {
+              "target": "entrypoint.function_entrypoint_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
           ]
         }
       }
@@ -630,8 +634,12 @@ Higher order call graphs
     "12:19-12:22": {
       "$parameter$f": {
         "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+          "calls": [
+            {
+              "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
+              "index": 0,
+              "return_type": []
+            }
           ]
         }
       }

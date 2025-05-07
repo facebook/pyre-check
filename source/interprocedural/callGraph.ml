@@ -5026,6 +5026,57 @@ module HigherOrderCallGraph = struct
             CallTarget.Set.join pass_through_arguments returned_callables_from_call, state)
 
 
+      and analyze_comprehension_generators ~pyre_in_context ~state generators =
+        let add_binding
+            (state, pyre_in_context)
+            ({ Comprehension.Generator.conditions; _ } as generator)
+          =
+          let ({ Assign.target; value; _ } as assignment) =
+            Statement.generator_assignment generator
+          in
+          let state =
+            match value with
+            | Some value -> analyze_expression ~pyre_in_context ~state ~expression:value |> snd
+            | None -> state
+          in
+          (* TODO: assign value to target *)
+          let _ = target in
+          (* Since generators create variables that Pyre sees as scoped within the generator, handle
+             them by adding the generator's bindings to the resolution. *)
+          (* Analyzing the conditions might have side effects. *)
+          let analyze_condition state condiiton =
+            analyze_expression ~pyre_in_context ~state ~expression:condiiton |> snd
+          in
+          let pyre_in_context =
+            PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
+          in
+          let state = List.fold conditions ~init:state ~f:analyze_condition in
+          state, pyre_in_context
+        in
+        List.fold ~f:add_binding generators ~init:(state, pyre_in_context)
+
+
+      and analyze_dictionary_comprehension
+          ~pyre_in_context
+          ~state
+          { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators; _ }
+        =
+        let state, pyre_in_context =
+          analyze_comprehension_generators ~pyre_in_context ~state generators
+        in
+        let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+        let _, state = analyze_expression ~pyre_in_context ~state ~expression:key in
+        CallTarget.Set.bottom, state
+
+
+      and analyze_comprehension ~pyre_in_context ~state { Comprehension.element; generators; _ } =
+        let bound_state, pyre_in_context =
+          analyze_comprehension_generators ~pyre_in_context ~state generators
+        in
+        let _, state = analyze_expression ~pyre_in_context ~state:bound_state ~expression:element in
+        CallTarget.Set.bottom, state
+
+
       (* Return possible callees and the new state. *)
       and analyze_expression
           ~pyre_in_context
@@ -5049,17 +5100,57 @@ module HigherOrderCallGraph = struct
               value
           with
           | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
-          | BooleanOperator _ -> CallTarget.Set.bottom, state
-          | ComparisonOperator _ -> CallTarget.Set.bottom, state
+          | BooleanOperator { left; right; _ } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
+              CallTarget.Set.bottom, state
+          | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
+              match
+                ComparisonOperator.lower_to_expression
+                  ~location
+                  ~callee_location:left.Node.location
+                  comparison
+              with
+              | Some override -> analyze_expression ~pyre_in_context ~state ~expression:override
+              | None ->
+                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
+                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
+                  CallTarget.Set.bottom, state)
           | Call ({ callee = _; arguments; origin = _ } as call) ->
               analyze_call ~pyre_in_context ~location ~call ~arguments ~state
           | Constant _ -> CallTarget.Set.bottom, state
-          | Dictionary _ -> CallTarget.Set.bottom, state
-          | DictionaryComprehension _ -> CallTarget.Set.bottom, state
-          | Generator _ -> CallTarget.Set.bottom, state
-          | Lambda { parameters = _; body = _ } -> CallTarget.Set.bottom, state
-          | List _ -> CallTarget.Set.bottom, state
-          | ListComprehension _ -> CallTarget.Set.bottom, state
+          | Dictionary entries ->
+              let analyze_dictionary_entry state = function
+                | Dictionary.Entry.KeyValue { key; value } ->
+                    let _, state = analyze_expression ~pyre_in_context ~state ~expression:key in
+                    let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+                    state
+                | Splat s -> analyze_expression ~pyre_in_context ~state ~expression:s |> snd
+              in
+              let state = List.fold entries ~f:analyze_dictionary_entry ~init:state in
+              CallTarget.Set.bottom, state
+          | DictionaryComprehension comprehension ->
+              analyze_dictionary_comprehension ~pyre_in_context ~state comprehension
+          | Generator comprehension -> analyze_comprehension ~pyre_in_context ~state comprehension
+          | Lambda { parameters = _; body } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:body in
+              CallTarget.Set.bottom, state
+          | List list ->
+              let analyze_list_element state expression =
+                analyze_expression ~pyre_in_context ~state ~expression |> snd
+              in
+              let state = List.fold list ~f:analyze_list_element ~init:state in
+              CallTarget.Set.bottom, state
+          | ListComprehension comprehension ->
+              analyze_comprehension ~pyre_in_context ~state comprehension
+          | Set set ->
+              let analyze_set_element state expression =
+                analyze_expression ~pyre_in_context ~state ~expression |> snd
+              in
+              let state = List.fold ~f:analyze_set_element set ~init:state in
+              CallTarget.Set.bottom, state
+          | SetComprehension comprehension ->
+              analyze_comprehension ~pyre_in_context ~state comprehension
           | Name (Name.Identifier identifier) ->
               let global_callables =
                 Context.input_define_call_graph
@@ -5147,16 +5238,46 @@ module HigherOrderCallGraph = struct
                 |> Option.value ~default:CallTarget.Set.bottom
               in
               callables, state
-          | Set _ -> CallTarget.Set.bottom, state
-          | SetComprehension _ -> CallTarget.Set.bottom, state
-          | Starred (Starred.Once _)
-          | Starred (Starred.Twice _) ->
+          | Starred (Starred.Once expression)
+          | Starred (Starred.Twice expression) ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression in
               CallTarget.Set.bottom, state
-          | FormatString _ -> CallTarget.Set.bottom, state
-          | Ternary { target = _; test = _; alternative = _ } -> CallTarget.Set.bottom, state
-          | Tuple _ -> CallTarget.Set.bottom, state
-          | UnaryOperator _ -> CallTarget.Set.bottom, state
-          | WalrusOperator { target = _; value = _ } -> CallTarget.Set.bottom, state
+          | FormatString substrings ->
+              let analyze_substring state = function
+                | Substring.Literal _ -> state
+                | Substring.Format { value; format_spec } ->
+                    (* TODO: redirect decorators in the stringify target *)
+                    let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+                    let state =
+                      match format_spec with
+                      | Some format_spec ->
+                          analyze_expression ~pyre_in_context ~state ~expression:format_spec |> snd
+                      | None -> state
+                    in
+                    state
+              in
+              let state = List.fold substrings ~init:state ~f:analyze_substring in
+              CallTarget.Set.bottom, state
+          | Ternary { target; test; alternative } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:test in
+              let value_then, state_then =
+                analyze_expression ~pyre_in_context ~state ~expression:target
+              in
+              let value_else, state_else =
+                analyze_expression ~pyre_in_context ~state ~expression:alternative
+              in
+              CallTarget.Set.join value_then value_else, join state_then state_else
+          | Tuple expressions ->
+              let analyze_tuple_element state expression =
+                analyze_expression ~pyre_in_context ~state ~expression |> snd
+              in
+              let state = List.fold ~f:analyze_tuple_element ~init:state expressions in
+              CallTarget.Set.bottom, state
+          | UnaryOperator { operand; _ } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:operand in
+              CallTarget.Set.bottom, state
+          | WalrusOperator { target = _; value } ->
+              analyze_expression ~pyre_in_context ~state ~expression:value
           | Yield None -> CallTarget.Set.bottom, state
           | Yield (Some expression)
           | YieldFrom expression ->
@@ -5297,7 +5418,11 @@ module HigherOrderCallGraph = struct
                 ~root:(name |> Reference.show |> State.create_root_from_identifier)
                 ~callees
                 state
-          | Delete _ -> state
+          | Delete expressions ->
+              let analyze_delete state expression =
+                analyze_expression ~pyre_in_context ~state ~expression |> snd
+              in
+              List.fold ~f:analyze_delete ~init:state expressions
           | Expression expression ->
               analyze_expression ~pyre_in_context ~state ~expression |> Core.snd
           | For _
@@ -5309,7 +5434,8 @@ module HigherOrderCallGraph = struct
           | Pass
           | Raise { expression = None; _ } ->
               state
-          | Raise { expression = Some _; _ } -> state
+          | Raise { expression = Some expression; _ } ->
+              analyze_expression ~pyre_in_context ~state ~expression |> snd
           | Return { expression = Some expression; _ } ->
               let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
               store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
