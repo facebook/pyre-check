@@ -5210,6 +5210,7 @@ module HigherOrderCallGraph = struct
       let analyze_statement ~pyre_in_context ~state ~statement =
         log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
         let state =
+          let statement = redirect_assignments statement in
           match Node.value statement with
           | Statement.Assign { Assign.target; value = Some value; _ } -> (
               match TaintAccessPath.of_expression ~self_variable target with
