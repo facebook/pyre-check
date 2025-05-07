@@ -2827,6 +2827,11 @@ let redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~locat
 
 
 let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location = function
+  | Expression.BinaryOperator ({ left; _ } as operator) ->
+      let call =
+        BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location operator
+      in
+      Expression.Call call
   | Expression.Subscript { Subscript.base; index } ->
       let origin = Some { Node.location; value = Origin.SubscriptGetItem } in
       Expression.Call
@@ -3868,14 +3873,6 @@ module CalleeVisitor = struct
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
-        | Expression.BinaryOperator ({ left; _ } as operator) ->
-            let implicit_call =
-              BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location operator
-            in
-            resolve_callees ~call:implicit_call
-            |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
-            |> ExpressionCallees.from_call
-            |> register_targets ~expression_identifier:(call_identifier implicit_call)
         | Expression.ComparisonOperator ({ left; _ } as comparison) -> (
             match
               ComparisonOperator.lower_to_expression
@@ -5052,10 +5049,6 @@ module HigherOrderCallGraph = struct
               value
           with
           | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
-          | BinaryOperator { left; right; _ } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
-              CallTarget.Set.bottom, state
           | BooleanOperator _ -> CallTarget.Set.bottom, state
           | ComparisonOperator _ -> CallTarget.Set.bottom, state
           | Call ({ callee = _; arguments; origin = _ } as call) ->
@@ -5159,8 +5152,6 @@ module HigherOrderCallGraph = struct
           | Starred (Starred.Once _)
           | Starred (Starred.Twice _) ->
               CallTarget.Set.bottom, state
-          | Slice _ -> CallTarget.Set.bottom, state
-          | Subscript _ -> CallTarget.Set.bottom, state
           | FormatString _ -> CallTarget.Set.bottom, state
           | Ternary { target = _; test = _; alternative = _ } -> CallTarget.Set.bottom, state
           | Tuple _ -> CallTarget.Set.bottom, state
@@ -5172,6 +5163,15 @@ module HigherOrderCallGraph = struct
               let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
               ( callees,
                 store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state )
+          | Slice _ ->
+              failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
+          | Subscript _ ->
+              failwith
+                "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
+          | BinaryOperator _ ->
+              failwith
+                "BinaryOperator nodes should always be rewritten by \
+                 `CallGraph.redirect_expressions`"
         in
         let call_targets, state =
           CallGraphProfiler.track_expression_analysis

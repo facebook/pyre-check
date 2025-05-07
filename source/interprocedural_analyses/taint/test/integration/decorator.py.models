@@ -2,6 +2,79 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "decorator.issue_str_wrapper",
+    "callable_line": 394,
+    "code": 5002,
+    "line": 396,
+    "start": 4,
+    "end": 5,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 395, "start": 22, "end": 36 } ],
+            "origin": { "line": 395, "start": 22, "end": 36 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 396, "start": 4, "end": 5 },
+              "resolves_to": [ "decorator.StringWrapper.__add__" ],
+              "port": "formal(self, position=0)",
+              "call_site": "396:4-396:25"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.StringWrapper.__add__",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "decorator.issue_str_wrapper:5002:0:Call|decorator.StringWrapper.__add__|0|formal(self):39abfcc9722f63e7030efbf7ee124b73"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "decorator.issue_via_conditional_decorator_factory",
     "callable_line": 379,
     "code": 5002,
@@ -1912,25 +1985,6 @@
   "kind": "model",
   "data": {
     "callable": "decorator.no_op_decorator",
-    "filename": "decorator.py",
-    "callable_line": 303,
-    "tito": [
-      {
-        "port": "formal(f, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "decorator.no_op_decorator[formal(f, position=0)=decorator.StringWrapper.__add__]",
     "filename": "decorator.py",
     "callable_line": 303,
     "tito": [

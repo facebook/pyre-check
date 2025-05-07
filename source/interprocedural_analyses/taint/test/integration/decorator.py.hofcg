@@ -801,11 +801,10 @@ Higher order call graphs
         "call": {
           "calls": [
             {
-              "target": "decorator.StringWrapper.__add__@decorated",
+              "target": "decorator.StringWrapper.__add__",
               "index": 0,
               "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "decorator.StringWrapper"
+              "return_type": []
             }
           ]
         }

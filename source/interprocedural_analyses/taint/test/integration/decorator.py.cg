@@ -90,8 +90,7 @@ Call dependencies
     "decorator.with_logging_no_sink (fun)[formal(f, position=0)=decorator.foo_with_sink (fun)]"
   ],
   "decorator.issue_str_wrapper (fun)": [
-    "_test_source (fun)",
-    "decorator.StringWrapper.__add__@decorated (method)",
+    "_test_source (fun)", "decorator.StringWrapper.__add__ (method)",
     "decorator.StringWrapper.__init__ (method)", "object.__new__ (method)"
   ],
   "decorator.issue_via_conditional_decorator_factory (fun)": [
