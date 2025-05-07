@@ -2832,6 +2832,13 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
         BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location operator
       in
       Expression.Call call
+  | Expression.ComparisonOperator ({ left; _ } as comparison) as expression -> (
+      match
+        ComparisonOperator.lower_to_expression ~location ~callee_location:left.location comparison
+      with
+      | Some { Node.value = call; _ } -> call
+      | None -> expression)
+  | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | Expression.Subscript { Subscript.base; index } ->
       let origin = Some { Node.location; value = Origin.SubscriptGetItem } in
       Expression.Call
@@ -2850,7 +2857,6 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
         redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~location call
       in
       Expression.Call call
-  | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | expression -> expression
 
 
@@ -3873,28 +3879,6 @@ module CalleeVisitor = struct
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
-        | Expression.ComparisonOperator ({ left; _ } as comparison) -> (
-            match
-              ComparisonOperator.lower_to_expression
-                ~location
-                ~callee_location:left.location
-                comparison
-            with
-            | Some { Node.value = Expression.Call call; _ } ->
-                let call =
-                  redirect_special_calls
-                    ~pyre_in_context
-                    ~callables_to_definitions_map
-                    ~location
-                    call
-                in
-                resolve_callees ~call
-                |> MissingFlowTypeAnalysis.add_unknown_callee
-                     ~missing_flow_type_analysis
-                     ~expression
-                |> ExpressionCallees.from_call
-                |> register_targets ~expression_identifier:(call_identifier call)
-            | _ -> ())
         | Expression.FormatString substrings ->
             let artificial_target =
               CallTarget.create_with_default_index
@@ -5104,18 +5088,10 @@ module HigherOrderCallGraph = struct
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
               CallTarget.Set.bottom, state
-          | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-              match
-                ComparisonOperator.lower_to_expression
-                  ~location
-                  ~callee_location:left.Node.location
-                  comparison
-              with
-              | Some override -> analyze_expression ~pyre_in_context ~state ~expression:override
-              | None ->
-                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
-                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
-                  CallTarget.Set.bottom, state)
+          | ComparisonOperator { left; operator = _; right } ->
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
+              let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
+              CallTarget.Set.bottom, state
           | Call ({ callee = _; arguments; origin = _ } as call) ->
               analyze_call ~pyre_in_context ~location ~call ~arguments ~state
           | Constant _ -> CallTarget.Set.bottom, state

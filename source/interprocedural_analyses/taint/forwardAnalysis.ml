@@ -2577,27 +2577,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:right
           in
           ForwardState.Tree.join left_taint right_taint, state
-      | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match
-            ComparisonOperator.lower_to_expression
-              ~location
-              ~callee_location:left.Node.location
-              comparison
-          with
-          | Some override ->
-              analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:override
-          | None ->
-              let left_taint, state =
-                analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left
-              in
-              let right_taint, state =
-                analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:right
-              in
-              let taint =
-                ForwardState.Tree.join left_taint right_taint
-                |> ForwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ())
-              in
-              taint, state)
+      | ComparisonOperator { left; operator = _; right } ->
+          let left_taint, state =
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left
+          in
+          let right_taint, state =
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:right
+          in
+          let taint =
+            ForwardState.Tree.join left_taint right_taint
+            |> ForwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ())
+          in
+          taint, state
       | Call { callee; arguments; origin } ->
           analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments ~origin
       | Constant (Constant.String { StringLiteral.value; _ }) ->

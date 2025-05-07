@@ -2310,20 +2310,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | BooleanOperator { left; operator = _; right } ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left
-      | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
-          match
-            ComparisonOperator.lower_to_expression
-              ~location
-              ~callee_location:left.Node.location
-              comparison
-          with
-          | Some override -> analyze_expression ~pyre_in_context ~taint ~state ~expression:override
-          | None ->
-              let taint =
-                BackwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ()) taint
-              in
-              analyze_expression ~pyre_in_context ~taint ~state ~expression:right
-              |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left)
+      | ComparisonOperator { left; operator = _; right } ->
+          let taint =
+            BackwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ()) taint
+          in
+          analyze_expression ~pyre_in_context ~taint ~state ~expression:right
+          |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left
       | Call { callee; arguments; origin } ->
           analyze_call ~pyre_in_context ~location ~taint ~state ~callee ~arguments ~origin
       | Constant _ -> state
