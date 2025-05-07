@@ -454,6 +454,13 @@ Higher order call graphs
               "implicit_receiver": true,
               "return_type": [],
               "receiver_class": "dict"
+            },
+            {
+              "target": "dict.__getitem__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "dict"
             }
           ]
         }

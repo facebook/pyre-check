@@ -2674,44 +2674,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
               join property_call_state attribute_state
           | _ -> analyze_assignment ~pyre_in_context ~target ~value state)
-    | AugmentedAssign ({ target; value; _ } as assign) ->
-        let target_taint = compute_assignment_taint ~pyre_in_context target state |> fst in
-        let state = clear_target_taint ~fields:[] state target in
-
-        let implicit_call =
-          Statement.AugmentedAssign.lower_to_call
-            ~location
-            ~callee_location:target.Node.location
-            assign
-        in
-        let callees = get_call_callees ~location ~call:implicit_call in
-        let { arguments_taint; implicit_argument_taint; state; _ } =
-          apply_callees_and_return_arguments_taint
-            ~apply_tito:true
-            ~pyre_in_context
-            ~callee:implicit_call.callee
-            ~call_location:location
-            ~arguments:implicit_call.arguments
-            ~state
-            ~call_taint:target_taint
-            callees
-        in
-        let value_taint =
-          match arguments_taint with
-          | value_taint :: _ -> value_taint
-          | [] -> failwith "unexpected"
-        in
-        let state =
-          analyze_expression ~pyre_in_context ~taint:value_taint ~state ~expression:value
-        in
-        let target_taint =
-          match implicit_argument_taint with
-          | CallModel.ImplicitArgument.Backward.Callee taint
-          | CalleeBase taint ->
-              taint
-          | None -> BackwardState.Tree.bottom
-        in
-        analyze_expression ~pyre_in_context ~taint:target_taint ~state ~expression:target
     | Assert { test; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression:test
     | Break
@@ -2762,6 +2724,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | With _
     | While _ ->
         state
+    | AugmentedAssign _ -> failwith "statement should be lowered using redirect_assignments"
 
 
   let backward ~statement_key state ~statement =

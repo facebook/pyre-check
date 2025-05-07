@@ -2851,6 +2851,20 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
 
 let redirect_assignments = function
   | {
+      Node.value = Statement.AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment);
+      location;
+    } ->
+      let call =
+        AugmentedAssign.lower_to_expression
+          ~location
+          ~callee_location:target.Node.location
+          augmented_assignment
+      in
+      {
+        Node.location;
+        value = Statement.Assign { Assign.target; annotation = None; value = Some call };
+      }
+  | {
       Node.value =
         Statement.Assign
           {
@@ -4212,7 +4226,6 @@ struct
         Ast.Statement.pp
         statement;
       let statement = redirect_assignments statement in
-      let location = Node.location statement in
       match Node.value statement with
       | Statement.Assign { Assign.target; value = Some value; _ } ->
           CalleeVisitor.visit_expression
@@ -4234,46 +4247,8 @@ struct
             ~context:Context.node_visitor_context
             ~callees_at_location:Context.callees_at_location
             target
-      | Statement.AugmentedAssign ({ AugmentedAssign.target; value; _ } as assign) ->
-          CalleeVisitor.visit_expression
-            ~pyre_in_context
-            ~assignment_target:None
-            ~context:Context.node_visitor_context
-            ~callees_at_location:Context.callees_at_location
-            value;
-          CalleeVisitor.visit_expression
-            ~pyre_in_context
-            ~assignment_target:(Some { location = Node.location target })
-            ~context:Context.node_visitor_context
-            ~callees_at_location:Context.callees_at_location
-            target;
-
-          let implicit_call =
-            AugmentedAssign.lower_to_call ~location ~callee_location:target.Node.location assign
-          in
-          let { NodeVisitorContext.debug; callables_to_definitions_map; override_graph; _ } =
-            Context.node_visitor_context
-          in
-          let callees =
-            resolve_callees
-              ~debug
-              ~pyre_in_context
-              ~callables_to_definitions_map
-              ~override_graph
-              ~call:implicit_call
-            |> MissingFlowTypeAnalysis.add_unknown_callee
-                 ~missing_flow_type_analysis:Context.node_visitor_context.missing_flow_type_analysis
-                 ~expression:(Expression.Call implicit_call |> Node.create ~location)
-            |> ExpressionCallees.from_call
-          in
-          Context.callees_at_location :=
-            DefineCallGraph.add_callees
-              ~debug
-              ~expression_identifier:(call_identifier implicit_call)
-              ~location
-              ~statement_for_logging:statement
-              ~callees
-              !Context.callees_at_location
+      | Statement.AugmentedAssign _ ->
+          failwith "statement should be lowered using redirect_assignments"
       (* Control flow statements should NOT be visited, since they are lowered down during the
          control flow graph building. *)
       | Statement.If _
@@ -5231,10 +5206,6 @@ module HigherOrderCallGraph = struct
                   let strong_update = TaintAccessPath.Path.is_empty path in
                   store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state
               )
-          | AugmentedAssign { AugmentedAssign.target; value; _ } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:target in
-              state
           | Assert _ -> state
           | Break
           | Class _
@@ -5341,6 +5312,8 @@ module HigherOrderCallGraph = struct
           | With _
           | While _ ->
               state
+          | Statement.AugmentedAssign _ ->
+              failwith "statement should be lowered using redirect_assignments"
         in
         log "Finished analyzing statement `%a`: `%a`" Statement.pp statement State.pp state;
         state
