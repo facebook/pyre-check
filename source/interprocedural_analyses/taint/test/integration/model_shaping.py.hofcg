@@ -99,11 +99,6 @@ Higher order call graphs
               "target": "isinstance",
               "index": 2,
               "return_type": [ "float", "integer", "boolean" ]
-            },
-            {
-              "target": "isinstance",
-              "index": 2,
-              "return_type": [ "float", "integer", "boolean" ]
             }
           ]
         }
@@ -178,11 +173,6 @@ Higher order call graphs
       "isinstance": {
         "call": {
           "calls": [
-            {
-              "target": "isinstance",
-              "index": 1,
-              "return_type": [ "float", "integer", "boolean" ]
-            },
             {
               "target": "isinstance",
               "index": 1,
@@ -321,11 +311,6 @@ Higher order call graphs
               "target": "isinstance",
               "index": 0,
               "return_type": [ "float", "integer", "boolean" ]
-            },
-            {
-              "target": "isinstance",
-              "index": 0,
-              "return_type": [ "float", "integer", "boolean" ]
             }
           ]
         }
@@ -411,11 +396,6 @@ Higher order call graphs
       "_is_dataclass_instance": {
         "call": {
           "calls": [
-            {
-              "target": "model_shaping._is_dataclass_instance",
-              "index": 0,
-              "return_type": [ "float", "integer", "boolean" ]
-            },
             {
               "target": "model_shaping._is_dataclass_instance",
               "index": 0,

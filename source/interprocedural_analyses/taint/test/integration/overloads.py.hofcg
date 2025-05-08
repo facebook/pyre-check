@@ -57,11 +57,6 @@ Higher order call graphs
               "target": "isinstance",
               "index": 0,
               "return_type": [ "float", "integer", "boolean" ]
-            },
-            {
-              "target": "isinstance",
-              "index": 0,
-              "return_type": [ "float", "integer", "boolean" ]
             }
           ]
         }

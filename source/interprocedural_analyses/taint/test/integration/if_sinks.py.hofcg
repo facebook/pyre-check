@@ -23,7 +23,6 @@ Higher order call graphs
       "_test_sink": {
         "call": {
           "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] },
             { "target": "_test_sink", "index": 0, "return_type": [] }
           ]
         }

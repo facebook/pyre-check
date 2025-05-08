@@ -4235,19 +4235,22 @@ struct
             ~context:Context.node_visitor_context
             ~callees_at_location:Context.callees_at_location
             target
-      | Statement.AugmentedAssign _ ->
-          failwith "statement should be lowered using redirect_assignments"
-      (* Control flow statements should NOT be visited, since they are lowered down during the
-         control flow graph building. *)
-      | Statement.If _
       | Statement.Class _
-      | Statement.Define _
-      | Statement.For _
-      | Statement.Match _
-      | Statement.While _
-      | Statement.With _
-      | Statement.Try _ ->
+      | Statement.Define _ ->
           ()
+      | Try _ ->
+          (* Try statements are lowered down in `Cfg.create`, but they are preserved in the final
+             Cfg. They should be ignored. *)
+          ()
+      | For _
+      | If _
+      | Match _
+      | With _
+      | While _ ->
+          failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
+      | AugmentedAssign _ ->
+          failwith
+            "AugmentedAssign nodes should always be rewritten by `CallGraph.redirect_assignments`"
       | _ ->
           CalleeVisitor.visit_statement
             ~pyre_in_context
@@ -5348,11 +5351,7 @@ module HigherOrderCallGraph = struct
                   let strong_update = TaintAccessPath.Path.is_empty path in
                   store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state
               )
-          | Assert _ -> state
-          | Break
-          | Class _
-          | Continue ->
-              state
+          | Assert { test; _ } -> analyze_expression ~pyre_in_context ~state ~expression:test |> snd
           | Define ({ Define.signature = { name; _ }; _ } as define) ->
               let delocalized_name = Reference.delocalize name in
               let regular_target =
@@ -5439,11 +5438,8 @@ module HigherOrderCallGraph = struct
               List.fold ~f:analyze_delete ~init:state expressions
           | Expression expression ->
               analyze_expression ~pyre_in_context ~state ~expression |> Core.snd
-          | For _
           | Global _
-          | If _
           | Import _
-          | Match _
           | Nonlocal _
           | Pass
           | Raise { expression = None; _ } ->
@@ -5454,13 +5450,25 @@ module HigherOrderCallGraph = struct
               let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
               store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
           | Return { expression = None; _ }
-          | Try _
-          | TypeAlias _
+          | Try _ ->
+              (* Try statements are lowered down in `Cfg.create`, but they are preserved in the
+                 final Cfg. They should be ignored. *)
+              state
+          | Break
+          | Class _
+          | Continue
+          | TypeAlias _ ->
+              state
+          | For _
+          | If _
+          | Match _
           | With _
           | While _ ->
-              state
-          | Statement.AugmentedAssign _ ->
-              failwith "statement should be lowered using redirect_assignments"
+              failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
+          | AugmentedAssign _ ->
+              failwith
+                "AugmentedAssign nodes should always be rewritten by \
+                 `CallGraph.redirect_assignments`"
         in
         log "Finished analyzing statement `%a`: `%a`" Statement.pp statement State.pp state;
         state

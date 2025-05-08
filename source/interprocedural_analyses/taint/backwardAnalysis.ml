@@ -2608,10 +2608,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> analyze_assignment ~pyre_in_context ~target ~value state)
     | Assert { test; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression:test
-    | Break
-    | Class _
-    | Continue ->
-        state
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
@@ -2623,15 +2619,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         List.fold expressions ~init:state ~f:process_expression
     | Expression expression ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression
-    | For _
-    | Global _
-    | If _
-    | Import _
-    | Match _
-    | Nonlocal _
-    | Pass
-    | Raise { expression = None; _ } ->
-        state
+    | Raise { expression = None; _ } -> state
     | Raise { expression = Some expression; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression
     | Return { expression = Some expression; _ } ->
@@ -2651,12 +2639,28 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~state
           ~expression
     | Return { expression = None; _ }
-    | Try _
-    | TypeAlias _ (* TODO(T196994965): handle Type Alias *)
+    | Break
+    | Class _
+    | Continue
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass ->
+        state
+    | TypeAlias _ (* TODO(T196994965): handle Type Alias *) -> state
+    | Try _ ->
+        (* Try statements are lowered down in `Cfg.create`, but they are preserved in the final Cfg.
+           They should be ignored. *)
+        state
+    | For _
+    | If _
+    | Match _
     | With _
     | While _ ->
-        state
-    | AugmentedAssign _ -> failwith "statement should be lowered using redirect_assignments"
+        failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
+    | AugmentedAssign _ ->
+        failwith
+          "AugmentedAssign nodes should always be rewritten by `CallGraph.redirect_assignments`"
 
 
   let backward ~statement_key state ~statement =

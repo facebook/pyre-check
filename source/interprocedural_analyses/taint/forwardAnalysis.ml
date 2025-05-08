@@ -2990,10 +2990,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               analyze_assignment ~pyre_in_context target taint taint state)
     | Assert { test; _ } -> analyze_condition ~pyre_in_context test state
-    | Break
-    | Class _
-    | Continue ->
-        state
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
@@ -3008,15 +3004,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression
         in
         state
-    | For _
-    | Global _
-    | If _
-    | Import _
-    | Match _
-    | Nonlocal _
-    | Pass
-    | Raise { expression = None; _ } ->
-        state
+    | Raise { expression = None; _ } -> state
     | Raise { expression = Some expression; _ } ->
         let _, state =
           analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression
@@ -3037,13 +3025,29 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                ~callee:FunctionContext.callable
                ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint);
         store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
-    | Return { expression = None; _ }
-    | Try _
-    | TypeAlias _ (* TODO(T196994965): handle Type Alias *)
+    | Return { expression = None; _ } -> state
+    | Break
+    | Class _
+    | Continue
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass ->
+        state
+    | TypeAlias _ (* TODO(T196994965): handle Type Alias *) -> state
+    | Try _ ->
+        (* Try statements are lowered down in `Cfg.create`, but they are preserved in the final Cfg.
+           They should be ignored. *)
+        state
+    | For _
+    | If _
+    | Match _
     | With _
     | While _ ->
-        state
-    | AugmentedAssign _ -> failwith "statement should be lowered using redirect_assignments"
+        failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
+    | AugmentedAssign _ ->
+        failwith
+          "AugmentedAssign nodes should always be rewritten by `CallGraph.redirect_assignments`"
 
 
   let create ~existing_model parameters define_location =
