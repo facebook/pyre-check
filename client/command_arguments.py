@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
+from . import dataclasses_merge
 from .identifiers import PyreFlavor
 
 TEXT: str = "text"
@@ -299,6 +300,7 @@ class PysaSavedStateArguments:
         }
 
 
+@dataclasses_merge.dataclass_merge
 @dataclass(frozen=True)
 class AnalyzeArguments:
     debug: bool = False
