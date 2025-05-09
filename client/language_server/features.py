@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import dataclasses
 import enum
-from typing import Callable, Dict
 
 
 class _Availability(enum.Enum):

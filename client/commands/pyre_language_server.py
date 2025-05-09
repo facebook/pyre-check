@@ -17,42 +17,22 @@ from __future__ import annotations
 import abc
 import asyncio
 import dataclasses
-import enum
-import functools
-import json
 import logging
-import os
-import random
-import subprocess
-import tempfile
-import traceback
-from collections import defaultdict
 from pathlib import Path
 from typing import (
-    Callable,
     Collection,
-    Coroutine,
-    DefaultDict,
     Dict,
-    Generic,
     List,
     Mapping,
     Optional,
-    Protocol,
     Set,
     Tuple,
-    TypeVar,
     Union,
 )
 
-from pyre_extensions import ParameterSpecification
-from pyre_extensions.type_variable_operators import Concatenate
-
 from .. import (
     background_tasks,
-    dataclasses_json_extensions as json_mixins,
     error,
-    identifiers,
     json_rpc,
     log,
     timer,
@@ -61,13 +41,11 @@ from ..language_server import connections, daemon_connection, features, protocol
 from . import (
     commands,
     daemon_querier,
-    libcst_util,
     server_state as state,
     type_error_handler,
 )
 from .daemon_querier import DaemonQueryFailure
 from .server_state import OpenedDocumentState
-from .source_code_context import SourceCodeContext
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5

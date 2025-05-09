@@ -20,9 +20,8 @@ import dataclasses
 import enum
 import logging
 import urllib
-from dataclasses import field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Type, TypeVar, Union
+from typing import Iterable, List, Optional, Type, TypeVar, Union
 
 import dataclasses_json
 from pyre_extensions import override

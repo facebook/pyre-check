@@ -8,7 +8,7 @@
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, List, Union
+from typing import Iterator
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -22,9 +22,7 @@ from ...language_server.connections import (
 )
 from ...language_server.features import LanguageServerFeatures, TypeCoverageAvailability
 from ...tests import setup
-from .. import server_state as state
 from ..daemon_querier import DaemonQueryFailure, PersistentDaemonQuerier
-from ..server_state import ConnectionStatus
 from ..tests import server_setup
 
 _DaemonQuerier_Failure_Message = "Some kind of failure has occured"

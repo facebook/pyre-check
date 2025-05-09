@@ -8,8 +8,6 @@
 import abc
 import asyncio
 import json
-import sys
-import tempfile
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
@@ -19,7 +17,6 @@ from ... import backend_arguments, background_tasks, error, json_rpc
 from ...language_server import connections, features, protocol as lsp
 from ...tests import setup
 from .. import (
-    daemon_querier,
     initialization as init,
     launch_and_subscribe_handler,
     persistent,

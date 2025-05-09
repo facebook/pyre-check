@@ -15,23 +15,20 @@ the request handler implementation can be mocked.
 
 import abc
 import dataclasses
-import enum
 import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Union
+from typing import Dict, Iterable, List, Optional, Union
 
-from .. import dataclasses_json_extensions as json_mixins, error, timer
+from .. import dataclasses_json_extensions as json_mixins, error
 from ..language_server import (
-    code_navigation_request,
     daemon_connection,
     protocol as lsp,
 )
 from . import (
     daemon_query,
     expression_level_coverage,
-    libcst_util,
     server_state as state,
 )
 

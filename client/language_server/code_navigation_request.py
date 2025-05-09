@@ -12,13 +12,12 @@ server and gets a response.
 """
 
 import dataclasses
-import enum
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error
-from . import daemon_connection, protocol as lsp
+from . import daemon_connection
 
 
 @dataclasses.dataclass(frozen=True)
