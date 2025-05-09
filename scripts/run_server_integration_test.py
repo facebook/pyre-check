@@ -19,7 +19,7 @@ python3 scripts/run_server_integration_test.py \
 ```
 """
 
-# pyre-unsafe
+# pyre-strict
 
 import argparse
 import filecmp
@@ -34,7 +34,7 @@ import tempfile
 from argparse import Namespace
 from contextlib import contextmanager
 from logging import Logger
-from typing import Generator, Optional, Tuple
+from typing import Generator, Iterator, Optional, Tuple
 
 LOG: Logger = logging.getLogger(__name__)
 
@@ -119,15 +119,15 @@ class Repository:
     ) -> None:
         # Parse list of fake commits.
         assert_readable_directory(repository_path)
-        self._base_repository_path = os.path.realpath(repository_path)
+        self._base_repository_path: str = os.path.realpath(repository_path)
         commits_list = os.listdir(self._base_repository_path)
         list.sort(commits_list)
         for commit in commits_list:
             assert_readable_directory(os.path.join(self._base_repository_path, commit))
-        self._commits_list = iter(commits_list)
+        self._commits_list: Iterator[str] = iter(commits_list)
 
         # Move into the temporary repository directory.
-        self._pyre_directory = os.path.join(base_directory, "repository")
+        self._pyre_directory: str = os.path.join(base_directory, "repository")
         os.mkdir(self._pyre_directory)
         os.chdir(self._pyre_directory)
 
@@ -318,7 +318,7 @@ def run_saved_state_test(
 
 
 @contextmanager
-def _watch_directory(source_directory) -> Generator[None, None, None]:
+def _watch_directory(source_directory: str) -> Generator[None, None, None]:
     subprocess.check_call(
         ["watchman", "watch", source_directory],
         stdout=subprocess.DEVNULL,

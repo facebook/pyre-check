@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
 import subprocess
 import tempfile
@@ -491,7 +491,7 @@ class FindGlobalAndLocalRootTest(testslide.TestCase):
 class FindTypeshedTest(testslide.TestCase):
     def assert_typeshed_roots(
         self, relative_directories: Iterable[str], expected_roots: Iterable[str]
-    ):
+    ) -> None:
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)

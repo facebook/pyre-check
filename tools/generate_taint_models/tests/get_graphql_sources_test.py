@@ -3,15 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
+# pyre-strict
 
-import os  # noqa
+
 import unittest
-from typing import Callable
 
 from graphql3 import (
     GraphQLBoolean,
     GraphQLField,
+    GraphQLFieldResolver,
     GraphQLID,
     GraphQLNonNull,
     GraphQLObjectType,
@@ -92,13 +92,13 @@ BrokenObjectType = GraphQLObjectType(
 )
 
 
-def add_field(type: GraphQLType, name: str, resolve: Callable) -> None:
+def add_field(type: GraphQLType, name: str, resolve: GraphQLFieldResolver | None) -> None:
     # pyre-ignore[16]: Undefined attribute
     type._fields[name] = GraphQLField(GraphQLNonNull(GraphQLID), resolve=resolve)
 
 
 # Indirectly add in an additional resolver, so that
 # 'test_gather_functions_to_model' can verify that that resolver is detected
-IndirectObjectType = add_field(
+IndirectObjectType: None = add_field(
     type=DirectObjectType, name="indirect", resolve=function_2
 )
