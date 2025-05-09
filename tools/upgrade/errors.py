@@ -611,9 +611,7 @@ def _relocate_errors(
     errors: LineToErrors, target_line_map: Dict[int, int]
 ) -> LineToErrors:
     relocated = defaultdict(list)
-    # pyre-fixme[9]: errors has type `Dict[int, List[Dict[str, str]]]`; used as
-    #  `List[Dict[str, str]]`.
-    for line, errors in errors.items():
+    for line, errors_for_line in errors.items():
         target_line = target_line_map.get(line)
         if target_line is None or target_line == line:
             target_line = line
@@ -621,10 +619,9 @@ def _relocate_errors(
             LOG.info(
                 f"Relocating the following fixmes from line {line}"
                 f" to line {target_line} because line {line} is within"
-                f" a multi-line format string:\n{errors}"
+                f" a multi-line format string:\n{errors_for_line}"
             )
-
-        relocated[target_line].extend(errors)
+        relocated[target_line].extend(errors_for_line)
     return relocated
 
 
