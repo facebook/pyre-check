@@ -14,7 +14,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 
 from setuptools import find_packages, setup
 
@@ -77,7 +77,7 @@ def run(
     package_name: str,
     package_version: str,
     module_name: str,
-    runtime_dependencies: List[str],
+    runtime_dependencies: Sequence[str],
     long_description: str,
     **kwargs: object,
 ) -> None:

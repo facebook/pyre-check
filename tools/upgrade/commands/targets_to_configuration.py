@@ -186,14 +186,10 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
 
     def collect_full_targets(self, targets: Dict[str, List[Target]]) -> List[str]:
         new_targets = []
-        # pyre-fixme[9]: targets has type `Dict[str, List[Target]]`; used as
-        #  `List[Target]`.
-        for path, targets in targets.items():
+        for path, targets_for_path in targets.items():
             new_targets += [
-                # pyre-fixme[16]: `str` has no attribute `name`.
                 "//" + path.replace("/TARGETS", "") + ":" + target.name
-                for target in targets
-                # pyre-fixme[16]: `str` has no attribute `check_types`.
+                for target in targets_for_path
                 if target.check_types
             ]
         return new_targets

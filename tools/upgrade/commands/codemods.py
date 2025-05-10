@@ -55,15 +55,16 @@ class MissingOverrideReturnAnnotations(Command):
     @override
     def run(self) -> None:
         errors = Errors.from_stdin(self._only_fix_error_code)
-        # pyre-fixme[16]: `List` has no attribute `paths_to_errors`.
-        for path, errors in errors.paths_to_errors.items():
+        for path, errors_for_path in errors.paths_to_errors.items():
             LOG.info("Patching errors in `%s`.", path)
-            errors = sorted(errors, key=lambda error: error["line"], reverse=True)
+            errors_for_path = sorted(
+                errors_for_path, key=lambda error: error["line"], reverse=True
+            )
 
             path = pathlib.Path(path)
             lines = path.read_text().split("\n")
 
-            for error in errors:
+            for error in errors_for_path:
                 if error["code"] != 15:
                     continue
                 line = error["line"] - 1
@@ -114,15 +115,16 @@ class MissingGlobalAnnotations(Command):
     @override
     def run(self) -> None:
         errors = Errors.from_stdin(self._only_fix_error_code)
-        # pyre-fixme[16]: `List` has no attribute `paths_to_errors`.
-        for path, errors in errors.paths_to_errors.items():
+        for path, errors_for_path in errors.paths_to_errors.items():
             LOG.info("Patching errors in `%s`", path)
-            errors = sorted(errors, key=lambda error: error["line"], reverse=True)
+            errors_for_path = sorted(
+                errors_for_path, key=lambda error: error["line"], reverse=True
+            )
 
             path = pathlib.Path(path)
             lines = path.read_text().split("\n")
 
-            for error in errors:
+            for error in errors_for_path:
                 if error["code"] != 5:
                     continue
 

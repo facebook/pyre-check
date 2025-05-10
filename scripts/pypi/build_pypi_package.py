@@ -278,7 +278,6 @@ def _run_setup_command(
         package_name="pyre-check-nightly" if nightly else "pyre-check",
         package_version=version,
         module_name=MODULE_NAME,
-        # pyre-fixme[6]: Expected `List[str]` for 4th param but got `Sequence[str]`.
         runtime_dependencies=dependencies,
         long_description=long_description,
         script_name="setup.py",

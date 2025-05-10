@@ -48,10 +48,9 @@ class InvalidServerResponse(Exception):
 
 
 class ServerStatus(str, enum.Enum):
-    # pyre-fixme[35]: Target cannot be annotated.
-    NEWLY_STARTED: str = "newly_started_server"
-    # pyre-fixme[35]: Target cannot be annotated.
-    ALREADY_RUNNING: str = "already_running_server"
+    _value_: str
+    NEWLY_STARTED = "newly_started_server"
+    ALREADY_RUNNING = "already_running_server"
 
     def __str__(self) -> str:
         return self.value

@@ -62,10 +62,9 @@ class QualifiedName:
 
 
 class AddPosition(str, enum.Enum):
-    # pyre-fixme[35]: Target cannot be annotated.
-    TOP_OF_SCOPE: str = "top"
-    # pyre-fixme[35]: Target cannot be annotated.
-    BOTTOM_OF_SCOPE: str = "bottom"
+    _value_: str
+    TOP_OF_SCOPE = "top"
+    BOTTOM_OF_SCOPE = "bottom"
 
     @staticmethod
     def from_json(input_object: object) -> "AddPosition":
