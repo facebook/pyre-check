@@ -1,4 +1,4 @@
-click>=8.0
+click>=8.0,<8.2.0
 dataclasses-json==0.5.7
 libcst
 psutil
