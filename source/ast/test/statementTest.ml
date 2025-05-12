@@ -456,7 +456,8 @@ let test_try_block_preamble _ =
                             };
                           ];
                         origin =
-                          Some { Node.location = ~@"4:7-4:14"; value = Origin.TryHandlerIsInstance };
+                          Some
+                            { Origin.location = ~@"4:7-4:14"; kind = Origin.TryHandlerIsInstance };
                       };
                 };
               message = None;
@@ -549,8 +550,8 @@ let test_for_loop_preamble _ =
                                                             origin =
                                                               Some
                                                                 {
-                                                                  Node.location = ~@"1:9-1:10";
-                                                                  value = Origin.ForIter;
+                                                                  Origin.location = ~@"1:9-1:10";
+                                                                  kind = Origin.ForIter;
                                                                 };
                                                           });
                                                  };
@@ -558,18 +559,19 @@ let test_for_loop_preamble _ =
                                                origin =
                                                  Some
                                                    {
-                                                     Node.location = ~@"1:9-1:10";
-                                                     value = Origin.ForIter;
+                                                     Origin.location = ~@"1:9-1:10";
+                                                     kind = Origin.ForIter;
                                                    };
                                              };
                                        };
                                      attribute = "__next__";
                                      origin =
-                                       Some { Node.location = ~@"1:9-1:10"; value = Origin.ForNext };
+                                       Some
+                                         { Origin.location = ~@"1:9-1:10"; kind = Origin.ForNext };
                                    });
                           };
                         arguments = [];
-                        origin = Some { Node.location = ~@"1:9-1:10"; value = Origin.ForNext };
+                        origin = Some { Origin.location = ~@"1:9-1:10"; kind = Origin.ForNext };
                       };
                   location = ~@"1:4-1:10";
                 };
@@ -628,8 +630,9 @@ let test_for_loop_preamble _ =
                                                                   origin =
                                                                     Some
                                                                       {
-                                                                        Node.location = ~@"3:2-3:4";
-                                                                        value = Origin.ForIter;
+                                                                        Origin.location =
+                                                                          ~@"3:2-3:4";
+                                                                        kind = Origin.ForIter;
                                                                       };
                                                                 });
                                                        };
@@ -637,8 +640,8 @@ let test_for_loop_preamble _ =
                                                      origin =
                                                        Some
                                                          {
-                                                           Node.location = ~@"3:2-3:4";
-                                                           value = Origin.ForIter;
+                                                           Origin.location = ~@"3:2-3:4";
+                                                           kind = Origin.ForIter;
                                                          };
                                                    };
                                              };
@@ -646,13 +649,13 @@ let test_for_loop_preamble _ =
                                            origin =
                                              Some
                                                {
-                                                 Node.location = ~@"3:2-3:4";
-                                                 value = Origin.ForNext;
+                                                 Origin.location = ~@"3:2-3:4";
+                                                 kind = Origin.ForNext;
                                                };
                                          });
                                 };
                               arguments = [];
-                              origin = Some { Node.location = ~@"3:2-3:4"; value = Origin.ForNext };
+                              origin = Some { Origin.location = ~@"3:2-3:4"; kind = Origin.ForNext };
                             };
                         location = ~@"2:10-3:4";
                       };

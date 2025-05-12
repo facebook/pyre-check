@@ -2916,7 +2916,7 @@ module State (Context : Context) = struct
                                    {
                                      base = right;
                                      attribute = "__contains__";
-                                     origin = Some { Node.location; value = Origin.InContains };
+                                     origin = Some (Origin.create ~location Origin.InContains);
                                    });
                           };
                       }
@@ -2951,7 +2951,7 @@ module State (Context : Context) = struct
                                        {
                                          base = right;
                                          attribute = "__iter__";
-                                         origin = Some { Node.location; value = Origin.InIter };
+                                         origin = Some (Origin.create ~location Origin.InIter);
                                        });
                               };
                             resolved;
@@ -3010,7 +3010,7 @@ module State (Context : Context) = struct
                                  {
                                    base = right;
                                    attribute = "__getitem__";
-                                   origin = Some { Node.location; value = Origin.InGetItem };
+                                   origin = Some (Origin.create ~location Origin.InGetItem);
                                  });
                         }
                       in
@@ -3033,7 +3033,7 @@ module State (Context : Context) = struct
                                           };
                                       };
                                     ];
-                                  origin = Some { Node.location; value = Origin.InGetItem };
+                                  origin = Some (Origin.create ~location Origin.InGetItem);
                                 };
                           }
                         in
@@ -3052,11 +3052,11 @@ module State (Context : Context) = struct
                                              base = getitem;
                                              attribute = "__eq__";
                                              origin =
-                                               Some { Node.location; value = Origin.InGetItemEq };
+                                               Some (Origin.create ~location Origin.InGetItemEq);
                                            });
                                   };
                                 arguments = [{ Call.Argument.name = None; value = left }];
-                                origin = Some { Node.location; value = Origin.InGetItemEq };
+                                origin = Some (Origin.create ~location Origin.InGetItemEq);
                               };
                         }
                       in
@@ -3518,7 +3518,7 @@ module State (Context : Context) = struct
               in
               let special =
                 match origin with
-                | Some { Node.value = origin; _ } -> Origin.is_dunder_method origin
+                | Some origin -> Origin.is_dunder_method origin
                 | _ -> false
               in
               resolve_attribute_access
@@ -3607,7 +3607,7 @@ module State (Context : Context) = struct
           (* The python runtime will treat `base[index]` (when not inside an assignment target) as
              `base.__getitem__(index)`. Besides the tuple special case above, we typecheck all other
              subscripts like this. *)
-          let origin = Some { Node.location; value = Origin.SubscriptGetItem } in
+          let origin = Some (Origin.create ~location Origin.SubscriptGetItem) in
           let synthetic_getitem_call =
             Expression.Call
               {
@@ -4869,7 +4869,7 @@ module State (Context : Context) = struct
                         {
                           base;
                           attribute = "__getitem__";
-                          origin = Some { Node.location; value = Origin.ForTypeChecking };
+                          origin = Some (Origin.create ~location Origin.ForTypeChecking);
                         }))
               in
               Resolution.resolve_expression_to_type
@@ -4887,7 +4887,7 @@ module State (Context : Context) = struct
                               name = None;
                             };
                           ];
-                        origin = Some { Node.location; value = Origin.ForTypeChecking };
+                        origin = Some (Origin.create ~location Origin.ForTypeChecking);
                       }))
             in
             match getitem_type with
@@ -5700,7 +5700,7 @@ module State (Context : Context) = struct
                      {
                        base;
                        attribute = "__setitem__";
-                       origin = Some { Node.location; value = Origin.SubscriptSetItem };
+                       origin = Some (Origin.create ~location Origin.SubscriptSetItem);
                      });
               Node.location;
             }

@@ -939,10 +939,10 @@ let test_with _ =
                               {
                                 base = !"item";
                                 attribute = "__enter__";
-                                origin = Some ~+Origin.With;
+                                origin = Some ~-Origin.With;
                               });
                       arguments = [];
-                      origin = Some ~+Origin.With;
+                      origin = Some ~-Origin.With;
                     });
              !!"body";
              !!"after";

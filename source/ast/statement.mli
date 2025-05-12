@@ -99,8 +99,8 @@ module Decorator : sig
   val from_expression : Expression.t -> t option
 
   val create_original_expression
-    :  create_origin_for_reference:(string list -> Expression.Origin.t option) ->
-    call_origin:Expression.Origin.t option ->
+    :  create_origin_for_reference:(string list -> Expression.Origin.kind option) ->
+    call_origin:Expression.Origin.kind option ->
     name:Reference.t Node.t ->
     arguments:Expression.Call.Argument.t list option ->
     Expression.t

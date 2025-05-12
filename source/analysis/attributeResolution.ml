@@ -627,7 +627,7 @@ let apply_dataclass_transforms_to_table
                         {
                           Call.callee = value;
                           arguments = [];
-                          origin = Some { Node.location; value = Origin.DataclassImplicitDefault };
+                          origin = Some (Origin.create ~location Origin.DataclassImplicitDefault);
                         };
                     location;
                   }

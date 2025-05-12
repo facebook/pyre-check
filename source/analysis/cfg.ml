@@ -184,14 +184,14 @@ module MatchTranslate = struct
                      ~location
                      ~base:subject
                      ~attribute:"__match_args__"
-                     ~origin:(Some { Node.location; value = Origin.MatchClassArgs index }))
+                     ~origin:(Some (Origin.create ~location (Origin.MatchClassArgs index))))
                 ~index
             in
             pattern_to_condition
               ~subject:
                 (create_getattr
                    ~location
-                   ~origin:(Some { Node.location; value = Origin.MatchClassGetAttr index })
+                   ~origin:(Some (Origin.create ~location (Origin.MatchClassGetAttr index)))
                    subject
                    attribute)
         in
@@ -203,11 +203,11 @@ module MatchTranslate = struct
                  ~base:subject
                  ~attribute
                  ~origin:
-                   (Some { Node.location; value = Origin.MatchClassKeywordAttribute attribute }))
+                   (Some (Origin.create ~location (Origin.MatchClassKeywordAttribute attribute))))
         in
         create_isinstance
           ~location
-          ~origin:(Some { Node.location; value = Origin.MatchClassIsInstance })
+          ~origin:(Some (Origin.create ~location Origin.MatchClassIsInstance))
           subject
           (create_name ~location:(Node.location class_name) (Node.value class_name))
         :: List.mapi ~f:of_positional_pattern patterns
@@ -225,14 +225,14 @@ module MatchTranslate = struct
           let value =
             create_dict
               ~location
-              ~origin:(Some { Node.location; value = Origin.MatchMappingRest rest })
+              ~origin:(Some (Origin.create ~location (Origin.MatchMappingRest rest)))
               subject
           in
           boolean_expression_capture ~location ~target ~value
         in
         create_isinstance
           ~location
-          ~origin:(Some { Node.location; value = Origin.MatchMappingIsInstance })
+          ~origin:(Some (Origin.create ~location Origin.MatchMappingIsInstance))
           subject
           (create_typing_mapping ~location)
         :: List.map2_exn keys patterns ~f:of_key_pattern
@@ -265,7 +265,7 @@ module MatchTranslate = struct
               ~container:subject
               ~key:(create_slice ~location ~lower ~upper)
             |> create_list
-                 ~origin:(Some { Node.location; value = Origin.MatchSequenceRest rest })
+                 ~origin:(Some (Origin.create ~location (Origin.MatchSequenceRest rest)))
                  ~location
           in
           boolean_expression_capture ~location ~target ~value
@@ -279,7 +279,7 @@ module MatchTranslate = struct
               (create_subscript_index ~location ~sequence:subject ~index:(index - suffix_length))
         in
         create_isinstance
-          ~origin:(Some { Node.location; value = Origin.MatchSequenceIsInstance })
+          ~origin:(Some (Origin.create ~location Origin.MatchSequenceIsInstance))
           ~location
           subject
           (create_typing_sequence ~location)

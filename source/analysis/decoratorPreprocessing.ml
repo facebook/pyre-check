@@ -382,7 +382,7 @@ let create_function_call ~should_await ~location ~callee_name arguments =
                callee_name)
           |> Node.create ~location;
         arguments;
-        origin = Some { Node.location; value = Origin.DecoratorInlining };
+        origin = Some (Origin.create ~location Origin.DecoratorInlining);
       }
   in
   if should_await then Expression.Await (Node.create ~location call) else call

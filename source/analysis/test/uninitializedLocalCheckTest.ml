@@ -385,7 +385,7 @@ let assert_defined_locals source expected _context =
     let make_dunder_attribute_special = function
       | Expression.Name
           (Attribute ({ attribute = "__enter__" | "__next__" | "__iter__"; _ } as attribute)) ->
-          Expression.Name (Attribute { attribute with origin = Some ~+Origin.ForTypeChecking })
+          Expression.Name (Attribute { attribute with origin = Some ~-Origin.ForTypeChecking })
       | other -> other
     in
     with_dummy_assert_origin statement

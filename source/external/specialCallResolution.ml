@@ -27,6 +27,6 @@ let redirect ~pyre_in_context ~location:call_location { Call.callee; arguments }
           Call.callee = base;
           arguments;
           origin =
-            Some { Node.location = call_location; value = Origin.PysaCallRedirect "async_task" };
+            Some (Origin.create ~location:call_location (Origin.PysaCallRedirect "async_task"));
         }
   | _ -> None

@@ -2811,10 +2811,9 @@ let expand_named_tuples
                                  attribute = name;
                                  origin =
                                    Some
-                                     {
-                                       Node.location;
-                                       value = Origin.NamedTupleConstructorAssignment name;
-                                     };
+                                     (Origin.create
+                                        ~location
+                                        (Origin.NamedTupleConstructorAssignment name));
                                }));
                      annotation = None;
                      value = Some (Node.create (Expression.Name (Identifier name)) ~location);
@@ -4433,7 +4432,7 @@ let add_dataclass_keyword_only_specifiers
                   };
                 ]
               in
-              let origin = Some { Node.location; value = Origin.DataclassImplicitField } in
+              let origin = Some (Origin.create ~location Origin.DataclassImplicitField) in
               let callee =
                 Expression.Name
                   (Name.Attribute
@@ -4759,7 +4758,7 @@ module SelfType = struct
                               nesting_context);
                      };
                    ];
-                 origin = Some { Node.location; value = Origin.SelfImplicitTypeVar };
+                 origin = Some (Origin.create ~location Origin.SelfImplicitTypeVar);
                }
             |> Node.create ~location);
         annotation = None;
@@ -4842,10 +4841,9 @@ let expand_enum_functional_syntax
                     arguments = [];
                     origin =
                       Some
-                        {
-                          Node.location;
-                          value = Origin.FunctionalEnumImplicitAuto [attribute_name];
-                        };
+                        (Origin.create
+                           ~location
+                           (Origin.FunctionalEnumImplicitAuto [attribute_name]));
                   }
                 |> Node.create ~location
               in

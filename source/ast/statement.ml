@@ -110,7 +110,7 @@ module AugmentedAssign = struct
   let lower_to_call ~location ~callee_location { target; operator; value } =
     let open Expression in
     let arguments = [{ Call.Argument.name = None; value }] in
-    let origin = Some { Node.location; value = Origin.AugmentedAssign operator } in
+    let origin = Some (Origin.create ~location Origin.AugmentedAssign) in
     {
       Call.callee =
         {
@@ -252,7 +252,7 @@ module Decorator = struct
              {
                Expression.Call.callee = name;
                arguments;
-               origin = call_origin >>| Node.create ~location;
+               origin = call_origin >>| Expression.Origin.create ~location;
              })
     | None -> name
 end
@@ -1132,8 +1132,8 @@ end = struct
     let value =
       let value =
         let create_call base iterator next =
-          let iter_origin = Some { Node.location = iterator_location; value = Origin.ForIter } in
-          let next_origin = Some { Node.location = iterator_location; value = Origin.ForNext } in
+          let iter_origin = Some (Origin.create ~location:iterator_location Origin.ForIter) in
+          let next_origin = Some (Origin.create ~location:iterator_location Origin.ForNext) in
           Expression.Call
             {
               Call.callee =
@@ -1484,7 +1484,7 @@ end = struct
                               { Call.Argument.name = None; value = target };
                               { Call.Argument.name = None; value = annotation };
                             ];
-                          origin = Some { Node.location; value = Origin.TryHandlerIsInstance };
+                          origin = Some (Origin.create ~location Origin.TryHandlerIsInstance);
                         };
                   };
                 message = None;
@@ -1604,7 +1604,7 @@ end = struct
       let open Expression in
       let enter_call =
         let create_call call_name =
-          let origin = Some { Node.location; value = Origin.With } in
+          let origin = Some (Origin.create ~location Origin.With) in
           {
             Node.location;
             value =
@@ -1764,8 +1764,8 @@ end = struct
       }
     =
     let open Expression in
-    let iter_origin = Some { Node.location; value = Origin.GeneratorIter } in
-    let next_origin = Some { Node.location; value = Origin.GeneratorNext } in
+    let iter_origin = Some (Origin.create ~location Origin.GeneratorIter) in
+    let next_origin = Some (Origin.create ~location Origin.GeneratorNext) in
     let value =
       if async then
         let aiter =

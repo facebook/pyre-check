@@ -788,10 +788,10 @@ module SymbolSelection = struct
         (* Prefer the expression `foo` over the invisible `foo.__dunder_method__`, since the user
            probably intends the former. *)
         match Node.value left, Node.value right with
-        | Expression.Name (Name.Attribute { origin = Some { Node.value = origin; _ }; _ }), _
+        | Expression.Name (Name.Attribute { origin = Some origin; _ }), _
           when Origin.is_dunder_method origin ->
             1
-        | _, Expression.Name (Name.Attribute { origin = Some { Node.value = origin; _ }; _ })
+        | _, Expression.Name (Name.Attribute { origin = Some origin; _ })
           when Origin.is_dunder_method origin ->
             -1
         | _ -> (

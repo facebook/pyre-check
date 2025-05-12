@@ -72,7 +72,7 @@ let rec coerce_special_methods { Node.location; value } =
                {
                  name with
                  base = coerce_special_methods base;
-                 origin = Some { Node.location; value = Origin.ForTestPurpose };
+                 origin = Some (Origin.create ~location Origin.ForTestPurpose);
                });
       }
   | Call { callee; arguments; origin } ->
@@ -436,6 +436,8 @@ let assert_type_equal = OUnit2.assert_equal ~printer:Type.show ~cmp:Type.equal
 
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
+
+let ( ~- ) value = Expression.Origin.create ~location:Location.any value
 
 let ( ! ) name =
   +Expression.Expression.Name

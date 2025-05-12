@@ -915,7 +915,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             {
               Call.callee;
               arguments;
-              origin = Some { Node.location = call_location; value = Origin.ImplicitInitCall };
+              origin = Some (Origin.create ~location:call_location Origin.ImplicitInitCall);
             }
           |> Node.create ~location:call_location
         in
@@ -1789,7 +1789,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   {
                     base = self;
                     attribute;
-                    origin = Some { Node.location; value = Origin.SetAttrConstantLiteral };
+                    origin = Some (Origin.create ~location Origin.SetAttrConstantLiteral);
                   })
             |> Node.create ~location)
             taint
@@ -1822,7 +1822,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                {
                  base;
                  attribute;
-                 origin = Some { Node.location; value = Origin.GetAttrConstantLiteral };
+                 origin = Some (Origin.create ~location Origin.GetAttrConstantLiteral);
                })
           |> Node.create ~location
         in
@@ -2460,8 +2460,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                      base;
                      attribute = method_name;
                      origin =
-                       Some
-                         { Node.location = call_location; value = Origin.FormatStringImplicitStr };
+                       Some (Origin.create ~location:call_location Origin.FormatStringImplicitStr);
                    });
             location = call_location;
           }

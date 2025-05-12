@@ -95,7 +95,7 @@ and Call : sig
   type t = {
     callee: Expression.t;
     arguments: Argument.t list;
-    origin: Origin.t Node.t option;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -239,7 +239,7 @@ and Name : sig
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      origin: Origin.t Node.t option;
+      origin: Origin.t option;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -391,12 +391,12 @@ and Origin : sig
   (* During the analysis, we create artificial nodes that were not present
    * in the original code. This type is used to describe the original node
    * that originated the artificial node. *)
-  type t =
-    | ComparisonOperator of ComparisonOperator.operator
-    | BinaryOperator of BinaryOperator.operator
-    | UnaryOperator of UnaryOperator.operator
-    | AugmentedAssign of BinaryOperator.operator
-    | Qualification of string list
+  type kind =
+    | ComparisonOperator (* a == b is turned into a.__eq__(b) *)
+    | BinaryOperator (* a + b is turned into a.__add__(b) *)
+    | UnaryOperator (* -a is turned into a.__neg__() *)
+    | AugmentedAssign (* a += b is turned into a = a.__add__(b) *)
+    | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter (* __iter__ call for a for loop *)
@@ -439,6 +439,14 @@ and Origin : sig
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = {
+    kind: kind;
+    location: Location.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val create : location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
 end
@@ -691,25 +699,25 @@ val is_none : t -> bool
 
 val create_name_from_identifiers
   :  location:Location.t ->
-  create_origin:(string list -> Origin.t option) ->
+  create_origin:(string list -> Origin.kind option) ->
   Identifier.t list ->
   Name.t
 
 val create_name
   :  location:Location.t ->
-  create_origin:(string list -> Origin.t option) ->
+  create_origin:(string list -> Origin.kind option) ->
   string ->
   Name.t
 
 val create_name_from_reference
   :  location:Location.t ->
-  create_origin:(string list -> Origin.t option) ->
+  create_origin:(string list -> Origin.kind option) ->
   Reference.t ->
   Name.t
 
 val from_reference
   :  location:Location.t ->
-  create_origin:(string list -> Origin.t option) ->
+  create_origin:(string list -> Origin.kind option) ->
   Reference.t ->
   t
 
@@ -729,7 +737,7 @@ val name_is : name:string -> t -> bool
 
 val sanitized : t -> t
 
-val delocalize : create_origin:(string list -> Origin.t option) -> t -> t
+val delocalize : create_origin:(string list -> Origin.kind option) -> t -> t
 
 val delocalize_qualified : t -> t
 
@@ -745,7 +753,7 @@ val subscript
   :  string ->
   expression Node.t list ->
   location:Location.t ->
-  create_origin:(string list -> Origin.t option) ->
+  create_origin:(string list -> Origin.kind option) ->
   expression
 
 val is_dunder_attribute : string -> bool

@@ -200,7 +200,7 @@ and Call : sig
     (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
        turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
        reason for lowering it. *)
-    origin: Origin.t Node.t option;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -246,7 +246,7 @@ end = struct
   type t = {
     callee: Expression.t;
     arguments: Argument.t list;
-    origin: Origin.t Node.t option;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -363,7 +363,7 @@ end = struct
     dunder_method
     >>| fun dunder_method ->
     let arguments = [{ Call.Argument.name = None; value = right }] in
-    let origin = Some { Node.location; value = Origin.ComparisonOperator operator } in
+    let origin = Some (Origin.create ~location Origin.ComparisonOperator) in
     Expression.Call
       {
         Call.callee =
@@ -492,7 +492,7 @@ end = struct
 
   let lower_to_call ~location ~callee_location { left; operator; right } =
     let arguments = [{ Call.Argument.name = None; value = right }] in
-    let origin = Some { Node.location; value = Origin.BinaryOperator operator } in
+    let origin = Some (Origin.create ~location Origin.BinaryOperator) in
     {
       Call.callee =
         {
@@ -697,7 +697,7 @@ and Name : sig
 
          We could store the full original expression but this could lead to a cyclic dependency
          between Statement and Expression. *)
-      origin: Origin.t Node.t option;
+      origin: Origin.t option;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -717,7 +717,7 @@ end = struct
     type t = {
       base: Expression.t;
       attribute: Identifier.t;
-      origin: Origin.t Node.t option;
+      origin: Origin.t option;
     }
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -864,7 +864,7 @@ end = struct
             { Call.Argument.value = default_none stop; name = None };
             { Call.Argument.value = default_none step; name = None };
           ];
-        origin = Some { Node.location; value = Origin.Slice };
+        origin = Some (Origin.create ~location Origin.Slice);
       }
     |> Node.create ~location
 end
@@ -1009,7 +1009,7 @@ end = struct
     | Not -> None
     | Positive -> Some "__pos__")
     >>| fun name ->
-    let origin = Some { Node.location; value = Origin.UnaryOperator operator } in
+    let origin = Some (Origin.create ~location Origin.UnaryOperator) in
     Expression.Call
       {
         Call.callee =
@@ -1101,12 +1101,12 @@ and Origin : sig
   (* During the analysis, we create artificial nodes that were not present
    * in the original code. This type is used to describe the original node
    * that originated the artificial node. *)
-  type t =
-    | ComparisonOperator of ComparisonOperator.operator
-    | BinaryOperator of BinaryOperator.operator
-    | UnaryOperator of UnaryOperator.operator
-    | AugmentedAssign of BinaryOperator.operator
-    | Qualification of string list
+  type kind =
+    | ComparisonOperator (* a == b is turned into a.__eq__(b) *)
+    | BinaryOperator (* a + b is turned into a.__add__(b) *)
+    | UnaryOperator (* -a is turned into a.__neg__() *)
+    | AugmentedAssign (* a += b is turned into a = a.__add__(b) *)
+    | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter (* __iter__ call for a for loop *)
@@ -1149,15 +1149,23 @@ and Origin : sig
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  type t = {
+    kind: kind;
+    location: Location.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val create : location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
 end = struct
-  type t =
-    | ComparisonOperator of ComparisonOperator.operator
-    | BinaryOperator of BinaryOperator.operator
-    | UnaryOperator of UnaryOperator.operator
-    | AugmentedAssign of BinaryOperator.operator
-    | Qualification of string list
+  type kind =
+    | ComparisonOperator (* a == b is turned into a.__eq__(b) *)
+    | BinaryOperator (* a + b is turned into a.__add__(b) *)
+    | UnaryOperator (* -a is turned into a.__neg__() *)
+    | AugmentedAssign (* a += b is turned into a = a.__add__(b) *)
+    | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter (* __iter__ call for a for loop *)
@@ -1201,11 +1209,20 @@ end = struct
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  let is_dunder_method = function
-    | ComparisonOperator _
-    | BinaryOperator _
-    | UnaryOperator _
-    | AugmentedAssign _
+  type t = {
+    kind: kind;
+    location: Location.t;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let create ~location kind = { kind; location }
+
+  let is_dunder_method { kind; _ } =
+    match kind with
+    | ComparisonOperator
+    | BinaryOperator
+    | UnaryOperator
+    | AugmentedAssign
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter
@@ -2912,7 +2929,7 @@ let create_name_from_identifiers ~location ~create_origin identifiers =
              {
                Name.Attribute.base = create rest;
                attribute = identifier;
-               origin = current_identifiers |> create_origin >>| Node.create ~location;
+               origin = current_identifiers |> create_origin >>| Origin.create ~location;
              })
         |> Node.create ~location
   in
@@ -2941,7 +2958,7 @@ let create_name_from_reference ~location ~create_origin reference =
              {
                Name.Attribute.base = create rest;
                attribute = identifier;
-               origin = current_reference |> create_origin >>| Node.create ~location;
+               origin = current_reference |> create_origin >>| Origin.create ~location;
              })
         |> Node.create ~location
   in
@@ -3084,7 +3101,7 @@ let rec delocalize ~create_origin ({ Node.value; location } as expression) =
                {
                  Name.Attribute.base = qualifier;
                  attribute = sanitized;
-                 origin = create_origin [identifier] >>| Node.create ~location;
+                 origin = create_origin [identifier] >>| Origin.create ~location;
                })
         else (
           Log.debug "Unable to extract qualifier from %s" identifier;

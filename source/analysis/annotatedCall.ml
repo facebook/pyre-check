@@ -25,7 +25,7 @@ let resolve_stringify_call ~resolution expression =
             {
               base = expression;
               attribute = "__str__";
-              origin = Some { Node.location = Location.any; value = Origin.ForTypeChecking };
+              origin = Some (Origin.create ~location:Location.any Origin.ForTypeChecking);
             }))
   in
 
@@ -47,7 +47,7 @@ let redirect_special_calls
   (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
-      let origin = Some { Node.location = call_location; value = Origin.StrCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.StrCall) in
       let callee =
         attribute_access
           ~location:callee_location
@@ -57,7 +57,7 @@ let redirect_special_calls
       in
       { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
-      let origin = Some { Node.location = call_location; value = Origin.AbsCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.AbsCall) in
       {
         Call.callee =
           attribute_access ~location:callee_location ~base:value ~method_name:"__abs__" ~origin;
@@ -65,7 +65,7 @@ let redirect_special_calls
         origin;
       }
   | Name (Name.Identifier "repr"), [{ Call.Argument.value; _ }] ->
-      let origin = Some { Node.location = call_location; value = Origin.ReprCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.ReprCall) in
       {
         Call.callee =
           attribute_access ~location:callee_location ~base:value ~method_name:"__repr__" ~origin;

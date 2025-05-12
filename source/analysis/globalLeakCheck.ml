@@ -467,7 +467,7 @@ module State (Context : Context) = struct
            arity should be 2 instead of 1 (we don't have an actual expression for the second
            argument, which is coming from the RHS of assignment). But globalLeakCheck doesn't care
            about arity so this works. *)
-        let origin = Some { Node.location; value = Origin.SubscriptSetItem } in
+        let origin = Some (Origin.create ~location Origin.SubscriptSetItem) in
         let synthetic_setitem_expression =
           {
             expression with

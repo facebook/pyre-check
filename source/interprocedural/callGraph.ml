@@ -2701,7 +2701,7 @@ let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expres
               base = expression;
               attribute = "__str__";
               origin =
-                Some { Node.location = Node.location expression; value = Origin.ForTypeChecking };
+                Some (Origin.create ~location:(Node.location expression) Origin.ForTypeChecking);
             }))
   in
   try
@@ -2739,7 +2739,7 @@ let transform_special_calls
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
-      let origin = Some { Node.location = call_location; value = Origin.StrCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.StrCall) in
       let callee =
         attribute_access
           ~base:value
@@ -2749,7 +2749,7 @@ let transform_special_calls
       Some { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
       (* Only handle `iter` with a single argument here. *)
-      let origin = Some { Node.location = call_location; value = Origin.IterCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.IterCall) in
       Some
         {
           Call.callee = attribute_access ~base:value ~method_name:"__iter__" ~origin;
@@ -2758,7 +2758,7 @@ let transform_special_calls
         }
   | Name (Name.Identifier "next"), [{ Call.Argument.value; _ }] ->
       (* Only handle `next` with a single argument here. *)
-      let origin = Some { Node.location = call_location; value = Origin.NextCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.NextCall) in
       Some
         {
           Call.callee = attribute_access ~base:value ~method_name:"__next__" ~origin;
@@ -2767,7 +2767,7 @@ let transform_special_calls
         }
   | Name (Name.Identifier "anext"), [{ Call.Argument.value; _ }] ->
       (* Only handle `anext` with a single argument here. *)
-      let origin = Some { Node.location = call_location; value = Origin.NextCall } in
+      let origin = Some (Origin.create ~location:call_location Origin.NextCall) in
       Some
         {
           Call.callee = attribute_access ~base:value ~method_name:"__anext__" ~origin;
@@ -2783,7 +2783,7 @@ let transform_special_calls
           }),
       { Call.Argument.value = actual_callable; _ } :: actual_arguments ) ->
       let origin =
-        Some { Node.location = call_location; value = Origin.PysaCallRedirect "functools.partial" }
+        Some (Origin.create ~location:call_location (Origin.PysaCallRedirect "functools.partial"))
       in
       Some { Call.callee = actual_callable; arguments = actual_arguments; origin }
   | ( Expression.Name
@@ -2802,11 +2802,11 @@ let transform_special_calls
       ] ) ->
       let origin =
         Some
-          {
-            Node.location = call_location;
-            value = Origin.PysaCallRedirect "multiprocessing.Process";
-          }
+          (Origin.create
+             ~location:call_location
+             (Origin.PysaCallRedirect "multiprocessing.Process"))
       in
+
       Some
         {
           Call.callee = process_callee;
@@ -2840,7 +2840,7 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
       | None -> expression)
   | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
   | Expression.Subscript { Subscript.base; index } ->
-      let origin = Some { Node.location; value = Origin.SubscriptGetItem } in
+      let origin = Some (Origin.create ~location Origin.SubscriptGetItem) in
       Expression.Call
         {
           callee =
@@ -2897,7 +2897,7 @@ let redirect_assignments statement =
          `x, y[a], z = w`. In the future, we should implement proper logic to handle those. *)
       let index_argument = { Call.Argument.value = index; name = None } in
       let value_argument = { Call.Argument.value = value_expression; name = None } in
-      let origin = Some { Node.location; value = Origin.SubscriptSetItem } in
+      let origin = Some (Origin.create ~location Origin.SubscriptSetItem) in
       {
         Node.location;
         value =
@@ -3494,7 +3494,7 @@ let return_type_for_call ~pyre_in_context ~callee =
        {
          callee;
          arguments = [];
-         origin = Some { Node.location = Location.any; value = Origin.ForTypeChecking };
+         origin = Some (Origin.create ~location:Location.any Origin.ForTypeChecking);
        }
     |> Node.create_with_default_location
     |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
@@ -3919,10 +3919,9 @@ module CalleeVisitor = struct
                                      attribute = method_name;
                                      origin =
                                        Some
-                                         {
-                                           Node.location = expression_location;
-                                           value = Origin.FormatStringImplicitStr;
-                                         };
+                                         (Origin.create
+                                            ~location:expression_location
+                                            Origin.FormatStringImplicitStr);
                                    });
                             location = expression_location;
                           }
@@ -3984,7 +3983,7 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base
               ~attribute
-              ~origin:(Some { Node.location; value = Origin.GetAttrConstantLiteral })
+              ~origin:(Some (Origin.create ~location Origin.GetAttrConstantLiteral))
               ~setter:false
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -4027,7 +4026,7 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base:self
               ~attribute
-              ~origin:(Some { Node.location; value = Origin.SetAttrConstantLiteral })
+              ~origin:(Some (Origin.create ~location Origin.SetAttrConstantLiteral))
               ~setter:true
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -5756,7 +5755,7 @@ module DecoratorResolution = struct
                   here, in order to resolve its callee. *);
              arguments = [{ Call.Argument.name = None; value = previous_argument }];
              origin =
-               Some { Node.location = decorator.Node.location; value = Origin.ForDecoratedTarget };
+               Some (Origin.create ~location:decorator.Node.location Origin.ForDecoratedTarget);
            })
     in
     match
