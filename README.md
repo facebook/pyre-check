@@ -2,6 +2,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Gitter](https://badges.gitter.im/pyre-check/community.svg)](https://gitter.im/pyre-check/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+> [!IMPORTANT]
+>
+> ## New Version is Available
+>
+> Check out <a href="https://github.com/facebook/pyrefly">Pyrefly</a>, a fast type checker and IDE for Python.
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/main/logo.png">
 </p>
