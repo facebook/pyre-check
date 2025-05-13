@@ -5387,6 +5387,7 @@ let test_populate_captures =
                       ~location:(location start stop)
                       (Expression.Constant Constant.Ellipsis);
                   ]);
+           origin = None;
          })
       ~location:(location start stop)
   in
@@ -5416,6 +5417,7 @@ let test_populate_captures =
                       ~location:(location start stop);
                     value_annotation;
                   ]);
+           origin = None;
          })
       ~location:(location start stop)
   in

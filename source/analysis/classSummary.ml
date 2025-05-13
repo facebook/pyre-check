@@ -347,6 +347,7 @@ module ClassAttributes = struct
                                        });
                               };
                             index;
+                            origin = None;
                           };
                     }
           in
@@ -554,7 +555,10 @@ module ClassAttributes = struct
                     | Some ({ Node.value = Subscript _; _ } as value)
                     | Some ({ Node.value = Call _; _ } as value) ->
                         Some
-                          { value with Node.value = Expression.Subscript { base = value; index } }
+                          {
+                            value with
+                            Node.value = Expression.Subscript { base = value; index; origin = None };
+                          }
                     | _ -> None
                   in
                   value
@@ -773,6 +777,7 @@ module ClassAttributes = struct
                               ~location:Location.any
                               ~create_origin:(fun _ -> None)
                               name;
+                          origin = None;
                         };
                   }
                 in
@@ -795,6 +800,7 @@ module ClassAttributes = struct
                                    });
                           };
                         index = meta_annotation;
+                        origin = None;
                       };
                 }
               in

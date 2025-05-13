@@ -123,7 +123,7 @@ let transform_string_annotation_expression_after_qualification ~relative =
       match value with
       | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
           Expression.Name (Name.Attribute { name with base = transform_expression base })
-      | Expression.Subscript { Subscript.base; index } -> (
+      | Expression.Subscript { Subscript.base; index; origin } -> (
           match base with
           | {
            Node.value =
@@ -144,7 +144,7 @@ let transform_string_annotation_expression_after_qualification ~relative =
           } ->
               (* Don't transform arguments in Literals. *)
               value
-          | _ -> Expression.Subscript { base; index = transform_expression index })
+          | _ -> Expression.Subscript { base; index = transform_expression index; origin })
       | Expression.Call { callee; arguments = variable_name :: remaining_arguments; origin }
         when is_type_variable_definition callee ->
           Expression.Call
@@ -209,12 +209,12 @@ let transform_string_annotation_expression_before_qualification ~qualifier ~scop
       match value with
       | Expression.Name (Name.Attribute ({ base; _ } as name)) ->
           Expression.Name (Name.Attribute { name with base = transform_expression base })
-      | Expression.Subscript { Subscript.base; index } -> (
+      | Expression.Subscript { Subscript.base; index; origin } -> (
           match base with
           | { Node.value = Expression.Name name; _ } when is_literal name ->
               (* Don't transform arguments in Literals. *)
               value
-          | _ -> Expression.Subscript { base; index = transform_expression index })
+          | _ -> Expression.Subscript { base; index = transform_expression index; origin })
       | Expression.Call
           {
             callee = { Node.value = Expression.Name name; _ } as callee;
@@ -592,7 +592,7 @@ module Qualify = struct
               right = qualify_expression ~qualify_strings ~scope right;
               origin;
             }
-      | Subscript { Subscript.base; index } ->
+      | Subscript { Subscript.base; index; origin } ->
           let qualified_base = qualify_expression ~qualify_strings ~scope base in
           let qualified_index =
             let qualify_strings =
@@ -606,7 +606,7 @@ module Qualify = struct
             in
             qualify_expression ~qualify_strings ~scope index
           in
-          Subscript { Subscript.base = qualified_base; index = qualified_index }
+          Subscript { Subscript.base = qualified_base; index = qualified_index; origin }
       | Call { callee; arguments; origin } ->
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let arguments =
@@ -1582,6 +1582,7 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                           _;
                         };
                       index;
+                      origin = _;
                     };
                 _;
               } -> (
@@ -2727,9 +2728,8 @@ let expand_named_tuples
         |> node
       in
       let fields_annotation =
-        let create_origin _ = None in
         let create_name name =
-          Expression.Name (create_name ~location ~create_origin name) |> node
+          Expression.Name (create_name ~location ~create_origin:(fun _ -> None) name) |> node
         in
         let tuple_members =
           match List.length attributes with
@@ -2737,9 +2737,9 @@ let expand_named_tuples
           | l -> List.init l ~f:(fun _ -> create_name "str")
         in
         let tuple_annotation =
-          subscript "typing.Tuple" ~location ~create_origin tuple_members |> node
+          subscript_for_annotation "typing.Tuple" ~location tuple_members |> node
         in
-        subscript "typing.ClassVar" ~location ~create_origin [tuple_annotation] |> node
+        subscript_for_annotation "typing.ClassVar" ~location [tuple_annotation] |> node
       in
       Statement.Assign
         {
@@ -2764,6 +2764,7 @@ let expand_named_tuples
                       Reference.create "typing.Final"
                       |> Ast.Expression.from_reference ~location ~create_origin:(fun _ -> None);
                     index = annotation;
+                    origin = None;
                   };
             }
           in
@@ -3236,7 +3237,7 @@ module AccessCollector = struct
         let collected = Option.value_map start ~default:collected ~f:(from_expression collected) in
         let collected = Option.value_map stop ~default:collected ~f:(from_expression collected) in
         Option.value_map step ~default:collected ~f:(from_expression collected)
-    | Subscript { Subscript.base; index } ->
+    | Subscript { Subscript.base; index; origin = _ } ->
         let collected = from_expression collected base in
         from_expression collected index
     | Call { Call.callee; arguments; origin = _ } ->
@@ -3532,6 +3533,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                         value_annotation;
                                       ];
                                 };
+                              origin = None;
                             };
                       }
                     in
@@ -3603,6 +3605,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                                         };
                                       ];
                                 };
+                              origin = None;
                             };
                       }
                     in
@@ -3863,6 +3866,7 @@ let replace_union_shorthand_in_annotation_expression =
                 _;
               };
             index = { Node.value = Tuple index_expressions; _ };
+            origin = _;
           } ->
           List.concat [sofar; index_expressions] |> List.rev
       | _ -> part_of_union_expression :: sofar
@@ -3894,9 +3898,10 @@ let replace_union_shorthand_in_annotation_expression =
                          });
                 };
               index;
+              origin = None;
             }
-      | Subscript { Subscript.base; index } ->
-          Subscript { base; index = transform_expression index }
+      | Subscript { Subscript.base; index; origin } ->
+          Subscript { base; index = transform_expression index; origin }
       | Tuple arguments -> Tuple (List.map ~f:transform_expression arguments)
       | List arguments -> List (List.map ~f:transform_expression arguments)
       | _ -> value
@@ -4613,6 +4618,7 @@ module SelfType = struct
                       {
                         base = { Node.value = Expression.Name base_name; _ };
                         index = { Node.value = Expression.Name index_name; _ };
+                        origin = _;
                       };
                   _;
                 };
@@ -4639,9 +4645,11 @@ module SelfType = struct
                                 {
                                   base = { Node.value = Expression.Name inner_base_name; _ };
                                   index = { Node.value = Expression.Name inner_index_name; _ };
+                                  origin = _;
                                 };
                             _;
                           };
+                        origin = _;
                       };
                   _;
                 };
@@ -4677,12 +4685,11 @@ module SelfType = struct
         in
         let self_or_class_parameter =
           let annotation =
-            let create_origin _ = None in
             let variable_annotation =
-              from_reference ~location ~create_origin self_type_variable_reference
+              from_reference ~location ~create_origin:(fun _ -> None) self_type_variable_reference
             in
             if Define.Signature.is_class_method signature then
-              subscript ~location ~create_origin "typing.Type" [variable_annotation]
+              subscript_for_annotation ~location "typing.Type" [variable_annotation]
               |> Node.create ~location
             else
               variable_annotation
@@ -4692,11 +4699,7 @@ module SelfType = struct
             | { Parameter.annotation = Some _readonly_self_or_class_parameter; _ } ->
                 (* The user wrote `self: PyreReadOnly[Self]` or `cls: PyreReadOnly[Type[Self]]`. So,
                    wrap the synthesized type in `PyreReadOnly`. *)
-                subscript
-                  ~location
-                  ~create_origin:(fun _ -> None)
-                  "pyre_extensions.PyreReadOnly"
-                  [annotation]
+                subscript_for_annotation ~location "pyre_extensions.PyreReadOnly" [annotation]
                 |> Node.create ~location
             | _ -> annotation
           in

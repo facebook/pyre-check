@@ -1887,9 +1887,8 @@ module OrderedTypes = struct
                  ~create_origin:(fun _ -> None)
                  (Format.asprintf "%a" PrettyPrinting.Variable.TypeVarTuple.pp_concise variadic))
         | UnboundedElements annotation ->
-            Ast.Expression.subscript
+            Ast.Expression.subscript_for_annotation
               ~location
-              ~create_origin:(fun _ -> None)
               "typing.Tuple"
               [
                 expression annotation; Expression.Constant Constant.Ellipsis |> Node.create ~location;
@@ -1901,6 +1900,7 @@ module OrderedTypes = struct
             Expression.Name (create_name ~location ~create_origin:(fun _ -> None) "typing.Unpack")
             |> Node.create ~location;
           index = index_value |> Node.create ~location;
+          origin = None;
         }
       |> Node.create ~location
 
@@ -2010,8 +2010,7 @@ module OrderedTypes = struct
     let unpacked =
       let location = Location.any in
       let wrapped_in_tuple =
-        subscript ~location ~create_origin:(fun _ -> None) "typing.Tuple" [annotation]
-        |> Node.create ~location
+        subscript_for_annotation ~location "typing.Tuple" [annotation] |> Node.create ~location
       in
       match parse_annotation wrapped_in_tuple with
       | Tuple (Concatenation concatenation) -> Some concatenation
@@ -3801,7 +3800,7 @@ module ToExpression = struct
 
   let location = Location.any
 
-  let subscript = subscript ~location
+  let subscript = subscript_for_annotation ~location
 
   let create_name name = Expression.Name (create_name ~location ~create_origin:(fun _ -> None) name)
 
@@ -3887,7 +3886,6 @@ module ToExpression = struct
       | Concatenation concatenation -> concatenation_to_expressions concatenation
       | Concrete arguments -> List.map ~f:expression arguments
     in
-    let subscript = subscript ~create_origin:(fun _ -> None) in
     match annotation with
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (
@@ -3908,6 +3906,7 @@ module ToExpression = struct
             {
               base = { Node.location; value = create_name "typing.Callable" };
               index = convert_signature_as_index implementation;
+              origin = None;
             }
         in
         let overloads =
@@ -3916,7 +3915,7 @@ module ToExpression = struct
             | None -> Some (convert_signature_as_leftmost_overload overload)
             | Some expression ->
                 Expression.Subscript
-                  { base = expression; index = convert_signature_as_index overload }
+                  { base = expression; index = convert_signature_as_index overload; origin = None }
                 |> Node.create ~location
                 |> Option.some
           in
@@ -3924,7 +3923,8 @@ module ToExpression = struct
         in
         match overloads with
         | Some overloads ->
-            Expression.Subscript { base = { Node.location; value = base_value }; index = overloads }
+            Expression.Subscript
+              { base = { Node.location; value = base_value }; index = overloads; origin = None }
         | None -> base_value)
     | Any -> create_name "typing.Any"
     | Literal literal ->
@@ -4717,8 +4717,8 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
         match Node.value resolved_base, subscript_index with
         (* There are two layers of subscripts, this is how we represent overloads in closed
            expression form *)
-        | Expression.Subscript { base = inner_base; index = inner_subscript_index }, overloads_index
-          ->
+        | ( Expression.Subscript { base = inner_base; index = inner_subscript_index; origin = _ },
+            overloads_index ) ->
             get_from_base inner_base (Some inner_subscript_index) (Some overloads_index)
         (* There is only one layer of subscripts - this is either a "plain" or "named" Callable
            type *)
@@ -4768,7 +4768,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
       let overloads =
         let rec parse_overloads = function
           | Expression.List arguments -> [get_signature (Tuple arguments)]
-          | Subscript { base; index } ->
+          | Subscript { base; index; origin = _ } ->
               get_signature (Node.value index) :: parse_overloads (Node.value base)
           | _ -> [undefined]
         in
@@ -4853,6 +4853,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
               _;
             };
           index = subscript_index;
+          origin = _;
         } ->
         let arguments =
           match Node.value subscript_index with
@@ -4899,6 +4900,7 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
               _;
             };
           index = element;
+          origin = _;
         } ->
         Parametric
           {
@@ -4933,10 +4935,11 @@ let rec create_logic ~resolve_aliases ~variables { Node.value = expression; _ } 
               Node.value = Expression.Tuple [_; { Node.value = Expression.Constant Ellipsis; _ }];
               _;
             } as subscript_index;
+          origin = _;
         } ->
         (* Do not eagerly unpack types for unbounded tuples *)
         create_from_subscript ~base ~subscript_index ~allows_unpacking:false
-    | Subscript { base; index = subscript_index } -> (
+    | Subscript { base; index = subscript_index; origin = _ } -> (
         let location = Node.location base in
         match parse_callable_if_appropriate ~location ~base ~subscript_index with
         | Some callable_type -> callable_type

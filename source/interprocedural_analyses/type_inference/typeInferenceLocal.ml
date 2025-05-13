@@ -569,7 +569,7 @@ module State (Context : Context) = struct
                 {
                   Node.value =
                     Expression.Subscript
-                      { base = { Node.value = Name name; _ } as base; index = key };
+                      { base = { Node.value = Name name; _ } as base; index = key; origin = _ };
                   _;
                 };
               _;

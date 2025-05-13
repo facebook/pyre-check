@@ -50,11 +50,11 @@ module MatchTranslate = struct
     |> Node.create ~location
 
 
-  let create_subscript ~location ~container ~key =
-    Expression.Subscript { base = container; index = key } |> Node.create ~location
+  let create_subscript ~location ~container ~key ~origin =
+    Expression.Subscript { base = container; index = key; origin } |> Node.create ~location
 
 
-  let create_subscript_index ~location ~sequence ~index =
+  let create_subscript_index ~location ~sequence ~index ~origin =
     match sequence with
     | { Node.value = Expression.Tuple elements; _ } when index >= 0 && index < List.length elements
       ->
@@ -62,6 +62,7 @@ module MatchTranslate = struct
     | _ ->
         create_subscript
           ~location
+          ~origin
           ~container:sequence
           ~key:(create_constant ~location (Constant.Integer index))
 
@@ -191,6 +192,7 @@ module MatchTranslate = struct
             let attribute =
               create_subscript_index
                 ~location
+                ~origin:(Some (Origin.create ~location (Origin.MatchClassArgsSubscript index)))
                 ~sequence:
                   (create_attribute_name
                      ~location
@@ -237,7 +239,15 @@ module MatchTranslate = struct
                          Origin.MatchClassJoinConditions)))
     | MatchMapping { keys; patterns; rest } ->
         let of_key_pattern key =
-          pattern_to_condition ~subject:(create_subscript ~location ~container:subject ~key)
+          pattern_to_condition
+            ~subject:
+              (create_subscript
+                 ~location
+                 ~container:subject
+                 ~key
+                 ~origin:
+                   (Some
+                      (Origin.create ~location:(Node.location key) Origin.MatchMappingKeySubscript)))
         in
         let of_rest rest =
           let target = create_identifier_name ~location rest in
@@ -302,6 +312,7 @@ module MatchTranslate = struct
             let upper = if phys_equal suffix_length 0 then None else Some (-suffix_length) in
             create_subscript
               ~location
+              ~origin:(Some (Origin.create ~location (Origin.MatchSequenceRestSubscript rest)))
               ~container:subject
               ~key:(create_slice ~location ~lower ~upper)
             |> create_list
@@ -315,12 +326,24 @@ module MatchTranslate = struct
             ~value
         in
         let of_prefix_pattern index =
-          pattern_to_condition ~subject:(create_subscript_index ~location ~sequence:subject ~index)
+          pattern_to_condition
+            ~subject:
+              (create_subscript_index
+                 ~location
+                 ~origin:(Some (Origin.create ~location (Origin.MatchSequencePrefix index)))
+                 ~sequence:subject
+                 ~index)
         in
         let of_suffix_pattern index =
           pattern_to_condition
             ~subject:
-              (create_subscript_index ~location ~sequence:subject ~index:(index - suffix_length))
+              (create_subscript_index
+                 ~location
+                 ~origin:
+                   (Some
+                      (Origin.create ~location (Origin.MatchSequenceSuffix (index - suffix_length))))
+                 ~sequence:subject
+                 ~index:(index - suffix_length))
         in
         create_isinstance
           ~origin:(Some (Origin.create ~location Origin.MatchSequenceIsInstance))

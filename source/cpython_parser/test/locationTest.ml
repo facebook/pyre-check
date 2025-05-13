@@ -416,6 +416,7 @@ let test_call_locations =
                                            (Expression.Constant (Constant.Integer 2));
                                        origin = None;
                                      });
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -841,6 +842,7 @@ let test_call_locations =
                                      ~start:(1, 6)
                                      ~stop:(1, 7)
                                      (Expression.Name (Name.Identifier "j"));
+                                 origin = None;
                                });
                         value =
                           Some
@@ -885,6 +887,7 @@ let test_call_locations =
                                               (Expression.Constant (Constant.Integer 1)));
                                        step = None;
                                      });
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -921,6 +924,7 @@ let test_call_locations =
                                               ~stop:(1, 5)
                                               (Expression.Constant (Constant.Integer 2)));
                                      });
+                              origin = None;
                             })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -947,6 +951,7 @@ let test_call_locations =
                                   ~start:(1, 2)
                                   ~stop:(1, 3)
                                   (Expression.Slice { Slice.start = None; stop = None; step = None });
+                              origin = None;
                             })));
                ];
       ]
@@ -4004,6 +4009,7 @@ let test_type_comments =
                                             ~start:(1, 0)
                                             ~stop:(2, 2)
                                             (Expression.Name (Name.Identifier "derp"));
+                                        origin = None;
                                       }));
                             async = false;
                             generator = false;

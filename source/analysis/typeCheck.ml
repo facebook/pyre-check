@@ -3577,7 +3577,7 @@ module State (Context : Context) = struct
           in
           { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
       | Slice slice -> forward_expression ~resolution (Slice.lowered ~location slice)
-      | Subscript { Subscript.base; index } ->
+      | Subscript { Subscript.base; index; origin = _ } ->
           let { Resolved.resolved = resolved_base; resolution = base_resolution; _ } =
             forward_expression ~resolution base
           in
@@ -5718,7 +5718,7 @@ module State (Context : Context) = struct
             (* We process type as union again to populate resolution *)
             propagate (resolution, errors) (Union types)
         | resolved -> inner_assignment resolution errors resolved)
-    | Expression.Subscript { Subscript.base; index } ->
+    | Expression.Subscript { Subscript.base; index; origin = _ } ->
         let {
           Resolved.errors = callee_errors;
           resolved = resolved_setitem_type;
@@ -6156,6 +6156,7 @@ module State (Context : Context) = struct
                   Subscript.base;
                   index =
                     { Node.value = Constant (String { kind = String; value = field_name }); _ };
+                  origin = _;
                 } -> (
                 let { Resolved.resolved; _ } = forward_expression ~resolution base in
                 match GlobalResolution.get_typed_dictionary global_resolution resolved with

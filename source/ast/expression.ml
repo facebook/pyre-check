@@ -889,6 +889,10 @@ and Subscript : sig
   type t = {
     base: Expression.t;
     index: Expression.t;
+    (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
+       turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
+       reason for lowering it. *)
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -897,12 +901,13 @@ end = struct
   type t = {
     base: Expression.t;
     index: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare
-      { base = left_base; index = left_index }
-      { base = right_base; index = right_index }
+      { base = left_base; index = left_index; origin = _ }
+      { base = right_base; index = right_index; origin = _ }
     =
     match Expression.location_insensitive_compare left_base right_base with
     | 0 -> Expression.location_insensitive_compare left_index right_index
@@ -1154,9 +1159,11 @@ and Origin : sig
     | MatchAsWithCondition
     | MatchClassArgs of int
     | MatchClassGetAttr of int
+    | MatchClassArgsSubscript of int
     | MatchClassKeywordAttribute of string
     | MatchClassIsInstance
     | MatchClassJoinConditions
+    | MatchMappingKeySubscript
     | MatchMappingRestDict of string
     | MatchMappingRestComparisonEquals of string
     | MatchMappingIsInstance
@@ -1164,7 +1171,10 @@ and Origin : sig
     | MatchOrJoinConditions
     | MatchSingletonComparisonIs
     | MatchSequenceRestList of string
+    | MatchSequenceRestSubscript of string
     | MatchSequenceRestComparisonEquals of string
+    | MatchSequencePrefix of int
+    | MatchSequenceSuffix of int
     | MatchSequenceIsInstance
     | MatchSequenceJoinConditions
     | MatchValueComparisonEquals
@@ -1235,9 +1245,11 @@ end = struct
     | MatchAsWithCondition
     | MatchClassArgs of int
     | MatchClassGetAttr of int
+    | MatchClassArgsSubscript of int
     | MatchClassKeywordAttribute of string
     | MatchClassIsInstance
     | MatchClassJoinConditions
+    | MatchMappingKeySubscript
     | MatchMappingRestDict of string
     | MatchMappingRestComparisonEquals of string
     | MatchMappingIsInstance
@@ -1245,7 +1257,10 @@ end = struct
     | MatchOrJoinConditions
     | MatchSingletonComparisonIs
     | MatchSequenceRestList of string
+    | MatchSequenceRestSubscript of string
     | MatchSequenceRestComparisonEquals of string
+    | MatchSequencePrefix of int
+    | MatchSequenceSuffix of int
     | MatchSequenceIsInstance
     | MatchSequenceJoinConditions
     | MatchValueComparisonEquals
@@ -1633,7 +1648,7 @@ end = struct
           Format.fprintf formatter ":%a" pp_expression_t step
 
 
-    and pp_subscript formatter { Subscript.base; index } =
+    and pp_subscript formatter { Subscript.base; index; origin = _ } =
       Format.fprintf formatter "%a[%a]" pp_expression_t base pp_expression_t index
 
 
@@ -2117,8 +2132,8 @@ module Mapper = struct
     Node.create ~location (Expression.Starred (default_map_starred ~mapper starred))
 
 
-  let default_map_subscript ~mapper { Subscript.base; index } =
-    { Subscript.base = map ~mapper base; index = map ~mapper index }
+  let default_map_subscript ~mapper { Subscript.base; index; origin } =
+    { Subscript.base = map ~mapper base; index = map ~mapper index; origin }
 
 
   let default_map_subscript_node ~mapper ~location subscript =
@@ -2770,7 +2785,7 @@ module Folder = struct
         fold ~folder ~state expression
 
 
-  let default_fold_subscript ~folder ~state { Subscript.base; index } =
+  let default_fold_subscript ~folder ~state { Subscript.base; index; origin = _ } =
     let state = fold ~folder ~state base in
     fold ~folder ~state index
 
@@ -2944,6 +2959,7 @@ let origin { Node.value; _ } =
   | Expression.BinaryOperator { BinaryOperator.origin; _ } -> origin
   | Expression.UnaryOperator { UnaryOperator.origin; _ } -> origin
   | Expression.BooleanOperator { BooleanOperator.origin; _ } -> origin
+  | Expression.Subscript { Subscript.origin; _ } -> origin
   | _ -> None
 
 
@@ -3206,8 +3222,8 @@ let rec delocalize ~create_origin ({ Node.value; location } as expression) =
   let delocalize = delocalize ~create_origin in
   let value =
     match value with
-    | Subscript { Subscript.base; index } ->
-        Subscript { Subscript.base = delocalize base; index = delocalize index }
+    | Subscript { Subscript.base; index; origin } ->
+        Subscript { Subscript.base = delocalize base; index = delocalize index; origin }
     | Slice { Slice.start; stop; step } ->
         Slice
           {
@@ -3357,14 +3373,18 @@ let arguments_location
       }
 
 
-let subscript base indices ~location ~create_origin =
-  let create_name name = Name (create_name ~location ~create_origin name) in
+let subscript base indices ~location ~create_origin_for_base ~origin =
+  let create_name name = Name (create_name ~location ~create_origin:create_origin_for_base name) in
   let index =
     match indices with
     | [index] -> index
     | multiple_indices -> Tuple multiple_indices |> Node.create_with_default_location
   in
-  Subscript { Subscript.base = { Node.location; value = create_name base }; index }
+  Subscript { Subscript.base = { Node.location; value = create_name base }; index; origin }
+
+
+let subscript_for_annotation base indices ~location =
+  subscript base indices ~location ~create_origin_for_base:(fun _ -> None) ~origin:None
 
 
 let is_dunder_attribute attribute_name =
@@ -3484,6 +3504,9 @@ let remove_origins expression =
   let map_unary_operator ~mapper { UnaryOperator.operator; operand; origin = _ } =
     { UnaryOperator.operand = Mapper.map ~mapper operand; operator; origin = None }
   in
+  let map_subscript ~mapper { Subscript.base; index; origin = _ } =
+    { Subscript.base = Mapper.map ~mapper base; index = Mapper.map ~mapper index; origin = None }
+  in
   Mapper.map
     ~mapper:
       (Mapper.create_transformer
@@ -3493,5 +3516,6 @@ let remove_origins expression =
          ~map_binary_operator
          ~map_boolean_operator
          ~map_unary_operator
+         ~map_subscript
          ())
     expression

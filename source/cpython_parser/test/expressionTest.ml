@@ -1918,7 +1918,8 @@ let test_subscript =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a[b]"
-             ~expected:(+Expression.Subscript { Subscript.base = !"a"; index = !"b" });
+             ~expected:
+               (+Expression.Subscript { Subscript.base = !"a"; index = !"b"; origin = None });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a.__getitem__(b)"
@@ -1939,7 +1940,8 @@ let test_subscript =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a[(b)]"
-             ~expected:(+Expression.Subscript { Subscript.base = !"a"; index = !"b" });
+             ~expected:
+               (+Expression.Subscript { Subscript.base = !"a"; index = !"b"; origin = None });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a[1 < 2]"
@@ -1955,13 +1957,14 @@ let test_subscript =
                             right = +Expression.Constant (Constant.Integer 2);
                             origin = None;
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a[b,c]"
              ~expected:
                (+Expression.Subscript
-                   { Subscript.base = !"a"; index = +Expression.Tuple [!"b"; !"c"] });
+                   { Subscript.base = !"a"; index = +Expression.Tuple [!"b"; !"c"]; origin = None });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a[b].c"
@@ -1970,7 +1973,8 @@ let test_subscript =
                    (Name.Attribute
                       {
                         Name.Attribute.base =
-                          +Expression.Subscript { Subscript.base = !"a"; index = !"b" };
+                          +Expression.Subscript
+                             { Subscript.base = !"a"; index = !"b"; origin = None };
                         attribute = "c";
                         origin = None;
                       }));
@@ -1982,6 +1986,7 @@ let test_subscript =
                    {
                      Subscript.base = !"a";
                      index = +Expression.Slice { Slice.start = None; stop = None; step = None };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -1991,6 +1996,7 @@ let test_subscript =
                    {
                      Subscript.base = !"a";
                      index = +Expression.Slice { Slice.start = None; stop = None; step = None };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2006,6 +2012,7 @@ let test_subscript =
                             stop = None;
                             step = None;
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2021,6 +2028,7 @@ let test_subscript =
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = None;
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2036,6 +2044,7 @@ let test_subscript =
                             stop = None;
                             step = Some (+Expression.Constant (Constant.Integer 1));
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2051,6 +2060,7 @@ let test_subscript =
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = None;
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2066,6 +2076,7 @@ let test_subscript =
                             stop = None;
                             step = Some (+Expression.Constant (Constant.Integer 1));
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2081,6 +2092,7 @@ let test_subscript =
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = Some (+Expression.Constant (Constant.Integer 1));
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2096,6 +2108,7 @@ let test_subscript =
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = Some (+Expression.Constant (Constant.Integer 1));
                           };
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -2115,6 +2128,7 @@ let test_subscript =
                                };
                             +Expression.Constant (Constant.Integer 2);
                           ];
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a[]";
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a[:::]";

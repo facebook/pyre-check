@@ -1475,6 +1475,7 @@ let test_define =
                                            {
                                              Subscript.base = !"x";
                                              index = +Expression.Constant (Constant.Integer 0);
+                                             origin = None;
                                            };
                                       attribute = "y";
                                       origin = None;
@@ -2206,6 +2207,7 @@ let test_define =
                                     Subscript.base = !"Tuple";
                                     index =
                                       +Expression.Tuple [+Expression.Starred (Starred.Once !"Ts")];
+                                    origin = None;
                                   });
                           async = false;
                           generator = false;
@@ -2843,7 +2845,8 @@ let test_assign =
                [
                  +Statement.Assign
                     {
-                      Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                      Assign.target =
+                        +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some (+Expression.Constant (Constant.Integer 3));
                       annotation = None;
                     };
@@ -2855,7 +2858,8 @@ let test_assign =
                [
                  +Statement.Assign
                     {
-                      Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                      Assign.target =
+                        +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some (+Expression.Constant (Constant.Integer 3));
                       annotation = Some !"int";
                     };
@@ -2867,7 +2871,8 @@ let test_assign =
                [
                  +Statement.Assign
                     {
-                      Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                      Assign.target =
+                        +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some (+Expression.Constant (Constant.Integer 3));
                       annotation = None;
                     };
@@ -2880,7 +2885,7 @@ let test_assign =
                  +Statement.AugmentedAssign
                     {
                       AugmentedAssign.target =
-                        +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                        +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       operator = BinaryOperator.Add;
                       value = +Expression.Constant (Constant.Integer 3);
                     };
@@ -2896,8 +2901,10 @@ let test_assign =
                         +Expression.Subscript
                            {
                              Subscript.base =
-                               +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                               +Expression.Subscript
+                                  { Subscript.base = !"i"; index = !"j"; origin = None };
                              index = +Expression.Constant (Constant.Integer 7);
+                             origin = None;
                            };
                       value = Some (+Expression.Constant (Constant.Integer 8));
                       annotation = None;
@@ -2921,6 +2928,7 @@ let test_assign =
                                     stop = None;
                                     step = Some (+Expression.Constant (Constant.Integer 1));
                                   };
+                             origin = None;
                            };
                       value =
                         Some
@@ -2930,6 +2938,7 @@ let test_assign =
                                 index =
                                   +Expression.Slice
                                      { Slice.start = None; stop = Some !"j"; step = None };
+                                origin = None;
                               });
                       annotation = None;
                     };
@@ -2942,7 +2951,8 @@ let test_assign =
                  +Statement.Assign { Assign.target = !"x"; annotation = None; value = Some !"y" };
                  +Statement.Assign
                     {
-                      Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                      Assign.target =
+                        +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some !"y";
                       annotation = None;
                     };
@@ -2956,7 +2966,11 @@ let test_assign =
                     {
                       Assign.target =
                         +Expression.Tuple
-                           [!"x"; +Expression.Subscript { Subscript.base = !"i"; index = !"j" }];
+                           [
+                             !"x";
+                             +Expression.Subscript
+                                { Subscript.base = !"i"; index = !"j"; origin = None };
+                           ];
                       annotation = None;
                       value = Some !"y";
                     };

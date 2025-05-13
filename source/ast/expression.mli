@@ -308,6 +308,7 @@ and Subscript : sig
   type t = {
     base: Expression.t;
     index: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -427,9 +428,11 @@ and Origin : sig
     | MatchAsWithCondition
     | MatchClassArgs of int
     | MatchClassGetAttr of int
+    | MatchClassArgsSubscript of int
     | MatchClassKeywordAttribute of string
     | MatchClassIsInstance
     | MatchClassJoinConditions
+    | MatchMappingKeySubscript
     | MatchMappingRestDict of string
     | MatchMappingRestComparisonEquals of string
     | MatchMappingIsInstance
@@ -437,7 +440,10 @@ and Origin : sig
     | MatchOrJoinConditions
     | MatchSingletonComparisonIs
     | MatchSequenceRestList of string
+    | MatchSequenceRestSubscript of string
     | MatchSequenceRestComparisonEquals of string
+    | MatchSequencePrefix of int
+    | MatchSequenceSuffix of int
     | MatchSequenceIsInstance
     | MatchSequenceJoinConditions
     | MatchValueComparisonEquals
@@ -779,8 +785,11 @@ val subscript
   :  string ->
   expression Node.t list ->
   location:Location.t ->
-  create_origin:(string list -> Origin.t option) ->
+  create_origin_for_base:(string list -> Origin.t option) ->
+  origin:Origin.t option ->
   expression
+
+val subscript_for_annotation : string -> expression Node.t list -> location:Location.t -> expression
 
 val is_dunder_attribute : string -> bool
 

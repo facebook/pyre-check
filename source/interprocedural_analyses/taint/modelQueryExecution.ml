@@ -1777,6 +1777,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                 {
                   base = { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
                   index = { Node.value = Expression.Tuple [_; annotation]; _ };
+                  origin = _;
                 }) ->
               Some annotation
           | _ -> None

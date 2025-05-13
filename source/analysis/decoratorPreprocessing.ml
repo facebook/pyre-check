@@ -405,9 +405,8 @@ let set_first_parameter_type
     when not (Define.is_static_method original_define) ->
       let new_annotation =
         if Define.is_class_method original_define then
-          subscript
+          subscript_for_annotation
             ~location
-            ~create_origin:(fun _ -> None)
             "typing.Type"
             [from_reference ~location ~create_origin:(fun _ -> None) parent]
           |> Node.create ~location

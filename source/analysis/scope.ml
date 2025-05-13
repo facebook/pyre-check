@@ -64,7 +64,8 @@ module Binding = struct
     | Expression.Name (Name.Identifier name) -> { name; kind; location } :: sofar
     | Expression.Starred (Starred.Once element | Starred.Twice element) ->
         of_unannotated_target ~kind sofar element
-    | Subscript { Subscript.base; index } -> of_expression (of_expression sofar base) index
+    | Subscript { Subscript.base; index; origin = _ } ->
+        of_expression (of_expression sofar base) index
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)
@@ -95,7 +96,7 @@ module Binding = struct
         let sofar = of_optional_expression sofar start in
         let sofar = of_optional_expression sofar stop in
         of_optional_expression sofar step
-    | Expression.Subscript { Subscript.base; index } ->
+    | Expression.Subscript { Subscript.base; index; origin = _ } ->
         let sofar = of_expression sofar base in
         of_expression sofar index
     | Expression.Call { Call.callee; arguments; origin = _ } ->

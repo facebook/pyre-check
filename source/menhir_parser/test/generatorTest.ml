@@ -437,7 +437,11 @@ let test_name =
            [
              +Statement.Expression
                 (+Expression.Subscript
-                    { Subscript.base = !"a"; index = +Expression.Constant (Constant.Integer 1) });
+                    {
+                      Subscript.base = !"a";
+                      index = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
+                    });
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
@@ -480,6 +484,7 @@ let test_name =
                              right = +Expression.Constant (Constant.Integer 2);
                              origin = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -495,6 +500,7 @@ let test_name =
                               {
                                 Subscript.base = !"a";
                                 index = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
                          attribute = "b";
                          origin = None;
@@ -503,7 +509,10 @@ let test_name =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "a[b]"
-           [+Statement.Expression (+Expression.Subscript { Subscript.base = !"a"; index = !"b" })];
+           [
+             +Statement.Expression
+                (+Expression.Subscript { Subscript.base = !"a"; index = !"b"; origin = None });
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "a[:]"
@@ -513,6 +522,7 @@ let test_name =
                     {
                       Subscript.base = !"a";
                       index = +Expression.Slice { Slice.start = None; stop = None; step = None };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -530,6 +540,7 @@ let test_name =
                              stop = None;
                              step = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -547,6 +558,7 @@ let test_name =
                              stop = None;
                              step = Some (+Expression.Constant (Constant.Integer 2));
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -564,6 +576,7 @@ let test_name =
                              stop = Some (+Expression.Constant (Constant.Integer 1));
                              step = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -588,6 +601,7 @@ let test_name =
                                      });
                              step = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -605,6 +619,7 @@ let test_name =
                              stop = Some (+Expression.Constant (Constant.Integer 1));
                              step = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -621,6 +636,7 @@ let test_name =
                              +Expression.Constant (Constant.Integer 1);
                              +Expression.Constant (Constant.Integer 2);
                            ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -642,6 +658,7 @@ let test_name =
                                 };
                              +Expression.Constant (Constant.Integer 2);
                            ];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a.((2, 3))";
@@ -972,6 +989,7 @@ let test_define =
                                        {
                                          Subscript.base = !"x";
                                          index = +Expression.Constant (Constant.Integer 0);
+                                         origin = None;
                                        };
                                   attribute = "y";
                                   origin = None;
@@ -1313,6 +1331,7 @@ let test_define =
                                      {
                                        Subscript.base = !"Tuple";
                                        index = +Expression.Tuple [!"int"; !"str"];
+                                       origin = None;
                                      });
                            };
                         ];
@@ -5976,7 +5995,9 @@ let test_stubs =
                 {
                   Assign.target = !"a";
                   annotation =
-                    Some (+Expression.Subscript { Subscript.base = !"Optional"; index = !"int" });
+                    Some
+                      (+Expression.Subscript
+                          { Subscript.base = !"Optional"; index = !"int"; origin = None });
                   value = Some (+Expression.Constant Constant.Ellipsis);
                 };
            ];
@@ -6225,7 +6246,8 @@ let test_setitem =
            [
              +Statement.Assign
                 {
-                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                  Assign.target =
+                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                   value = Some (+Expression.Constant (Constant.Integer 3));
                   annotation = None;
                 };
@@ -6237,7 +6259,7 @@ let test_setitem =
              +Statement.AugmentedAssign
                 {
                   AugmentedAssign.target =
-                    +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                   value = +Expression.Constant (Constant.Integer 3);
                   operator = BinaryOperator.Add;
                 };
@@ -6252,8 +6274,10 @@ let test_setitem =
                     +Expression.Subscript
                        {
                          Subscript.base =
-                           +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                           +Expression.Subscript
+                              { Subscript.base = !"i"; index = !"j"; origin = None };
                          index = +Expression.Constant (Constant.Integer 7);
+                         origin = None;
                        };
                   value = Some (+Expression.Constant (Constant.Integer 8));
                   annotation = None;
@@ -6276,6 +6300,7 @@ let test_setitem =
                                 stop = None;
                                 step = Some (+Expression.Constant (Constant.Integer 1));
                               };
+                         origin = None;
                        };
                   value =
                     Some
@@ -6285,6 +6310,7 @@ let test_setitem =
                             index =
                               +Expression.Slice
                                  { Slice.start = None; stop = Some !"j"; step = None };
+                            origin = None;
                           });
                   annotation = None;
                 };
@@ -6295,7 +6321,8 @@ let test_setitem =
            [
              +Statement.Assign
                 {
-                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                  Assign.target =
+                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                   value =
                     Some
                       (+Expression.Ternary
@@ -6314,7 +6341,8 @@ let test_setitem =
              +Statement.Assign { Assign.target = !"x"; annotation = None; value = Some !"y" };
              +Statement.Assign
                 {
-                  Assign.target = +Expression.Subscript { Subscript.base = !"i"; index = !"j" };
+                  Assign.target =
+                    +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                   value = Some !"y";
                   annotation = None;
                 };
@@ -6327,7 +6355,11 @@ let test_setitem =
                 {
                   Assign.target =
                     +Expression.Tuple
-                       [!"x"; +Expression.Subscript { Subscript.base = !"i"; index = !"j" }];
+                       [
+                         !"x";
+                         +Expression.Subscript
+                            { Subscript.base = !"i"; index = !"j"; origin = None };
+                       ];
                   annotation = None;
                   value = Some !"y";
                 };

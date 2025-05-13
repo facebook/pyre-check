@@ -218,9 +218,13 @@ module Make (Transformer : Transformer) = struct
                 stop = stop >>| transform_expression;
                 step = step >>| transform_expression;
               }
-        | Subscript { Subscript.base; index } ->
+        | Subscript { Subscript.base; index; origin } ->
             Subscript
-              { Subscript.base = transform_expression base; index = transform_expression index }
+              {
+                Subscript.base = transform_expression base;
+                index = transform_expression index;
+                origin;
+              }
         | Ternary { Ternary.target; test; alternative } ->
             Ternary
               {

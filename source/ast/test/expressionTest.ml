@@ -274,7 +274,9 @@ let test_pp _ =
                {
                  Subscript.base = +Expression.Name (Name.Identifier "b");
                  index = +Expression.Constant (Constant.Integer 1);
+                 origin = None;
                };
+          origin = None;
         })
     "a[b[1]]";
   assert_pp_equal
@@ -293,6 +295,7 @@ let test_pp _ =
                               origin = None;
                             });
                     index = +Expression.Constant (Constant.Integer 1);
+                    origin = None;
                   };
              attribute = "c";
              origin = None;

@@ -1499,13 +1499,19 @@ end = struct
               | { Node.value = Expression.Tuple _; _ } ->
                   Node.create
                     ~location
-                    (subscript ~create_origin:(fun _ -> None) "typing.Union" [annotation] ~location)
+                    (subscript
+                       ~create_origin_for_base:(fun _ -> None)
+                       ~origin:None
+                       "typing.Union"
+                       [annotation]
+                       ~location)
               | _ -> annotation
             in
             Node.create
               ~location
               (subscript
-                 ~create_origin:(fun _ -> None)
+                 ~create_origin_for_base:(fun _ -> None)
+                 ~origin:None
                  "ExceptionGroup"
                  [exception_group_type]
                  ~location)
@@ -2216,7 +2222,7 @@ let is_generator statements =
         is_optional_expression_generator start
         || is_optional_expression_generator stop
         || is_optional_expression_generator step
-    | Expression.Subscript { Subscript.base; index } ->
+    | Expression.Subscript { Subscript.base; index; origin = _ } ->
         is_expression_generator base || is_expression_generator index
     | Expression.FormatString substrings ->
         let is_substring_generator = function

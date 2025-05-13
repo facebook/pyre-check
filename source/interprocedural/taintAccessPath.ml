@@ -432,7 +432,11 @@ let of_expression ~self_variable expression =
     | {
         Node.value =
           Subscript
-            { base; index = { Node.value = Expression.Constant (Constant.String { value; _ }); _ } };
+            {
+              base;
+              index = { Node.value = Expression.Constant (Constant.String { value; _ }); _ };
+              origin = _;
+            };
         _;
       } ->
         let path = Abstract.TreeDomain.Label.Index value :: path in

@@ -448,7 +448,8 @@ let expression =
     |> Node.create ~location
   in
   let subscript ~location ~value ~slice ~ctx:() =
-    Expression.Subscript { Subscript.base = value; index = slice } |> Node.create ~location
+    Expression.Subscript { Subscript.base = value; index = slice; origin = None }
+    |> Node.create ~location
   in
   let starred ~location ~value ~ctx:() =
     Expression.Starred (Starred.Once value) |> Node.create ~location

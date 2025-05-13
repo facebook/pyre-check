@@ -2847,8 +2847,8 @@ let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~locatio
       | Some { Node.value = call; _ } -> call
       | None -> expression)
   | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
-  | Expression.Subscript { Subscript.base; index } ->
-      let origin = Some (Origin.create ~location Origin.SubscriptGetItem) in
+  | Expression.Subscript { Subscript.base; index; origin = subscript_origin } ->
+      let origin = Some (Origin.create ?base:subscript_origin ~location Origin.SubscriptGetItem) in
       Expression.Call
         {
           callee =
@@ -2894,7 +2894,8 @@ let redirect_assignments statement =
    Node.value =
      Statement.Assign
        {
-         Assign.target = { Node.value = Expression.Subscript { base; index }; _ };
+         Assign.target =
+           { Node.value = Expression.Subscript { base; index; origin = subscript_origin }; _ };
          value = Some value_expression;
          _;
        };
@@ -2905,7 +2906,7 @@ let redirect_assignments statement =
          `x, y[a], z = w`. In the future, we should implement proper logic to handle those. *)
       let index_argument = { Call.Argument.value = index; name = None } in
       let value_argument = { Call.Argument.value = value_expression; name = None } in
-      let origin = Some (Origin.create ~location Origin.SubscriptSetItem) in
+      let origin = Some (Origin.create ?base:subscript_origin ~location Origin.SubscriptSetItem) in
       {
         Node.location;
         value =

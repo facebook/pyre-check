@@ -327,6 +327,7 @@ let test_call_locations _ =
                                 (Expression.Constant (Constant.Integer 2));
                             origin = None;
                           });
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -358,6 +359,7 @@ let test_call_locations _ =
                               ~stop:(1, 6)
                               (Expression.Constant (Constant.Integer 2));
                           ]);
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -737,6 +739,7 @@ let test_call_locations _ =
                         node ~start:(1, 4) ~stop:(1, 5) (Expression.Name (Name.Identifier "i"));
                       index =
                         node ~start:(1, 6) ~stop:(1, 7) (Expression.Name (Name.Identifier "j"));
+                      origin = None;
                     });
              value =
                Some (node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "y")));
@@ -772,6 +775,7 @@ let test_call_locations _ =
                                    (Expression.Constant (Constant.Integer 1)));
                             step = None;
                           });
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -803,6 +807,7 @@ let test_call_locations _ =
                                    ~stop:(1, 5)
                                    (Expression.Constant (Constant.Integer 2)));
                           });
+                   origin = None;
                  })));
     ];
   assert_source_locations
@@ -824,6 +829,7 @@ let test_call_locations _ =
                        ~start:(1, 2)
                        ~stop:(1, 3)
                        (Expression.Slice { Slice.start = None; stop = None; step = None });
+                   origin = None;
                  })));
     ]
 
