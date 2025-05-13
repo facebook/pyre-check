@@ -163,7 +163,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression alternative
       | Tuple elements -> List.iter elements ~f:visit_expression
       | UnaryOperator { UnaryOperator.operand; _ } -> visit_expression operand
-      | WalrusOperator { WalrusOperator.target; value } ->
+      | WalrusOperator { WalrusOperator.target; value; origin = _ } ->
           visit_expression target;
           visit_expression value
       | Expression.Yield expression -> Option.iter ~f:visit_expression expression

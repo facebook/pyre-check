@@ -5304,7 +5304,7 @@ module HigherOrderCallGraph = struct
           | UnaryOperator { operand; _ } ->
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:operand in
               CallTarget.Set.bottom, state
-          | WalrusOperator { target = _; value } ->
+          | WalrusOperator { target = _; value; origin = _ } ->
               analyze_expression ~pyre_in_context ~state ~expression:value
           | Yield None -> CallTarget.Set.bottom, state
           | Yield (Some expression)

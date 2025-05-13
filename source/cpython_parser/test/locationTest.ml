@@ -3799,6 +3799,7 @@ let test_walrus_locations =
                                   ~start:(1, 6)
                                   ~stop:(1, 7)
                                   (Expression.Constant (Constant.Integer 1));
+                              origin = None;
                             })));
                ];
       ]

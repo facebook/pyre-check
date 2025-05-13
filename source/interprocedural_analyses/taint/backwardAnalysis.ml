@@ -2457,7 +2457,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.foldi ~f:(analyze_reverse_list_element ~total ~pyre_in_context taint) ~init:state
       | UnaryOperator { operator = _; operand; origin = _ } ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:operand
-      | WalrusOperator { target; value } ->
+      | WalrusOperator { target; value; origin = _ } ->
           let state = analyze_assignment ~pyre_in_context ~target ~value state in
           analyze_expression ~pyre_in_context ~taint ~state ~expression:value
       | Yield None -> state

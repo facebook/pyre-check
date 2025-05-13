@@ -76,7 +76,7 @@ module Binding = struct
   and of_expression sofar { Node.value = expression; _ } =
     let open Expression in
     match expression with
-    | Expression.WalrusOperator { WalrusOperator.target; value } ->
+    | Expression.WalrusOperator { WalrusOperator.target; value; origin = _ } ->
         let sofar = of_expression sofar value in
         of_unannotated_target ~kind:Kind.WalrusTarget sofar target
     (* Boilerplates to make sure all expressions are visited. *)

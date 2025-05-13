@@ -179,18 +179,18 @@ let test_collect _ =
     [
       +Statement.Expression
          (+Expression.WalrusOperator
-             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1); origin = None });
     ]
     ( [
         +Expression.WalrusOperator
-           { target = !"a"; value = +Expression.Constant (Constant.Integer 1) };
+           { target = !"a"; value = +Expression.Constant (Constant.Integer 1); origin = None };
         +Expression.Constant (Constant.Integer 1);
         +Expression.Name (Identifier "a");
       ],
       [
         +Statement.Expression
            (+Expression.WalrusOperator
-               { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+               { target = !"a"; value = +Expression.Constant (Constant.Integer 1); origin = None });
       ] )
 
 

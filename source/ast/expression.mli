@@ -368,6 +368,7 @@ and WalrusOperator : sig
   type t = {
     target: Expression.t;
     value: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 

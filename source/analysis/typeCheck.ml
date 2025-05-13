@@ -3784,7 +3784,7 @@ module State (Context : Context) = struct
           | None ->
               let resolved = forward_expression ~resolution operand in
               { resolved with resolved = Type.bool; resolved_annotation = None; base = None })
-      | WalrusOperator { value; target } ->
+      | WalrusOperator { value; target; origin = _ } ->
           let resolution, errors =
             let post_resolution, errors =
               forward_assignment ~resolution ~location ~target ~value:(Some value) ~annotation:None

@@ -77,12 +77,12 @@ let test_transform _ =
     [
       +Statement.Expression
          (+Expression.WalrusOperator
-             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1); origin = None });
     ]
     [
       +Statement.Expression
          (+Expression.WalrusOperator
-             { target = !"a"; value = +Expression.Constant (Constant.Integer 2) });
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 2); origin = None });
     ]
     0;
   assert_modifying_source

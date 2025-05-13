@@ -2776,7 +2776,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~init:(ForwardState.Tree.empty, state)
       | UnaryOperator { operator = _; operand; origin = _ } ->
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:operand
-      | WalrusOperator { target; value } ->
+      | WalrusOperator { target; value; origin = _ } ->
           let value_taint, state =
             analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
           in

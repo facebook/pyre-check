@@ -1061,6 +1061,10 @@ and WalrusOperator : sig
   type t = {
     target: Expression.t;
     value: Expression.t;
+    (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
+       turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
+       reason for lowering it. *)
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -1069,6 +1073,7 @@ end = struct
   type t = {
     target: Expression.t;
     value: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -1755,7 +1760,7 @@ end = struct
             operator
             pp_expression_t
             operand
-      | WalrusOperator { WalrusOperator.target; value } ->
+      | WalrusOperator { WalrusOperator.target; value; origin = _ } ->
           Format.fprintf formatter "%a := %a" pp_expression_t target pp_expression_t value
       | Yield yield -> (
           match yield with
@@ -2168,8 +2173,8 @@ module Mapper = struct
       (Expression.UnaryOperator (default_map_unary_operator ~mapper unary_operator))
 
 
-  let default_map_walrus_operator ~mapper { WalrusOperator.target; value } =
-    { WalrusOperator.target = map ~mapper target; value = map ~mapper value }
+  let default_map_walrus_operator ~mapper { WalrusOperator.target; value; origin } =
+    { WalrusOperator.target = map ~mapper target; value = map ~mapper value; origin }
 
 
   let default_map_walrus_operator_node ~mapper ~location walrus_operator =
@@ -2801,7 +2806,7 @@ module Folder = struct
     fold ~folder ~state operand
 
 
-  let default_fold_walrus_operator ~folder ~state { WalrusOperator.target; value } =
+  let default_fold_walrus_operator ~folder ~state { WalrusOperator.target; value; origin = _ } =
     let state = fold ~folder ~state target in
     fold ~folder ~state value
 
@@ -2960,6 +2965,7 @@ let origin { Node.value; _ } =
   | Expression.UnaryOperator { UnaryOperator.origin; _ } -> origin
   | Expression.BooleanOperator { BooleanOperator.origin; _ } -> origin
   | Expression.Subscript { Subscript.origin; _ } -> origin
+  | Expression.WalrusOperator { WalrusOperator.origin; _ } -> origin
   | _ -> None
 
 
@@ -3507,6 +3513,13 @@ let remove_origins expression =
   let map_subscript ~mapper { Subscript.base; index; origin = _ } =
     { Subscript.base = Mapper.map ~mapper base; index = Mapper.map ~mapper index; origin = None }
   in
+  let map_walrus_operator ~mapper { WalrusOperator.target; value; origin = _ } =
+    {
+      WalrusOperator.target = Mapper.map ~mapper target;
+      value = Mapper.map ~mapper value;
+      origin = None;
+    }
+  in
   Mapper.map
     ~mapper:
       (Mapper.create_transformer
@@ -3517,5 +3530,6 @@ let remove_origins expression =
          ~map_boolean_operator
          ~map_unary_operator
          ~map_subscript
+         ~map_walrus_operator
          ())
     expression

@@ -487,6 +487,7 @@ let test_ternary_walrus =
                    {
                      WalrusOperator.target = !"a";
                      value = +Expression.Constant (Constant.Integer 1);
+                     origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -500,7 +501,9 @@ let test_ternary_walrus =
                           {
                             WalrusOperator.target = !"b";
                             value = +Expression.Constant (Constant.Integer 1);
+                            origin = None;
                           };
+                     origin = None;
                    });
         (* Standalone assignment expressions are required to be protected with parenthesis. *)
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "a := 1";

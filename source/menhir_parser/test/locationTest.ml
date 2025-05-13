@@ -3348,6 +3348,7 @@ let test_walrus_locations _ =
                      node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
                    value =
                      node ~start:(1, 5) ~stop:(1, 6) (Expression.Constant (Constant.Integer 1));
+                   origin = None;
                  })));
     ]
 

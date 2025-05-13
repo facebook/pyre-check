@@ -235,11 +235,12 @@ module Make (Transformer : Transformer) = struct
         | Tuple elements -> Tuple (transform_list elements ~f:transform_expression)
         | UnaryOperator { UnaryOperator.operator; operand; origin } ->
             UnaryOperator { UnaryOperator.operator; operand = transform_expression operand; origin }
-        | WalrusOperator { WalrusOperator.target; value } ->
+        | WalrusOperator { WalrusOperator.target; value; origin } ->
             WalrusOperator
               {
                 WalrusOperator.target = transform_expression target;
                 value = transform_expression value;
+                origin;
               }
         | Expression.Yield expression -> Expression.Yield (expression >>| transform_expression)
         | Expression.YieldFrom expression ->

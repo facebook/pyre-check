@@ -303,7 +303,11 @@ let test_pp _ =
     "a.b[1].c";
   assert_pp_equal
     (+Expression.WalrusOperator
-        { WalrusOperator.target = !"a"; value = +Expression.Constant (Constant.Integer 1) })
+        {
+          WalrusOperator.target = !"a";
+          value = +Expression.Constant (Constant.Integer 1);
+          origin = None;
+        })
     "a := 1";
   assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)";
   assert_pp_equal
@@ -802,7 +806,7 @@ let test_default_folder context =
         { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1; origin = None })
     ~expected:1;
   assert_count
-    (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1 })
+    (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1; origin = None })
     ~expected:1;
   assert_count (+Expression.Yield (Some (integer 1))) ~expected:1;
   assert_count (+Expression.YieldFrom (integer 1)) ~expected:1;
@@ -1053,8 +1057,9 @@ let test_default_mapper context =
       (+Expression.UnaryOperator
           { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 2; origin = None });
   assert_transformed
-    (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1 })
-    ~expected:(+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 2 });
+    (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1; origin = None })
+    ~expected:
+      (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 2; origin = None });
   assert_transformed
     (+Expression.Yield (Some (integer 1)))
     ~expected:(+Expression.Yield (Some (integer 2)));

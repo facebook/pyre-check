@@ -423,6 +423,7 @@ module ParserToAst = struct
           {
             AstExpression.WalrusOperator.target = convert_expression target;
             value = convert_expression value;
+            origin = None;
           }
         |> Node.create ~location
     | Yield expression ->

@@ -342,7 +342,7 @@ module State (Context : Context) = struct
         let { errors = left_errors; _ } = forward_expression left in
         let { errors = right_errors; _ } = forward_expression right in
         { empty_result with errors = left_errors @ right_errors }
-    | WalrusOperator { target; value } ->
+    | WalrusOperator { target; value; origin = _ } ->
         let { reachable_globals; errors } = forward_assignment_target ~resolution target in
         let { reachable_globals = value_globals; errors = value_errors } =
           forward_expression value

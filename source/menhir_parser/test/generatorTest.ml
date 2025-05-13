@@ -6400,6 +6400,7 @@ let test_walrus_operator =
                     {
                       WalrusOperator.target = !"a";
                       value = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -6414,6 +6415,7 @@ let test_walrus_operator =
                          {
                            WalrusOperator.target = !"a";
                            value = +Expression.Constant (Constant.Integer 1);
+                           origin = None;
                          };
                       +Expression.Constant (Constant.Integer 2);
                     ]);
@@ -6435,6 +6437,7 @@ let test_walrus_operator =
                              right = +Expression.Constant (Constant.Integer 2);
                              origin = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -6454,6 +6457,7 @@ let test_walrus_operator =
                              right = +Expression.Constant Constant.False;
                              origin = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -6472,6 +6476,7 @@ let test_walrus_operator =
                              test = +Expression.Constant Constant.True;
                              alternative = +Expression.Constant (Constant.Integer 2);
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -6487,7 +6492,9 @@ let test_walrus_operator =
                            {
                              WalrusOperator.target = !"b";
                              value = +Expression.Constant (Constant.Integer 1);
+                             origin = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "(a := 1) := 2";

@@ -323,7 +323,8 @@ let expression =
   let named_expr ~location ~target ~value =
     (* TODO(T47589601): `target` can be strenghthened into `Identifier.t` if qualification is
        removed. *)
-    Expression.WalrusOperator { WalrusOperator.target; value } |> Node.create ~location
+    Expression.WalrusOperator { WalrusOperator.target; value; origin = None }
+    |> Node.create ~location
   in
   let bin_op ~location ~left ~op ~right =
     Expression.BinaryOperator { BinaryOperator.left; operator = op; right; origin = None }

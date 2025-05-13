@@ -742,11 +742,12 @@ module Qualify = struct
               alternative = qualify_expression ~qualify_strings ~scope alternative;
             }
       | Tuple elements -> Tuple (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
-      | WalrusOperator { target; value } ->
+      | WalrusOperator { target; value; origin } ->
           WalrusOperator
             {
               target = qualify_expression ~qualify_strings ~scope target;
               value = qualify_expression ~qualify_strings ~scope value;
+              origin;
             }
       | UnaryOperator { UnaryOperator.operator; operand; origin } ->
           UnaryOperator
