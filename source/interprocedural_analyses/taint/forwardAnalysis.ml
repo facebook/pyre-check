@@ -131,7 +131,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             "Could not find callees for `%a` at `%a:%a` in the call graph."
             Expression.pp
             (Node.create_with_default_location (Expression.Call call)
-            |> Ast.Expression.delocalize ~create_origin:(fun _ -> None))
+            |> Ast.Expression.delocalize ~create_origin:(fun ~expression:_ _ -> None))
             Reference.pp
             FunctionContext.qualifier
             Location.pp
@@ -866,6 +866,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee_taint
       ~arguments
       ~arguments_taint
+      ~origin
       ~new_targets
       ~init_targets
       ~state:initial_state
@@ -915,7 +916,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             {
               Call.callee;
               arguments;
-              origin = Some (Origin.create ~location:call_location Origin.ImplicitInitCall);
+              origin =
+                Some (Origin.create ?base:origin ~location:call_location Origin.ImplicitInitCall);
             }
           |> Node.create ~location:call_location
         in
@@ -953,6 +955,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
       ~call_location
       ~arguments
+      ~origin
       ~self_taint
       ~callee_taint
       ~arguments_taint
@@ -1042,6 +1045,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~callee_taint
               ~arguments
               ~arguments_taint
+              ~origin
               ~new_targets
               ~init_targets
               ~state:initial_state
@@ -1322,6 +1326,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   and analyze_arguments_with_higher_order_parameters
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
       ~arguments
+      ~origin
       ~state
       ~higher_order_parameters
     =
@@ -1440,6 +1445,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~callee:argument
             ~call_location:argument_location
             ~arguments
+            ~origin:
+              (Some
+                 (Origin.create
+                    ?base:origin
+                    ~location:argument_location
+                    (Origin.PysaHigherOrderParameter index)))
             ~self_taint
             ~callee_taint:(Some callee_taint)
             ~arguments_taint
@@ -1480,6 +1491,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
       ~call_location
       ~arguments
+      ~origin
       ~state
       callees
     =
@@ -1499,6 +1511,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_arguments_with_higher_order_parameters
           ~pyre_in_context
           ~arguments
+          ~origin
           ~state
           ~higher_order_parameters:callees.higher_order_parameters
     in
@@ -1510,6 +1523,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
       ~call_location
       ~arguments
+      ~origin
       ~self_taint
       ~callee_taint
       ~arguments_taint
@@ -1525,6 +1539,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state
       ~location
       ~base
+      ~origin
       ~taint_and_state_after_index_access
       call_target
     =
@@ -1546,7 +1561,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~location
                     ~base
                     ~attribute
-                    ~origin:None
+                    ~origin
                 in
                 let taint =
                   taint
@@ -1602,7 +1617,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            name = None;
          };
        ];
-     origin = _;
+     origin;
     } ->
         let _, state =
           analyze_expression
@@ -1640,6 +1655,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~state
                   ~location
                   ~base
+                  ~origin
                   ~taint_and_state_after_index_access
                   call_target
               in
@@ -1681,7 +1697,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments =
        [{ Call.Argument.value = index; name = None }; { Call.Argument.value; name = None }] as
        arguments;
-     origin = _;
+     origin;
     } ->
         let is_dict_setitem = CallGraph.CallCallees.is_mapping_method callees in
         let is_sequence_setitem = CallGraph.CallCallees.is_sequence_method callees in
@@ -1701,6 +1717,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~callee
             ~call_location:location
             ~arguments
+            ~origin
             ~state
             callees
           |> snd
@@ -1776,7 +1793,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
          { Call.Argument.value = assigned_value; name = None };
        ];
-     origin = _;
+     origin = call_origin;
     } ->
         let taint, state =
           analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:assigned_value
@@ -1789,7 +1806,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   {
                     base = self;
                     attribute;
-                    origin = Some (Origin.create ~location Origin.SetAttrConstantLiteral);
+                    origin =
+                      Some (Origin.create ?base:call_origin ~location Origin.SetAttrConstantLiteral);
                   })
             |> Node.create ~location)
             taint
@@ -1814,7 +1832,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
          { Call.Argument.value = default; name = _ };
        ];
-     origin = _;
+     origin = call_origin;
     } ->
         let attribute_expression =
           Expression.Name
@@ -1822,7 +1840,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                {
                  base;
                  attribute;
-                 origin = Some (Origin.create ~location Origin.GetAttrConstantLiteral);
+                 origin =
+                   Some (Origin.create ?base:call_origin ~location Origin.GetAttrConstantLiteral);
                })
           |> Node.create ~location
         in
@@ -2295,6 +2314,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_location:location
           ~callee
           ~arguments
+          ~origin
           ~state
           callees
 
@@ -2329,6 +2349,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~callee:expression
               ~call_location:location
               ~arguments:[]
+              ~origin
               ~self_taint:(Some base_taint)
               ~callee_taint:None
               ~arguments_taint:[]
@@ -2450,18 +2471,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~base_state
       =
       let callees = CallGraph.CallCallees.create ~call_targets:[call_target] () in
+      let stringify_origin =
+        Some
+          (Origin.create
+             ?base:(Ast.Expression.origin base)
+             ~location:call_location
+             Origin.FormatStringImplicitStr)
+      in
       let callee =
         let callee_from_method_name method_name =
           {
             Node.value =
               Expression.Name
-                (Name.Attribute
-                   {
-                     base;
-                     attribute = method_name;
-                     origin =
-                       Some (Origin.create ~location:call_location Origin.FormatStringImplicitStr);
-                   });
+                (Name.Attribute { base; attribute = method_name; origin = stringify_origin });
             location = call_location;
           }
         in
@@ -2479,6 +2501,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~is_result_used:true
           ~call_location
           ~arguments:[]
+          ~origin:stringify_origin
           ~self_taint:(Some base_taint)
           ~callee_taint:None
           ~arguments_taint:[]
@@ -2960,6 +2983,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                         ~callee:target
                         ~call_location:location
                         ~arguments:[{ Call.Argument.name = None; value }]
+                        ~origin:None
                         ~state
                         (CallGraph.CallCallees.create ~call_targets:property_targets ())
                     in

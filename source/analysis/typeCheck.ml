@@ -6025,7 +6025,7 @@ module State (Context : Context) = struct
   and resolve_reference_type ~resolution reference =
     from_reference
       ~location:Location.any
-      ~create_origin:(fun _ -> Some Origin.ForTypeChecking)
+      ~create_origin:(fun _ -> Some (Origin.create ~location:Location.any Origin.ForTypeChecking))
       reference
     |> resolve_expression_type ~resolution
 
@@ -7528,8 +7528,10 @@ module State (Context : Context) = struct
             in
             Type.Variable.ParamSpec.of_component_annotations
               ~get_param_spec
-              ~args_annotation:(delocalize ~create_origin:(fun _ -> None) args_annotation)
-              ~kwargs_annotation:(delocalize ~create_origin:(fun _ -> None) kwargs_annotation)
+              ~args_annotation:
+                (delocalize ~create_origin:(fun ~expression:_ _ -> None) args_annotation)
+              ~kwargs_annotation:
+                (delocalize ~create_origin:(fun ~expression:_ _ -> None) kwargs_annotation)
           in
           let possible_param_spec =
             let possible_param_spec_global =

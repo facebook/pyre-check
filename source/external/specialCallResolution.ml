@@ -14,7 +14,11 @@ open Expression
 
 let recognized_callable_target_types = Type.Set.of_list [Type.Primitive "TestCallableTarget"]
 
-let redirect ~pyre_in_context ~location:call_location { Call.callee; arguments } =
+let redirect
+    ~pyre_in_context
+    ~location:call_location
+    { Call.callee; arguments; origin = call_origin }
+  =
   let is_async_task base =
     PyrePysaEnvironment.InContext.resolve_expression_to_type pyre_in_context base
     |> fun annotation -> Set.exists recognized_callable_target_types ~f:(Type.equal annotation)
@@ -27,6 +31,10 @@ let redirect ~pyre_in_context ~location:call_location { Call.callee; arguments }
           Call.callee = base;
           arguments;
           origin =
-            Some (Origin.create ~location:call_location (Origin.PysaCallRedirect "async_task"));
+            Some
+              (Origin.create
+                 ?base:call_origin
+                 ~location:call_location
+                 (Origin.PysaCallRedirect "async_task"));
         }
   | _ -> None

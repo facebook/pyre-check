@@ -1146,8 +1146,13 @@ and Origin : sig
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
     | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | PysaHigherOrderParameter of int
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
+    | Nested of {
+        head: kind;
+        tail: kind;
+      }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
@@ -1156,7 +1161,7 @@ and Origin : sig
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val create : location:Location.t -> kind -> t
+  val create : ?base:t -> location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
 end = struct
@@ -1205,8 +1210,13 @@ end = struct
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
     | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | PysaHigherOrderParameter of int
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
+    | Nested of {
+        head: kind;
+        tail: kind;
+      }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
@@ -1215,34 +1225,41 @@ end = struct
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  let create ~location kind = { kind; location }
+  let create ?base ~location kind =
+    match base with
+    | Some { kind = tail; location } -> { kind = Nested { head = kind; tail }; location }
+    | None -> { kind; location }
+
 
   let is_dunder_method { kind; _ } =
-    match kind with
-    | ComparisonOperator
-    | BinaryOperator
-    | UnaryOperator
-    | AugmentedAssign
-    | SubscriptSetItem
-    | SubscriptGetItem
-    | ForIter
-    | ForNext
-    | GeneratorIter
-    | GeneratorNext
-    | With
-    | InContains
-    | InIter
-    | InGetItem
-    | InGetItemEq
-    | StrCall
-    | ReprCall
-    | AbsCall
-    | IterCall
-    | NextCall
-    | ImplicitInitCall
-    | FormatStringImplicitStr ->
-        true
-    | _ -> false
+    let rec is_dunder_method_kind = function
+      | ComparisonOperator
+      | BinaryOperator
+      | UnaryOperator
+      | AugmentedAssign
+      | SubscriptSetItem
+      | SubscriptGetItem
+      | ForIter
+      | ForNext
+      | GeneratorIter
+      | GeneratorNext
+      | With
+      | InContains
+      | InIter
+      | InGetItem
+      | InGetItemEq
+      | StrCall
+      | ReprCall
+      | AbsCall
+      | IterCall
+      | NextCall
+      | ImplicitInitCall
+      | FormatStringImplicitStr ->
+          true
+      | Nested { head; _ } -> is_dunder_method_kind head
+      | _ -> false
+    in
+    is_dunder_method_kind kind
 end
 
 and Expression : sig
@@ -2929,7 +2946,7 @@ let create_name_from_identifiers ~location ~create_origin identifiers =
              {
                Name.Attribute.base = create rest;
                attribute = identifier;
-               origin = current_identifiers |> create_origin >>| Origin.create ~location;
+               origin = create_origin current_identifiers;
              })
         |> Node.create ~location
   in
@@ -2958,7 +2975,7 @@ let create_name_from_reference ~location ~create_origin reference =
              {
                Name.Attribute.base = create rest;
                attribute = identifier;
-               origin = current_reference |> create_origin >>| Origin.create ~location;
+               origin = create_origin current_reference;
              })
         |> Node.create ~location
   in
@@ -3093,7 +3110,7 @@ let rec delocalize ~create_origin ({ Node.value; location } as expression) =
           let qualifier =
             Str.matched_group 1 identifier
             |> String.substr_replace_all ~pattern:"?" ~with_:"."
-            |> create_name ~location ~create_origin
+            |> create_name ~location ~create_origin:(create_origin ~expression)
             |> fun name -> Name name |> Node.create ~location
           in
           Name
@@ -3101,7 +3118,7 @@ let rec delocalize ~create_origin ({ Node.value; location } as expression) =
                {
                  Name.Attribute.base = qualifier;
                  attribute = sanitized;
-                 origin = create_origin [identifier] >>| Origin.create ~location;
+                 origin = create_origin ~expression [identifier];
                })
         else (
           Log.debug "Unable to extract qualifier from %s" identifier;
@@ -3296,6 +3313,13 @@ let operator_name_to_symbol = function
   | "__and__" -> Some "&"
   | "__xor__" -> Some "^"
   | "__or__" -> Some "|"
+  | _ -> None
+
+
+let origin { Node.value; _ } =
+  match value with
+  | Expression.Name (Name.Attribute { Name.Attribute.origin; _ }) -> origin
+  | Expression.Call { Call.origin; _ } -> origin
   | _ -> None
 
 

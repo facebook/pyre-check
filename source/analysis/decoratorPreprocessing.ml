@@ -354,7 +354,10 @@ let rec requalify_define ~old_qualifier ~new_qualifier ~relative_path define =
 let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }; _ } =
   let name_expression name =
     Expression.Name
-      (create_name ~location ~create_origin:(fun _ -> Some Origin.DecoratorInlining) name)
+      (create_name
+         ~location
+         ~create_origin:(fun _ -> Some (Origin.create ~location Origin.DecoratorInlining))
+         name)
     |> Node.create ~location
   in
   let argument_value =
@@ -378,7 +381,7 @@ let create_function_call ~should_await ~location ~callee_name arguments =
           Expression.Name
             (create_name_from_reference
                ~location
-               ~create_origin:(fun _ -> Some Origin.DecoratorInlining)
+               ~create_origin:(fun _ -> Some (Origin.create ~location Origin.DecoratorInlining))
                callee_name)
           |> Node.create ~location;
         arguments;
@@ -529,7 +532,7 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
         Expression.Name
           (create_name_from_reference
              ~location
-             ~create_origin:(fun _ -> Some Origin.DecoratorInlining)
+             ~create_origin:(fun _ -> Some (Origin.create ~location Origin.DecoratorInlining))
              (Reference.create args_local_variable_name))
         |> Node.create ~location;
       annotation = None;
@@ -568,7 +571,7 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
         Expression.Name
           (create_name_from_reference
              ~location
-             ~create_origin:(fun _ -> Some Origin.DecoratorInlining)
+             ~create_origin:(fun _ -> Some (Origin.create ~location Origin.DecoratorInlining))
              (Reference.create kwargs_local_variable_name))
         |> Node.create ~location;
       annotation = None;

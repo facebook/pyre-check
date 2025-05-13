@@ -328,7 +328,7 @@ let test_delocalize _ =
       ~printer:Expression.show
       ~cmp:location_insensitive_equal
       expected
-      (delocalize ~create_origin:(fun _ -> None) source)
+      (delocalize ~create_origin:(fun ~expression:_ _ -> None) source)
   in
   assert_delocalized !"constant" !"constant";
   assert_delocalized !"$local_qualifier$variable" !"qualifier.variable";

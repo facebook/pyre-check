@@ -417,8 +417,6 @@ module Qualify = struct
 
   let is_qualified = String.is_prefix ~prefix:"$"
 
-  let create_qualification_origin identifiers = Some (Origin.Qualification identifiers)
-
   let qualify_if_needed ~qualifier name =
     if Reference.is_strict_prefix ~prefix:qualifier name then
       name
@@ -492,7 +490,11 @@ module Qualify = struct
   let qualify_identifier_name ~location ~scope:{ aliases; _ } identifier =
     match Map.find aliases identifier with
     | Some { name; _ } ->
-        create_name_from_reference ~location ~create_origin:create_qualification_origin name
+        create_name_from_reference
+          ~location
+          ~create_origin:(fun identifiers ->
+            Some (Origin.create ~location (Origin.Qualification identifiers)))
+          name
     | _ -> Name.Identifier identifier
 
 
@@ -1075,18 +1077,23 @@ module Qualify = struct
                     (Expression.Name
                        (create_name_from_reference
                           ~location
-                          ~create_origin:create_qualification_origin
+                          ~create_origin:(fun identifiers ->
+                            Some (Origin.create ~location (Origin.Qualification identifiers)))
                           name)))
-          | Expression.Name (Attribute attribute as name) ->
+          | Expression.Name
+              (Attribute ({ Name.Attribute.origin = attribute_origin; _ } as attribute) as name) ->
               let value =
                 if is_class_toplevel then
                   match name_to_reference name with
                   | Some reference ->
                       let qualifier = NestingContext.to_qualifier ~module_name parent in
                       qualify_if_needed ~qualifier reference
-                      |> create_name_from_reference
-                           ~location
-                           ~create_origin:create_qualification_origin
+                      |> create_name_from_reference ~location ~create_origin:(fun identifiers ->
+                             Some
+                               (Origin.create
+                                  ?base:attribute_origin
+                                  ~location
+                                  (Origin.Qualification identifiers)))
                       |> fun name -> Expression.Name name
                   | None ->
                       let { Name.Attribute.base; _ } = attribute in
@@ -4836,7 +4843,10 @@ let expand_enum_functional_syntax
                       Reference.create "enum.auto"
                       |> from_reference
                            ~create_origin:(fun attributes ->
-                             Some (Origin.FunctionalEnumImplicitAuto attributes))
+                             Some
+                               (Origin.create
+                                  ~location
+                                  (Origin.FunctionalEnumImplicitAuto attributes)))
                            ~location;
                     arguments = [];
                     origin =

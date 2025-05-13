@@ -249,11 +249,7 @@ module Decorator = struct
         Node.create
           ~location
           (Expression.Expression.Call
-             {
-               Expression.Call.callee = name;
-               arguments;
-               origin = call_origin >>| Expression.Origin.create ~location;
-             })
+             { Expression.Call.callee = name; arguments; origin = call_origin })
     | None -> name
 end
 

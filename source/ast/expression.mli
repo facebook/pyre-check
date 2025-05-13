@@ -436,8 +436,13 @@ and Origin : sig
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
     | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | PysaHigherOrderParameter of int
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
+    | Nested of {
+        head: kind;
+        tail: kind;
+      }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
@@ -446,7 +451,7 @@ and Origin : sig
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  val create : location:Location.t -> kind -> t
+  val create : ?base:t -> location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
 end
@@ -699,25 +704,25 @@ val is_none : t -> bool
 
 val create_name_from_identifiers
   :  location:Location.t ->
-  create_origin:(string list -> Origin.kind option) ->
+  create_origin:(string list -> Origin.t option) ->
   Identifier.t list ->
   Name.t
 
 val create_name
   :  location:Location.t ->
-  create_origin:(string list -> Origin.kind option) ->
+  create_origin:(string list -> Origin.t option) ->
   string ->
   Name.t
 
 val create_name_from_reference
   :  location:Location.t ->
-  create_origin:(string list -> Origin.kind option) ->
+  create_origin:(string list -> Origin.t option) ->
   Reference.t ->
   Name.t
 
 val from_reference
   :  location:Location.t ->
-  create_origin:(string list -> Origin.kind option) ->
+  create_origin:(string list -> Origin.t option) ->
   Reference.t ->
   t
 
@@ -737,7 +742,7 @@ val name_is : name:string -> t -> bool
 
 val sanitized : t -> t
 
-val delocalize : create_origin:(string list -> Origin.kind option) -> t -> t
+val delocalize : create_origin:(expression:t -> string list -> Origin.t option) -> t -> t
 
 val delocalize_qualified : t -> t
 
@@ -753,7 +758,7 @@ val subscript
   :  string ->
   expression Node.t list ->
   location:Location.t ->
-  create_origin:(string list -> Origin.kind option) ->
+  create_origin:(string list -> Origin.t option) ->
   expression
 
 val is_dunder_attribute : string -> bool
@@ -771,5 +776,7 @@ val inverse_operator : string -> string option
 val is_operator : string -> bool
 
 val operator_name_to_symbol : string -> string option
+
+val origin : t -> Origin.t option
 
 val remove_origins : t -> t

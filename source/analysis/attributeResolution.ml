@@ -1338,9 +1338,11 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
             Type.Variable.ParamSpec.of_component_annotations
               ~get_param_spec
               ~args_annotation:
-                (Expression.delocalize ~create_origin:(fun _ -> None) args_annotation)
+                (Expression.delocalize ~create_origin:(fun ~expression:_ _ -> None) args_annotation)
               ~kwargs_annotation:
-                (Expression.delocalize ~create_origin:(fun _ -> None) kwargs_annotation)
+                (Expression.delocalize
+                   ~create_origin:(fun ~expression:_ _ -> None)
+                   kwargs_annotation)
           in
           match res with
           | Some res -> Some res
@@ -1454,7 +1456,7 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
           let metaclass_of_bases =
             let explicit_bases =
               let base_to_class base_expression =
-                delocalize ~create_origin:(fun _ -> None) base_expression
+                delocalize ~create_origin:(fun ~expression:_ _ -> None) base_expression
                 |> parse_annotation
                 |> Type.split
                 |> fst

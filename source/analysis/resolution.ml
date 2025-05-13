@@ -75,7 +75,8 @@ let resolve_expression_to_type_info ({ resolve_expression; _ } as resolution) ex
 let resolve_reference ({ resolve_expression; _ } as resolution) reference =
   Expression.from_reference
     ~location:Location.any
-    ~create_origin:(fun _ -> Some Expression.Origin.ForTypeChecking)
+    ~create_origin:(fun _ ->
+      Some (Expression.Origin.create ~location:Location.any Expression.Origin.ForTypeChecking))
     reference
   |> resolve_expression ~resolution
   |> snd
@@ -208,7 +209,8 @@ let resolve_attribute_access resolution ~base_type ~attribute =
   let expression_to_analyze =
     Expression.from_reference
       ~location:Location.any
-      ~create_origin:(fun _ -> Some Expression.Origin.ForTypeChecking)
+      ~create_origin:(fun _ ->
+        Some (Expression.Origin.create ~location:Location.any Expression.Origin.ForTypeChecking))
       (Reference.create ~prefix:unique_name attribute)
   in
   resolve_expression_to_type resolution expression_to_analyze

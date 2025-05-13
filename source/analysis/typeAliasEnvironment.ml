@@ -131,7 +131,7 @@ module IncomingDataComputation = struct
       | Expression.Call _, None -> (
           match
             Type.Variable.Declaration.parse
-              (delocalize ~create_origin:(fun _ -> None) value)
+              (delocalize ~create_origin:(fun ~expression:_ _ -> None) value)
               ~target:name
           with
           | Some variable -> Some (ExtractedVariableDeclaration variable)
@@ -152,7 +152,8 @@ module IncomingDataComputation = struct
             } )
       | (BinaryOperator _ | Subscript _ | Name _), None ->
           let value =
-            Type.preprocess_alias_value value |> delocalize ~create_origin:(fun _ -> None)
+            Type.preprocess_alias_value value
+            |> delocalize ~create_origin:(fun ~expression:_ _ -> None)
           in
           let value_annotation =
             (* before creating the value type, collect the local scope *)
@@ -400,7 +401,8 @@ module OutgoingDataComputation = struct
     in
     let parsed =
       let expression =
-        Type.preprocess_alias_value expression |> delocalize ~create_origin:(fun _ -> None)
+        Type.preprocess_alias_value expression
+        |> delocalize ~create_origin:(fun ~expression:_ _ -> None)
       in
       let aliases ?replace_unbound_parameters_with_any name =
         get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
@@ -421,8 +423,8 @@ module OutgoingDataComputation = struct
     in
     Type.Variable.ParamSpec.of_component_annotations
       ~get_param_spec
-      ~args_annotation:(delocalize ~create_origin:(fun _ -> None) args_annotation)
-      ~kwargs_annotation:(delocalize ~create_origin:(fun _ -> None) kwargs_annotation)
+      ~args_annotation:(delocalize ~create_origin:(fun ~expression:_ _ -> None) args_annotation)
+      ~kwargs_annotation:(delocalize ~create_origin:(fun ~expression:_ _ -> None) kwargs_annotation)
 end
 
 module AliasValue = struct

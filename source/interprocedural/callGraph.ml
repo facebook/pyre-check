@@ -2726,8 +2726,11 @@ let transform_special_calls
     ~pyre_in_context
     ~callables_to_definitions_map
     ~location:call_location
-    ({ Call.callee = { Node.location = callee_location; _ } as callee; arguments; origin = _ } as
-    original_call)
+    ({
+       Call.callee = { Node.location = callee_location; _ } as callee;
+       arguments;
+       origin = call_origin;
+     } as original_call)
   =
   let attribute_access ~base ~method_name ~origin =
     {
@@ -2739,7 +2742,7 @@ let transform_special_calls
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
-      let origin = Some (Origin.create ~location:call_location Origin.StrCall) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.StrCall) in
       let callee =
         attribute_access
           ~base:value
@@ -2749,7 +2752,7 @@ let transform_special_calls
       Some { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
       (* Only handle `iter` with a single argument here. *)
-      let origin = Some (Origin.create ~location:call_location Origin.IterCall) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.IterCall) in
       Some
         {
           Call.callee = attribute_access ~base:value ~method_name:"__iter__" ~origin;
@@ -2758,7 +2761,7 @@ let transform_special_calls
         }
   | Name (Name.Identifier "next"), [{ Call.Argument.value; _ }] ->
       (* Only handle `next` with a single argument here. *)
-      let origin = Some (Origin.create ~location:call_location Origin.NextCall) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.NextCall) in
       Some
         {
           Call.callee = attribute_access ~base:value ~method_name:"__next__" ~origin;
@@ -2767,7 +2770,7 @@ let transform_special_calls
         }
   | Name (Name.Identifier "anext"), [{ Call.Argument.value; _ }] ->
       (* Only handle `anext` with a single argument here. *)
-      let origin = Some (Origin.create ~location:call_location Origin.NextCall) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.NextCall) in
       Some
         {
           Call.callee = attribute_access ~base:value ~method_name:"__anext__" ~origin;
@@ -2783,7 +2786,11 @@ let transform_special_calls
           }),
       { Call.Argument.value = actual_callable; _ } :: actual_arguments ) ->
       let origin =
-        Some (Origin.create ~location:call_location (Origin.PysaCallRedirect "functools.partial"))
+        Some
+          (Origin.create
+             ?base:call_origin
+             ~location:call_location
+             (Origin.PysaCallRedirect "functools.partial"))
       in
       Some { Call.callee = actual_callable; arguments = actual_arguments; origin }
   | ( Expression.Name
@@ -2803,6 +2810,7 @@ let transform_special_calls
       let origin =
         Some
           (Origin.create
+             ?base:call_origin
              ~location:call_location
              (Origin.PysaCallRedirect "multiprocessing.Process"))
       in
@@ -3774,7 +3782,7 @@ module MissingFlowTypeAnalysis = struct
             Expression.pp
             (callee
             |> Node.create_with_default_location
-            |> Ast.Expression.delocalize ~create_origin:(fun _ -> None))
+            |> Ast.Expression.delocalize ~create_origin:(fun ~expression:_ _ -> None))
         in
         let call_target =
           {
@@ -3920,6 +3928,7 @@ module CalleeVisitor = struct
                                      origin =
                                        Some
                                          (Origin.create
+                                            ?base:(Ast.Expression.origin expression)
                                             ~location:expression_location
                                             Origin.FormatStringImplicitStr);
                                    });
@@ -3972,7 +3981,7 @@ module CalleeVisitor = struct
                   };
                   { Call.Argument.value = _; _ };
                 ];
-              origin = _;
+              origin = call_origin;
             } ->
             resolve_attribute_access
               ~pyre_in_context
@@ -3983,7 +3992,8 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base
               ~attribute
-              ~origin:(Some (Origin.create ~location Origin.GetAttrConstantLiteral))
+              ~origin:
+                (Some (Origin.create ?base:call_origin ~location Origin.GetAttrConstantLiteral))
               ~setter:false
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -4015,7 +4025,7 @@ module CalleeVisitor = struct
                   };
                   { Call.Argument.value = _; name = None };
                 ];
-              origin = _;
+              origin = call_origin;
             } ->
             resolve_attribute_access
               ~pyre_in_context
@@ -4026,7 +4036,8 @@ module CalleeVisitor = struct
               ~attribute_targets
               ~base:self
               ~attribute
-              ~origin:(Some (Origin.create ~location Origin.SetAttrConstantLiteral))
+              ~origin:
+                (Some (Origin.create ?base:call_origin ~location Origin.SetAttrConstantLiteral))
               ~setter:true
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
@@ -5748,8 +5759,12 @@ module DecoratorResolution = struct
            {
              Call.callee =
                Ast.Expression.delocalize
-                 ~create_origin:(fun attributes ->
-                   Some (Origin.ForDecoratedTargetCallee attributes))
+                 ~create_origin:(fun ~expression attributes ->
+                   Some
+                     (Origin.create
+                        ?base:(Ast.Expression.origin expression)
+                        ~location:(Node.location expression)
+                        (Origin.ForDecoratedTargetCallee attributes)))
                  decorator
                (* TODO: `decorator` might be a local variable whose definition should be included
                   here, in order to resolve its callee. *);
@@ -5774,7 +5789,11 @@ module DecoratorResolution = struct
         let callable_name =
           Ast.Expression.create_name_from_reference
             ~location:define_location
-            ~create_origin:(fun attributes -> Some (Origin.ForDecoratedTargetCallee attributes))
+            ~create_origin:(fun attributes ->
+              Some
+                (Origin.create
+                   ~location:define_location
+                   (Origin.ForDecoratedTargetCallee attributes)))
             define_name
         in
         log "Decorators: [%s]" (decorators |> List.map ~f:Expression.show |> String.concat ~sep:";");

@@ -83,7 +83,7 @@ let resolve_ignoring_untracked ~pyre_in_context expression =
          negatives."
         untracked_type
         Expression.pp
-        (Ast.Expression.delocalize ~create_origin:(fun _ -> None) expression);
+        (Ast.Expression.delocalize ~create_origin:(fun ~expression:_ _ -> None) expression);
       Type.Any
 
 
