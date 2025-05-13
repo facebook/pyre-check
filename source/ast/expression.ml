@@ -1138,33 +1138,39 @@ and Origin : sig
    * in the original code. This type is used to describe the original node
    * that originated the artificial node. *)
   type kind =
-    | ComparisonOperator (* a == b is turned into a.__eq__(b) *)
-    | BinaryOperator (* a + b is turned into a.__add__(b) *)
-    | UnaryOperator (* -a is turned into a.__neg__() *)
-    | AugmentedAssign (* a += b is turned into a = a.__add__(b) *)
+    | ComparisonOperator (* `a == b` is turned into `a.__eq__(b)` *)
+    | BinaryOperator (* `a + b` is turned into `a.__add__(b)` *)
+    | UnaryOperator (* `-a` is turned into `a.__neg__()` *)
+    | AugmentedAssign (* `a += b` is turned into `a = a.__add__(b)` *)
     | Qualification of string list (* all symbols are turned into their fully qualified version *)
-    | SubscriptSetItem
-    | SubscriptGetItem
-    | ForIter (* __iter__ call for a for loop *)
-    | ForNext (* __next__ call for a for loop *)
-    | GeneratorIter (* __iter__ call for a generator *)
-    | GeneratorNext (* __next__ call for a generator *)
-    | With (* __enter__ call for a with statement *)
-    | InContains (* e in l can be turned into l.__contains__(e) *)
-    | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
-    | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
-    | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
-    | Slice (* 1:2 is turned into slice(1,2,None) *)
-    | Negate
-    | NegateIs
-    | NegateIsNot
-    | Normalize
-    | NormalizeNotComparison
-    | NormalizeNotBoolOperator
-    | TryHandlerIsInstance (* try..except X as e is turned into assert(isinstance(X, e)) *)
+    | SubscriptSetItem (* `d[a] = b` is turned into `d.__setitem__(a, b)` *)
+    | SubscriptGetItem (* `d[a]` is turned into `d.__getitem__(a)` *)
+    | ForIter (* `for e in l:` is turned into `l.__iter__().__next__()` *)
+    | ForNext (* `for e in l:` is turned into `l.__iter__().__next__()` *)
+    | GeneratorIter (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
+    | GeneratorNext (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
+    | With (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
+    | InContains (* `e in l` can be turned into `l.__contains__(e)` *)
+    | InIter (* `e in l` can be turned into `l.__iter__().__next__().__eq__(e)` *)
+    | InGetItem (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
+    | InGetItemEq (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
+    | Slice (* `1:2` is turned into `slice(1,2,None)` *)
+    | Negate (* `if cond:` is turned into `assert(cond)` and `assert(not cond)` *)
+    | NegateIs (* `not(a is not b)` is turned into `a is b` *)
+    | NegateIsNot (* `not(a is b)` is turned into `a is not b` *)
+    | Normalize (* we turn boolean expressions into negation normal form *)
+    | NormalizeNotComparison (* `not(a < b)` is turned into `a >= b` *)
+    | NormalizeNotBoolOperator (* `not(a == b)` is turned into `a != b` *)
+    | TryHandlerIsInstance (* `try..except X as e` is turned into `assert(isinstance(X, e))` *)
     | NamedTupleConstructorAssignment of string
+      (* `collections.namedtuple('T', 'a b')` is turned into `def __init__(self, a, b): self.a = a;
+         self.b = b` *)
     | DataclassImplicitField
+      (* `@dataclass` on `class A: x: int` is turned into `x: int = dataclasses.field()` *)
     | DataclassImplicitDefault
+    (* `x: int = dataclasses.field(default_factory=f)` is turned into `x = f()` in the implicit
+       constructor *)
+    (* All the origins below are used to translate `match` statements *)
     | MatchAsComparisonEquals
     | MatchAsWithCondition
     | MatchClassArgs of int
@@ -1197,21 +1203,29 @@ and Origin : sig
     | NextCall (* next(x) is turned into x.__next__() *)
     | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
     | SelfImplicitTypeVar
+      (* `def f(self):` is turned into `def f(self: TypeVar["self", bound=MyClass]):` *)
     | FunctionalEnumImplicitAuto of string list
-    | DecoratorInlining
-    | ForDecoratedTarget
-    | ForDecoratedTargetCallee of string list
+      (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
+         ...` *)
+    | DecoratorInlining (* Pysa inlines decorator during preprocessing *)
+    | ForDecoratedTarget (* `@foo def f(): ...` is turned into `def f@decorated(): return foo(f)` *)
+    | ForDecoratedTargetCallee of
+        string list (* `@foo def f(): ...` is turned into `def f@decorated(): return foo(f)` *)
     | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
     | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
-    | PysaHigherOrderParameter of int
+    | PysaHigherOrderParameter of
+        int (* `f(g)` might be turned into `f(g())` for the taint analysis *)
     | ForTestPurpose (* AST node created when running tests *)
     | ForTypeChecking (* AST node created internally during a type check of an expression *)
     | Nested of {
         head: kind;
         tail: kind;
       }
+      (* In some rare cases, AST lowering happens in multiple steps.
+       * For instance: `match x: case 0: pass` turns into `if x == 0:` which then turns into `if x.__equals__(0):`.
+       * We keep a trace of all AST transforms. *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
@@ -1225,30 +1239,30 @@ and Origin : sig
   val is_dunder_method : t -> bool
 end = struct
   type kind =
-    | ComparisonOperator (* a == b is turned into a.__eq__(b) *)
-    | BinaryOperator (* a + b is turned into a.__add__(b) *)
-    | UnaryOperator (* -a is turned into a.__neg__() *)
-    | AugmentedAssign (* a += b is turned into a = a.__add__(b) *)
-    | Qualification of string list (* all symbols are turned into their fully qualified version *)
+    | ComparisonOperator
+    | BinaryOperator
+    | UnaryOperator
+    | AugmentedAssign
+    | Qualification of string list
     | SubscriptSetItem
     | SubscriptGetItem
-    | ForIter (* __iter__ call for a for loop *)
-    | ForNext (* __next__ call for a for loop *)
-    | GeneratorIter (* __iter__ call for a generator *)
-    | GeneratorNext (* __next__ call for a generator *)
-    | With (* __enter__ call for a with statement *)
-    | InContains (* e in l can be turned into l.__contains__(e) *)
-    | InIter (* e in l can be turned into l.__iter__().__next__().__eq__(e) *)
-    | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
-    | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
-    | Slice (* 1:2 is turned into slice(1,2,None) *)
+    | ForIter
+    | ForNext
+    | GeneratorIter
+    | GeneratorNext
+    | With
+    | InContains
+    | InIter
+    | InGetItem
+    | InGetItemEq
+    | Slice
     | Negate
     | NegateIs
     | NegateIsNot
     | Normalize
     | NormalizeNotComparison
     | NormalizeNotBoolOperator
-    | TryHandlerIsInstance (* try..except X as e is turned into assert(isinstance(X, e)) *)
+    | TryHandlerIsInstance
     | NamedTupleConstructorAssignment of string
     | DataclassImplicitField
     | DataclassImplicitDefault
@@ -1277,24 +1291,24 @@ end = struct
     | MatchSequenceJoinConditions
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
-    | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
-    | ReprCall (* repr(x) is turned into x.__repr__() *)
-    | AbsCall (* abs(x) is turned into x.__abs__() *)
-    | IterCall (* iter(x) is turned into x.__iter__() *)
-    | NextCall (* next(x) is turned into x.__next__() *)
-    | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
+    | StrCall
+    | ReprCall
+    | AbsCall
+    | IterCall
+    | NextCall
+    | ImplicitInitCall
     | SelfImplicitTypeVar
     | FunctionalEnumImplicitAuto of string list
     | DecoratorInlining
     | ForDecoratedTarget
     | ForDecoratedTargetCallee of string list
-    | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
-    | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
-    | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
-    | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
+    | FormatStringImplicitStr
+    | GetAttrConstantLiteral
+    | SetAttrConstantLiteral
+    | PysaCallRedirect of string
     | PysaHigherOrderParameter of int
-    | ForTestPurpose (* AST node created when running tests *)
-    | ForTypeChecking (* AST node created internally during a type check of an expression *)
+    | ForTestPurpose
+    | ForTypeChecking
     | Nested of {
         head: kind;
         tail: kind;
