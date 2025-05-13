@@ -6,7 +6,6 @@
 # pyre-unsafe
 
 import unittest
-from pathlib import Path
 from unittest.mock import call, MagicMock, mock_open, patch
 
 from ...repository import Repository
@@ -16,11 +15,9 @@ repository = Repository()
 
 
 class UpdatePysaVersionTest(unittest.TestCase):
-    @patch("subprocess.run")
-    @patch.object(Repository, "commit_changes")
-    @patch.object(
-        Configuration, "find_project_configuration", return_value=Path("/root")
-    )
+    @patch("json.dumps")
+    @patch("json.loads")
+    @patch.object(Configuration, "find_parent_file")
     @patch.object(Configuration, "set_pysa_version")
     @patch.object(Configuration, "write")
     @patch("builtins.open")
@@ -29,19 +26,19 @@ class UpdatePysaVersionTest(unittest.TestCase):
         open_mock,
         configuration_write,
         configuration_set_pysa_version,
-        find_project_configuration,
-        commit_changes,
-        subprocess,
+        find_parent_file,
+        json_loads,
+        json_dumps,
     ) -> None:
         arguments = MagicMock()
         arguments.hash = "new"
         arguments.no_commit = False
-        with patch("json.dump"):
-            mocks = [
-                mock_open(read_data='{"pysa_version": "old"}').return_value,
-            ]
-            open_mock.side_effect = mocks
+        mocks = [
+            mock_open(read_data='{"pysa_version": "old"}').return_value,
+        ]
+        open_mock.side_effect = mocks
 
-            PysaVersionUpdate.from_arguments(arguments, repository).run()
-            configuration_set_pysa_version.assert_has_calls([call("new")])
-            configuration_write.assert_has_calls([call()])
+        PysaVersionUpdate.from_arguments(arguments, repository).run()
+        configuration_set_pysa_version.assert_has_calls([call("new")])
+        configuration_write.assert_has_calls([call()])
+        find_parent_file.assert_any_call(".pysa_configuration")

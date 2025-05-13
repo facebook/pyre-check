@@ -10,6 +10,7 @@ TODO(T132414938) Add a module-level docstring
 """
 
 import argparse
+import json
 import logging
 
 from pyre_extensions import override
@@ -56,7 +57,7 @@ class PysaVersionUpdate(Command):
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
 
-        # Update to new pysa version.
+        # Update to new pysa version in `.pyre_configuration`
         configuration = Configuration(global_configuration)
         old_version = configuration.pysa_version
         if not old_version:
@@ -67,3 +68,11 @@ class PysaVersionUpdate(Command):
             return
         configuration.set_pysa_version(self._hash)
         configuration.write()
+
+        # Update to new pysa version in `.pysa_configuration`
+        path = Configuration.find_parent_file(".pysa_configuration")
+        if path:
+            # TODO(T224086333): move `.pysa_configuration`'s `pysa_version` to less nested `version` field
+            contents = json.loads(path.read_text(encoding="utf-8"))
+            contents["pyre_configuration"]["pysa_version"] = self._hash
+            path.write_text(json.dumps(contents, indent=2), encoding="utf-8")
