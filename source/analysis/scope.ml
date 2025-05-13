@@ -92,7 +92,7 @@ module Binding = struct
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let sofar = of_expression sofar left in
         of_expression sofar right
-    | Expression.Slice { Slice.start; stop; step } ->
+    | Expression.Slice { Slice.start; stop; step; origin = _ } ->
         let sofar = of_optional_expression sofar start in
         let sofar = of_optional_expression sofar stop in
         of_optional_expression sofar step

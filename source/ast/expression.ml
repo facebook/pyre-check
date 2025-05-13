@@ -840,6 +840,10 @@ and Slice : sig
     start: Expression.t option;
     stop: Expression.t option;
     step: Expression.t option;
+    (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
+       turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
+       reason for lowering it. *)
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -851,22 +855,23 @@ end = struct
     start: Expression.t option;
     stop: Expression.t option;
     step: Expression.t option;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  let location_insensitive_compare left right =
-    match left, right with
-    | ( { start = left_start; stop = left_stop; step = left_step },
-        { start = right_start; stop = right_stop; step = right_step } ) -> (
-        match Option.compare Expression.location_insensitive_compare left_start right_start with
+  let location_insensitive_compare
+      { start = left_start; stop = left_stop; step = left_step; origin = _ }
+      { start = right_start; stop = right_stop; step = right_step; origin = _ }
+    =
+    match Option.compare Expression.location_insensitive_compare left_start right_start with
+    | x when not (Int.equal x 0) -> x
+    | _ -> (
+        match Option.compare Expression.location_insensitive_compare left_stop right_stop with
         | x when not (Int.equal x 0) -> x
-        | _ -> (
-            match Option.compare Expression.location_insensitive_compare left_stop right_stop with
-            | x when not (Int.equal x 0) -> x
-            | _ -> Option.compare Expression.location_insensitive_compare left_step right_step))
+        | _ -> Option.compare Expression.location_insensitive_compare left_step right_step)
 
 
-  let lowered ~location { Slice.start; stop; step } =
+  let lowered ~location { Slice.start; stop; step; origin } =
     let default_none = function
       | None -> Expression.Constant Constant.NoneLiteral |> Node.create ~location
       | Some expr -> expr
@@ -880,7 +885,7 @@ end = struct
             { Call.Argument.value = default_none stop; name = None };
             { Call.Argument.value = default_none step; name = None };
           ];
-        origin = Some (Origin.create ~location Origin.Slice);
+        origin = Some (Origin.create ?base:origin ~location Origin.Slice);
       }
     |> Node.create ~location
 end
@@ -1177,6 +1182,7 @@ and Origin : sig
     | MatchSingletonComparisonIs
     | MatchSequenceRestList of string
     | MatchSequenceRestSubscript of string
+    | MatchSequenceRestSlice of string
     | MatchSequenceRestComparisonEquals of string
     | MatchSequencePrefix of int
     | MatchSequenceSuffix of int
@@ -1263,6 +1269,7 @@ end = struct
     | MatchSingletonComparisonIs
     | MatchSequenceRestList of string
     | MatchSequenceRestSubscript of string
+    | MatchSequenceRestSlice of string
     | MatchSequenceRestComparisonEquals of string
     | MatchSequencePrefix of int
     | MatchSequenceSuffix of int
@@ -1628,16 +1635,16 @@ end = struct
 
 
     and pp_slice formatter = function
-      | { Slice.start = None; stop = None; step = None } -> Format.fprintf formatter ":"
-      | { Slice.start = Some start; stop = None; step = None } ->
+      | { Slice.start = None; stop = None; step = None; origin = _ } -> Format.fprintf formatter ":"
+      | { Slice.start = Some start; stop = None; step = None; origin = _ } ->
           Format.fprintf formatter "%a:" pp_expression_t start
-      | { Slice.start = Some start; stop = Some stop; step = None } ->
+      | { Slice.start = Some start; stop = Some stop; step = None; origin = _ } ->
           Format.fprintf formatter "%a:%a" pp_expression_t start pp_expression_t stop
-      | { Slice.start = None; stop = Some stop; step = None } ->
+      | { Slice.start = None; stop = Some stop; step = None; origin = _ } ->
           Format.fprintf formatter ":%a" pp_expression_t stop
-      | { Slice.start = Some start; stop = None; step = Some step } ->
+      | { Slice.start = Some start; stop = None; step = Some step; origin = _ } ->
           Format.fprintf formatter "%a::%a" pp_expression_t start pp_expression_t step
-      | { Slice.start = Some start; stop = Some stop; step = Some step } ->
+      | { Slice.start = Some start; stop = Some stop; step = Some step; origin = _ } ->
           Format.fprintf
             formatter
             "%a:%a:%a"
@@ -1647,9 +1654,9 @@ end = struct
             stop
             pp_expression_t
             step
-      | { Slice.start = None; stop = Some stop; step = Some step } ->
+      | { Slice.start = None; stop = Some stop; step = Some step; origin = _ } ->
           Format.fprintf formatter ":%a:%a" pp_expression_t stop pp_expression_t step
-      | { Slice.start = None; stop = None; step = Some step } ->
+      | { Slice.start = None; stop = None; step = Some step; origin = _ } ->
           Format.fprintf formatter ":%a" pp_expression_t step
 
 
@@ -2116,11 +2123,12 @@ module Mapper = struct
       (Expression.SetComprehension (default_map_set_comprehension ~mapper comprehension))
 
 
-  let default_map_slice ~mapper { Slice.start; stop; step } =
+  let default_map_slice ~mapper { Slice.start; stop; step; origin } =
     {
       Slice.start = map_option ~mapper start;
       stop = map_option ~mapper stop;
       step = map_option ~mapper step;
+      origin;
     }
 
 
@@ -2778,7 +2786,7 @@ module Folder = struct
     | Name.Attribute { Name.Attribute.base; attribute = _; origin = _ } -> fold ~folder ~state base
 
 
-  let default_fold_slice ~folder ~state { Slice.start; stop; step } =
+  let default_fold_slice ~folder ~state { Slice.start; stop; step; origin = _ } =
     let state = fold_option ~folder ~state start in
     let state = fold_option ~folder ~state stop in
     fold_option ~folder ~state step
@@ -2966,6 +2974,7 @@ let origin { Node.value; _ } =
   | Expression.BooleanOperator { BooleanOperator.origin; _ } -> origin
   | Expression.Subscript { Subscript.origin; _ } -> origin
   | Expression.WalrusOperator { WalrusOperator.origin; _ } -> origin
+  | Expression.Slice { Slice.origin; _ } -> origin
   | _ -> None
 
 
@@ -3230,12 +3239,13 @@ let rec delocalize ~create_origin ({ Node.value; location } as expression) =
     match value with
     | Subscript { Subscript.base; index; origin } ->
         Subscript { Subscript.base = delocalize base; index = delocalize index; origin }
-    | Slice { Slice.start; stop; step } ->
+    | Slice { Slice.start; stop; step; origin } ->
         Slice
           {
             Slice.start = Option.map ~f:delocalize start;
             stop = Option.map ~f:delocalize stop;
             step = Option.map ~f:delocalize step;
+            origin;
           }
     | Call { Call.callee; arguments; origin } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
@@ -3520,6 +3530,14 @@ let remove_origins expression =
       origin = None;
     }
   in
+  let map_slice ~mapper { Slice.start; stop; step; origin = _ } =
+    {
+      Slice.start = Option.map ~f:(Mapper.map ~mapper) start;
+      stop = Option.map ~f:(Mapper.map ~mapper) stop;
+      step = Option.map ~f:(Mapper.map ~mapper) step;
+      origin = None;
+    }
+  in
   Mapper.map
     ~mapper:
       (Mapper.create_transformer
@@ -3531,5 +3549,6 @@ let remove_origins expression =
          ~map_unary_operator
          ~map_subscript
          ~map_walrus_operator
+         ~map_slice
          ())
     expression

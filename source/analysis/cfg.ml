@@ -71,12 +71,13 @@ module MatchTranslate = struct
     Expression.Call { callee; arguments; origin } |> Node.create ~location
 
 
-  let create_slice ~location ~lower ~upper =
+  let create_slice ~location ~origin ~lower ~upper =
     Expression.Slice
       {
         Slice.start = lower >>| (fun x -> Constant.Integer x) >>| create_constant ~location;
         stop = upper >>| (fun x -> Constant.Integer x) >>| create_constant ~location;
         step = None;
+        origin;
       }
     |> Node.create ~location
 
@@ -314,7 +315,12 @@ module MatchTranslate = struct
               ~location
               ~origin:(Some (Origin.create ~location (Origin.MatchSequenceRestSubscript rest)))
               ~container:subject
-              ~key:(create_slice ~location ~lower ~upper)
+              ~key:
+                (create_slice
+                   ~location
+                   ~origin:(Some (Origin.create ~location (Origin.MatchSequenceRestSlice rest)))
+                   ~lower
+                   ~upper)
             |> create_list
                  ~origin:(Some (Origin.create ~location (Origin.MatchSequenceRestList rest)))
                  ~location

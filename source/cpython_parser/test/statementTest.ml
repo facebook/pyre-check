@@ -2927,6 +2927,7 @@ let test_assign =
                                     Slice.start = Some !"j";
                                     stop = None;
                                     step = Some (+Expression.Constant (Constant.Integer 1));
+                                    origin = None;
                                   };
                              origin = None;
                            };
@@ -2937,7 +2938,12 @@ let test_assign =
                                 Subscript.base = !"i";
                                 index =
                                   +Expression.Slice
-                                     { Slice.start = None; stop = Some !"j"; step = None };
+                                     {
+                                       Slice.start = None;
+                                       stop = Some !"j";
+                                       step = None;
+                                       origin = None;
+                                     };
                                 origin = None;
                               });
                       annotation = None;

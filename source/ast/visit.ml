@@ -138,7 +138,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           | Starred.Once expression
           | Starred.Twice expression ->
               visit_expression expression)
-      | Slice { Slice.start; stop; step } ->
+      | Slice { Slice.start; stop; step; origin = _ } ->
           Option.iter ~f:visit_expression start;
           Option.iter ~f:visit_expression stop;
           Option.iter ~f:visit_expression step

@@ -211,12 +211,13 @@ module Make (Transformer : Transformer) = struct
               | Starred.Twice expression -> Starred.Twice (transform_expression expression)
             in
             Starred starred
-        | Slice { Slice.start; stop; step } ->
+        | Slice { Slice.start; stop; step; origin } ->
             Slice
               {
                 Slice.start = start >>| transform_expression;
                 stop = stop >>| transform_expression;
                 step = step >>| transform_expression;
+                origin;
               }
         | Subscript { Subscript.base; index; origin } ->
             Subscript

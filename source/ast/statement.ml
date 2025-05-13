@@ -2218,7 +2218,7 @@ let is_generator statements =
         List.exists expressions ~f:is_expression_generator
     | Expression.Starred Starred.(Once expression | Twice expression) ->
         is_expression_generator expression
-    | Expression.Slice { Slice.start; stop; step } ->
+    | Expression.Slice { Slice.start; stop; step; origin = _ } ->
         is_optional_expression_generator start
         || is_optional_expression_generator stop
         || is_optional_expression_generator step

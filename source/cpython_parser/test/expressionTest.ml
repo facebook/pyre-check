@@ -1988,7 +1988,9 @@ let test_subscript =
                (+Expression.Subscript
                    {
                      Subscript.base = !"a";
-                     index = +Expression.Slice { Slice.start = None; stop = None; step = None };
+                     index =
+                       +Expression.Slice
+                          { Slice.start = None; stop = None; step = None; origin = None };
                      origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
@@ -1998,7 +2000,9 @@ let test_subscript =
                (+Expression.Subscript
                    {
                      Subscript.base = !"a";
-                     index = +Expression.Slice { Slice.start = None; stop = None; step = None };
+                     index =
+                       +Expression.Slice
+                          { Slice.start = None; stop = None; step = None; origin = None };
                      origin = None;
                    });
         labeled_test_case __FUNCTION__ __LINE__
@@ -2014,6 +2018,7 @@ let test_subscript =
                             Slice.start = Some (+Expression.Constant (Constant.Integer 1));
                             stop = None;
                             step = None;
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2030,6 +2035,7 @@ let test_subscript =
                             Slice.start = None;
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = None;
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2046,6 +2052,7 @@ let test_subscript =
                             Slice.start = None;
                             stop = None;
                             step = Some (+Expression.Constant (Constant.Integer 1));
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2062,6 +2069,7 @@ let test_subscript =
                             Slice.start = Some (+Expression.Constant (Constant.Integer 1));
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = None;
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2078,6 +2086,7 @@ let test_subscript =
                             Slice.start = Some (+Expression.Constant (Constant.Integer 1));
                             stop = None;
                             step = Some (+Expression.Constant (Constant.Integer 1));
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2094,6 +2103,7 @@ let test_subscript =
                             Slice.start = None;
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = Some (+Expression.Constant (Constant.Integer 1));
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2110,6 +2120,7 @@ let test_subscript =
                             Slice.start = Some (+Expression.Constant (Constant.Integer 1));
                             stop = Some (+Expression.Constant (Constant.Integer 1));
                             step = Some (+Expression.Constant (Constant.Integer 1));
+                            origin = None;
                           };
                      origin = None;
                    });
@@ -2128,6 +2139,7 @@ let test_subscript =
                                  Slice.start = None;
                                  stop = Some (+Expression.Constant (Constant.Integer 1));
                                  step = None;
+                                 origin = None;
                                };
                             +Expression.Constant (Constant.Integer 2);
                           ];

@@ -389,6 +389,7 @@ module ParserToAst = struct
             AstExpression.Slice.start = start >>| convert_expression;
             stop = stop >>| convert_expression;
             step = step >>| convert_expression;
+            origin = None;
           }
         |> Node.create ~location
     | Subscript { Subscript.base; index } ->

@@ -296,6 +296,7 @@ and Slice : sig
     start: Expression.t option;
     stop: Expression.t option;
     step: Expression.t option;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -442,6 +443,7 @@ and Origin : sig
     | MatchSingletonComparisonIs
     | MatchSequenceRestList of string
     | MatchSequenceRestSubscript of string
+    | MatchSequenceRestSlice of string
     | MatchSequenceRestComparisonEquals of string
     | MatchSequencePrefix of int
     | MatchSequenceSuffix of int

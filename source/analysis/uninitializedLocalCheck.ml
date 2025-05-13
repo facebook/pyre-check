@@ -69,7 +69,7 @@ module AccessCollector = struct
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let collected = from_expression collected left in
         from_expression collected right
-    | Slice { start; stop; step } ->
+    | Slice { start; stop; step; origin = _ } ->
         let collected = Option.value_map start ~default:collected ~f:(from_expression collected) in
         let collected = Option.value_map stop ~default:collected ~f:(from_expression collected) in
         Option.value_map step ~default:collected ~f:(from_expression collected)

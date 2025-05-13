@@ -3632,8 +3632,8 @@ module State (Context : Context) = struct
           in
           let ({ Resolved.errors; _ } as resolved) =
             match index, concrete_tuple_members with
-            | { Node.value = Expression.Slice { Slice.start; stop; step = None }; _ }, Some members
-              -> (
+            | ( { Node.value = Expression.Slice { Slice.start; stop; step = None; origin = _ }; _ },
+                Some members ) -> (
                 (* If we have a slice of a fixed length tuple, first try to infer a simple type for
                    the slice. If not, fall back to __getitem__. *)
                 match concrete_tuple_slice_type start stop members with

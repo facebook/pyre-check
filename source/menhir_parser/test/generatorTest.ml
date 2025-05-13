@@ -521,7 +521,9 @@ let test_name =
                 (+Expression.Subscript
                     {
                       Subscript.base = !"a";
-                      index = +Expression.Slice { Slice.start = None; stop = None; step = None };
+                      index =
+                        +Expression.Slice
+                           { Slice.start = None; stop = None; step = None; origin = None };
                       origin = None;
                     });
            ];
@@ -539,6 +541,7 @@ let test_name =
                              Slice.start = Some (+Expression.Constant (Constant.Integer 1));
                              stop = None;
                              step = None;
+                             origin = None;
                            };
                       origin = None;
                     });
@@ -557,6 +560,7 @@ let test_name =
                              Slice.start = None;
                              stop = None;
                              step = Some (+Expression.Constant (Constant.Integer 2));
+                             origin = None;
                            };
                       origin = None;
                     });
@@ -575,6 +579,7 @@ let test_name =
                              Slice.start = None;
                              stop = Some (+Expression.Constant (Constant.Integer 1));
                              step = None;
+                             origin = None;
                            };
                       origin = None;
                     });
@@ -600,6 +605,7 @@ let test_name =
                                        alternative = +Expression.Constant (Constant.Integer 2);
                                      });
                              step = None;
+                             origin = None;
                            };
                       origin = None;
                     });
@@ -618,6 +624,7 @@ let test_name =
                              Slice.start = Some (+Expression.Constant (Constant.Integer 1));
                              stop = Some (+Expression.Constant (Constant.Integer 1));
                              step = None;
+                             origin = None;
                            };
                       origin = None;
                     });
@@ -655,6 +662,7 @@ let test_name =
                                   Slice.start = None;
                                   stop = Some (+Expression.Constant (Constant.Integer 1));
                                   step = None;
+                                  origin = None;
                                 };
                              +Expression.Constant (Constant.Integer 2);
                            ];
@@ -6299,6 +6307,7 @@ let test_setitem =
                                 Slice.start = Some !"j";
                                 stop = None;
                                 step = Some (+Expression.Constant (Constant.Integer 1));
+                                origin = None;
                               };
                          origin = None;
                        };
@@ -6309,7 +6318,12 @@ let test_setitem =
                             Subscript.base = !"i";
                             index =
                               +Expression.Slice
-                                 { Slice.start = None; stop = Some !"j"; step = None };
+                                 {
+                                   Slice.start = None;
+                                   stop = Some !"j";
+                                   step = None;
+                                   origin = None;
+                                 };
                             origin = None;
                           });
                   annotation = None;

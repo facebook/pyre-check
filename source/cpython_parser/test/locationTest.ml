@@ -886,6 +886,7 @@ let test_call_locations =
                                               ~stop:(1, 4)
                                               (Expression.Constant (Constant.Integer 1)));
                                        step = None;
+                                       origin = None;
                                      });
                               origin = None;
                             })));
@@ -923,6 +924,7 @@ let test_call_locations =
                                               ~start:(1, 4)
                                               ~stop:(1, 5)
                                               (Expression.Constant (Constant.Integer 2)));
+                                       origin = None;
                                      });
                               origin = None;
                             })));
@@ -950,7 +952,8 @@ let test_call_locations =
                                 node
                                   ~start:(1, 2)
                                   ~stop:(1, 3)
-                                  (Expression.Slice { Slice.start = None; stop = None; step = None });
+                                  (Expression.Slice
+                                     { Slice.start = None; stop = None; step = None; origin = None });
                               origin = None;
                             })));
                ];

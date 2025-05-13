@@ -459,7 +459,8 @@ let expression =
   let list ~location ~elts ~ctx:() = Expression.List elts |> Node.create ~location in
   let tuple ~location ~elts ~ctx:() = Expression.Tuple elts |> Node.create ~location in
   let slice ~location ~lower ~upper ~step =
-    Expression.Slice { Slice.start = lower; stop = upper; step } |> Node.create ~location
+    Expression.Slice { Slice.start = lower; stop = upper; step; origin = None }
+    |> Node.create ~location
   in
   PyreAst.TaglessFinal.Expression.make
     ~bool_op
