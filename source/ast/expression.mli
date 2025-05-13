@@ -48,6 +48,7 @@ module rec BooleanOperator : sig
     left: Expression.t;
     operator: operator;
     right: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -120,6 +121,7 @@ and ComparisonOperator : sig
     left: Expression.t;
     operator: operator;
     right: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -157,6 +159,7 @@ and BinaryOperator : sig
     left: Expression.t;
     operator: operator;
     right: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -345,6 +348,7 @@ and UnaryOperator : sig
   type t = {
     operator: operator;
     operand: Expression.t;
+    origin: Origin.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -409,18 +413,35 @@ and Origin : sig
     | InGetItem (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
     | InGetItemEq (* e in l can be turned into l.__getitem__(0).__eq__(e) *)
     | Slice (* 1:2 is turned into slice(1,2,None) *)
+    | Negate
+    | NegateIs
+    | NegateIsNot
+    | Normalize
+    | NormalizeNotComparison
+    | NormalizeNotBoolOperator
     | TryHandlerIsInstance (* try..except X as e is turned into assert(isinstance(X, e)) *)
     | NamedTupleConstructorAssignment of string
     | DataclassImplicitField
     | DataclassImplicitDefault
+    | MatchAsComparisonEquals
+    | MatchAsWithCondition
     | MatchClassArgs of int
     | MatchClassGetAttr of int
     | MatchClassKeywordAttribute of string
     | MatchClassIsInstance
-    | MatchMappingRest of string
+    | MatchClassJoinConditions
+    | MatchMappingRestDict of string
+    | MatchMappingRestComparisonEquals of string
     | MatchMappingIsInstance
-    | MatchSequenceRest of string
+    | MatchMappingJoinConditions
+    | MatchOrJoinConditions
+    | MatchSingletonComparisonIs
+    | MatchSequenceRestList of string
+    | MatchSequenceRestComparisonEquals of string
     | MatchSequenceIsInstance
+    | MatchSequenceJoinConditions
+    | MatchValueComparisonEquals
+    | MatchConditionWithGuard
     | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
     | ReprCall (* repr(x) is turned into x.__repr__() *)
     | AbsCall (* abs(x) is turned into x.__abs__() *)

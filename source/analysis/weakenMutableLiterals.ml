@@ -174,6 +174,7 @@ let rec weaken_mutable_literals
                 left = { Node.value = Expression.List items; _ };
                 operator = Mult;
                 right = { Node.value = Expression.Constant (Constant.Integer _); _ };
+                origin = _;
               };
           _;
         },

@@ -368,7 +368,8 @@ let test_match _ =
       [
         Statement.assume
           ~origin:(Some ~+(Assert.Origin.Match { true_branch = false }))
-          (+Expression.UnaryOperator { operator = UnaryOperator.Not; operand = !"guard" });
+          (+Expression.UnaryOperator
+              { operator = UnaryOperator.Not; operand = !"guard"; origin = None });
       ]
   in
   assert_cfg
@@ -811,7 +812,7 @@ let test_try _ =
     ];
   let bool_handler =
     +Expression.BooleanOperator
-       { BooleanOperator.left = !"a"; operator = BooleanOperator.Or; right = !"b" }
+       { BooleanOperator.left = !"a"; operator = BooleanOperator.Or; right = !"b"; origin = None }
   in
   let block =
     {
@@ -954,7 +955,9 @@ let test_with _ =
 
 let test_while _ =
   let x = +Expression.Name (Name.Identifier "x") in
-  let not_x = +Expression.UnaryOperator { operator = UnaryOperator.Not; operand = x } in
+  let not_x =
+    +Expression.UnaryOperator { operator = UnaryOperator.Not; operand = x; origin = None }
+  in
   let loop = { While.test = x; body = [!!"body"]; orelse = [!!"orelse"] } in
   assert_cfg
     [+Statement.While loop]

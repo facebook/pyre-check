@@ -2139,7 +2139,7 @@ module State (Context : Context) = struct
               (BinaryOperator.lower_to_expression ~location ~callee_location:location operator)
           in
           { resolved with errors = resolved.errors }
-      | BooleanOperator { BooleanOperator.left; operator; right } -> (
+      | BooleanOperator { BooleanOperator.left; operator; right; origin = _ } -> (
           let {
             Resolved.resolution = resolution_left;
             resolved = resolved_left;
@@ -2861,9 +2861,19 @@ module State (Context : Context) = struct
             base = None;
           }
       | ComparisonOperator
-          { ComparisonOperator.left; right; operator = ComparisonOperator.In as operator }
+          {
+            ComparisonOperator.left;
+            right;
+            operator = ComparisonOperator.In as operator;
+            origin = _;
+          }
       | ComparisonOperator
-          { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn as operator } ->
+          {
+            ComparisonOperator.left;
+            right;
+            operator = ComparisonOperator.NotIn as operator;
+            origin = _;
+          } ->
           let resolve_in_call
               (resolution, errors, joined_annotation)
               { Type.type_for_lookup; class_name; accessed_through_class; _ }
@@ -4155,6 +4165,7 @@ module State (Context : Context) = struct
             };
           operator = ComparisonOperator.Is;
           right = annotation_expression;
+          origin = _;
         }
     | ComparisonOperator
         {
@@ -4171,6 +4182,7 @@ module State (Context : Context) = struct
             };
           operator = ComparisonOperator.Equals;
           right = annotation_expression;
+          origin = _;
         }
     | Call
         {
@@ -4221,6 +4233,7 @@ module State (Context : Context) = struct
             };
           operator = ComparisonOperator.IsNot;
           right = annotation_expression;
+          origin = _;
         }
     | ComparisonOperator
         {
@@ -4237,6 +4250,7 @@ module State (Context : Context) = struct
             };
           operator = ComparisonOperator.NotEquals;
           right = annotation_expression;
+          origin = _;
         }
     | UnaryOperator
         {
@@ -4256,6 +4270,7 @@ module State (Context : Context) = struct
                   };
               _;
             };
+          origin = _;
         } ->
         let type_not_matched = parse_refinement_annotation annotation_expression in
         handle_negative_exact_type_match type_not_matched value
@@ -4306,6 +4321,7 @@ module State (Context : Context) = struct
                   };
               _;
             };
+          origin = _;
         } -> begin
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4411,6 +4427,7 @@ module State (Context : Context) = struct
           ComparisonOperator.left = refinement_target;
           operator = ComparisonOperator.In;
           right = { Node.value = List elements | Tuple elements | Set elements; _ } as iterable;
+          origin = _;
         } -> (
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4450,8 +4467,12 @@ module State (Context : Context) = struct
                 | _ -> refine_iterable_member refinement_target iterable)))
     (* `is` and `in` refinement *)
     | ComparisonOperator
-        { ComparisonOperator.left = refinement_target; operator = ComparisonOperator.Is; right } ->
-    begin
+        {
+          ComparisonOperator.left = refinement_target;
+          operator = ComparisonOperator.Is;
+          right;
+          origin = _;
+        } -> begin
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
         | Some name -> (
@@ -4466,7 +4487,12 @@ module State (Context : Context) = struct
             | None -> Value resolution)
       end
     | ComparisonOperator
-        { ComparisonOperator.left = refinement_target; operator = ComparisonOperator.In; right } ->
+        {
+          ComparisonOperator.left = refinement_target;
+          operator = ComparisonOperator.In;
+          right;
+          origin = _;
+        } ->
         refine_iterable_member refinement_target right
     (* Not-none checks (including ones that work over containers) *)
     | ComparisonOperator
@@ -4474,10 +4500,15 @@ module State (Context : Context) = struct
           ComparisonOperator.left;
           operator = ComparisonOperator.IsNot;
           right = { Node.value = Constant Constant.NoneLiteral; _ };
+          origin = _;
         } ->
         refine_resolution_for_assert ~resolution left
     | UnaryOperator
-        { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value = Name name; _ } }
+        {
+          UnaryOperator.operator = UnaryOperator.Not;
+          operand = { Node.value = Name name; _ };
+          origin = _;
+        }
       when is_simple_name name -> (
         match existing_annotation name with
         | Some ({ TypeInfo.Unit.annotation = Type.Primitive "bool"; _ } as annotation) ->
@@ -4494,6 +4525,7 @@ module State (Context : Context) = struct
           ComparisonOperator.left = refinement_target;
           operator = ComparisonOperator.Equals;
           right = value;
+          origin = _;
         } -> (
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4512,6 +4544,7 @@ module State (Context : Context) = struct
           ComparisonOperator.left = refinement_target;
           operator = ComparisonOperator.NotEquals | ComparisonOperator.IsNot;
           right = value;
+          origin = _;
         } -> (
         let { Resolved.resolved; _ } = forward_expression ~resolution value in
         let type_not_matched = TypeInfo.Unit.create_mutable resolved |> TypeInfo.Unit.annotation in
@@ -4548,6 +4581,7 @@ module State (Context : Context) = struct
           ComparisonOperator.left = { Node.value = Constant Constant.NoneLiteral; _ };
           operator = ComparisonOperator.NotIn;
           right = refinement_target;
+          origin = _;
         } -> begin
         match maybe_simple_name_of refinement_target with
         | None -> Value resolution
@@ -4645,6 +4679,7 @@ module State (Context : Context) = struct
           operand =
             { Node.value = Call { arguments = { Call.Argument.name = None; value } :: _; _ }; _ } as
             operand;
+          origin = _;
         } -> (
         let { TypeInfo.Unit.annotation = callee_return_type; _ } =
           resolve_expression ~resolution operand
@@ -4656,7 +4691,7 @@ module State (Context : Context) = struct
             Value resolution)
     (* Compound assertions *)
     | WalrusOperator { target; _ } -> refine_resolution_for_assert ~resolution target
-    | BooleanOperator { BooleanOperator.left; operator; right } -> (
+    | BooleanOperator { BooleanOperator.left; operator; right; origin = _ } -> (
         match operator with
         | BooleanOperator.And ->
             let left_state = refine_resolution_for_assert ~resolution left in

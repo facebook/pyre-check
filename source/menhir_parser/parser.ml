@@ -283,6 +283,7 @@ module ParserToAst = struct
             AstExpression.BinaryOperator.left = convert_expression left;
             operator;
             right = convert_expression right;
+            origin = None;
           }
         |> Node.create ~location
     | BooleanOperator { BooleanOperator.left; operator; right } ->
@@ -291,6 +292,7 @@ module ParserToAst = struct
             AstExpression.BooleanOperator.left = convert_expression left;
             operator;
             right = convert_expression right;
+            origin = None;
           }
         |> Node.create ~location
     | Call { Call.callee; arguments } ->
@@ -307,6 +309,7 @@ module ParserToAst = struct
             AstExpression.ComparisonOperator.left = convert_expression left;
             operator;
             right = convert_expression right;
+            origin = None;
           }
         |> Node.create ~location
     | Constant value -> AstExpression.Expression.Constant value |> Node.create ~location
@@ -408,7 +411,11 @@ module ParserToAst = struct
         |> Node.create ~location
     | UnaryOperator { UnaryOperator.operator; operand } ->
         AstExpression.Expression.UnaryOperator
-          { AstExpression.UnaryOperator.operator; operand = convert_expression operand }
+          {
+            AstExpression.UnaryOperator.operator;
+            operand = convert_expression operand;
+            origin = None;
+          }
         |> Node.create ~location
     | WalrusOperator { WalrusOperator.target; value } ->
         AstExpression.Expression.WalrusOperator

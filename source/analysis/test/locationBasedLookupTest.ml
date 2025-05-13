@@ -3118,6 +3118,7 @@ let test_lookup_expression context =
                                (Expression.Name (Name.Identifier "$parameter$x"));
                            right =
                              Expression.Constant (Integer 1) |> Node.create_with_default_location;
+                           origin = None;
                          }
                        |> Node.create_with_default_location;
                    };
@@ -3136,6 +3137,7 @@ let test_lookup_expression context =
                  Node.create_with_default_location
                    (Expression.Name (Name.Identifier "$parameter$x"));
                right = Expression.Constant (Integer 1) |> Node.create_with_default_location;
+               origin = None;
              }
           |> Node.create_with_default_location),
         Type.Any );
@@ -3225,6 +3227,7 @@ let test_coverage_gaps_in_module context =
                        Node.create_with_default_location
                          (Expression.Name (Name.Identifier "$parameter$x"));
                      right = Expression.Constant (Integer 1) |> Node.create_with_default_location;
+                     origin = None;
                    }
                 |> Node.create_with_default_location);
             type_ = Type.Any;

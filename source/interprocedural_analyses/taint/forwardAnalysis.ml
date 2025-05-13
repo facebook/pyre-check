@@ -2591,7 +2591,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
-      | BooleanOperator { left; operator = _; right } ->
+      | BooleanOperator { left; operator = _; right; origin = _ } ->
           let left_taint, state =
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left
           in
@@ -2599,7 +2599,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:right
           in
           ForwardState.Tree.join left_taint right_taint, state
-      | ComparisonOperator { left; operator = _; right } ->
+      | ComparisonOperator { left; operator = _; right; origin = _ } ->
           let left_taint, state =
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left
           in
@@ -2774,7 +2774,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~f:(analyze_list_element ~pyre_in_context ~is_result_used)
             expressions
             ~init:(ForwardState.Tree.empty, state)
-      | UnaryOperator { operator = _; operand } ->
+      | UnaryOperator { operator = _; operand; origin = _ } ->
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:operand
       | WalrusOperator { target; value } ->
           let value_taint, state =

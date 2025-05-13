@@ -1681,7 +1681,7 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
     | {
         Node.value =
           Expression.BinaryOperator
-            { BinaryOperator.operator = (Add | Sub | Mult) as operator; left; right };
+            { BinaryOperator.operator = (Add | Sub | Mult) as operator; left; right; origin = _ };
         _;
       } -> (
         parse_integer_expression left
@@ -4259,7 +4259,7 @@ let rec parse_statement
              Node.value =
                ComparisonOperator
                  {
-                   ComparisonOperator.left =
+                   left =
                      {
                        Node.value =
                          Name
@@ -4271,8 +4271,9 @@ let rec parse_statement
                              });
                        _;
                      };
-                   ComparisonOperator.operator;
-                   ComparisonOperator.right = { Node.value = Tuple tuple; _ };
+                   operator;
+                   right = { Node.value = Tuple tuple; _ };
+                   origin = _;
                  };
              _;
            };

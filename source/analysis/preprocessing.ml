@@ -576,19 +576,21 @@ module Qualify = struct
       match value with
       | Expression.Await expression ->
           Expression.Await (qualify_expression ~qualify_strings ~scope expression)
-      | BinaryOperator { BinaryOperator.left; operator; right } ->
+      | BinaryOperator { BinaryOperator.left; operator; right; origin } ->
           BinaryOperator
             {
               BinaryOperator.left = qualify_expression ~qualify_strings ~scope left;
               operator;
               right = qualify_expression ~qualify_strings ~scope right;
+              origin;
             }
-      | BooleanOperator { BooleanOperator.left; operator; right } ->
+      | BooleanOperator { BooleanOperator.left; operator; right; origin } ->
           BooleanOperator
             {
               BooleanOperator.left = qualify_expression ~qualify_strings ~scope left;
               operator;
               right = qualify_expression ~qualify_strings ~scope right;
+              origin;
             }
       | Subscript { Subscript.base; index } ->
           let qualified_base = qualify_expression ~qualify_strings ~scope base in
@@ -632,12 +634,13 @@ module Qualify = struct
                 List.map ~f:(qualify_argument ~qualify_strings:DoNotQualify ~scope) arguments
           in
           Expression.Call { callee; arguments; origin }
-      | ComparisonOperator { ComparisonOperator.left; operator; right } ->
+      | ComparisonOperator { ComparisonOperator.left; operator; right; origin } ->
           ComparisonOperator
             {
               ComparisonOperator.left = qualify_expression ~qualify_strings ~scope left;
               operator;
               right = qualify_expression ~qualify_strings ~scope right;
+              origin;
             }
       | Dictionary entries ->
           Dictionary (List.map entries ~f:(qualify_entry ~qualify_strings ~scope))
@@ -745,9 +748,13 @@ module Qualify = struct
               target = qualify_expression ~qualify_strings ~scope target;
               value = qualify_expression ~qualify_strings ~scope value;
             }
-      | UnaryOperator { UnaryOperator.operator; operand } ->
+      | UnaryOperator { UnaryOperator.operator; operand; origin } ->
           UnaryOperator
-            { UnaryOperator.operator; operand = qualify_expression ~qualify_strings ~scope operand }
+            {
+              UnaryOperator.operator;
+              operand = qualify_expression ~qualify_strings ~scope operand;
+              origin;
+            }
       | Yield (Some expression) ->
           Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None -> Yield None
@@ -1486,7 +1493,8 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
       | Statement.If { If.test; body; orelse } -> (
           let extract_comparison { Node.value; _ } =
             match value with
-            | Expression.ComparisonOperator { ComparisonOperator.left; operator; right } -> (
+            | Expression.ComparisonOperator { ComparisonOperator.left; operator; right; origin = _ }
+              -> (
                 match operator with
                 | ComparisonOperator.LessThan -> Some (Comparison.LessThan, left, right)
                 | ComparisonOperator.LessThanOrEquals ->
@@ -1855,13 +1863,14 @@ let replace_platform_specific_code ~sys_platform source =
                   None
               in
               match test with
-              | ComparisonOperator { ComparisonOperator.left; operator = Equals | Is; right } -> (
+              | ComparisonOperator
+                  { ComparisonOperator.left; operator = Equals | Is; right; origin = _ } -> (
                   match get_platform_string "sys.platform" left right with
                   | Some platform_string ->
                       if String.equal sys_platform platform_string then body else orelse
                   | _ -> [statement])
-              | ComparisonOperator { ComparisonOperator.left; operator = NotEquals | IsNot; right }
-                -> (
+              | ComparisonOperator
+                  { ComparisonOperator.left; operator = NotEquals | IsNot; right; origin = _ } -> (
                   match get_platform_string "sys.platform" left right with
                   | Some platform_string ->
                       if String.equal sys_platform platform_string then orelse else body
@@ -1889,6 +1898,7 @@ let replace_platform_specific_code ~sys_platform source =
                             };
                         _;
                       };
+                    origin = _;
                   } -> (
                   match get_platform_string "sys.platform.startswith" callee expression with
                   | Some platform_string ->
@@ -1935,7 +1945,11 @@ let expand_type_checking_imports source =
       | Statement.If { If.test; body; _ } when is_type_checking test -> (), body
       | If
           {
-            If.test = { Node.value = UnaryOperator { UnaryOperator.operator = Not; operand }; _ };
+            If.test =
+              {
+                Node.value = UnaryOperator { UnaryOperator.operator = Not; operand; origin = _ };
+                _;
+              };
             orelse;
             _;
           }
@@ -1944,7 +1958,11 @@ let expand_type_checking_imports source =
       | If
           {
             If.test =
-              { Node.value = BooleanOperator { BooleanOperator.operator = Or; left; right }; _ };
+              {
+                Node.value =
+                  BooleanOperator { BooleanOperator.operator = Or; left; right; origin = _ };
+                _;
+              };
             body;
             _;
           }
@@ -3851,7 +3869,7 @@ let replace_union_shorthand_in_annotation_expression =
     in
     let value =
       match value with
-      | Expression.BinaryOperator { operator = BinaryOperator.BitOr; left; right } ->
+      | Expression.BinaryOperator { operator = BinaryOperator.BitOr; left; right; origin = _ } ->
           let indices =
             [left; right]
             (* Recursively transform them into `typing.Union[...]` form *)

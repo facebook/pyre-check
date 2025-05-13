@@ -12,11 +12,14 @@ open Expression
 open Pyre
 open Test
 
-let assert_expression_equal =
-  assert_equal ~printer:Expression.show ~pp_diff:(diff ~print:Expression.pp)
-
-
 let location_insensitive_equal left right = Expression.location_insensitive_compare left right = 0
+
+let assert_expression_equal =
+  assert_equal
+    ~printer:Expression.show
+    ~cmp:location_insensitive_equal
+    ~pp_diff:(diff ~print:Expression.pp)
+
 
 let test_negate _ =
   let assert_negate ~expected ~negated =
@@ -47,13 +50,16 @@ let test_normalize _ =
                   {
                     UnaryOperator.operator = UnaryOperator.Not;
                     operand = +Expression.Constant Constant.True;
+                    origin = None;
                   };
+             origin = None;
            }))
     (+Expression.BooleanOperator
         {
           BooleanOperator.operator = BooleanOperator.And;
           left = +Expression.Constant Constant.False;
           right = +Expression.Constant Constant.False;
+          origin = None;
         });
   assert_expression_equal
     (normalize
@@ -62,12 +68,14 @@ let test_normalize _ =
              BooleanOperator.operator = BooleanOperator.Or;
              left = +Expression.Constant Constant.False;
              right = +Expression.Constant Constant.False;
+             origin = None;
            }))
     (+Expression.BooleanOperator
         {
           BooleanOperator.operator = BooleanOperator.Or;
           left = +Expression.Constant Constant.False;
           right = +Expression.Constant Constant.False;
+          origin = None;
         });
   assert_expression_equal
     (normalize
@@ -76,12 +84,14 @@ let test_normalize _ =
              BooleanOperator.operator = BooleanOperator.Or;
              left = +Expression.Constant Constant.False;
              right = !"right";
+             origin = None;
            }))
     (+Expression.BooleanOperator
         {
           BooleanOperator.operator = BooleanOperator.Or;
           left = +Expression.Constant Constant.False;
           right = !"right";
+          origin = None;
         });
   assert_expression_equal
     (normalize
@@ -89,6 +99,7 @@ let test_normalize _ =
            {
              UnaryOperator.operator = UnaryOperator.Not;
              operand = +Expression.Constant Constant.True;
+             origin = None;
            }))
     (+Expression.Constant Constant.False);
   assert_expression_equal
@@ -97,6 +108,7 @@ let test_normalize _ =
            {
              UnaryOperator.operator = UnaryOperator.Not;
              operand = +Expression.Constant Constant.False;
+             origin = None;
            }))
     (+Expression.Constant Constant.True);
   assert_expression_equal
@@ -109,7 +121,9 @@ let test_normalize _ =
                   {
                     UnaryOperator.operator = UnaryOperator.Not;
                     operand = +Expression.Constant Constant.True;
+                    origin = None;
                   };
+             origin = None;
            }))
     (+Expression.Constant Constant.True);
   assert_expression_equal
@@ -123,13 +137,16 @@ let test_normalize _ =
                     ComparisonOperator.left = !"a";
                     operator = ComparisonOperator.LessThan;
                     right = !"b";
+                    origin = None;
                   };
+             origin = None;
            }))
     (+Expression.ComparisonOperator
         {
           ComparisonOperator.left = !"a";
           operator = ComparisonOperator.GreaterThanOrEquals;
           right = !"b";
+          origin = None;
         });
   assert_expression_equal
     (normalize
@@ -142,10 +159,17 @@ let test_normalize _ =
                     ComparisonOperator.left = !"x";
                     operator = ComparisonOperator.IsNot;
                     right = !"y";
+                    origin = None;
                   };
+             origin = None;
            }))
     (+Expression.ComparisonOperator
-        { ComparisonOperator.left = !"x"; operator = ComparisonOperator.Is; right = !"y" });
+        {
+          ComparisonOperator.left = !"x";
+          operator = ComparisonOperator.Is;
+          right = !"y";
+          origin = None;
+        });
   assert_expression_equal
     (normalize
        (+Expression.UnaryOperator
@@ -153,13 +177,16 @@ let test_normalize _ =
              UnaryOperator.operator = UnaryOperator.Not;
              operand =
                +Expression.UnaryOperator
-                  { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" };
+                  { UnaryOperator.operator = UnaryOperator.Not; operand = !"x"; origin = None };
+             origin = None;
            }))
     !"x";
   assert_expression_equal
     (normalize
-       (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" }))
-    (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"x" })
+       (+Expression.UnaryOperator
+           { UnaryOperator.operator = UnaryOperator.Not; operand = !"x"; origin = None }))
+    (+Expression.UnaryOperator
+        { UnaryOperator.operator = UnaryOperator.Not; operand = !"x"; origin = None })
 
 
 let test_pp _ =
@@ -176,7 +203,9 @@ let test_pp _ =
               {
                 UnaryOperator.operator = UnaryOperator.Not;
                 operand = +Expression.Constant Constant.True;
+                origin = None;
               };
+         origin = None;
        }
   in
   assert_pp_equal simple_expression "False and not True";
@@ -647,7 +676,12 @@ let test_default_folder context =
   assert_count (+Expression.Await (integer 1)) ~expected:1;
   assert_count
     (+Expression.BooleanOperator
-        { BooleanOperator.left = integer 1; operator = BooleanOperator.And; right = integer 2 })
+        {
+          BooleanOperator.left = integer 1;
+          operator = BooleanOperator.And;
+          right = integer 2;
+          origin = None;
+        })
     ~expected:3;
   assert_count
     (+Expression.Call
@@ -667,6 +701,7 @@ let test_default_folder context =
           ComparisonOperator.left = integer 1;
           operator = ComparisonOperator.Equals;
           right = integer 2;
+          origin = None;
         })
     ~expected:3;
   assert_count (+Expression.Constant Constant.NoneLiteral) ~expected:0;
@@ -761,7 +796,7 @@ let test_default_folder context =
   assert_count (+Expression.Tuple [integer 1; integer 2]) ~expected:3;
   assert_count
     (+Expression.UnaryOperator
-        { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1 })
+        { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1; origin = None })
     ~expected:1;
   assert_count
     (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1 })
@@ -794,10 +829,20 @@ let test_default_mapper context =
   assert_transformed (+Expression.Await (integer 1)) ~expected:(+Expression.Await (integer 2));
   assert_transformed
     (+Expression.BooleanOperator
-        { BooleanOperator.left = integer 1; operator = BooleanOperator.And; right = integer 2 })
+        {
+          BooleanOperator.left = integer 1;
+          operator = BooleanOperator.And;
+          right = integer 2;
+          origin = None;
+        })
     ~expected:
       (+Expression.BooleanOperator
-          { BooleanOperator.left = integer 2; operator = BooleanOperator.And; right = integer 3 });
+          {
+            BooleanOperator.left = integer 2;
+            operator = BooleanOperator.And;
+            right = integer 3;
+            origin = None;
+          });
   assert_transformed
     (+Expression.Call
         {
@@ -826,6 +871,7 @@ let test_default_mapper context =
           ComparisonOperator.left = integer 1;
           operator = ComparisonOperator.Equals;
           right = integer 2;
+          origin = None;
         })
     ~expected:
       (+Expression.ComparisonOperator
@@ -833,6 +879,7 @@ let test_default_mapper context =
             ComparisonOperator.left = integer 2;
             operator = ComparisonOperator.Equals;
             right = integer 3;
+            origin = None;
           });
   assert_transformed
     (+Expression.Constant Constant.NoneLiteral)
@@ -998,10 +1045,10 @@ let test_default_mapper context =
     ~expected:(+Expression.Tuple [integer 2; integer 3]);
   assert_transformed
     (+Expression.UnaryOperator
-        { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1 })
+        { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1; origin = None })
     ~expected:
       (+Expression.UnaryOperator
-          { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 2 });
+          { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 2; origin = None });
   assert_transformed
     (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1 })
     ~expected:(+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 2 });

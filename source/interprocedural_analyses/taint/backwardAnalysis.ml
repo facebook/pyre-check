@@ -2327,10 +2327,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       match value with
       | Await expression -> analyze_expression ~pyre_in_context ~taint ~state ~expression
-      | BooleanOperator { left; operator = _; right } ->
+      | BooleanOperator { left; operator = _; right; origin = _ } ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~pyre_in_context ~taint ~state ~expression:left
-      | ComparisonOperator { left; operator = _; right } ->
+      | ComparisonOperator { left; operator = _; right; origin = _ } ->
           let taint =
             BackwardState.Tree.add_local_breadcrumbs (Features.type_bool_scalar_set ()) taint
           in
@@ -2455,7 +2455,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let total = List.length list in
           List.rev list
           |> List.foldi ~f:(analyze_reverse_list_element ~total ~pyre_in_context taint) ~init:state
-      | UnaryOperator { operator = _; operand } ->
+      | UnaryOperator { operator = _; operand; origin = _ } ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:operand
       | WalrusOperator { target; value } ->
           let state = analyze_assignment ~pyre_in_context ~target ~value state in

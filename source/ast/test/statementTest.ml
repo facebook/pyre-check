@@ -995,11 +995,17 @@ let test_decorator_from_expression context =
 
   assert_decorator (+Expression.Tuple []) ~expected:None;
   assert_decorator
-    (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"a" })
+    (+Expression.UnaryOperator
+        { UnaryOperator.operator = UnaryOperator.Not; operand = !"a"; origin = None })
     ~expected:None;
   assert_decorator
     (+Expression.ComparisonOperator
-        { ComparisonOperator.left = !"a"; operator = ComparisonOperator.LessThan; right = !"b" })
+        {
+          ComparisonOperator.left = !"a";
+          operator = ComparisonOperator.LessThan;
+          right = !"b";
+          origin = None;
+        })
     ~expected:None;
   assert_decorator
     (+Expression.Name

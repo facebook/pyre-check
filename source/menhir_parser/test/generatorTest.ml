@@ -122,6 +122,7 @@ let test_lexer =
                               { Name.Attribute.base = !"a"; attribute = "print"; origin = None });
                       operator = ComparisonOperator.Equals;
                       right = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -173,6 +174,7 @@ let test_lexer =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -185,6 +187,7 @@ let test_lexer =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -197,6 +200,7 @@ let test_lexer =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -209,6 +213,7 @@ let test_lexer =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
              +Statement.Expression (+Expression.Constant (Constant.Integer 3));
            ];
@@ -349,6 +354,7 @@ let test_await =
                         +Expression.Await
                            (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
                       right = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -363,6 +369,7 @@ let test_await =
                         +Expression.Await
                            (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
     ]
@@ -471,6 +478,7 @@ let test_name =
                              ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                              operator = ComparisonOperator.LessThan;
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
                     });
            ];
@@ -998,6 +1006,7 @@ let test_define =
                                ComparisonOperator.left = !"x";
                                operator = ComparisonOperator.LessThan;
                                right = !"y";
+                               origin = None;
                              };
                         ];
                       return_annotation = None;
@@ -2337,6 +2346,7 @@ let test_boolean_operator =
                       BooleanOperator.left = +Expression.Constant Constant.True;
                       operator = BooleanOperator.And;
                       right = +Expression.Constant Constant.False;
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2349,6 +2359,7 @@ let test_boolean_operator =
                       BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = BooleanOperator.And;
                       right = +Expression.Constant Constant.False;
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2361,6 +2372,7 @@ let test_boolean_operator =
                       BooleanOperator.left = +Expression.Constant Constant.True;
                       operator = BooleanOperator.Or;
                       right = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2376,9 +2388,11 @@ let test_boolean_operator =
                              BooleanOperator.left = +Expression.Constant (Constant.Integer 1);
                              operator = BooleanOperator.And;
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
                       operator = BooleanOperator.Or;
                       right = +Expression.Constant (Constant.Integer 3);
+                      origin = None;
                     });
            ];
     ]
@@ -2397,6 +2411,7 @@ let test_binary_operator =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2409,6 +2424,7 @@ let test_binary_operator =
                       operator = BinaryOperator.BitXor;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2421,6 +2437,7 @@ let test_binary_operator =
                       operator = BinaryOperator.FloorDiv;
                       left = +Expression.Constant (Constant.Integer 1);
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2437,8 +2454,10 @@ let test_binary_operator =
                              operator = BinaryOperator.RShift;
                              left = +Expression.Constant (Constant.Integer 1);
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
                       right = +Expression.Constant (Constant.Integer 3);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2454,6 +2473,7 @@ let test_binary_operator =
                         +Expression.Name
                            (Name.Attribute
                               { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2470,8 +2490,10 @@ let test_binary_operator =
                              operator = BinaryOperator.Sub;
                              left = +Expression.Constant (Constant.Integer 1);
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
                       right = +Expression.Constant (Constant.Integer 3);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2487,6 +2509,7 @@ let test_binary_operator =
                         +Expression.Name
                            (Name.Attribute
                               { Name.Attribute.base = !"b"; attribute = "c"; origin = None });
+                      origin = None;
                     });
            ];
     ]
@@ -2504,6 +2527,7 @@ let test_unary_operator =
                     {
                       UnaryOperator.operator = UnaryOperator.Not;
                       operand = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2515,6 +2539,7 @@ let test_unary_operator =
                     {
                       UnaryOperator.operator = UnaryOperator.Invert;
                       operand = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -2526,6 +2551,7 @@ let test_unary_operator =
                     {
                       UnaryOperator.operator = UnaryOperator.Positive;
                       operand = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
     ]
@@ -2569,6 +2595,7 @@ let test_lambda =
                              ComparisonOperator.left = !"x";
                              operator = ComparisonOperator.Is;
                              right = !"y";
+                             origin = None;
                            };
                     });
            ];
@@ -2606,6 +2633,7 @@ let test_lambda =
                              operator = BinaryOperator.Add;
                              left = !"x";
                              right = +Expression.Constant (Constant.Integer 1);
+                             origin = None;
                            };
                     });
            ];
@@ -2655,6 +2683,7 @@ let test_ternary =
                              ComparisonOperator.left = !"a";
                              operator = ComparisonOperator.In;
                              right = !"b";
+                             origin = None;
                            };
                       test = +Expression.Constant (Constant.Integer 1);
                       alternative = +Expression.Constant (Constant.Integer 1);
@@ -2784,6 +2813,7 @@ let test_dictionary =
                                  ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                                  operator = ComparisonOperator.LessThan;
                                  right = +Expression.Constant (Constant.Integer 2);
+                                 origin = None;
                                };
                         };
                     ]);
@@ -2919,6 +2949,7 @@ let test_dictionary =
                                          });
                                  operator = BooleanOperator.Or;
                                  right = !"c";
+                                 origin = None;
                                };
                           value = !"a";
                         };
@@ -2967,6 +2998,7 @@ let test_dictionary =
                                  BooleanOperator.left = !"a";
                                  operator = BooleanOperator.Or;
                                  right = !"b";
+                                 origin = None;
                                };
                           value = +Expression.Constant (Constant.Integer 2);
                         };
@@ -2987,6 +3019,7 @@ let test_dictionary =
                                  BooleanOperator.left = !"a";
                                  operator = BooleanOperator.And;
                                  right = !"b";
+                                 origin = None;
                                };
                           value = +Expression.Constant (Constant.Integer 2);
                         };
@@ -3076,6 +3109,7 @@ let test_list_parsing =
                              ComparisonOperator.left = !"a";
                              operator = ComparisonOperator.In;
                              right = !"b";
+                             origin = None;
                            };
                       generators =
                         [
@@ -3185,6 +3219,7 @@ let test_list_parsing =
                                        +Expression.Constant (Constant.Integer 1);
                                      operator = ComparisonOperator.LessThan;
                                      right = +Expression.Constant (Constant.Integer 2);
+                                     origin = None;
                                    };
                               ];
                             async = false;
@@ -3215,9 +3250,11 @@ let test_list_parsing =
                                             ComparisonOperator.left = !"a";
                                             operator = ComparisonOperator.Is;
                                             right = +Expression.Constant (Constant.Integer 1);
+                                            origin = None;
                                           };
                                      operator = BooleanOperator.Or;
                                      right = +Expression.Constant Constant.True;
+                                     origin = None;
                                    };
                               ];
                             async = false;
@@ -3373,6 +3410,7 @@ let test_generator =
                              ComparisonOperator.left = !"a";
                              operator = ComparisonOperator.In;
                              right = !"b";
+                             origin = None;
                            };
                       generators =
                         [
@@ -3471,6 +3509,7 @@ let test_comparison =
                               { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       operator = ComparisonOperator.LessThan;
                       right = +Expression.Constant (Constant.Integer 2);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3483,6 +3522,7 @@ let test_comparison =
                       ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.In;
                       right = +Expression.List [];
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3495,6 +3535,7 @@ let test_comparison =
                       ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.Is;
                       right = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3507,6 +3548,7 @@ let test_comparison =
                       ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.IsNot;
                       right = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3519,6 +3561,7 @@ let test_comparison =
                       ComparisonOperator.left = +Expression.Name (Name.Identifier "foo");
                       operator = ComparisonOperator.Is;
                       right = +Expression.Name (Name.Identifier "not_bar");
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3531,6 +3574,7 @@ let test_comparison =
                       ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                       operator = ComparisonOperator.Equals;
                       right = +Expression.Constant (Constant.Integer 1);
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3546,6 +3590,7 @@ let test_comparison =
                              ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                              operator = ComparisonOperator.LessThan;
                              right = +Expression.Constant (Constant.Integer 1);
+                             origin = None;
                            };
                       operator = BooleanOperator.And;
                       right =
@@ -3554,7 +3599,9 @@ let test_comparison =
                              ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                              operator = ComparisonOperator.LessThan;
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3570,6 +3617,7 @@ let test_comparison =
                              ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                              operator = ComparisonOperator.LessThan;
                              right = +Expression.Constant (Constant.Integer 1);
+                             origin = None;
                            };
                       operator = BooleanOperator.And;
                       right =
@@ -3578,7 +3626,9 @@ let test_comparison =
                              ComparisonOperator.left = +Expression.Constant (Constant.Integer 1);
                              operator = ComparisonOperator.Is;
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
+                      origin = None;
                     });
            ];
     ]
@@ -3985,6 +4035,7 @@ let test_string =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                       right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -3997,6 +4048,7 @@ let test_string =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                       right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -4009,6 +4061,7 @@ let test_string =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                       right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
+                      origin = None;
                     });
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -4021,6 +4074,7 @@ let test_string =
                       operator = BinaryOperator.Add;
                       left = +Expression.Constant (Constant.String (StringLiteral.create "a"));
                       right = +Expression.Constant (Constant.String (StringLiteral.create "b"));
+                      origin = None;
                     });
            ];
     ]
@@ -4741,6 +4795,7 @@ let test_assign =
                             BooleanOperator.left = !"b";
                             operator = BooleanOperator.Or;
                             right = !"c";
+                            origin = None;
                           });
                 };
            ];
@@ -4764,7 +4819,9 @@ let test_assign =
                                    BooleanOperator.left = !"c";
                                    operator = BooleanOperator.Or;
                                    right = !"d";
+                                   origin = None;
                                  };
+                            origin = None;
                           });
                 };
            ];
@@ -4992,7 +5049,9 @@ let test_if =
                                 ComparisonOperator.left = !"x";
                                 operator = ComparisonOperator.GreaterThan;
                                 right = +Expression.Constant (Constant.Integer 0);
+                                origin = None;
                               };
+                         origin = None;
                        };
                   body = [+Statement.Expression !"b"];
                   orelse = [];
@@ -5021,7 +5080,9 @@ let test_if =
                                      };
                                 operator = ComparisonOperator.GreaterThan;
                                 right = +Expression.Constant (Constant.Integer 0);
+                                origin = None;
                               };
+                         origin = None;
                        };
                   body = [+Statement.Expression !"b"];
                   orelse = [];
@@ -5042,9 +5103,11 @@ let test_if =
                                 ComparisonOperator.left = !"a";
                                 operator = ComparisonOperator.Is;
                                 right = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
                          operator = BooleanOperator.Or;
                          right = +Expression.Constant Constant.True;
+                         origin = None;
                        };
                   body = [+Statement.Expression !"b"];
                   orelse = [];
@@ -5065,6 +5128,7 @@ let test_if =
                                 ComparisonOperator.left = !"a";
                                 operator = ComparisonOperator.Is;
                                 right = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
                          operator = BooleanOperator.Or;
                          right =
@@ -5073,7 +5137,9 @@ let test_if =
                                 ComparisonOperator.left = !"b";
                                 operator = ComparisonOperator.Is;
                                 right = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
+                         origin = None;
                        };
                   body = [+Statement.Expression !"c"];
                   orelse = [];
@@ -5094,6 +5160,7 @@ let test_if =
                                 ComparisonOperator.left = !"a";
                                 operator = ComparisonOperator.Is;
                                 right = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
                          operator = BooleanOperator.Or;
                          right =
@@ -5102,7 +5169,9 @@ let test_if =
                                 ComparisonOperator.left = !"b";
                                 operator = ComparisonOperator.Equals;
                                 right = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
+                         origin = None;
                        };
                   body = [+Statement.Expression !"c"];
                   orelse = [];
@@ -5123,6 +5192,7 @@ let test_if =
                                 ComparisonOperator.left = !"a";
                                 operator = ComparisonOperator.Is;
                                 right = +Expression.Constant (Constant.Integer 1);
+                                origin = None;
                               };
                          operator = BooleanOperator.Or;
                          right =
@@ -5134,6 +5204,7 @@ let test_if =
                                        ComparisonOperator.left = !"b";
                                        operator = ComparisonOperator.Is;
                                        right = +Expression.Constant (Constant.Integer 1);
+                                       origin = None;
                                      };
                                 operator = BooleanOperator.Or;
                                 right =
@@ -5142,8 +5213,11 @@ let test_if =
                                        ComparisonOperator.left = !"c";
                                        operator = ComparisonOperator.Is;
                                        right = +Expression.Constant (Constant.Integer 1);
+                                       origin = None;
                                      };
+                                origin = None;
                               };
+                         origin = None;
                        };
                   body = [+Statement.Expression !"d"];
                   orelse = [];
@@ -5356,6 +5430,7 @@ let test_try =
                                   BooleanOperator.left = !"a";
                                   operator = BooleanOperator.Or;
                                   right = !"b";
+                                  origin = None;
                                 });
                         name = None;
                         body = [+Statement.Expression !"c"];
@@ -5383,6 +5458,7 @@ let test_try =
                                   BooleanOperator.left = !"a";
                                   operator = BooleanOperator.Or;
                                   right = !"b";
+                                  origin = None;
                                 });
                         name = Some (+"e");
                         body = [+Statement.Expression !"c"];
@@ -5534,6 +5610,7 @@ let test_assert =
                          ComparisonOperator.left = !"a";
                          operator = ComparisonOperator.Is;
                          right = !"b";
+                         origin = None;
                        };
                   message = None;
                   origin = None;
@@ -5555,6 +5632,7 @@ let test_assert =
                          ComparisonOperator.left = !"a";
                          operator = ComparisonOperator.IsNot;
                          right = +Expression.Constant Constant.NoneLiteral;
+                         origin = None;
                        };
                   message =
                     Some (+Expression.Constant (Constant.String (StringLiteral.create "b or c")));
@@ -5773,6 +5851,7 @@ let test_tuple =
                            operator = BinaryOperator.Add;
                            left = +Expression.Constant (Constant.Integer 1);
                            right = +Expression.Constant (Constant.Integer 1);
+                           origin = None;
                          };
                     ]);
            ];
@@ -5804,6 +5883,7 @@ let test_tuple =
                            operator = BinaryOperator.Add;
                            left = +Expression.Constant (Constant.Integer 1);
                            right = +Expression.Constant (Constant.Integer 1);
+                           origin = None;
                          };
                       +Expression.Constant (Constant.Integer 1);
                     ]);
@@ -6127,6 +6207,7 @@ let test_ellipsis =
                          ComparisonOperator.left = !"x";
                          operator = ComparisonOperator.Is;
                          right = +Expression.Constant Constant.Ellipsis;
+                         origin = None;
                        };
                   body = [+Statement.Pass];
                   orelse = [];
@@ -6320,6 +6401,7 @@ let test_walrus_operator =
                              operator = BinaryOperator.Add;
                              left = +Expression.Constant (Constant.Integer 1);
                              right = +Expression.Constant (Constant.Integer 2);
+                             origin = None;
                            };
                     });
            ];
@@ -6338,6 +6420,7 @@ let test_walrus_operator =
                              BooleanOperator.left = +Expression.Constant Constant.True;
                              operator = BooleanOperator.And;
                              right = +Expression.Constant Constant.False;
+                             origin = None;
                            };
                     });
            ];
@@ -6514,6 +6597,7 @@ let test_format_string =
                         operator = BinaryOperator.Add;
                         left = +Expression.Constant (Constant.Integer 1);
                         right = +Expression.Constant (Constant.Integer 2);
+                        origin = None;
                       };
                };
            ];

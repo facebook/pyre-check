@@ -5139,7 +5139,7 @@ module HigherOrderCallGraph = struct
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
               CallTarget.Set.bottom, state
-          | ComparisonOperator { left; operator = _; right } ->
+          | ComparisonOperator { left; operator = _; right; origin = _ } ->
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
               CallTarget.Set.bottom, state

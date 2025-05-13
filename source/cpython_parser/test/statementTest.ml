@@ -107,6 +107,7 @@ let test_expression_return_raise =
                           ComparisonOperator.left = !"a";
                           operator = ComparisonOperator.Is;
                           right = !"b";
+                          origin = None;
                         });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -183,6 +184,7 @@ let test_assert_delete =
                              ComparisonOperator.left = !"a";
                              operator = ComparisonOperator.IsNot;
                              right = +Expression.Constant Constant.NoneLiteral;
+                             origin = None;
                            };
                       message =
                         Some
@@ -790,6 +792,7 @@ let test_try =
                                       BooleanOperator.left = !"a";
                                       operator = BooleanOperator.Or;
                                       right = !"b";
+                                      origin = None;
                                     });
                             name = None;
                             body = [+Statement.Expression !"c"];
@@ -818,6 +821,7 @@ let test_try =
                                       BooleanOperator.left = !"a";
                                       operator = BooleanOperator.Or;
                                       right = !"b";
+                                      origin = None;
                                     });
                             name = Some (+"e");
                             body = [+Statement.Expression !"c"];
@@ -1506,6 +1510,7 @@ let test_define =
                                    ComparisonOperator.left = !"x";
                                    operator = ComparisonOperator.LessThan;
                                    right = !"y";
+                                   origin = None;
                                  };
                             ];
                           return_annotation = None;
@@ -2679,6 +2684,7 @@ let test_assign =
                                 BooleanOperator.left = !"b";
                                 operator = BooleanOperator.Or;
                                 right = !"c";
+                                origin = None;
                               });
                     };
                ];

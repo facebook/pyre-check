@@ -307,13 +307,15 @@ let expression =
     | first :: second :: rest ->
         (* Boolean operators are left-associative *)
         let init =
-          Expression.BooleanOperator { BooleanOperator.left = first; operator = op; right = second }
+          Expression.BooleanOperator
+            { BooleanOperator.left = first; operator = op; right = second; origin = None }
           |> Node.create
                ~location:{ location with Location.stop = second.Node.location.Location.stop }
         in
         let f sofar next =
           let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
-          Expression.BooleanOperator { BooleanOperator.left = sofar; operator = op; right = next }
+          Expression.BooleanOperator
+            { BooleanOperator.left = sofar; operator = op; right = next; origin = None }
           |> Node.create ~location:{ location with Location.stop = next_stop }
         in
         List.fold rest ~init ~f
@@ -324,7 +326,8 @@ let expression =
     Expression.WalrusOperator { WalrusOperator.target; value } |> Node.create ~location
   in
   let bin_op ~location ~left ~op ~right =
-    Expression.BinaryOperator { BinaryOperator.left; operator = op; right } |> Node.create ~location
+    Expression.BinaryOperator { BinaryOperator.left; operator = op; right; origin = None }
+    |> Node.create ~location
   in
   let unary_op ~location ~op ~operand =
     match op, operand with
@@ -333,7 +336,8 @@ let expression =
     | UnaryOperator.Negative, { Node.value = Expression.Constant (Constant.Integer literal); _ } ->
         Expression.Constant (Constant.Integer (-literal)) |> Node.create ~location
     | _ ->
-        Expression.UnaryOperator { UnaryOperator.operator = op; operand } |> Node.create ~location
+        Expression.UnaryOperator { UnaryOperator.operator = op; operand; origin = None }
+        |> Node.create ~location
   in
   let lambda ~location ~args ~body =
     Expression.Lambda { Lambda.parameters = args; body } |> Node.create ~location
@@ -380,12 +384,13 @@ let expression =
       let right =
         let { Node.location = { Ast.Location.start = last_start; _ }; _ } = last in
         let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
-        Expression.ComparisonOperator { ComparisonOperator.left = last; operator; right = next }
+        Expression.ComparisonOperator
+          { ComparisonOperator.left = last; operator; right = next; origin = None }
         |> Node.create ~location:{ Ast.Location.start = last_start; stop = next_stop }
       in
       let sofar =
         Expression.BooleanOperator
-          { BooleanOperator.left = sofar; operator = BooleanOperator.And; right }
+          { BooleanOperator.left = sofar; operator = BooleanOperator.And; right; origin = None }
         |> Node.create ~location:{ location with Location.stop = right.Node.location.Location.stop }
       in
       sofar, next
@@ -397,7 +402,7 @@ let expression =
     | (operator, right) :: rest ->
         let { Node.location = { Ast.Location.stop = right_stop; _ }; _ } = right in
         let first_operand =
-          Expression.ComparisonOperator { ComparisonOperator.left; operator; right }
+          Expression.ComparisonOperator { ComparisonOperator.left; operator; right; origin = None }
           |> Node.create ~location:{ location with Location.stop = right_stop }
         in
         let result, _ = List.fold ~init:(first_operand, right) ~f rest in
