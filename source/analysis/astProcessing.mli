@@ -6,6 +6,7 @@
  *)
 
 val source_of_qualifier
-  :  parse_result_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
+  :  string_annotation_preserve_location:bool ->
+  parse_result_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
   Ast.Reference.t ->
   Ast.Source.t option

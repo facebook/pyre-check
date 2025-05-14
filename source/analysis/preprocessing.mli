@@ -11,9 +11,12 @@ val expand_relative_imports : Source.t -> Source.t
 
 val expand_import_python_calls : Source.t -> Source.t
 
-val expand_string_annotations : Source.t -> Source.t
+val expand_string_annotations : preserve_original_location:bool -> Source.t -> Source.t
 
-val expand_strings_in_annotation_expression : Expression.t -> Expression.t
+val expand_strings_in_annotation_expression
+  :  preserve_original_location:bool ->
+  Expression.t ->
+  Expression.t
 
 val get_qualified_local_identifier : qualifier:Reference.t -> Identifier.t -> Identifier.t
 
@@ -95,10 +98,10 @@ val dequalify_map : Source.t -> Reference.t Reference.Map.t
 val preprocess_before_wildcards : Source.t -> Source.t
 
 (* Steps that do not affect wildcard imports *)
-val preprocess_after_wildcards : Source.t -> Source.t
+val preprocess_after_wildcards : string_annotation_preserve_location:bool -> Source.t -> Source.t
 
 (* All preprocessing steps, skipping wildcard expansion *)
-val preprocess_no_wildcards : Source.t -> Source.t
+val preprocess_no_wildcards : string_annotation_preserve_location:bool -> Source.t -> Source.t
 
 (* Following are exposed for testing only *)
 

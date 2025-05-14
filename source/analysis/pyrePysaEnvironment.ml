@@ -30,7 +30,10 @@ module PysaTypeEnvironment = struct
     in
     let () = DecoratorPreprocessing.setup_preprocessing decorator_configuration in
     let errors_environment =
-      EnvironmentControls.create ~populate_call_graph:false configuration
+      EnvironmentControls.create
+        ~populate_call_graph:false
+        ~string_annotation_preserve_location:false
+        configuration
       |> ErrorsEnvironment.create_with_ast_environment
     in
     ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment

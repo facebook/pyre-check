@@ -14,6 +14,7 @@ val create
   ?in_memory_sources:(Ast.ModulePath.t * string) list ->
   ?no_validation_on_class_lookup_failure:bool ->
   ?use_lazy_module_tracking:bool ->
+  ?string_annotation_preserve_location:bool ->
   Configuration.Analysis.t ->
   t
 
@@ -34,6 +35,8 @@ val assert_allow_updates : t -> unit
 val populate_call_graph : t -> bool
 
 val use_lazy_module_tracking : t -> bool
+
+val string_annotation_preserve_location : t -> bool
 
 module TypeCheckControls : sig
   type t = {

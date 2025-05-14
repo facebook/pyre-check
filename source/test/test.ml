@@ -165,7 +165,9 @@ let parse ?(handle = "") ?(coerce_special_methods = false) source =
 let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = false) ?handle source =
   let source =
     if preprocess then
-      Preprocessing.preprocess_no_wildcards (parse ?handle ~coerce_special_methods source)
+      Preprocessing.preprocess_no_wildcards
+        ~string_annotation_preserve_location:true
+        (parse ?handle ~coerce_special_methods source)
     else
       parse ~coerce_special_methods source
   in

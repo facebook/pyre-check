@@ -552,7 +552,10 @@ let test_forward_expression =
       context
     =
     let expression =
-      let expression = parse expression |> Preprocessing.preprocess_no_wildcards in
+      let expression =
+        parse expression
+        |> Preprocessing.preprocess_no_wildcards ~string_annotation_preserve_location:true
+      in
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression

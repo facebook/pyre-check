@@ -59,5 +59,8 @@ let relative_path_of_qualifier api qualifier =
 
 let parse_result_of_qualifier { parse_result_of_qualifier; _ } = parse_result_of_qualifier
 
-let source_of_qualifier { parse_result_of_qualifier; _ } =
-  AstProcessing.source_of_qualifier ~parse_result_of_qualifier
+let source_of_qualifier { parse_result_of_qualifier; controls; _ } =
+  AstProcessing.source_of_qualifier
+    ~string_annotation_preserve_location:
+      (EnvironmentControls.string_annotation_preserve_location controls)
+    ~parse_result_of_qualifier

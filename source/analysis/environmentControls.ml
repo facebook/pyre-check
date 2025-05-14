@@ -15,6 +15,7 @@ type t = {
   in_memory_sources: (Ast.ModulePath.t * raw_code) list option;
   no_validation_on_class_lookup_failure: bool;
   use_lazy_module_tracking: bool;
+  string_annotation_preserve_location: bool;
 }
 
 let create
@@ -22,6 +23,7 @@ let create
     ?in_memory_sources
     ?(no_validation_on_class_lookup_failure = false)
     ?(use_lazy_module_tracking = false)
+    ?(string_annotation_preserve_location = true)
     configuration
   =
   {
@@ -30,6 +32,7 @@ let create
     in_memory_sources;
     no_validation_on_class_lookup_failure;
     use_lazy_module_tracking;
+    string_annotation_preserve_location;
   }
 
 
@@ -40,6 +43,10 @@ let configuration { configuration; _ } = configuration
 let populate_call_graph { populate_call_graph; _ } = populate_call_graph
 
 let use_lazy_module_tracking { use_lazy_module_tracking; _ } = use_lazy_module_tracking
+
+let string_annotation_preserve_location { string_annotation_preserve_location; _ } =
+  string_annotation_preserve_location
+
 
 let no_validation_on_class_lookup_failure { no_validation_on_class_lookup_failure; _ } =
   no_validation_on_class_lookup_failure

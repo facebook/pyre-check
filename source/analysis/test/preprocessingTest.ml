@@ -99,7 +99,7 @@ let test_expand_string_annotations =
     assert_source_equal
       ~location_insensitive:true
       (parse expected)
-      (Preprocessing.expand_string_annotations (parse source))
+      (Preprocessing.expand_string_annotations ~preserve_original_location:true (parse source))
   in
   test_list
     [
@@ -346,7 +346,9 @@ let test_expand_type_alias_body =
       ~printer:Expression.show
       ~cmp:(fun left right -> Expression.location_insensitive_compare left right = 0)
       (parse_single_expression expected)
-      (Preprocessing.expand_strings_in_annotation_expression (parse_single_expression expression))
+      (Preprocessing.expand_strings_in_annotation_expression
+         ~preserve_original_location:true
+         (parse_single_expression expression))
   in
   test_list
     [
@@ -435,6 +437,7 @@ let test_expand_string_annotation_preserves_locations =
                  });
         }
         (Preprocessing.expand_strings_in_annotation_expression
+           ~preserve_original_location:true
            {
              Node.location = location (1, 5) (1, 10);
              value =

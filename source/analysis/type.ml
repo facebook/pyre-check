@@ -5348,7 +5348,7 @@ let dequalify map annotation =
 let preprocess_alias_value value =
   value
   |> Preprocessing.replace_union_shorthand_in_annotation_expression
-  |> Preprocessing.expand_strings_in_annotation_expression
+  |> Preprocessing.expand_strings_in_annotation_expression ~preserve_original_location:true
 
 
 let infer_transform annotation =
