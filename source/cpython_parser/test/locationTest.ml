@@ -345,10 +345,14 @@ let test_await_locations =
                          ~start:(1, 0)
                          ~stop:(1, 7)
                          (Expression.Await
-                            (node
-                               ~start:(1, 6)
-                               ~stop:(1, 7)
-                               (Expression.Constant (Constant.Integer 1))))));
+                            {
+                              Await.operand =
+                                node
+                                  ~start:(1, 6)
+                                  ~stop:(1, 7)
+                                  (Expression.Constant (Constant.Integer 1));
+                              origin = None;
+                            })));
                ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
@@ -363,10 +367,14 @@ let test_await_locations =
                          ~start:(1, 0)
                          ~stop:(1, 9)
                          (Expression.Await
-                            (node
-                               ~start:(1, 8)
-                               ~stop:(1, 9)
-                               (Expression.Constant (Constant.Integer 1))))));
+                            {
+                              Await.operand =
+                                node
+                                  ~start:(1, 8)
+                                  ~stop:(1, 9)
+                                  (Expression.Constant (Constant.Integer 1));
+                              origin = None;
+                            })));
                ];
       ]
   in

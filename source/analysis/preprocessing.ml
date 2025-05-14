@@ -587,8 +587,9 @@ module Qualify = struct
         scope, List.rev reversed_generators
       in
       match value with
-      | Expression.Await expression ->
-          Expression.Await (qualify_expression ~qualify_strings ~scope expression)
+      | Expression.Await { Await.operand; origin } ->
+          Expression.Await
+            { Await.operand = qualify_expression ~qualify_strings ~scope operand; origin }
       | BinaryOperator { BinaryOperator.left; operator; right; origin } ->
           BinaryOperator
             {
@@ -3242,7 +3243,7 @@ module AccessCollector = struct
         (* For attribute access, only count the base *)
         from_expression collected base
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
-    | Await await -> from_expression collected await
+    | Await { Await.operand; origin = _ } -> from_expression collected operand
     | BinaryOperator { BinaryOperator.left; right; _ }
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->

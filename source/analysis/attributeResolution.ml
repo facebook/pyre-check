@@ -3425,8 +3425,8 @@ class base ~queries:(Queries.{ controls; get_class_summary; class_hierarchy; _ }
       in
       let order = self#full_order ~cycle_detections in
       match Node.value expression with
-      | Expression.Await expression ->
-          self#resolve_literal ~cycle_detections expression ~scoped_type_variables
+      | Expression.Await { Await.operand; origin = _ } ->
+          self#resolve_literal ~cycle_detections operand ~scoped_type_variables
           |> Type.awaitable_value
           |> Option.value ~default:Type.Any
       | BooleanOperator { BooleanOperator.left; right; _ } ->

@@ -417,7 +417,9 @@ let test_await_yield =
     test_list
       [
         labeled_test_case __FUNCTION__ __LINE__
-        @@ assert_parsed "await x" ~expected:(+Expression.Await !"x");
+        @@ assert_parsed
+             "await x"
+             ~expected:(+Expression.Await { Await.operand = !"x"; origin = None });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed "(yield)" ~expected:(+Expression.Yield None);
         labeled_test_case __FUNCTION__ __LINE__
@@ -429,15 +431,18 @@ let test_await_yield =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "(yield (await x))"
-             ~expected:(+Expression.Yield (Some (+Expression.Await !"x")));
+             ~expected:
+               (+Expression.Yield (Some (+Expression.Await { Await.operand = !"x"; origin = None })));
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "await (yield from x)"
-             ~expected:(+Expression.Await (+Expression.YieldFrom !"x"));
+             ~expected:
+               (+Expression.Await { Await.operand = +Expression.YieldFrom !"x"; origin = None });
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "await (yield x)"
-             ~expected:(+Expression.Await (+Expression.Yield (Some !"x")));
+             ~expected:
+               (+Expression.Await { Await.operand = +Expression.Yield (Some !"x"); origin = None });
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "await";
         (* Standalone yield/yield from expressions are required to be protected with parenthesis. *)
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "yield";

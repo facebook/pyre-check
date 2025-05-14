@@ -341,7 +341,11 @@ let test_await =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "await 1"
-           [+Statement.Expression (+Expression.Await (+Expression.Constant (Constant.Integer 1)))];
+           [
+             +Statement.Expression
+                (+Expression.Await
+                    { Await.operand = +Expression.Constant (Constant.Integer 1); origin = None });
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed_equal
            "await foo() + 1"
@@ -352,7 +356,12 @@ let test_await =
                       operator = BinaryOperator.Add;
                       left =
                         +Expression.Await
-                           (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
+                           {
+                             Await.operand =
+                               +Expression.Call
+                                  { Call.callee = !"foo"; arguments = []; origin = None };
+                             origin = None;
+                           };
                       right = +Expression.Constant (Constant.Integer 1);
                       origin = None;
                     });
@@ -367,7 +376,12 @@ let test_await =
                       operator = BinaryOperator.Mult;
                       left =
                         +Expression.Await
-                           (+Expression.Call { Call.callee = !"foo"; arguments = []; origin = None });
+                           {
+                             Await.operand =
+                               +Expression.Call
+                                  { Call.callee = !"foo"; arguments = []; origin = None };
+                             origin = None;
+                           };
                       right = +Expression.Constant (Constant.Integer 2);
                       origin = None;
                     });

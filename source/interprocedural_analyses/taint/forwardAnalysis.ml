@@ -2590,7 +2590,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           value
       in
       match value with
-      | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
+      | Await { Await.operand; origin = _ } ->
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:operand
       | BooleanOperator { left; operator = _; right; origin = _ } ->
           let left_taint, state =
             analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left

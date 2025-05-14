@@ -680,7 +680,7 @@ let test_default_folder context =
       actual
   in
   let integer i = +Expression.Constant (Constant.Integer i) in
-  assert_count (+Expression.Await (integer 1)) ~expected:1;
+  assert_count (+Expression.Await { Await.operand = integer 1; origin = None }) ~expected:1;
   assert_count
     (+Expression.BooleanOperator
         {
@@ -833,7 +833,9 @@ let test_default_mapper context =
       actual
   in
   let integer i = +Expression.Constant (Constant.Integer i) in
-  assert_transformed (+Expression.Await (integer 1)) ~expected:(+Expression.Await (integer 2));
+  assert_transformed
+    (+Expression.Await { Await.operand = integer 1; origin = None })
+    ~expected:(+Expression.Await { Await.operand = integer 2; origin = None });
   assert_transformed
     (+Expression.BooleanOperator
         {

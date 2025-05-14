@@ -124,7 +124,8 @@ module Make (Transformer : Transformer) = struct
       let transform_children value =
         let open Expression in
         match value with
-        | Await expression -> Expression.Await (transform_expression expression)
+        | Await { Await.operand; origin } ->
+            Expression.Await { Await.operand = transform_expression operand; origin }
         | BinaryOperator { BinaryOperator.left; operator; right; origin } ->
             BinaryOperator
               {

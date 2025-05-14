@@ -276,7 +276,11 @@ let test_await_locations _ =
               ~start:(1, 0)
               ~stop:(1, 7)
               (Expression.Await
-                 (node ~start:(1, 6) ~stop:(1, 7) (Expression.Constant (Constant.Integer 1))))));
+                 {
+                   Await.operand =
+                     node ~start:(1, 6) ~stop:(1, 7) (Expression.Constant (Constant.Integer 1));
+                   origin = None;
+                 })));
     ];
   assert_source_locations
     "await   1"
@@ -289,7 +293,11 @@ let test_await_locations _ =
               ~start:(1, 0)
               ~stop:(1, 9)
               (Expression.Await
-                 (node ~start:(1, 8) ~stop:(1, 9) (Expression.Constant (Constant.Integer 1))))));
+                 {
+                   Await.operand =
+                     node ~start:(1, 8) ~stop:(1, 9) (Expression.Constant (Constant.Integer 1));
+                   origin = None;
+                 })));
     ]
 
 

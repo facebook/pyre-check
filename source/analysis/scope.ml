@@ -80,7 +80,7 @@ module Binding = struct
         let sofar = of_expression sofar value in
         of_unannotated_target ~kind:Kind.WalrusTarget sofar target
     (* Boilerplates to make sure all expressions are visited. *)
-    | Expression.Await expression
+    | Expression.Await { Await.operand = expression; origin = _ }
     | Expression.Name (Name.Attribute { Name.Attribute.base = expression; _ })
     | Expression.UnaryOperator { UnaryOperator.operand = expression; _ }
     | Expression.Starred (Starred.Once expression | Starred.Twice expression)

@@ -374,21 +374,22 @@ let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }
 
 
 let create_function_call ~should_await ~location ~callee_name arguments =
+  let origin = Some (Origin.create ~location Origin.DecoratorInlining) in
   let call =
     Expression.Call
       {
         callee =
           Expression.Name
-            (create_name_from_reference
-               ~location
-               ~create_origin:(fun _ -> Some (Origin.create ~location Origin.DecoratorInlining))
-               callee_name)
+            (create_name_from_reference ~location ~create_origin:(fun _ -> origin) callee_name)
           |> Node.create ~location;
         arguments;
-        origin = Some (Origin.create ~location Origin.DecoratorInlining);
+        origin;
       }
   in
-  if should_await then Expression.Await (Node.create ~location call) else call
+  if should_await then
+    Expression.Await { Await.operand = Node.create ~location call; origin }
+  else
+    call
 
 
 let create_function_call_to ~location ~callee_name { Define.Signature.parameters; async; _ } =

@@ -665,12 +665,13 @@ module State (Context : Context) = struct
       Return the new state along with nested awaitable expressions. *)
   and forward_expression ~resolution ~(state : t) ~expression:{ Node.value; location } =
     match value with
-    | Await ({ Node.value = Name name; _ } as expression) when is_simple_name name ->
+    | Await { Await.operand = { Node.value = Name name; _ } as expression; origin = _ }
+      when is_simple_name name ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression
         in
         { state = mark_name_as_awaited state ~name; nested_awaitable_expressions }
-    | Await ({ Node.location; _ } as expression) ->
+    | Await { Await.operand = { Node.location; _ } as expression; origin = _ } ->
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression
         in

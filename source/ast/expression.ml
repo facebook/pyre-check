@@ -262,6 +262,28 @@ end = struct
     | _ -> List.compare Argument.location_insensitive_compare left.arguments right.arguments
 end
 
+and Await : sig
+  type t = {
+    operand: Expression.t;
+    (* If this AST node was created from lowering down another AST node (for instance, `a + b` is
+       turned into `a.__add__(b)`), `origin` stores the location of the original AST node and the
+       reason for lowering it. *)
+    origin: Origin.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  type t = {
+    operand: Expression.t;
+    origin: Origin.t option;
+  }
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    Expression.location_insensitive_compare left.operand right.operand
+end
+
 and ComparisonOperator : sig
   type operator =
     | Equals
@@ -1147,8 +1169,10 @@ and Origin : sig
     | SubscriptGetItem (* `d[a]` is turned into `d.__getitem__(a)` *)
     | ForIter (* `for e in l:` is turned into `l.__iter__().__next__()` *)
     | ForNext (* `for e in l:` is turned into `l.__iter__().__next__()` *)
+    | ForAwait (* `for e in l:` might be turned into `await l.__iter__().__next__()` *)
     | GeneratorIter (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
     | GeneratorNext (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
+    | GeneratorAwait (* `(e for e in l)` might be turned into `await l.__iter__().__next__()` *)
     | With (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
     | InContains (* `e in l` can be turned into `l.__contains__(e)` *)
     | InIter (* `e in l` can be turned into `l.__iter__().__next__().__eq__(e)` *)
@@ -1253,8 +1277,10 @@ end = struct
     | SubscriptGetItem
     | ForIter
     | ForNext
+    | ForAwait
     | GeneratorIter
     | GeneratorNext
+    | GeneratorAwait
     | With
     | InContains
     | InIter
@@ -1368,7 +1394,7 @@ end
 
 and Expression : sig
   type expression =
-    | Await of t
+    | Await of Await.t
     | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
@@ -1407,7 +1433,7 @@ and Expression : sig
   val pp_type_param_list : Format.formatter -> TypeParam.t list -> unit
 end = struct
   type expression =
-    | Await of t
+    | Await of Await.t
     | BinaryOperator of BinaryOperator.t
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
@@ -1439,7 +1465,7 @@ end = struct
 
   let rec location_insensitive_compare_expression left right =
     match left, right with
-    | Await left, Await right -> location_insensitive_compare left right
+    | Await left, Await right -> Await.location_insensitive_compare left right
     | BinaryOperator left, BinaryOperator right ->
         BinaryOperator.location_insensitive_compare left right
     | BooleanOperator left, BooleanOperator right ->
@@ -1700,7 +1726,7 @@ end = struct
 
     and pp_expression formatter expression =
       match expression with
-      | Await expression -> Format.fprintf formatter "await %a" pp_expression_t expression
+      | Await { Await.operand; _ } -> Format.fprintf formatter "await %a" pp_expression_t operand
       | BinaryOperator { BinaryOperator.left; operator; right; origin = _ } ->
           Format.fprintf
             formatter
@@ -1823,7 +1849,7 @@ end
 
 module Mapper = struct
   type 'a t = {
-    map_await: mapper:'a t -> location:Location.t -> Expression.t -> 'a;
+    map_await: mapper:'a t -> location:Location.t -> Await.t -> 'a;
     map_binary_operator: mapper:'a t -> location:Location.t -> BinaryOperator.t -> 'a;
     map_boolean_operator: mapper:'a t -> location:Location.t -> BooleanOperator.t -> 'a;
     map_call: mapper:'a t -> location:Location.t -> Call.t -> 'a;
@@ -1884,7 +1910,7 @@ module Mapper = struct
       { Node.value; location }
     =
     match value with
-    | Expression.Await expression -> map_await ~mapper ~location expression
+    | Expression.Await await -> map_await ~mapper ~location await
     | Expression.BinaryOperator binary_operator ->
         map_binary_operator ~mapper ~location binary_operator
     | Expression.BooleanOperator boolean_operator ->
@@ -2006,7 +2032,9 @@ module Mapper = struct
     default_map_substrings_with_location ~mapper ~map_location:Fn.id substrings
 
 
-  let default_map_await ~mapper awaited = map ~mapper awaited
+  let default_map_await ~mapper { Await.operand; origin } =
+    { Await.operand = map ~mapper operand; origin }
+
 
   let default_map_await_node ~mapper ~location awaited =
     Node.create ~location (Expression.Await (default_map_await ~mapper awaited))
@@ -2530,7 +2558,7 @@ end
 
 module Folder = struct
   type 'a t = {
-    fold_await: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
+    fold_await: folder:'a t -> state:'a -> location:Location.t -> Await.t -> 'a;
     fold_binary_operator: folder:'a t -> state:'a -> location:Location.t -> BinaryOperator.t -> 'a;
     fold_boolean_operator:
       folder:'a t -> state:'a -> location:Location.t -> BooleanOperator.t -> 'a;
@@ -2600,7 +2628,7 @@ module Folder = struct
       { Node.value; location }
     =
     match value with
-    | Expression.Await expression -> fold_await ~folder ~state ~location expression
+    | Expression.Await await -> fold_await ~folder ~state ~location await
     | Expression.BinaryOperator binary_operator ->
         fold_binary_operator ~folder ~state ~location binary_operator
     | Expression.BooleanOperator boolean_operator ->
@@ -2740,7 +2768,7 @@ module Folder = struct
       substrings
 
 
-  let default_fold_await ~folder ~state awaited = fold ~folder ~state awaited
+  let default_fold_await ~folder ~state { Await.operand; origin = _ } = fold ~folder ~state operand
 
   let default_fold_binary_operator
       ~folder
@@ -2997,6 +3025,7 @@ let origin { Node.value; _ } =
   | Expression.Subscript { Subscript.origin; _ } -> origin
   | Expression.WalrusOperator { WalrusOperator.origin; _ } -> origin
   | Expression.Slice { Slice.origin; _ } -> origin
+  | Expression.Await { Await.origin; _ } -> origin
   | _ -> None
 
 
@@ -3560,6 +3589,9 @@ let remove_origins expression =
       origin = None;
     }
   in
+  let map_await ~mapper { Await.operand; origin = _ } =
+    { Await.operand = Mapper.map ~mapper operand; origin = None }
+  in
   Mapper.map
     ~mapper:
       (Mapper.create_transformer
@@ -3572,5 +3604,6 @@ let remove_origins expression =
          ~map_subscript
          ~map_walrus_operator
          ~map_slice
+         ~map_await
          ())
     expression

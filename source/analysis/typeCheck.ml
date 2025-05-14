@@ -2088,7 +2088,7 @@ module State (Context : Context) = struct
     in
     let resolved =
       match value with
-      | Await expression -> (
+      | Await { Await.operand = expression; origin = _ } -> (
           let { Resolved.resolution; resolved; errors; _ } =
             forward_expression ~resolution expression
           in

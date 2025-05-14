@@ -276,7 +276,9 @@ module ParserToAst = struct
     let open Expression in
     match value with
     | Await expression ->
-        AstExpression.Expression.Await (convert_expression expression) |> Node.create ~location
+        AstExpression.Expression.Await
+          { AstExpression.Await.operand = convert_expression expression; origin = None }
+        |> Node.create ~location
     | BinaryOperator { BinaryOperator.left; operator; right } ->
         AstExpression.Expression.BinaryOperator
           {

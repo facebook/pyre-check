@@ -596,68 +596,73 @@ let test_for_loop_preamble _ =
                   Node.value =
                     Expression.Await
                       {
-                        Node.value =
-                          Expression.Call
-                            {
-                              Call.callee =
+                        Await.operand =
+                          {
+                            Node.value =
+                              Expression.Call
                                 {
-                                  Node.location = ~@"2:10-3:4";
-                                  value =
-                                    Expression.Name
-                                      (Name.Attribute
-                                         {
-                                           Name.Attribute.base =
+                                  Call.callee =
+                                    {
+                                      Node.location = ~@"2:10-3:4";
+                                      value =
+                                        Expression.Name
+                                          (Name.Attribute
                                              {
-                                               Node.location = ~@"2:10-3:4";
-                                               value =
-                                                 Expression.Call
-                                                   {
-                                                     Call.callee =
+                                               Name.Attribute.base =
+                                                 {
+                                                   Node.location = ~@"2:10-3:4";
+                                                   value =
+                                                     Expression.Call
                                                        {
-                                                         Node.location = ~@"2:10-3:4";
-                                                         value =
-                                                           Expression.Name
-                                                             (Name.Attribute
-                                                                {
-                                                                  Name.Attribute.base =
+                                                         Call.callee =
+                                                           {
+                                                             Node.location = ~@"2:10-3:4";
+                                                             value =
+                                                               Expression.Name
+                                                                 (Name.Attribute
                                                                     {
-                                                                      Node.value =
-                                                                        Expression.Name
-                                                                          (Name.Identifier "xs");
-                                                                      location = ~@"3:2-3:4";
-                                                                    };
-                                                                  attribute = "__aiter__";
-                                                                  origin =
-                                                                    Some
-                                                                      {
-                                                                        Origin.location =
-                                                                          ~@"3:2-3:4";
-                                                                        kind = Origin.ForIter;
-                                                                      };
-                                                                });
+                                                                      Name.Attribute.base =
+                                                                        {
+                                                                          Node.value =
+                                                                            Expression.Name
+                                                                              (Name.Identifier "xs");
+                                                                          location = ~@"3:2-3:4";
+                                                                        };
+                                                                      attribute = "__aiter__";
+                                                                      origin =
+                                                                        Some
+                                                                          {
+                                                                            Origin.location =
+                                                                              ~@"3:2-3:4";
+                                                                            kind = Origin.ForIter;
+                                                                          };
+                                                                    });
+                                                           };
+                                                         arguments = [];
+                                                         origin =
+                                                           Some
+                                                             {
+                                                               Origin.location = ~@"3:2-3:4";
+                                                               kind = Origin.ForIter;
+                                                             };
                                                        };
-                                                     arguments = [];
-                                                     origin =
-                                                       Some
-                                                         {
-                                                           Origin.location = ~@"3:2-3:4";
-                                                           kind = Origin.ForIter;
-                                                         };
+                                                 };
+                                               attribute = "__anext__";
+                                               origin =
+                                                 Some
+                                                   {
+                                                     Origin.location = ~@"3:2-3:4";
+                                                     kind = Origin.ForNext;
                                                    };
-                                             };
-                                           attribute = "__anext__";
-                                           origin =
-                                             Some
-                                               {
-                                                 Origin.location = ~@"3:2-3:4";
-                                                 kind = Origin.ForNext;
-                                               };
-                                         });
+                                             });
+                                    };
+                                  arguments = [];
+                                  origin =
+                                    Some { Origin.location = ~@"3:2-3:4"; kind = Origin.ForNext };
                                 };
-                              arguments = [];
-                              origin = Some { Origin.location = ~@"3:2-3:4"; kind = Origin.ForNext };
-                            };
-                        location = ~@"2:10-3:4";
+                            location = ~@"2:10-3:4";
+                          };
+                        origin = Some { Origin.location = ~@"3:2-3:4"; kind = Origin.ForAwait };
                       };
                   location = ~@"2:10-3:4";
                 };

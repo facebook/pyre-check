@@ -1175,7 +1175,15 @@ end = struct
           create_call iterator "__iter__" "__next__"
       in
       if async then
-        { Node.location; Node.value = Expression.Await (Node.create value ~location) }
+        {
+          Node.location;
+          Node.value =
+            Expression.Await
+              {
+                Await.operand = Node.create ~location value;
+                origin = Some (Origin.create ~location:iterator_location Origin.ForAwait);
+              };
+        }
       else
         { Node.location; value }
     in
@@ -1605,8 +1613,8 @@ end = struct
     let preamble (({ Node.location; _ } as expression), target) =
       let open Expression in
       let enter_call =
+        let origin = Some (Origin.create ~location Origin.With) in
         let create_call call_name =
-          let origin = Some (Origin.create ~location Origin.With) in
           {
             Node.location;
             value =
@@ -1626,7 +1634,9 @@ end = struct
           }
         in
         if async then
-          Node.create ~location (Expression.Await (create_call "__aenter__"))
+          Node.create
+            ~location
+            (Expression.Await { Await.operand = create_call "__aenter__"; origin })
         else
           create_call "__enter__"
       in
@@ -1768,6 +1778,7 @@ end = struct
     let open Expression in
     let iter_origin = Some (Origin.create ~location Origin.GeneratorIter) in
     let next_origin = Some (Origin.create ~location Origin.GeneratorNext) in
+    let await_origin = Some (Origin.create ~location Origin.GeneratorAwait) in
     let value =
       if async then
         let aiter =
@@ -1814,7 +1825,8 @@ end = struct
                 origin = next_origin;
               };
         }
-        |> fun target -> Node.create ~location (Expression.Await target)
+        |> fun target ->
+        Node.create ~location (Expression.Await { Await.operand = target; origin = await_origin })
       else
         let iter =
           {
@@ -2187,7 +2199,7 @@ let is_generator statements =
     | Expression.Yield _
     | Expression.YieldFrom _ ->
         true
-    | Expression.Await await -> is_expression_generator await
+    | Expression.Await { Await.operand; origin = _ } -> is_expression_generator operand
     | Expression.BinaryOperator { BinaryOperator.left; right; _ }
     | Expression.BooleanOperator { BooleanOperator.left; right; _ }
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->

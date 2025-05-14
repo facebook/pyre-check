@@ -63,7 +63,7 @@ module AccessCollector = struct
         | Name (Name.Identifier _) -> collected
         | _ -> from_expression collected base)
     (* The rest is boilerplates to make sure that expressions are visited recursively *)
-    | Await await -> from_expression collected await
+    | Await { Await.operand; _ } -> from_expression collected operand
     | BinaryOperator { BinaryOperator.left; right; _ }
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->

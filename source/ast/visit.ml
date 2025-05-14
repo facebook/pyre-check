@@ -95,7 +95,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     let visit_children value =
       let open Expression in
       match value with
-      | Await expression -> visit_expression expression
+      | Await { Await.operand; _ } -> visit_expression operand
       | BinaryOperator { BinaryOperator.left; right; _ }
       | BooleanOperator { BooleanOperator.left; right; _ }
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->

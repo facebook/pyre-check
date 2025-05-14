@@ -375,7 +375,9 @@ let expression =
   let generator_exp ~location ~elt ~generators =
     Expression.Generator { Comprehension.element = elt; generators } |> Node.create ~location
   in
-  let await ~location ~value = Expression.Await value |> Node.create ~location in
+  let await ~location ~value =
+    Expression.Await { Await.operand = value; origin = None } |> Node.create ~location
+  in
   let yield ~location ~value = Expression.Yield value |> Node.create ~location in
   let yield_from ~location ~value = Expression.YieldFrom value |> Node.create ~location in
   let compare ~location ~left ~ops ~comparators =

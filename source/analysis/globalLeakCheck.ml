@@ -318,7 +318,7 @@ module State (Context : Context) = struct
     | Expression.Constant _
     | Yield None ->
         empty_result
-    | Await expression
+    | Await { Await.operand = expression; origin = _ }
     | Yield (Some expression)
     | YieldFrom expression
     | UnaryOperator { operand = expression; _ }

@@ -4064,40 +4064,44 @@ module CalleeVisitor = struct
               value =
                 Expression.Await
                   {
-                    Node.value =
-                      Expression.Call
-                        {
-                          callee =
+                    Await.operand =
+                      {
+                        Node.value =
+                          Expression.Call
                             {
-                              Node.value =
-                                Name
-                                  (Name.Attribute
-                                    {
-                                      base =
+                              callee =
+                                {
+                                  Node.value =
+                                    Name
+                                      (Name.Attribute
                                         {
-                                          Node.value =
-                                            Expression.Call
-                                              {
-                                                callee =
+                                          base =
+                                            {
+                                              Node.value =
+                                                Expression.Call
                                                   {
-                                                    Node.value =
-                                                      Name
-                                                        (Name.Attribute
-                                                          { attribute = "__aiter__"; _ });
+                                                    callee =
+                                                      {
+                                                        Node.value =
+                                                          Name
+                                                            (Name.Attribute
+                                                              { attribute = "__aiter__"; _ });
+                                                        _;
+                                                      };
                                                     _;
-                                                  };
-                                                _;
-                                              } as aiter;
+                                                  } as aiter;
+                                              _;
+                                            };
+                                          attribute = "__anext__";
                                           _;
-                                        };
-                                      attribute = "__anext__";
-                                      _;
-                                    });
+                                        });
+                                  _;
+                                };
                               _;
-                            };
-                          _;
-                        } as aiter_anext;
-                    _;
+                            } as aiter_anext;
+                        _;
+                      };
+                    origin = _;
                   };
               location;
             } ->
@@ -5135,7 +5139,8 @@ module HigherOrderCallGraph = struct
               ~location
               value
           with
-          | Expression.Await expression -> analyze_expression ~pyre_in_context ~state ~expression
+          | Expression.Await { Await.operand = expression; origin = _ } ->
+              analyze_expression ~pyre_in_context ~state ~expression
           | BooleanOperator { left; right; _ } ->
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
               let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
