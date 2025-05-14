@@ -428,6 +428,7 @@ and Origin : sig
     | InGetItem (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
     | InGetItemEq (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
     | Slice (* `1:2` is turned into `slice(1,2,None)` *)
+    | UnionShorthand (* `a | b` is turned into `typing.Union[a, b]` when in typing context *)
     | Negate (* `if cond:` is turned into `assert(cond)` and `assert(not cond)` *)
     | NegateIs (* `not(a is not b)` is turned into `a is b` *)
     | NegateIsNot (* `not(a is b)` is turned into `a is not b` *)

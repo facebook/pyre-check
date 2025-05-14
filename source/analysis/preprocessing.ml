@@ -3889,7 +3889,7 @@ let replace_union_shorthand_in_annotation_expression =
     in
     let value =
       match value with
-      | Expression.BinaryOperator { operator = BinaryOperator.BitOr; left; right; origin = _ } ->
+      | Expression.BinaryOperator { operator = BinaryOperator.BitOr; left; right; origin } ->
           let indices =
             [left; right]
             (* Recursively transform them into `typing.Union[...]` form *)
@@ -3899,6 +3899,7 @@ let replace_union_shorthand_in_annotation_expression =
             |> List.rev
           in
           let index = { Node.value = Expression.Tuple indices; location } in
+          let origin = Some (Origin.create ?base:origin ~location Origin.UnionShorthand) in
           Expression.Subscript
             {
               base =
@@ -3910,11 +3911,11 @@ let replace_union_shorthand_in_annotation_expression =
                          {
                            base = { Node.location; value = Name (Name.Identifier "typing") };
                            attribute = "Union";
-                           origin = None;
+                           origin;
                          });
                 };
               index;
-              origin = None;
+              origin;
             }
       | Subscript { Subscript.base; index; origin } ->
           Subscript { base; index = transform_expression index; origin }
