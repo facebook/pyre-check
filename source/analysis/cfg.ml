@@ -125,7 +125,7 @@ module MatchTranslate = struct
   let create_typing_sequence ~location =
     create_attribute_name
       ~location
-      ~origin:None
+      ~origin:(Some (Origin.create ~location Origin.MatchTypingSequence))
       ~base:(create_identifier_name ~location "typing")
       ~attribute:"Sequence"
 
@@ -133,7 +133,7 @@ module MatchTranslate = struct
   let create_typing_mapping ~location =
     create_attribute_name
       ~location
-      ~origin:None
+      ~origin:(Some (Origin.create ~location Origin.MatchTypingMapping))
       ~base:(create_identifier_name ~location "typing")
       ~attribute:"Mapping"
 
@@ -279,7 +279,12 @@ module MatchTranslate = struct
                  ~location
                  ~left
                  ~right
-                 ~origin:(Some (Origin.create ~location Origin.MatchMappingJoinConditions)))
+                 ~origin:
+                   (Some
+                      (Origin.create
+                         ?base:(Ast.Expression.origin left)
+                         ~location
+                         Origin.MatchMappingJoinConditions)))
     | MatchOr patterns ->
         List.map patterns ~f:(pattern_to_condition ~subject)
         |> List.reduce_exn ~f:(fun left right ->
@@ -287,7 +292,12 @@ module MatchTranslate = struct
                  ~location
                  ~left
                  ~right
-                 ~origin:(Some (Origin.create ~location Origin.MatchOrJoinConditions)))
+                 ~origin:
+                   (Some
+                      (Origin.create
+                         ?base:(Ast.Expression.origin left)
+                         ~location
+                         Origin.MatchOrJoinConditions)))
     | MatchSingleton constant ->
         create_comparison_is
           ~location
@@ -364,7 +374,12 @@ module MatchTranslate = struct
                  ~location
                  ~left
                  ~right
-                 ~origin:(Some (Origin.create ~location Origin.MatchSequenceJoinConditions)))
+                 ~origin:
+                   (Some
+                      (Origin.create
+                         ?base:(Ast.Expression.origin left)
+                         ~location
+                         Origin.MatchSequenceJoinConditions)))
     | MatchValue value ->
         create_comparison_equals
           ~location

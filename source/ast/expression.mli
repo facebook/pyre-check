@@ -432,6 +432,9 @@ and Origin : sig
     (* `x: int = dataclasses.field(default_factory=f)` is turned into `x = f()` in the implicit
        constructor *)
     (* All the origins below are used to translate `match` statements *)
+    | MatchTypingSequence
+      (* `match x: case [..]:` is turned into `isinstance(x, typing.Sequence)` *)
+    | MatchTypingMapping (* `match x: case {...}:` is turned into `isinstance(x, typing.Mapping)` *)
     | MatchAsComparisonEquals
     | MatchAsWithCondition
     | MatchClassArgs of int
