@@ -4765,7 +4765,11 @@ module SelfType = struct
                              base =
                                Node.create ~location (Expression.Name (Name.Identifier "typing"));
                              attribute = "TypeVar";
-                             origin = None;
+                             origin =
+                               Some
+                                 (Origin.create
+                                    ~location
+                                    (Origin.SelfImplicitTypeVar self_variable_name));
                            }));
                  arguments =
                    [
@@ -4782,13 +4786,19 @@ module SelfType = struct
                        value =
                          from_reference
                            ~location:Location.any
-                           ~create_origin:(fun _ -> None)
+                           ~create_origin:(fun attributes ->
+                             Some
+                               (Origin.create
+                                  ~location
+                                  (Origin.SelfImplicitTypeVarQualification
+                                     (self_variable_name, attributes))))
                            (NestingContext.to_qualifier
                               ~module_name:Reference.empty
                               nesting_context);
                      };
                    ];
-                 origin = Some (Origin.create ~location Origin.SelfImplicitTypeVar);
+                 origin =
+                   Some (Origin.create ~location (Origin.SelfImplicitTypeVar self_variable_name));
                }
             |> Node.create ~location);
         annotation = None;

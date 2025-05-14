@@ -466,8 +466,10 @@ and Origin : sig
     | IterCall (* iter(x) is turned into x.__iter__() *)
     | NextCall (* next(x) is turned into x.__next__() *)
     | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
-    | SelfImplicitTypeVar
-      (* `def f(self):` is turned into `def f(self: TypeVar["self", bound=MyClass]):` *)
+    | SelfImplicitTypeVar of string
+    | SelfImplicitTypeVarQualification of string * string list
+      (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
+         bound=MyClass])` *)
     | FunctionalEnumImplicitAuto of string list
       (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
          ...` *)
