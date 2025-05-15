@@ -1224,12 +1224,14 @@ and Origin : sig
     | MatchSequenceJoinConditions
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
-    | StrCall (* str(x) is turned into x.__str__() or x.__repr__() *)
-    | ReprCall (* repr(x) is turned into x.__repr__() *)
-    | AbsCall (* abs(x) is turned into x.__abs__() *)
-    | IterCall (* iter(x) is turned into x.__iter__() *)
-    | NextCall (* next(x) is turned into x.__next__() *)
-    | ImplicitInitCall (* A(x) is turned into A.__init__(..., x) *)
+    | ResolveStrCall
+    | StrCallToDunderStr (* `str(x)` is turned into `x.__str__()` *)
+    | StrCallToDunderRepr (* `str(x)` is turned into `x.__repr__()` *)
+    | ReprCall (* `repr(x)` is turned into `x.__repr__()` *)
+    | AbsCall (* `abs(x)` is turned into `x.__abs__()` *)
+    | IterCall (* `iter(x)` is turned into `x.__iter__()` *)
+    | NextCall (* `next(x)` is turned into `x.__next__()` *)
+    | ImplicitInitCall (* `A(x)` is turned into `A.__init__(..., x)` *)
     | SelfImplicitTypeVar of string
     | SelfImplicitTypeVarQualification of string * string list
       (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
@@ -1241,7 +1243,8 @@ and Origin : sig
     | ForDecoratedTarget (* `@foo def f(): ...` is turned into `def f@decorated(): return foo(f)` *)
     | ForDecoratedTargetCallee of
         string list (* `@foo def f(): ...` is turned into `def f@decorated(): return foo(f)` *)
-    | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" or f"{x.__repr__}" *)
+    | FormatStringImplicitStr (* f"{x}" is turned into f"{x.__str__()}" *)
+    | FormatStringImplicitRepr (* f"{x}" is turned into f"{x.__repr__()}" *)
     | GetAttrConstantLiteral (* getattr(x, "foo") is turned into x.foo *)
     | SetAttrConstantLiteral (* object.__setattr__(x, "foo", value) is turned into x.foo = value *)
     | PysaCallRedirect of string (* hardcoded AST rewrite made for Pysa analysis *)
@@ -1326,7 +1329,9 @@ end = struct
     | MatchSequenceJoinConditions
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
-    | StrCall
+    | ResolveStrCall
+    | StrCallToDunderStr
+    | StrCallToDunderRepr
     | ReprCall
     | AbsCall
     | IterCall
@@ -1339,6 +1344,7 @@ end = struct
     | ForDecoratedTarget
     | ForDecoratedTargetCallee of string list
     | FormatStringImplicitStr
+    | FormatStringImplicitRepr
     | GetAttrConstantLiteral
     | SetAttrConstantLiteral
     | PysaCallRedirect of string
@@ -1380,13 +1386,15 @@ end = struct
       | InIter
       | InGetItem
       | InGetItemEq
-      | StrCall
+      | StrCallToDunderStr
+      | StrCallToDunderRepr
       | ReprCall
       | AbsCall
       | IterCall
       | NextCall
       | ImplicitInitCall
-      | FormatStringImplicitStr ->
+      | FormatStringImplicitStr
+      | FormatStringImplicitRepr ->
           true
       | Nested { head; _ } -> is_dunder_method_kind head
       | _ -> false

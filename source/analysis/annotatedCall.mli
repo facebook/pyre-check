@@ -7,8 +7,12 @@
 
 open Ast
 
+type resolved_stringify =
+  | Str
+  | Repr
+
 (* Redirect a call to `str(e)` to the proper method for any expression `e` *)
-val resolve_stringify_call : resolution:Resolution.t -> Expression.t -> string
+val resolve_stringify_call : resolution:Resolution.t -> Expression.t -> resolved_stringify
 
 val redirect_special_calls
   :  resolution:Resolution.t ->

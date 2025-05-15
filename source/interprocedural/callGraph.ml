@@ -2692,6 +2692,10 @@ let resolve_callee_from_defining_expression
       | _ -> None)
 
 
+type resolved_stringify =
+  | Str
+  | Repr
+
 let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expression =
   let string_callee =
     Node.create_with_default_location
@@ -2701,7 +2705,11 @@ let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expres
               base = expression;
               attribute = "__str__";
               origin =
-                Some (Origin.create ~location:(Node.location expression) Origin.ForTypeChecking);
+                Some
+                  (Origin.create
+                     ?base:(Ast.Expression.origin expression)
+                     ~location:(Node.location expression)
+                     Origin.ResolveStrCall);
             }))
   in
   try
@@ -2714,10 +2722,10 @@ let resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map expres
     with
     | Some name when Reference.equal name (Reference.create "object.__str__") ->
         (* Call resolved to object.__str__, fallback to calling __repr__ if it exists. *)
-        "__repr__"
-    | _ -> "__str__"
+        Repr
+    | _ -> Str
   with
-  | PyrePysaLogic.UntrackedClass _ -> "__str__"
+  | PyrePysaLogic.UntrackedClass _ -> Str
 
 
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
@@ -2742,13 +2750,13 @@ let transform_special_calls
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
-      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.StrCall) in
-      let callee =
-        attribute_access
-          ~base:value
-          ~method_name:(resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value)
-          ~origin
+      let method_name, origin_kind =
+        match resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value with
+        | Str -> "__str__", Origin.StrCallToDunderStr
+        | Repr -> "__repr__", Origin.StrCallToDunderRepr
       in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location origin_kind) in
+      let callee = attribute_access ~base:value ~method_name ~origin in
       Some { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
       (* Only handle `iter` with a single argument here. *)
@@ -3913,11 +3921,15 @@ module CalleeVisitor = struct
                       =
                       let { CallCallees.call_targets; _ } =
                         let callee =
-                          let method_name =
-                            resolve_stringify_call
-                              ~pyre_in_context
-                              ~callables_to_definitions_map
-                              expression
+                          let method_name, origin_kind =
+                            match
+                              resolve_stringify_call
+                                ~pyre_in_context
+                                ~callables_to_definitions_map
+                                expression
+                            with
+                            | Str -> "__str__", Origin.FormatStringImplicitStr
+                            | Repr -> "__repr__", Origin.FormatStringImplicitRepr
                           in
                           {
                             Node.value =
@@ -3931,7 +3943,7 @@ module CalleeVisitor = struct
                                          (Origin.create
                                             ?base:(Ast.Expression.origin expression)
                                             ~location:expression_location
-                                            Origin.FormatStringImplicitStr);
+                                            origin_kind);
                                    });
                             location = expression_location;
                           }

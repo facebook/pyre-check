@@ -17,6 +17,10 @@ let attribute_access ~location ~base ~method_name ~origin =
   }
 
 
+type resolved_stringify =
+  | Str
+  | Repr
+
 let resolve_stringify_call ~resolution expression =
   let string_callee =
     Node.create_with_default_location
@@ -25,17 +29,25 @@ let resolve_stringify_call ~resolution expression =
             {
               base = expression;
               attribute = "__str__";
-              origin = Some (Origin.create ~location:Location.any Origin.ForTypeChecking);
+              origin =
+                Some
+                  (Origin.create
+                     ?base:(Ast.Expression.origin expression)
+                     ~location:(Node.location expression)
+                     Origin.ResolveStrCall);
             }))
   in
 
   try
     match Resolution.resolve_expression_to_type resolution string_callee |> Type.callable_name with
     | Some name ->
-        if Reference.equal name (Reference.create "object.__str__") then "__repr__" else "__str__"
-    | _ -> "__str__"
+        if Reference.equal name (Reference.create "object.__str__") then
+          Repr
+        else
+          Str
+    | _ -> Str
   with
-  | ClassHierarchy.Untracked _ -> "__str__"
+  | ClassHierarchy.Untracked _ -> Str
 
 
 let redirect_special_calls
@@ -48,14 +60,13 @@ let redirect_special_calls
   (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
-      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.StrCall) in
-      let callee =
-        attribute_access
-          ~location:callee_location
-          ~base:value
-          ~method_name:(resolve_stringify_call ~resolution value)
-          ~origin
+      let method_name, origin_kind =
+        match resolve_stringify_call ~resolution value with
+        | Str -> "__str__", Origin.StrCallToDunderStr
+        | Repr -> "__repr__", Origin.StrCallToDunderRepr
       in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location origin_kind) in
+      let callee = attribute_access ~location:callee_location ~base:value ~method_name ~origin in
       { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.AbsCall) in
