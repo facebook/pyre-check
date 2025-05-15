@@ -92,6 +92,7 @@ let assert_higher_order_call_graph_fixpoint
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~check_invariants:true
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
   let dependency_graph =

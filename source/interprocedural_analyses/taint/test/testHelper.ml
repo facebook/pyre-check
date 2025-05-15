@@ -739,6 +739,7 @@ let initialize
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~decorator_resolution
       ~skip_analysis_targets
+      ~check_invariants:true
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)

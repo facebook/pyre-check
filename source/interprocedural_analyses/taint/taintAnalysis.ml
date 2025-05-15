@@ -881,6 +881,7 @@ let run_taint_analysis
           ~store_shared_memory:true
           ~attribute_targets
           ~skip_analysis_targets
+          ~check_invariants:(TaintConfiguration.runtime_check_invariants ())
           ~decorators:
             (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
                callables_to_decorators_map)

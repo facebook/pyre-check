@@ -61,6 +61,7 @@ let compute_define_call_graph
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~callables_to_definitions_map:
         (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~check_invariants:true
       ~qualifier:module_name
       ~define
   in

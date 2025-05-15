@@ -455,6 +455,7 @@ val call_graph_of_define
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  check_invariants:bool ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
@@ -475,6 +476,7 @@ val call_graph_of_callable
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  check_invariants:bool ->
   callable:Target.t ->
   DefineCallGraph.t
 
@@ -661,6 +663,7 @@ module SharedMemory : sig
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     decorator_resolution:DecoratorResolution.Results.t ->
     skip_analysis_targets:Target.HashSet.t ->
+    check_invariants:bool ->
     definitions:Target.t list ->
     create_dependency_for:AllTargetsUseCase.t ->
     call_graphs

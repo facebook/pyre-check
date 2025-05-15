@@ -79,6 +79,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
           |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~callables_to_definitions_map:
           (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~check_invariants:true
         ~callable
       |> CallGraph.DefineCallGraph.all_targets
            ~use_case:CallGraph.AllTargetsUseCase.TaintAnalysisDependency
