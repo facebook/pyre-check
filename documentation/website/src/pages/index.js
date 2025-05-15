@@ -69,6 +69,32 @@ const features = [
   },
 ];
 
+function TopBanner() {
+  return (
+    <div className={styles.topBannerContainer}>
+      <div className={styles.topBanner}>
+        <div className={styles.topBannerTitle}>
+          {'📣\xa0'}
+          <Link
+            to={`https://pyrefly.org/`}
+            className={styles.topBannerTitleText}>
+            {'Check out Pyrefly'}
+          </Link>
+          {'\xa0📣'}
+          <br />
+          <Link
+            to={`https://pyrefly.org/`}
+            className={styles.topBannerTitleText}>
+            <span style={{fontSize: '0.8em'}}>
+              The next iteration of Pyre!️
+            </span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Feature({imageUrl, title, description}) {
   const imgUrl = useBaseUrl(imageUrl);
   return (
@@ -91,6 +117,7 @@ function Home() {
     <Layout
       title={`${siteConfig.title}`}
       description="A performant type-checker for Python 3.">
+      <TopBanner />
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
           <img src="img/pyre.svg" alt="Pyre logo." width="100" />
