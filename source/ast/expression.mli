@@ -412,7 +412,9 @@ and Origin : sig
     | ComparisonOperator (* `a == b` is turned into `a.__eq__(b)` *)
     | BinaryOperator (* `a + b` is turned into `a.__add__(b)` *)
     | UnaryOperator (* `-a` is turned into `a.__neg__()` *)
-    | AugmentedAssign (* `a += b` is turned into `a = a.__add__(b)` *)
+    | AugmentedAssignDunderCall (* `a += b` is turned into `a = a.__add__(b)` *)
+    | AugmentedAssignLHS (* left hand side `a` in `a = a.__add__(b)` *)
+    | AugmentedAssignRHS (* right hand side `a` in `a = a.__add__(b)` *)
     | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem (* `d[a] = b` is turned into `d.__setitem__(a, b)` *)
     | SubscriptGetItem (* `d[a]` is turned into `d.__getitem__(a)` *)
@@ -846,5 +848,7 @@ val is_operator : string -> bool
 val operator_name_to_symbol : string -> string option
 
 val origin : t -> Origin.t option
+
+val map_origin : f:(Origin.t option -> Origin.t option) -> t -> t
 
 val remove_origins : t -> t

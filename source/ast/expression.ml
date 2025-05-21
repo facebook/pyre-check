@@ -1163,7 +1163,9 @@ and Origin : sig
     | ComparisonOperator (* `a == b` is turned into `a.__eq__(b)` *)
     | BinaryOperator (* `a + b` is turned into `a.__add__(b)` *)
     | UnaryOperator (* `-a` is turned into `a.__neg__()` *)
-    | AugmentedAssign (* `a += b` is turned into `a = a.__add__(b)` *)
+    | AugmentedAssignDunderCall (* `a += b` is turned into `a = a.__add__(b)` *)
+    | AugmentedAssignLHS (* left hand side `a` in `a = a.__add__(b)` *)
+    | AugmentedAssignRHS (* right hand side `a` in `a = a.__add__(b)` *)
     | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem (* `d[a] = b` is turned into `d.__setitem__(a, b)` *)
     | SubscriptGetItem (* `d[a]` is turned into `d.__getitem__(a)` *)
@@ -1275,7 +1277,9 @@ end = struct
     | ComparisonOperator
     | BinaryOperator
     | UnaryOperator
-    | AugmentedAssign
+    | AugmentedAssignDunderCall
+    | AugmentedAssignLHS
+    | AugmentedAssignRHS
     | Qualification of string list
     | SubscriptSetItem
     | SubscriptGetItem
@@ -1374,7 +1378,7 @@ end = struct
       | ComparisonOperator
       | BinaryOperator
       | UnaryOperator
-      | AugmentedAssign
+      | AugmentedAssignDunderCall
       | SubscriptSetItem
       | SubscriptGetItem
       | ForIter
@@ -3037,6 +3041,37 @@ let origin { Node.value; _ } =
   | Expression.Slice { Slice.origin; _ } -> origin
   | Expression.Await { Await.origin; _ } -> origin
   | _ -> None
+
+
+let map_origin ~f ({ Node.value; location } as expression) =
+  match value with
+  | Expression.Name (Name.Attribute ({ Name.Attribute.origin; _ } as attribute_access)) ->
+      Expression.Name (Name.Attribute { attribute_access with Name.Attribute.origin = f origin })
+      |> Node.create ~location
+  | Expression.Call ({ Call.origin; _ } as call) ->
+      Expression.Call { call with Call.origin = f origin } |> Node.create ~location
+  | Expression.ComparisonOperator ({ ComparisonOperator.origin; _ } as comparison) ->
+      Expression.ComparisonOperator { comparison with ComparisonOperator.origin = f origin }
+      |> Node.create ~location
+  | Expression.BinaryOperator ({ BinaryOperator.origin; _ } as binary) ->
+      Expression.BinaryOperator { binary with BinaryOperator.origin = f origin }
+      |> Node.create ~location
+  | Expression.UnaryOperator ({ UnaryOperator.origin; _ } as unary) ->
+      Expression.UnaryOperator { unary with UnaryOperator.origin = f origin }
+      |> Node.create ~location
+  | Expression.BooleanOperator ({ BooleanOperator.origin; _ } as boolean) ->
+      Expression.BooleanOperator { boolean with BooleanOperator.origin = f origin }
+      |> Node.create ~location
+  | Expression.Subscript ({ Subscript.origin; _ } as subscript) ->
+      Expression.Subscript { subscript with Subscript.origin = f origin } |> Node.create ~location
+  | Expression.WalrusOperator ({ WalrusOperator.origin; _ } as walrus) ->
+      Expression.WalrusOperator { walrus with WalrusOperator.origin = f origin }
+      |> Node.create ~location
+  | Expression.Slice ({ Slice.origin; _ } as slice) ->
+      Expression.Slice { slice with Slice.origin = f origin } |> Node.create ~location
+  | Expression.Await ({ Await.origin; _ } as await) ->
+      Expression.Await { await with Await.origin = f origin } |> Node.create ~location
+  | _ -> expression
 
 
 let negate ({ Node.location; value } as node) =

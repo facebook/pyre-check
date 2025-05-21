@@ -110,7 +110,14 @@ module AugmentedAssign = struct
   let lower_to_call ~location ~callee_location { target; operator; value } =
     let open Expression in
     let arguments = [{ Call.Argument.name = None; value }] in
-    let origin = Some (Origin.create ~location Origin.AugmentedAssign) in
+    let origin = Some (Origin.create ~location Origin.AugmentedAssignDunderCall) in
+    let target =
+      map_origin
+        ~f:(fun origin ->
+          Some
+            (Origin.create ?base:origin ~location:(Node.location target) Origin.AugmentedAssignRHS))
+        target
+    in
     {
       Call.callee =
         {

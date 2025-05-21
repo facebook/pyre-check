@@ -2963,6 +2963,16 @@ let redirect_assignments statement =
             ~callee_location:target.Node.location
             augmented_assignment
         in
+        let target =
+          map_origin
+            ~f:(fun origin ->
+              Some
+                (Origin.create
+                   ?base:origin
+                   ~location:(Node.location target)
+                   Origin.AugmentedAssignLHS))
+            target
+        in
         {
           Node.location;
           value = Statement.Assign { Assign.target; annotation = None; value = Some call };
