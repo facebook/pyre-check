@@ -8353,16 +8353,17 @@ module State (Context : Context) = struct
         let post_resolution, errors = forward_statement ~resolution ~statement in
         let () =
           let (_ : unit option) = Context.error_map >>| LocalErrorMap.set ~statement_key ~errors in
-          match post_resolution with
-          | Unreachable -> ()
-          | Value post_resolution ->
-              let precondition = Resolution.type_info_store resolution in
-              let postcondition = Resolution.type_info_store post_resolution in
-              let (_ : unit option) =
-                Context.resolution_fixpoint
-                >>| TypeInfo.ForFunctionBody.set ~statement_key ~precondition ~postcondition
-              in
-              ()
+          let precondition = Resolution.type_info_store resolution in
+          let postcondition =
+            match post_resolution with
+            | Unreachable -> TypeInfo.Store.empty
+            | Value post_resolution -> Resolution.type_info_store post_resolution
+          in
+          let (_ : unit option) =
+            Context.resolution_fixpoint
+            >>| TypeInfo.ForFunctionBody.set ~statement_key ~precondition ~postcondition
+          in
+          ()
         in
         post_resolution
 
