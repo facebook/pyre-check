@@ -1689,14 +1689,24 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs ~add_on_tito breadcrumbs) taint_tree
 
 
-  let add_local_type_breadcrumbs ~pyre_in_context ~expression taint =
+  let add_local_type_breadcrumbs
+      ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~callable
+      ~expression
+      taint
+    =
     let open Ast in
     match expression.Node.value with
     | Expression.Expression.Name (Expression.Name.Identifier _) ->
         (* Add scalar breadcrumbs only for variables, for performance reasons *)
         let type_breadcrumbs =
           let type_ =
-            Interprocedural.CallResolution.resolve_ignoring_untracked ~pyre_in_context expression
+            Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_type
+              type_of_expression_shared_memory
+              ~pyre_in_context
+              ~callable
+              expression
           in
           Features.type_breadcrumbs_from_annotation
             ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)

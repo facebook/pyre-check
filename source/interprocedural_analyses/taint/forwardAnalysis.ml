@@ -2727,6 +2727,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ForwardState.read ~root ~path:[] state.taint
             |> ForwardState.Tree.add_local_type_breadcrumbs
                  ~pyre_in_context
+                 ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+                 ~callable:FunctionContext.callable
                  ~expression:{ Node.value; location }
           in
           ( local_taint
@@ -2853,7 +2855,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       state
     =
     let taint =
-      ForwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression:target taint
+      ForwardState.Tree.add_local_type_breadcrumbs
+        ~pyre_in_context
+        ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+        ~callable:FunctionContext.callable
+        ~expression:target
+        taint
     in
     match value with
     | Starred (Once target | Twice target) ->

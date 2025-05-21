@@ -2395,6 +2395,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint =
             BackwardState.Tree.add_local_type_breadcrumbs
               ~pyre_in_context
+              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+              ~callable:FunctionContext.callable
               ~expression:{ Node.value; location }
               taint
           in
@@ -2586,7 +2588,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       compute_assignment_taint ~pyre_in_context target state
       |> fst
       |> read_tree fields
-      |> BackwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression:target
+      |> BackwardState.Tree.add_local_type_breadcrumbs
+           ~pyre_in_context
+           ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+           ~callable:FunctionContext.callable
+           ~expression:target
     in
     let state =
       if weak then (* Weak updates do not remove the taint. *)
