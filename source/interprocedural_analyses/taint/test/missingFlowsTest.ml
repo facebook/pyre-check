@@ -97,6 +97,7 @@ let assert_fixpoint
           get_define_call_graph;
           global_constants =
             GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only;
+          type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create ();
           decorator_inlined = false;
           callables_to_definitions_map =
             Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;

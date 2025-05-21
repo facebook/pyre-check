@@ -298,6 +298,12 @@ module StringFormatCallees : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+module ExpressionIdentifier : sig
+  type t [@@deriving compare, sexp, hash, show]
+
+  val of_expression : Expression.t -> t
+end
+
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
   type t = {

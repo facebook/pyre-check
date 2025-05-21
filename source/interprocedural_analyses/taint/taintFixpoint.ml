@@ -29,6 +29,7 @@ module Context = struct
     get_define_call_graph:
       Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
+    type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
     (* Whether decorators are inlined during pre-processing. *)
     decorator_inlined: bool;
     callables_to_definitions_map: Interprocedural.Target.CallablesSharedMemory.ReadOnly.t;
@@ -117,6 +118,7 @@ module Analysis = struct
       ~callables_to_definitions_map
       ~class_interval_graph
       ~global_constants
+      ~type_of_expression_shared_memory
       ~get_define_call_graph
       ~qualifier
       ~callable
@@ -155,6 +157,7 @@ module Analysis = struct
             ~callables_to_definitions_map
             ~class_interval_graph
             ~global_constants
+            ~type_of_expression_shared_memory
             ~qualifier
             ~callable
             ~define
@@ -174,6 +177,7 @@ module Analysis = struct
             ~callables_to_definitions_map
             ~class_interval_graph
             ~global_constants
+            ~type_of_expression_shared_memory
             ~qualifier
             ~callable
             ~define
@@ -217,6 +221,7 @@ module Analysis = struct
           class_interval_graph;
           get_define_call_graph;
           global_constants;
+          type_of_expression_shared_memory;
           decorator_inlined;
           callables_to_definitions_map;
         }
@@ -268,6 +273,7 @@ module Analysis = struct
         ~pyre_api
         ~class_interval_graph
         ~global_constants
+        ~type_of_expression_shared_memory
         ~get_define_call_graph
         ~qualifier
         ~callable

@@ -95,6 +95,7 @@ let assert_taint ?models ?models_source ~context source expect =
     in
     let cfg = Cfg.create define.value in
     let taint_configuration = TaintConfiguration.Heap.default in
+    let type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create () in
     let forward, _errors, _ =
       ForwardAnalysis.run
         ?profiler:None
@@ -107,6 +108,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
+        ~type_of_expression_shared_memory
         ~qualifier
         ~callable:call_target
         ~define

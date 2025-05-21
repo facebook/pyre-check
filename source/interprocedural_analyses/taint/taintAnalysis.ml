@@ -1095,6 +1095,7 @@ let run_taint_analysis
           class_interval_graph = class_interval_graph_shared_memory;
           get_define_call_graph;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
+          type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create ();
           decorator_inlined = inline_decorators || not higher_order_call_graph;
           callables_to_definitions_map =
             Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;

@@ -621,6 +621,8 @@ module type TAINT_DOMAIN = sig
   (* Add trace info at call-site *)
   val apply_call
     :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+    type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
+    caller:Target.t ->
     call_site:CallSite.t ->
     location:Location.t ->
     callee:Target.t ->
@@ -1259,6 +1261,8 @@ end = struct
 
   let apply_call
       ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
       ~call_site
       ~location
       ~callee
@@ -1283,7 +1287,12 @@ end = struct
           ~f:Features.ViaFeatureSet.add
           ~init:Features.ViaFeatureSet.bottom
           local_taint
-        |> Features.expand_via_features ~pyre_in_context ~callee ~arguments
+        |> Features.expand_via_features
+             ~pyre_in_context
+             ~type_of_expression_shared_memory
+             ~caller
+             ~callee
+             ~arguments
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
       let local_first_indices =
@@ -1575,6 +1584,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let apply_call
       ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
       ~call_site
       ~location
       ~callee
@@ -1589,6 +1600,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ( path,
         Taint.apply_call
           ~pyre_in_context
+          ~type_of_expression_shared_memory
+          ~caller
           ~call_site
           ~location
           ~callee

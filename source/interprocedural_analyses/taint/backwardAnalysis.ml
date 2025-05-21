@@ -72,6 +72,8 @@ module type FUNCTION_CONTEXT = sig
   val triggered_sinks : Issue.TriggeredSinkForBackward.t
 
   val caller_class_interval : Interprocedural.ClassIntervalSet.t
+
+  val type_of_expression_shared_memory : Interprocedural.TypeOfExpressionSharedMemory.t
 end
 
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
@@ -432,6 +434,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       TaintProfiler.track_model_fetch ~profiler ~analysis:Backward ~call_target:target ~f:(fun () ->
           CallModel.at_callsite
             ~pyre_in_context
+            ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+            ~caller:FunctionContext.callable
             ~get_callee_model:FunctionContext.get_callee_model
             ~call_target:target
             ~arguments)
@@ -457,11 +461,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let global_sink =
         GlobalModel.from_expression
           ~pyre_in_context
+          ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+          ~caller:FunctionContext.callable
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
         |> GlobalModel.get_sinks
+             ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+             ~caller:FunctionContext.callable
         |> SinkTreeWithHandle.join
       in
       let taint_from_state =
@@ -644,6 +652,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         track_apply_call_step ApplyCallForArgumentSinks (fun () ->
             CallModel.sink_trees_of_argument
               ~pyre_in_context
+              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+              ~caller:FunctionContext.callable
               ~transform_non_leaves
               ~model:taint_model
               ~call_site
@@ -1134,6 +1144,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let global_model =
             GlobalModel.from_expression
               ~pyre_in_context
+              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+              ~caller:FunctionContext.callable
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~expression
@@ -1797,11 +1809,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let global_taint =
             GlobalModel.from_expression
               ~pyre_in_context
+              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+              ~caller:FunctionContext.callable
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~expression:base
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
+                 ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+                 ~caller:FunctionContext.callable
             |> SinkTreeWithHandle.join
           in
           BackwardState.Tree.join global_taint (get_taint access_path state)
@@ -2188,6 +2204,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       CallModel.StringFormatCall.apply_call
         ~callee:call_target.CallGraph.CallTarget.target
         ~pyre_in_context
+        ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+        ~caller:FunctionContext.callable
         ~call_site
         ~location
         FunctionContext.string_combine_partial_sink_tree
@@ -2196,6 +2214,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       string_literal
       |> CallModel.StringFormatCall.implicit_string_literal_sinks
            ~pyre_in_context
+           ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+           ~caller:FunctionContext.callable
            ~implicit_sinks:FunctionContext.taint_configuration.implicit_sinks
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.join taint
@@ -2521,11 +2541,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let global_taint =
             GlobalModel.from_expression
               ~pyre_in_context
+              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+              ~caller:FunctionContext.callable
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~expression:target
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
+                 ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+                 ~caller:FunctionContext.callable
             |> SinkTreeWithHandle.join
           in
           BackwardState.Tree.join local_taint global_taint
@@ -2585,6 +2609,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let target_global_model =
           GlobalModel.from_expression
             ~pyre_in_context
+            ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+            ~caller:FunctionContext.callable
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
             ~expression:target
@@ -2650,6 +2676,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let return_sink =
           CallModel.return_sink
             ~pyre_in_context
+            ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+            ~caller:FunctionContext.callable
             ~location
             ~callee:FunctionContext.callable
             ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint
@@ -2977,6 +3005,7 @@ let run
     ~callables_to_definitions_map
     ~class_interval_graph
     ~global_constants
+    ~type_of_expression_shared_memory
     ~qualifier
     ~callable
     ~define
@@ -3041,6 +3070,8 @@ let run
 
 
     let string_combine_partial_sink_tree = string_combine_partial_sink_tree
+
+    let type_of_expression_shared_memory = type_of_expression_shared_memory
   end
   in
   let module State = State (FunctionContext) in

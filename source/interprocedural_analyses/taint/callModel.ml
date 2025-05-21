@@ -17,7 +17,14 @@ open Interprocedural
 open Domains
 open Expression
 
-let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
+let at_callsite
+    ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~caller
+    ~get_callee_model
+    ~call_target
+    ~arguments
+  =
   match get_callee_model call_target with
   | None -> Model.obscure_model
   | Some model ->
@@ -27,7 +34,12 @@ let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
         let expand_frame_via_features frame =
           let breadcrumbs =
             Frame.get Frame.Slots.ViaFeature frame
-            |> Features.expand_via_features ~pyre_in_context ~callee:call_target ~arguments
+            |> Features.expand_via_features
+                 ~pyre_in_context
+                 ~type_of_expression_shared_memory
+                 ~caller
+                 ~callee:call_target
+                 ~arguments
           in
           Frame.add_propagated_breadcrumbs breadcrumbs frame
         in
@@ -344,6 +356,8 @@ let tito_intervals tito_taint =
 
 let sink_trees_of_argument
     ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~caller
     ~transform_non_leaves
     ~model:{ Model.backward; _ }
     ~call_site
@@ -360,6 +374,8 @@ let sink_trees_of_argument
       BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
       |> BackwardState.Tree.apply_call
            ~pyre_in_context
+           ~type_of_expression_shared_memory
+           ~caller
            ~call_site
            ~location
            ~callee:target
@@ -384,6 +400,8 @@ let sink_trees_of_argument
 
 let source_tree_of_argument
     ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~caller
     ~model:{ Model.forward; _ }
     ~call_site
     ~location
@@ -397,6 +415,8 @@ let source_tree_of_argument
   ForwardState.read ~root ~path:[] forward.generations
   |> ForwardState.Tree.apply_call
        ~pyre_in_context
+       ~type_of_expression_shared_memory
+       ~caller
        ~call_site
        ~location
        ~callee:target
@@ -519,7 +539,13 @@ module StringFormatCall = struct
     location: Location.t;
   }
 
-  let implicit_string_literal_sources ~pyre_in_context ~implicit_sources { value; location } =
+  let implicit_string_literal_sources
+      ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
+      ~implicit_sources
+      { value; location }
+    =
     let literal_string_regular_expressions = implicit_sources.TaintConfiguration.literal_strings in
     if String.is_empty value || List.is_empty literal_string_regular_expressions then
       ForwardTaint.bottom
@@ -529,6 +555,8 @@ module StringFormatCall = struct
           ForwardTaint.singleton CallInfo.declaration kind Frame.initial
           |> ForwardTaint.apply_call
                ~pyre_in_context
+               ~type_of_expression_shared_memory
+               ~caller
                ~call_site:(CallSite.create location)
                ~location
                ~callee:Target.ArtificialTargets.str_literal
@@ -548,7 +576,13 @@ module StringFormatCall = struct
         ~init:ForwardTaint.bottom
 
 
-  let implicit_string_literal_sinks ~pyre_in_context ~implicit_sinks { value; location } =
+  let implicit_string_literal_sinks
+      ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
+      ~implicit_sinks
+      { value; location }
+    =
     let literal_string_regular_expressions =
       implicit_sinks.TaintConfiguration.literal_string_sinks
     in
@@ -560,6 +594,8 @@ module StringFormatCall = struct
           BackwardTaint.singleton CallInfo.declaration sink_kind Frame.initial
           |> BackwardTaint.apply_call
                ~pyre_in_context
+               ~type_of_expression_shared_memory
+               ~caller
                ~call_site:(CallSite.create location)
                ~location
                ~callee:Target.ArtificialTargets.str_literal
@@ -592,9 +628,18 @@ module StringFormatCall = struct
     CallGraph.DefineCallGraph.resolve_string_format call_graph_of_define ~location
 
 
-  let apply_call ~callee ~pyre_in_context ~call_site ~location =
+  let apply_call
+      ~callee
+      ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
+      ~call_site
+      ~location
+    =
     BackwardState.Tree.apply_call
       ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
       ~call_site
       ~location
       ~callee
@@ -651,11 +696,20 @@ let arguments_for_string_format arguments =
 
 
 (* At a call site, extract the returned sink from `sink_model` of `callee` *)
-let return_sink ~pyre_in_context ~location ~callee ~sink_model =
+let return_sink
+    ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~caller
+    ~location
+    ~callee
+    ~sink_model
+  =
   let taint =
     BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] sink_model
     |> BackwardState.Tree.apply_call
          ~pyre_in_context
+         ~type_of_expression_shared_memory
+         ~caller
          ~call_site:(CallSite.create location)
          ~location
          ~callee

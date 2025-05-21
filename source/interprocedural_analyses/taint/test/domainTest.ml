@@ -24,9 +24,16 @@ let test_partition_call_map context =
       { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
     |> Interprocedural.Target.from_regular
   in
+  let type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create () in
+  let caller =
+    Interprocedural.Target.from_regular
+      (Interprocedural.Target.Regular.Function { name = "test.foo"; kind = Normal })
+  in
   let call_taint1 =
     ForwardTaint.apply_call
       ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
       ~call_site:CallSite.any
       ~location:Location.any
       ~callee
@@ -41,6 +48,8 @@ let test_partition_call_map context =
   let call_taint2 =
     ForwardTaint.apply_call
       ~pyre_in_context
+      ~type_of_expression_shared_memory
+      ~caller
       ~call_site:CallSite.any
       ~location:Location.any
       ~callee
