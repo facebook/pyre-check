@@ -1,6 +1,8 @@
 @generated
 Overrides
 object.__init__ (override) -> [object.__init__ (method) properties.Class.__init__ (override) properties.PropertyCallable.__init__ (override) properties.PropertyCallableReturn.__init__ (override) properties.PropertySetterInConstructor.__init__ (override) properties.RegularAttribute.__init__ (override) properties.SetterMutatesValue.__init__ (override)]
+properties.A.foo (override) -> [properties.A.foo (method)]
+properties.Base.foo (override) -> [properties.A.foo (override) properties.Base.foo (method)]
 properties.Class.__init__ (override) -> [properties.Class.__init__ (method)]
 properties.Class.my_property (override) -> [properties.Class.my_property (method) properties.OtherDerived.my_property (override)]
 properties.Class.uses_property (override) -> [properties.Class.uses_property (method) properties.Derived.uses_property (override)]

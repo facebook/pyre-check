@@ -1090,7 +1090,10 @@ let check_module_TESTING_ONLY
   |> List.map ~f:(fun define ->
          check_define
            ~resolution
-           ~local_annotations:(local_annotations_for_define (Node.value define |> Define.name))
+           ~local_annotations:
+             (local_annotations_for_define
+                (Node.value define |> Define.name)
+                (Node.location define))
            ~qualifier
            define)
   |> List.concat

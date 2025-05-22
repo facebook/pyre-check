@@ -2731,7 +2731,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           PyrePysaEnvironment.InContext.create_at_statement_key
             pyre_api
             ~define_name:FunctionContext.define_name
-            ~define:(Ast.Node.value FunctionContext.definition)
+            ~define:FunctionContext.definition
             ~statement_key
         in
         analyze_statement ~pyre_in_context state statement)

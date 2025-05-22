@@ -29,7 +29,7 @@
             ],
             "tito_positions": [ { "line": 280, "start": 32, "end": 46 } ],
             "origin": { "line": 280, "start": 32, "end": 46 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false
           }
         ]
@@ -46,7 +46,7 @@
               }
             ],
             "origin": { "line": 281, "start": 19, "end": 23 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false,
             "call_site": "281:8-281:24"
           }
@@ -99,7 +99,7 @@
               { "line": 269, "start": 19, "end": 23 }
             ],
             "origin": { "line": 268, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false
           }
         ]
@@ -116,7 +116,7 @@
               }
             ],
             "origin": { "line": 269, "start": 19, "end": 35 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false,
             "call_site": "269:8-269:36"
           }
@@ -163,7 +163,7 @@
               }
             ],
             "origin": { "line": 71, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": false
           }
         ]
@@ -188,7 +188,7 @@
               "port": "formal(value, position=1)",
               "call_site": "71:8-71:24"
             },
-            "caller_interval": [ { "lower": 27, "upper": 30 } ],
+            "caller_interval": [ { "lower": 31, "upper": 34 } ],
             "is_self_call": true
           }
         ]
@@ -699,7 +699,7 @@
               "port": "formal(y, position=1)",
               "call_site": "186:11-186:40"
             },
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "receiver_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false
           }
         ]
@@ -869,7 +869,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
         ]
@@ -905,7 +905,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 27, "upper": 30 } ],
+            "caller_interval": [ { "lower": 31, "upper": 34 } ],
             "is_self_call": false
           }
         ]
@@ -932,7 +932,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
         ]
@@ -961,7 +961,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": false
           }
         ]
@@ -980,7 +980,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 27, "upper": 30 } ],
+            "caller_interval": [ { "lower": 31, "upper": 34 } ],
             "is_self_call": false
           }
         ]
@@ -1064,7 +1064,7 @@
               }
             ],
             "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": false
           }
         ]
@@ -1164,7 +1164,7 @@
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 2, "upper": 7 } ],
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false
           }
         ]
@@ -1185,7 +1185,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 29, "start": 19, "end": 24 } ],
             "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 7 } ],
+              "caller_interval": [ { "lower": 6, "upper": 11 } ],
               "is_self_call": false
             }
           }
@@ -1215,7 +1215,7 @@
               }
             ],
             "origin": { "line": 20, "start": 23, "end": 37 },
-            "caller_interval": [ { "lower": 2, "upper": 7 } ],
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false
           }
         ]
@@ -1236,7 +1236,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 21, "start": 15, "end": 19 } ],
             "origin": { "line": 20, "start": 23, "end": 37 },
-            "caller_interval": [ { "lower": 2, "upper": 7 } ],
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false
           },
           {
@@ -1252,7 +1252,7 @@
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": true
           }
         ]
@@ -1281,7 +1281,7 @@
               }
             ],
             "origin": { "line": 24, "start": 25, "end": 39 },
-            "caller_interval": [ { "lower": 2, "upper": 7 } ],
+            "caller_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false
           }
         ]
@@ -1302,7 +1302,7 @@
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": true
           }
         ]
@@ -1323,7 +1323,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 25, "start": 15, "end": 19 } ],
             "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 7 } ],
+              "caller_interval": [ { "lower": 6, "upper": 11 } ],
               "is_self_call": false
             }
           }
@@ -1377,7 +1377,7 @@
               }
             ],
             "origin": { "line": 36, "start": 23, "end": 37 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
           }
         ]
@@ -1398,7 +1398,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 37, "start": 15, "end": 19 } ],
             "origin": { "line": 36, "start": 23, "end": 37 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
           }
         ]
@@ -1427,7 +1427,7 @@
               }
             ],
             "origin": { "line": 40, "start": 25, "end": 39 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
           }
         ]
@@ -1448,7 +1448,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 41, "start": 15, "end": 19 } ],
             "tito": {
-              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "caller_interval": [ { "lower": 7, "upper": 8 } ],
               "is_self_call": false
             }
           }
@@ -1476,7 +1476,7 @@
               }
             ],
             "origin": { "line": 81, "start": 19, "end": 24 },
-            "caller_interval": [ { "lower": 27, "upper": 30 } ],
+            "caller_interval": [ { "lower": 31, "upper": 34 } ],
             "is_self_call": false,
             "call_site": "81:8-81:25"
           }
@@ -1506,7 +1506,7 @@
               }
             ],
             "origin": { "line": 47, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
         ]
@@ -1535,7 +1535,7 @@
               }
             ],
             "origin": { "line": 50, "start": 25, "end": 39 },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": false
           }
         ]
@@ -1556,7 +1556,7 @@
               "resolves_to": [ "properties.OtherDerived.my_property" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "caller_interval": [ { "lower": 9, "upper": 10 } ],
             "is_self_call": true
           }
         ]
@@ -1611,7 +1611,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 181, "start": 38, "end": 52 } ],
             "origin": { "line": 181, "start": 38, "end": 52 },
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
             "is_self_call": false
           }
         ]
@@ -1630,7 +1630,7 @@
               }
             ],
             "origin": { "line": 180, "start": 19, "end": 25 },
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
             "is_self_call": false,
             "call_site": "180:8-180:26"
           }
@@ -1658,7 +1658,7 @@
               }
             ],
             "origin": { "line": 170, "start": 19, "end": 20 },
-            "caller_interval": [ { "lower": 16, "upper": 17 } ],
+            "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
             "call_site": "170:8-170:21"
           }
@@ -1676,7 +1676,7 @@
               }
             ],
             "origin": { "line": 169, "start": 19, "end": 25 },
-            "caller_interval": [ { "lower": 16, "upper": 17 } ],
+            "caller_interval": [ { "lower": 20, "upper": 21 } ],
             "is_self_call": false,
             "call_site": "169:8-169:26"
           }
@@ -1730,7 +1730,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 147, "start": 17, "end": 18 } ],
             "tito": {
-              "caller_interval": [ { "lower": 18, "upper": 19 } ],
+              "caller_interval": [ { "lower": 22, "upper": 23 } ],
               "is_self_call": false
             }
           }
@@ -1850,7 +1850,7 @@
             ],
             "tito_positions": [ { "line": 280, "start": 32, "end": 46 } ],
             "origin": { "line": 280, "start": 32, "end": 46 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false
           }
         ]
@@ -1873,7 +1873,7 @@
             ],
             "tito_positions": [ { "line": 280, "start": 8, "end": 12 } ],
             "origin": { "line": 281, "start": 19, "end": 23 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false,
             "call_site": "281:8-281:24"
           }
@@ -1905,7 +1905,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 268, "start": 27, "end": 41 } ],
             "origin": { "line": 268, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false
           }
         ]
@@ -1926,7 +1926,7 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 269, "start": 19, "end": 23 } ],
             "origin": { "line": 269, "start": 19, "end": 35 },
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "caller_interval": [ { "lower": 24, "upper": 25 } ],
             "is_self_call": false,
             "call_site": "269:8-269:36"
           }
@@ -2027,7 +2027,7 @@
               }
             ],
             "origin": { "line": 60, "start": 19, "end": 23 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": false,
             "call_site": "60:8-60:24"
           }
@@ -2059,7 +2059,7 @@
               }
             ],
             "origin": { "line": 64, "start": 20, "end": 24 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": false,
             "call_site": "64:4-65:12"
           }
@@ -2114,7 +2114,7 @@
               }
             ],
             "origin": { "line": 68, "start": 15, "end": 31 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": true
           }
         ]
@@ -2140,7 +2140,7 @@
               "port": "formal(self, position=0)",
               "call_site": "68:15-68:31"
             },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": true
           }
         ]
@@ -2173,7 +2173,7 @@
             ],
             "tito_positions": [ { "line": 71, "start": 27, "end": 41 } ],
             "origin": { "line": 71, "start": 27, "end": 41 },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": false
           },
           {
@@ -2186,7 +2186,7 @@
               "port": "formal(self, position=0)",
               "call_site": "71:8-71:24"
             },
-            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "caller_interval": [ { "lower": 30, "upper": 35 } ],
             "is_self_call": true
           }
         ]

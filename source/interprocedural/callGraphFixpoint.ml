@@ -100,18 +100,14 @@ module CallGraphAnalysis = struct
       ~previous_model:_
       ~get_callee_model
     =
-    let {
-      Target.CallablesSharedMemory.DefineAndQualifier.qualifier;
-      define = { Ast.Node.value = define; _ };
-    }
-      =
+    let { Target.CallablesSharedMemory.DefineAndQualifier.qualifier; define } =
       callable
       |> Target.strip_parameters
       |> Target.CallablesSharedMemory.ReadOnly.get_define callables_to_definitions_map
       |> Option.value_exn
            ~message:(Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable)
     in
-    if Ast.Statement.Define.is_stub define then
+    if Ast.Statement.Define.is_stub (Ast.Node.value define) then
       (* Skip analyzing stubs, which do not have initial call graphs. Otherwise we would fail to get
          their initial call graphs below, when analyzing them in the next iteration. *)
       { AnalyzeDefineResult.result = (); model = empty_model; additional_dependencies = [] }
@@ -125,7 +121,7 @@ module CallGraphAnalysis = struct
              ~message:(Format.asprintf "Missing call graph for `%a`" Target.pp callable)
       in
       let profiler =
-        if Ast.Statement.Define.dump_perf_higher_order_call_graph define then
+        if Ast.Statement.Define.dump_perf_higher_order_call_graph (Ast.Node.value define) then
           CallGraphProfiler.start ~enable_perf:false ~callable ()
         else
           CallGraphProfiler.disabled
@@ -174,7 +170,7 @@ module CallGraphAnalysis = struct
                |> Target.strip_parameters
                |> Target.CallablesSharedMemory.ReadOnly.mem callables_to_definitions_map)
       in
-      if CallGraph.debug_higher_order_call_graph define then (
+      if CallGraph.debug_higher_order_call_graph (Ast.Node.value define) then (
         Log.dump
           "Returned callables for `%a`: `%a`"
           Target.pp_pretty_with_kind
@@ -184,7 +180,9 @@ module CallGraphAnalysis = struct
         Log.dump
           "Additional dependencies for `%a`: `%a`"
           Ast.Reference.pp
-          (Analysis.PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define)
+          (Analysis.PyrePysaLogic.qualified_name_of_define
+             ~module_name:qualifier
+             (Ast.Node.value define))
           Target.Set.pp_pretty_with_kind
           additional_dependencies);
       {

@@ -234,16 +234,17 @@ module ReadOnly = struct
     |> Option.value ~default:[]
 
 
-  let get_local_annotations environment ?dependency reference =
-    get ?dependency environment reference >>= TypeCheck.CheckResult.local_annotations
+  let get_local_annotations environment ?dependency define_name define_location =
+    get ?dependency environment define_name
+    >>= TypeCheck.CheckResult.local_annotations ~define_location
 
 
   let get_callees environment ?dependency reference =
     get ?dependency environment reference >>= TypeCheck.CheckResult.callees
 
 
-  let get_or_recompute_local_annotations environment name =
-    match get_local_annotations environment name with
+  let get_or_recompute_local_annotations environment ?dependency define_name define_location =
+    match get_local_annotations ?dependency environment define_name define_location with
     | Some _ as local_annotations -> local_annotations
     | None ->
         (* Local annotations not preserved in shared memory in a standard pyre server (they can be,
@@ -254,7 +255,11 @@ module ReadOnly = struct
         let type_check_controls =
           get_environment_controls environment |> EnvironmentControls.type_check_controls
         in
-        TypeCheck.compute_local_annotations ~type_check_controls ~global_resolution name
+        TypeCheck.compute_local_annotations
+          ~type_check_controls
+          ~global_resolution
+          ~define_name
+          ~define_location
         >>| fun (local_annotations, _expression_types) -> local_annotations
 end
 

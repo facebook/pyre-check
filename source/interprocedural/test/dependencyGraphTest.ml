@@ -435,14 +435,13 @@ let test_type_collection context =
       in
       source, environment
     in
-    let defines =
-      Preprocessing.defines ~include_toplevels:true source
-      |> List.map ~f:(fun { Node.value; _ } -> value)
+    let defines = Preprocessing.defines ~include_toplevels:true source in
+    let ({ Node.value = { Define.body = statements; _ }; _ } as define) = List.nth_exn defines 2 in
+    let define_name =
+      FunctionDefinition.qualified_name_of_define ~module_name (Node.value define)
     in
-    let ({ Define.body = statements; _ } as define) = List.nth_exn defines 2 in
-    let define_name = FunctionDefinition.qualified_name_of_define ~module_name define in
     let lookup =
-      TypeEnvironment.ReadOnly.get_local_annotations environment define_name
+      TypeEnvironment.ReadOnly.get_local_annotations environment define_name (Node.location define)
       |> fun value -> Option.value_exn value
     in
     let test_expect (node_id, statement_index, test_expression, expected_type) =

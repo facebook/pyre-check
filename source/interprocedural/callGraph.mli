@@ -463,7 +463,7 @@ val call_graph_of_define
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   check_invariants:bool ->
   qualifier:Reference.t ->
-  define:Ast.Statement.Define.t ->
+  define:Ast.Statement.Define.t Node.t ->
   DefineCallGraph.t
 
 val redirect_expressions
@@ -542,7 +542,7 @@ val higher_order_call_graph_of_define
   called_when_parameter:Target.HashSet.t ->
   callable:Target.t option ->
   qualifier:Reference.t ->
-  define:Ast.Statement.Define.t ->
+  define:Ast.Statement.Define.t Node.t ->
   initial_state:HigherOrderCallGraph.State.t ->
   get_callee_model:(Target.t -> HigherOrderCallGraph.t option) ->
   profiler:CallGraphProfiler.t ->

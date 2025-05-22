@@ -1158,3 +1158,52 @@ Higher order call graphs
     }
   }
 }
+{
+  "callable": "properties.TestTypeInferenceInSetter.my_property@setter",
+  "returned_callables": [],
+  "calls": {
+    "303:12-303:23": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "properties.A.foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.A"
+            }
+          ]
+        }
+      }
+    },
+    "302:11-302:31": {
+      "isinstance": {
+        "call": {
+          "calls": [
+            {
+              "target": "isinstance",
+              "index": 0,
+              "return_type": [ "float", "integer", "boolean" ]
+            }
+          ]
+        }
+      }
+    },
+    "301:8-301:19": {
+      "foo": {
+        "call": {
+          "calls": [
+            {
+              "target": "Overrides{properties.Base.foo}",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "properties.Base"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -692,6 +692,7 @@ let global_leak_errors ~type_environment ~qualifier define =
       TypeEnvironment.TypeEnvironmentReadOnly.get_or_recompute_local_annotations
         type_environment
         (Node.value define |> Define.name)
+        (Node.location define)
 
 
     let error_map = LocalErrorMap.empty ()

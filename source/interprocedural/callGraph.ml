@@ -4345,7 +4345,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val callees_at_location : DefineCallGraph.t ref (* This can be mutated. *)
 
-  val define : Ast.Statement.Define.t
+  val define : Ast.Statement.Define.t Node.t
 end) =
 struct
   include PyrePysaLogic.Fixpoint.Make (struct
@@ -4542,7 +4542,7 @@ module HigherOrderCallGraph = struct
 
     val debug : bool
 
-    val define : Ast.Statement.Define.t
+    val define : Ast.Statement.Define.t Node.t
 
     val define_name : Reference.t
 
@@ -4569,8 +4569,8 @@ module HigherOrderCallGraph = struct
   end) =
   struct
     let self_variable =
-      if Ast.Statement.Define.is_method Context.define then
-        let { Ast.Statement.Define.signature = { parameters; _ }; _ } = Context.define in
+      if Ast.Statement.Define.is_method (Node.value Context.define) then
+        let { Ast.Statement.Define.signature = { parameters; _ }; _ } = Node.value Context.define in
         match TaintAccessPath.normalize_parameters parameters with
         | { root = TaintAccessPath.Root.PositionalParameter { position = 0; _ }; qualified_name; _ }
           :: _ ->
@@ -5680,11 +5680,13 @@ let higher_order_call_graph_of_define
 
     let get_callee_model = get_callee_model
 
-    let debug = debug_higher_order_call_graph define
+    let debug = debug_higher_order_call_graph (Node.value define)
 
     let define = define
 
-    let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define
+    let define_name =
+      PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
+
 
     let callable = callable
 
@@ -5709,14 +5711,16 @@ let higher_order_call_graph_of_define
     ~debug:Context.debug
     "Building higher order call graph of `%a` with initial state `%a`. Define call graph: `%a`"
     Reference.pp
-    (PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define)
+    (PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define))
     HigherOrderCallGraph.State.pp
     initial_state
     DefineCallGraph.pp
     define_call_graph;
   let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (Context) in
   let returned_callables =
-    Fixpoint.Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:initial_state
+    Fixpoint.Fixpoint.forward
+      ~cfg:(PyrePysaLogic.Cfg.create (Node.value define))
+      ~initial:initial_state
     |> Fixpoint.Fixpoint.exit
     >>| Fixpoint.get_returned_callables
     |> Option.value ~default:CallTarget.Set.bottom
@@ -5749,7 +5753,9 @@ let call_graph_of_define
       find_missing_flows
       (Some Configuration.MissingFlowKind.Type)
   in
-  let define_name = PyrePysaLogic.qualified_name_of_define ~module_name:qualifier define in
+  let define_name =
+    PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
+  in
   let callees_at_location = ref DefineCallGraph.empty in
   let context =
     {
@@ -5760,7 +5766,9 @@ let call_graph_of_define
            Some { MissingFlowTypeAnalysis.qualifier }
         else
           None);
-      debug = Ast.Statement.Define.dump define || Ast.Statement.Define.dump_call_graph define;
+      debug =
+        Ast.Statement.Define.dump (Node.value define)
+        || Ast.Statement.Define.dump_call_graph (Node.value define);
       override_graph;
       attribute_targets;
       callables_to_definitions_map;
@@ -5781,7 +5789,7 @@ let call_graph_of_define
   let () =
     let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
     List.iter
-      define.Ast.Statement.Define.signature.parameters
+      define.Ast.Node.value.Ast.Statement.Define.signature.parameters
       ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->
         Option.iter value ~f:(fun value ->
             CalleeVisitor.visit_expression
@@ -5792,7 +5800,7 @@ let call_graph_of_define
               value))
   in
 
-  DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create define) ~initial:() |> ignore;
+  DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create (Node.value define)) ~initial:() |> ignore;
   let call_indexer = CallTarget.Indexer.create () in
   let call_graph =
     !callees_at_location
@@ -5832,7 +5840,7 @@ let call_graph_of_callable
         ~callables_to_definitions_map
         ~check_invariants
         ~qualifier
-        ~define:(Node.value define)
+        ~define
   | _ -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
 
 

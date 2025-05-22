@@ -165,7 +165,7 @@ module InContext : sig
   val create_at_statement_key
     :  ReadOnly.t ->
     define_name:Ast.Reference.t ->
-    define:Ast.Statement.Define.t ->
+    define:Ast.Statement.Define.t Ast.Node.t ->
     statement_key:int ->
     t
 

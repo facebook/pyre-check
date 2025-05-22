@@ -68,7 +68,7 @@ let assert_taint ~context source expected =
           (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
         ~check_invariants:true
         ~qualifier
-        ~define:(Ast.Node.value define)
+        ~define
     in
     let cfg = Cfg.create define.value in
     let taint_configuration = TaintConfiguration.Heap.default in

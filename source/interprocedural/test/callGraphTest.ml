@@ -70,15 +70,13 @@ let compute_define_call_graph
 
 
 let find_define_exn ~define_name ~module_name source =
-  let find_define = function
-    | { Node.value = define; _ }
-      when String.equal
-             (FunctionDefinition.qualified_name_of_define ~module_name define |> Reference.show)
-             define_name ->
-        Some define
-    | _ -> None
+  let find_define define =
+    String.equal
+      (FunctionDefinition.qualified_name_of_define ~module_name (Node.value define)
+      |> Reference.show)
+      define_name
   in
-  List.find_map_exn
+  List.find_exn
     (Preprocessing.defines ~include_nested:true ~include_toplevels:true source)
     ~f:find_define
 

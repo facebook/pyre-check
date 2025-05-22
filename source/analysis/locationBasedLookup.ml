@@ -289,63 +289,67 @@ module ExpressionTypes = struct
     in
     let coverage_data_lookup = Location.Table.create () in
     let walk_define define_name =
-      match
-        ( GlobalResolution.get_define_body_in_project global_resolution define_name,
-          TypeCheck.compute_local_annotations ~type_check_controls ~global_resolution define_name )
-      with
-      | None, _
-      | _, None ->
-          ()
-      | ( Some ({ Node.value = define; _ } as define_node),
-          Some (local_annotation_map, expressions_with_types) ) ->
-          let cfg = Cfg.create define in
-          let walk_statement node_id statement_index statement =
-            let pre_annotations, post_annotations =
-              let statement_key = [%hash: int * int] (node_id, statement_index) in
-              ( TypeInfo.ForFunctionBody.ReadOnly.get_precondition
-                  local_annotation_map
-                  ~statement_key
-                |> Option.value ~default:TypeInfo.Store.empty,
-                TypeInfo.ForFunctionBody.ReadOnly.get_postcondition
-                  local_annotation_map
-                  ~statement_key
-                |> Option.value ~default:TypeInfo.Store.empty )
-            in
-            let pre_resolution =
-              (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-              TypeCheck.resolution
-                global_resolution
-                ~type_info_store:pre_annotations
-                (module TypeCheck.DummyContext)
-            in
-            let post_resolution =
-              (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-              TypeCheck.resolution
-                global_resolution
-                ~type_info_store:post_annotations
-                (module TypeCheck.DummyContext)
-            in
-            CreateLookupsIncludingTypeAnnotationsVisitor.visit
-              {
-                CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
-                post_resolution;
-                coverage_data_lookup;
-                expressions_with_types;
-              }
-              (Source.create [statement])
-            |> ignore
-          in
-          let walk_cfg_node ~key:node_id ~data:cfg_node =
-            let statements = Cfg.Node.statements cfg_node in
-            List.iteri statements ~f:(walk_statement node_id)
-          in
-          Hashtbl.iteri cfg ~f:walk_cfg_node;
-          (* Special-case define signature processing, since this is not included in the define's
-             cfg. *)
-          let define_signature =
-            { define_node with value = Statement.Define { define with Define.body = [] } }
-          in
-          walk_statement Cfg.entry_index 0 define_signature
+      match GlobalResolution.get_define_body_in_project global_resolution define_name with
+      | None -> ()
+      | Some { Node.value = define; location = define_location } -> (
+          match
+            TypeCheck.compute_local_annotations
+              ~type_check_controls
+              ~global_resolution
+              ~define_name
+              ~define_location
+          with
+          | None -> ()
+          | Some (local_annotation_map, expressions_with_types) ->
+              let cfg = Cfg.create define in
+              let walk_statement node_id statement_index statement =
+                let pre_annotations, post_annotations =
+                  let statement_key = [%hash: int * int] (node_id, statement_index) in
+                  ( TypeInfo.ForFunctionBody.ReadOnly.get_precondition
+                      local_annotation_map
+                      ~statement_key
+                    |> Option.value ~default:TypeInfo.Store.empty,
+                    TypeInfo.ForFunctionBody.ReadOnly.get_postcondition
+                      local_annotation_map
+                      ~statement_key
+                    |> Option.value ~default:TypeInfo.Store.empty )
+                in
+                let pre_resolution =
+                  (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                  TypeCheck.resolution
+                    global_resolution
+                    ~type_info_store:pre_annotations
+                    (module TypeCheck.DummyContext)
+                in
+                let post_resolution =
+                  (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                  TypeCheck.resolution
+                    global_resolution
+                    ~type_info_store:post_annotations
+                    (module TypeCheck.DummyContext)
+                in
+                CreateLookupsIncludingTypeAnnotationsVisitor.visit
+                  {
+                    CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
+                    post_resolution;
+                    coverage_data_lookup;
+                    expressions_with_types;
+                  }
+                  (Source.create [statement])
+                |> ignore
+              in
+              let walk_cfg_node ~key:node_id ~data:cfg_node =
+                let statements = Cfg.Node.statements cfg_node in
+                List.iteri statements ~f:(walk_statement node_id)
+              in
+              Hashtbl.iteri cfg ~f:walk_cfg_node;
+              (* Special-case define signature processing, since this is not included in the
+                 define's cfg. *)
+              let define_signature =
+                Statement.Define { define with Define.body = [] }
+                |> Node.create ~location:define_location
+              in
+              walk_statement Cfg.entry_index 0 define_signature)
     in
     let define_names =
       GlobalResolution.get_define_names_for_qualifier_in_project global_resolution qualifier
@@ -1219,8 +1223,19 @@ module SingleSymbolQueries = struct
       { LocationWithSymbol.define_name; node_id; statement_index }
     =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let define_location =
+      (* TODO: Right now, we can only get the rosolution of the first body when multiple bodies have
+         the same define name. *)
+      GlobalResolution.get_define_body_in_project global_resolution define_name
+      >>| Node.location
+      |> Option.value ~default:Location.any
+    in
     let coverage_data_lookup_map =
-      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations
+        type_environment
+        ?dependency:None
+        define_name
+        define_location
       |> function
       | Some coverage_data_lookup_map -> coverage_data_lookup_map
       | None -> TypeInfo.ForFunctionBody.empty () |> TypeInfo.ForFunctionBody.read_only

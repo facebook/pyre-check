@@ -58,6 +58,12 @@ let all_bodies { body; siblings; _ } =
   | Some body -> body :: sibling_bodies
 
 
+let body_for_location function_definition ~location =
+  all_bodies function_definition
+  |> List.find ~f:(fun { Node.location = body_location; _ } ->
+         Location.equal body_location location)
+
+
 let collect_typecheck_units { Source.statements; module_path = { ModulePath.qualifier; _ }; _ } =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let rec collect_from_statement ~ignore_class sofar { Node.value; location } =

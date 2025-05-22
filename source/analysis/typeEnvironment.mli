@@ -39,11 +39,14 @@ module TypeEnvironmentReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
+    Location.t ->
     TypeInfo.ForFunctionBody.ReadOnly.t option
 
   val get_or_recompute_local_annotations
     :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
+    Location.t ->
     TypeInfo.ForFunctionBody.ReadOnly.t option
 
   val get_callees

@@ -64,6 +64,10 @@ Call dependencies
     "_test_source (fun)",
     "properties.TaintedGetterAndSetter.my_property@setter (override)"
   ],
+  "properties.TestTypeInferenceInSetter.my_property@setter (method)": [
+    "isinstance (fun)", "properties.A.foo (method)",
+    "properties.Base.foo (override)"
+  ],
   "properties.function_with_nested_properties.my_property (fun)": [
     "properties.foo (fun)"
   ],

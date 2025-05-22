@@ -8374,13 +8374,15 @@ end
 module CheckResult = struct
   type t = {
     errors: Error.t list option;
-    local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t option;
+    local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t Location.SerializableMap.t;
     callees: Callgraph.callee_with_locations list option;
   }
 
   let errors { errors; _ } = errors
 
-  let local_annotations { local_annotations; _ } = local_annotations
+  let local_annotations { local_annotations; _ } ~define_location =
+    Location.SerializableMap.find_opt define_location local_annotations
+
 
   let callees { callees; _ } = callees
 
@@ -8389,7 +8391,9 @@ module CheckResult = struct
       { errors = errors1; local_annotations = local_annotations1; callees = callees1 }
     =
     [%compare.equal: Error.t list option] errors0 errors1
-    && [%equal: TypeInfo.ForFunctionBody.ReadOnly.t option] local_annotations0 local_annotations1
+    && [%equal: TypeInfo.ForFunctionBody.ReadOnly.t Location.SerializableMap.t]
+         local_annotations0
+         local_annotations1
     && [%equal: Callgraph.callee_with_locations list option] callees0 callees1
 end
 
@@ -9307,7 +9311,8 @@ let compute_local_annotations
     ~type_check_controls:
       { EnvironmentControls.TypeCheckControls.debug; no_validation_on_class_lookup_failure; _ }
     ~global_resolution
-    name
+    ~define_name
+    ~define_location
   =
   let expressions_with_types = Location.Table.create () in
   let exit_state_of_define define_node =
@@ -9339,7 +9344,8 @@ let compute_local_annotations
     exit_state ~resolution (module Context)
   in
   try
-    GlobalResolution.get_define_body_in_project global_resolution name
+    GlobalResolution.get_function_definition_in_project global_resolution define_name
+    >>= FunctionDefinition.body_for_location ~location:define_location
     >>| exit_state_of_define
     >>= (fun { local_annotations; _ } -> local_annotations)
     >>| TypeInfo.ForFunctionBody.read_only
@@ -9446,11 +9452,11 @@ let check_define
   in
   let local_annotations =
     if include_local_annotations then
-      Some
-        (Option.value local_annotations ~default:(TypeInfo.ForFunctionBody.empty ())
-        |> TypeInfo.ForFunctionBody.read_only)
+      Option.value local_annotations ~default:(TypeInfo.ForFunctionBody.empty ())
+      |> TypeInfo.ForFunctionBody.read_only
+      |> Location.SerializableMap.singleton location
     else
-      None
+      Location.SerializableMap.empty
   in
   { CheckResult.errors; local_annotations; callees }
 
@@ -9472,18 +9478,27 @@ let check_function_definition
       List.map results ~f:CheckResult.errors
       |> List.fold ~init:(Some []) ~f:(Option.map2 ~f:List.append)
     in
+    let aggregate_local_annotations result =
+      List.fold
+        ~init:Location.SerializableMap.empty
+        ~f:(fun sofar { CheckResult.local_annotations; _ } ->
+          Location.SerializableMap.union (fun _ left _ -> Some left) sofar local_annotations)
+        result
+    in
     match body with
     | None ->
         {
           CheckResult.errors = aggregate_errors sibling_results;
-          local_annotations = None;
+          local_annotations = aggregate_local_annotations sibling_results;
           callees = None;
         }
     | Some define_node ->
-        let ({ CheckResult.local_annotations; callees; _ } as body_result) =
-          check_define define_node
-        in
-        { errors = aggregate_errors (body_result :: sibling_results); local_annotations; callees }
+        let ({ CheckResult.callees; _ } as body_result) = check_define define_node in
+        {
+          errors = aggregate_errors (body_result :: sibling_results);
+          local_annotations = aggregate_local_annotations (body_result :: sibling_results);
+          callees;
+        }
   in
 
   let number_of_lines =

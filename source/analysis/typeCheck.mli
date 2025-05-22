@@ -88,21 +88,25 @@ val resolution_at_key
 val compute_local_annotations
   :  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
   global_resolution:GlobalResolution.t ->
-  Reference.t ->
+  define_name:Reference.t ->
+  define_location:Location.t ->
   (TypeInfo.ForFunctionBody.ReadOnly.t * (Expression.t * TypeInfo.Unit.t) list Location.Table.t)
   option
 
 module CheckResult : sig
   type t = {
     errors: Error.t list option;
-    local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t option;
+    local_annotations: TypeInfo.ForFunctionBody.ReadOnly.t Location.SerializableMap.t;
     callees: Callgraph.callee_with_locations list option;
   }
   [@@deriving equal]
 
   val errors : t -> Error.t list option
 
-  val local_annotations : t -> TypeInfo.ForFunctionBody.ReadOnly.t option
+  val local_annotations
+    :  t ->
+    define_location:Location.t ->
+    TypeInfo.ForFunctionBody.ReadOnly.t option
 
   val callees : t -> Callgraph.callee_with_locations list option
 end

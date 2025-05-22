@@ -279,3 +279,25 @@ class PropertySetterTitoModel:
     def test_obscure_property(self):
         self.obscure_property = _test_source()
         _test_sink(self)
+
+
+class Base:
+    def foo(self) -> None:
+        ...
+
+
+class A(Base):
+    def foo(self) -> None:
+        ...
+
+
+class TestTypeInferenceInSetter:
+    @property
+    def my_property(self) -> str:
+        return ""
+
+    @my_property.setter
+    def my_property(self, value: Base) -> None:
+        value.foo()
+        if isinstance(value, A):
+            value.foo()

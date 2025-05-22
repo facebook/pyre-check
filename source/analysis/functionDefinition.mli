@@ -36,4 +36,6 @@ val qualified_name_of_define : module_name:Reference.t -> Define.t -> Reference.
 
 val all_bodies : t -> Define.t Node.t list
 
+val body_for_location : t -> location:Location.t -> Define.t Node.t option
+
 val collect_defines : Source.t -> (Reference.t * t) list

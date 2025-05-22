@@ -17,6 +17,7 @@ val check_define
 
 val check_module_TESTING_ONLY
   :  resolution:Resolution.t ->
-  local_annotations_for_define:(Ast.Reference.t -> TypeInfo.ForFunctionBody.ReadOnly.t option) ->
+  local_annotations_for_define:
+    (Ast.Reference.t -> Ast.Location.t -> TypeInfo.ForFunctionBody.ReadOnly.t option) ->
   Source.t ->
   Error.t list
