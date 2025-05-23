@@ -1282,13 +1282,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       (* Since generators create variables that Pyre sees as scoped within the generator, handle
          them by adding the generator's bindings to the resolution. *)
+      let pyre_in_context =
+        PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
+      in
       (* Analyzing the conditions might have issues and side effects. *)
       let analyze_condition state condiiton =
         analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression:condiiton
         |> snd
-      in
-      let pyre_in_context =
-        PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
       in
       List.fold conditions ~init:state ~f:analyze_condition, pyre_in_context
     in

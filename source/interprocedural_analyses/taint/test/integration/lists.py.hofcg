@@ -93,6 +93,70 @@ Higher order call graphs
   }
 }
 {
+  "callable": "lists.inconsistent_redirect_expressions_in_condition",
+  "returned_callables": [],
+  "calls": {
+    "125:21-125:36": {
+      "__eq__": {
+        "call": {
+          "calls": [
+            {
+              "target": "str.__eq__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [ "float", "integer", "boolean" ],
+              "receiver_class": "str"
+            }
+          ]
+        }
+      }
+    },
+    "125:21-125:27": {
+      "__repr__": {
+        "call": {
+          "calls": [
+            {
+              "target": "lists.HasRepr.__repr__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "lists.HasRepr"
+            }
+          ]
+        }
+      }
+    },
+    "125:16-125:17": {
+      "__next__": {
+        "call": {
+          "calls": [
+            {
+              "target": "typing.Iterator.__next__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "typing.Iterator"
+            }
+          ]
+        }
+      },
+      "__iter__": {
+        "call": {
+          "calls": [
+            {
+              "target": "list.__iter__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "list"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+{
   "callable": "lists.list_append_wrapper",
   "returned_callables": [],
   "calls": {

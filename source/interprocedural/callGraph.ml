@@ -5227,12 +5227,12 @@ module HigherOrderCallGraph = struct
           let _ = target in
           (* Since generators create variables that Pyre sees as scoped within the generator, handle
              them by adding the generator's bindings to the resolution. *)
+          let pyre_in_context =
+            PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
+          in
           (* Analyzing the conditions might have side effects. *)
           let analyze_condition state condiiton =
             analyze_expression ~pyre_in_context ~state ~expression:condiiton |> snd
-          in
-          let pyre_in_context =
-            PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
           in
           let state = List.fold conditions ~init:state ~f:analyze_condition in
           state, pyre_in_context

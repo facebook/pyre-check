@@ -1,2 +1,4 @@
 @generated
 Overrides
+lists.HasRepr.__repr__ (override) -> [lists.HasRepr.__repr__ (method)]
+object.__repr__ (override) -> [lists.HasRepr.__repr__ (override) object.__repr__ (method)]

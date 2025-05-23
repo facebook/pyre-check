@@ -111,3 +111,15 @@ def test_list_append_wrapper():
 
     l.append("")
     _test_sink(l[1])  # False positive.
+
+
+class HasRepr:
+    def __repr__(self) -> str:
+        return ""
+
+
+def inconsistent_redirect_expressions_in_condition(l: List[HasRepr]) -> None:
+    # Demonstrate a (fixed) inconsistency in how we handle generators.
+    # Call graph, forward and backward analysis need to agree on whether
+    # `str(x)` resolves to `x.__str__()` or `x.__repr__()`
+    [x for x in l if str(x) == "123"]
