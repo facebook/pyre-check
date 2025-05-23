@@ -1266,7 +1266,7 @@ module Qualify = struct
                     }
                   in
                   { Node.value = Statement.Define { define with signature }; location }
-              | Statement.Assign { Assign.target; annotation; value } ->
+              | Statement.Assign { Assign.target; annotation; value; origin } ->
                   let qualified_annotation =
                     Option.map annotation ~f:(qualify_assign_annotation ~scope)
                   in
@@ -1276,7 +1276,8 @@ module Qualify = struct
                   let target = qualify_assign_target ~scope:new_scope ~annotation target in
                   {
                     Node.value =
-                      Statement.Assign { Assign.target; annotation = qualified_annotation; value };
+                      Statement.Assign
+                        { Assign.target; annotation = qualified_annotation; value; origin };
                     location;
                   }
               | AugmentedAssign { AugmentedAssign.target; operator; value } ->
@@ -1306,14 +1307,14 @@ module Qualify = struct
         }
       in
       match value with
-      | Statement.Assign { Assign.target; annotation; value } ->
+      | Statement.Assign { Assign.target; annotation; value; origin } ->
           let target = qualify_assign_target ~scope ~annotation target in
           let qualified_annotation = Option.map annotation ~f:(qualify_assign_annotation ~scope) in
           let qualified_value =
             Option.map value ~f:(qualify_assign_value ~scope ~qualified_annotation)
           in
           Statement.Assign
-            { Assign.target; annotation = qualified_annotation; value = qualified_value }
+            { Assign.target; annotation = qualified_annotation; value = qualified_value; origin }
       | AugmentedAssign { AugmentedAssign.target; operator; value } ->
           let value = qualify_assign_value ~scope ~qualified_annotation:None value in
           let target = qualify_assign_target ~scope ~annotation:None target in
@@ -2187,7 +2188,16 @@ let toplevel_expand_tuple_assign = function
     }
     when Int.equal (List.length targets) (List.length values) ->
       List.rev_map2_exn targets values ~f:(fun target value ->
-          { Node.value = { Assign.target; value = Some value; annotation = None }; Node.location })
+          {
+            Node.value =
+              {
+                Assign.target;
+                value = Some value;
+                annotation = None;
+                origin = Some (Node.create ~location Assign.Origin.TopLevelTupleAssign);
+              };
+            Node.location;
+          })
   | assign -> [assign]
 
 
@@ -2423,6 +2433,8 @@ let expand_typed_dictionary_declarations
                            annotation = Some value;
                            value =
                              Some (Node.create ~location (Expression.Constant Constant.Ellipsis));
+                           origin =
+                             Some (Node.create ~location Assign.Origin.TypedDictImplicitClass);
                          }
                       |> Node.create ~location)
                 | _ -> None
@@ -2762,6 +2774,7 @@ let expand_named_tuples
           Assign.target = Node.create ~location (Expression.Name (Name.Identifier "_fields"));
           annotation = Some fields_annotation;
           value = Some value;
+          origin = Some (Node.create ~location Assign.Origin.NamedTupleImplicitFields);
         }
       |> Node.create ~location
     in
@@ -2791,6 +2804,7 @@ let expand_named_tuples
               value =
                 (default_value
                 >>| fun _ -> Node.create (Expression.Constant Constant.Ellipsis) ~location);
+              origin = Some (Node.create ~location Assign.Origin.NamedTupleImplicitFields);
             }
           |> Node.create ~location
         in
@@ -2859,6 +2873,7 @@ let expand_named_tuples
                                }));
                      annotation = None;
                      value = Some (Node.create (Expression.Name (Identifier name)) ~location);
+                     origin = Some (Node.create ~location Assign.Origin.NamedTupleImplicitFields);
                    })
                 ~location
             in
@@ -4366,6 +4381,7 @@ let expand_pytorch_register_buffer
                             }));
                   annotation;
                   value = Some initial_value;
+                  origin = Some (Node.create ~location Assign.Origin.PyTorchRegisterBuffer);
                 }
               |> Node.create ~location:statement_location;
             ] )
@@ -4445,7 +4461,10 @@ let add_dataclass_keyword_only_specifiers
   in
   let set_keyword_only_field statement_node =
     match statement_node with
-    | { Node.value = Statement.Assign { value = expression_node; target; annotation }; location } ->
+    | {
+     Node.value = Statement.Assign { value = expression_node; target; annotation; origin };
+     location;
+    } ->
         (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
         let expression_node =
           Option.value
@@ -4496,7 +4515,7 @@ let add_dataclass_keyword_only_specifiers
         in
         {
           statement_node with
-          value = Statement.Assign { target; annotation; value = Some attribute_value };
+          value = Statement.Assign { target; annotation; value = Some attribute_value; origin };
         }
     | _ -> statement_node
   in
@@ -4817,6 +4836,7 @@ module SelfType = struct
                }
             |> Node.create ~location);
         annotation = None;
+        origin = Some (Node.create ~location Assign.Origin.SelfImplicitTypeVar);
       }
     |> Node.create_with_default_location
 
@@ -4906,7 +4926,13 @@ let expand_enum_functional_syntax
                 |> Node.create ~location
               in
               Some
-                (Statement.Assign { target; annotation = None; value = Some value }
+                (Statement.Assign
+                   {
+                     target;
+                     annotation = None;
+                     value = Some value;
+                     origin = Some (Node.create ~location Assign.Origin.FunctionalEnumImplicitAuto);
+                   }
                 |> Node.create ~location)
           | _ -> None
         in

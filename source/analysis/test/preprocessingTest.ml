@@ -2437,6 +2437,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   target = +Expression.Name (Name.Identifier "NotFoo");
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
+                  origin = None;
                 };
              (let parent = NestingContext.create_toplevel () in
               +Statement.Class
@@ -2481,6 +2482,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    attribute = "some_attribute";
                                                    origin = None;
                                                  }));
+                                      origin = None;
                                     };
                                ];
                            };
@@ -2494,6 +2496,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   target = +Expression.Name (Name.Identifier "$local_Foo$NotFoo");
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
+                  origin = None;
                 };
              (let parent = NestingContext.create_toplevel () in
               +Statement.Class
@@ -2556,6 +2559,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    attribute = "some_attribute";
                                                    origin = None;
                                                  }));
+                                      origin = None;
                                     };
                                ];
                            };
@@ -2573,6 +2577,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   target = +Expression.Name (Name.Identifier "Foo");
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
+                  origin = None;
                 };
              (let parent = NestingContext.create_toplevel () in
               +Statement.Class
@@ -2617,6 +2622,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    attribute = "some_attribute";
                                                    origin = None;
                                                  }));
+                                      origin = None;
                                     };
                                ];
                            };
@@ -2637,6 +2643,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                           });
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
+                  origin = None;
                 };
              (let parent = NestingContext.create_toplevel () in
               +Statement.Class
@@ -2699,6 +2706,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    attribute = "some_attribute";
                                                    origin = None;
                                                  }));
+                                      origin = None;
                                     };
                                ];
                            };
@@ -2716,6 +2724,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                   target = +Expression.Name (Name.Identifier "Foo");
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
+                  origin = None;
                 };
              (let parent = NestingContext.create_toplevel () in
               +Statement.Class
@@ -2760,6 +2769,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    attribute = "some_attribute";
                                                    origin = None;
                                                  }));
+                                      origin = None;
                                     };
                                ];
                            };
@@ -2780,6 +2790,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                           });
                   annotation = None;
                   value = Some (+Expression.Name (Name.Identifier "None"));
+                  origin = None;
                 };
              (let parent = NestingContext.create_toplevel () in
               +Statement.Class
@@ -2843,6 +2854,7 @@ let test_qualify_ast_class_with_same_name_as_local =
                                                    attribute = "some_attribute";
                                                    origin = None;
                                                  }));
+                                      origin = None;
                                     };
                                ];
                            };
@@ -4272,6 +4284,7 @@ let test_toplevel_assigns =
             Some
               (+Expression.Tuple
                   [+Expression.Name (Name.Identifier "c"); +Expression.Name (Name.Identifier "d")]);
+          origin = None;
         };
     }
   in
@@ -4284,6 +4297,7 @@ let test_toplevel_assigns =
             Assign.target = +Expression.Name (Name.Identifier "b");
             annotation = None;
             Assign.value = Some (+Expression.Name (Name.Identifier "d"));
+            origin = None;
           };
       };
       {
@@ -4293,6 +4307,7 @@ let test_toplevel_assigns =
             Assign.target = +Expression.Name (Name.Identifier "a");
             annotation = None;
             Assign.value = Some (+Expression.Name (Name.Identifier "c"));
+            origin = None;
           };
       };
     ]
@@ -4338,7 +4353,7 @@ let test_toplevel_assigns =
       (labeled_test_case __FUNCTION__ __LINE__
       @@ fun _ ->
       assert_equal
-        ~cmp:(List.equal (Node.equal Assign.equal))
+        ~cmp:(List.equal (Node.equal (fun a b -> Assign.location_insensitive_compare a b = 0)))
         ~printer:(fun list -> String.concat (List.map ~f:(Node.show Assign.pp) list))
         (Preprocessing.toplevel_expand_tuple_assign simultaneous_assign)
         sequential_assigns);

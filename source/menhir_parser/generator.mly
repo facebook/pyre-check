@@ -386,7 +386,7 @@
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> statement
 %type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> statements
 %type <ParserStatement.Expression.expression Ast.Node.t> subscript_key
-%type <(value:ParserStatement.Expression.expression Ast.Node.t -> annotation:ParserExpression.Expression.t option -> ParserStatement.Statement.statement Ast.Node.t) list> targets
+%type <(value:ParserStatement.Expression.expression Ast.Node.t -> annotation:ParserExpression.Expression.t option -> index_in_chain:int option -> ParserStatement.Statement.statement Ast.Node.t) list> targets
 %type <ParserStatement.Expression.expression Ast.Node.t> test
 %type <ParserStatement.Expression.expression Ast.Node.t> test_list
 %type <ParserStatement.Expression.expression Ast.Node.t> test_with_generator
@@ -464,6 +464,7 @@ small_statement:
           Assign.target = target;
           annotation = Some annotation;
           value = None;
+          index_in_chain = None;
         };
       }]
     }
@@ -478,6 +479,7 @@ small_statement:
           Assign.target = target;
           annotation = Some annotation;
           value = None;
+          index_in_chain = None;
         };
       }]
     }
@@ -494,6 +496,7 @@ small_statement:
           Assign.target = target;
           annotation = Some annotation;
           value = Some value;
+          index_in_chain = None;
         };
       }]
     }
@@ -510,15 +513,18 @@ small_statement:
           Assign.target = target;
           annotation = Some annotation;
           value = Some value;
+          index_in_chain = None;
         };
       }]
     }
   | targets = targets; value = value; annotation = comment_annotation? {
-      List.map ~f:(fun target -> target ~value ~annotation) targets
+      let is_chain = List.length targets > 1 in
+      List.mapi ~f:(fun index target -> target ~value ~annotation ~index_in_chain:(Option.some_if is_chain index)) targets
   }
   | targets = targets; ellipsis = ELLIPSES {
       let value = create_ellipsis ellipsis in
-      List.map ~f:(fun target -> target ~value ~annotation:None) targets
+      let is_chain = List.length targets > 1 in
+      List.mapi ~f:(fun index target -> target ~value ~annotation:None ~index_in_chain:(Option.some_if is_chain index)) targets
     }
   | target = test_list;
     annotation = annotation;
@@ -534,6 +540,7 @@ small_statement:
           Assign.target = target;
           annotation = Some annotation;
           value = Some ellipsis;
+          index_in_chain = None;
         };
       }]
     }
@@ -1274,7 +1281,7 @@ import:
 
 %inline target:
   | target = test_list {
-      let assignment_with_annotation ~value ~annotation =
+      let assignment_with_annotation ~value ~annotation ~index_in_chain =
         {
           Node.location = {
             target.Node.location with Location.stop =
@@ -1284,6 +1291,7 @@ import:
             Assign.target = target;
             annotation = annotation;
             value = Some value;
+            index_in_chain;
           };
         }
       in

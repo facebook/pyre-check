@@ -646,10 +646,10 @@ let pattern =
     ()
 
 
-let create_assign ~location ~target ~annotation ~value () =
+let create_assign ~location ~target ~annotation ~value ~origin () =
   let open Ast.Statement in
   let module Node = Ast.Node in
-  Statement.Assign { Assign.target; annotation; value } |> Node.create ~location
+  Statement.Assign { Assign.target; annotation; value; origin } |> Node.create ~location
 
 
 let process_function_type_comment
@@ -898,7 +898,14 @@ let statement =
   let delete ~location ~targets ~context:_ = [Statement.Delete targets |> Node.create ~location] in
   let assign ~location ~targets ~value ~type_comment ~context:_ =
     (* Eagerly turn chained assignments `a = b = c` into `a = c; b = c`. *)
-    let create_assign_for_target target =
+    let number_assignments = List.length targets in
+    let create_assign_for_target index target =
+      let origin =
+        if number_assignments > 1 then
+          Some (Node.create ~location (Assign.Origin.ChainedAssign { index }))
+        else
+          None
+      in
       let location =
         let open Ast.Location in
         let { start; _ } = Node.location target in
@@ -923,9 +930,9 @@ let statement =
             (* TODO (T104971233): Support type comments when the LHS of assign is a list/tuple. *)
             None
       in
-      create_assign ~location ~target ~annotation ~value:(Some value) ()
+      create_assign ~location ~target ~annotation ~value:(Some value) ~origin ()
     in
-    List.map targets ~f:create_assign_for_target
+    List.mapi targets ~f:create_assign_for_target
   in
   let type_alias ~location ~name ~type_params ~value ~context:_ =
     [Statement.TypeAlias { TypeAlias.name; type_params; value } |> Ast.Node.create ~location]
@@ -937,7 +944,7 @@ let statement =
     ]
   in
   let ann_assign ~location ~target ~annotation ~value ~simple:_ ~context:_ =
-    [create_assign ~location ~target ~annotation:(Some annotation) ~value ()]
+    [create_assign ~location ~target ~annotation:(Some annotation) ~value () ~origin:None]
   in
   let for_ ~location ~target ~iter ~body ~orelse ~type_comment:_ ~context =
     [

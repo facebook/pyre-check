@@ -537,6 +537,7 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
         |> Node.create ~location;
       annotation = None;
       value = Some (Expression.Tuple elements |> Node.create ~location);
+      origin = Some (Node.create ~location Assign.Origin.DecoratorInlining);
     }
   |> Node.create ~location
 
@@ -576,6 +577,7 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
         |> Node.create ~location;
       annotation = None;
       value = Some (Expression.Dictionary entries |> Node.create ~location);
+      origin = Some (Node.create ~location Assign.Origin.DecoratorInlining);
     }
   |> Node.create ~location
 

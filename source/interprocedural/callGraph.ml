@@ -2975,7 +2975,14 @@ let redirect_assignments statement =
         in
         {
           Node.location;
-          value = Statement.Assign { Assign.target; annotation = None; value = Some call };
+          value =
+            Statement.Assign
+              {
+                Assign.target;
+                annotation = None;
+                value = Some call;
+                origin = Some (Node.create ~location Assign.Origin.AugmentedAssign);
+              };
         }
     | _ -> statement
   in

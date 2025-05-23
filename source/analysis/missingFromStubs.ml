@@ -63,6 +63,7 @@ let callable_body =
                   "typing.Callable.__call__"));
         annotation = Some (Type.expression Type.object_primitive);
         value = Some (Node.create_with_default_location (Expression.Constant Constant.NoneLiteral));
+        origin = Some (Node.create_with_default_location Assign.Origin.MissingStubCallable);
       };
     Statement.Assign
       {
@@ -79,6 +80,7 @@ let callable_body =
             (Node.create_with_default_location
                (Expression.Constant
                   (Constant.String { StringLiteral.kind = StringLiteral.String; value = "" })));
+        origin = Some (Node.create_with_default_location Assign.Origin.MissingStubCallable);
       };
   ]
   |> List.map ~f:Node.create_with_default_location

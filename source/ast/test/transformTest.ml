@@ -752,6 +752,7 @@ let test_sanitize_statement _ =
                                   value = !"$parameter$a";
                                 };
                             ]);
+                    origin = None;
                   };
                +Statement.Expression
                   (+Expression.Call
@@ -818,6 +819,7 @@ let test_sanitize_statement _ =
                                   value = !"a";
                                 };
                             ]);
+                    origin = None;
                   };
                +Statement.Expression
                   (+Expression.Call

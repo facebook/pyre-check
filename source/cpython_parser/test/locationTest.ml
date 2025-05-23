@@ -169,6 +169,7 @@ let test_assign_locations =
                                ~start:(1, 4)
                                ~stop:(1, 5)
                                (Expression.Constant (Constant.Integer 1)));
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -195,6 +196,7 @@ let test_assign_locations =
                                ~start:(1, 9)
                                ~stop:(1, 10)
                                (Expression.Constant (Constant.Integer 1)));
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -221,6 +223,7 @@ let test_assign_locations =
                                ~start:(1, 4)
                                ~stop:(1, 5)
                                (Expression.Constant (Constant.Integer 1)));
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -242,6 +245,7 @@ let test_assign_locations =
                                ~stop:(1, 6)
                                (Expression.Name (Name.Identifier "int")));
                         value = None;
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -263,6 +267,12 @@ let test_assign_locations =
                                ~start:(1, 8)
                                ~stop:(1, 9)
                                (Expression.Constant (Constant.Integer 1)));
+                        origin =
+                          Some
+                            (node
+                               ~start:(1, 0)
+                               ~stop:(1, 9)
+                               (Assign.Origin.ChainedAssign { index = 0 }));
                       });
                  node
                    ~start:(1, 4)
@@ -278,6 +288,12 @@ let test_assign_locations =
                                ~start:(1, 8)
                                ~stop:(1, 9)
                                (Expression.Constant (Constant.Integer 1)));
+                        origin =
+                          Some
+                            (node
+                               ~start:(1, 0)
+                               ~stop:(1, 9)
+                               (Assign.Origin.ChainedAssign { index = 1 }));
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -303,6 +319,7 @@ let test_assign_locations =
                                      ~start:(1, 15)
                                      ~stop:(1, 16)
                                      (Expression.Name (Name.Identifier "b")))));
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -828,6 +845,12 @@ let test_call_locations =
                                ~start:(1, 11)
                                ~stop:(1, 12)
                                (Expression.Name (Name.Identifier "y")));
+                        origin =
+                          Some
+                            (node
+                               ~start:(1, 0)
+                               ~stop:(1, 12)
+                               (Assign.Origin.ChainedAssign { index = 0 }));
                       });
                  node
                    ~start:(1, 4)
@@ -859,6 +882,12 @@ let test_call_locations =
                                ~stop:(1, 12)
                                (Expression.Name (Name.Identifier "y")));
                         annotation = None;
+                        origin =
+                          Some
+                            (node
+                               ~start:(1, 0)
+                               ~stop:(1, 12)
+                               (Assign.Origin.ChainedAssign { index = 1 }));
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -3126,6 +3155,7 @@ let test_stub_locations =
                                ~start:(1, 4)
                                ~stop:(1, 7)
                                (Expression.Constant Constant.Ellipsis));
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -3523,6 +3553,7 @@ let test_tuple_locations =
                                ~start:(1, 9)
                                ~stop:(1, 10)
                                (Expression.Name (Name.Identifier "a")));
+                        origin = None;
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__

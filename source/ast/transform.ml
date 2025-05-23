@@ -268,12 +268,13 @@ module Make (Transformer : Transformer) = struct
       let transform_children value =
         let open Statement in
         match value with
-        | Assign { Assign.target; annotation; value } ->
+        | Assign { Assign.target; annotation; value; origin } ->
             Statement.Assign
               {
                 Assign.target = transform_expression target;
                 annotation = annotation >>| transform_expression;
                 value = value >>| transform_expression;
+                origin;
               }
         | Assert { Assert.test; message; origin } ->
             Assert

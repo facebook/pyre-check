@@ -10,10 +10,34 @@ val toplevel_define_name : string
 val class_toplevel_define_name : string
 
 module Assign : sig
+  module Origin : sig
+    type t =
+      | ChainedAssign of { index: int } (* `x = y = z` is turned into `x = z; y = z` *)
+      | AugmentedAssign (* `x &= y` is turned into `x = x & y` *)
+      | For (* `for e in l:` is turned into `e = l.__iter__().__next__()` *)
+      | TryHandler (* `try: .. except X as e` is turned into `e = ...` *)
+      | With (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
+      | Generator (* `(e for e in l)` is turned into `e = l.__iter__().__next__()` *)
+      | TopLevelTupleAssign (* `(x, y) = (a, b)` might be turned into `x = a; y = b` *)
+      | MissingStubCallable
+      | DecoratorInlining
+      | TypedDictImplicitClass
+      | NamedTupleImplicitFields
+      | PyTorchRegisterBuffer
+      | SelfImplicitTypeVar
+        (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
+           bound=MyClass])` *)
+      | FunctionalEnumImplicitAuto
+        (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
+           ...` *)
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
+  end
+
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
+    origin: Origin.t Node.t option;
   }
   [@@deriving equal, compare, sexp, show, hash]
 

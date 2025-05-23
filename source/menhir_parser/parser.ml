@@ -453,12 +453,16 @@ module ParserToAst = struct
     let value =
       let open Statement in
       match value with
-      | Assign { Assign.target; annotation; value } ->
+      | Assign { Assign.target; annotation; value; index_in_chain } ->
           AstStatement.Statement.Assign
             {
               AstStatement.Assign.target = convert_expression target;
               annotation = annotation >>| convert_expression;
               value = value >>| convert_expression;
+              origin =
+                (index_in_chain
+                >>| fun index ->
+                Node.create ~location (AstStatement.Assign.Origin.ChainedAssign { index }));
             }
       | Assert { Assert.test; message } ->
           AstStatement.Statement.Assert

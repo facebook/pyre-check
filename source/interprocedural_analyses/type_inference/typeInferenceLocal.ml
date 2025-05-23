@@ -914,7 +914,15 @@ module State (Context : Context) = struct
               augmented_assign
           in
           let lowered_assignment =
-            Statement.Assign { Assign.annotation = None; target; value = Some call }
+            Statement.Assign
+              {
+                Assign.annotation = None;
+                target;
+                value = Some call;
+                origin =
+                  Some
+                    (Node.create ~location:(Node.location statement) Assign.Origin.AugmentedAssign);
+              }
             |> Node.create ~location:(Node.location statement)
           in
           propagate_assign lowered_assignment resolution resolved call

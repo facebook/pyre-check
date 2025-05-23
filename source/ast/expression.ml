@@ -1174,7 +1174,7 @@ and Origin : sig
     | ForAwait (* `for e in l:` might be turned into `await l.__iter__().__next__()` *)
     | GeneratorIter (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
     | GeneratorNext (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
-    | GeneratorAwait (* `(e for e in l)` might be turned into `await l.__iter__().__next__()` *)
+    | GeneratorAwait (* `(e for e in l)` might be turned into `await l.__aiter__().__anext__()` *)
     | With (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
     | InContains (* `e in l` can be turned into `l.__contains__(e)` *)
     | InIter (* `e in l` can be turned into `l.__iter__().__next__().__eq__(e)` *)

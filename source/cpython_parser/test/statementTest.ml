@@ -2656,7 +2656,10 @@ let test_assign =
         @@ assert_parsed
              "a = b"
              ~expected:
-               [+Statement.Assign { Assign.target = !"a"; annotation = None; value = Some !"b" }];
+               [
+                 +Statement.Assign
+                    { Assign.target = !"a"; annotation = None; value = Some !"b"; origin = None };
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a = b  # type: int"
@@ -2668,6 +2671,7 @@ let test_assign =
                       annotation =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       value = Some !"b";
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2688,13 +2692,17 @@ let test_assign =
                                 right = !"c";
                                 origin = None;
                               });
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a: int"
              ~expected:
-               [+Statement.Assign { Assign.target = !"a"; annotation = Some !"int"; value = None }];
+               [
+                 +Statement.Assign
+                    { Assign.target = !"a"; annotation = Some !"int"; value = None; origin = None };
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "a: int = 1"
@@ -2705,6 +2713,7 @@ let test_assign =
                       Assign.target = !"a";
                       annotation = Some !"int";
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2720,6 +2729,7 @@ let test_assign =
                               { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       annotation = None;
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2735,6 +2745,7 @@ let test_assign =
                               { Name.Attribute.base = !"a"; attribute = "b"; origin = None });
                       annotation = Some !"int";
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2751,6 +2762,7 @@ let test_assign =
                       annotation =
                         Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2763,6 +2775,7 @@ let test_assign =
                       Assign.target = +Expression.Tuple [!"a"; !"b"];
                       annotation = None;
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2791,6 +2804,7 @@ let test_assign =
                                 arguments = [];
                                 origin = None;
                               });
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2803,12 +2817,14 @@ let test_assign =
                       Assign.target = !"a";
                       annotation = None;
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                  +Statement.Assign
                     {
                       Assign.target = !"b";
                       annotation = None;
                       value = Some (+Expression.Constant (Constant.Integer 1));
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2849,6 +2865,7 @@ let test_assign =
                         +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some (+Expression.Constant (Constant.Integer 3));
                       annotation = None;
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2862,6 +2879,7 @@ let test_assign =
                         +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some (+Expression.Constant (Constant.Integer 3));
                       annotation = Some !"int";
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2875,6 +2893,7 @@ let test_assign =
                         +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some (+Expression.Constant (Constant.Integer 3));
                       annotation = None;
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2908,6 +2927,7 @@ let test_assign =
                            };
                       value = Some (+Expression.Constant (Constant.Integer 8));
                       annotation = None;
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2947,6 +2967,7 @@ let test_assign =
                                 origin = None;
                               });
                       annotation = None;
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2954,13 +2975,15 @@ let test_assign =
              "x = i[j] = y"
              ~expected:
                [
-                 +Statement.Assign { Assign.target = !"x"; annotation = None; value = Some !"y" };
+                 +Statement.Assign
+                    { Assign.target = !"x"; annotation = None; value = Some !"y"; origin = None };
                  +Statement.Assign
                     {
                       Assign.target =
                         +Expression.Subscript { Subscript.base = !"i"; index = !"j"; origin = None };
                       value = Some !"y";
                       annotation = None;
+                      origin = None;
                     };
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -2979,6 +3002,7 @@ let test_assign =
                            ];
                       annotation = None;
                       value = Some !"y";
+                      origin = None;
                     };
                ];
       ]

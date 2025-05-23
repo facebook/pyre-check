@@ -1963,7 +1963,9 @@ module State (Context : Context) = struct
       let resolution, errors =
         let iterator_resolution, iterator_errors =
           let post_resolution, errors =
-            let { Assign.target; annotation; value } = Statement.generator_assignment generator in
+            let { Assign.target; annotation; value; origin = _ } =
+              Statement.generator_assignment generator
+            in
             forward_assignment ~resolution ~location ~target ~annotation ~value
           in
           resolution_or_default post_resolution ~default:resolution, errors
@@ -6108,7 +6110,7 @@ module State (Context : Context) = struct
     let global_resolution = Resolution.global_resolution resolution in
     let validate_return = validate_return ~location in
     match value with
-    | Statement.Assign { Assign.target; annotation; value } ->
+    | Statement.Assign { Assign.target; annotation; value; origin = _ } ->
         forward_assignment ~resolution ~location ~target ~annotation ~value
     | AugmentedAssign ({ AugmentedAssign.target; _ } as augmented_assignment) ->
         (* lower augmented assignment to regular assignment *)

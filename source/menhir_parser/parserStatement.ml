@@ -19,6 +19,8 @@ module Assign = struct
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t option;
+    (* If this is in a assignment chain `a = b = c`, the index of that assignment *)
+    index_in_chain: int option;
   }
 end
 
