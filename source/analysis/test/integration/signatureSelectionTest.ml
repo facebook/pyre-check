@@ -987,8 +987,8 @@ let test_check_constructor_overloads context =
 
 let test_check_variable_arguments =
   let assert_type_errors source errors context = assert_type_errors source errors context in
-  let assert_strict_type_errors source errors context =
-    assert_strict_type_errors source errors context
+  let assert_strict_type_errors ?enable_strict_any_check source errors context =
+    assert_strict_type_errors ?enable_strict_any_check source errors context
   in
   test_list
     [
@@ -1056,6 +1056,7 @@ let test_check_variable_arguments =
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
+           ~enable_strict_any_check:true
            {|
       import typing
       def foo(a: int, b: int) -> int:

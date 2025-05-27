@@ -36,6 +36,7 @@ let test_check_missing_parameter context =
 
   (* typing.Any given *)
   assert_strict_type_errors
+    ~enable_strict_any_check:true
     {|
       import typing
       def foo(x: typing.Any) -> int:
@@ -44,6 +45,7 @@ let test_check_missing_parameter context =
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     context;
   assert_strict_type_errors
+    ~enable_strict_any_check:true
     {|
       import typing
       def foo(x: typing.Dict[str, typing.Any], y: typing.Dict[int, typing.Any]) -> int:
@@ -55,6 +57,7 @@ let test_check_missing_parameter context =
     ]
     context;
   assert_strict_type_errors
+    ~enable_strict_any_check:true
     {|
       import typing
       MyType = typing.Any
@@ -64,6 +67,7 @@ let test_check_missing_parameter context =
     ["Prohibited any [33]: `MyType` cannot alias to `Any`."]
     context;
   assert_strict_type_errors
+    ~enable_strict_any_check:true
     {|
       import typing
       def foo(x: typing.Any = unknown) -> int:
@@ -75,6 +79,7 @@ let test_check_missing_parameter context =
     ]
     context;
   assert_strict_type_errors
+    ~enable_strict_any_check:true
     {|
       import typing
       def foo(x: typing.Dict[typing.Any, str]) -> int:

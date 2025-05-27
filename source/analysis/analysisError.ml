@@ -4212,7 +4212,12 @@ let filter ~resolution errors =
 let suppress
     ~mode
     ~ignore_codes
-    ~type_check_controls:{ EnvironmentControls.TypeCheckControls.include_strict_override_errors; _ }
+    ~type_check_controls:
+      {
+        EnvironmentControls.TypeCheckControls.include_strict_override_errors;
+        include_strict_any_errors;
+        _;
+      }
     error
   =
   let suppress_in_strict ({ kind; _ } as error) =
@@ -4221,6 +4226,12 @@ let suppress
     else
       match kind with
       | InvalidOverride { decorator = MissingOverride; _ } -> not include_strict_override_errors
+      | ProhibitedAny _ -> not include_strict_any_errors
+      | MissingReturnAnnotation { given_annotation = Some a; _ }
+      | MissingGlobalAnnotation { given_annotation = Some a; _ }
+      | MissingAttributeAnnotation { missing_annotation = { given_annotation = Some a; _ }; _ }
+      | MissingParameterAnnotation { given_annotation = Some a; _ } ->
+          (Type.is_any a || Type.contains_any a) && not include_strict_any_errors
       | IncompleteType _ ->
           (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
           true

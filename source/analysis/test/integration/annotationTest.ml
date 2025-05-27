@@ -172,6 +172,7 @@ let test_check_undefined_type =
            ["Undefined or invalid type [11]: Annotation `Herp` is not defined as a type."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
+           ~enable_strict_any_check:true
            {|
               import typing
               class Foo:
@@ -1077,6 +1078,7 @@ let test_check_immutable_annotations =
            ["Missing parameter annotation [2]: Parameter `any` must have a type other than `Any`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
+           ~enable_strict_any_check:true
            {|
               import typing
               def foo(any: typing.Any) -> None:

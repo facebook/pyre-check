@@ -14,7 +14,9 @@ open TypeCheck
 let assert_errors ?(show_error_traces = false) ~context input_source expected_errors =
   Memory.reset_shared_memory ();
   let source_code_api, type_errors =
-    let project = ScratchProject.setup ~context ["test.py", input_source] in
+    let project =
+      ScratchProject.setup ~enable_strict_any_check:true ~context ["test.py", input_source]
+    in
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
       ScratchProject.build_type_environment_and_postprocess project
     in

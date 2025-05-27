@@ -911,6 +911,7 @@ let test_attribute_strict =
          errors are thrown in debug that are filtered away in strict. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
+           ~enable_strict_any_check:true
            {|
               import typing
               MyType = typing.Any
@@ -966,6 +967,7 @@ let test_attribute_strict =
       (* Any has all attributes in default mode, but not strict mode. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_strict_type_errors
+           ~enable_strict_any_check:true
            {|
               import typing
               def foo(any: typing.Any) -> int:
