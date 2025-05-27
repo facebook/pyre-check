@@ -44,6 +44,7 @@ module TypeCheckControls : sig
     include_local_annotations: bool;
     include_readonly_errors: bool;
     include_strict_override_errors: bool;
+    include_strict_any_errors: bool;
     include_unawaited_awaitable_errors: bool;
     debug: bool;
     include_suppressed_errors: bool;

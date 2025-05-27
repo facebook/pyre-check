@@ -115,6 +115,7 @@ class PartialConfiguration:
     dot_pyre_directory: Optional[Path] = None
     enable_readonly_analysis: Optional[bool] = None
     enable_strict_override_check: Optional[bool] = None
+    enable_strict_any_check: Optional[bool] = None
     enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(
         default_factory=list,
@@ -438,6 +439,9 @@ class PartialConfiguration:
                 enable_strict_override_check=ensure_option_type(
                     configuration_json, "enable_strict_override_check", bool
                 ),
+                enable_strict_any_check=ensure_option_type(
+                    configuration_json, "enable_strict_any_check", bool
+                ),
                 enable_unawaited_awaitable_analysis=ensure_option_type(
                     configuration_json, "enable_unawaited_awaitable_analysis", bool
                 ),
@@ -611,6 +615,7 @@ class Configuration:
     dot_pyre_directory: Optional[Path] = None
     enable_readonly_analysis: Optional[bool] = None
     enable_strict_override_check: Optional[bool] = None
+    enable_strict_any_check: Optional[bool] = None
     enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
@@ -669,6 +674,7 @@ class Configuration:
             ],
             enable_readonly_analysis=partial_configuration.enable_readonly_analysis,
             enable_strict_override_check=partial_configuration.enable_strict_override_check,
+            enable_strict_any_check=partial_configuration.enable_strict_any_check,
             enable_unawaited_awaitable_analysis=(
                 partial_configuration.enable_unawaited_awaitable_analysis
             ),
@@ -762,6 +768,11 @@ class Configuration:
             **(
                 {"enable_strict_override_check": self.enable_strict_override_check}
                 if self.enable_strict_override_check is not None
+                else {}
+            ),
+            **(
+                {"enable_strict_any_check": self.enable_strict_any_check}
+                if self.enable_strict_any_check is not None
                 else {}
             ),
             **(

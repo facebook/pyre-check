@@ -185,6 +185,7 @@ class BaseArguments:
     debug: bool = False
     enable_readonly_analysis: Optional[bool] = None
     enable_strict_override_check: Optional[bool] = None
+    enable_strict_any_check: Optional[bool] = None
     enable_unawaited_awaitable_analysis: Optional[bool] = None
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
@@ -229,6 +230,11 @@ class BaseArguments:
             **(
                 {"enable_strict_override_check": self.enable_strict_override_check}
                 if self.enable_strict_override_check is not None
+                else {}
+            ),
+            **(
+                {"enable_strict_any_check": self.enable_strict_any_check}
+                if self.enable_strict_any_check is not None
                 else {}
             ),
             **(

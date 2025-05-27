@@ -101,6 +101,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.use_buck2, True)
         self.assertEqual(configuration.enable_readonly_analysis, None)
         self.assertEqual(configuration.enable_strict_override_check, None)
+        self.assertEqual(configuration.enable_strict_any_check, None)
         self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
         self.assertEqual(configuration.include_suppressed_errors, True)
 
@@ -413,6 +414,15 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_dict(
+                {"enable_strict_any_check": True}
+            ).enable_strict_any_check,
+            True,
+        )
+        self.assertEqual(
+            PartialConfiguration.from_dict({}).enable_strict_any_check, None
+        )
+        self.assertEqual(
+            PartialConfiguration.from_dict(
                 {"enable_unawaited_awaitable_analysis": True}
             ).enable_unawaited_awaitable_analysis,
             True,
@@ -455,6 +465,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
         assert_raises(json.dumps({"enable_readonly_analysis": 42}))
         assert_raises(json.dumps({"enable_strict_override_check": 42}))
+        assert_raises(json.dumps({"enable_strict_any_check": 42}))
         assert_raises(json.dumps({"enable_unawaited_awaitable_analysis": 42}))
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": 42}))
@@ -571,6 +582,12 @@ class PartialConfigurationTest(unittest.TestCase):
             True,
         )
         self.assertEqual(
+            PartialConfiguration(enable_strict_any_check=True)
+            .expand_relative_paths("bar")
+            .enable_strict_any_check,
+            True,
+        )
+        self.assertEqual(
             PartialConfiguration(enable_unawaited_awaitable_analysis=True)
             .expand_relative_paths("bar")
             .enable_unawaited_awaitable_analysis,
@@ -613,6 +630,7 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=None,
                 enable_readonly_analysis=True,
                 enable_strict_override_check=True,
+                enable_strict_any_check=True,
                 enable_unawaited_awaitable_analysis=True,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
@@ -650,6 +668,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.dot_pyre_directory, None)
         self.assertEqual(configuration.enable_readonly_analysis, True)
         self.assertEqual(configuration.enable_strict_override_check, True)
+        self.assertEqual(configuration.enable_strict_any_check, True)
         self.assertEqual(configuration.enable_unawaited_awaitable_analysis, True)
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])

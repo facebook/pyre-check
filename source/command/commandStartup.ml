@@ -41,6 +41,7 @@ module BaseConfiguration = struct
     memory_profiling_output: string option;
     enable_readonly_analysis: bool;
     enable_strict_override_check: bool;
+    enable_strict_any_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
   }
@@ -121,6 +122,12 @@ module BaseConfiguration = struct
              "enable_strict_override_check"
              ~default:Configuration.Analysis.default_enable_strict_override_check
       in
+      let enable_strict_any_check =
+        json
+        |> bool_member
+             "enable_strict_any_check"
+             ~default:Configuration.Analysis.default_enable_strict_any_check
+      in
       let enable_unawaited_awaitable_analysis =
         json
         |> bool_member
@@ -157,6 +164,7 @@ module BaseConfiguration = struct
           memory_profiling_output;
           enable_readonly_analysis;
           enable_strict_override_check;
+          enable_strict_any_check;
           enable_unawaited_awaitable_analysis;
           include_suppressed_errors;
         }

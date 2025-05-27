@@ -69,6 +69,7 @@ module CodeNavigationConfiguration = struct
             long_lived_workers;
             enable_readonly_analysis;
             enable_strict_override_check;
+            enable_strict_any_check;
             enable_unawaited_awaitable_analysis;
             include_suppressed_errors;
             shared_memory =
@@ -108,6 +109,7 @@ module CodeNavigationConfiguration = struct
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
       ~enable_readonly_analysis
       ~enable_strict_override_check
+      ~enable_strict_any_check
       ~enable_unawaited_awaitable_analysis
       ~include_suppressed_errors
       ()

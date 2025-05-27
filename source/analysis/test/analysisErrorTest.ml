@@ -705,6 +705,7 @@ let test_suppress _ =
       include_local_annotations = true;
       include_readonly_errors = true;
       include_strict_override_errors = true;
+      include_strict_any_errors = true;
       include_unawaited_awaitable_errors = true;
       debug = true;
       include_suppressed_errors = true;

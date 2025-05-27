@@ -372,6 +372,8 @@ module Analysis = struct
 
   let default_enable_strict_override_check = false
 
+  let default_enable_strict_any_check = false
+
   let default_enable_unawaited_awaitable_analysis = false
 
   let default_include_suppressed_errors = false
@@ -403,6 +405,7 @@ module Analysis = struct
     enable_type_comments: bool;
     enable_readonly_analysis: bool;
     enable_strict_override_check: bool;
+    enable_strict_any_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
   }
@@ -436,6 +439,7 @@ module Analysis = struct
       ?(enable_type_comments = true)
       ?(enable_readonly_analysis = default_enable_readonly_analysis)
       ?(enable_strict_override_check = default_enable_strict_override_check)
+      ?(enable_strict_any_check = default_enable_strict_any_check)
       ?(enable_unawaited_awaitable_analysis = default_enable_unawaited_awaitable_analysis)
       ?(include_suppressed_errors = default_include_suppressed_errors)
       ~source_paths
@@ -492,6 +496,7 @@ module Analysis = struct
       enable_type_comments;
       enable_readonly_analysis;
       enable_strict_override_check;
+      enable_strict_any_check;
       enable_unawaited_awaitable_analysis;
       include_suppressed_errors;
     }

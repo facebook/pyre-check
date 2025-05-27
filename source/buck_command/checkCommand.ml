@@ -35,6 +35,7 @@ let create_environment_controls ~root ~python_version ~system_platform () =
       ~enable_type_comments:true
       ~enable_readonly_analysis:false
       ~enable_strict_override_check:false
+      ~enable_strict_any_check:false
       ~enable_unawaited_awaitable_analysis:true
       ~include_suppressed_errors:false
       ~source_paths:[]

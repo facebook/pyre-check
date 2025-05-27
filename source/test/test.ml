@@ -3211,6 +3211,7 @@ module ScratchProject = struct
       ?strict
       ?enable_readonly_analysis
       ?enable_strict_override_check
+      ?enable_strict_any_check
       ?enable_unawaited_awaitable_analysis
       ?include_suppressed_errors
       sources
@@ -3257,6 +3258,7 @@ module ScratchProject = struct
           ?debug
           ?enable_readonly_analysis
           ?enable_strict_override_check
+          ?enable_strict_any_check
           ?enable_unawaited_awaitable_analysis
           ?include_suppressed_errors
           ()
@@ -3497,6 +3499,7 @@ let assert_errors
     ?system_platform
     ?enable_readonly_analysis
     ?enable_strict_override_check
+    ?enable_strict_any_check
     ?enable_unawaited_awaitable_analysis
     ?include_suppressed_errors
     ?include_pyre_extensions
@@ -3531,6 +3534,7 @@ let assert_errors
             ?system_platform
             ?enable_readonly_analysis
             ?enable_strict_override_check
+            ?enable_strict_any_check
             ?enable_unawaited_awaitable_analysis
             ?include_suppressed_errors
             ?include_pyre_extensions

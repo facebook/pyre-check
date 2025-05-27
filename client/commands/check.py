@@ -122,6 +122,7 @@ def create_check_arguments(
             debug=check_arguments.debug,
             enable_readonly_analysis=configuration.get_enable_readonly_analysis(),
             enable_strict_override_check=configuration.get_enable_strict_override_check(),
+            enable_strict_any_check=configuration.get_enable_strict_any_check(),
             enable_unawaited_awaitable_analysis=(
                 configuration.get_enable_unawaited_awaitable_analysis()
             ),

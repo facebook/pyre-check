@@ -115,6 +115,8 @@ module Analysis : sig
 
   val default_enable_strict_override_check : bool
 
+  val default_enable_strict_any_check : bool
+
   val default_enable_unawaited_awaitable_analysis : bool
 
   val default_include_suppressed_errors : bool
@@ -146,6 +148,7 @@ module Analysis : sig
     enable_type_comments: bool;
     enable_readonly_analysis: bool;
     enable_strict_override_check: bool;
+    enable_strict_any_check: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
   }
@@ -178,6 +181,7 @@ module Analysis : sig
     ?enable_type_comments:bool ->
     ?enable_readonly_analysis:bool ->
     ?enable_strict_override_check:bool ->
+    ?enable_strict_any_check:bool ->
     ?enable_unawaited_awaitable_analysis:bool ->
     ?include_suppressed_errors:bool ->
     source_paths:SearchPath.t list ->
