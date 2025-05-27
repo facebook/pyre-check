@@ -1,0 +1,5 @@
+@generated
+Overrides
+call_graph.IsSource.__init__ (override) -> [call_graph.IsSource.__init__ (method)]
+call_graph.NotSource.__init__ (override) -> [call_graph.NotSource.__init__ (method)]
+object.__init__ (override) -> [call_graph.IsSource.__init__ (override) call_graph.NotSource.__init__ (override) object.__init__ (method)]

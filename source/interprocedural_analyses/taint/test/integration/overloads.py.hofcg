@@ -5,12 +5,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "27:4-27:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -20,12 +18,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "23:4-23:14": {
-      "call_me": {
-        "call": {
-          "calls": [
-            { "target": "overloads.call_me", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "overloads.call_me", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -34,41 +30,35 @@ Higher order call graphs
   "callable": "overloads.g",
   "returned_callables": [],
   "calls": {
-    "48:8-48:20": {
-      "call_me": {
-        "call": {
-          "calls": [
-            {
-              "target": "overloads.A.call_me",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "overloads.A"
-            }
-          ]
-        }
+    "46:8-46:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "47:7-47:23": {
-      "isinstance": {
-        "call": {
-          "calls": [
-            {
-              "target": "isinstance",
-              "index": 0,
-              "return_type": [ "float", "integer", "boolean" ]
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
       }
     },
-    "46:8-46:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "48:8-48:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "overloads.A.call_me",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "overloads.A"
+          }
+        ]
       }
     }
   }
@@ -78,12 +68,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "32:8-32:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

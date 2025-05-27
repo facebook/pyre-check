@@ -146,12 +146,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
-  let get_attribute_access_callees ~location ~attribute =
+  let get_attribute_access_callees
+      ~location
+      ~attribute_access:({ Name.Attribute.attribute; _ } as attribute_access)
+    =
     let callees =
       CallGraph.DefineCallGraph.resolve_attribute_access
         FunctionContext.call_graph_of_define
         ~location
-        ~attribute
+        ~attribute_access
     in
     let () =
       match callees with
@@ -1047,7 +1050,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Special case: `x.foo()` where foo is a property returning a callable. *)
     let analyze ~base_taint ~callee_taint =
       match callee.Node.value with
-      | Expression.Name (Name.Attribute { base; attribute; origin }) ->
+      | Expression.Name (Name.Attribute attribute_access) ->
           (* If we are already analyzing a call of a property, then ignore properties
            * to avoid infinite recursion. *)
           let resolve_properties = not is_property_call in
@@ -1055,9 +1058,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~pyre_in_context
             ~location:callee.Node.location
             ~resolve_properties
-            ~base
-            ~attribute
-            ~origin
+            ~attribute_access
             ~base_taint
             ~attribute_taint:callee_taint
             ~state
@@ -1065,8 +1066,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let callee_is_property =
       match is_property_call, callee.Node.value with
-      | false, Expression.Name (Name.Attribute { attribute; _ }) ->
-          get_attribute_access_callees ~location:callee.Node.location ~attribute |> Option.is_some
+      | false, Expression.Name (Name.Attribute attribute_access) ->
+          get_attribute_access_callees ~location:callee.Node.location ~attribute_access
+          |> Option.is_some
       | _ -> false
     in
     if callee_is_property then
@@ -1093,18 +1095,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
       ~location
       ~resolve_properties
-      ~base
-      ~attribute
-      ~origin
+      ~attribute_access:({ Name.Attribute.base; attribute; origin } as attribute_access)
       ~base_taint:initial_base_taint
       ~attribute_taint
       ~state
     =
-    let expression =
-      Expression.Name (Name.Attribute { base; attribute; origin }) |> Node.create ~location
-    in
+    let expression = Expression.Name (Name.Attribute attribute_access) |> Node.create ~location in
     let attribute_access_callees =
-      if resolve_properties then get_attribute_access_callees ~location ~attribute else None
+      if resolve_properties then get_attribute_access_callees ~location ~attribute_access else None
     in
 
     let base_taint_property_call, state_property_call =
@@ -1492,9 +1490,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~pyre_in_context
                   ~location
                   ~resolve_properties:false
-                  ~base
-                  ~attribute
-                  ~origin:None
+                  ~attribute_access:{ Name.Attribute.base; attribute; origin = None }
                   ~base_taint:BackwardState.Tree.bottom
                   ~attribute_taint:taint
                   ~state)
@@ -2295,12 +2291,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let new_taint, new_state =
         match
-          CallModel.StringFormatCall.get_string_format_callees
-            ~call_graph_of_define:FunctionContext.call_graph_of_define
+          CallGraph.DefineCallGraph.resolve_format_string_stringify
+            FunctionContext.call_graph_of_define
             ~location:expression_location
         with
-        | Some { CallGraph.StringFormatCallees.stringify_targets = _ :: _ as stringify_targets; _ }
-          ->
+        | Some { CallGraph.FormatStringStringifyCallees.targets = _ :: _ as stringify_targets } ->
             List.fold
               stringify_targets
               ~init:(taint, state)
@@ -2403,14 +2398,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:base
-      | Name (Name.Attribute { base; attribute; origin }) ->
+      | Name (Name.Attribute attribute_access) ->
           analyze_attribute_access
             ~pyre_in_context
             ~location
             ~resolve_properties:true
-            ~base
-            ~attribute
-            ~origin
+            ~attribute_access
             ~base_taint:BackwardState.Tree.bottom
             ~attribute_taint:taint
             ~state
@@ -2630,8 +2623,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~expression:value
         else
           match target_value with
-          | Expression.Name (Name.Attribute { attribute; _ }) ->
-              let attribute_access_callees = get_attribute_access_callees ~location ~attribute in
+          | Expression.Name (Name.Attribute attribute_access) ->
+              let attribute_access_callees =
+                get_attribute_access_callees ~location ~attribute_access
+              in
 
               let property_call_state =
                 match attribute_access_callees with

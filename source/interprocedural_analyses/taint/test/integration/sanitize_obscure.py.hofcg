@@ -4,18 +4,14 @@ Higher order call graphs
   "callable": "sanitize_obscure.$toplevel",
   "returned_callables": [],
   "calls": {
-    "11:4-11:16": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+    "11:0-11:1|identifier|$local_sanitize_obscure$T": {
+      "identifier": {
+        "globals": [ { "target": "Obj{sanitize_obscure.T}", "index": 0 } ]
       }
     },
-    "11:0-11:1": {
-      "$local_sanitize_obscure$T": {
-        "identifier": {
-          "globals": [ { "target": "Obj{sanitize_obscure.T}", "index": 0 } ]
-        }
+    "11:4-11:16": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -24,30 +20,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_sink",
   "returned_callables": [],
   "calls": {
-    "82:4-82:13": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "81:8-81:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "81:8-81:31": {
-      "sanitize_a_sink_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_a_sink_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "82:4-82:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -56,30 +48,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_sink_via_parameter",
   "returned_callables": [],
   "calls": {
-    "190:4-190:13": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "189:8-189:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_sink_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "189:8-189:36": {
-      "sanitize_parameter_sink_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_sink_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "190:4-190:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -88,30 +76,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_sink_via_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "129:4-129:13": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "128:8-128:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_sink_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "128:8-128:41": {
-      "sanitize_parameter_sink_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_sink_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "129:4-129:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -120,30 +104,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_sink_via_return",
   "returned_callables": [],
   "calls": {
-    "218:4-218:13": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "217:8-217:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_sink_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "217:8-217:33": {
-      "sanitize_return_sink_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_sink_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "218:4-218:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -152,30 +132,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_sink_via_return_tito",
   "returned_callables": [],
   "calls": {
-    "162:4-162:13": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "161:8-161:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_sink_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "161:8-161:38": {
-      "sanitize_return_sink_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_sink_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "162:4-162:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -184,30 +160,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_source",
   "returned_callables": [],
   "calls": {
-    "96:11-96:36": {
-      "sanitize_a_source_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_a_source_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "95:8-95:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "95:8-95:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "96:11-96:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -216,30 +188,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_source_via_parameter",
   "returned_callables": [],
   "calls": {
-    "176:11-176:41": {
-      "sanitize_parameter_source_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_source_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "175:8-175:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "175:8-175:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "176:11-176:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_source_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -248,30 +216,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_source_via_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "110:11-110:46": {
-      "sanitize_parameter_source_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_source_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "109:8-109:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "109:8-109:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "110:11-110:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_source_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -280,30 +244,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_source_via_return",
   "returned_callables": [],
   "calls": {
-    "204:11-204:38": {
-      "sanitize_return_source_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_source_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "203:8-203:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "203:8-203:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "204:11-204:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_source_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -312,30 +272,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_of_a_source_via_return_tito",
   "returned_callables": [],
   "calls": {
-    "148:11-148:43": {
-      "sanitize_return_source_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_source_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "147:8-147:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "147:8-147:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "148:11-148:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_source_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -344,30 +300,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.no_propagation_with_sanitize_a_tito",
   "returned_callables": [],
   "calls": {
-    "66:8-66:26": {
-      "sanitize_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "65:8-65:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "65:8-65:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "66:8-66:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -376,30 +328,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_a_sink_via_other_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "134:4-134:13": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "133:8-133:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_sink_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "133:8-133:48": {
-      "sanitize_parameter_sink_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_sink_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "134:4-134:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -408,30 +356,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_a_source_via_other_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "115:11-115:57": {
-      "sanitize_parameter_source_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_source_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "114:8-114:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "114:8-114:18": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "115:11-115:57": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_source_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -440,30 +384,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_sink",
   "returned_callables": [],
   "calls": {
-    "87:4-87:13": {
-      "b_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "86:8-86:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "86:8-86:31": {
-      "sanitize_a_sink_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_a_sink_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "87:4-87:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -472,30 +412,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter",
   "returned_callables": [],
   "calls": {
-    "195:4-195:13": {
-      "b_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "194:8-194:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_sink_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "194:8-194:36": {
-      "sanitize_parameter_sink_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_sink_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "195:4-195:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -504,30 +440,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "139:4-139:13": {
-      "b_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "138:8-138:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_sink_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "138:8-138:41": {
-      "sanitize_parameter_sink_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_sink_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "139:4-139:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -536,30 +468,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_sink_via_return",
   "returned_callables": [],
   "calls": {
-    "223:4-223:13": {
-      "b_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "222:8-222:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_sink_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "222:8-222:33": {
-      "sanitize_return_sink_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_sink_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "223:4-223:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -568,30 +496,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_sink_via_return_tito",
   "returned_callables": [],
   "calls": {
-    "167:4-167:13": {
-      "b_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "166:8-166:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_sink_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "166:8-166:38": {
-      "sanitize_return_sink_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_sink_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "167:4-167:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -600,30 +524,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_source",
   "returned_callables": [],
   "calls": {
-    "101:11-101:36": {
-      "sanitize_a_source_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_a_source_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "100:8-100:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "100:8-100:18": {
-      "b_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "101:11-101:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -632,30 +552,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_source_via_parameter",
   "returned_callables": [],
   "calls": {
-    "181:11-181:41": {
-      "sanitize_parameter_source_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_source_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "180:8-180:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "180:8-180:18": {
-      "b_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "181:11-181:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_source_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -664,30 +580,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_source_via_parameter_tito",
   "returned_callables": [],
   "calls": {
-    "120:11-120:46": {
-      "sanitize_parameter_source_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_parameter_source_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "119:8-119:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "119:8-119:18": {
-      "b_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "120:11-120:46": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_parameter_source_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -696,30 +608,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_source_via_return",
   "returned_callables": [],
   "calls": {
-    "209:11-209:38": {
-      "sanitize_return_source_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_source_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "208:8-208:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "208:8-208:18": {
-      "b_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "209:11-209:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_source_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -728,30 +636,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_source_via_return_tito",
   "returned_callables": [],
   "calls": {
-    "153:11-153:43": {
-      "sanitize_return_source_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_return_source_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "152:8-152:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "152:8-152:18": {
-      "b_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "153:11-153:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_return_source_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -760,30 +664,26 @@ Higher order call graphs
   "callable": "sanitize_obscure.propagation_of_b_with_sanitize_a_tito",
   "returned_callables": [],
   "calls": {
-    "72:11-72:29": {
-      "sanitize_a_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_a_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "71:8-71:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.b_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "71:8-71:18": {
-      "b_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.b_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "72:11-72:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_a_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -793,16 +693,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "231:11-231:49": {
-      "sanitize_obscure_single_argument": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_obscure_single_argument",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_obscure_single_argument",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -811,26 +709,22 @@ Higher order call graphs
   "callable": "sanitize_obscure.test1",
   "returned_callables": [],
   "calls": {
-    "20:4-20:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "19:8-19:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_all",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "19:8-19:23": {
-      "sanitize_all": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_all",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "20:4-20:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -839,35 +733,29 @@ Higher order call graphs
   "callable": "sanitize_obscure.test2",
   "returned_callables": [],
   "calls": {
-    "26:4-26:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "24:8-24:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "25:8-25:23": {
-      "sanitize_all": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_all",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_all",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "24:8-24:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "26:4-26:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -876,26 +764,22 @@ Higher order call graphs
   "callable": "sanitize_obscure.test3",
   "returned_callables": [],
   "calls": {
-    "35:4-35:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "34:8-34:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "34:8-34:24": {
-      "sanitize_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "35:4-35:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -904,35 +788,29 @@ Higher order call graphs
   "callable": "sanitize_obscure.test4",
   "returned_callables": [],
   "calls": {
-    "41:4-41:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "39:8-39:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "40:8-40:24": {
-      "sanitize_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_obscure.sanitize_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_obscure.sanitize_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "39:8-39:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "41:4-41:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

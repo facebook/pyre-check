@@ -4,71 +4,55 @@ Higher order call graphs
   "callable": "parametric_models.f_and_g_to_test",
   "returned_callables": [],
   "calls": {
-    "30:4-30:11": {
-      "sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "parametric_models.sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "25:7-25:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
-    "28:12-28:15": {
-      "g": {
-        "call": {
-          "calls": [
-            {
-              "target": "parametric_models.g",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "25:7-25:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "26:12-26:15": {
-      "f": {
-        "call": {
-          "calls": [
-            {
-              "target": "parametric_models.f",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "parametric_models.f", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "25:7-25:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "28:12-28:15": {
+      "call": {
+        "calls": [
+          { "target": "parametric_models.g", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "30:4-30:11": {
+      "call": {
+        "calls": [
+          {
+            "target": "parametric_models.sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -77,58 +61,52 @@ Higher order call graphs
   "callable": "parametric_models.inferred_sink",
   "returned_callables": [],
   "calls": {
-    "45:8-45:25": {
-      "sink_subkind_b": {
-        "call": {
-          "calls": [
-            {
-              "target": "parametric_models.sink_subkind_b",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "42:7-42:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "42:7-42:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "43:8-43:25": {
-      "sink_subkind_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "parametric_models.sink_subkind_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "parametric_models.sink_subkind_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "42:7-42:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "45:8-45:25": {
+      "call": {
+        "calls": [
+          {
+            "target": "parametric_models.sink_subkind_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -137,26 +115,22 @@ Higher order call graphs
   "callable": "parametric_models.test_to_subkind_sink",
   "returned_callables": [],
   "calls": {
-    "50:4-50:20": {
-      "inferred_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "parametric_models.inferred_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "49:8-49:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "49:8-49:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "50:4-50:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "parametric_models.inferred_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }

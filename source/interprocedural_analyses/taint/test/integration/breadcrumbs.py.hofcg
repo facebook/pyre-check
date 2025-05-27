@@ -5,12 +5,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "31:4-31:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -20,12 +18,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "19:11-19:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -35,12 +31,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "27:4-27:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -50,12 +44,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "15:11-15:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -65,12 +57,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "23:4-23:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -80,12 +70,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "11:11-11:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -94,174 +82,155 @@ Higher order call graphs
   "callable": "breadcrumbs.scalar_attribute_backward",
   "returned_callables": [],
   "calls": {
-    "57:44-57:60": {
-      "ids_list": { "attribute_access": { "is_attribute": true } },
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "51:7-51:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
-    "57:28-57:34": {
-      "__repr__": {
-        "call": {
-          "calls": [
-            {
-              "target": "object.__repr__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      }
-    },
-    "57:19-57:61": {
-      "join": {
-        "call": {
-          "calls": [
-            {
-              "target": "str.join",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "str"
-            }
-          ]
-        }
-      }
-    },
-    "57:8-57:62": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "55:9-55:14": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      }
-    },
-    "54:8-54:36": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "53:9-53:14": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "51:7-51:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "52:8-52:36": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "51:7-51:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "53:9-53:14|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "53:9-53:14|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "54:8-54:36": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "55:9-55:14|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "55:9-55:14|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "57:8-57:62": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "57:19-57:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "str.join",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "str"
+          }
+        ]
+      }
+    },
+    "57:28-57:34|artificial-call|str-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__repr__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "57:44-57:60|artificial-call|generator-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "57:44-57:60|artificial-call|generator-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     }
   }
@@ -270,160 +239,145 @@ Higher order call graphs
   "callable": "breadcrumbs.scalar_attribute_forward",
   "returned_callables": [],
   "calls": {
-    "72:40-72:56": {
-      "ids_list": { "attribute_access": { "is_attribute": true } },
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "65:14-65:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "breadcrumbs.tpm_request",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "72:24-72:30": {
-      "__repr__": {
-        "call": {
-          "calls": [
-            {
-              "target": "object.__repr__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "66:7-66:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "66:7-66:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "68:9-68:14|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "68:9-68:14|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "70:9-70:14|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "70:9-70:14|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "72:15-72:57": {
-      "join": {
-        "call": {
-          "calls": [
-            {
-              "target": "str.join",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "str"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "str.join",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "str"
+          }
+        ]
       }
     },
-    "70:9-70:14": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "72:24-72:30|artificial-call|str-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__repr__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
-    "68:9-68:14": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "72:40-72:56|artificial-call|generator-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
       }
     },
-    "66:7-66:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      }
-    },
-    "65:14-65:27": {
-      "tpm_request": {
-        "call": {
-          "calls": [
-            {
-              "target": "breadcrumbs.tpm_request",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "72:40-72:56|artificial-call|generator-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     }
   }

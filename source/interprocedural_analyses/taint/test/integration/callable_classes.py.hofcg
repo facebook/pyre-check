@@ -4,24 +4,20 @@ Higher order call graphs
   "callable": "callable_classes.$toplevel",
   "returned_callables": [],
   "calls": {
-    "18:7-18:18": {
-      "returns_p": {
-        "call": {
-          "calls": [
-            {
-              "target": "callable_classes.returns_p",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "18:0-18:1|identifier|$local_callable_classes$p": {
+      "identifier": {
+        "globals": [ { "target": "Obj{callable_classes.p}", "index": 0 } ]
       }
     },
-    "18:0-18:1": {
-      "$local_callable_classes$p": {
-        "identifier": {
-          "globals": [ { "target": "Obj{callable_classes.p}", "index": 0 } ]
-        }
+    "18:7-18:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.returns_p",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -30,33 +26,29 @@ Higher order call graphs
   "callable": "callable_classes.bar",
   "returned_callables": [],
   "calls": {
-    "36:11-36:17": {
-      "$local_callable_classes?bar$p": {
-        "call": {
-          "calls": [
-            {
-              "target": "callable_classes.CallableProtocol.__call__",
-              "index": 0,
-              "implicit_receiver": true,
-              "implicit_dunder_call": true,
-              "return_type": [],
-              "receiver_class": "callable_classes.CallableProtocol"
-            }
-          ]
-        }
+    "35:8-35:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.returns_callable_protocol",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "35:8-35:35": {
-      "returns_callable_protocol": {
-        "call": {
-          "calls": [
-            {
-              "target": "callable_classes.returns_callable_protocol",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "36:11-36:17": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.CallableProtocol.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "implicit_dunder_call": true,
+            "return_type": [],
+            "receiver_class": "callable_classes.CallableProtocol"
+          }
+        ]
       }
     }
   }
@@ -66,19 +58,17 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "22:11-22:17": {
-      "$local_callable_classes$p": {
-        "call": {
-          "calls": [
-            {
-              "target": "callable_classes.P.__call__",
-              "index": 0,
-              "implicit_receiver": true,
-              "implicit_dunder_call": true,
-              "return_type": [],
-              "receiver_class": "callable_classes.P"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "callable_classes.P.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "implicit_dunder_call": true,
+            "return_type": [],
+            "receiver_class": "callable_classes.P"
+          }
+        ]
       }
     }
   }

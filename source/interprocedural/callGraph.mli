@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Data_structures
 open Ast
 open Expression
 module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
@@ -281,17 +280,9 @@ module IdentifierCallees : sig
   val to_json : t -> Yojson.Safe.t
 end
 
-(** An aggregate of callees for formatting strings. *)
-module StringFormatCallees : sig
-  type t = {
-    (* Implicit callees for any expression that is stringified. *)
-    stringify_targets: CallTarget.t list;
-    (* Artificial callees for distinguishing f-strings within a function. *)
-    f_string_targets: CallTarget.t list;
-  }
-  [@@deriving eq, show]
-
-  val from_stringify_targets : CallTarget.t list -> t
+(** Artificial callees for distinguishing f-strings within a function. *)
+module FormatStringArtificialCallees : sig
+  type t = { targets: CallTarget.t list } [@@deriving eq, show]
 
   val from_f_string_targets : CallTarget.t list -> t
 
@@ -304,13 +295,23 @@ module ExpressionIdentifier : sig
   val of_expression : Expression.t -> t
 end
 
+(** Implicit callees for any expression that is stringified. *)
+module FormatStringStringifyCallees : sig
+  type t = { targets: CallTarget.t list } [@@deriving eq, show]
+
+  val from_stringify_targets : CallTarget.t list -> t
+
+  val to_json : t -> Yojson.Safe.t
+end
+
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
   type t = {
     call: CallCallees.t option;
     attribute_access: AttributeAccessCallees.t option;
     identifier: IdentifierCallees.t option;
-    string_format: StringFormatCallees.t option;
+    format_string_artificial: FormatStringArtificialCallees.t option;
+    format_string_stringify: FormatStringStringifyCallees.t option;
   }
   [@@deriving eq, show]
 
@@ -320,21 +321,15 @@ module ExpressionCallees : sig
 
   val from_identifier : IdentifierCallees.t -> t
 
-  val from_string_format : StringFormatCallees.t -> t
+  val from_format_string_artificial : FormatStringArtificialCallees.t -> t
+
+  val from_format_string_stringify : FormatStringStringifyCallees.t -> t
 
   val to_json : t -> Yojson.Safe.t
-end
 
-(** An aggregate of all possible callees for an arbitrary location.
+  val dedup_and_sort : t -> t
 
-    Note that multiple expressions might have the same location. *)
-module LocationCallees : sig
-  type t =
-    | Singleton of ExpressionCallees.t
-    | Compound of ExpressionCallees.t SerializableStringMap.t
-  [@@deriving eq, show]
-
-  val to_json : t -> Yojson.Safe.t
+  val equal_ignoring_types : t -> t -> bool
 end
 
 (* Exposed for rare use cases, such as resolving the callees of decorators. *)
@@ -353,7 +348,7 @@ module DefineCallGraphForTest : sig
 
   val empty : t
 
-  val add : t -> location:Ast.Location.t -> callees:LocationCallees.t -> t
+  val from_expected : (string * ExpressionCallees.t) list -> t
 
   val equal_ignoring_types : t -> t -> bool
 end
@@ -371,14 +366,7 @@ module DefineCallGraph : sig
 
   val empty : t
 
-  val add_callees
-    :  debug:bool ->
-    expression_identifier:string ->
-    location:Location.t ->
-    statement_for_logging:Statement.t ->
-    callees:ExpressionCallees.t ->
-    t ->
-    t
+  val equal_ignoring_types : t -> t -> bool
 
   (** Return all callees of the call graph, depending on the use case. *)
   val all_targets : use_case:AllTargetsUseCase.t -> t -> Target.t list
@@ -394,7 +382,7 @@ module DefineCallGraph : sig
   val resolve_attribute_access
     :  t ->
     location:Ast.Location.t ->
-    attribute:string ->
+    attribute_access:Ast.Expression.Name.Attribute.t ->
     AttributeAccessCallees.t option
 
   val resolve_identifier
@@ -403,7 +391,15 @@ module DefineCallGraph : sig
     identifier:string ->
     IdentifierCallees.t option
 
-  val resolve_string_format : t -> location:Ast.Location.t -> StringFormatCallees.t option
+  val resolve_format_string_artificial
+    :  t ->
+    location:Ast.Location.t ->
+    FormatStringArtificialCallees.t option
+
+  val resolve_format_string_stringify
+    :  t ->
+    location:Ast.Location.t ->
+    FormatStringStringifyCallees.t option
 
   (* Ensure the taint analysis does not use these targets. *)
   val drop_decorated_targets : t -> t

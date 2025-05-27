@@ -151,11 +151,6 @@ module StringFormatCall : sig
 
   val declared_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardState.Tree.t
 
-  val get_string_format_callees
-    :  call_graph_of_define:CallGraph.DefineCallGraph.t ->
-    location:Location.t ->
-    CallGraph.StringFormatCallees.t option
-
   val apply_call
     :  callee:Target.t ->
     pyre_in_context:PyrePysaEnvironment.InContext.t ->

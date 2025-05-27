@@ -1227,8 +1227,7 @@ and Origin : sig
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCallToDunderStr (* `str(x)` is turned into `x.__str__()` *)
-    | StrCallToDunderRepr (* `str(x)` is turned into `x.__repr__()` *)
+    | StrCall (* `str(x)` is turned into `x.__str__()` or `x.__repr__()` *)
     | ReprCall (* `repr(x)` is turned into `x.__repr__()` *)
     | AbsCall (* `abs(x)` is turned into `x.__abs__()` *)
     | IterCall (* `iter(x)` is turned into `x.__iter__()` *)
@@ -1272,6 +1271,8 @@ and Origin : sig
   val create : ?base:t -> location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
+
+  val pp_kind_json : Format.formatter -> kind -> unit
 end = struct
   type kind =
     | ComparisonOperator
@@ -1334,8 +1335,7 @@ end = struct
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCallToDunderStr
-    | StrCallToDunderRepr
+    | StrCall
     | ReprCall
     | AbsCall
     | IterCall
@@ -1390,8 +1390,7 @@ end = struct
       | InIter
       | InGetItem
       | InGetItemEq
-      | StrCallToDunderStr
-      | StrCallToDunderRepr
+      | StrCall
       | ReprCall
       | AbsCall
       | IterCall
@@ -1404,6 +1403,114 @@ end = struct
       | _ -> false
     in
     is_dunder_method_kind kind
+
+
+  let rec pp_kind_json formatter = function
+    | ComparisonOperator -> Format.fprintf formatter "comparison"
+    | BinaryOperator -> Format.fprintf formatter "binary"
+    | UnaryOperator -> Format.fprintf formatter "unary"
+    | AugmentedAssignDunderCall -> Format.fprintf formatter "augmented-assign-dunder-call"
+    | AugmentedAssignLHS -> Format.fprintf formatter "augmented-assign-lhs"
+    | AugmentedAssignRHS -> Format.fprintf formatter "augmented-assign-rhs"
+    | Qualification identifiers ->
+        Format.fprintf formatter "qualification:%s" (String.concat ~sep:"." (List.rev identifiers))
+    | SubscriptSetItem -> Format.fprintf formatter "subscript-set-item"
+    | SubscriptGetItem -> Format.fprintf formatter "subscript-get-item"
+    | ForIter -> Format.fprintf formatter "for-iter"
+    | ForNext -> Format.fprintf formatter "for-next"
+    | ForAwait -> Format.fprintf formatter "for-await"
+    | GeneratorIter -> Format.fprintf formatter "generator-iter"
+    | GeneratorNext -> Format.fprintf formatter "generator-next"
+    | GeneratorAwait -> Format.fprintf formatter "generator-await"
+    | With -> Format.fprintf formatter "with"
+    | InContains -> Format.fprintf formatter "in-contains"
+    | InIter -> Format.fprintf formatter "in-iter"
+    | InGetItem -> Format.fprintf formatter "in-get-item"
+    | InGetItemEq -> Format.fprintf formatter "in-get-item-eq"
+    | Slice -> Format.fprintf formatter "slice"
+    | UnionShorthand -> Format.fprintf formatter "union-shorthand"
+    | Negate -> Format.fprintf formatter "negate"
+    | NegateIs -> Format.fprintf formatter "negate-is"
+    | NegateIsNot -> Format.fprintf formatter "negate-is-not"
+    | Normalize -> Format.fprintf formatter "normalize"
+    | NormalizeNotComparison -> Format.fprintf formatter "normalize-not-comparison"
+    | NormalizeNotBoolOperator -> Format.fprintf formatter "normalize-not-bool-operator"
+    | TryHandlerIsInstance -> Format.fprintf formatter "try-handler-isinstance"
+    | NamedTupleConstructorAssignment attribute ->
+        Format.fprintf formatter "named-tuple-constructor-assignment:%s" attribute
+    | DataclassImplicitField -> Format.fprintf formatter "dataclass-implicit-field"
+    | DataclassImplicitDefault -> Format.fprintf formatter "dataclass-implicit-default"
+    | MatchTypingSequence -> Format.fprintf formatter "match-typing-sequence"
+    | MatchTypingMapping -> Format.fprintf formatter "match-typing-mapping"
+    | MatchAsComparisonEquals -> Format.fprintf formatter "match-as-comparison-equals"
+    | MatchAsWithCondition -> Format.fprintf formatter "match-as-with-condition"
+    | MatchClassArgs index -> Format.fprintf formatter "match-class-args:%d" index
+    | MatchClassGetAttr index -> Format.fprintf formatter "match-class-get-attr:%d" index
+    | MatchClassArgsSubscript index ->
+        Format.fprintf formatter "match-class-args-subscript:%d" index
+    | MatchClassKeywordAttribute attribute ->
+        Format.fprintf formatter "match-class-keyword-attribute:%s" attribute
+    | MatchClassIsInstance -> Format.fprintf formatter "match-class-isinstance"
+    | MatchClassJoinConditions -> Format.fprintf formatter "match-class-join-conditions"
+    | MatchMappingKeySubscript -> Format.fprintf formatter "match-mapping-key-subscript"
+    | MatchMappingRestDict attribute ->
+        Format.fprintf formatter "match-mapping-rest-dict:%s" attribute
+    | MatchMappingRestComparisonEquals attribute ->
+        Format.fprintf formatter "match-mapping-rest-comparison-equals:%s" attribute
+    | MatchMappingIsInstance -> Format.fprintf formatter "match-mapping-isinstance"
+    | MatchMappingJoinConditions -> Format.fprintf formatter "match-mapping-join-conditions"
+    | MatchOrJoinConditions -> Format.fprintf formatter "match-or-join-conditions"
+    | MatchSingletonComparisonIs -> Format.fprintf formatter "match-singleton-comparison-is"
+    | MatchSequenceRestList attribute ->
+        Format.fprintf formatter "match-sequence-rest-list:%s" attribute
+    | MatchSequenceRestSubscript attribute ->
+        Format.fprintf formatter "match-sequence-rest-subscript:%s" attribute
+    | MatchSequenceRestSlice attribute ->
+        Format.fprintf formatter "match-sequence-rest-slice:%s" attribute
+    | MatchSequenceRestComparisonEquals attribute ->
+        Format.fprintf formatter "match-sequence-rest-comparison-equals:%s" attribute
+    | MatchSequencePrefix index -> Format.fprintf formatter "match-sequence-prefix:%d" index
+    | MatchSequenceSuffix index -> Format.fprintf formatter "match-sequence-suffix:%d" index
+    | MatchSequenceIsInstance -> Format.fprintf formatter "match-sequence-isinstance"
+    | MatchSequenceJoinConditions -> Format.fprintf formatter "match-sequence-join-conditions"
+    | MatchValueComparisonEquals -> Format.fprintf formatter "match-value-comparison-equals"
+    | MatchConditionWithGuard -> Format.fprintf formatter "match-condition-with-guard"
+    | ResolveStrCall -> Format.fprintf formatter "resolve-str-call"
+    | StrCall -> Format.fprintf formatter "str-call"
+    | ReprCall -> Format.fprintf formatter "repr-call"
+    | AbsCall -> Format.fprintf formatter "abs-call"
+    | IterCall -> Format.fprintf formatter "iter-call"
+    | NextCall -> Format.fprintf formatter "next-call"
+    | ImplicitInitCall -> Format.fprintf formatter "implicit-init-call"
+    | SelfImplicitTypeVar name -> Format.fprintf formatter "self-implicit-typevar:%s" name
+    | SelfImplicitTypeVarQualification (name, attributes) ->
+        Format.fprintf
+          formatter
+          "self-implicit-typevar-qualification:%s:%s"
+          name
+          (String.concat ~sep:"." (List.rev attributes))
+    | FunctionalEnumImplicitAuto attributes ->
+        Format.fprintf
+          formatter
+          "functional-enum-implicit-auto:%s"
+          (String.concat ~sep:"." attributes)
+    | DecoratorInlining -> Format.fprintf formatter "decorator-inlining"
+    | ForDecoratedTarget -> Format.fprintf formatter "for-decorated-target"
+    | ForDecoratedTargetCallee identifiers ->
+        Format.fprintf
+          formatter
+          "for-decorated-target-callee:%s"
+          (String.concat ~sep:"." (List.rev identifiers))
+    | FormatStringImplicitStr -> Format.fprintf formatter "format-string-implicit-str"
+    | FormatStringImplicitRepr -> Format.fprintf formatter "format-string-implicit-repr"
+    | GetAttrConstantLiteral -> Format.fprintf formatter "get-attr-constant-literal"
+    | SetAttrConstantLiteral -> Format.fprintf formatter "set-attr-constant-literal"
+    | PysaCallRedirect name -> Format.fprintf formatter "pysa-call-redirect:%s" name
+    | PysaHigherOrderParameter index ->
+        Format.fprintf formatter "pysa-higher-order-parameter:%d" index
+    | ForTestPurpose -> Format.fprintf formatter "for-test-purpose"
+    | ForTypeChecking -> Format.fprintf formatter "for-type-checking"
+    | Nested { head; tail } -> Format.fprintf formatter "%a>%a" pp_kind_json tail pp_kind_json head
 end
 
 and Expression : sig

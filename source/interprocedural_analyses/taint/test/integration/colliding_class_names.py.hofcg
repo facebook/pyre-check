@@ -5,12 +5,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "16:15-16:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -20,12 +18,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "11:15-11:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

@@ -4,50 +4,44 @@ Higher order call graphs
   "callable": "obscure_tito.test_obscure_return",
   "returned_callables": [],
   "calls": {
-    "33:20-33:34": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "32:8-32:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "33:11-33:35": {
-      "update": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{obscure_tito.C.update}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "obscure_tito.C"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{obscure_tito.C.update}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
       }
     },
-    "32:8-32:11": {
-      "C": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "33:20-33:34": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -56,41 +50,37 @@ Higher order call graphs
   "callable": "obscure_tito.test_obscure_sink",
   "returned_callables": [],
   "calls": {
-    "38:4-38:32": {
-      "taint_parameter": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{obscure_tito.C.taint_parameter}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "obscure_tito.C"
-            }
-          ]
-        }
+    "37:8-37:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "37:8-37:11": {
-      "C": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "38:4-38:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{obscure_tito.C.taint_parameter}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
       }
     }
   }
@@ -99,50 +89,44 @@ Higher order call graphs
   "callable": "obscure_tito.test_obscure_tito",
   "returned_callables": [],
   "calls": {
-    "27:13-27:27": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "26:8-26:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "27:4-27:28": {
-      "update": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{obscure_tito.C.update}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "obscure_tito.C"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{obscure_tito.C.update}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "obscure_tito.C"
+          }
+        ]
       }
     },
-    "26:8-26:11": {
-      "C": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "27:13-27:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

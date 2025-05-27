@@ -1,6 +1,10 @@
 @generated
 Call dependencies
 {
+  "deadcode.dead_code_by_type_refinement (fun)": [
+    "_test_sink (fun)", "deadcode.MyCallable.__call__ (method)",
+    "isinstance (fun)", "print (fun)"
+  ],
   "deadcode.early_break_no_issue_for (fun)": [
     "object.__new__ (method)", "range.__init__ (method)",
     "range.__iter__ (method)", "typing.Iterator.__next__ (method)"

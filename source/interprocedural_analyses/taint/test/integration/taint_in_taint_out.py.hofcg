@@ -4,47 +4,41 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
   "returned_callables": [],
   "calls": {
-    "188:19-188:50": {
-      "evaluate_lazy_field": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.ComplexEvaluator"
-            }
-          ]
-        }
+    "186:15-186:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
       }
     },
     "187:23-187:56": {
-      "evaluate_lazy_payload": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.ComplexEvaluator"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
       }
     },
-    "186:15-186:38": {
-      "isinstance": {
-        "call": {
-          "calls": [
-            {
-              "target": "isinstance",
-              "index": 0,
-              "return_type": [ "float", "integer", "boolean" ]
-            }
-          ]
-        }
+    "188:19-188:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
       }
     }
   }
@@ -54,16 +48,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "83:11-83:21": {
-      "add_tito": {
-        "attribute_access": {
-          "globals": [
-            {
-              "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-              "index": 0
-            }
-          ],
-          "is_attribute": true
-        }
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+            "index": 0
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -73,16 +65,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "91:11-91:21": {
-      "add_tito": {
-        "attribute_access": {
-          "globals": [
-            {
-              "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-              "index": 0
-            }
-          ],
-          "is_attribute": true
-        }
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+            "index": 0
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -92,16 +82,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "95:4-95:22": {
-      "indirect_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.indirect_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.indirect_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -111,16 +99,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "322:8-322:28": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -130,16 +116,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "312:8-312:28": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -148,30 +132,26 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_one",
   "returned_callables": [],
   "calls": {
-    "330:8-330:28": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 1,
-              "return_type": []
-            }
-          ]
-        }
+    "328:8-328:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "328:8-328:28": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "330:8-330:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 1,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -180,30 +160,26 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_one_and_two",
   "returned_callables": [],
   "calls": {
-    "362:8-362:28": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "360:8-360:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "360:8-360:28": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "362:8-362:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -212,30 +188,26 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_three",
   "returned_callables": [],
   "calls": {
-    "346:8-346:30": {
-      "tito_collapse_three": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_three",
-              "index": 1,
-              "return_type": []
-            }
-          ]
-        }
+    "344:8-344:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "344:8-344:30": {
-      "tito_collapse_three": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_three",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "346:8-346:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 1,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -244,30 +216,26 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_two",
   "returned_callables": [],
   "calls": {
-    "338:8-338:28": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 1,
-              "return_type": []
-            }
-          ]
-        }
+    "336:8-336:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "336:8-336:28": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "338:8-338:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 1,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -276,30 +244,26 @@ Higher order call graphs
   "callable": "taint_in_taint_out.combine_collapse_two_and_one",
   "returned_callables": [],
   "calls": {
-    "354:8-354:28": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "352:8-352:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "352:8-352:28": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "354:8-354:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -309,44 +273,42 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "170:41-170:56": {
-      "items": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.items",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      },
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterable.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterable"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "dict.items",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "170:41-170:56|artificial-call|generator-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterable"
+          }
+        ]
+      }
+    },
+    "170:41-170:56|artificial-call|generator-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     }
   }
@@ -356,25 +318,23 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "75:11-75:28": {
-      "Recursive": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.Recursive.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.Recursive.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -383,26 +343,22 @@ Higher order call graphs
   "callable": "taint_in_taint_out.indirect_sink",
   "returned_callables": [],
   "calls": {
-    "99:15-99:25": {
-      "add_tito": {
-        "attribute_access": {
-          "globals": [
-            {
-              "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-              "index": 0
-            }
-          ],
-          "is_attribute": true
-        }
+    "99:4-99:26": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "99:4-99:26": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "99:15-99:25": {
+      "attribute_access": {
+        "globals": [
+          {
+            "target": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+            "index": 0
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -412,16 +368,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "308:11-308:31": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -431,16 +385,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "232:11-232:26": {
-      "perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -450,16 +402,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "206:11-206:26": {
-      "obscure_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.obscure_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -468,64 +418,54 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_approximate_return_access_paths",
   "returned_callables": [],
   "calls": {
-    "256:15-256:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "256:4-256:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "255:8-255:42": {
-      "approximate_return_access_paths": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.approximate_return_access_paths",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "253:8-253:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "254:10-254:24": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "253:8-253:16": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "255:8-255:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "256:4-256:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "256:15-256:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -534,64 +474,54 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix",
   "returned_callables": [],
   "calls": {
-    "263:15-263:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "263:4-263:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "262:8-262:42": {
-      "approximate_return_access_paths": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.approximate_return_access_paths",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "260:8-260:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "261:12-261:26": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "260:8-260:16": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "262:8-262:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "263:4-263:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "263:15-263:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -600,49 +530,39 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
   "returned_callables": [],
   "calls": {
-    "429:15-429:28": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "429:15-429:23": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "429:4-429:29": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "427:14-427:28": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "428:8-428:36": {
-      "join_tito_collapse_test_3": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.join_tito_collapse_test_3",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.join_tito_collapse_test_3",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "427:14-427:28": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "429:4-429:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "429:15-429:23|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "429:15-429:28|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -651,49 +571,39 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
   "returned_callables": [],
   "calls": {
-    "455:15-455:26": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "455:15-455:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "455:4-455:27": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "453:20-453:34": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "454:8-454:42": {
-      "user_declared_tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.user_declared_tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "453:20-453:34": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "455:4-455:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "455:15-455:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "455:15-455:26|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -702,26 +612,22 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_with_indirect_sink_tito",
   "returned_callables": [],
   "calls": {
-    "104:4-104:35": {
-      "adds_tito_with_indirect_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.adds_tito_with_indirect_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "103:8-103:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "103:8-103:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "104:4-104:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.adds_tito_with_indirect_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -730,42 +636,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.issue_with_into_dict_then_tito_collapse",
   "returned_callables": [],
   "calls": {
-    "217:15-217:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "217:4-217:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "215:8-215:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "216:8-216:39": {
-      "into_dict_then_tito_collapse": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.into_dict_then_tito_collapse",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.into_dict_then_tito_collapse",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "215:8-215:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "217:4-217:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "217:15-217:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -774,80 +672,72 @@ Higher order call graphs
   "callable": "taint_in_taint_out.join_tito_collapse_test_1",
   "returned_callables": [],
   "calls": {
-    "392:21-392:41": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "388:13-388:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "389:7-389:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "389:7-389:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "390:19-390:39": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "389:7-389:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      }
-    },
-    "388:13-388:21": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "392:21-392:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -856,80 +746,72 @@ Higher order call graphs
   "callable": "taint_in_taint_out.join_tito_collapse_test_2",
   "returned_callables": [],
   "calls": {
-    "401:21-401:43": {
-      "tito_collapse_three": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_three",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "397:13-397:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "398:7-398:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "398:7-398:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "399:19-399:39": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "398:7-398:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      }
-    },
-    "397:13-397:21": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "401:21-401:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -938,58 +820,52 @@ Higher order call graphs
   "callable": "taint_in_taint_out.join_tito_collapse_test_3",
   "returned_callables": [],
   "calls": {
-    "423:23-423:43": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "420:7-420:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "420:7-420:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "421:15-421:35": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "420:7-420:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "423:23-423:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -998,67 +874,61 @@ Higher order call graphs
   "callable": "taint_in_taint_out.loop_perfect_tito",
   "returned_callables": [],
   "calls": {
-    "369:12-369:27": {
-      "perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
     "367:13-367:23": {
-      "range": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "range.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "367:8-367:23": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "range.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "range"
-            }
-          ]
-        }
+    "367:13-367:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "367:13-367:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "369:12-369:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1067,67 +937,61 @@ Higher order call graphs
   "callable": "taint_in_taint_out.loop_tito_collapse_one",
   "returned_callables": [],
   "calls": {
-    "376:12-376:32": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
     "374:13-374:23": {
-      "range": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "range.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "374:8-374:23": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "range.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "range"
-            }
-          ]
-        }
+    "374:13-374:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "374:13-374:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "376:12-376:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1136,67 +1000,61 @@ Higher order call graphs
   "callable": "taint_in_taint_out.loop_tito_collapse_two",
   "returned_callables": [],
   "calls": {
-    "383:12-383:32": {
-      "tito_collapse_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
     "381:13-381:23": {
-      "range": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "range.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "381:8-381:23": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "range.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "range"
-            }
-          ]
-        }
+    "381:13-381:23|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "381:13-381:23|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "383:12-383:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1205,42 +1063,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_issue_tito_collapse_two_with_input_path",
   "returned_callables": [],
   "calls": {
-    "416:15-416:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "416:4-416:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "414:26-414:40": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "415:8-415:44": {
-      "tito_collapse_one_with_input_path": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "414:26-414:40": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "416:4-416:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "416:15-416:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1249,42 +1099,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_issue_user_declared_tito_collapse_one",
   "returned_callables": [],
   "calls": {
-    "449:15-449:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "449:4-449:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "447:14-447:28": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "448:8-448:42": {
-      "user_declared_tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.user_declared_tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "447:14-447:28": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "449:4-449:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "449:15-449:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1293,42 +1135,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_issue_user_declared_tito_no_collapse",
   "returned_callables": [],
   "calls": {
-    "439:15-439:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "439:4-439:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "437:14-437:28": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "438:8-438:41": {
-      "user_declared_tito_no_collapse": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.user_declared_tito_no_collapse",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.user_declared_tito_no_collapse",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "437:14-437:28": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "439:4-439:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "439:15-439:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1337,42 +1171,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_issue_with_into_dict_then_perfect_tito",
   "returned_callables": [],
   "calls": {
-    "243:15-243:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "243:4-243:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "241:8-241:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "242:8-242:38": {
-      "into_dict_then_perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.into_dict_then_perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.into_dict_then_perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "241:8-241:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "243:4-243:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "243:15-243:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1381,42 +1207,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_issue_with_perfect_tito_then_into_dict",
   "returned_callables": [],
   "calls": {
-    "249:15-249:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "249:4-249:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "247:8-247:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "248:8-248:38": {
-      "perfect_tito_then_into_dict": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito_then_into_dict",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito_then_into_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "247:8-247:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "249:4-249:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "249:15-249:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1425,42 +1243,34 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_issue_with_tito_collapse_then_into_dict",
   "returned_callables": [],
   "calls": {
-    "223:15-223:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "223:4-223:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "221:8-221:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "222:8-222:39": {
-      "tito_collapse_then_into_dict": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_then_into_dict",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_then_into_dict",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "221:8-221:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "223:4-223:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "223:15-223:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1469,19 +1279,17 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
   "returned_callables": [],
   "calls": {
-    "463:4-463:14": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "463:4-463:14|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     }
   }
@@ -1490,18 +1298,14 @@ Higher order call graphs
   "callable": "taint_in_taint_out.no_tito_overwrite_then_init",
   "returned_callables": [],
   "calls": {
-    "469:11-469:17": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "468:4-468:14|artificial-call|subscript-set-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "468:4-468:14": {
-      "__setitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "469:11-469:17|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1510,64 +1314,54 @@ Higher order call graphs
   "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
   "returned_callables": [],
   "calls": {
-    "271:15-271:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "271:4-271:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "269:8-269:42": {
-      "approximate_return_access_paths": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.approximate_return_access_paths",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "267:8-267:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "268:10-268:24": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "267:8-267:16": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "269:8-269:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.approximate_return_access_paths",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "271:4-271:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "271:15-271:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -1577,16 +1371,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "317:8-317:23": {
-      "perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1596,16 +1388,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "236:8-236:23": {
-      "perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1614,19 +1404,17 @@ Higher order call graphs
   "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
   "returned_callables": [],
   "calls": {
-    "276:11-276:17": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "276:11-276:17|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     }
   }
@@ -1635,78 +1423,68 @@ Higher order call graphs
   "callable": "taint_in_taint_out.product_data",
   "returned_callables": [],
   "calls": {
-    "47:18-47:39": {
-      "_unpack": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out._unpack",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "45:19-45:83": {
-      "DataRecord": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "44:17-44:38": {
-      "some_service": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.some_service",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "37:11-37:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.get_data",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "40:17-40:39": {
-      "product_data": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.product_data",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.product_data",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "37:11-37:22": {
-      "get_data": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.get_data",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "44:17-44:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.some_service",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "45:19-45:83": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "47:18-47:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out._unpack",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1716,16 +1494,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "55:11-55:26": {
-      "product_data": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.product_data",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.product_data",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1734,35 +1510,29 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_always_via_feature",
   "returned_callables": [],
   "calls": {
-    "148:33-148:47": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "148:4-148:49": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
     "148:15-148:48": {
-      "tito_with_feature": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_with_feature",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_with_feature",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "148:4-148:49": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "148:33-148:47": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1771,257 +1541,215 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_complex_argument_tito",
   "returned_callables": [],
   "calls": {
-    "597:4-597:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 11, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "596:4-596:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 10, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "595:4-595:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 9, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "594:4-594:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 8, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "593:4-593:35": {
-      "complex_argument_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.complex_argument_tito",
-              "index": 2,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "592:12-592:20": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 3,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 3,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "591:8-591:16": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 2,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "589:4-589:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 7, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "588:4-588:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 6, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "587:4-587:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 5, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "586:4-586:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 4, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "585:4-585:31": {
-      "complex_argument_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.complex_argument_tito",
-              "index": 1,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "584:12-584:26": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "582:4-582:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 3, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "581:4-581:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "580:4-580:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "579:4-579:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "578:4-578:31": {
-      "complex_argument_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.complex_argument_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "577:12-577:26": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "575:8-575:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "576:8-576:16": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 1,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "575:8-575:16": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "577:12-577:26": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "578:4-578:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "579:4-579:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "580:4-580:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "581:4-581:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "582:4-582:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "584:12-584:26": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "585:4-585:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "586:4-586:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "587:4-587:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "588:4-588:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "589:4-589:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "591:8-591:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "592:12-592:20": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "593:4-593:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.complex_argument_tito",
+            "index": 2,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "594:4-594:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "595:4-595:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 9, "return_type": [] }
+        ]
+      }
+    },
+    "596:4-596:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 10, "return_type": [] }
+        ]
+      }
+    },
+    "597:4-597:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 11, "return_type": [] }
+        ]
       }
     }
   }
@@ -2030,37 +1758,31 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_complex_evaluator",
   "returned_callables": [],
   "calls": {
-    "194:47-194:61": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "194:4-194:63": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
     "194:15-194:62": {
-      "evaluate_lazy_payload": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.ComplexEvaluator"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.ComplexEvaluator"
+          }
+        ]
       }
     },
-    "194:4-194:63": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "194:47-194:61": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2069,44 +1791,38 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_explicit_call_to_superclass",
   "returned_callables": [],
   "calls": {
-    "166:4-166:24": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "165:11-165:34": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.GetUser.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "165:19-165:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "165:11-165:34": {
-      "GetUser": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.GetUser.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "166:4-166:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2115,35 +1831,29 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_simplified_evaluator",
   "returned_callables": [],
   "calls": {
-    "174:29-174:43": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "174:4-174:45": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
     "174:15-174:44": {
-      "evaluate_lazy": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.evaluate_lazy",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.evaluate_lazy",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "174:4-174:45": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "174:29-174:43": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2152,47 +1862,39 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tito_class_method",
   "returned_callables": [],
   "calls": {
-    "549:4-549:33": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "548:26-548:40": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "547:4-547:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
     "548:4-548:41": {
-      "set_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.TitoClassMethod.set_a",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.TitoClassMethod",
-              "is_class_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoClassMethod.set_a",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoClassMethod",
+            "is_class_method": true
+          }
+        ]
       }
     },
-    "547:4-547:33": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "548:26-548:40": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "549:4-549:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
       }
     }
   }
@@ -2201,44 +1903,36 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tito_from_0_to_1",
   "returned_callables": [],
   "calls": {
-    "567:4-567:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "566:4-566:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "563:8-563:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "565:4-565:26": {
-      "tito_from_0_to_1": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_from_0_to_1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_from_0_to_1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "563:8-563:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "566:4-566:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "567:4-567:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
       }
     }
   }
@@ -2247,383 +1941,319 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tito_self",
   "returned_callables": [],
   "calls": {
-    "533:4-533:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 13, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "532:4-532:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 12, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "531:4-531:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 11, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "530:19-530:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 5, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "530:4-530:34": {
-      "set_subfield": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.set_subfield",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.TitoSelf"
-            }
-          ]
-        }
-      }
-    },
-    "529:8-529:24": {
-      "TitoSelf": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 4,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.__init__",
-              "index": 4,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "527:4-527:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 10, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "526:4-526:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 9, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "525:19-525:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 4, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "525:4-525:34": {
-      "set_join": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.set_join",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.TitoSelf"
-            }
-          ]
-        }
-      }
-    },
-    "523:4-523:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 8, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "522:4-522:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 7, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "521:15-521:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 3, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "521:4-521:34": {
-      "set_join": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.set_join",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.TitoSelf"
-            }
-          ]
-        }
-      }
-    },
-    "520:8-520:24": {
-      "TitoSelf": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 3,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.__init__",
-              "index": 3,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "518:4-518:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 6, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "517:15-517:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "517:4-517:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 5, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "516:15-516:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "516:4-516:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 4, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "515:17-515:31": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "515:4-515:33": {
-      "set_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.set_a",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.TitoSelf"
-            }
-          ]
-        }
-      }
-    },
-    "514:8-514:24": {
-      "TitoSelf": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 2,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.__init__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "512:4-512:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 3, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "511:4-511:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "510:12-510:26": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "510:4-510:27": {
-      "set_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.set_a",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "taint_in_taint_out.TitoSelf"
-            }
-          ]
-        }
-      }
-    },
-    "509:8-509:24": {
-      "TitoSelf": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 1,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.__init__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "507:4-507:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "506:4-506:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "505:8-505:36": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "505:17-505:31": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "505:8-505:36": {
-      "TitoSelf": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "taint_in_taint_out.TitoSelf.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "506:4-506:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "507:4-507:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "509:8-509:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "510:4-510:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_a",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "510:12-510:26": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "511:4-511:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "512:4-512:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "514:8-514:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "515:4-515:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_a",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "515:17-515:31": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "516:4-516:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "516:15-516:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "517:4-517:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "517:15-517:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "518:4-518:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "520:8-520:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "521:4-521:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_join",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "521:15-521:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "522:4-522:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "523:4-523:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "525:4-525:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_join",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "525:19-525:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "526:4-526:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 9, "return_type": [] }
+        ]
+      }
+    },
+    "527:4-527:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 10, "return_type": [] }
+        ]
+      }
+    },
+    "529:8-529:24": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "530:4-530:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.TitoSelf.set_subfield",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "taint_in_taint_out.TitoSelf"
+          }
+        ]
+      }
+    },
+    "530:19-530:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "531:4-531:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 11, "return_type": [] }
+        ]
+      }
+    },
+    "532:4-532:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 12, "return_type": [] }
+        ]
+      }
+    },
+    "533:4-533:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 13, "return_type": [] }
+        ]
       }
     }
   }
@@ -2632,35 +2262,29 @@ Higher order call graphs
   "callable": "taint_in_taint_out.test_tuple_tito_indices",
   "returned_callables": [],
   "calls": {
-    "129:4-129:18": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "128:28-128:64": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.return_taint",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "128:41-128:55": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "128:28-128:64": {
-      "return_taint": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.return_taint",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "129:4-129:18": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2669,26 +2293,22 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito",
   "returned_callables": [],
   "calls": {
-    "59:32-59:46": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "59:11-59:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.product_data_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "59:11-59:47": {
-      "product_data_wrapper": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.product_data_wrapper",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "59:32-59:46": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2697,38 +2317,30 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_one",
   "returned_callables": [],
   "calls": {
-    "285:11-285:27": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "285:11-285:22": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "285:11-285:17": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
     "284:8-284:41": {
-      "tito_collapse_one_append_a_b_c": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one_append_a_b_c",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_append_a_b_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "285:11-285:17|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "285:11-285:22|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "285:11-285:27|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -2737,31 +2349,25 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_one_with_input_path",
   "returned_callables": [],
   "calls": {
-    "406:29-406:40": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "406:29-406:35": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
     "406:11-406:41": {
-      "tito_collapse_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "406:29-406:35|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "406:29-406:40|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -2771,16 +2377,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "410:11-410:47": {
-      "tito_collapse_one_with_input_path": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_one_with_input_path",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2790,16 +2394,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "210:8-210:23": {
-      "obscure_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.obscure_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2808,24 +2410,20 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_three",
   "returned_callables": [],
   "calls": {
-    "303:11-303:17": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "302:8-302:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_three_append_a",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "302:8-302:39": {
-      "tito_collapse_three_append_a": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_three_append_a",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "303:11-303:17|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -2834,31 +2432,25 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_collapse_two",
   "returned_callables": [],
   "calls": {
-    "294:11-294:22": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "294:11-294:17": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
     "293:8-293:39": {
-      "tito_collapse_two_append_a_b": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.tito_collapse_two_append_a_b",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.tito_collapse_two_append_a_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "294:11-294:17|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "294:11-294:22|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -2867,32 +2459,28 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_from_0_to_1",
   "returned_callables": [],
   "calls": {
-    "559:6-559:22": {
-      "random_integer": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.random_integer",
-              "index": 0,
-              "return_type": [ "float", "integer" ]
-            }
-          ]
-        }
+    "559:4-559:27|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "559:4-559:27": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "559:6-559:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.random_integer",
+            "index": 0,
+            "return_type": [ "float", "integer" ]
+          }
+        ]
       }
     }
   }
@@ -2902,16 +2490,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "144:15-144:31": {
-      "add_feature": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.add_feature",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.add_feature",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2920,27 +2506,21 @@ Higher order call graphs
   "callable": "taint_in_taint_out.tito_with_sink",
   "returned_callables": [],
   "calls": {
-    "474:15-474:21": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "473:8-473:14|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
     "474:4-474:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "473:8-473:14": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "474:15-474:21|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -2950,12 +2530,9 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "63:11-63:31": {
-      "getattr": {
-        "call": {
-          "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
-        }
-      },
-      "foo": { "attribute_access": { "is_attribute": true } }
+      "call": {
+        "calls": [ { "target": "getattr", "index": 0, "return_type": [] } ]
+      }
     }
   }
 }
@@ -2963,26 +2540,22 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
   "returned_callables": [],
   "calls": {
-    "180:19-180:26": {
-      "$parameter$field": {
-        "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "UnknownIdentifierCallee" ]
-          ]
-        }
+    "179:11-179:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "callable",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
       }
     },
-    "179:11-179:26": {
-      "callable": {
-        "call": {
-          "calls": [
-            {
-              "target": "callable",
-              "index": 0,
-              "return_type": [ "float", "integer", "boolean" ]
-            }
-          ]
-        }
+    "180:19-180:26": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
       }
     }
   }
@@ -2991,34 +2564,30 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
   "returned_callables": [],
   "calls": {
-    "190:56-190:71": {
-      "items": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__next__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "190:21-190:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "190:21-190:37": {
-      "$local_taint_in_taint_out?ComplexEvaluator?evaluate_lazy_payload$_evaluate": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "190:56-190:71": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "190:56-190:71|artificial-call|generator-iter": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "190:56-190:71|artificial-call|generator-next": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -3028,16 +2597,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "161:8-161:36": {
-      "__init__": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.GetQuery.__init__",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.GetQuery.__init__",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -3046,63 +2613,55 @@ Higher order call graphs
   "callable": "taint_in_taint_out.Recursive.__init__",
   "returned_callables": [],
   "calls": {
+    "69:12-69:16|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "69:41-69:80|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "69:41-69:80|artificial-call|generator-iter": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "69:41-69:80|artificial-call|generator-next": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "69:48-69:79|artificial-call|slice": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "slice.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "71:23-71:42": {
-      "get_related": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.get_related",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "69:48-69:79": {
-      "slice": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "slice.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "69:41-69:80": {
-      "__next__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "69:12-69:16": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.get_related",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -3112,16 +2671,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "498:15-498:33": {
-      "perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -3130,32 +2687,30 @@ Higher order call graphs
   "callable": "taint_in_taint_out.TitoSelf.set_join",
   "returned_callables": [],
   "calls": {
-    "489:11-489:16": {
-      "__lt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__lt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__ge__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__ge__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "489:11-489:16|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__lt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "489:11-489:16|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__ge__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     }
   }
@@ -3165,16 +2720,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "495:19-495:34": {
-      "perfect_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "taint_in_taint_out.perfect_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "taint_in_taint_out.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }

@@ -4,178 +4,152 @@ Higher order call graphs
   "callable": "global.$toplevel",
   "returned_callables": [],
   "calls": {
-    "116:7-116:15": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 4,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 4,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "116:0-116:4": {
-      "$local_global$obj8": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
-        }
-      }
-    },
-    "82:7-82:15": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 3,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 3,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "82:0-82:4": {
-      "$local_global$obj6": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
-        }
-      }
-    },
-    "73:0-73:22": {
-      "create_global_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "global.create_global_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "60:7-60:21": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "60:0-60:4": {
-      "$local_global$obj4": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj4}", "index": 0 } ]
-        }
-      }
-    },
-    "42:7-42:15": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 2,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "42:0-42:4": {
-      "$local_global$obj3": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
-        }
-      }
-    },
-    "35:7-35:15": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 1,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "35:0-35:4": {
-      "$local_global$obj2": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj2}", "index": 0 } ]
-        }
+    "13:0-13:4|identifier|$local_global$obj1": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
       }
     },
     "13:7-13:15": {
-      "Object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "13:0-13:4": {
-      "$local_global$obj1": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
-        }
+    "35:0-35:4|identifier|$local_global$obj2": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj2}", "index": 0 } ]
+      }
+    },
+    "35:7-35:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 1,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "42:0-42:4|identifier|$local_global$obj3": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
+      }
+    },
+    "42:7-42:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "60:0-60:4|identifier|$local_global$obj4": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj4}", "index": 0 } ]
+      }
+    },
+    "60:7-60:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "73:0-73:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "global.create_global_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "82:0-82:4|identifier|$local_global$obj6": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
+      }
+    },
+    "82:7-82:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 3,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "116:0-116:4|identifier|$local_global$obj8": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
+      }
+    },
+    "116:7-116:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 4,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -185,12 +159,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "70:8-70:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -199,22 +171,18 @@ Higher order call graphs
   "callable": "global.obj1_flow",
   "returned_callables": [],
   "calls": {
-    "27:4-27:15": {
-      "obj1_sink": {
-        "call": {
-          "calls": [
-            { "target": "global.obj1_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "26:4-26:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "26:4-26:17": {
-      "obj1_source": {
-        "call": {
-          "calls": [
-            { "target": "global.obj1_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "27:4-27:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -223,22 +191,18 @@ Higher order call graphs
   "callable": "global.obj1_no_flow",
   "returned_callables": [],
   "calls": {
-    "32:4-32:17": {
-      "obj1_source": {
-        "call": {
-          "calls": [
-            { "target": "global.obj1_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "31:4-31:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "31:4-31:15": {
-      "obj1_sink": {
-        "call": {
-          "calls": [
-            { "target": "global.obj1_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj1_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -247,20 +211,16 @@ Higher order call graphs
   "callable": "global.obj1_sink",
   "returned_callables": [],
   "calls": {
-    "21:15-21:19": {
-      "$local_global$obj1": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
-        }
+    "21:4-21:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "21:4-21:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "21:15-21:19|identifier|$local_global$obj1": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
       }
     }
   }
@@ -269,20 +229,16 @@ Higher order call graphs
   "callable": "global.obj1_source",
   "returned_callables": [],
   "calls": {
-    "17:13-17:27": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "17:4-17:8|identifier|$local_global$obj1": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
       }
     },
-    "17:4-17:8": {
-      "$local_global$obj1": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj1}", "index": 0 } ]
-        }
+    "17:13-17:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -291,20 +247,16 @@ Higher order call graphs
   "callable": "global.obj2_sink",
   "returned_callables": [],
   "calls": {
-    "39:15-39:19": {
-      "$local_global$obj2": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj2}", "index": 0 } ]
-        }
+    "39:4-39:20": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "39:4-39:20": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "39:15-39:19|identifier|$local_global$obj2": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj2}", "index": 0 } ]
       }
     }
   }
@@ -313,40 +265,32 @@ Higher order call graphs
   "callable": "global.obj3_flow",
   "returned_callables": [],
   "calls": {
-    "57:4-57:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "56:8-56:21": {
-      "obj3_return": {
-        "call": {
-          "calls": [
-            { "target": "global.obj3_return", "index": 0, "return_type": [] }
-          ]
-        }
+    "55:4-55:28": {
+      "call": {
+        "calls": [
+          { "target": "global.obj3_set", "index": 0, "return_type": [] }
+        ]
       }
     },
     "55:13-55:27": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "55:4-55:28": {
-      "obj3_set": {
-        "call": {
-          "calls": [
-            { "target": "global.obj3_set", "index": 0, "return_type": [] }
-          ]
-        }
+    "56:8-56:21": {
+      "call": {
+        "calls": [
+          { "target": "global.obj3_return", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "57:4-57:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -355,11 +299,9 @@ Higher order call graphs
   "callable": "global.obj3_return",
   "returned_callables": [],
   "calls": {
-    "46:11-46:15": {
-      "$local_global$obj3": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
-        }
+    "46:11-46:15|identifier|$local_global$obj3": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
       }
     }
   }
@@ -368,11 +310,9 @@ Higher order call graphs
   "callable": "global.obj3_set",
   "returned_callables": [],
   "calls": {
-    "50:4-50:8": {
-      "$local_global$obj3": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
-        }
+    "50:4-50:8|identifier|$local_global$obj3": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj3}", "index": 0 } ]
       }
     }
   }
@@ -381,20 +321,16 @@ Higher order call graphs
   "callable": "global.obj4_flow",
   "returned_callables": [],
   "calls": {
-    "65:15-65:19": {
-      "$local_global$obj4": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj4}", "index": 0 } ]
-        }
+    "65:4-65:20": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "65:4-65:20": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "65:15-65:19|identifier|$local_global$obj4": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj4}", "index": 0 } ]
       }
     }
   }
@@ -403,22 +339,18 @@ Higher order call graphs
   "callable": "global.obj6_flow",
   "returned_callables": [],
   "calls": {
-    "97:4-97:15": {
-      "obj6_sink": {
-        "call": {
-          "calls": [
-            { "target": "global.obj6_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "96:4-96:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj6_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "96:4-96:17": {
-      "obj6_source": {
-        "call": {
-          "calls": [
-            { "target": "global.obj6_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "97:4-97:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj6_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -427,20 +359,16 @@ Higher order call graphs
   "callable": "global.obj6_sink",
   "returned_callables": [],
   "calls": {
-    "91:15-91:19": {
-      "$local_global$obj6": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
-        }
+    "91:4-91:20": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "91:4-91:20": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "91:15-91:19|identifier|$local_global$obj6": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
       }
     }
   }
@@ -449,20 +377,16 @@ Higher order call graphs
   "callable": "global.obj6_source",
   "returned_callables": [],
   "calls": {
-    "87:11-87:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "87:4-87:8|identifier|$local_global$obj6": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
       }
     },
-    "87:4-87:8": {
-      "$local_global$obj6": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj6}", "index": 0 } ]
-        }
+    "87:11-87:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -471,22 +395,18 @@ Higher order call graphs
   "callable": "global.obj7_flow",
   "returned_callables": [],
   "calls": {
-    "113:4-113:15": {
-      "obj7_sink": {
-        "call": {
-          "calls": [
-            { "target": "global.obj7_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "112:4-112:17": {
+      "call": {
+        "calls": [
+          { "target": "global.obj7_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "112:4-112:17": {
-      "obj7_source": {
-        "call": {
-          "calls": [
-            { "target": "global.obj7_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "113:4-113:15": {
+      "call": {
+        "calls": [
+          { "target": "global.obj7_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -496,12 +416,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "107:4-107:20": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -511,12 +429,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "103:11-103:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -525,40 +441,32 @@ Higher order call graphs
   "callable": "global.obj8_flow",
   "returned_callables": [],
   "calls": {
-    "132:4-132:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "131:8-131:21": {
-      "obj8_return": {
-        "call": {
-          "calls": [
-            { "target": "global.obj8_return", "index": 0, "return_type": [] }
-          ]
-        }
+    "130:4-130:28": {
+      "call": {
+        "calls": [
+          { "target": "global.obj8_set", "index": 0, "return_type": [] }
+        ]
       }
     },
     "130:13-130:27": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "130:4-130:28": {
-      "obj8_set": {
-        "call": {
-          "calls": [
-            { "target": "global.obj8_set", "index": 0, "return_type": [] }
-          ]
-        }
+    "131:8-131:21": {
+      "call": {
+        "calls": [
+          { "target": "global.obj8_return", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "132:4-132:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -567,11 +475,9 @@ Higher order call graphs
   "callable": "global.obj8_return",
   "returned_callables": [],
   "calls": {
-    "120:11-120:15": {
-      "$local_global$obj8": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
-        }
+    "120:11-120:15|identifier|$local_global$obj8": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
       }
     }
   }
@@ -580,11 +486,9 @@ Higher order call graphs
   "callable": "global.obj8_set",
   "returned_callables": [],
   "calls": {
-    "125:4-125:8": {
-      "$local_global$obj8": {
-        "identifier": {
-          "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
-        }
+    "125:4-125:8|identifier|$local_global$obj8": {
+      "identifier": {
+        "globals": [ { "target": "Obj{global.obj8}", "index": 0 } ]
       }
     }
   }

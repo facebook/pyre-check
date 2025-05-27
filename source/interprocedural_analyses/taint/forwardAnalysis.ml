@@ -151,12 +151,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
-  let get_attribute_access_callees ~location ~attribute =
+  let get_attribute_access_callees
+      ~location
+      ~attribute_access:({ Name.Attribute.attribute; _ } as attribute_access)
+    =
     let callees =
       CallGraph.DefineCallGraph.resolve_attribute_access
         FunctionContext.call_graph_of_define
         ~location
-        ~attribute
+        ~attribute_access
     in
     let () =
       match callees with
@@ -1119,7 +1122,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee
     =
     match callee.Node.value with
-    | Expression.Name (Name.Attribute { base; attribute; origin }) ->
+    | Expression.Name (Name.Attribute attribute_access) ->
         (* If we are already analyzing a call of a property, then ignore properties
          * to avoid infinite recursion. *)
         let resolve_properties = not is_property_call in
@@ -1130,9 +1133,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~is_attribute_used:true
             ~location:callee.Node.location
             ~resolve_properties
-            ~base
-            ~attribute
-            ~origin
+            ~attribute_access
         in
         { self_taint = Some base_taint; callee_taint = Some attribute_taint; state }
     | _ ->
@@ -1153,8 +1154,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Special case: `x.foo()` where foo is a property returning a callable. *)
     let callee_is_property =
       match is_property_call, callee.Node.value with
-      | false, Expression.Name (Name.Attribute { attribute; _ }) ->
-          get_attribute_access_callees ~location:callee.Node.location ~attribute |> Option.is_some
+      | false, Expression.Name (Name.Attribute attribute_access) ->
+          get_attribute_access_callees ~location:callee.Node.location ~attribute_access
+          |> Option.is_some
       | _ -> false
     in
     let taint_on_self_and_callee () =
@@ -1558,7 +1560,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state
       ~location
       ~base
-      ~origin
       ~taint_and_state_after_index_access
       call_target
     =
@@ -1578,9 +1579,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     ~is_attribute_used:is_result_used
                     ~resolve_properties:false
                     ~location
-                    ~base
-                    ~attribute
-                    ~origin
+                    ~attribute_access:{ Name.Attribute.base; attribute; origin = None }
                 in
                 let taint =
                   taint
@@ -1636,7 +1635,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            name = None;
          };
        ];
-     origin;
+     origin = _;
     } ->
         let _, state =
           analyze_expression
@@ -1674,7 +1673,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~state
                   ~location
                   ~base
-                  ~origin
                   ~taint_and_state_after_index_access
                   call_target
               in
@@ -2344,20 +2342,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
       ~state
       ~is_attribute_used
-      ~location
       ~resolve_properties
-      ~base
-      ~attribute
-      ~origin
+      ~location
+      ~attribute_access:({ Name.Attribute.base; attribute; origin } as attribute_access)
     =
-    let expression =
-      Expression.Name (Name.Attribute { base; attribute; origin }) |> Node.create ~location
-    in
+    let expression = Expression.Name (Name.Attribute attribute_access) |> Node.create ~location in
     let base_taint, state =
       analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:base
     in
     let attribute_access_callees =
-      if resolve_properties then get_attribute_access_callees ~location ~attribute else None
+      if resolve_properties then get_attribute_access_callees ~location ~attribute_access else None
     in
 
     let property_call_result =
@@ -2555,12 +2549,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let expression_taint, state =
         match
-          CallModel.StringFormatCall.get_string_format_callees
-            ~call_graph_of_define:FunctionContext.call_graph_of_define
+          CallGraph.DefineCallGraph.resolve_format_string_stringify
+            FunctionContext.call_graph_of_define
             ~location:expression_location
         with
-        | Some { CallGraph.StringFormatCallees.stringify_targets = _ :: _ as stringify_targets; _ }
-          ->
+        | Some { CallGraph.FormatStringStringifyCallees.targets = _ :: _ as stringify_targets } ->
             List.fold
               stringify_targets
               ~init:(ForwardState.Tree.empty, { taint = ForwardState.empty })
@@ -2739,7 +2732,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
-      | Name (Name.Attribute { base; attribute; origin }) ->
+      | Name (Name.Attribute attribute_access) ->
           let { attribute_taint; state; _ } =
             analyze_attribute_access
               ~pyre_in_context
@@ -2747,9 +2740,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~is_attribute_used:is_result_used
               ~resolve_properties:true
               ~location
-              ~base
-              ~attribute
-              ~origin
+              ~attribute_access
           in
           attribute_taint, state
       | Set set ->
@@ -3019,8 +3010,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression:value |> snd
         else
           match target_value with
-          | Expression.Name (Name.Attribute { attribute; _ }) ->
-              let attribute_access_callees = get_attribute_access_callees ~location ~attribute in
+          | Expression.Name (Name.Attribute attribute_access) ->
+              let attribute_access_callees =
+                get_attribute_access_callees ~location ~attribute_access
+              in
 
               let property_call_state =
                 match attribute_access_callees with

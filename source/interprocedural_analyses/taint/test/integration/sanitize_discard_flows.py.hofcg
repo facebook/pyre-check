@@ -4,30 +4,26 @@ Higher order call graphs
   "callable": "sanitize_discard_flows.test_sink_a_sanitize_a_discarded",
   "returned_callables": [],
   "calls": {
-    "42:11-42:36": {
-      "sanitize_a_source_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.sanitize_a_source_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "42:4-42:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.a_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "42:4-42:37": {
-      "a_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.a_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "42:11-42:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.sanitize_a_source_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -36,43 +32,37 @@ Higher order call graphs
   "callable": "sanitize_discard_flows.test_source_a_sanitize_a_b_discarded",
   "returned_callables": [],
   "calls": {
-    "38:53-38:63": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "38:11-38:65": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.sanitize_b_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "38:32-38:64": {
-      "sanitize_a_sink_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.sanitize_a_sink_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "38:11-38:65": {
-      "sanitize_b_sink_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.sanitize_b_sink_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "38:53-38:63": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -81,30 +71,26 @@ Higher order call graphs
   "callable": "sanitize_discard_flows.test_source_a_sanitize_a_kept",
   "returned_callables": [],
   "calls": {
-    "34:32-34:42": {
-      "a_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.a_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "34:11-34:43": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.sanitize_a_sink_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "34:11-34:43": {
-      "sanitize_a_sink_tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "sanitize_discard_flows.sanitize_a_sink_tito",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "34:32-34:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "sanitize_discard_flows.a_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }

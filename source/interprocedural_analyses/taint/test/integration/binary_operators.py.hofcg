@@ -4,50 +4,44 @@ Higher order call graphs
   "callable": "binary_operators.test1",
   "returned_callables": [],
   "calls": {
-    "16:10-16:24": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "16:4-16:24": {
-      "__add__": {
-        "call": {
-          "calls": [
-            {
-              "target": "binary_operators.Add.__add__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "binary_operators.Add"
-            }
-          ]
-        }
-      }
-    },
     "15:10-15:15": {
-      "Add": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "16:4-16:24|artificial-call|binary": {
+      "call": {
+        "calls": [
+          {
+            "target": "binary_operators.Add.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "binary_operators.Add"
+          }
+        ]
+      }
+    },
+    "16:10-16:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -56,50 +50,44 @@ Higher order call graphs
   "callable": "binary_operators.test2",
   "returned_callables": [],
   "calls": {
-    "21:11-21:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "21:4-21:25": {
-      "__iadd__": {
-        "call": {
-          "calls": [
-            {
-              "target": "binary_operators.Add.__add__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "binary_operators.Add"
-            }
-          ]
-        }
-      }
-    },
     "20:10-20:15": {
-      "Add": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "21:4-21:25|artificial-call|augmented-assign-dunder-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "binary_operators.Add.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "binary_operators.Add"
+          }
+        ]
+      }
+    },
+    "21:11-21:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -109,12 +97,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "11:8-11:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

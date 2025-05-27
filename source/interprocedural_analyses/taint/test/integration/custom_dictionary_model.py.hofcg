@@ -4,32 +4,28 @@ Higher order call graphs
   "callable": "custom_dictionary_model.sink_dictionary_key",
   "returned_callables": [],
   "calls": {
-    "26:6-26:22": {
-      "_test_source_2": {
-        "call": {
-          "calls": [
-            {
-              "target": "custom_dictionary_model._test_source_2",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "26:4-26:29|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "26:4-26:29": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "26:6-26:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "custom_dictionary_model._test_source_2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -38,32 +34,28 @@ Higher order call graphs
   "callable": "custom_dictionary_model.sink_dictionary_value",
   "returned_callables": [],
   "calls": {
-    "21:13-21:29": {
-      "_test_source_2": {
-        "call": {
-          "calls": [
-            {
-              "target": "custom_dictionary_model._test_source_2",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "21:4-21:29|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "21:4-21:29": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "21:13-21:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "custom_dictionary_model._test_source_2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -72,37 +64,31 @@ Higher order call graphs
   "callable": "custom_dictionary_model.tainted_dictionary_key_sink",
   "returned_callables": [],
   "calls": {
-    "38:4-38:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "37:4-37:25|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
     "37:6-37:20": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "37:4-37:25": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "38:4-38:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -111,37 +97,31 @@ Higher order call graphs
   "callable": "custom_dictionary_model.tainted_dictionary_value_sink",
   "returned_callables": [],
   "calls": {
-    "32:4-32:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "31:4-31:27|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
     "31:13-31:27": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "31:4-31:27": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -150,28 +130,24 @@ Higher order call graphs
   "callable": "custom_dictionary_model.untainted_dictionary",
   "returned_callables": [],
   "calls": {
-    "16:4-16:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "15:4-15:31|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "15:4-15:31": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "16:4-16:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

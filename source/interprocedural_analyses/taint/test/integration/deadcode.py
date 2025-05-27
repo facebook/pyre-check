@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
+from typing import Optional
+from dataclasses import dataclass
 
 # TODO(T182207981): Find issues in unreachable places
 
@@ -78,3 +80,21 @@ class EarlyReturns():
 def early_return_no_issue_class():
     object = EarlyReturns(_test_source())
     _test_sink(object.x)
+
+
+class MyCallable:
+    def __call__(self) -> None:
+        return
+
+
+@dataclass
+class Foo:
+    a: MyCallable
+
+
+def dead_code_by_type_refinement(d: Optional[Foo]) -> None:
+    if d is not None:
+        if isinstance(d.a, MyCallable):
+            print("..")
+        else:
+            _test_sink(d)

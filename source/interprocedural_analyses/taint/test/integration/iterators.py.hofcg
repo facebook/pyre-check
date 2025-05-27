@@ -4,59 +4,49 @@ Higher order call graphs
   "callable": "iterators.test_custom_getitem",
   "returned_callables": [],
   "calls": {
-    "60:25-60:40": {
-      "CustomGetItem": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "60:20-60:41": {
-      "__iter__": {
-        "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "CannotFindParentClass" ]
-          ]
-        }
-      }
-    },
-    "60:15-60:42": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.SupportsNext.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.SupportsNext"
-            }
-          ]
-        }
-      }
-    },
     "60:4-60:43": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "60:15-60:42|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.SupportsNext.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.SupportsNext"
+          }
+        ]
+      }
+    },
+    "60:20-60:41|artificial-call|iter-call": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
+      }
+    },
+    "60:25-60:40": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -65,65 +55,57 @@ Higher order call graphs
   "callable": "iterators.test_custom_iter",
   "returned_callables": [],
   "calls": {
-    "47:25-47:37": {
-      "CustomIter": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "47:20-47:38": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "iterators.CustomIter.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "iterators.CustomIter"
-            }
-          ]
-        }
-      }
-    },
-    "47:15-47:39": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
     "47:4-47:40": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "47:15-47:39|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "47:20-47:38|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "iterators.CustomIter.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "iterators.CustomIter"
+          }
+        ]
+      }
+    },
+    "47:25-47:37": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -132,459 +114,381 @@ Higher order call graphs
   "callable": "iterators.test_next_iter",
   "returned_callables": [],
   "calls": {
-    "37:15-37:24": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 3,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "37:4-37:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 11, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "36:15-36:23": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "36:4-36:24": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 10, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "35:4-35:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 9, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "34:31-34:45": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 6, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "34:13-34:21": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 4,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
-      }
-    },
-    "34:8-34:63": {
-      "next": {
-        "call": {
-          "calls": [ { "target": "next", "index": 1, "return_type": [] } ]
-        }
-      }
-    },
-    "32:4-32:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 8, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "31:23-31:37": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 5, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "31:13-31:21": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 3,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
-      }
-    },
-    "31:8-31:38": {
-      "next": {
-        "call": {
-          "calls": [ { "target": "next", "index": 0, "return_type": [] } ]
-        }
-      }
-    },
-    "29:20-29:27": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterable.__iter__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "29:15-29:28": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 6,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
-    "29:4-29:29": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 7, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "28:9-28:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 4, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "26:20-26:27": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterable.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "26:15-26:28": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 5,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
-    "26:4-26:29": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 6, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "25:14-25:28": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 3, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "23:15-23:24": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "23:4-23:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 5, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "22:15-22:23": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "22:4-22:24": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 4, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "21:13-21:27": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
-      }
-    },
-    "21:8-21:28": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 4,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
-    "20:24-20:38": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "18:15-18:22": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 3,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
-    "18:4-18:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 3, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "17:15-17:22": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 2,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
-    "17:4-17:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "16:15-16:22": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      }
-    },
-    "16:4-16:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "15:8-15:22": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
-      }
-    },
-    "14:19-14:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "12:20-12:34": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
-      }
-    },
-    "12:15-12:35": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
+    "11:16-11:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "12:4-12:36": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "11:16-11:30": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "12:15-12:35|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "12:20-12:34|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "14:19-14:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "15:8-15:22|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "16:4-16:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "16:15-16:22|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "17:4-17:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "17:15-17:22|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "18:4-18:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "18:15-18:22|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "20:24-20:38": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "21:8-21:28|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "21:13-21:27|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "22:4-22:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "22:15-22:23|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "23:4-23:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "23:15-23:24|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "25:14-25:28": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "26:4-26:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "26:15-26:28|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 5,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "26:20-26:27|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "28:9-28:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 4, "return_type": [] }
+        ]
+      }
+    },
+    "29:4-29:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 7, "return_type": [] }
+        ]
+      }
+    },
+    "29:15-29:28|artificial-call|next-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 6,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "29:20-29:27|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "31:8-31:38": {
+      "call": {
+        "calls": [ { "target": "next", "index": 0, "return_type": [] } ]
+      }
+    },
+    "31:13-31:21|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "31:23-31:37": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 5, "return_type": [] }
+        ]
+      }
+    },
+    "32:4-32:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 8, "return_type": [] }
+        ]
+      }
+    },
+    "34:8-34:63": {
+      "call": {
+        "calls": [ { "target": "next", "index": 1, "return_type": [] } ]
+      }
+    },
+    "34:13-34:21|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 4,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "34:31-34:45": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 6, "return_type": [] }
+        ]
+      }
+    },
+    "35:4-35:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 9, "return_type": [] }
+        ]
+      }
+    },
+    "36:4-36:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 10, "return_type": [] }
+        ]
+      }
+    },
+    "36:15-36:23|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 2,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "37:4-37:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 11, "return_type": [] }
+        ]
+      }
+    },
+    "37:15-37:24|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 3,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     }
   }
@@ -594,12 +498,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "52:15-52:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -608,28 +510,24 @@ Higher order call graphs
   "callable": "iterators.CustomIter.__iter__",
   "returned_callables": [],
   "calls": {
-    "42:21-42:35": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "42:15-42:37|artificial-call|iter-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
       }
     },
-    "42:15-42:37": {
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "42:21-42:35": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

@@ -4,68 +4,48 @@ Higher order call graphs
   "callable": "callables.$toplevel",
   "returned_callables": [],
   "calls": {
-    "37:15-37:38": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
-      }
-    },
-    "37:0-37:12": {
-      "$local_callables$PIOutputType": {
-        "identifier": {
-          "globals": [
-            { "target": "Obj{callables.PIOutputType}", "index": 0 }
-          ]
-        }
-      }
-    },
-    "36:14-36:36": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
-      }
-    },
-    "36:0-36:11": {
-      "$local_callables$PIInputType": {
-        "identifier": {
-          "globals": [
-            { "target": "Obj{callables.PIInputType}", "index": 0 }
-          ]
-        }
-      }
-    },
-    "13:15-13:38": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
-      }
-    },
-    "13:0-13:12": {
-      "$local_callables$EPOutputType": {
-        "identifier": {
-          "globals": [
-            { "target": "Obj{callables.EPOutputType}", "index": 0 }
-          ]
-        }
+    "12:0-12:11|identifier|$local_callables$EPInputType": {
+      "identifier": {
+        "globals": [ { "target": "Obj{callables.EPInputType}", "index": 0 } ]
       }
     },
     "12:14-12:36": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
-    "12:0-12:11": {
-      "$local_callables$EPInputType": {
-        "identifier": {
-          "globals": [
-            { "target": "Obj{callables.EPInputType}", "index": 0 }
-          ]
-        }
+    "13:0-13:12|identifier|$local_callables$EPOutputType": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{callables.EPOutputType}", "index": 0 }
+        ]
+      }
+    },
+    "13:15-13:38": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "36:0-36:11|identifier|$local_callables$PIInputType": {
+      "identifier": {
+        "globals": [ { "target": "Obj{callables.PIInputType}", "index": 0 } ]
+      }
+    },
+    "36:14-36:36": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "37:0-37:12|identifier|$local_callables$PIOutputType": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{callables.PIOutputType}", "index": 0 }
+        ]
+      }
+    },
+    "37:15-37:38": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -74,106 +54,94 @@ Higher order call graphs
   "callable": "callables.async_execute_event_processor",
   "returned_callables": [],
   "calls": {
-    "58:14-58:44": {
-      "async_call_tainted": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "callables.AbstractEventProcessor"
-            }
-          ]
-        }
+    "55:18-55:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "callables.get_event_processors",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "57:14-57:35": {
-      "async_run": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{callables.AbstractEventProcessor.async_run}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "callables.AbstractEventProcessor"
-            }
-          ]
-        }
+    "55:18-55:40|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
       }
     },
-    "56:42-56:56": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "55:18-55:40|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     },
     "56:20-56:67": {
-      "processor_type": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "callables.AbstractEventProcessor.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "callables.AbstractEventProcessor.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "55:18-55:40": {
-      "get_event_processors": {
-        "call": {
-          "calls": [
-            {
-              "target": "callables.get_event_processors",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "56:42-56:56": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "55:8-55:40": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "57:14-57:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{callables.AbstractEventProcessor.async_run}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "callables.AbstractEventProcessor"
+          }
+        ]
+      }
+    },
+    "58:14-58:44": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "callables.AbstractEventProcessor"
+          }
+        ]
       }
     }
   }
@@ -183,12 +151,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "33:8-33:32": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -198,12 +164,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "30:8-30:31": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

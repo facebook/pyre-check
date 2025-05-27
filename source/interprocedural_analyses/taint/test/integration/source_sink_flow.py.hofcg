@@ -5,16 +5,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "18:4-18:12": {
-      "qux": {
-        "call": {
-          "calls": [
-            {
-              "target": "source_sink_flow.qux",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "source_sink_flow.qux", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -24,12 +18,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "10:11-10:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -38,30 +30,22 @@ Higher order call graphs
   "callable": "source_sink_flow.match_flows",
   "returned_callables": [],
   "calls": {
-    "27:4-27:13": {
-      "bad": {
-        "call": {
-          "calls": [
-            {
-              "target": "source_sink_flow.bad",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "26:8-26:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "source_sink_flow.some_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "26:8-26:21": {
-      "some_source": {
-        "call": {
-          "calls": [
-            {
-              "target": "source_sink_flow.some_source",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "27:4-27:13": {
+      "call": {
+        "calls": [
+          { "target": "source_sink_flow.bad", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -71,12 +55,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "14:4-14:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -86,16 +68,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "22:11-22:16": {
-      "bar": {
-        "call": {
-          "calls": [
-            {
-              "target": "source_sink_flow.bar",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "source_sink_flow.bar", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

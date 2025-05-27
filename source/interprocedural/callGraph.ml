@@ -775,7 +775,7 @@ module HigherOrderParameter = struct
     }
 
 
-  let deduplicate { index; call_targets; unresolved } =
+  let dedup_and_sort { index; call_targets; unresolved } =
     { index; call_targets = CallTarget.dedup_and_sort call_targets; unresolved }
 
 
@@ -824,7 +824,7 @@ module HigherOrderParameterMap = struct
     Map.union (fun _ left right -> Some (HigherOrderParameter.join left right)) left right
 
 
-  let deduplicate map = Map.map HigherOrderParameter.deduplicate map
+  let dedup_and_sort map = Map.map HigherOrderParameter.dedup_and_sort map
 
   let all_targets ~use_case map =
     Map.fold
@@ -1007,7 +1007,7 @@ module CallCallees = struct
     }
 
 
-  let deduplicate
+  let dedup_and_sort
       {
         call_targets;
         new_targets;
@@ -1022,7 +1022,7 @@ module CallCallees = struct
     let new_targets = CallTarget.dedup_and_sort new_targets in
     let init_targets = CallTarget.dedup_and_sort init_targets in
     let decorated_targets = CallTarget.dedup_and_sort decorated_targets in
-    let higher_order_parameters = HigherOrderParameterMap.deduplicate higher_order_parameters in
+    let higher_order_parameters = HigherOrderParameterMap.dedup_and_sort higher_order_parameters in
     {
       call_targets;
       new_targets;
@@ -1272,7 +1272,7 @@ module AttributeAccessCallees = struct
     { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
 
 
-  let deduplicate
+  let dedup_and_sort
       { property_targets; global_targets; is_attribute; callable_targets; decorated_targets }
     =
     {
@@ -1421,7 +1421,7 @@ module IdentifierCallees = struct
     { global_targets; nonlocal_targets; callable_targets; decorated_targets }
 
 
-  let deduplicate { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
+  let dedup_and_sort { global_targets; nonlocal_targets; callable_targets; decorated_targets } =
     {
       global_targets = CallTarget.dedup_and_sort global_targets;
       nonlocal_targets = CallTarget.dedup_and_sort nonlocal_targets;
@@ -1496,62 +1496,64 @@ module IdentifierCallees = struct
     }
 end
 
-(** An aggregate of callees for formatting strings. *)
-module StringFormatCallees = struct
-  type t = {
-    (* Implicit callees for any expression that is stringified. *)
-    stringify_targets: CallTarget.t list;
-    (* Artificial callees for distinguishing f-strings within a function. *)
-    f_string_targets: CallTarget.t list;
-  }
-  [@@deriving eq, show { with_path = false }]
+(** Artificial callees for distinguishing f-strings within a function. *)
+module FormatStringArtificialCallees = struct
+  type t = { targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { stringify_targets; f_string_targets } =
-    {
-      stringify_targets = CallTarget.dedup_and_sort stringify_targets;
-      f_string_targets = CallTarget.dedup_and_sort f_string_targets;
-    }
+  let dedup_and_sort { targets } = { targets = CallTarget.dedup_and_sort targets }
+
+  let join { targets = left_targets } { targets = right_targets } =
+    { targets = List.rev_append left_targets right_targets }
 
 
-  let join
-      { stringify_targets = left_stringify_targets; f_string_targets = left_f_string_targets }
-      { stringify_targets = right_stringify_targets; f_string_targets = right_f_string_targets }
-    =
-    {
-      stringify_targets = List.rev_append left_stringify_targets right_stringify_targets;
-      f_string_targets = List.rev_append left_f_string_targets right_f_string_targets;
-    }
-
-
-  let all_targets ~use_case { stringify_targets; f_string_targets } =
+  let all_targets ~use_case { targets } =
     (match use_case with
     | AllTargetsUseCase.CallGraphDependency -> []
-    | AllTargetsUseCase.TaintAnalysisDependency -> stringify_targets
-    | AllTargetsUseCase.Everything -> List.rev_append f_string_targets stringify_targets)
+    | AllTargetsUseCase.TaintAnalysisDependency -> []
+    | AllTargetsUseCase.Everything -> targets)
     |> List.map ~f:CallTarget.target
 
 
-  let from_stringify_targets stringify_targets = { stringify_targets; f_string_targets = [] }
+  let from_f_string_targets targets = { targets }
 
-  let from_f_string_targets f_string_targets = { stringify_targets = []; f_string_targets }
-
-  let to_json { stringify_targets; f_string_targets } =
-    []
-    |> JsonHelper.add_list "stringify" stringify_targets CallTarget.to_json
-    |> JsonHelper.add_list "f-string" f_string_targets CallTarget.to_json
-    |> fun bindings -> `Assoc bindings
-
+  let to_json { targets } = `List (List.map ~f:CallTarget.to_json targets)
 
   let redirect_to_decorated ~decorators:_ = Fn.id
 
   let drop_decorated_targets = Fn.id
 
-  let regenerate_call_indices ~indexer { stringify_targets; f_string_targets } =
-    {
-      stringify_targets =
-        List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) stringify_targets;
-      f_string_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) f_string_targets;
-    }
+  let regenerate_call_indices ~indexer { targets } =
+    { targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) targets }
+end
+
+(** Implicit callees for any expression that is stringified. *)
+module FormatStringStringifyCallees = struct
+  type t = { targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
+
+  let dedup_and_sort { targets } = { targets = CallTarget.dedup_and_sort targets }
+
+  let join { targets = left_targets } { targets = right_targets } =
+    { targets = List.rev_append left_targets right_targets }
+
+
+  let all_targets ~use_case { targets } =
+    (match use_case with
+    | AllTargetsUseCase.CallGraphDependency -> []
+    | AllTargetsUseCase.TaintAnalysisDependency -> targets
+    | AllTargetsUseCase.Everything -> targets)
+    |> List.map ~f:CallTarget.target
+
+
+  let from_stringify_targets targets = { targets }
+
+  let to_json { targets } = `List (List.map ~f:CallTarget.to_json targets)
+
+  let redirect_to_decorated ~decorators:_ = Fn.id
+
+  let drop_decorated_targets = Fn.id
+
+  let regenerate_call_indices ~indexer { targets } =
+    { targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) targets }
 end
 
 (** Represents a unique identifier for an expression in the control flow graph. *)
@@ -1592,6 +1594,51 @@ module ExpressionIdentifier = struct
         }
     [@@deriving compare, sexp, hash, show { with_path = false }]
 
+    let location = function
+      | Regular location
+      | ArtificialAttributeAccess { Origin.location; _ }
+      | ArtificialCall { Origin.location; _ }
+      | ArtificialComparisonOperator { Origin.location; _ }
+      | ArtificialBinaryOperator { Origin.location; _ }
+      | ArtificialUnaryOperator { Origin.location; _ }
+      | ArtificialBooleanOperator { Origin.location; _ }
+      | ArtificialSubscript { Origin.location; _ }
+      | ArtificialWalrusOperator { Origin.location; _ }
+      | ArtificialSlice { Origin.location; _ }
+      | ArtificialAwait { Origin.location; _ }
+      | IdentifierExpression { location; _ }
+      | FormatStringArtificial location
+      | FormatStringStringify location
+      | Constant { location; _ } ->
+          location
+
+
+    let autogenerated_compare = compare
+
+    let compare left right =
+      match Location.compare (location left) (location right) with
+      | 0 -> autogenerated_compare left right
+      | result -> result
+
+
+    let of_call ~location { Call.origin; _ } =
+      match origin with
+      | None -> Regular location
+      | Some origin -> ArtificialCall origin
+
+
+    let of_attribute_access ~location { Name.Attribute.origin; _ } =
+      match origin with
+      | None -> Regular location
+      | Some origin -> ArtificialAttributeAccess origin
+
+
+    let of_identifier ~location identifier = IdentifierExpression { location; identifier }
+
+    let of_format_string_artificial ~location = FormatStringArtificial location
+
+    let of_format_string_stringify ~location = FormatStringStringify location
+
     let of_expression { Node.value; location } =
       match value with
       | Expression.Call { Call.origin = Some origin; _ } -> ArtificialCall origin
@@ -1617,6 +1664,107 @@ module ExpressionIdentifier = struct
            | Constant.Integer _ ) as constant) ->
           Constant { location; constant }
       | _ -> Regular location
+
+
+    let pp_json_key formatter = function
+      | Regular location -> Location.pp formatter location
+      | ArtificialAttributeAccess { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-attribute-access|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialCall { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-call|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialComparisonOperator { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-comparison-operator|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialBinaryOperator { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-binary-operator|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialUnaryOperator { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-unary-operator|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialBooleanOperator { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-boolean-operator|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialSubscript { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-subscript|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialWalrusOperator { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-walrus|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialSlice { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-slice|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | ArtificialAwait { Origin.location; kind } ->
+          Format.fprintf
+            formatter
+            "%a|artificial-await|%a"
+            Location.pp
+            location
+            Origin.pp_kind_json
+            kind
+      | IdentifierExpression { location; identifier } ->
+          Format.fprintf formatter "%a|identifier|%s" Location.pp location identifier
+      | FormatStringArtificial location ->
+          Format.fprintf formatter "%a|format-string-artificial" Location.pp location
+      | FormatStringStringify location ->
+          Format.fprintf formatter "%a|format-string-stringify" Location.pp location
+      | Constant { location; constant } ->
+          Format.fprintf
+            formatter
+            "%a|constant|%a"
+            Location.pp
+            location
+            Expression.pp
+            (Expression.Constant constant |> Node.create_with_default_location)
+
+
+    let json_key = Format.asprintf "%a" pp_json_key
   end
 
   include T
@@ -1632,24 +1780,59 @@ module ExpressionCallees = struct
     call: CallCallees.t option;
     attribute_access: AttributeAccessCallees.t option;
     identifier: IdentifierCallees.t option;
-    string_format: StringFormatCallees.t option;
+    format_string_artificial: FormatStringArtificialCallees.t option;
+    format_string_stringify: FormatStringStringifyCallees.t option;
   }
   [@@deriving eq, show { with_path = false }]
 
   let from_call callees =
-    { call = Some callees; attribute_access = None; identifier = None; string_format = None }
+    {
+      call = Some callees;
+      attribute_access = None;
+      identifier = None;
+      format_string_artificial = None;
+      format_string_stringify = None;
+    }
 
 
   let from_attribute_access properties =
-    { call = None; attribute_access = Some properties; identifier = None; string_format = None }
+    {
+      call = None;
+      attribute_access = Some properties;
+      identifier = None;
+      format_string_artificial = None;
+      format_string_stringify = None;
+    }
 
 
   let from_identifier identifier =
-    { call = None; attribute_access = None; identifier = Some identifier; string_format = None }
+    {
+      call = None;
+      attribute_access = None;
+      identifier = Some identifier;
+      format_string_artificial = None;
+      format_string_stringify = None;
+    }
 
 
-  let from_string_format string_format =
-    { call = None; attribute_access = None; identifier = None; string_format = Some string_format }
+  let from_format_string_artificial format_string_artificial =
+    {
+      call = None;
+      attribute_access = None;
+      identifier = None;
+      format_string_artificial = Some format_string_artificial;
+      format_string_stringify = None;
+    }
+
+
+  let from_format_string_stringify format_string_stringify =
+    {
+      call = None;
+      attribute_access = None;
+      identifier = None;
+      format_string_artificial = None;
+      format_string_stringify = Some format_string_stringify;
+    }
 
 
   let join
@@ -1657,13 +1840,15 @@ module ExpressionCallees = struct
         call = left_call;
         attribute_access = left_attribute_access;
         identifier = left_identifier;
-        string_format = left_string_format;
+        format_string_artificial = left_format_string_artificial;
+        format_string_stringify = left_format_string_stringify;
       }
       {
         call = right_call;
         attribute_access = right_attribute_access;
         identifier = right_identifier;
-        string_format = right_string_format;
+        format_string_artificial = right_format_string_artificial;
+        format_string_stringify = right_format_string_stringify;
       }
     =
     {
@@ -1671,21 +1856,37 @@ module ExpressionCallees = struct
       attribute_access =
         Option.merge ~f:AttributeAccessCallees.join left_attribute_access right_attribute_access;
       identifier = Option.merge ~f:IdentifierCallees.join left_identifier right_identifier;
-      string_format =
-        Option.merge ~f:StringFormatCallees.join left_string_format right_string_format;
+      format_string_artificial =
+        Option.merge
+          ~f:FormatStringArtificialCallees.join
+          left_format_string_artificial
+          right_format_string_artificial;
+      format_string_stringify =
+        Option.merge
+          ~f:FormatStringStringifyCallees.join
+          left_format_string_stringify
+          right_format_string_stringify;
     }
 
 
-  let deduplicate { call; attribute_access; identifier; string_format } =
+  let dedup_and_sort
+      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
+    =
     {
-      call = call >>| CallCallees.deduplicate;
-      attribute_access = attribute_access >>| AttributeAccessCallees.deduplicate;
-      identifier = identifier >>| IdentifierCallees.deduplicate;
-      string_format = string_format >>| StringFormatCallees.deduplicate;
+      call = call >>| CallCallees.dedup_and_sort;
+      attribute_access = attribute_access >>| AttributeAccessCallees.dedup_and_sort;
+      identifier = identifier >>| IdentifierCallees.dedup_and_sort;
+      format_string_artificial =
+        format_string_artificial >>| FormatStringArtificialCallees.dedup_and_sort;
+      format_string_stringify =
+        format_string_stringify >>| FormatStringStringifyCallees.dedup_and_sort;
     }
 
 
-  let all_targets ~use_case { call; attribute_access; identifier; string_format } =
+  let all_targets
+      ~use_case
+      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
+    =
     let call_targets = call >>| CallCallees.all_targets ~use_case |> Option.value ~default:[] in
     let attribute_access_targets =
       attribute_access >>| AttributeAccessCallees.all_targets ~use_case |> Option.value ~default:[]
@@ -1693,13 +1894,21 @@ module ExpressionCallees = struct
     let identifier_targets =
       identifier >>| IdentifierCallees.all_targets ~use_case |> Option.value ~default:[]
     in
-    let string_format_targets =
-      string_format >>| StringFormatCallees.all_targets ~use_case |> Option.value ~default:[]
+    let format_string_artificial_targets =
+      format_string_artificial
+      >>| FormatStringArtificialCallees.all_targets ~use_case
+      |> Option.value ~default:[]
+    in
+    let format_string_stringify_targets =
+      format_string_stringify
+      >>| FormatStringStringifyCallees.all_targets ~use_case
+      |> Option.value ~default:[]
     in
     call_targets
     |> List.rev_append attribute_access_targets
     |> List.rev_append identifier_targets
-    |> List.rev_append string_format_targets
+    |> List.rev_append format_string_artificial_targets
+    |> List.rev_append format_string_stringify_targets
 
 
   let is_empty_attribute_access_callees = function
@@ -1707,7 +1916,8 @@ module ExpressionCallees = struct
         call = None;
         attribute_access = Some some_attribute_access;
         identifier = None;
-        string_format = None;
+        format_string_artificial = None;
+        format_string_stringify = None;
       } ->
         AttributeAccessCallees.is_empty some_attribute_access
     | _ -> false
@@ -1718,13 +1928,15 @@ module ExpressionCallees = struct
         call = call_left;
         attribute_access = attribute_access_left;
         identifier = identifier_left;
-        string_format = string_format_left;
+        format_string_artificial = format_string_artificial_left;
+        format_string_stringify = format_string_stringify_left;
       }
       {
         call = call_right;
         attribute_access = attribute_access_right;
         identifier = identifier_right;
-        string_format = string_format_right;
+        format_string_artificial = format_string_artificial_right;
+        format_string_stringify = format_string_stringify_right;
       }
     =
     Option.equal CallCallees.equal_ignoring_types call_left call_right
@@ -1733,107 +1945,79 @@ module ExpressionCallees = struct
          attribute_access_left
          attribute_access_right
     && Option.equal IdentifierCallees.equal identifier_left identifier_right
-    && Option.equal StringFormatCallees.equal string_format_left string_format_right
+    && Option.equal
+         FormatStringArtificialCallees.equal
+         format_string_artificial_left
+         format_string_artificial_right
+    && Option.equal
+         FormatStringStringifyCallees.equal
+         format_string_stringify_left
+         format_string_stringify_right
 
 
-  let to_json { call; attribute_access; identifier; string_format } =
+  let to_json
+      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
+    =
     []
     |> JsonHelper.add_optional "call" call CallCallees.to_json
     |> JsonHelper.add_optional "attribute_access" attribute_access AttributeAccessCallees.to_json
     |> JsonHelper.add_optional "identifier" identifier IdentifierCallees.to_json
-    |> JsonHelper.add_optional "string_format" string_format StringFormatCallees.to_json
+    |> JsonHelper.add_optional
+         "format_string_artificial"
+         format_string_artificial
+         FormatStringArtificialCallees.to_json
+    |> JsonHelper.add_optional
+         "format_string_stringify"
+         format_string_stringify
+         FormatStringStringifyCallees.to_json
     |> fun bindings -> `Assoc (List.rev bindings)
 
 
-  let redirect_to_decorated ~decorators { call; attribute_access; identifier; string_format } =
+  let redirect_to_decorated
+      ~decorators
+      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
+    =
     {
       call = call >>| CallCallees.redirect_to_decorated ~decorators;
       attribute_access =
         attribute_access >>| AttributeAccessCallees.redirect_to_decorated ~decorators;
       identifier = identifier >>| IdentifierCallees.redirect_to_decorated ~decorators;
-      string_format = string_format >>| StringFormatCallees.redirect_to_decorated ~decorators;
+      format_string_artificial =
+        format_string_artificial >>| FormatStringArtificialCallees.redirect_to_decorated ~decorators;
+      format_string_stringify =
+        format_string_stringify >>| FormatStringStringifyCallees.redirect_to_decorated ~decorators;
     }
 
 
-  let drop_decorated_targets { call; attribute_access; identifier; string_format } =
+  let drop_decorated_targets
+      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
+    =
     {
       call = call >>| CallCallees.drop_decorated_targets;
       attribute_access = attribute_access >>| AttributeAccessCallees.drop_decorated_targets;
       identifier = identifier >>| IdentifierCallees.drop_decorated_targets;
-      string_format = string_format >>| StringFormatCallees.drop_decorated_targets;
+      format_string_artificial =
+        format_string_artificial >>| FormatStringArtificialCallees.drop_decorated_targets;
+      format_string_stringify =
+        format_string_stringify >>| FormatStringStringifyCallees.drop_decorated_targets;
     }
 
 
-  let regenerate_call_indices ~indexer { call; attribute_access; identifier; string_format } =
+  let regenerate_call_indices
+      ~indexer
+      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
+    =
     CallTarget.Indexer.generate_fresh_indices indexer;
     {
       call = call >>| CallCallees.regenerate_call_indices ~indexer;
       attribute_access =
         attribute_access >>| AttributeAccessCallees.regenerate_call_indices ~indexer;
       identifier = identifier >>| IdentifierCallees.regenerate_call_indices ~indexer;
-      string_format = string_format >>| StringFormatCallees.regenerate_call_indices ~indexer;
+      format_string_artificial =
+        format_string_artificial >>| FormatStringArtificialCallees.regenerate_call_indices ~indexer;
+      format_string_stringify =
+        format_string_stringify >>| FormatStringStringifyCallees.regenerate_call_indices ~indexer;
     }
-end
-
-(** An aggregate of all possible callees for an arbitrary location.
-
-    Note that multiple expressions might have the same location. *)
-module LocationCallees = struct
-  module Map = struct
-    include SerializableStringMap
-
-    type t = ExpressionCallees.t SerializableStringMap.t
-
-    let custom_equal = equal
-
-    let equal = equal ExpressionCallees.equal
-
-    let singleton ~expression_identifier ~callees = singleton expression_identifier callees
-
-    let add map ~expression_identifier ~callees =
-      update
-        expression_identifier
-        (function
-          | Some existing_callees -> Some (ExpressionCallees.join existing_callees callees)
-          | None -> Some callees)
-        map
-
-
-    let to_json map =
-      let bindings =
-        fold (fun key value sofar -> (key, ExpressionCallees.to_json value) :: sofar) map []
-      in
-      `Assoc bindings
-  end
-
-  type t =
-    | Singleton of ExpressionCallees.t
-    | Compound of Map.t
-  [@@deriving eq]
-
-  let pp formatter = function
-    | Singleton callees -> Format.fprintf formatter "%a" ExpressionCallees.pp callees
-    | Compound map ->
-        Map.to_alist map
-        |> List.map ~f:(fun (key, value) -> Format.asprintf "%s: %a" key ExpressionCallees.pp value)
-        |> String.concat ~sep:", "
-        |> Format.fprintf formatter "%s"
-
-
-  let show callees = Format.asprintf "%a" pp callees
-
-  let equal_ignoring_types location_callees_left location_callees_right =
-    match location_callees_left, location_callees_right with
-    | Singleton callees_left, Singleton callees_right ->
-        ExpressionCallees.equal_ignoring_types callees_left callees_right
-    | Compound map_left, Compound map_right ->
-        Map.custom_equal ExpressionCallees.equal_ignoring_types map_left map_right
-    | _ -> false
-
-
-  let to_json = function
-    | Singleton callees -> `Assoc ["singleton", ExpressionCallees.to_json callees]
-    | Compound map -> `Assoc ["compound", Map.to_json map]
 end
 
 let log ~debug format =
@@ -1843,43 +2027,28 @@ let log ~debug format =
     Log.log ~section:`CallGraph format
 
 
-let call_identifier { Call.callee; _ } =
-  match Node.value callee with
-  | Name (Name.Attribute { attribute; _ }) -> attribute
-  | Name (Name.Identifier name) -> name
-  | _ ->
-      (* Fall back to something that hopefully identifies the call well. *)
-      Expression.show callee
-
-
-let expression_identifier = function
-  | Expression.Call call -> Some (call_identifier call)
-  | Expression.Name (Name.Attribute { attribute; _ }) -> Some attribute
-  | _ -> (* not a valid call site. *) None
-
-
 (** The call graph of a function or method definition. This is for testing purpose only. *)
 module DefineCallGraphForTest = struct
-  type t = LocationCallees.t Location.Map.Tree.t [@@deriving eq]
+  type t = ExpressionCallees.t String.Map.t [@@deriving eq]
 
   let pp formatter call_graph =
-    let pp_pair formatter (key, value) =
-      Format.fprintf formatter "@,%a -> %a" Location.pp key LocationCallees.pp value
+    let pp_pair formatter (expression_identifier, callees) =
+      Format.fprintf formatter "@,%s -> %a" expression_identifier ExpressionCallees.pp callees
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    call_graph |> Location.Map.Tree.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+    call_graph |> Map.to_alist |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
+
+
+  let from_expected =
+    List.fold ~init:String.Map.empty ~f:(fun sofar (expression_identifier, callees) ->
+        Map.set sofar ~key:expression_identifier ~data:callees)
 
 
   let show = Format.asprintf "%a" pp
 
-  let empty = Location.Map.Tree.empty
+  let empty = String.Map.empty
 
-  let add call_graph ~location ~callees =
-    Location.Map.Tree.set call_graph ~key:location ~data:callees
-
-
-  let equal_ignoring_types call_graph_left call_graph_right =
-    Location.Map.Tree.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
+  let equal_ignoring_types = Map.equal ExpressionCallees.equal_ignoring_types
 end
 
 module MakeSaveCallGraph (CallGraph : sig
@@ -1978,39 +2147,34 @@ end
 
 (** The call graph of a function or method definition. *)
 module DefineCallGraph = struct
-  type t = LocationCallees.Map.t Location.SerializableMap.t [@@deriving eq]
+  type t = ExpressionCallees.t ExpressionIdentifier.Map.t [@@deriving eq]
 
   let to_json call_graph =
     let bindings =
-      Location.SerializableMap.fold
-        (fun key data sofar -> (Location.show key, LocationCallees.Map.to_json data) :: sofar)
+      ExpressionIdentifier.Map.fold
+        (fun key data sofar ->
+          (ExpressionIdentifier.json_key key, ExpressionCallees.to_json data) :: sofar)
         call_graph
         []
     in
-    `Assoc bindings
+    `Assoc (List.rev bindings)
 
 
   let pp formatter call_graph =
     let pp_pair formatter (key, value) =
-      Format.fprintf
-        formatter
-        "@,%a -> %a"
-        Location.pp
-        key
-        (LocationCallees.Map.pp ExpressionCallees.pp)
-        value
+      Format.fprintf formatter "@,%a -> %a" ExpressionIdentifier.pp key ExpressionCallees.pp value
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
     call_graph
-    |> Location.SerializableMap.to_alist
+    |> ExpressionIdentifier.Map.to_alist
     |> Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs
 
 
   let show = Format.asprintf "%a" pp
 
-  let empty = Location.SerializableMap.empty
+  let empty = ExpressionIdentifier.Map.empty
 
-  let is_empty = Location.SerializableMap.is_empty
+  let is_empty = ExpressionIdentifier.Map.is_empty
 
   include MakeSaveCallGraph (struct
     type nonrec t = t
@@ -2026,122 +2190,124 @@ module DefineCallGraph = struct
 
   let for_test map =
     map
-    |> Location.SerializableMap.to_alist
-    |> List.map ~f:(fun (location, callees) ->
-           match SerializableStringMap.to_alist callees with
-           | [] -> failwith "unreachable"
-           | [(_, callees)] ->
-               location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
-           | _ ->
-               ( location,
-                 LocationCallees.Compound
-                   (SerializableStringMap.map ExpressionCallees.deduplicate callees) ))
-    |> Location.Map.Tree.of_alist_exn
+    |> ExpressionIdentifier.Map.to_alist
+    |> List.map ~f:(fun (expression_identifier, callees) ->
+           ExpressionIdentifier.json_key expression_identifier, callees)
+    |> String.Map.of_alist_exn
 
+
+  let equal_ignoring_types = ExpressionIdentifier.Map.equal ExpressionCallees.equal_ignoring_types
 
   let merge =
-    let merge_location_callees_map =
-      LocationCallees.Map.merge (fun _ left right ->
-          match left, right with
-          | Some left, Some right -> Some (ExpressionCallees.join left right)
-          | Some left, None -> Some left
-          | None, Some right -> Some right
-          | None, None -> None)
-    in
-    Location.SerializableMap.merge (fun _ left right ->
+    ExpressionIdentifier.Map.merge (fun _ left right ->
         match left, right with
-        | Some left, Some right -> Some (merge_location_callees_map left right)
+        | Some left, Some right -> Some (ExpressionCallees.join left right)
         | Some left, None -> Some left
         | None, Some right -> Some right
         | None, None -> None)
 
 
-  let add_callees ~debug ~expression_identifier ~location ~statement_for_logging ~callees =
+  let add_callees ~debug ~expression_identifier ~callees ~expression_for_logging =
     let () =
       log
         ~debug
         "Resolved callees at `%a` for expression `%a`:@,%a "
         Location.pp
-        location
-        Statement.pp
-        statement_for_logging
+        (ExpressionIdentifier.location expression_identifier)
+        Expression.pp
+        expression_for_logging
         ExpressionCallees.pp
         callees
     in
-    Location.SerializableMap.update location (function
-        | None -> Some (LocationCallees.Map.singleton ~expression_identifier ~callees)
+    ExpressionIdentifier.Map.update expression_identifier (function
+        | None -> Some callees
+        | Some existing_callees when ExpressionCallees.equal existing_callees callees ->
+            Some existing_callees
         | Some existing_callees ->
-            Some (LocationCallees.Map.add existing_callees ~expression_identifier ~callees))
+            (* TODO(T222755472): We should error here since it means we are visiting the same
+               expression twice and getting different results. *)
+            Some (ExpressionCallees.join existing_callees callees))
 
 
-  let set_call_callees ~call ~location ~call_callees =
-    let expression_identifier = call_identifier call in
-    Location.SerializableMap.update location (function
+  let set_callees ~error_if_existing_empty ~expression_identifier ~callees =
+    ExpressionIdentifier.Map.update expression_identifier (function
         | None ->
-            Some
-              (LocationCallees.Map.singleton
-                 ~expression_identifier
-                 ~callees:(ExpressionCallees.from_call call_callees))
-        | Some callees ->
-            Some
-              (LocationCallees.Map.update
-                 expression_identifier
-                 (function
-                   | Some callees ->
-                       Some { callees with ExpressionCallees.call = Some call_callees }
-                   | None -> Some (ExpressionCallees.from_call call_callees))
-                 callees))
+            if error_if_existing_empty then
+              failwith "unexpected: no existing call graph edge"
+            else
+              Some callees
+        | Some _ -> Some callees)
 
 
-  let set_identifier_callees ~identifier ~location ~identifier_callees =
-    Location.SerializableMap.update location (function
-        | None ->
-            Some
-              (LocationCallees.Map.singleton
-                 ~expression_identifier:identifier
-                 ~callees:(ExpressionCallees.from_identifier identifier_callees))
-        | Some callees ->
-            Some
-              (LocationCallees.Map.update
-                 identifier
-                 (function
-                   | Some callees ->
-                       Some { callees with ExpressionCallees.identifier = Some identifier_callees }
-                   | None -> Some (ExpressionCallees.from_identifier identifier_callees))
-                 callees))
+  let add_call_callees ~debug ~location ~call ~callees =
+    add_callees
+      ~debug
+      ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
+      ~expression_for_logging:(Node.create_with_default_location (Expression.Call call))
+      ~callees:(ExpressionCallees.from_call callees)
 
 
-  let set_attribute_access_callees ~attribute ~location ~attribute_access_callees =
-    Location.SerializableMap.update location (function
-        | None ->
-            Some
-              (LocationCallees.Map.singleton
-                 ~expression_identifier:attribute
-                 ~callees:(ExpressionCallees.from_attribute_access attribute_access_callees))
-        | Some callees ->
-            Some
-              (LocationCallees.Map.update
-                 attribute
-                 (function
-                   | Some callees ->
-                       Some
-                         {
-                           callees with
-                           ExpressionCallees.attribute_access = Some attribute_access_callees;
-                         }
-                   | None -> Some (ExpressionCallees.from_attribute_access attribute_access_callees))
-                 callees))
+  let add_identifier_callees ~debug ~location ~identifier ~callees =
+    add_callees
+      ~debug
+      ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
+      ~expression_for_logging:
+        (Node.create_with_default_location (Expression.Name (Name.Identifier identifier)))
+      ~callees:(ExpressionCallees.from_identifier callees)
+
+
+  let set_call_callees ~location ~call ~callees =
+    set_callees
+      ~error_if_existing_empty:true
+      ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
+      ~callees:(ExpressionCallees.from_call callees)
+
+
+  let set_identifier_callees ~location ~identifier ~identifier_callees =
+    set_callees
+      ~error_if_existing_empty:true
+      ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
+      ~callees:(ExpressionCallees.from_identifier identifier_callees)
+
+
+  let add_attribute_access_callees ~debug ~location ~attribute_access ~callees =
+    add_callees
+      ~debug
+      ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
+      ~expression_for_logging:
+        (Node.create_with_default_location (Expression.Name (Name.Attribute attribute_access)))
+      ~callees:(ExpressionCallees.from_attribute_access callees)
+
+
+  let set_attribute_access_callees ~location ~attribute_access ~attribute_access_callees =
+    set_callees
+      ~error_if_existing_empty:false (* empty attribute accesses are stripped *)
+      ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
+      ~callees:(ExpressionCallees.from_attribute_access attribute_access_callees)
+
+
+  let add_format_string_articifial_callees ~debug ~location ~format_string ~callees =
+    add_callees
+      ~debug
+      ~expression_identifier:(ExpressionIdentifier.of_format_string_artificial ~location)
+      ~expression_for_logging:(Node.create_with_default_location format_string)
+      ~callees:(ExpressionCallees.from_format_string_artificial callees)
+
+
+  let add_format_string_stringify_callees ~debug ~location ~substring ~callees =
+    add_callees
+      ~debug
+      ~expression_identifier:(ExpressionIdentifier.of_format_string_stringify ~location)
+      ~expression_for_logging:(Node.create_with_default_location substring)
+      ~callees:(ExpressionCallees.from_format_string_stringify callees)
 
 
   let filter_empty_attribute_access =
-    let exist_non_empty_attribute_access =
-      SerializableStringMap.exists (fun _ callees ->
-          not (ExpressionCallees.is_empty_attribute_access_callees callees))
-    in
-    Location.SerializableMap.filter (fun _ -> exist_non_empty_attribute_access)
+    ExpressionIdentifier.Map.filter (fun _ callees ->
+        not (ExpressionCallees.is_empty_attribute_access_callees callees))
 
 
-  let update_expression_callees ~f = Location.SerializableMap.map (LocationCallees.Map.map f)
+  let update_expression_callees ~f = ExpressionIdentifier.Map.map f
 
   let redirect_to_decorated ~decorators =
     update_expression_callees ~f:(ExpressionCallees.redirect_to_decorated ~decorators)
@@ -2149,6 +2315,8 @@ module DefineCallGraph = struct
 
   (* Ensure the taint analysis does not use these targets. *)
   let drop_decorated_targets = update_expression_callees ~f:ExpressionCallees.drop_decorated_targets
+
+  let dedup_and_sort = update_expression_callees ~f:ExpressionCallees.dedup_and_sort
 
   let regenerate_call_indices ~indexer =
     (* The indices are relative to the locations. When location x is earlier than y, calls at
@@ -2160,49 +2328,48 @@ module DefineCallGraph = struct
   (** Return all callees of the call graph, depending on the use case. *)
   let all_targets ~use_case call_graph =
     call_graph
-    |> Location.SerializableMap.data
-    |> List.concat_map ~f:(fun map ->
-           map
-           |> LocationCallees.Map.data
-           |> List.concat_map ~f:(ExpressionCallees.all_targets ~use_case))
+    |> ExpressionIdentifier.Map.data
+    |> List.concat_map ~f:(ExpressionCallees.all_targets ~use_case)
     |> List.dedup_and_sort ~compare:Target.compare
 
 
-  let resolve_expression call_graph ~location ~expression_identifier =
-    match Location.SerializableMap.find_opt location call_graph with
-    | Some callees -> (
-        match SerializableStringMap.data callees with
-        | [] -> None
-        | [callee] -> Some callee
-        | _ -> SerializableStringMap.find_opt expression_identifier callees)
-    | None -> None
+  let resolve_expression call_graph ~expression_identifier =
+    ExpressionIdentifier.Map.find_opt expression_identifier call_graph
 
 
   let resolve_call call_graph ~location ~call =
-    expression_identifier (Expression.Call call)
-    >>= fun expression_identifier ->
-    resolve_expression call_graph ~location ~expression_identifier
+    resolve_expression
+      call_graph
+      ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
     >>= fun { ExpressionCallees.call; _ } -> call
 
 
-  let resolve_attribute_access call_graph ~location ~attribute =
-    resolve_expression call_graph ~location ~expression_identifier:attribute
+  let resolve_attribute_access call_graph ~location ~attribute_access =
+    resolve_expression
+      call_graph
+      ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
     >>= fun { ExpressionCallees.attribute_access; _ } -> attribute_access
 
 
   let resolve_identifier call_graph ~location ~identifier =
-    resolve_expression call_graph ~location ~expression_identifier:identifier
+    resolve_expression
+      call_graph
+      ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
     >>= fun { ExpressionCallees.identifier; _ } -> identifier
 
 
-  let string_format_expression_identifier = "$__str__$"
-
-  let resolve_string_format call_graph ~location =
+  let resolve_format_string_artificial call_graph ~location =
     resolve_expression
       call_graph
-      ~location
-      ~expression_identifier:string_format_expression_identifier
-    >>= fun { ExpressionCallees.string_format; _ } -> string_format
+      ~expression_identifier:(ExpressionIdentifier.of_format_string_artificial ~location)
+    >>= fun { ExpressionCallees.format_string_artificial; _ } -> format_string_artificial
+
+
+  let resolve_format_string_stringify call_graph ~location =
+    resolve_expression
+      call_graph
+      ~expression_identifier:(ExpressionIdentifier.of_format_string_stringify ~location)
+    >>= fun { ExpressionCallees.format_string_stringify; _ } -> format_string_stringify
 end
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
@@ -2822,12 +2989,12 @@ let transform_special_calls
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
-      let method_name, origin_kind =
+      let method_name =
         match resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value with
-        | Str -> "__str__", Origin.StrCallToDunderStr
-        | Repr -> "__repr__", Origin.StrCallToDunderRepr
+        | Str -> "__str__"
+        | Repr -> "__repr__"
       in
-      let origin = Some (Origin.create ?base:call_origin ~location:call_location origin_kind) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.StrCall) in
       let callee = attribute_access ~base:value ~method_name ~origin in
       Some { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
@@ -3974,16 +4141,6 @@ module CalleeVisitor = struct
       let resolve_callees =
         resolve_callees ~debug ~pyre_in_context ~callables_to_definitions_map ~override_graph
       in
-      let register_targets ~expression_identifier ?(location = location) callees =
-        callees_at_location :=
-          DefineCallGraph.add_callees
-            ~debug
-            ~expression_identifier
-            ~location
-            ~statement_for_logging:(Statement.Expression expression |> Node.create ~location)
-            ~callees
-            !callees_at_location
-      in
       let value =
         redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location value
       in
@@ -3999,35 +4156,51 @@ module CalleeVisitor = struct
       let () =
         match value with
         | Expression.Call call ->
-            resolve_callees ~call
-            |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
-            |> ExpressionCallees.from_call
-            |> register_targets ~expression_identifier:(call_identifier call)
-        | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; origin }) ->
+            let callees =
+              resolve_callees ~call
+              |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
+            in
+            callees_at_location :=
+              DefineCallGraph.add_call_callees ~debug ~location ~call ~callees !callees_at_location
+        | Expression.Name
+            (Name.Attribute ({ Name.Attribute.base; attribute; origin } as attribute_access)) ->
             let setter =
               match assignment_target with
               | Some { AssignmentTarget.location = assignment_target_location } ->
                   Location.equal assignment_target_location location
               | None -> false
             in
-            resolve_attribute_access
-              ~pyre_in_context
-              ~debug
-              ~callables_to_definitions_map
-              ~override_graph
-              ~define_name
-              ~attribute_targets
-              ~base
-              ~attribute
-              ~origin
-              ~setter
-            |> ExpressionCallees.from_attribute_access
-            |> register_targets ~expression_identifier:attribute
+            let callees =
+              resolve_attribute_access
+                ~pyre_in_context
+                ~debug
+                ~callables_to_definitions_map
+                ~override_graph
+                ~define_name
+                ~attribute_targets
+                ~base
+                ~attribute
+                ~origin
+                ~setter
+            in
+            callees_at_location :=
+              DefineCallGraph.add_attribute_access_callees
+                ~debug
+                ~location
+                ~attribute_access
+                ~callees
+                !callees_at_location
         | Expression.Name (Name.Identifier identifier) ->
             resolve_identifier ~define:define_name ~pyre_in_context ~identifier
-            >>| ExpressionCallees.from_identifier
-            >>| register_targets ~expression_identifier:identifier
-            |> ignore
+            >>| (fun callees ->
+                  callees_at_location :=
+                    DefineCallGraph.add_identifier_callees
+                      ~debug
+                      ~location
+                      ~identifier
+                      ~callees
+                      !callees_at_location)
+            |> Option.value ~default:()
         | Expression.FormatString substrings ->
             let artificial_target =
               CallTarget.create_with_default_index
@@ -4035,20 +4208,17 @@ module CalleeVisitor = struct
                 ~return_type:None
                 Target.ArtificialTargets.format_string
             in
-            let callees =
-              ExpressionCallees.from_string_format
-                (StringFormatCallees.from_f_string_targets [artificial_target])
-            in
-            (* Use indexed artificial targets to distinguish format strings at different
-               locations. *)
-            register_targets
-              ~expression_identifier:DefineCallGraph.string_format_expression_identifier
-              ~location
-              callees;
+            callees_at_location :=
+              DefineCallGraph.add_format_string_articifial_callees
+                ~debug
+                ~location
+                ~format_string:value
+                ~callees:(FormatStringArtificialCallees.from_f_string_targets [artificial_target])
+                !callees_at_location;
             List.iter substrings ~f:(function
                 | Substring.Literal _ -> ()
                 | Substring.Format { value; format_spec } -> (
-                    let register_call_targets
+                    let register_stringify_call_targets
                         ({ Node.location = expression_location; _ } as expression)
                       =
                       let { CallCallees.call_targets; _ } =
@@ -4088,20 +4258,19 @@ module CalleeVisitor = struct
                           ~return_type:(lazy Type.string)
                           ~callee
                       in
-
                       if not (List.is_empty call_targets) then
-                        let callees =
-                          ExpressionCallees.from_string_format
-                            (StringFormatCallees.from_stringify_targets call_targets)
-                        in
-                        register_targets
-                          ~expression_identifier:DefineCallGraph.string_format_expression_identifier
-                          ~location:expression_location
-                          callees
+                        callees_at_location :=
+                          DefineCallGraph.add_format_string_stringify_callees
+                            ~debug
+                            ~location:expression_location
+                            ~substring:(Node.value expression)
+                            ~callees:
+                              (FormatStringStringifyCallees.from_stringify_targets call_targets)
+                            !callees_at_location
                     in
-                    register_call_targets value;
+                    register_stringify_call_targets value;
                     match format_spec with
-                    | Some format_spec -> register_call_targets format_spec
+                    | Some format_spec -> register_stringify_call_targets format_spec
                     | None -> ()))
         | _ -> ()
       in
@@ -4128,20 +4297,29 @@ module CalleeVisitor = struct
                 ];
               origin = call_origin;
             } ->
-            resolve_attribute_access
-              ~pyre_in_context
-              ~debug
-              ~callables_to_definitions_map
-              ~override_graph
-              ~define_name
-              ~attribute_targets
-              ~base
-              ~attribute
-              ~origin:
-                (Some (Origin.create ?base:call_origin ~location Origin.GetAttrConstantLiteral))
-              ~setter:false
-            |> ExpressionCallees.from_attribute_access
-            |> register_targets ~expression_identifier:attribute
+            let origin =
+              Some (Origin.create ?base:call_origin ~location Origin.GetAttrConstantLiteral)
+            in
+            let callees =
+              resolve_attribute_access
+                ~pyre_in_context
+                ~debug
+                ~callables_to_definitions_map
+                ~override_graph
+                ~define_name
+                ~attribute_targets
+                ~base
+                ~attribute
+                ~origin
+                ~setter:false
+            in
+            callees_at_location :=
+              DefineCallGraph.add_attribute_access_callees
+                ~debug
+                ~location
+                ~attribute_access:{ Name.Attribute.base; attribute; origin }
+                ~callees
+                !callees_at_location
         | Expression.Call
             {
               callee =
@@ -4172,20 +4350,29 @@ module CalleeVisitor = struct
                 ];
               origin = call_origin;
             } ->
-            resolve_attribute_access
-              ~pyre_in_context
-              ~debug
-              ~callables_to_definitions_map
-              ~override_graph
-              ~define_name
-              ~attribute_targets
-              ~base:self
-              ~attribute
-              ~origin:
-                (Some (Origin.create ?base:call_origin ~location Origin.SetAttrConstantLiteral))
-              ~setter:true
-            |> ExpressionCallees.from_attribute_access
-            |> register_targets ~expression_identifier:attribute
+            let origin =
+              Some (Origin.create ?base:call_origin ~location Origin.SetAttrConstantLiteral)
+            in
+            let callees =
+              resolve_attribute_access
+                ~pyre_in_context
+                ~debug
+                ~callables_to_definitions_map
+                ~override_graph
+                ~define_name
+                ~attribute_targets
+                ~base:self
+                ~attribute
+                ~origin
+                ~setter:true
+            in
+            callees_at_location :=
+              DefineCallGraph.add_attribute_access_callees
+                ~debug
+                ~location
+                ~attribute_access:{ Name.Attribute.base = self; attribute; origin }
+                ~callees
+                !callees_at_location
         | _ -> ()
       in
       state
@@ -4374,13 +4561,20 @@ struct
         statement;
       let statement = redirect_assignments statement in
       match Node.value statement with
-      | Statement.Assign { Assign.target; value = Some value; _ } ->
-          CalleeVisitor.visit_expression
-            ~pyre_in_context
-            ~assignment_target:None
-            ~context:Context.node_visitor_context
-            ~callees_at_location:Context.callees_at_location
-            value;
+      | Statement.Assign { Assign.target; value = Some value; origin; annotation = _ } ->
+          let () =
+            match origin with
+            | Some { Node.value = Assign.Origin.ChainedAssign { index }; _ } when index >= 1 ->
+                (* We already visited the value expression for index = 0, so skip it this time. *)
+                ()
+            | _ ->
+                CalleeVisitor.visit_expression
+                  ~pyre_in_context
+                  ~assignment_target:None
+                  ~context:Context.node_visitor_context
+                  ~callees_at_location:Context.callees_at_location
+                  value
+          in
           CalleeVisitor.visit_expression
             ~pyre_in_context
             ~assignment_target:(Some { location = Node.location target })
@@ -5155,7 +5349,7 @@ module HigherOrderCallGraph = struct
               DefineCallGraph.set_call_callees
                 ~location
                 ~call
-                ~call_callees:
+                ~callees:
                   {
                     original_call_callees with
                     call_targets = new_call_targets;
@@ -5359,10 +5553,10 @@ module HigherOrderCallGraph = struct
                 State.get (State.create_root_from_identifier identifier) state
               in
               CallTarget.Set.join global_callables callables_from_variable, state
-          | Name (Name.Attribute { base = _; attribute; origin = _ }) ->
+          | Name (Name.Attribute attribute_access) ->
               let callables =
                 Context.input_define_call_graph
-                |> DefineCallGraph.resolve_attribute_access ~location ~attribute
+                |> DefineCallGraph.resolve_attribute_access ~location ~attribute_access
                 >>| (fun ({
                             AttributeAccessCallees.callable_targets;
                             property_targets;
@@ -5393,8 +5587,8 @@ module HigherOrderCallGraph = struct
                       in
                       Context.output_define_call_graph :=
                         DefineCallGraph.set_attribute_access_callees
-                          ~attribute
                           ~location
+                          ~attribute_access
                           ~attribute_access_callees:
                             {
                               attribute_access_callees with
@@ -5738,6 +5932,7 @@ let higher_order_call_graph_of_define
     call_graph =
       !Context.output_define_call_graph
       |> DefineCallGraph.filter_empty_attribute_access
+      |> DefineCallGraph.dedup_and_sort
       |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer;
   }
 
@@ -5807,12 +6002,15 @@ let call_graph_of_define
               value))
   in
 
-  DefineFixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create (Node.value define)) ~initial:() |> ignore;
+  let cfg = PyrePysaLogic.Cfg.create (Node.value define) in
+  log ~debug:context.debug "Processing CFG:@.%a" PyrePysaLogic.Cfg.pp cfg;
+  DefineFixpoint.forward ~cfg ~initial:() |> ignore;
   let call_indexer = CallTarget.Indexer.create () in
   let call_graph =
     !callees_at_location
     |> DefineCallGraph.filter_empty_attribute_access
     |> DefineCallGraph.redirect_to_decorated ~decorators
+    |> DefineCallGraph.dedup_and_sort
     |> DefineCallGraph.regenerate_call_indices ~indexer:call_indexer
   in
   Statistics.performance

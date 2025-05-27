@@ -476,8 +476,7 @@ and Origin : sig
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCallToDunderStr (* `str(x)` is turned into `x.__str__()` *)
-    | StrCallToDunderRepr (* `str(x)` is turned into `x.__repr__()` *)
+    | StrCall (* `str(x)` is turned into `x.__str__()` or `x.__repr__()` *)
     | ReprCall (* `repr(x)` is turned into `x.__repr__()` *)
     | AbsCall (* `abs(x)` is turned into `x.__abs__()` *)
     | IterCall (* `iter(x)` is turned into `x.__iter__()` *)
@@ -521,6 +520,8 @@ and Origin : sig
   val create : ?base:t -> location:Location.t -> kind -> t
 
   val is_dunder_method : t -> bool
+
+  val pp_kind_json : Format.formatter -> kind -> unit
 end
 
 and Expression : sig

@@ -35,11 +35,11 @@ let get_global_targets ~call_graph ~expression =
         ~identifier
       >>| (fun { global_targets; _ } -> global_targets)
       |> Option.value ~default:[]
-  | Expression.Name (Name.Attribute { attribute; _ }) ->
+  | Expression.Name (Name.Attribute attribute_access) ->
       CallGraph.DefineCallGraph.resolve_attribute_access
         call_graph
         ~location:(Node.location expression)
-        ~attribute
+        ~attribute_access
       >>| (fun { global_targets; _ } -> global_targets)
       |> Option.value ~default:[]
   | _ -> []

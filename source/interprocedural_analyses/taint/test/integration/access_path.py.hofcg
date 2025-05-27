@@ -4,59 +4,51 @@ Higher order call graphs
   "callable": "access_path.indexes_and_attributes",
   "returned_callables": [],
   "calls": {
-    "29:15-29:29": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "access_path.SpecialDict.__getitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "access_path.SpecialDict"
-            }
-          ]
-        }
-      }
-    },
-    "29:4-29:30": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "26:8-26:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "access_path.SpecialDict.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "27:18-27:32": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "26:8-26:21": {
-      "SpecialDict": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "access_path.SpecialDict.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "29:4-29:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:15-29:29|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.SpecialDict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "access_path.SpecialDict"
+          }
+        ]
       }
     }
   }
@@ -65,51 +57,43 @@ Higher order call graphs
   "callable": "access_path.indexes_are_attributes_for___dict__",
   "returned_callables": [],
   "calls": {
-    "35:15-35:38": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "35:4-35:39": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "33:8-33:16": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "34:18-34:32": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "33:8-33:16": {
-      "object": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "35:4-35:39": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "35:15-35:38|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -118,52 +102,44 @@ Higher order call graphs
   "callable": "access_path.indexes_are_strings",
   "returned_callables": [],
   "calls": {
-    "13:15-13:21": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__getitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "13:4-13:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "12:4-12:25|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
     "12:11-12:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "12:4-12:25": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "13:4-13:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "13:15-13:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     }
   }
@@ -172,92 +148,76 @@ Higher order call graphs
   "callable": "access_path.issue_positional_and_variadic",
   "returned_callables": [],
   "calls": {
-    "50:34-50:48": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 3, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "50:4-50:49": {
-      "positional_and_variadic2": {
-        "call": {
-          "calls": [
-            {
-              "target": "access_path.positional_and_variadic2",
-              "index": 2,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "49:32-49:46": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "49:4-49:47": {
-      "positional_and_variadic2": {
-        "call": {
-          "calls": [
-            {
-              "target": "access_path.positional_and_variadic2",
-              "index": 1,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "48:35-48:49": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "48:4-48:50": {
-      "positional_and_variadic2": {
-        "call": {
-          "calls": [
-            {
-              "target": "access_path.positional_and_variadic2",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "47:4-47:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "47:35-47:49": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "47:4-47:50": {
-      "positional_and_variadic1": {
-        "call": {
-          "calls": [
-            {
-              "target": "access_path.positional_and_variadic1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "48:4-48:50": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "48:35-48:49": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "49:4-49:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic2",
+            "index": 1,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "49:32-49:46": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "50:4-50:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "access_path.positional_and_variadic2",
+            "index": 2,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "50:34-50:48": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 3, "return_type": [] }
+        ]
       }
     }
   }
@@ -267,12 +227,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "39:4-39:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -282,12 +240,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "43:4-43:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -297,18 +253,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "22:15-22:37": {
-      "get": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.get",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "dict.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     }
   }

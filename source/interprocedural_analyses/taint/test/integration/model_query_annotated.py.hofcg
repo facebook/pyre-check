@@ -4,43 +4,35 @@ Higher order call graphs
   "callable": "model_query_annotated.test1_alarm1",
   "returned_callables": [],
   "calls": {
-    "28:15-28:18": {
-      "a": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 1 }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "28:4-28:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "26:4-26:7": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
     "27:4-27:7": {
-      "b": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
-    "26:4-26:7": {
-      "a": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "28:4-28:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "28:15-28:18": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 1 }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -49,43 +41,35 @@ Higher order call graphs
   "callable": "model_query_annotated.test1_alarm2",
   "returned_callables": [],
   "calls": {
-    "34:15-34:18": {
-      "b": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 1 }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "34:4-34:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "32:4-32:7": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
     "33:4-33:7": {
-      "b": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
-    "32:4-32:7": {
-      "a": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.a}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "34:4-34:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "34:15-34:18": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.b}", "index": 1 }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -94,33 +78,27 @@ Higher order call graphs
   "callable": "model_query_annotated.test1_alarm3",
   "returned_callables": [],
   "calls": {
-    "39:15-39:18": {
-      "x": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.x}", "index": 1 }
-          ],
-          "is_attribute": true
-        }
+    "38:4-38:7": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.x}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
     "39:4-39:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "38:4-38:7": {
-      "x": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.x}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "39:15-39:18": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.x}", "index": 1 }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -129,33 +107,27 @@ Higher order call graphs
   "callable": "model_query_annotated.test1_alarm4",
   "returned_callables": [],
   "calls": {
-    "44:15-44:18": {
-      "y": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.y}", "index": 1 }
-          ],
-          "is_attribute": true
-        }
+    "43:4-43:7": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.y}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
     "44:4-44:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "43:4-43:7": {
-      "y": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test1_C.y}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "44:15-44:18": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test1_C.y}", "index": 1 }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -164,33 +136,27 @@ Higher order call graphs
   "callable": "model_query_annotated.test2_alarm1",
   "returned_callables": [],
   "calls": {
-    "55:15-55:18": {
-      "a": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test2_C.a}", "index": 1 }
-          ],
-          "is_attribute": true
-        }
+    "54:4-54:7": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test2_C.a}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
     "55:4-55:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "54:4-54:7": {
-      "a": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test2_C.a}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "55:15-55:18": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test2_C.a}", "index": 1 }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -199,33 +165,27 @@ Higher order call graphs
   "callable": "model_query_annotated.test2_alarm2",
   "returned_callables": [],
   "calls": {
-    "60:15-60:18": {
-      "x": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test2_C.x}", "index": 1 }
-          ],
-          "is_attribute": true
-        }
+    "59:4-59:7": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test2_C.x}", "index": 0 }
+        ],
+        "is_attribute": true
       }
     },
     "60:4-60:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "59:4-59:7": {
-      "x": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{model_query_annotated.Test2_C.x}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "60:15-60:18": {
+      "attribute_access": {
+        "globals": [
+          { "target": "Obj{model_query_annotated.Test2_C.x}", "index": 1 }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -235,12 +195,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "65:4-65:19": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -250,12 +208,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "79:4-79:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -265,12 +221,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "85:4-85:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -280,12 +234,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "69:4-69:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -295,12 +247,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "73:4-73:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -310,12 +260,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "91:4-91:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

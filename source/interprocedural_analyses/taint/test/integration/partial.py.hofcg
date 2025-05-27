@@ -4,34 +4,30 @@ Higher order call graphs
   "callable": "partial.NestedDefineDecorator.__get__.wrapper",
   "returned_callables": [],
   "calls": {
-    "76:19-76:49": {
-      "__call__": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.NestedDefineDecorator.__call__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "partial.NestedDefineDecorator"
-            }
-          ]
-        }
+    "75:12-75:41|artificial-call|subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "75:12-75:41": {
-      "__setitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.__setitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "76:19-76:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.NestedDefineDecorator.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.NestedDefineDecorator"
+          }
+        ]
       }
     }
   }
@@ -41,12 +37,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "14:4-14:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -56,10 +50,8 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "93:11-93:40": {
-      "NestedDefineConstructor": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -69,26 +61,24 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "66:11-66:35": {
-      "PartialConstructor": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "functools.partial.__call__",
-              "index": 0,
-              "implicit_receiver": true,
-              "implicit_dunder_call": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "implicit_dunder_call": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -97,40 +87,34 @@ Higher order call graphs
   "callable": "partial.multiprocessing_not_tainted",
   "returned_callables": [],
   "calls": {
+    "42:4-42:77|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "42:35-42:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
     "42:61-42:75": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "42:35-42:50": {
-      "a_flows_to_sink": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "42:4-42:77": {
-      "a_flows_to_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -139,40 +123,34 @@ Higher order call graphs
   "callable": "partial.multiprocessing_tainted",
   "returned_callables": [],
   "calls": {
+    "38:4-38:77|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "38:35-38:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
     "38:58-38:72": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "38:35-38:50": {
-      "a_flows_to_sink": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "38:4-38:77": {
-      "a_flows_to_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -181,31 +159,27 @@ Higher order call graphs
   "callable": "partial.partial_application_with_benign",
   "returned_callables": [],
   "calls": {
-    "24:22-24:37": {
-      "a_flows_to_sink": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "24:4-24:41|artificial-call|pysa-call-redirect:functools.partial": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "24:4-24:41": {
-      "a_flows_to_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "24:22-24:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -214,40 +188,34 @@ Higher order call graphs
   "callable": "partial.partial_application_with_named_a",
   "returned_callables": [],
   "calls": {
-    "29:22-29:37": {
-      "a_flows_to_sink": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "29:4-29:43": {
-      "a_flows_to_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
     "28:8-28:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "29:4-29:43|artificial-call|pysa-call-redirect:functools.partial": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "29:22-29:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -256,40 +224,34 @@ Higher order call graphs
   "callable": "partial.partial_application_with_named_b",
   "returned_callables": [],
   "calls": {
-    "34:22-34:37": {
-      "a_flows_to_sink": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "34:4-34:43": {
-      "a_flows_to_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
     "33:8-33:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "34:4-34:43|artificial-call|pysa-call-redirect:functools.partial": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "34:22-34:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -298,40 +260,34 @@ Higher order call graphs
   "callable": "partial.partial_application_with_tainted",
   "returned_callables": [],
   "calls": {
-    "19:22-19:37": {
-      "a_flows_to_sink": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
-      }
-    },
-    "19:4-19:41": {
-      "a_flows_to_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.a_flows_to_sink",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
     "18:8-18:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "19:4-19:41|artificial-call|pysa-call-redirect:functools.partial": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "19:22-19:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.a_flows_to_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -347,26 +303,24 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "86:5-86:26": {
-      "NestedDefineDecorator": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "partial.NestedDefineDecorator.__init__[formal(func, position=1)=partial.NestedDefineConstructor.__init__]",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "86:5-86:26|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.NestedDefineDecorator.__init__[formal(func, position=1)=partial.NestedDefineConstructor.__init__]",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -375,28 +329,22 @@ Higher order call graphs
   "callable": "partial.NestedDefineDecorator.__call__",
   "returned_callables": [],
   "calls": {
-    "82:15-82:52": {
-      "_func": {
-        "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "CannotFindParentClass" ]
-          ]
-        }
+    "81:19-81:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "81:19-81:41": {
-      "pop": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.MutableMapping.pop",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "82:15-82:52": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
       }
     }
   }
@@ -423,26 +371,24 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "58:5-58:21": {
-      "PartialDecorator": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "partial.PartialDecorator.__init__[formal(func, position=1)=functools.partial.__call__]",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "58:5-58:21|artificial-call|for-decorated-target": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "partial.PartialDecorator.__init__[formal(func, position=1)=functools.partial.__call__]",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -451,28 +397,22 @@ Higher order call graphs
   "callable": "partial.PartialDecorator.__call__",
   "returned_callables": [],
   "calls": {
-    "54:15-54:52": {
-      "_func": {
-        "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "CannotFindParentClass" ]
-          ]
-        }
+    "53:19-53:41": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.pop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "53:19-53:41": {
-      "pop": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.MutableMapping.pop",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "54:15-54:52": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
       }
     }
   }
@@ -481,19 +421,17 @@ Higher order call graphs
   "callable": "partial.PartialDecorator.__get__",
   "returned_callables": [],
   "calls": {
-    "50:15-50:66": {
-      "__call__": {
-        "call": {
-          "calls": [
-            {
-              "target": "partial.PartialDecorator.__call__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "partial.PartialDecorator"
-            }
-          ]
-        }
+    "50:15-50:66|artificial-call|pysa-call-redirect:functools.partial": {
+      "call": {
+        "calls": [
+          {
+            "target": "partial.PartialDecorator.__call__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "partial.PartialDecorator"
+          }
+        ]
       }
     }
   }

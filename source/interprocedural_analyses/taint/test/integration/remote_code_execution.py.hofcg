@@ -4,20 +4,16 @@ Higher order call graphs
   "callable": "remote_code_execution.rce_problem",
   "returned_callables": [],
   "calls": {
-    "11:4-11:11": {
-      "eval": {
-        "call": {
-          "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
-        }
+    "10:8-10:26": {
+      "call": {
+        "calls": [
+          { "target": "_user_controlled", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "10:8-10:26": {
-      "_user_controlled": {
-        "call": {
-          "calls": [
-            { "target": "_user_controlled", "index": 0, "return_type": [] }
-          ]
-        }
+    "11:4-11:11": {
+      "call": {
+        "calls": [ { "target": "eval", "index": 0, "return_type": [] } ]
       }
     }
   }

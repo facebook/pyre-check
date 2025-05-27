@@ -4,18 +4,14 @@ Higher order call graphs
   "callable": "mutate_self.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:9-10:26": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+    "10:0-10:6|identifier|$local_mutate_self$MySelf": {
+      "identifier": {
+        "globals": [ { "target": "Obj{mutate_self.MySelf}", "index": 0 } ]
       }
     },
-    "10:0-10:6": {
-      "$local_mutate_self$MySelf": {
-        "identifier": {
-          "globals": [ { "target": "Obj{mutate_self.MySelf}", "index": 0 } ]
-        }
+    "10:9-10:26": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -25,12 +21,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "77:15-77:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -39,69 +33,61 @@ Higher order call graphs
   "callable": "mutate_self.issue_free_function",
   "returned_callables": [],
   "calls": {
-    "84:4-84:16": {
-      "bar_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.bar_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
-      }
-    },
-    "83:4-83:16": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "81:8-81:14": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "mutate_self.Base.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "82:4-82:33": {
-      "free_function_mutates_self": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.free_function_mutates_self",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.free_function_mutates_self",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "81:8-81:14": {
-      "Base": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "mutate_self.Base.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "83:4-83:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
+      }
+    },
+    "84:4-84:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.bar_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -110,56 +96,50 @@ Higher order call graphs
   "callable": "mutate_self.issue_mutates_foo_and_returns_instance",
   "returned_callables": [],
   "calls": {
-    "73:4-73:47": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "73:4-73:10": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "mutate_self.Base.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "73:4-73:36": {
-      "mutates_foo_and_returns": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo_and_returns",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo_and_returns",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "73:4-73:10": {
-      "Base": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "mutate_self.Base.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "73:4-73:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -168,71 +148,63 @@ Higher order call graphs
   "callable": "mutate_self.issue_mutates_foo_instance",
   "returned_callables": [],
   "calls": {
-    "69:4-69:16": {
-      "bar_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.bar_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
-      }
-    },
-    "68:4-68:16": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "66:8-66:14": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "mutate_self.Base.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "67:4-67:19": {
-      "mutates_foo": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "66:8-66:14": {
-      "Base": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "mutate_self.Base.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "68:4-68:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
+      }
+    },
+    "69:4-69:16": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.bar_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -242,12 +214,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "22:8-22:28": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -257,12 +227,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "19:8-19:28": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -271,49 +239,43 @@ Higher order call graphs
   "callable": "mutate_self.Base.isssue_mutates_foo",
   "returned_callables": [],
   "calls": {
-    "33:8-33:23": {
-      "bar_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.bar_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "31:8-31:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
     "32:8-32:23": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "31:8-31:26": {
-      "mutates_foo": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "33:8-33:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.bar_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -322,34 +284,30 @@ Higher order call graphs
   "callable": "mutate_self.Base.issue_mutates_and_returns",
   "returned_callables": [],
   "calls": {
-    "45:8-45:49": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "45:8-45:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo_and_returns",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "45:8-45:38": {
-      "mutates_foo_and_returns": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo_and_returns",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "45:8-45:49": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -358,49 +316,43 @@ Higher order call graphs
   "callable": "mutate_self.Base.issue_mutates_foo_self_annotation",
   "returned_callables": [],
   "calls": {
-    "54:8-54:23": {
-      "bar_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.bar_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "52:8-52:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo_self_annotation",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
     "53:8-53:23": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "52:8-52:42": {
-      "mutates_foo_self_annotation": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo_self_annotation",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "54:8-54:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.bar_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -409,49 +361,43 @@ Higher order call graphs
   "callable": "mutate_self.Base.issue_mutates_foo_self_typevar",
   "returned_callables": [],
   "calls": {
-    "62:8-62:23": {
-      "bar_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.bar_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "60:8-60:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo_self_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
     "61:8-61:23": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "60:8-60:39": {
-      "mutates_foo_self_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo_self_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "62:8-62:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.bar_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -460,49 +406,43 @@ Higher order call graphs
   "callable": "mutate_self.Base.issue_mutates_foo_with_hop",
   "returned_callables": [],
   "calls": {
-    "38:8-38:23": {
-      "bar_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.bar_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "36:8-36:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo_with_hop",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
     "37:8-37:23": {
-      "foo_sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.foo_sink",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.foo_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     },
-    "36:8-36:35": {
-      "mutates_foo_with_hop": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo_with_hop",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+    "38:8-38:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.bar_sink",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }
@@ -512,12 +452,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "25:19-25:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -527,12 +465,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "41:19-41:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -542,12 +478,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "49:19-49:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -557,12 +491,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "57:19-57:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -572,18 +504,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "28:8-28:26": {
-      "mutates_foo": {
-        "call": {
-          "calls": [
-            {
-              "target": "mutate_self.Base.mutates_foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "mutate_self.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "mutate_self.Base.mutates_foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "mutate_self.Base"
+          }
+        ]
       }
     }
   }

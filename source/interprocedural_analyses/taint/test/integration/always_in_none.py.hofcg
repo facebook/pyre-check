@@ -4,43 +4,37 @@ Higher order call graphs
   "callable": "always_in_none.test",
   "returned_callables": [],
   "calls": {
-    "33:4-33:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "21:17-21:60": {
+      "call": {
+        "calls": [
+          {
+            "target": "always_in_none.ComplicatedService.serve_tainted_request",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "always_in_none.ComplicatedService"
+          }
+        ]
       }
     },
     "29:21-29:64": {
-      "serve_tainted_request": {
-        "call": {
-          "calls": [
-            {
-              "target": "always_in_none.ComplicatedService.serve_tainted_request",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "always_in_none.ComplicatedService"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "always_in_none.ComplicatedService.serve_tainted_request",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "always_in_none.ComplicatedService"
+          }
+        ]
       }
     },
-    "21:17-21:60": {
-      "serve_tainted_request": {
-        "call": {
-          "calls": [
-            {
-              "target": "always_in_none.ComplicatedService.serve_tainted_request",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "always_in_none.ComplicatedService"
-            }
-          ]
-        }
+    "33:4-33:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -49,22 +43,18 @@ Higher order call graphs
   "callable": "always_in_none.test_none_clears_taint",
   "returned_callables": [],
   "calls": {
-    "39:4-39:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "37:8-37:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "37:8-37:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "39:4-39:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

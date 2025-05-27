@@ -4,18 +4,14 @@ Higher order call graphs
   "callable": "builder_pattern.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:4-10:16": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+    "10:0-10:1|identifier|$local_builder_pattern$T": {
+      "identifier": {
+        "globals": [ { "target": "Obj{builder_pattern.T}", "index": 0 } ]
       }
     },
-    "10:0-10:1": {
-      "$local_builder_pattern$T": {
-        "identifier": {
-          "globals": [ { "target": "Obj{builder_pattern.T}", "index": 0 } ]
-        }
+    "10:4-10:16": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -24,83 +20,71 @@ Higher order call graphs
   "callable": "builder_pattern.test_chained_class_setter",
   "returned_callables": [],
   "calls": {
-    "74:4-74:30": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "73:4-73:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "72:46-72:60": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "72:4-72:61": {
-      "set_saved_no_return": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved_no_return",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+    "71:14-71:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "72:4-72:25": {
-      "return_self": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.return_self",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.return_self",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "71:14-71:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "72:4-72:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_no_return",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "72:46-72:60": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "73:4-73:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "74:4-74:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
       }
     }
   }
@@ -109,68 +93,58 @@ Higher order call graphs
   "callable": "builder_pattern.test_class_setter",
   "returned_callables": [],
   "calls": {
-    "81:4-81:30": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "80:4-80:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "79:32-79:46": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "78:14-78:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "79:4-79:47": {
-      "set_saved_no_return": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved_no_return",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_no_return",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "78:14-78:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "79:32-79:46": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "80:4-80:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "81:4-81:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
       }
     }
   }
@@ -179,80 +153,70 @@ Higher order call graphs
   "callable": "builder_pattern.test_issue",
   "returned_callables": [],
   "calls": {
-    "51:46-51:60": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "51:4-51:74": {
-      "async_save": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.async_save",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
-      }
-    },
-    "51:4-51:61": {
-      "set_saved": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+    "50:14-50:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "51:4-51:35": {
-      "set_not_saved": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_not_saved",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "50:14-50:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "51:4-51:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "51:4-51:74": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "51:46-51:60": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -261,80 +225,70 @@ Higher order call graphs
   "callable": "builder_pattern.test_issue_with_sub_builder",
   "returned_callables": [],
   "calls": {
-    "110:8-110:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "109:4-111:18": {
-      "async_save": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.async_save",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.SubBuilder"
-            }
-          ]
-        }
-      }
-    },
-    "109:4-111:5": {
-      "set_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.SubBuilder"
-            }
-          ]
-        }
+    "108:14-108:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "109:4-109:51": {
-      "set_not_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_not_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.SubBuilder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
       }
     },
-    "108:14-108:26": {
-      "SubBuilder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "109:4-111:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "109:4-111:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "110:8-110:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -343,80 +297,70 @@ Higher order call graphs
   "callable": "builder_pattern.test_issue_with_type_var",
   "returned_callables": [],
   "calls": {
-    "64:8-64:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "63:4-65:18": {
-      "async_save": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.async_save",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
-      }
-    },
-    "63:4-65:5": {
-      "set_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+    "62:14-62:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "63:4-63:51": {
-      "set_not_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_not_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "62:14-62:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "63:4-65:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "63:4-65:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "64:8-64:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -425,80 +369,70 @@ Higher order call graphs
   "callable": "builder_pattern.test_no_issue",
   "returned_callables": [],
   "calls": {
-    "46:26-46:40": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "46:4-46:74": {
-      "async_save": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.async_save",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
-      }
-    },
-    "46:4-46:61": {
-      "set_saved": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+    "45:14-45:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "46:4-46:41": {
-      "set_not_saved": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_not_saved",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "45:14-45:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "46:4-46:61": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "46:4-46:74": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "46:26-46:40": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -507,80 +441,70 @@ Higher order call graphs
   "callable": "builder_pattern.test_no_issue_with_sub_builder",
   "returned_callables": [],
   "calls": {
-    "102:42-102:56": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "102:4-104:18": {
-      "async_save": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.async_save",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.SubBuilder"
-            }
-          ]
-        }
-      }
-    },
-    "102:4-104:5": {
-      "set_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.SubBuilder"
-            }
-          ]
-        }
+    "101:14-101:26": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "102:4-102:57": {
-      "set_not_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_not_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.SubBuilder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
       }
     },
-    "101:14-101:26": {
-      "SubBuilder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "102:4-104:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "102:4-104:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.SubBuilder"
+          }
+        ]
+      }
+    },
+    "102:42-102:56": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -589,80 +513,70 @@ Higher order call graphs
   "callable": "builder_pattern.test_no_issue_with_type_var",
   "returned_callables": [],
   "calls": {
-    "56:42-56:56": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "56:4-58:18": {
-      "async_save": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.async_save",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
-      }
-    },
-    "56:4-58:5": {
-      "set_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+    "55:14-55:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "56:4-56:57": {
-      "set_not_saved_through_typevar": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_not_saved_through_typevar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_not_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "55:14-55:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "56:4-58:5": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved_through_typevar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "56:4-58:18": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.async_save",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "56:42-56:56": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -671,107 +585,91 @@ Higher order call graphs
   "callable": "builder_pattern.test_taint_update_receiver_declaration",
   "returned_callables": [],
   "calls": {
-    "93:15-93:36": {
-      "return_self": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.return_self",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
-      }
-    },
-    "93:4-93:37": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "92:4-92:30": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "91:4-91:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "90:36-90:50": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "90:4-90:51": {
-      "set_saved": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.set_saved",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+    "89:14-89:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "builder_pattern.Builder.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
     "90:4-90:25": {
-      "return_self": {
-        "call": {
-          "calls": [
-            {
-              "target": "builder_pattern.Builder.return_self",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "builder_pattern.Builder"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.return_self",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     },
-    "89:14-89:23": {
-      "Builder": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "builder_pattern.Builder.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "90:4-90:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.set_saved",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
+      }
+    },
+    "90:36-90:50": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "91:4-91:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "92:4-92:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "93:4-93:37": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "93:15-93:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "builder_pattern.Builder.return_self",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "builder_pattern.Builder"
+          }
+        ]
       }
     }
   }
@@ -781,12 +679,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "27:8-27:31": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

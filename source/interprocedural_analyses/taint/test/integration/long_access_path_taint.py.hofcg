@@ -4,47 +4,39 @@ Higher order call graphs
   "callable": "long_access_path_taint.test",
   "returned_callables": [],
   "calls": {
-    "36:4-36:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "35:45-35:59": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
+    "35:10-35:65": {
+      "call": {
+        "calls": [
+          {
+            "target": "long_access_path_taint.C.async_create",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "long_access_path_taint.C",
+            "is_class_method": true
+          }
+        ]
       }
     },
     "35:29-35:43": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "35:10-35:65": {
-      "async_create": {
-        "call": {
-          "calls": [
-            {
-              "target": "long_access_path_taint.C.async_create",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "long_access_path_taint.C",
-              "is_class_method": true
-            }
-          ]
-        }
+    "35:45-35:59": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "36:4-36:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -53,34 +45,30 @@ Higher order call graphs
   "callable": "long_access_path_taint.C.__init__",
   "returned_callables": [],
   "calls": {
-    "16:22-16:42": {
-      "get": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.get",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "15:25-15:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.get",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     },
-    "15:25-15:48": {
-      "get": {
-        "call": {
-          "calls": [
-            {
-              "target": "dict.get",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+    "16:22-16:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.get",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
       }
     }
   }
@@ -89,84 +77,76 @@ Higher order call graphs
   "callable": "long_access_path_taint.C.async_create",
   "returned_callables": [],
   "calls": {
+    "24:15-24:26|artificial-call|str-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__repr__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "25:11-25:33|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "str.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "str"
+          }
+        ]
+      }
+    },
+    "25:11-25:33|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "str.__ne__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "str"
+          }
+        ]
+      }
+    },
+    "29:26-29:37|artificial-call|str-call": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__repr__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
     "31:15-31:45": {
-      "$parameter$cls": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "long_access_path_taint.C.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "29:26-29:37": {
-      "__repr__": {
-        "call": {
-          "calls": [
-            {
-              "target": "object.__repr__",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
-      }
-    },
-    "25:11-25:33": {
-      "__ne__": {
-        "call": {
-          "calls": [
-            {
-              "target": "str.__ne__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "str"
-            }
-          ]
-        }
-      },
-      "__eq__": {
-        "call": {
-          "calls": [
-            {
-              "target": "str.__eq__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "str"
-            }
-          ]
-        }
-      }
-    },
-    "24:15-24:26": {
-      "__repr__": {
-        "call": {
-          "calls": [
-            {
-              "target": "object.__repr__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "dict"
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "long_access_path_taint.C.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }

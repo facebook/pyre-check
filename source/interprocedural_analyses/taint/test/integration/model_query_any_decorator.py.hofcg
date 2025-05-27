@@ -4,44 +4,38 @@ Higher order call graphs
   "callable": "model_query_any_decorator.$toplevel",
   "returned_callables": [],
   "calls": {
+    "55:0-55:4|identifier|$local_model_query_any_decorator$arg1": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{model_query_any_decorator.arg1}", "index": 0 }
+        ]
+      }
+    },
+    "128:0-128:3|identifier|$local_model_query_any_decorator$app": {
+      "identifier": {
+        "globals": [
+          { "target": "Obj{model_query_any_decorator.app}", "index": 0 }
+        ]
+      }
+    },
     "128:6-128:19": {
-      "Application": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "128:0-128:3": {
-      "$local_model_query_any_decorator$app": {
-        "identifier": {
-          "globals": [
-            { "target": "Obj{model_query_any_decorator.app}", "index": 0 }
-          ]
-        }
-      }
-    },
-    "55:0-55:4": {
-      "$local_model_query_any_decorator$arg1": {
-        "identifier": {
-          "globals": [
-            { "target": "Obj{model_query_any_decorator.arg1}", "index": 0 }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -50,31 +44,27 @@ Higher order call graphs
   "callable": "model_query_any_decorator.test1_alarm1@decorated",
   "returned_callables": [],
   "calls": {
-    "36:0-37:15": {
-      "test1_alarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test1_alarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "35:1-35:9|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test1_d1[formal(f, position=0)=model_query_any_decorator.test1_alarm1]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "35:1-35:9": {
-      "test1_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test1_d1[formal(f, position=0)=model_query_any_decorator.test1_alarm1]",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "36:0-37:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test1_alarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test1_alarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -83,31 +73,27 @@ Higher order call graphs
   "callable": "model_query_any_decorator.test1_noalarm1@decorated",
   "returned_callables": [],
   "calls": {
-    "41:0-42:15": {
-      "test1_noalarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test1_noalarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "40:1-40:9|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test1_d2[formal(f, position=0)=model_query_any_decorator.test1_noalarm1]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "40:1-40:9": {
-      "test1_d2": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test1_d2[formal(f, position=0)=model_query_any_decorator.test1_noalarm1]",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "41:0-42:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test1_noalarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test1_noalarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -116,31 +102,27 @@ Higher order call graphs
   "callable": "model_query_any_decorator.test2_alarm1@decorated",
   "returned_callables": [],
   "calls": {
-    "46:0-47:15": {
-      "test2_alarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test2_alarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "45:1-45:9|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test2_d1[formal(f, position=0)=model_query_any_decorator.test2_alarm1]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "45:1-45:9": {
-      "test2_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test2_d1[formal(f, position=0)=model_query_any_decorator.test2_alarm1]",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "46:0-47:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test2_alarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test2_alarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -149,31 +131,27 @@ Higher order call graphs
   "callable": "model_query_any_decorator.test2_noalarm1@decorated",
   "returned_callables": [],
   "calls": {
-    "51:0-52:15": {
-      "test2_noalarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test2_noalarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "50:1-50:9|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test2_d2[formal(f, position=0)=model_query_any_decorator.test2_noalarm1]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "50:1-50:9": {
-      "test2_d2": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test2_d2[formal(f, position=0)=model_query_any_decorator.test2_noalarm1]",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "51:0-52:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test2_noalarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test2_noalarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -188,36 +166,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "59:0-60:15": {
-      "test3_alarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test3_alarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "58:1-58:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test3_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "58:1-58:42": {
-      "test3_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test3_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test3_d1(model_query_any_decorator.arg1, 2, $parameter$arg3 = \"Foo\", $parameter$arg4 = \"Bar\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "58:1-58:42|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "59:0-60:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test3_alarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -232,36 +206,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "64:0-65:15": {
-      "test3_alarm2": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test3_alarm2",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "63:1-63:37": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test3_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "63:1-63:37": {
-      "test3_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test3_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test3_d1(model_query_any_decorator.arg1, 2, \"bar\", $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "63:1-63:37|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "64:0-65:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm2": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test3_alarm2",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -276,36 +246,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "69:0-70:15": {
-      "test3_alarm3": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test3_alarm3",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "68:1-68:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test3_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "68:1-68:30": {
-      "test3_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test3_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test3_d1(model_query_any_decorator.arg1, 2, $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "68:1-68:30|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "69:0-70:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_alarm3": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test3_alarm3",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -320,36 +286,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "74:0-75:15": {
-      "test3_noalarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test3_noalarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "73:1-73:11": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test3_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "73:1-73:11": {
-      "test3_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test3_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test3_d1()": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "73:1-73:11|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "74:0-75:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_noalarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test3_noalarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -364,36 +326,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "79:0-80:15": {
-      "test3_noalarm2": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test3_noalarm2",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "78:1-78:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test3_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "78:1-78:21": {
-      "test3_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test3_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test3_d1($parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "78:1-78:21|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "79:0-80:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test3_noalarm2": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test3_noalarm2",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -408,36 +366,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "84:0-85:15": {
-      "test4_alarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test4_alarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "83:1-83:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test4_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "83:1-83:30": {
-      "test4_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test4_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test4_d1(model_query_any_decorator.arg1, 2, $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "83:1-83:30|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "84:0-85:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_alarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test4_alarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -452,36 +406,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "89:0-90:15": {
-      "test4_noalarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test4_noalarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "88:1-88:42": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test4_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "88:1-88:42": {
-      "test4_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test4_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test4_d1(model_query_any_decorator.arg1, 2, $parameter$arg3 = \"Foo\", $parameter$arg4 = \"Bar\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "88:1-88:42|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "89:0-90:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test4_noalarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -496,36 +446,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "94:0-95:15": {
-      "test4_noalarm2": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test4_noalarm2",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "93:1-93:11": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test4_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "93:1-93:11": {
-      "test4_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test4_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test4_d1()": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "93:1-93:11|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "94:0-95:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm2": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test4_noalarm2",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -540,36 +486,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "99:0-100:15": {
-      "test4_noalarm3": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test4_noalarm3",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "98:1-98:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test4_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "98:1-98:21": {
-      "test4_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test4_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test4_d1($parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "98:1-98:21|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "99:0-100:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test4_noalarm3": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test4_noalarm3",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -584,36 +526,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "104:0-105:15": {
-      "test5_alarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test5_alarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "103:1-103:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test5_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "103:1-103:30": {
-      "test5_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test5_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test5_d1(model_query_any_decorator.arg1, 2, $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "103:1-103:30|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "104:0-105:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_alarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test5_alarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -628,36 +566,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "109:0-110:15": {
-      "test5_alarm2": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test5_alarm2",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "108:1-108:48": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test5_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "108:1-108:48": {
-      "test5_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test5_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test5_d1(model_query_any_decorator.arg1, 2, 3, 4, $parameter$arg4 = \"Bar\", $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "108:1-108:48|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "109:0-110:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_alarm2": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test5_alarm2",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -672,36 +606,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "114:0-115:15": {
-      "test5_noalarm1": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test5_noalarm1",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "113:1-113:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test5_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "113:1-113:30": {
-      "test5_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test5_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test5_d1(2, model_query_any_decorator.arg1, $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "113:1-113:30|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "114:0-115:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_noalarm1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test5_noalarm1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -716,36 +646,32 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "119:0-120:15": {
-      "test5_noalarm2": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test5_noalarm2",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "118:1-118:36": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.test5_d1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "118:1-118:36": {
-      "test5_d1": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.test5_d1",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
-      },
-      "model_query_any_decorator.test5_d1(model_query_any_decorator.arg1, 3, 2, 4, $parameter$arg3 = \"Foo\")": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
-        }
+    "118:1-118:36|artificial-call|for-decorated-target": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownCallCallee" ] ]
+      }
+    },
+    "119:0-120:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test5_noalarm2": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test5_noalarm2",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -754,33 +680,29 @@ Higher order call graphs
   "callable": "model_query_any_decorator.test_local_variable_method_decorator@decorated",
   "returned_callables": [],
   "calls": {
-    "132:0-133:15": {
-      "test_local_variable_method_decorator": {
-        "attribute_access": {
-          "callables": [
-            {
-              "target": "model_query_any_decorator.test_local_variable_method_decorator",
-              "index": 0,
-              "return_type": []
-            }
-          ],
-          "is_attribute": true
-        }
+    "131:1-131:14|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "model_query_any_decorator.Application.decorator[formal(f, position=1)=model_query_any_decorator.test_local_variable_method_decorator]",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "model_query_any_decorator.Application"
+          }
+        ]
       }
     },
-    "131:1-131:14": {
-      "decorator": {
-        "call": {
-          "calls": [
-            {
-              "target": "model_query_any_decorator.Application.decorator[formal(f, position=1)=model_query_any_decorator.test_local_variable_method_decorator]",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "model_query_any_decorator.Application"
-            }
-          ]
-        }
+    "132:0-133:15|artificial-attribute-access|for-decorated-target-callee:model_query_any_decorator.test_local_variable_method_decorator": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "model_query_any_decorator.test_local_variable_method_decorator",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }

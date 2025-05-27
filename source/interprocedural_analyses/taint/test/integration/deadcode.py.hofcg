@@ -1,57 +1,97 @@
 @generated
 Higher order call graphs
 {
+  "callable": "deadcode.dead_code_by_type_refinement",
+  "returned_callables": [],
+  "calls": {
+    "97:11-97:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "isinstance",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "deadcode.MyCallable.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "deadcode.MyCallable"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "98:12-98:23": {
+      "call": {
+        "calls": [ { "target": "print", "index": 0, "return_type": [] } ]
+      }
+    },
+    "100:12-100:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "deadcode.early_break_no_issue_for",
   "returned_callables": [],
   "calls": {
-    "49:13-49:21": {
-      "range": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "range.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "51:13-51:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "49:8-49:21": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "range.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "range"
-            }
-          ]
-        }
+    "51:13-51:21|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "51:13-51:21|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     }
   }
@@ -60,54 +100,50 @@ Higher order call graphs
   "callable": "deadcode.early_continue_no_issue_for",
   "returned_callables": [],
   "calls": {
-    "61:13-61:21": {
-      "range": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "range.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "63:13-63:21": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "range.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "61:8-61:21": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "range.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "range"
-            }
-          ]
-        }
+    "63:13-63:21|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "range.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "range"
+          }
+        ]
+      }
+    },
+    "63:13-63:21|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     }
   }
@@ -116,11 +152,9 @@ Higher order call graphs
   "callable": "deadcode.early_raise_no_issue",
   "returned_callables": [],
   "calls": {
-    "67:10-67:31": {
-      "RuntimeError": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+    "69:10-69:31": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -129,44 +163,38 @@ Higher order call graphs
   "callable": "deadcode.early_return_no_issue_class",
   "returned_callables": [],
   "calls": {
-    "80:4-80:24": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "81:13-81:41": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "deadcode.EarlyReturns.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "79:26-79:40": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "81:26-81:40": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "79:13-79:41": {
-      "EarlyReturns": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "deadcode.EarlyReturns.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "82:4-82:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -175,34 +203,28 @@ Higher order call graphs
   "callable": "deadcode.early_return_no_issue_for_else",
   "returned_callables": [],
   "calls": {
-    "39:15-39:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "37:13-37:14|artificial-call|for-iter": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "39:4-39:30": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "37:13-37:14|artificial-call|for-next": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "35:8-35:14": {
-      "__next__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "41:4-41:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "41:15-41:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -211,13 +233,11 @@ Higher order call graphs
   "callable": "deadcode.early_return_no_source",
   "returned_callables": [],
   "calls": {
-    "16:8-16:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "18:8-18:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

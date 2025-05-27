@@ -4,52 +4,44 @@ Higher order call graphs
   "callable": "class_interval.abstract_method",
   "returned_callables": [],
   "calls": {
-    "393:4-393:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "392:8-392:13": {
-      "f": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A13.f",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B13"
-            }
-          ]
-        }
+    "390:8-390:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A13.f",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C13"
+          }
+        ]
       }
     },
     "391:4-391:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "390:8-390:13": {
-      "f": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A13.f",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C13"
-            }
-          ]
-        }
+    "392:8-392:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A13.f",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B13"
+          }
+        ]
+      }
+    },
+    "393:4-393:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
       }
     }
   }
@@ -59,16 +51,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "337:11-337:18": {
-      "f": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A9.f",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "class_interval.A9.f", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -77,28 +63,24 @@ Higher order call graphs
   "callable": "class_interval.canonical_example",
   "returned_callables": [],
   "calls": {
-    "38:9-38:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "38:4-38:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B0.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B0"
+          }
+        ]
       }
     },
-    "38:4-38:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B0.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B0"
-            }
-          ]
-        }
+    "38:9-38:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -107,37 +89,31 @@ Higher order call graphs
   "callable": "class_interval.issue_precise_tito_intervals",
   "returned_callables": [],
   "calls": {
-    "742:20-742:34": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "742:4-742:36": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
     "742:15-742:35": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A23.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B23"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A23.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B23"
+          }
+        ]
       }
     },
-    "742:4-742:36": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "742:20-742:34": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -146,28 +122,24 @@ Higher order call graphs
   "callable": "class_interval.multi_inheritance_issue",
   "returned_callables": [],
   "calls": {
-    "498:15-498:21": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B16.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B16"
-            }
-          ]
-        }
+    "498:4-498:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "498:4-498:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "498:15-498:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B16.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B16"
+          }
+        ]
       }
     }
   }
@@ -176,28 +148,24 @@ Higher order call graphs
   "callable": "class_interval.multi_inheritance_no_issue_one_hop",
   "returned_callables": [],
   "calls": {
-    "435:15-435:21": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B14.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B14"
-            }
-          ]
-        }
+    "435:4-435:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "435:4-435:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "435:15-435:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B14.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B14"
+          }
+        ]
       }
     }
   }
@@ -206,28 +174,24 @@ Higher order call graphs
   "callable": "class_interval.multi_inheritance_no_issue_two_hops",
   "returned_callables": [],
   "calls": {
-    "468:15-468:21": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B15.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B15"
-            }
-          ]
-        }
+    "468:4-468:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "468:4-468:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "468:15-468:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B15.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B15"
+          }
+        ]
       }
     }
   }
@@ -236,28 +200,24 @@ Higher order call graphs
   "callable": "class_interval.multiple_inheritance",
   "returned_callables": [],
   "calls": {
-    "106:9-106:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "106:4-106:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B2.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B2"
+          }
+        ]
       }
     },
-    "106:4-106:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B2.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B2"
-            }
-          ]
-        }
+    "106:9-106:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -266,28 +226,24 @@ Higher order call graphs
   "callable": "class_interval.no_call_to_parent_class",
   "returned_callables": [],
   "calls": {
-    "70:9-70:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "70:4-70:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B1.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B1"
+          }
+        ]
       }
     },
-    "70:4-70:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B1.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B1"
-            }
-          ]
-        }
+    "70:9-70:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -296,28 +252,24 @@ Higher order call graphs
   "callable": "class_interval.no_issue_source_through_staticmethod_tito",
   "returned_callables": [],
   "calls": {
-    "767:15-767:21": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A24.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C24"
-            }
-          ]
-        }
+    "767:4-767:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "767:4-767:22": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "767:15-767:21": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A24.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C24"
+          }
+        ]
       }
     }
   }
@@ -326,41 +278,35 @@ Higher order call graphs
   "callable": "class_interval.no_issue_taint_transform_with_class_interval",
   "returned_callables": [],
   "calls": {
-    "697:16-697:30": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "697:4-697:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "697:11-697:31": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A22.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C22"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A22.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C22"
+          }
+        ]
       }
     },
-    "697:4-697:32": {
-      "sink_d": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.sink_d",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "697:16-697:30": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -369,42 +315,36 @@ Higher order call graphs
   "callable": "class_interval.no_issue_taint_transform_with_class_interval_for_classmethods",
   "returned_callables": [],
   "calls": {
-    "674:18-674:32": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "674:4-674:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "674:11-674:33": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A21.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C21",
-              "is_class_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A21.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C21",
+            "is_class_method": true
+          }
+        ]
       }
     },
-    "674:4-674:34": {
-      "sink_d": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.sink_d",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "674:18-674:32": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -413,28 +353,24 @@ Higher order call graphs
   "callable": "class_interval.propagate_source_empty",
   "returned_callables": [],
   "calls": {
-    "267:22-267:28": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A6.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C6"
-            }
-          ]
-        }
+    "267:11-267:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "267:11-267:29": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "267:22-267:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A6.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C6"
+          }
+        ]
       }
     }
   }
@@ -443,28 +379,24 @@ Higher order call graphs
   "callable": "class_interval.sink_in_subclass",
   "returned_callables": [],
   "calls": {
-    "148:9-148:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "148:4-148:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.B3.m0}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B3"
+          }
+        ]
       }
     },
-    "148:4-148:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.B3.m0}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B3"
-            }
-          ]
-        }
+    "148:9-148:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -473,28 +405,24 @@ Higher order call graphs
   "callable": "class_interval.sink_two_hops",
   "returned_callables": [],
   "calls": {
-    "219:9-219:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "219:4-219:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B5.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B5"
+          }
+        ]
       }
     },
-    "219:4-219:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B5.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B5"
-            }
-          ]
-        }
+    "219:9-219:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -503,28 +431,24 @@ Higher order call graphs
   "callable": "class_interval.source_two_hops",
   "returned_callables": [],
   "calls": {
-    "184:9-184:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "184:4-184:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.D4.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D4"
+          }
+        ]
       }
     },
-    "184:4-184:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.D4.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.D4"
-            }
-          ]
-        }
+    "184:9-184:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -533,101 +457,87 @@ Higher order call graphs
   "callable": "class_interval.test_class_methods",
   "returned_callables": [],
   "calls": {
-    "552:11-552:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 2, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "552:4-552:26": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A17.m2",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B17",
-              "is_class_method": true
-            }
-          ]
-        }
-      }
-    },
-    "547:9-547:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "547:4-547:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A17.m0",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B17",
-              "is_class_method": true
-            }
-          ]
-        }
-      }
-    },
-    "546:8-546:13": {
-      "B17": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "543:4-543:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17",
+            "is_class_method": true
+          }
+        ]
       }
     },
     "543:11-543:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "543:4-543:26": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A17.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B17",
-              "is_class_method": true
-            }
-          ]
-        }
+    "546:8-546:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "547:4-547:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m0",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "547:9-547:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "552:4-552:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A17.m2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B17",
+            "is_class_method": true
+          }
+        ]
+      }
+    },
+    "552:11-552:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 2, "return_type": [] }
+        ]
       }
     }
   }
@@ -636,28 +546,24 @@ Higher order call graphs
   "callable": "class_interval.test_multi_inheritance_parent_call",
   "returned_callables": [],
   "calls": {
-    "635:9-635:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "635:4-635:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A20.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B20"
+          }
+        ]
       }
     },
-    "635:4-635:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A20.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B20"
-            }
-          ]
-        }
+    "635:9-635:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -666,39 +572,35 @@ Higher order call graphs
   "callable": "class_interval.test_multi_inheritance_parent_issue",
   "returned_callables": [],
   "calls": {
-    "639:39-639:44": {
-      "D20": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "639:4-639:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.test_multi_inheritance_parent_call",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "639:4-639:45": {
-      "test_multi_inheritance_parent_call": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.test_multi_inheritance_parent_call",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "639:39-639:44": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -707,60 +609,48 @@ Higher order call graphs
   "callable": "class_interval.test_static_methods",
   "returned_callables": [],
   "calls": {
-    "578:9-578:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 1, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "578:4-578:24": {
-      "m0": {
-        "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "CannotFindParentClass" ]
-          ]
-        }
-      }
-    },
-    "577:8-577:13": {
-      "C18": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "574:4-574:26": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindAttribute" ] ]
       }
     },
     "574:11-574:25": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "574:4-574:26": {
-      "m0": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotFindAttribute" ] ]
-        }
+    "577:8-577:13": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "578:4-578:24": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
+      }
+    },
+    "578:9-578:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
       }
     }
   }
@@ -769,28 +659,24 @@ Higher order call graphs
   "callable": "class_interval.undetected_issue",
   "returned_callables": [],
   "calls": {
-    "367:4-367:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "364:8-364:13": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A12.f",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C12"
+          }
+        ]
       }
     },
-    "364:8-364:13": {
-      "f": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A12.f",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C12"
-            }
-          ]
-        }
+    "367:4-367:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -800,18 +686,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "19:8-19:18": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A0.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A0"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A0.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A0"
+          }
+        ]
       }
     }
   }
@@ -821,18 +705,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "50:8-50:18": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A1.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A1"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A1.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A1"
+          }
+        ]
       }
     }
   }
@@ -841,36 +723,30 @@ Higher order call graphs
   "callable": "class_interval.A10.object_target",
   "returned_callables": [],
   "calls": {
-    "345:8-345:11": {
-      "f": {
-        "attribute_access": {
-          "globals": [
-            { "target": "Obj{class_interval.A10.f}", "index": 0 }
-          ],
-          "is_attribute": true
-        }
+    "344:12-344:17": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "344:12-344:17": {
-      "A10": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "345:8-345:11": {
+      "attribute_access": {
+        "globals": [ { "target": "Obj{class_interval.A10.f}", "index": 0 } ],
+        "is_attribute": true
       }
     }
   }
@@ -880,12 +756,8 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "350:15-350:23": {
-      "g": {
-        "call": {
-          "unresolved": [
-            "BypassingDecorators", [ "CannotFindParentClass" ]
-          ]
-        }
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
       }
     }
   }
@@ -895,18 +767,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "372:15-372:23": {
-      "g": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A13.g}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A13"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A13.g}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A13"
+          }
+        ]
       }
     }
   }
@@ -916,18 +786,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "411:15-411:24": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A14.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A14"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A14.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A14"
+          }
+        ]
       }
     }
   }
@@ -937,18 +805,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "440:15-440:24": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A15.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A15"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A15.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A15"
+          }
+        ]
       }
     }
   }
@@ -958,18 +824,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "473:15-473:24": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A16.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A16"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A16.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A16"
+          }
+        ]
       }
     }
   }
@@ -979,19 +843,17 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "512:8-512:19": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A17.m1}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A17",
-              "is_class_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A17.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A17",
+            "is_class_method": true
+          }
+        ]
       }
     }
   }
@@ -1001,19 +863,17 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "520:8-520:19": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.D17.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.D17",
-              "is_class_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.D17.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D17",
+            "is_class_method": true
+          }
+        ]
       }
     }
   }
@@ -1023,19 +883,17 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "586:8-586:17": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A19.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A19",
-              "is_class_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A19.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A19",
+            "is_class_method": true
+          }
+        ]
       }
     }
   }
@@ -1045,12 +903,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "590:8-590:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1060,18 +916,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "595:8-595:17": {
-      "m3": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A19.m3",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A19"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A19.m3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A19"
+          }
+        ]
       }
     }
   }
@@ -1081,12 +935,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "598:8-598:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1096,18 +948,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "84:8-84:18": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A2.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A2"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A2.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A2"
+          }
+        ]
       }
     }
   }
@@ -1117,19 +967,17 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "653:15-653:26": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A21.m1}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A21",
-              "is_class_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A21.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A21",
+            "is_class_method": true
+          }
+        ]
       }
     }
   }
@@ -1139,18 +987,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "679:15-679:27": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A22.m1}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A22"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A22.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A22"
+          }
+        ]
       }
     }
   }
@@ -1160,18 +1006,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "714:15-714:25": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A23.m1}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A23"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A23.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A23"
+          }
+        ]
       }
     }
   }
@@ -1180,33 +1024,29 @@ Higher order call graphs
   "callable": "class_interval.A24.m0",
   "returned_callables": [],
   "calls": {
-    "747:24-747:33": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A24.m1}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A24"
-            }
-          ]
-        }
+    "747:15-747:34": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A24.tito",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
       }
     },
-    "747:15-747:34": {
-      "tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A24.tito",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ]
-        }
+    "747:24-747:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A24.m1}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A24"
+          }
+        ]
       }
     }
   }
@@ -1216,18 +1056,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "120:8-120:18": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A3.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A3"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A3.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A3"
+          }
+        ]
       }
     }
   }
@@ -1237,18 +1075,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "162:8-162:18": {
-      "m3": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A4.m3}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A4"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A4.m3}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A4"
+          }
+        ]
       }
     }
   }
@@ -1258,18 +1094,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "198:8-198:18": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A5.m2}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A5"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A5.m2}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A5"
+          }
+        ]
       }
     }
   }
@@ -1279,18 +1113,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "237:15-237:24": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{class_interval.A6.m0}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A6"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{class_interval.A6.m0}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A6"
+          }
+        ]
       }
     }
   }
@@ -1300,18 +1132,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "289:12-289:19": {
-      "foo": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B7.foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B7"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B7.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B7"
+          }
+        ]
       }
     }
   }
@@ -1320,114 +1150,100 @@ Higher order call graphs
   "callable": "class_interval.A8.bar",
   "returned_callables": [],
   "calls": {
-    "323:19-323:29": {
-      "baz": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A8.baz",
-              "index": 1,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A8"
-            }
-          ]
-        }
+    "312:11-312:17|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "323:19-323:23": {
-      "A8": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "321:13-321:19": {
-      "__ne__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__eq__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      }
-    },
-    "320:19-320:27": {
-      "foo": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B8.foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B8"
-            },
-            {
-              "target": "class_interval.C8.foo",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C8"
-            }
-          ]
-        }
-      }
-    },
-    "314:13-314:19": {
-      "__ne__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__eq__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "312:11-312:17|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
     "313:19-313:29": {
-      "baz": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A8.baz",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.A8"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A8.baz",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A8"
+          }
+        ]
       }
     },
-    "312:11-312:17": {
-      "__ne__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
-      },
-      "__eq__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "314:13-314:19|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "314:13-314:19|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "320:19-320:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B8.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B8"
+          },
+          {
+            "target": "class_interval.C8.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C8"
+          }
+        ]
+      }
+    },
+    "321:13-321:19|artificial-call|comparison": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "321:13-321:19|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "323:19-323:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "323:19-323:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A8.baz",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.A8"
+          }
+        ]
       }
     }
   }
@@ -1437,12 +1253,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "328:15-328:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1452,12 +1266,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "333:15-333:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1467,18 +1279,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "29:8-29:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A0.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B0"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A0.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B0"
+          }
+        ]
       }
     }
   }
@@ -1488,18 +1298,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "58:8-58:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B1.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B1"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B1.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B1"
+          }
+        ]
       }
     }
   }
@@ -1509,18 +1317,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "424:15-424:24": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A14.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B14"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A14.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B14"
+          }
+        ]
       }
     }
   }
@@ -1530,18 +1336,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "453:15-453:24": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A15.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B15"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A15.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B15"
+          }
+        ]
       }
     }
   }
@@ -1551,18 +1355,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "486:15-486:24": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A16.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B16"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A16.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B16"
+          }
+        ]
       }
     }
   }
@@ -1572,16 +1374,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "562:8-562:19": {
-      "sink_b": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.sink_b",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_b",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1591,18 +1391,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "92:8-92:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A2.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B2"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A2.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B2"
+          }
+        ]
       }
     }
   }
@@ -1612,16 +1410,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "663:15-663:30": {
-      "transformX": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.transformX",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.transformX",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1631,16 +1427,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "687:15-687:30": {
-      "transformX": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.transformX",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.transformX",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1650,12 +1444,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "759:15-759:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1665,18 +1457,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "128:8-128:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A3.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B3"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A3.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B3"
+          }
+        ]
       }
     }
   }
@@ -1686,18 +1476,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "170:8-170:18": {
-      "m2": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A4.m2",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B4"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A4.m2",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B4"
+          }
+        ]
       }
     }
   }
@@ -1707,18 +1495,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "206:8-206:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A5.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B5"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A5.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B5"
+          }
+        ]
       }
     }
   }
@@ -1727,78 +1513,70 @@ Higher order call graphs
   "callable": "class_interval.B6.m0",
   "returned_callables": [],
   "calls": {
-    "248:19-248:28": {
-      "m3": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.E6.m3",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.E6"
-            }
-          ]
-        }
+    "245:11-245:17|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__eq__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
-    "248:19-248:23": {
-      "E6": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "245:11-245:17|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__ne__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "246:19-246:33": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "245:11-245:17": {
-      "__ne__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__ne__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__eq__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__eq__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "248:19-248:23": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "248:19-248:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.E6.m3",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.E6"
+          }
+        ]
       }
     }
   }
@@ -1808,12 +1586,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "281:15-281:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1823,18 +1599,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "278:15-278:25": {
-      "bar": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B7.bar",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B7"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B7.bar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B7"
+          }
+        ]
       }
     }
   }
@@ -1844,12 +1618,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "302:15-302:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1859,12 +1631,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "34:8-34:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1874,12 +1644,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "66:8-66:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1889,12 +1657,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "360:15-360:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1904,12 +1670,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "386:15-386:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1919,12 +1683,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "419:15-419:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1934,16 +1696,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "532:8-532:19": {
-      "sink_c": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.sink_c",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -1953,17 +1713,15 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "569:8-569:18": {
-      "m": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B18.m",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B18.m",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
       }
     }
   }
@@ -1973,12 +1731,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "625:8-625:23": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -1988,16 +1744,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "726:15-726:31": {
-      "add_feature_c": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.add_feature_c",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.add_feature_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2007,18 +1761,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "133:8-133:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A3.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C3"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A3.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C3"
+          }
+        ]
       }
     }
   }
@@ -2028,12 +1780,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "136:8-136:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2043,12 +1793,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "175:8-175:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2058,18 +1806,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "253:15-253:24": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.A6.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.C6"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.A6.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.C6"
+          }
+        ]
       }
     }
   }
@@ -2079,12 +1825,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "494:15-494:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2094,16 +1838,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "538:8-538:19": {
-      "sink_c": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.sink_c",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.sink_c",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2113,12 +1855,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "102:8-102:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2128,16 +1868,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "731:15-731:31": {
-      "add_feature_d": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.add_feature_d",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.add_feature_d",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2147,18 +1885,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "180:8-180:18": {
-      "m1": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B4.m1",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.D4"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B4.m1",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.D4"
+          }
+        ]
       }
     }
   }
@@ -2168,12 +1904,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "215:8-215:21": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2182,41 +1916,37 @@ Higher order call graphs
   "callable": "class_interval.D6.m0",
   "returned_callables": [],
   "calls": {
-    "258:8-258:20": {
-      "m0": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.B6.m0",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "class_interval.B6"
-            }
-          ]
-        }
+    "258:8-258:15": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "super.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "258:8-258:15": {
-      "super": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "super.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "258:8-258:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.B6.m0",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "class_interval.B6"
+          }
+        ]
       }
     }
   }
@@ -2226,12 +1956,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "448:15-448:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -2241,16 +1969,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "736:15-736:31": {
-      "add_feature_e": {
-        "call": {
-          "calls": [
-            {
-              "target": "class_interval.add_feature_e",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "class_interval.add_feature_e",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -2260,12 +1986,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "263:15-263:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }

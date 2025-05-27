@@ -5,18 +5,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "28:8-28:23": {
-      "method": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{combinatory_ports.Base.method}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{combinatory_ports.Base.method}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "combinatory_ports.Base"
+          }
+        ]
       }
     }
   }
@@ -26,18 +24,16 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "36:8-36:23": {
-      "method": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{combinatory_ports.Base.method}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{combinatory_ports.Base.method}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "combinatory_ports.Base"
+          }
+        ]
       }
     }
   }
@@ -46,28 +42,24 @@ Higher order call graphs
   "callable": "combinatory_ports.C.method",
   "returned_callables": [],
   "calls": {
-    "46:8-46:23": {
-      "method": {
-        "call": {
-          "calls": [
-            {
-              "target": "Overrides{combinatory_ports.Base.method}",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "combinatory_ports.Base"
-            }
-          ]
-        }
+    "45:8-45:26": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "45:8-45:26": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "46:8-46:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "Overrides{combinatory_ports.Base.method}",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "combinatory_ports.Base"
+          }
+        ]
       }
     }
   }

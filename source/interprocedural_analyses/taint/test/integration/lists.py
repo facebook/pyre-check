@@ -6,7 +6,7 @@
 # flake8: noqa
 
 from builtins import _test_sink, _test_source
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 
 def create_zipped_source() -> zip[Tuple[int, int]]:
@@ -123,3 +123,18 @@ def inconsistent_redirect_expressions_in_condition(l: List[HasRepr]) -> None:
     # Call graph, forward and backward analysis need to agree on whether
     # `str(x)` resolves to `x.__str__()` or `x.__repr__()`
     [x for x in l if str(x) == "123"]
+
+
+class HasStr:
+    def __str__(self) -> str:
+        return ""
+
+
+def returns_list_repr(x: Any) -> List[HasRepr]:
+    ...
+
+
+def inconsistent_type_context(l: List[HasStr]) -> None:
+    # Demonstrate a (fixed) inconsistency in how we handle nested generators.
+    # The type context is different between the inner generator and the outer one.
+    [str(x) for x in returns_list_repr([str(x) for x in l])]

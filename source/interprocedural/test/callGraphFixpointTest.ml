@@ -11,13 +11,12 @@ open Test
 open Interprocedural
 open CallGraph
 open CallGraphTestHelper
-open Data_structures
 
 module Expected = struct
   type t = {
     callable: Target.t;
     returned_callables: CallTarget.t list;
-    call_graph: (string * LocationCallees.t) list;
+    call_graph: (string * ExpressionCallees.t) list;
   }
 end
 
@@ -173,16 +172,15 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "5:9-5:12",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                     ( "5:9-5:12|artificial-attribute-access|qualification:test.foo",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -197,15 +195,14 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "7:9-7:14",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -236,35 +233,32 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "7:9-7:17",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.bar"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "arg",
-                                              Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "7:13-7:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function { name = "test.bar"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 0 "arg",
+                                           Target.Regular.Function
+                                             { name = "test.foo"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "7:13-7:16|artificial-attribute-access|qualification:test.foo",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -284,16 +278,15 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "3:9-3:12",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                     ( "3:9-3:12|artificial-attribute-access|qualification:test.foo",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -318,15 +311,14 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "3:9-3:14",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -352,67 +344,52 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "5:5-5:11",
-                       LocationCallees.Compound
-                         (SerializableStringMap.of_alist_exn
-                            [
-                              ( "__eq__",
-                                ExpressionCallees.from_call
-                                  (CallCallees.create
-                                     ~call_targets:
-                                       [
-                                         CallTarget.create_regular
-                                           ~implicit_receiver:true
-                                           ~receiver_class:"int"
-                                           ~return_type:(Some ReturnType.bool)
-                                           ~index:0
-                                           (Target.Regular.Method
-                                              {
-                                                class_name = "int";
-                                                method_name = "__eq__";
-                                                kind = Normal;
-                                              });
-                                       ]
-                                     ()) );
-                              ( "__ne__",
-                                ExpressionCallees.from_call
-                                  (CallCallees.create
-                                     ~call_targets:
-                                       [
-                                         CallTarget.create_regular
-                                           ~implicit_receiver:true
-                                           ~receiver_class:"int"
-                                           ~return_type:(Some ReturnType.bool)
-                                           ~index:0
-                                           (Target.Regular.Method
-                                              {
-                                                class_name = "int";
-                                                method_name = "__ne__";
-                                                kind = Normal;
-                                              });
-                                       ]
-                                     ()) );
-                            ]) );
-                     ( "6:11-6:14",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                     ( "5:5-5:11|artificial-call|comparison",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  ~receiver_class:"int"
+                                  ~return_type:(Some ReturnType.bool)
+                                  ~index:0
+                                  (Target.Regular.Method
+                                     { class_name = "int"; method_name = "__eq__"; kind = Normal });
+                              ]
+                            ()) );
+                     ( "5:5-5:11|artificial-call|normalize-not-comparison>comparison",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  ~receiver_class:"int"
+                                  ~return_type:(Some ReturnType.bool)
+                                  ~index:0
+                                  (Target.Regular.Method
+                                     { class_name = "int"; method_name = "__ne__"; kind = Normal });
+                              ]
+                            ()) );
+                     ( "6:11-6:14|artificial-attribute-access|qualification:test.bar",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                      ( "8:11-8:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -442,35 +419,33 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "7:9-7:23",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.propagate"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "x",
-                                              Target.Regular.Function
-                                                { name = "test.bar"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "7:19-7:22",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.propagate"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 0 "x",
+                                           Target.Regular.Function
+                                             { name = "test.bar"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "7:19-7:22|artificial-attribute-access|qualification:test.bar",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -519,35 +494,33 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "9:9-9:28",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.wrap_propagate"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "x",
-                                              Target.Regular.Function
-                                                { name = "test.bar"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "9:24-9:27",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.wrap_propagate"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 0 "x",
+                                           Target.Regular.Function
+                                             { name = "test.bar"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "9:24-9:27|artificial-attribute-access|qualification:test.bar",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -580,35 +553,33 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "10:9-10:23",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.decorator"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "f",
-                                              Target.Regular.Function
-                                                { name = "test.bar"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "10:19-10:22",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.decorator"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 0 "f",
+                                           Target.Regular.Function
+                                             { name = "test.bar"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "10:19-10:22|artificial-attribute-access|qualification:test.bar",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -653,39 +624,37 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "13:10-13:21",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.decorator.inner"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 0 "x",
-                                              Target.Regular.Function
-                                                { name = "test.baz"; kind = Normal }
-                                              |> Target.from_regular );
-                                            ( AccessPath.Root.Variable "$parameter$f",
-                                              Target.Regular.Function
-                                                { name = "test.foo"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "13:14-13:17",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.baz"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.decorator.inner"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 0 "x",
+                                           Target.Regular.Function
+                                             { name = "test.baz"; kind = Normal }
+                                           |> Target.from_regular );
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.foo"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "13:14-13:17|artificial-attribute-access|qualification:test.baz",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.baz"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -717,16 +686,15 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "9:9-9:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.outer.inner"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.outer.inner"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -764,27 +732,25 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "14:9-14:20",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.decorator.wrapper"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.decorator.wrapper"; kind = Normal });
+                              ]
+                            ()) );
                      ( "14:9-14:23",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ~unresolved:CallGraph.Unresolved.False
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ~unresolved:CallGraph.Unresolved.False
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -826,15 +792,11 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "19:11-19:15",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create ())) );
+                     ( "19:11-19:15|artificial-attribute-access|qualification:test.foo1",
+                       ExpressionCallees.from_attribute_access (AttributeAccessCallees.create ()) );
                      (* TODO: Resolve `C.foo`. *)
-                     ( "23:8-23:12",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create ())) );
+                     ( "23:8-23:12|artificial-attribute-access|qualification:test.foo3",
+                       ExpressionCallees.from_attribute_access (AttributeAccessCallees.create ()) );
                    ];
                  returned_callables =
                    [
@@ -890,18 +852,17 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "13:9-13:14",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~receiver_class:"test.A"
-                                     (Target.Regular.Override
-                                        { class_name = "test.A"; method_name = "m"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  ~receiver_class:"test.A"
+                                  (Target.Regular.Override
+                                     { class_name = "test.A"; method_name = "m"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -940,25 +901,24 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "14:2-14:7",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.decorator.foo"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( AccessPath.Root.Variable "$parameter$f",
-                                              Target.Regular.Function
-                                                { name = "test.baz"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.decorator.foo"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.baz"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -991,29 +951,28 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "9:9-9:15",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ~higher_order_parameters:
+                              (HigherOrderParameterMap.from_list
                                  [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ~higher_order_parameters:
-                                 (HigherOrderParameterMap.from_list
-                                    [
-                                      {
-                                        index = 0;
-                                        call_targets =
-                                          [
-                                            CallTarget.create_regular
-                                              (Target.Regular.Function
-                                                 { name = "test.bar.g"; kind = Normal });
-                                          ];
-                                        unresolved = CallGraph.Unresolved.False;
-                                      };
-                                    ])
-                               ())) );
+                                   {
+                                     index = 0;
+                                     call_targets =
+                                       [
+                                         CallTarget.create_regular
+                                           (Target.Regular.Function
+                                              { name = "test.bar.g"; kind = Normal });
+                                       ];
+                                     unresolved = CallGraph.Unresolved.False;
+                                   };
+                                 ])
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -1041,12 +1000,7 @@ let test_higher_order_call_graph_fixpoint =
                  Expected.callable =
                    Target.Regular.Function { name = "test.baz"; kind = Normal }
                    |> Target.from_regular;
-                 call_graph =
-                   [
-                     ( "12:9-12:14",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call (CallCallees.create ())) );
-                   ];
+                 call_graph = ["12:9-12:14", ExpressionCallees.from_call (CallCallees.create ())];
                  returned_callables = [];
                };
              ]
@@ -1090,73 +1044,66 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "13:1-13:15",
-                       LocationCallees.Compound
-                         (SerializableStringMap.of_alist_exn
-                            [
-                              ( "log",
-                                ExpressionCallees.from_call
-                                  (CallCallees.create
-                                     ~call_targets:
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.log"; kind = Normal });
+                              ]
+                            ()) );
+                     ( "13:1-13:15|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  ~implicit_dunder_call:true
+                                  ~receiver_class:"test.DecoratorProtocol"
+                                  (Target.Regular.Method
+                                     {
+                                       class_name = "test.DecoratorProtocol";
+                                       method_name = "__call__";
+                                       kind = Normal;
+                                     });
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.log.inner"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 0 "func",
+                                           Target.Regular.Function
+                                             { name = "test.foo"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ~higher_order_parameters:
+                              (HigherOrderParameterMap.from_list
+                                 [
+                                   {
+                                     index = 0;
+                                     call_targets =
                                        [
                                          CallTarget.create_regular
                                            (Target.Regular.Function
-                                              { name = "test.log"; kind = Normal });
-                                       ]
-                                     ()) );
-                              ( "test.log($parameter$flag = True)",
-                                ExpressionCallees.from_call
-                                  (CallCallees.create
-                                     ~call_targets:
-                                       [
-                                         CallTarget.create_regular
-                                           ~implicit_receiver:true
-                                           ~implicit_dunder_call:true
-                                           ~receiver_class:"test.DecoratorProtocol"
-                                           (Target.Regular.Method
-                                              {
-                                                class_name = "test.DecoratorProtocol";
-                                                method_name = "__call__";
-                                                kind = Normal;
-                                              });
-                                         CallTarget.create
-                                           (create_parameterized_target
-                                              ~regular:
-                                                (Target.Regular.Function
-                                                   { name = "test.log.inner"; kind = Normal })
-                                              ~parameters:
-                                                [
-                                                  ( create_positional_parameter 0 "func",
-                                                    Target.Regular.Function
-                                                      { name = "test.foo"; kind = Normal }
-                                                    |> Target.from_regular );
-                                                ]);
-                                       ]
-                                     ~higher_order_parameters:
-                                       (HigherOrderParameterMap.from_list
-                                          [
-                                            {
-                                              index = 0;
-                                              call_targets =
-                                                [
-                                                  CallTarget.create_regular
-                                                    (Target.Regular.Function
-                                                       { name = "test.foo"; kind = Normal });
-                                                ];
-                                              unresolved = CallGraph.Unresolved.False;
-                                            };
-                                          ])
-                                     ()) );
-                            ]) );
-                     ( "14:0-15:8",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                                              { name = "test.foo"; kind = Normal });
+                                       ];
+                                     unresolved = CallGraph.Unresolved.False;
+                                   };
+                                 ])
+                            ()) );
+                     ( "14:0-15:8|artificial-attribute-access|for-decorated-target-callee:test.foo",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1209,21 +1156,20 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "19:9-19:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.MyClass";
-                                          method_name = "bar";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     {
+                                       class_name = "test.MyClass";
+                                       method_name = "bar";
+                                       kind = Normal;
+                                     });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1268,46 +1214,45 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "15:3-15:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~init_targets:
-                                 [
-                                   CallTarget.create
-                                     ~implicit_receiver:true
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Method
+                     ( "15:3-15:16|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~init_targets:
+                              [
+                                CallTarget.create
+                                  ~implicit_receiver:true
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Method
+                                          {
+                                            class_name = "test.classproperty";
+                                            method_name = "__init__";
+                                            kind = Normal;
+                                          })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 1 "fget",
+                                           Target.Regular.Method
                                              {
-                                               class_name = "test.classproperty";
-                                               method_name = "__init__";
+                                               class_name = "test.MyClass";
+                                               method_name = "bar";
                                                kind = Normal;
-                                             })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 1 "fget",
-                                              Target.Regular.Method
-                                                {
-                                                  class_name = "test.MyClass";
-                                                  method_name = "bar";
-                                                  kind = Normal;
-                                                }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ~new_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~is_static_method:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "object";
-                                          method_name = "__new__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ())) );
+                                             }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ~new_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~is_static_method:true
+                                  (Target.Regular.Method
+                                     {
+                                       class_name = "object";
+                                       method_name = "__new__";
+                                       kind = Normal;
+                                     });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1345,25 +1290,24 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "13:9-13:14",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Function
-                                             { name = "test.decorator.inner"; kind = Normal })
-                                        ~parameters:
-                                          [
-                                            ( AccessPath.Root.Variable "$parameter$f",
-                                              Target.Regular.Function
-                                                { name = "test.bar"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.decorator.inner"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.bar"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -1401,21 +1345,16 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "19:15-19:22",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.A";
-                                          method_name = "bar";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1460,21 +1399,16 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "22:15-22:22",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.A";
-                                          method_name = "bar";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1506,37 +1440,23 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "5:3-5:20",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~unresolved:
-                                 (Unresolved.True (BypassingDecorators CannotResolveExports))
-                               ())) );
-                     ( "6:2-7:14",
-                       LocationCallees.Compound
-                         (SerializableStringMap.of_alist_exn
-                            [
-                              ( "A",
-                                ExpressionCallees.from_attribute_access
-                                  (AttributeAccessCallees.create ~is_attribute:true ()) );
-                              ( "name",
-                                ExpressionCallees.from_attribute_access
-                                  (AttributeAccessCallees.create
-                                     ~property_targets:
-                                       [
-                                         CallTarget.create_regular
-                                           ~implicit_receiver:true
-                                           (Target.Regular.Method
-                                              {
-                                                class_name = "test.A";
-                                                method_name = "name";
-                                                kind = Normal;
-                                              });
-                                       ]
-                                     ~is_attribute:false
-                                     ()) );
-                            ]) );
+                     ( "5:3-5:20|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~unresolved:(Unresolved.True (BypassingDecorators CannotResolveExports))
+                            ()) );
+                     ( "6:2-7:14|artificial-attribute-access|for-decorated-target-callee:test.A.name",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~property_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "name"; kind = Normal });
+                              ]
+                            ~is_attribute:false
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -1547,22 +1467,17 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "9:9-9:15",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~property_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.A";
-                                          method_name = "name";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ~is_attribute:false
-                               ())) );
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~property_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "name"; kind = Normal });
+                              ]
+                            ~is_attribute:false
+                            ()) );
                    ];
                  returned_callables = [ (* TODO(T222400916): This should be `test.foo`. *) ];
                };
@@ -1590,37 +1505,23 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "5:3-5:15",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~unresolved:
-                                 (Unresolved.True (BypassingDecorators CannotResolveExports))
-                               ())) );
-                     ( "6:2-7:14",
-                       LocationCallees.Compound
-                         (SerializableStringMap.of_alist_exn
-                            [
-                              ( "A",
-                                ExpressionCallees.from_attribute_access
-                                  (AttributeAccessCallees.create ~is_attribute:true ()) );
-                              ( "name",
-                                ExpressionCallees.from_attribute_access
-                                  (AttributeAccessCallees.create
-                                     ~property_targets:
-                                       [
-                                         CallTarget.create_regular
-                                           ~implicit_receiver:true
-                                           (Target.Regular.Method
-                                              {
-                                                class_name = "test.A";
-                                                method_name = "name";
-                                                kind = Normal;
-                                              });
-                                       ]
-                                     ~is_attribute:false
-                                     ()) );
-                            ]) );
+                     ( "5:3-5:15|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~unresolved:(Unresolved.True (BypassingDecorators CannotResolveExports))
+                            ()) );
+                     ( "6:2-7:14|artificial-attribute-access|for-decorated-target-callee:test.A.name",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~property_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "name"; kind = Normal });
+                              ]
+                            ~is_attribute:false
+                            ()) );
                    ];
                  returned_callables = [ (* TODO(T222400916): This should be `test.foo`. *) ];
                };
@@ -1631,22 +1532,17 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "9:9-9:15",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~property_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.A";
-                                          method_name = "name";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ~is_attribute:false
-                               ())) );
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~property_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "name"; kind = Normal });
+                              ]
+                            ~is_attribute:false
+                            ()) );
                    ];
                  returned_callables = [ (* TODO(T222400916): This should be `test.foo`. *) ];
                };
@@ -1685,44 +1581,42 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "12:1-12:5",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     ~implicit_receiver:true
-                                     ~implicit_dunder_call:true
-                                     ~receiver_class:"test.Base"
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Method
-                                             {
-                                               class_name = "test.Base";
-                                               method_name = "__call__";
-                                               kind = Normal;
-                                             })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 1 "func",
-                                              Target.Regular.Function
-                                                { name = "test.contextmanager"; kind = Normal }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "13:0-14:10",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.contextmanager"; kind = Normal });
-                                 ]
-                               ())) );
+                     ( "12:1-12:5|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  ~implicit_receiver:true
+                                  ~implicit_dunder_call:true
+                                  ~receiver_class:"test.Base"
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Method
+                                          {
+                                            class_name = "test.Base";
+                                            method_name = "__call__";
+                                            kind = Normal;
+                                          })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 1 "func",
+                                           Target.Regular.Function
+                                             { name = "test.contextmanager"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "13:0-14:10|artificial-attribute-access|for-decorated-target-callee:test.contextmanager",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.contextmanager"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1747,47 +1641,45 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "19:1-19:9",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     ~implicit_receiver:true
-                                     ~implicit_dunder_call:true
-                                     ~receiver_class:"test.Subclass"
-                                     (create_parameterized_target
-                                        ~regular:
-                                          (Target.Regular.Method
+                     ( "19:1-19:9|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create
+                                  ~implicit_receiver:true
+                                  ~implicit_dunder_call:true
+                                  ~receiver_class:"test.Subclass"
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Method
+                                          {
+                                            class_name = "test.Base";
+                                            method_name = "__call__";
+                                            kind = Normal;
+                                          })
+                                     ~parameters:
+                                       [
+                                         ( create_positional_parameter 1 "func",
+                                           Target.Regular.Function
                                              {
-                                               class_name = "test.Base";
-                                               method_name = "__call__";
+                                               name = "test.contextmanager_subclass";
                                                kind = Normal;
-                                             })
-                                        ~parameters:
-                                          [
-                                            ( create_positional_parameter 1 "func",
-                                              Target.Regular.Function
-                                                {
-                                                  name = "test.contextmanager_subclass";
-                                                  kind = Normal;
-                                                }
-                                              |> Target.from_regular );
-                                          ]);
-                                 ]
-                               ())) );
-                     ( "20:0-21:10",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.contextmanager_subclass"; kind = Normal });
-                                 ]
-                               ())) );
+                                             }
+                                           |> Target.from_regular );
+                                       ]);
+                              ]
+                            ()) );
+                     ( "20:0-21:10|artificial-attribute-access|for-decorated-target-callee:test.contextmanager_subclass",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.contextmanager_subclass"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1830,52 +1722,47 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "9:1-9:9",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
+                     ( "9:1-9:9|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  ~implicit_dunder_call:true
+                                  ~receiver_class:"test.Subclass"
+                                  (Target.Regular.Method
+                                     {
+                                       class_name = "test.Base";
+                                       method_name = "__call__";
+                                       kind = Normal;
+                                     });
+                              ]
+                            ~higher_order_parameters:
+                              (HigherOrderParameterMap.from_list
                                  [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~implicit_dunder_call:true
-                                     ~receiver_class:"test.Subclass"
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.Base";
-                                          method_name = "__call__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ~higher_order_parameters:
-                                 (HigherOrderParameterMap.from_list
-                                    [
-                                      {
-                                        index = 0;
-                                        call_targets =
-                                          [
-                                            CallTarget.create_regular
-                                              (Target.Regular.Function
-                                                 {
-                                                   name = "test.stub_contextmanager";
-                                                   kind = Normal;
-                                                 });
-                                          ];
-                                        unresolved = CallGraph.Unresolved.False;
-                                      };
-                                    ])
-                               ())) );
-                     ( "10:0-11:10",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.stub_contextmanager"; kind = Normal });
-                                 ]
-                               ())) );
+                                   {
+                                     index = 0;
+                                     call_targets =
+                                       [
+                                         CallTarget.create_regular
+                                           (Target.Regular.Function
+                                              { name = "test.stub_contextmanager"; kind = Normal });
+                                       ];
+                                     unresolved = CallGraph.Unresolved.False;
+                                   };
+                                 ])
+                            ()) );
+                     ( "10:0-11:10|artificial-attribute-access|for-decorated-target-callee:test.stub_contextmanager",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.stub_contextmanager"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1905,41 +1792,39 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
-                     ( "6:1-6:10",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
+                     ( "6:1-6:10|artificial-call|for-decorated-target",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.decorator"; kind = Normal });
+                              ]
+                            ~higher_order_parameters:
+                              (HigherOrderParameterMap.from_list
                                  [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function
-                                        { name = "test.decorator"; kind = Normal });
-                                 ]
-                               ~higher_order_parameters:
-                                 (HigherOrderParameterMap.from_list
-                                    [
-                                      {
-                                        index = 0;
-                                        call_targets =
-                                          [
-                                            CallTarget.create_regular
-                                              (Target.Regular.Function
-                                                 { name = "test.bar"; kind = Normal });
-                                          ];
-                                        unresolved = CallGraph.Unresolved.False;
-                                      };
-                                    ])
-                               ())) );
-                     ( "7:0-8:12",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                                   {
+                                     index = 0;
+                                     call_targets =
+                                       [
+                                         CallTarget.create_regular
+                                           (Target.Regular.Function
+                                              { name = "test.bar"; kind = Normal });
+                                       ];
+                                     unresolved = CallGraph.Unresolved.False;
+                                   };
+                                 ])
+                            ()) );
+                     ( "7:0-8:12|artificial-attribute-access|for-decorated-target-callee:test.bar",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [
@@ -1972,33 +1857,27 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "10:9-10:15",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ())) );
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ()) );
                      ( "9:6-9:11",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~property_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     ~implicit_receiver:true
-                                     ~return_type:(Some ReturnType.integer)
-                                     (Target.Regular.Method
-                                        {
-                                          class_name = "test.A";
-                                          method_name = "foo";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ~is_attribute:false
-                               ())) );
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~property_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  ~return_type:(Some ReturnType.integer)
+                                  (Target.Regular.Method
+                                     { class_name = "test.A"; method_name = "foo"; kind = Normal });
+                              ]
+                            ~is_attribute:false
+                            ()) );
                    ];
                  returned_callables = [];
                };
@@ -2027,39 +1906,37 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "7:9-7:17",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
+                              ]
+                            ~higher_order_parameters:
+                              (HigherOrderParameterMap.from_list
                                  [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                                 ]
-                               ~higher_order_parameters:
-                                 (HigherOrderParameterMap.from_list
-                                    [
-                                      {
-                                        index = 0;
-                                        call_targets =
-                                          [
-                                            CallTarget.create_regular
-                                              (Target.Regular.Function
-                                                 { name = "test.foo"; kind = Normal });
-                                          ];
-                                        unresolved = CallGraph.Unresolved.False;
-                                      };
-                                    ])
-                               ())) );
-                     ( "7:13-7:16",
-                       LocationCallees.Singleton
-                         (ExpressionCallees.from_attribute_access
-                            (AttributeAccessCallees.create
-                               ~callable_targets:
-                                 [
-                                   CallTarget.create_regular
-                                     (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ())) );
+                                   {
+                                     index = 0;
+                                     call_targets =
+                                       [
+                                         CallTarget.create_regular
+                                           (Target.Regular.Function
+                                              { name = "test.foo"; kind = Normal });
+                                       ];
+                                     unresolved = CallGraph.Unresolved.False;
+                                   };
+                                 ])
+                            ()) );
+                     ( "7:13-7:16|artificial-attribute-access|qualification:test.foo",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.foo"; kind = Normal });
+                              ]
+                            ()) );
                    ];
                  returned_callables = [];
                };

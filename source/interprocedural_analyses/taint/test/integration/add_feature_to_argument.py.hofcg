@@ -4,30 +4,26 @@ Higher order call graphs
   "callable": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
   "returned_callables": [],
   "calls": {
-    "78:4-78:30": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "77:8-77:28": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.tito_with_feature",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "77:8-77:28": {
-      "tito_with_feature": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.tito_with_feature",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "78:4-78:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -36,26 +32,22 @@ Higher order call graphs
   "callable": "add_feature_to_argument.adds_and_taints",
   "returned_callables": [],
   "calls": {
-    "19:4-19:30": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "18:8-18:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "18:8-18:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "19:4-19:30": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -64,33 +56,27 @@ Higher order call graphs
   "callable": "add_feature_to_argument.dict_test_add_via_value_of_second",
   "returned_callables": [],
   "calls": {
-    "39:21-39:29": {
-      "__getitem__": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
-        }
+    "38:8-38:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "39:4-39:40": {
-      "add_via_value_of": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_via_value_of",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_via_value_of",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "38:8-38:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "39:21-39:29|artificial-call|subscript-get-item": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     }
   }
@@ -100,16 +86,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "24:11-24:45": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -118,58 +102,52 @@ Higher order call graphs
   "callable": "add_feature_to_argument.propagate_multiple_add_feature",
   "returned_callables": [],
   "calls": {
-    "63:8-63:47": {
-      "add_feature_to_second": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_second",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "60:7-60:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "60:7-60:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
       }
     },
     "61:8-61:46": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "60:7-60:12": {
-      "__le__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__le__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
-      },
-      "__gt__": {
-        "call": {
-          "calls": [
-            {
-              "target": "int.__gt__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer", "boolean" ],
-              "receiver_class": "int"
-            }
-          ]
-        }
+    "63:8-63:47": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_second",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -178,26 +156,22 @@ Higher order call graphs
   "callable": "add_feature_to_argument.source_add_feature_to_argument_accumulates_features",
   "returned_callables": [],
   "calls": {
-    "83:4-83:51": {
-      "add_feature_to_argument_accumulates_features": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "82:8-82:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "82:8-82:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "83:4-83:51": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -206,78 +180,68 @@ Higher order call graphs
   "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
   "returned_callables": [],
   "calls": {
-    "51:15-51:19": {
-      "__getitem__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__getitem__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "49:15-49:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "51:4-51:20": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "50:20-50:27|artificial-call|generator-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "50:20-50:27|artificial-call|generator-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     },
     "50:31-50:57": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "50:20-50:27": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "51:4-51:20": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "49:15-49:29": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "51:15-51:19|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
       }
     }
   }
@@ -286,26 +250,22 @@ Higher order call graphs
   "callable": "add_feature_to_argument.test_add_feature_to_sink",
   "returned_callables": [],
   "calls": {
-    "45:4-45:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "44:4-44:39": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "44:4-44:39": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "45:4-45:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -314,54 +274,48 @@ Higher order call graphs
   "callable": "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
   "returned_callables": [],
   "calls": {
-    "56:4-56:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "55:20-55:29|artificial-call|generator-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "list.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "list"
+          }
+        ]
+      }
+    },
+    "55:20-55:29|artificial-call|generator-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer" ],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
       }
     },
     "55:33-55:67": {
-      "add_feature_to_first": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_feature_to_first",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_feature_to_first",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "55:20-55:29": {
-      "__next__": {
-        "call": {
-          "calls": [
-            {
-              "target": "typing.Iterator.__next__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [ "float", "integer" ],
-              "receiver_class": "typing.Iterator"
-            }
-          ]
-        }
-      },
-      "__iter__": {
-        "call": {
-          "calls": [
-            {
-              "target": "list.__iter__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "list"
-            }
-          ]
-        }
+    "56:4-56:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -370,26 +324,22 @@ Higher order call graphs
   "callable": "add_feature_to_argument.test_add_multiple_feature",
   "returned_callables": [],
   "calls": {
-    "68:4-68:25": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "67:4-67:45": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.propagate_multiple_add_feature",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "67:4-67:45": {
-      "propagate_multiple_add_feature": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.propagate_multiple_add_feature",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "68:4-68:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -398,26 +348,22 @@ Higher order call graphs
   "callable": "add_feature_to_argument.test_add_via_value_of_second",
   "returned_callables": [],
   "calls": {
-    "33:4-33:33": {
-      "add_via_value_of": {
-        "call": {
-          "calls": [
-            {
-              "target": "add_feature_to_argument.add_via_value_of",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "32:8-32:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "32:8-32:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "33:4-33:33": {
+      "call": {
+        "calls": [
+          {
+            "target": "add_feature_to_argument.add_via_value_of",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }

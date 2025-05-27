@@ -1005,7 +1005,7 @@ let test_string context =
 
       def format_string_with_tainted_format_spec() -> str:
         input = _test_source()
-        return f"{1:{input}}"
+        return f"{123:{input}}"
     |}
     [
       outcome ~kind:`Function ~returns:[] "qualifier.normal_string";

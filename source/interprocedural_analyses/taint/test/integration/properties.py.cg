@@ -96,6 +96,10 @@ Call dependencies
   "properties.test_issue_in_class_property (fun)": [
     "_test_sink (fun)", "properties.ClassProperty.my_class_property (method)"
   ],
+  "properties.test_property_augmented_assign (fun)": [
+    "properties.PropertySetterTitoModel.my_property (method)",
+    "properties.PropertySetterTitoModel.my_property@setter (method)"
+  ],
   "properties.test_property_callable (fun)": [
     "_test_source (fun)", "object.__new__ (method)",
     "properties.PropertyCallable.__init__ (method)",

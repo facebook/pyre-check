@@ -4,74 +4,64 @@ Higher order call graphs
   "callable": "skip_analysis.no_issue_due_to_skip",
   "returned_callables": [],
   "calls": {
-    "23:15-23:32": {
-      "tito_here": {
-        "call": {
-          "calls": [
-            {
-              "target": "skip_analysis.SkipMe.tito_here",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "skip_analysis.SkipMe"
-            }
-          ]
-        }
-      }
-    },
-    "23:4-23:33": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
-      }
-    },
-    "22:4-22:22": {
-      "taint_here": {
-        "call": {
-          "calls": [
-            {
-              "target": "skip_analysis.SkipMe.taint_here",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "skip_analysis.SkipMe"
-            }
-          ]
-        }
+    "20:8-20:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "21:11-21:19": {
-      "SkipMe": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "20:8-20:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "22:4-22:22": {
+      "call": {
+        "calls": [
+          {
+            "target": "skip_analysis.SkipMe.taint_here",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "skip_analysis.SkipMe"
+          }
+        ]
+      }
+    },
+    "23:4-23:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "23:15-23:32": {
+      "call": {
+        "calls": [
+          {
+            "target": "skip_analysis.SkipMe.tito_here",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "skip_analysis.SkipMe"
+          }
+        ]
       }
     }
   }

@@ -4,35 +4,29 @@ Higher order call graphs
   "callable": "maximum_tito_depth.issue",
   "returned_callables": [],
   "calls": {
-    "70:4-70:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "68:8-68:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "69:8-69:21": {
-      "tito_three": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_three",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "68:8-68:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "70:4-70:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -41,35 +35,29 @@ Higher order call graphs
   "callable": "maximum_tito_depth.non_issue",
   "returned_callables": [],
   "calls": {
-    "76:4-76:17": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "74:8-74:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     },
     "75:8-75:20": {
-      "tito_four": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_four",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_four",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "74:8-74:22": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "76:4-76:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -79,16 +67,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "64:11-64:24": {
-      "tito_three": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_three",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_three",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -97,43 +83,37 @@ Higher order call graphs
   "callable": "maximum_tito_depth.tito_max_consecutive",
   "returned_callables": [],
   "calls": {
-    "29:8-29:19": {
-      "tito_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "27:8-27:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "28:8-28:19": {
-      "tito_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "27:8-27:20": {
-      "tito_zero": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_zero",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "29:8-29:19": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -142,30 +122,26 @@ Higher order call graphs
   "callable": "maximum_tito_depth.tito_min_disjoint",
   "returned_callables": [],
   "calls": {
-    "37:15-37:26": {
-      "tito_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "35:15-35:27": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "35:15-35:27": {
-      "tito_zero": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_zero",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "37:15-37:26": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -174,56 +150,48 @@ Higher order call graphs
   "callable": "maximum_tito_depth.tito_min_disjoint_max_consecutive",
   "returned_callables": [],
   "calls": {
-    "47:12-47:24": {
-      "tito_zero": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_zero",
-              "index": 1,
-              "return_type": []
-            }
-          ]
-        }
-      }
-    },
-    "46:12-46:23": {
-      "tito_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "43:12-43:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
     "44:12-44:24": {
-      "tito_zero": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_zero",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     },
-    "43:12-43:23": {
-      "tito_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "46:12-46:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "47:12-47:24": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_zero",
+            "index": 1,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -232,41 +200,37 @@ Higher order call graphs
   "callable": "maximum_tito_depth.tito_obscure",
   "returned_callables": [],
   "calls": {
-    "59:11-59:20": {
-      "tito": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.C.tito",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": [],
-              "receiver_class": "maximum_tito_depth.C"
-            }
-          ]
-        }
+    "58:8-58:11": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "object.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
       }
     },
-    "58:8-58:11": {
-      "C": {
-        "call": {
-          "new_calls": [
-            {
-              "target": "object.__new__",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ],
-          "init_calls": [
-            {
-              "target": "object.__init__",
-              "index": 0,
-              "implicit_receiver": true,
-              "return_type": []
-            }
-          ]
-        }
+    "59:11-59:20": {
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.C.tito",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "maximum_tito_depth.C"
+          }
+        ]
       }
     }
   }
@@ -276,16 +240,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "15:11-15:23": {
-      "tito_zero": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_zero",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_zero",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -295,16 +257,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "23:11-23:22": {
-      "tito_two": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_two",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_two",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }
@@ -314,16 +274,14 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "19:11-19:22": {
-      "tito_one": {
-        "call": {
-          "calls": [
-            {
-              "target": "maximum_tito_depth.tito_one",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "maximum_tito_depth.tito_one",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }

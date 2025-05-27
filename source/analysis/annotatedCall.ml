@@ -60,12 +60,12 @@ let redirect_special_calls
   (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
-      let method_name, origin_kind =
+      let method_name =
         match resolve_stringify_call ~resolution value with
-        | Str -> "__str__", Origin.StrCallToDunderStr
-        | Repr -> "__repr__", Origin.StrCallToDunderRepr
+        | Str -> "__str__"
+        | Repr -> "__repr__"
       in
-      let origin = Some (Origin.create ?base:call_origin ~location:call_location origin_kind) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.StrCall) in
       let callee = attribute_access ~location:callee_location ~base:value ~method_name ~origin in
       { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->

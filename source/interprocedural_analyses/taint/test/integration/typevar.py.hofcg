@@ -4,18 +4,14 @@ Higher order call graphs
   "callable": "typevar.$toplevel",
   "returned_callables": [],
   "calls": {
-    "10:4-10:29": {
-      "TypeVar": {
-        "call": {
-          "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
-        }
+    "10:0-10:1|identifier|$local_typevar$T": {
+      "identifier": {
+        "globals": [ { "target": "Obj{typevar.T}", "index": 0 } ]
       }
     },
-    "10:0-10:1": {
-      "$local_typevar$T": {
-        "identifier": {
-          "globals": [ { "target": "Obj{typevar.T}", "index": 0 } ]
-        }
+    "10:4-10:29": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -24,21 +20,17 @@ Higher order call graphs
   "callable": "typevar.issue",
   "returned_callables": [],
   "calls": {
-    "17:15-17:26": {
-      "tainted": {
-        "attribute_access": {
-          "globals": [ { "target": "Obj{typevar.Foo.tainted}", "index": 0 } ],
-          "is_attribute": true
-        }
+    "17:4-17:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "17:4-17:27": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+    "17:15-17:26": {
+      "attribute_access": {
+        "globals": [ { "target": "Obj{typevar.Foo.tainted}", "index": 0 } ],
+        "is_attribute": true
       }
     }
   }
@@ -48,11 +40,9 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "14:8-14:20": {
-      "tainted": {
-        "attribute_access": {
-          "globals": [ { "target": "Obj{typevar.Foo.tainted}", "index": 0 } ],
-          "is_attribute": true
-        }
+      "attribute_access": {
+        "globals": [ { "target": "Obj{typevar.Foo.tainted}", "index": 0 } ],
+        "is_attribute": true
       }
     }
   }

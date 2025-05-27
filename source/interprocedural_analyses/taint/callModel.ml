@@ -624,10 +624,6 @@ module StringFormatCall = struct
     |> BackwardState.Tree.create_leaf
 
 
-  let get_string_format_callees ~call_graph_of_define ~location =
-    CallGraph.DefineCallGraph.resolve_string_format call_graph_of_define ~location
-
-
   let apply_call
       ~callee
       ~pyre_in_context
@@ -668,8 +664,10 @@ module StringFormatCall = struct
 
     let from_format_string ~call_graph_of_define ~location =
       let call_targets =
-        match get_string_format_callees ~call_graph_of_define ~location with
-        | Some { CallGraph.StringFormatCallees.f_string_targets; _ } -> f_string_targets
+        match
+          CallGraph.DefineCallGraph.resolve_format_string_artificial call_graph_of_define ~location
+        with
+        | Some { CallGraph.FormatStringArtificialCallees.targets } -> targets
         | None -> []
       in
       create

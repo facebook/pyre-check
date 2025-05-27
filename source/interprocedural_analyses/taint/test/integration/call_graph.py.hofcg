@@ -1,10 +1,10 @@
 @generated
 Higher order call graphs
 {
-  "callable": "joined_tito.y_is_benign",
+  "callable": "call_graph.test_multi_assign",
   "returned_callables": [],
   "calls": {
-    "23:14-23:44": {
+    "27:8-27:19": {
       "call": {
         "new_calls": [
           {
@@ -16,7 +16,7 @@ Higher order call graphs
         ],
         "init_calls": [
           {
-            "target": "joined_tito.Wrapper.__init__",
+            "target": "call_graph.NotSource.__init__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
@@ -24,37 +24,43 @@ Higher order call graphs
         ]
       }
     },
-    "23:24-23:38": {
+    "28:12-28:22": {
       "call": {
         "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "24:8-24:18": {
-      "call": {
-        "new_calls": [
           {
-            "target": "object.__new__",
-            "index": 1,
-            "return_type": [],
-            "is_static_method": true
-          }
-        ],
-        "init_calls": [
-          {
-            "target": "joined_tito.C.__init__",
+            "target": "call_graph.NotSource.method",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": []
+            "return_type": [],
+            "receiver_class": "call_graph.NotSource"
           }
         ]
       }
     },
-    "25:4-25:19": {
+    "30:4-30:17": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "31:4-31:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "call_graph.IsSource.method",
+  "returned_callables": [],
+  "calls": {
+    "15:15-15:29": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     }

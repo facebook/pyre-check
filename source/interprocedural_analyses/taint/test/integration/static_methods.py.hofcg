@@ -4,26 +4,18 @@ Higher order call graphs
   "callable": "static_methods.run_test",
   "returned_callables": [],
   "calls": {
-    "20:9-20:23": {
-      "_test_source": {
-        "call": {
-          "calls": [
-            { "target": "_test_source", "index": 0, "return_type": [] }
-          ]
-        }
+    "20:4-20:24": {
+      "call": {
+        "calls": [
+          { "target": "static_methods.test", "index": 0, "return_type": [] }
+        ]
       }
     },
-    "20:4-20:24": {
-      "test": {
-        "call": {
-          "calls": [
-            {
-              "target": "static_methods.test",
-              "index": 0,
-              "return_type": []
-            }
-          ]
-        }
+    "20:9-20:23": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
@@ -33,17 +25,15 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "16:11-16:35": {
-      "sink": {
-        "call": {
-          "calls": [
-            {
-              "target": "static_methods.StaticClass.sink",
-              "index": 0,
-              "return_type": [],
-              "is_static_method": true
-            }
-          ]
-        }
+      "call": {
+        "calls": [
+          {
+            "target": "static_methods.StaticClass.sink",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ]
       }
     }
   }
@@ -53,12 +43,10 @@ Higher order call graphs
   "returned_callables": [],
   "calls": {
     "12:8-12:24": {
-      "_test_sink": {
-        "call": {
-          "calls": [
-            { "target": "_test_sink", "index": 0, "return_type": [] }
-          ]
-        }
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
       }
     }
   }
