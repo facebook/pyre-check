@@ -306,13 +306,12 @@ end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
-  type t = {
-    call: CallCallees.t option;
-    attribute_access: AttributeAccessCallees.t option;
-    identifier: IdentifierCallees.t option;
-    format_string_artificial: FormatStringArtificialCallees.t option;
-    format_string_stringify: FormatStringStringifyCallees.t option;
-  }
+  type t =
+    | Call of CallCallees.t
+    | AttributeAccess of AttributeAccessCallees.t
+    | Identifier of IdentifierCallees.t
+    | FormatStringArtificial of FormatStringArtificialCallees.t
+    | FormatStringStringify of FormatStringStringifyCallees.t
   [@@deriving eq, show]
 
   val from_call : CallCallees.t -> t

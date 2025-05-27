@@ -1776,248 +1776,127 @@ end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees = struct
-  type t = {
-    call: CallCallees.t option;
-    attribute_access: AttributeAccessCallees.t option;
-    identifier: IdentifierCallees.t option;
-    format_string_artificial: FormatStringArtificialCallees.t option;
-    format_string_stringify: FormatStringStringifyCallees.t option;
-  }
+  type t =
+    | Call of CallCallees.t
+    | AttributeAccess of AttributeAccessCallees.t
+    | Identifier of IdentifierCallees.t
+    | FormatStringArtificial of FormatStringArtificialCallees.t
+    | FormatStringStringify of FormatStringStringifyCallees.t
   [@@deriving eq, show { with_path = false }]
 
-  let from_call callees =
-    {
-      call = Some callees;
-      attribute_access = None;
-      identifier = None;
-      format_string_artificial = None;
-      format_string_stringify = None;
-    }
+  let from_call callees = Call callees
+
+  let from_attribute_access callees = AttributeAccess callees
+
+  let from_identifier callees = Identifier callees
+
+  let from_format_string_artificial callees = FormatStringArtificial callees
+
+  let from_format_string_stringify callees = FormatStringStringify callees
+
+  let join left right =
+    match left, right with
+    | Call left, Call right -> Call (CallCallees.join left right)
+    | AttributeAccess left, AttributeAccess right ->
+        AttributeAccess (AttributeAccessCallees.join left right)
+    | Identifier left, Identifier right -> Identifier (IdentifierCallees.join left right)
+    | FormatStringArtificial left, FormatStringArtificial right ->
+        FormatStringArtificial (FormatStringArtificialCallees.join left right)
+    | FormatStringStringify left, FormatStringStringify right ->
+        FormatStringStringify (FormatStringStringifyCallees.join left right)
+    | _ ->
+        Format.asprintf
+          "Trying to join different callee types:\n\tleft: %a\n\tright: %a"
+          pp
+          left
+          pp
+          right
+        |> failwith
 
 
-  let from_attribute_access properties =
-    {
-      call = None;
-      attribute_access = Some properties;
-      identifier = None;
-      format_string_artificial = None;
-      format_string_stringify = None;
-    }
+  let dedup_and_sort = function
+    | Call callees -> Call (CallCallees.dedup_and_sort callees)
+    | AttributeAccess callees -> AttributeAccess (AttributeAccessCallees.dedup_and_sort callees)
+    | Identifier callees -> Identifier (IdentifierCallees.dedup_and_sort callees)
+    | FormatStringArtificial callees ->
+        FormatStringArtificial (FormatStringArtificialCallees.dedup_and_sort callees)
+    | FormatStringStringify callees ->
+        FormatStringStringify (FormatStringStringifyCallees.dedup_and_sort callees)
 
 
-  let from_identifier identifier =
-    {
-      call = None;
-      attribute_access = None;
-      identifier = Some identifier;
-      format_string_artificial = None;
-      format_string_stringify = None;
-    }
-
-
-  let from_format_string_artificial format_string_artificial =
-    {
-      call = None;
-      attribute_access = None;
-      identifier = None;
-      format_string_artificial = Some format_string_artificial;
-      format_string_stringify = None;
-    }
-
-
-  let from_format_string_stringify format_string_stringify =
-    {
-      call = None;
-      attribute_access = None;
-      identifier = None;
-      format_string_artificial = None;
-      format_string_stringify = Some format_string_stringify;
-    }
-
-
-  let join
-      {
-        call = left_call;
-        attribute_access = left_attribute_access;
-        identifier = left_identifier;
-        format_string_artificial = left_format_string_artificial;
-        format_string_stringify = left_format_string_stringify;
-      }
-      {
-        call = right_call;
-        attribute_access = right_attribute_access;
-        identifier = right_identifier;
-        format_string_artificial = right_format_string_artificial;
-        format_string_stringify = right_format_string_stringify;
-      }
-    =
-    {
-      call = Option.merge ~f:CallCallees.join left_call right_call;
-      attribute_access =
-        Option.merge ~f:AttributeAccessCallees.join left_attribute_access right_attribute_access;
-      identifier = Option.merge ~f:IdentifierCallees.join left_identifier right_identifier;
-      format_string_artificial =
-        Option.merge
-          ~f:FormatStringArtificialCallees.join
-          left_format_string_artificial
-          right_format_string_artificial;
-      format_string_stringify =
-        Option.merge
-          ~f:FormatStringStringifyCallees.join
-          left_format_string_stringify
-          right_format_string_stringify;
-    }
-
-
-  let dedup_and_sort
-      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
-    =
-    {
-      call = call >>| CallCallees.dedup_and_sort;
-      attribute_access = attribute_access >>| AttributeAccessCallees.dedup_and_sort;
-      identifier = identifier >>| IdentifierCallees.dedup_and_sort;
-      format_string_artificial =
-        format_string_artificial >>| FormatStringArtificialCallees.dedup_and_sort;
-      format_string_stringify =
-        format_string_stringify >>| FormatStringStringifyCallees.dedup_and_sort;
-    }
-
-
-  let all_targets
-      ~use_case
-      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
-    =
-    let call_targets = call >>| CallCallees.all_targets ~use_case |> Option.value ~default:[] in
-    let attribute_access_targets =
-      attribute_access >>| AttributeAccessCallees.all_targets ~use_case |> Option.value ~default:[]
-    in
-    let identifier_targets =
-      identifier >>| IdentifierCallees.all_targets ~use_case |> Option.value ~default:[]
-    in
-    let format_string_artificial_targets =
-      format_string_artificial
-      >>| FormatStringArtificialCallees.all_targets ~use_case
-      |> Option.value ~default:[]
-    in
-    let format_string_stringify_targets =
-      format_string_stringify
-      >>| FormatStringStringifyCallees.all_targets ~use_case
-      |> Option.value ~default:[]
-    in
-    call_targets
-    |> List.rev_append attribute_access_targets
-    |> List.rev_append identifier_targets
-    |> List.rev_append format_string_artificial_targets
-    |> List.rev_append format_string_stringify_targets
+  let all_targets ~use_case = function
+    | Call callees -> CallCallees.all_targets ~use_case callees
+    | AttributeAccess callees -> AttributeAccessCallees.all_targets ~use_case callees
+    | Identifier callees -> IdentifierCallees.all_targets ~use_case callees
+    | FormatStringArtificial callees -> FormatStringArtificialCallees.all_targets ~use_case callees
+    | FormatStringStringify callees -> FormatStringStringifyCallees.all_targets ~use_case callees
 
 
   let is_empty_attribute_access_callees = function
-    | {
-        call = None;
-        attribute_access = Some some_attribute_access;
-        identifier = None;
-        format_string_artificial = None;
-        format_string_stringify = None;
-      } ->
-        AttributeAccessCallees.is_empty some_attribute_access
+    | AttributeAccess callees -> AttributeAccessCallees.is_empty callees
     | _ -> false
 
 
-  let equal_ignoring_types
-      {
-        call = call_left;
-        attribute_access = attribute_access_left;
-        identifier = identifier_left;
-        format_string_artificial = format_string_artificial_left;
-        format_string_stringify = format_string_stringify_left;
-      }
-      {
-        call = call_right;
-        attribute_access = attribute_access_right;
-        identifier = identifier_right;
-        format_string_artificial = format_string_artificial_right;
-        format_string_stringify = format_string_stringify_right;
-      }
-    =
-    Option.equal CallCallees.equal_ignoring_types call_left call_right
-    && Option.equal
-         AttributeAccessCallees.equal_ignoring_types
-         attribute_access_left
-         attribute_access_right
-    && Option.equal IdentifierCallees.equal identifier_left identifier_right
-    && Option.equal
-         FormatStringArtificialCallees.equal
-         format_string_artificial_left
-         format_string_artificial_right
-    && Option.equal
-         FormatStringStringifyCallees.equal
-         format_string_stringify_left
-         format_string_stringify_right
+  let equal_ignoring_types left right =
+    match left, right with
+    | Call left, Call right -> CallCallees.equal_ignoring_types left right
+    | AttributeAccess left, AttributeAccess right ->
+        AttributeAccessCallees.equal_ignoring_types left right
+    | Identifier left, Identifier right -> IdentifierCallees.equal left right
+    | FormatStringArtificial left, FormatStringArtificial right ->
+        FormatStringArtificialCallees.equal left right
+    | FormatStringStringify left, FormatStringStringify right ->
+        FormatStringStringifyCallees.equal left right
+    | _ -> false
 
 
-  let to_json
-      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
-    =
-    []
-    |> JsonHelper.add_optional "call" call CallCallees.to_json
-    |> JsonHelper.add_optional "attribute_access" attribute_access AttributeAccessCallees.to_json
-    |> JsonHelper.add_optional "identifier" identifier IdentifierCallees.to_json
-    |> JsonHelper.add_optional
-         "format_string_artificial"
-         format_string_artificial
-         FormatStringArtificialCallees.to_json
-    |> JsonHelper.add_optional
-         "format_string_stringify"
-         format_string_stringify
-         FormatStringStringifyCallees.to_json
-    |> fun bindings -> `Assoc (List.rev bindings)
+  let to_json = function
+    | Call callees -> `Assoc ["call", CallCallees.to_json callees]
+    | AttributeAccess callees -> `Assoc ["attribute_access", AttributeAccessCallees.to_json callees]
+    | Identifier callees -> `Assoc ["identifier", IdentifierCallees.to_json callees]
+    | FormatStringArtificial callees ->
+        `Assoc ["format_string_artificial", FormatStringArtificialCallees.to_json callees]
+    | FormatStringStringify callees ->
+        `Assoc ["format_string_stringify", FormatStringStringifyCallees.to_json callees]
 
 
-  let redirect_to_decorated
-      ~decorators
-      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
-    =
-    {
-      call = call >>| CallCallees.redirect_to_decorated ~decorators;
-      attribute_access =
-        attribute_access >>| AttributeAccessCallees.redirect_to_decorated ~decorators;
-      identifier = identifier >>| IdentifierCallees.redirect_to_decorated ~decorators;
-      format_string_artificial =
-        format_string_artificial >>| FormatStringArtificialCallees.redirect_to_decorated ~decorators;
-      format_string_stringify =
-        format_string_stringify >>| FormatStringStringifyCallees.redirect_to_decorated ~decorators;
-    }
+  let redirect_to_decorated ~decorators = function
+    | Call callees -> Call (CallCallees.redirect_to_decorated ~decorators callees)
+    | AttributeAccess callees ->
+        AttributeAccess (AttributeAccessCallees.redirect_to_decorated ~decorators callees)
+    | Identifier callees -> Identifier (IdentifierCallees.redirect_to_decorated ~decorators callees)
+    | FormatStringArtificial callees ->
+        FormatStringArtificial
+          (FormatStringArtificialCallees.redirect_to_decorated ~decorators callees)
+    | FormatStringStringify callees ->
+        FormatStringStringify
+          (FormatStringStringifyCallees.redirect_to_decorated ~decorators callees)
 
 
-  let drop_decorated_targets
-      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
-    =
-    {
-      call = call >>| CallCallees.drop_decorated_targets;
-      attribute_access = attribute_access >>| AttributeAccessCallees.drop_decorated_targets;
-      identifier = identifier >>| IdentifierCallees.drop_decorated_targets;
-      format_string_artificial =
-        format_string_artificial >>| FormatStringArtificialCallees.drop_decorated_targets;
-      format_string_stringify =
-        format_string_stringify >>| FormatStringStringifyCallees.drop_decorated_targets;
-    }
+  let drop_decorated_targets = function
+    | Call callees -> Call (CallCallees.drop_decorated_targets callees)
+    | AttributeAccess callees ->
+        AttributeAccess (AttributeAccessCallees.drop_decorated_targets callees)
+    | Identifier callees -> Identifier (IdentifierCallees.drop_decorated_targets callees)
+    | FormatStringArtificial callees ->
+        FormatStringArtificial (FormatStringArtificialCallees.drop_decorated_targets callees)
+    | FormatStringStringify callees ->
+        FormatStringStringify (FormatStringStringifyCallees.drop_decorated_targets callees)
 
 
-  let regenerate_call_indices
-      ~indexer
-      { call; attribute_access; identifier; format_string_artificial; format_string_stringify }
-    =
+  let regenerate_call_indices ~indexer callees =
     CallTarget.Indexer.generate_fresh_indices indexer;
-    {
-      call = call >>| CallCallees.regenerate_call_indices ~indexer;
-      attribute_access =
-        attribute_access >>| AttributeAccessCallees.regenerate_call_indices ~indexer;
-      identifier = identifier >>| IdentifierCallees.regenerate_call_indices ~indexer;
-      format_string_artificial =
-        format_string_artificial >>| FormatStringArtificialCallees.regenerate_call_indices ~indexer;
-      format_string_stringify =
-        format_string_stringify >>| FormatStringStringifyCallees.regenerate_call_indices ~indexer;
-    }
+    match callees with
+    | Call callees -> Call (CallCallees.regenerate_call_indices ~indexer callees)
+    | AttributeAccess callees ->
+        AttributeAccess (AttributeAccessCallees.regenerate_call_indices ~indexer callees)
+    | Identifier callees -> Identifier (IdentifierCallees.regenerate_call_indices ~indexer callees)
+    | FormatStringArtificial callees ->
+        FormatStringArtificial
+          (FormatStringArtificialCallees.regenerate_call_indices ~indexer callees)
+    | FormatStringStringify callees ->
+        FormatStringStringify
+          (FormatStringStringifyCallees.regenerate_call_indices ~indexer callees)
 end
 
 let log ~debug format =
@@ -2341,35 +2220,47 @@ module DefineCallGraph = struct
     resolve_expression
       call_graph
       ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
-    >>= fun { ExpressionCallees.call; _ } -> call
+    >>= function
+    | ExpressionCallees.Call call -> Some call
+    | _ -> None
 
 
   let resolve_attribute_access call_graph ~location ~attribute_access =
     resolve_expression
       call_graph
       ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
-    >>= fun { ExpressionCallees.attribute_access; _ } -> attribute_access
+    >>= function
+    | ExpressionCallees.AttributeAccess attribute_access -> Some attribute_access
+    | _ -> None
 
 
   let resolve_identifier call_graph ~location ~identifier =
     resolve_expression
       call_graph
       ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
-    >>= fun { ExpressionCallees.identifier; _ } -> identifier
+    >>= function
+    | ExpressionCallees.Identifier identifier -> Some identifier
+    | _ -> None
 
 
   let resolve_format_string_artificial call_graph ~location =
     resolve_expression
       call_graph
       ~expression_identifier:(ExpressionIdentifier.of_format_string_artificial ~location)
-    >>= fun { ExpressionCallees.format_string_artificial; _ } -> format_string_artificial
+    >>= function
+    | ExpressionCallees.FormatStringArtificial format_string_artificial ->
+        Some format_string_artificial
+    | _ -> None
 
 
   let resolve_format_string_stringify call_graph ~location =
     resolve_expression
       call_graph
       ~expression_identifier:(ExpressionIdentifier.of_format_string_stringify ~location)
-    >>= fun { ExpressionCallees.format_string_stringify; _ } -> format_string_stringify
+    >>= function
+    | ExpressionCallees.FormatStringStringify format_string_stringify ->
+        Some format_string_stringify
+    | _ -> None
 end
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
