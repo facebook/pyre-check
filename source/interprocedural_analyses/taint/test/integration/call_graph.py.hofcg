@@ -1,6 +1,31 @@
 @generated
 Higher order call graphs
 {
+  "callable": "call_graph.test_default_parameters",
+  "returned_callables": [],
+  "calls": {
+    "34:37-34:51": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "34:37-34:56|artificial-call|binary": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
+      }
+    },
+    "35:4-35:17": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "call_graph.test_multi_assign",
   "returned_callables": [],
   "calls": {

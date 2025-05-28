@@ -1,5 +1,70 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "call_graph.test_default_parameters",
+    "callable_line": 34,
+    "code": 5002,
+    "line": 35,
+    "start": 15,
+    "end": 16,
+    "filename": "call_graph.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 34, "start": 37, "end": 51 } ],
+            "origin": { "line": 34, "start": 37, "end": 51 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 35, "start": 15, "end": 16 },
+            "call_site": "35:4-35:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "string_concat_lhs" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "call_graph.test_default_parameters:5002:0:Call|_test_sink|0|formal(arg):6a745e3013c2218c5c27521f93634de0"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -194,6 +259,32 @@
             "origin": { "line": 15, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "call_graph.test_default_parameters",
+    "filename": "call_graph.py",
+    "callable_line": 34,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 35, "start": 15, "end": 16 },
+            "call_site": "35:4-35:17"
           }
         ]
       }

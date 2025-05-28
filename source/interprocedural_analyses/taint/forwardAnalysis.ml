@@ -1270,8 +1270,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (state, pyre_in_context)
         ({ Comprehension.Generator.conditions; _ } as generator)
       =
-      let ({ Statement.Assign.target; value; _ } as assignment) =
-        Statement.Statement.generator_assignment generator
+      let { Statement.Assign.target; value; _ }, inner_pyre_context =
+        CallGraph.preprocess_generator
+          ~pyre_in_context
+          ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
+          generator
       in
       let assign_value_taint, state =
         match value with
@@ -1282,17 +1285,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let state =
         analyze_assignment ~pyre_in_context target assign_value_taint assign_value_taint state
       in
-      (* Since generators create variables that Pyre sees as scoped within the generator, handle
-         them by adding the generator's bindings to the resolution. *)
-      let pyre_in_context =
-        PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
-      in
       (* Analyzing the conditions might have issues and side effects. *)
       let analyze_condition state condiiton =
-        analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression:condiiton
+        analyze_expression
+          ~pyre_in_context:inner_pyre_context
+          ~state
+          ~is_result_used:false
+          ~expression:condiiton
         |> snd
       in
-      List.fold conditions ~init:state ~f:analyze_condition, pyre_in_context
+      List.fold conditions ~init:state ~f:analyze_condition, inner_pyre_context
     in
     List.fold ~f:add_binding generators ~init:(state, pyre_in_context)
 
@@ -2607,13 +2609,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~expression:({ Node.value; location } as expression)
     =
     let analyze_expression_inner () =
-      let value =
-        CallGraph.redirect_expressions
-          ~pyre_in_context
-          ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
-          ~location
-          value
-      in
       match value with
       | Await { Await.operand; origin = _ } ->
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:operand
@@ -2755,12 +2750,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
       | Slice _ ->
-          failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
+          failwith "Slice nodes should always be rewritten by `CallGraph.preprocess_statement`"
       | Subscript _ ->
-          failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
+          failwith "Subscripts nodes should always be rewritten by `CallGraph.preprocess_statement`"
       | BinaryOperator _ ->
           failwith
-            "BinaryOperator nodes should always be rewritten by `CallGraph.redirect_expressions`"
+            "BinaryOperator nodes should always be rewritten by `CallGraph.preprocess_statement`"
       | FormatString substrings ->
           let substrings =
             List.concat_map substrings ~f:(function
@@ -2975,7 +2970,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let analyze_definition ~define:_ state = state
 
   let analyze_statement ~pyre_in_context ({ Node.location; _ } as statement) state =
-    let statement = CallGraph.redirect_assignments statement in
+    let statement =
+      CallGraph.preprocess_statement
+        ~pyre_in_context
+        ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
+        statement
+    in
     match Node.value statement with
     | Statement.Statement.Assign
         { value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
@@ -3116,7 +3116,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
     | AugmentedAssign _ ->
         failwith
-          "AugmentedAssign nodes should always be rewritten by `CallGraph.redirect_assignments`"
+          "AugmentedAssign nodes should always be rewritten by `CallGraph.preprocess_statement`"
 
 
   let create ~existing_model parameters define_location =
@@ -3156,6 +3156,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match value with
         | None -> ForwardState.Tree.bottom, state
         | Some expression ->
+            let expression =
+              CallGraph.preprocess_parameter_default_value
+                ~pyre_in_context
+                ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
+                expression
+            in
             analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
       in
       store_taint

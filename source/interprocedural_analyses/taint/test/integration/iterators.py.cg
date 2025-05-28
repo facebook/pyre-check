@@ -6,8 +6,7 @@ Call dependencies
     "_test_source (fun)", "list.__iter__ (method)"
   ],
   "iterators.test_custom_getitem (fun)": [
-    "_test_sink (fun)", "object.__init__ (method)",
-    "object.__new__ (method)", "typing.SupportsNext.__next__ (method)"
+    "_test_sink (fun)", "object.__init__ (method)", "object.__new__ (method)"
   ],
   "iterators.test_custom_iter (fun)": [
     "_test_sink (fun)", "iterators.CustomIter.__iter__ (method)",

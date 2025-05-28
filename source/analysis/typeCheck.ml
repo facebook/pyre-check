@@ -3578,7 +3578,7 @@ module State (Context : Context) = struct
                 forward_expression ~resolution expression
           in
           { resolved with resolved = Type.Top; resolved_annotation = None; base = None }
-      | Slice slice -> forward_expression ~resolution (Slice.lowered ~location slice)
+      | Slice slice -> forward_expression ~resolution (Slice.lower_to_expression ~location slice)
       | Subscript { Subscript.base; index; origin = _ } ->
           let { Resolved.resolved = resolved_base; resolution = base_resolution; _ } =
             forward_expression ~resolution base

@@ -146,11 +146,11 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "lists.HasStr.__str__",
+            "target": "lists.HasRepr.__repr__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": [],
-            "receiver_class": "lists.HasStr"
+            "receiver_class": "lists.HasRepr"
           }
         ]
       }
@@ -197,7 +197,7 @@ Higher order call graphs
         "calls": [
           {
             "target": "lists.HasStr.__str__",
-            "index": 1,
+            "index": 0,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "lists.HasStr"

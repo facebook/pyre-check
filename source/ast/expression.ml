@@ -871,7 +871,9 @@ and Slice : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val lowered : location:Location.t -> t -> Expression.t
+  val lower_to_call : location:Location.t -> t -> Call.t
+
+  val lower_to_expression : location:Location.t -> t -> Expression.t
 end = struct
   type t = {
     start: Expression.t option;
@@ -893,23 +895,25 @@ end = struct
         | _ -> Option.compare Expression.location_insensitive_compare left_step right_step)
 
 
-  let lowered ~location { Slice.start; stop; step; origin } =
+  let lower_to_call ~location { Slice.start; stop; step; origin } =
     let default_none = function
       | None -> Expression.Constant Constant.NoneLiteral |> Node.create ~location
       | Some expr -> expr
     in
-    Expression.Call
-      {
-        Call.callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location;
-        arguments =
-          [
-            { Call.Argument.value = default_none start; name = None };
-            { Call.Argument.value = default_none stop; name = None };
-            { Call.Argument.value = default_none step; name = None };
-          ];
-        origin = Some (Origin.create ?base:origin ~location Origin.Slice);
-      }
-    |> Node.create ~location
+    {
+      Call.callee = Expression.Name (Name.Identifier "slice") |> Node.create ~location;
+      arguments =
+        [
+          { Call.Argument.value = default_none start; name = None };
+          { Call.Argument.value = default_none stop; name = None };
+          { Call.Argument.value = default_none step; name = None };
+        ];
+      origin = Some (Origin.create ?base:origin ~location Origin.Slice);
+    }
+
+
+  let lower_to_expression ~location slice =
+    Expression.Call (lower_to_call ~location slice) |> Node.create ~location
 end
 
 and Subscript : sig

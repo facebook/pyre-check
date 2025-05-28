@@ -29,3 +29,7 @@ def test_multi_assign():
     # Treating it as x = x.method(); x = y would lead to a false positive.
     _test_sink(x)  # No source
     _test_sink(y)  # No source
+
+
+def test_default_parameters(x: str = _test_source() + "") -> None:
+    _test_sink(x)

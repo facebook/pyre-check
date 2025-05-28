@@ -1592,7 +1592,7 @@ module ExpressionIdentifier = struct
           location: Location.t;
           constant: Constant.t;
         }
-    [@@deriving compare, sexp, hash, show { with_path = false }]
+    [@@deriving compare, eq, sexp, hash, show { with_path = false }]
 
     let location = function
       | Regular location
@@ -2972,41 +2972,143 @@ let redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~locat
       PyrePysaEnvironment.InContext.redirect_special_calls pyre_in_context ~location call
 
 
-let redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location = function
-  | Expression.BinaryOperator ({ left; _ } as operator) ->
-      let call =
-        BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location operator
+let rec preprocess_expression ~pyre_in_context ~callables_to_definitions_map expression =
+  (* This uses `Expression.Mapper` to recursively rewrite the given expression.
+   *
+   * Each `map_XXX` function is responsible for calling `Mapper.map` on sub-expressions to
+   * properly recurse down the AST. This is why we sometimes call `default_map_XXX`.
+   *
+   * The mapper will use the same `pyre_in_context` for all sub-expressions. If
+   * we need to update the context (for instance, for generators), we need to call
+   * `preprocess_expression ~pyre_in_context` with the new context instead of
+   * calling `Mapper.map`. This is why this function is recursive.
+   *)
+  let map_binary_operator ~mapper ~location ({ BinaryOperator.left; _ } as binary_operator) =
+    BinaryOperator.lower_to_call ~location ~callee_location:left.Node.location binary_operator
+    |> Mapper.default_map_call_node ~mapper ~location
+  in
+  let map_comparison_operator
+      ~mapper
+      ~location
+      ({ ComparisonOperator.left; _ } as comparison_operator)
+    =
+    match
+      ComparisonOperator.lower_to_expression
+        ~location
+        ~callee_location:left.location
+        comparison_operator
+    with
+    | Some { Node.value = Expression.Call call; _ } ->
+        Mapper.default_map_call_node ~mapper ~location call
+    | _ -> Mapper.default_map_comparison_operator_node ~mapper ~location comparison_operator
+  in
+  let map_slice ~mapper ~location slice =
+    Slice.lower_to_call ~location slice |> Mapper.default_map_call_node ~mapper ~location
+  in
+  let map_subscript ~mapper ~location { Subscript.base; index; origin = subscript_origin } =
+    let origin = Some (Origin.create ?base:subscript_origin ~location Origin.SubscriptGetItem) in
+    Expression.Call
+      {
+        Call.callee =
+          {
+            Node.value =
+              Expression.Name
+                (Name.Attribute
+                   { base = Mapper.map ~mapper base; attribute = "__getitem__"; origin });
+            location = Node.location base;
+          };
+        arguments = [{ Call.Argument.value = Mapper.map ~mapper index; name = None }];
+        origin;
+      }
+    |> Node.create ~location
+  in
+  let map_comprehension_generators generators =
+    let fold_generator
+        (generators, outer_pyre_context)
+        ({ Comprehension.Generator.target; iterator; conditions; async } as generator)
+      =
+      let inner_pyre_context =
+        Statement.generator_assignment generator
+        |> PyrePysaEnvironment.InContext.resolve_assignment outer_pyre_context
       in
-      Expression.Call call
-  | Expression.ComparisonOperator ({ left; _ } as comparison) as expression -> (
-      match
-        ComparisonOperator.lower_to_expression ~location ~callee_location:left.location comparison
-      with
-      | Some { Node.value = call; _ } -> call
-      | None -> expression)
-  | Expression.Slice slice -> Slice.lowered ~location slice |> Node.value
-  | Expression.Subscript { Subscript.base; index; origin = subscript_origin } ->
-      let origin = Some (Origin.create ?base:subscript_origin ~location Origin.SubscriptGetItem) in
-      Expression.Call
-        {
-          callee =
-            {
-              Node.value =
-                Expression.Name (Name.Attribute { base; attribute = "__getitem__"; origin });
-              location = Node.location base;
-            };
-          arguments = [{ Call.Argument.value = index; name = None }];
-          origin;
-        }
-  | Expression.Call call ->
-      let call =
-        redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~location call
+      (* We need to preprocess conditions with the new pyre context. We need to call
+         `preprocess_expression` instead of `Mapper.map` *)
+      let conditions =
+        List.map
+          ~f:
+            (preprocess_expression
+               ~pyre_in_context:inner_pyre_context
+               ~callables_to_definitions_map)
+          conditions
       in
-      Expression.Call call
-  | expression -> expression
+      (* We explicitly do NOT preprocess the target and iterator since we need to call
+         `generator_assignment` + `resolve_assignment` during the taint fixpoint, using the original
+         expressions. Updating the `target` and `iterator` here would lead to inconsistencies of the
+         type context. *)
+      let generator = { Comprehension.Generator.target; iterator; conditions; async } in
+      generator :: generators, inner_pyre_context
+    in
+    let reversed_generators, pyre_in_context =
+      List.fold ~f:fold_generator ~init:([], pyre_in_context) generators
+    in
+    List.rev reversed_generators, pyre_in_context
+  in
+  let map_comprehension ~mapper:_ ~location ~make_node { Comprehension.element; generators } =
+    let generators, pyre_in_context = map_comprehension_generators generators in
+    {
+      Comprehension.element =
+        preprocess_expression ~pyre_in_context ~callables_to_definitions_map element;
+      generators;
+    }
+    |> make_node
+    |> Node.create ~location
+  in
+  let map_generator = map_comprehension ~make_node:(fun e -> Expression.Generator e) in
+  let map_list_comprehension =
+    map_comprehension ~make_node:(fun e -> Expression.ListComprehension e)
+  in
+  let map_set_comprehension =
+    map_comprehension ~make_node:(fun e -> Expression.SetComprehension e)
+  in
+  let map_dictionary_comprehension
+      ~mapper:_
+      ~location
+      { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators }
+    =
+    let generators, pyre_in_context = map_comprehension_generators generators in
+    Expression.DictionaryComprehension
+      {
+        Comprehension.element =
+          {
+            Dictionary.Entry.KeyValue.key =
+              preprocess_expression ~pyre_in_context ~callables_to_definitions_map key;
+            value = preprocess_expression ~pyre_in_context ~callables_to_definitions_map value;
+          };
+        generators;
+      }
+    |> Node.create ~location
+  in
+  let map_call ~mapper ~location call =
+    redirect_special_calls ~pyre_in_context ~callables_to_definitions_map ~location call
+    |> Mapper.default_map_call_node ~mapper ~location
+  in
+  Mapper.map
+    ~mapper:
+      (Mapper.create_default
+         ~map_binary_operator
+         ~map_comparison_operator
+         ~map_slice
+         ~map_subscript
+         ~map_generator
+         ~map_dictionary_comprehension
+         ~map_list_comprehension
+         ~map_set_comprehension
+         ~map_call
+         ())
+    expression
 
 
-let redirect_assignments statement =
+let preprocess_assignments statement =
   let statement =
     (* Note that there are cases where we perform two consecutive redirects.
      * For instance, for `d[j] += x` *)
@@ -3082,6 +3184,100 @@ let redirect_assignments statement =
             };
       }
   | statement -> statement
+
+
+let preprocess_parameter_default_value = preprocess_expression
+
+(* This must be called *once* before analyzing a statement in a control flow graph. *)
+let preprocess_statement ~pyre_in_context ~callables_to_definitions_map statement =
+  (* First, preprocess assignments *)
+  let { Node.location; value } = preprocess_assignments statement in
+  (* Then, preprocess expressions nested witin the statement *)
+  let preprocess_expression =
+    preprocess_expression ~pyre_in_context ~callables_to_definitions_map
+  in
+  let value =
+    match value with
+    | Statement.Assign { target; value; annotation; origin } ->
+        Statement.Assign
+          {
+            target = preprocess_expression target;
+            value = Option.map ~f:preprocess_expression value;
+            annotation;
+            origin;
+          }
+    | Assert { test; message; origin } ->
+        Statement.Assert { test = preprocess_expression test; message; origin }
+    | Delete expressions -> Statement.Delete (List.map ~f:preprocess_expression expressions)
+    | Expression expression -> Statement.Expression (preprocess_expression expression)
+    | Raise { expression; from } ->
+        Statement.Raise
+          {
+            expression = Option.map ~f:preprocess_expression expression;
+            from = Option.map ~f:preprocess_expression from;
+          }
+    | Return { expression; is_implicit } ->
+        Statement.Return
+          { expression = Option.map ~f:preprocess_expression expression; is_implicit }
+    | TypeAlias { name; type_params; value } ->
+        Statement.TypeAlias
+          { name = preprocess_expression name; type_params; value = preprocess_expression value }
+    | Define _
+    | Break
+    | Class _
+    | Continue
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass ->
+        value
+    | Try _ ->
+        (* Try statements are lowered down in `Cfg.create`, but they are preserved in the final Cfg.
+           They should be ignored. *)
+        value
+    | For _
+    | If _
+    | Match _
+    | With _
+    | While _ ->
+        failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
+    | AugmentedAssign _ ->
+        failwith "AugmentedAssign nodes should always be rewritten by `preprocess_assignments`"
+  in
+  { Node.location; value }
+
+
+(* This must be called *once* before analyzing a generator. *)
+let preprocess_generator ~pyre_in_context:outer_pyre_context ~callables_to_definitions_map generator
+  =
+  let ({ Assign.target; value; annotation; origin } as assignment) =
+    Statement.generator_assignment generator
+  in
+  (* Since generators create variables that Pyre sees as scoped within the generator, handle them by
+     adding the generator's bindings to the resolution. This returns the type context inside the
+     generator/conditions. *)
+  let inner_pyre_context =
+    PyrePysaEnvironment.InContext.resolve_assignment outer_pyre_context assignment
+  in
+  let assignment =
+    {
+      Assign.target =
+        preprocess_expression
+          ~pyre_in_context:outer_pyre_context
+          ~callables_to_definitions_map
+          target;
+      Assign.value =
+        Option.map
+          ~f:
+            (preprocess_expression
+               ~pyre_in_context:outer_pyre_context
+               ~callables_to_definitions_map)
+          value;
+      annotation;
+      origin;
+    }
+  in
+  assignment, inner_pyre_context
 
 
 let resolve_recognized_callees
@@ -3906,10 +4102,6 @@ let resolve_attribute_access
   }
 
 
-module AssignmentTarget = struct
-  type t = { location: Location.t }
-end
-
 module MissingFlowTypeAnalysis = struct
   type t = { qualifier: Reference.t }
 
@@ -3988,437 +4180,412 @@ module ExpressionIdentifierInvariant = struct
         !map
 end
 
-module NodeVisitorContext = struct
-  type t = {
-    pyre_api: PyrePysaEnvironment.ReadOnly.t;
-    define_name: Reference.t option;
-    debug: bool;
-    override_graph: OverrideGraph.SharedMemory.ReadOnly.t option;
-    missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
-    attribute_targets: Target.HashSet.t;
-    callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
-    expression_identifier_invariant: ExpressionIdentifierInvariant.t option;
-  }
-end
-
-module CalleeVisitor = struct
-  module NodeVisitor = struct
+module CallGraphBuilder = struct
+  module Context = struct
     type t = {
-      pyre_in_context: PyrePysaEnvironment.InContext.t;
-      assignment_target: AssignmentTarget.t option;
-      context: NodeVisitorContext.t;
-      callees_at_location: DefineCallGraph.t ref; (* This can be mutated. *)
+      define_name: Reference.t option;
+      debug: bool;
+      override_graph: OverrideGraph.SharedMemory.ReadOnly.t option;
+      missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
+      attribute_targets: Target.HashSet.t;
+      callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+      expression_identifier_invariant: ExpressionIdentifierInvariant.t option;
     }
-
-    let expression_visitor
-        ({
-           pyre_in_context;
-           assignment_target;
-           context =
-             {
-               NodeVisitorContext.debug;
-               override_graph;
-               missing_flow_type_analysis;
-               define_name;
-               attribute_targets;
-               callables_to_definitions_map;
-               expression_identifier_invariant;
-               _;
-             };
-           callees_at_location;
-         } as state)
-        ({ Node.value; location } as expression)
-      =
-      let resolve_callees =
-        resolve_callees ~debug ~pyre_in_context ~callables_to_definitions_map ~override_graph
-      in
-      let value =
-        redirect_expressions ~pyre_in_context ~callables_to_definitions_map ~location value
-      in
-      let () =
-        match expression_identifier_invariant with
-        | Some expression_identifier_invariant ->
-            ExpressionIdentifierInvariant.check_invariant
-              expression_identifier_invariant
-              ~define_name
-              ~expression:{ Node.location; value }
-        | None -> ()
-      in
-      let () =
-        match value with
-        | Expression.Call call ->
-            let callees =
-              resolve_callees ~call
-              |> MissingFlowTypeAnalysis.add_unknown_callee ~missing_flow_type_analysis ~expression
-            in
-            callees_at_location :=
-              DefineCallGraph.add_call_callees ~debug ~location ~call ~callees !callees_at_location
-        | Expression.Name
-            (Name.Attribute ({ Name.Attribute.base; attribute; origin } as attribute_access)) ->
-            let setter =
-              match assignment_target with
-              | Some { AssignmentTarget.location = assignment_target_location } ->
-                  Location.equal assignment_target_location location
-              | None -> false
-            in
-            let callees =
-              resolve_attribute_access
-                ~pyre_in_context
-                ~debug
-                ~callables_to_definitions_map
-                ~override_graph
-                ~define_name
-                ~attribute_targets
-                ~base
-                ~attribute
-                ~origin
-                ~setter
-            in
-            callees_at_location :=
-              DefineCallGraph.add_attribute_access_callees
-                ~debug
-                ~location
-                ~attribute_access
-                ~callees
-                !callees_at_location
-        | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~define:define_name ~pyre_in_context ~identifier
-            >>| (fun callees ->
-                  callees_at_location :=
-                    DefineCallGraph.add_identifier_callees
-                      ~debug
-                      ~location
-                      ~identifier
-                      ~callees
-                      !callees_at_location)
-            |> Option.value ~default:()
-        | Expression.FormatString substrings ->
-            let artificial_target =
-              CallTarget.create_with_default_index
-                ~implicit_dunder_call:false
-                ~return_type:None
-                Target.ArtificialTargets.format_string
-            in
-            callees_at_location :=
-              DefineCallGraph.add_format_string_articifial_callees
-                ~debug
-                ~location
-                ~format_string:value
-                ~callees:(FormatStringArtificialCallees.from_f_string_targets [artificial_target])
-                !callees_at_location;
-            List.iter substrings ~f:(function
-                | Substring.Literal _ -> ()
-                | Substring.Format { value; format_spec } -> (
-                    let register_stringify_call_targets
-                        ({ Node.location = expression_location; _ } as expression)
-                      =
-                      let { CallCallees.call_targets; _ } =
-                        let callee =
-                          let method_name, origin_kind =
-                            match
-                              resolve_stringify_call
-                                ~pyre_in_context
-                                ~callables_to_definitions_map
-                                expression
-                            with
-                            | Str -> "__str__", Origin.FormatStringImplicitStr
-                            | Repr -> "__repr__", Origin.FormatStringImplicitRepr
-                          in
-                          {
-                            Node.value =
-                              Expression.Name
-                                (Name.Attribute
-                                   {
-                                     base = expression;
-                                     attribute = method_name;
-                                     origin =
-                                       Some
-                                         (Origin.create
-                                            ?base:(Ast.Expression.origin expression)
-                                            ~location:expression_location
-                                            origin_kind);
-                                   });
-                            location = expression_location;
-                          }
-                        in
-                        resolve_regular_callees
-                          ~debug
-                          ~callables_to_definitions_map
-                          ~pyre_in_context
-                          ~override_graph
-                          ~return_type:(lazy Type.string)
-                          ~callee
-                      in
-                      if not (List.is_empty call_targets) then
-                        callees_at_location :=
-                          DefineCallGraph.add_format_string_stringify_callees
-                            ~debug
-                            ~location:expression_location
-                            ~substring:(Node.value expression)
-                            ~callees:
-                              (FormatStringStringifyCallees.from_stringify_targets call_targets)
-                            !callees_at_location
-                    in
-                    register_stringify_call_targets value;
-                    match format_spec with
-                    | Some format_spec -> register_stringify_call_targets format_spec
-                    | None -> ()))
-        | _ -> ()
-      in
-      (* Special-case `getattr()` and `setattr()` for the taint analysis. *)
-      let () =
-        match value with
-        | Expression.Call
-            {
-              callee = { Node.value = Name (Name.Identifier "getattr"); _ };
-              arguments =
-                [
-                  { Call.Argument.value = base; _ };
-                  {
-                    Call.Argument.value =
-                      {
-                        Node.value =
-                          Expression.Constant
-                            (Constant.String { StringLiteral.value = attribute; _ });
-                        _;
-                      };
-                    _;
-                  };
-                  { Call.Argument.value = _; _ };
-                ];
-              origin = call_origin;
-            } ->
-            let origin =
-              Some (Origin.create ?base:call_origin ~location Origin.GetAttrConstantLiteral)
-            in
-            let callees =
-              resolve_attribute_access
-                ~pyre_in_context
-                ~debug
-                ~callables_to_definitions_map
-                ~override_graph
-                ~define_name
-                ~attribute_targets
-                ~base
-                ~attribute
-                ~origin
-                ~setter:false
-            in
-            callees_at_location :=
-              DefineCallGraph.add_attribute_access_callees
-                ~debug
-                ~location
-                ~attribute_access:{ Name.Attribute.base; attribute; origin }
-                ~callees
-                !callees_at_location
-        | Expression.Call
-            {
-              callee =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base = { Node.value = Name (Name.Identifier "object"); _ };
-                          attribute = "__setattr__";
-                          _;
-                        });
-                  _;
-                };
-              arguments =
-                [
-                  { Call.Argument.value = self; name = None };
-                  {
-                    Call.Argument.value =
-                      {
-                        Node.value =
-                          Expression.Constant (Constant.String { value = attribute; kind = String });
-                        _;
-                      };
-                    name = None;
-                  };
-                  { Call.Argument.value = _; name = None };
-                ];
-              origin = call_origin;
-            } ->
-            let origin =
-              Some (Origin.create ?base:call_origin ~location Origin.SetAttrConstantLiteral)
-            in
-            let callees =
-              resolve_attribute_access
-                ~pyre_in_context
-                ~debug
-                ~callables_to_definitions_map
-                ~override_graph
-                ~define_name
-                ~attribute_targets
-                ~base:self
-                ~attribute
-                ~origin
-                ~setter:true
-            in
-            callees_at_location :=
-              DefineCallGraph.add_attribute_access_callees
-                ~debug
-                ~location
-                ~attribute_access:{ Name.Attribute.base = self; attribute; origin }
-                ~callees
-                !callees_at_location
-        | _ -> ()
-      in
-      state
-
-
-    let statement_visitor state _ = state
-
-    let generator_visitor ({ pyre_in_context; _ } as state) generator =
-      (* Since generators create variables that Pyre sees as scoped within the generator, handle
-         them by adding the generator's bindings to the resolution. *)
-      let ({ Ast.Statement.Assign.target = _; value; _ } as assignment) =
-        Ast.Statement.Statement.generator_assignment generator
-      in
-      (* Since the analysis views the generator as an assignment, we need to also register (extra)
-         calls that (are generated above and) appear within the right-hand-side of the assignment*)
-      let iter, iter_next, location =
-        match value with
-        | Some
-            {
-              value =
-                Expression.Await
-                  {
-                    Await.operand =
-                      {
-                        Node.value =
-                          Expression.Call
-                            {
-                              callee =
-                                {
-                                  Node.value =
-                                    Name
-                                      (Name.Attribute
-                                        {
-                                          base =
-                                            {
-                                              Node.value =
-                                                Expression.Call
-                                                  {
-                                                    callee =
-                                                      {
-                                                        Node.value =
-                                                          Name
-                                                            (Name.Attribute
-                                                              { attribute = "__aiter__"; _ });
-                                                        _;
-                                                      };
-                                                    _;
-                                                  } as aiter;
-                                              _;
-                                            };
-                                          attribute = "__anext__";
-                                          _;
-                                        });
-                                  _;
-                                };
-                              _;
-                            } as aiter_anext;
-                        _;
-                      };
-                    origin = _;
-                  };
-              location;
-            } ->
-            (* E.g., x async for x in y *) aiter, aiter_anext, location
-        | Some
-            {
-              value =
-                Expression.Call
-                  {
-                    callee =
-                      {
-                        Node.value =
-                          Name
-                            (Name.Attribute
-                              {
-                                base =
-                                  {
-                                    Node.value =
-                                      Expression.Call
-                                        {
-                                          callee =
-                                            {
-                                              Node.value =
-                                                Name (Name.Attribute { attribute = "__iter__"; _ });
-                                              _;
-                                            };
-                                          _;
-                                        } as iter;
-                                    _;
-                                  };
-                                attribute = "__next__";
-                                _;
-                              });
-                        _;
-                      };
-                    _;
-                  } as iter_next;
-              location;
-            } ->
-            (* E.g., x for x in y *) iter, iter_next, location
-        | _ -> failwith "Expect generators to be treated as e.__iter__().__next__()"
-      in
-      let state = expression_visitor state { Node.value = iter; location } in
-      let state = expression_visitor state { Node.value = iter_next; location } in
-      {
-        state with
-        pyre_in_context =
-          PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment;
-      }
-
-
-    let node state = function
-      | Visit.Expression expression -> expression_visitor state expression
-      | Visit.Statement statement -> statement_visitor state statement
-      | Visit.Generator generator -> generator_visitor state generator
-      | _ -> state
-
-
-    let visit_statement_children _ statement =
-      match Node.value statement with
-      | Statement.Assign _
-      | Statement.Define _
-      | Statement.Class _ ->
-          false
-      | _ -> true
-
-
-    let visit_expression_children _ _ = true
-
-    let visit_format_string_children _ _ = true
-
-    let visit_expression_based_on_parent ~parent_expression expression =
-      (* Only skip visiting the callee. *)
-      match parent_expression.Node.value, expression.Node.value with
-      | Expression.Call { callee; _ }, Expression.Name (Name.Identifier _)
-      | Expression.Call { callee; _ }, Expression.Name (Name.Attribute _) ->
-          not (Expression.equal callee expression)
-      | _ -> true
   end
 
-  module T = Visit.MakeNodeVisitor (NodeVisitor)
+  (* We use `Expression.Folder.fold` to visit all expressions recursively. Each `fold_XXX` is
+     responsible for calling `Folder.fold` on all sub-expressions, with the right pyre context. *)
 
-  (* Visit the given expression and register the resolved callees into `callees_at_location`. This
-     function has side effects due to updating `callees_at_location`. *)
-  let visit_expression ~pyre_in_context ~assignment_target ~context ~callees_at_location =
-    T.visit_expression
-      ~parent_expression:None
-      ~state:(ref { NodeVisitor.pyre_in_context; assignment_target; context; callees_at_location })
+  (* Internal state of the folder. *)
+  module State = struct
+    type t = {
+      context: Context.t;
+      pyre_in_context: PyrePysaEnvironment.InContext.t;
+      assignment_target: ExpressionIdentifier.t option;
+      callees_at_location: DefineCallGraph.t ref; (* This will be mutated. *)
+    }
+  end
+
+  let resolve_callees
+      ~state:
+        {
+          State.context =
+            {
+              Context.debug;
+              callables_to_definitions_map;
+              override_graph;
+              missing_flow_type_analysis;
+              _;
+            };
+          pyre_in_context;
+          _;
+        }
+      ~location
+      ~call
+    =
+    resolve_callees ~debug ~pyre_in_context ~callables_to_definitions_map ~override_graph ~call
+    |> MissingFlowTypeAnalysis.add_unknown_callee
+         ~missing_flow_type_analysis
+         ~expression:(Expression.Call call |> Node.create ~location)
 
 
-  (* Visit the given statement and register the resolved callees into `callees_at_location`. This
-     function has side effects due to updating `callees_at_location`. *)
-  let visit_statement ~pyre_in_context ~assignment_target ~context ~callees_at_location =
-    T.visit_statement
-      ~state:(ref { NodeVisitor.pyre_in_context; assignment_target; context; callees_at_location })
+  let resolve_attribute_access
+      ~state:
+        {
+          State.context =
+            {
+              Context.debug;
+              define_name;
+              callables_to_definitions_map;
+              override_graph;
+              attribute_targets;
+              _;
+            };
+          pyre_in_context;
+          _;
+        }
+    =
+    resolve_attribute_access
+      ~pyre_in_context
+      ~debug
+      ~callables_to_definitions_map
+      ~override_graph
+      ~define_name
+      ~attribute_targets
+
+
+  let resolve_identifier ~state:{ State.context = { Context.define_name; _ }; pyre_in_context; _ } =
+    resolve_identifier ~define:define_name ~pyre_in_context
+
+
+  let check_expression_identifier_invariant
+      ~state:{ State.context = { Context.define_name; expression_identifier_invariant; _ }; _ }
+      ~location
+      expression
+    =
+    match expression_identifier_invariant with
+    | Some expression_identifier_invariant ->
+        ExpressionIdentifierInvariant.check_invariant
+          expression_identifier_invariant
+          ~define_name
+          ~expression:{ Node.location; value = expression }
+    | None -> ()
+
+
+  let fold_call
+      ~folder
+      ~state:({ State.callees_at_location; context = { Context.debug; _ }; _ } as state)
+      ~location
+      ({ Call.callee = callee_expression; arguments; _ } as call)
+    =
+    let () = check_expression_identifier_invariant ~state ~location (Expression.Call call) in
+    let callees = resolve_callees ~state ~location ~call in
+    callees_at_location :=
+      DefineCallGraph.add_call_callees ~debug ~location ~call ~callees !callees_at_location;
+    (* Special-case `getattr()` and `setattr()` for the taint analysis. *)
+    let () =
+      match call with
+      | {
+       Call.callee = { Node.value = Name (Name.Identifier "getattr"); _ };
+       arguments =
+         [
+           { Call.Argument.value = base; _ };
+           {
+             Call.Argument.value =
+               {
+                 Node.value =
+                   Expression.Constant (Constant.String { StringLiteral.value = attribute; _ });
+                 _;
+               };
+             _;
+           };
+           { Call.Argument.value = _; _ };
+         ];
+       origin = call_origin;
+      } ->
+          let origin =
+            Some (Origin.create ?base:call_origin ~location Origin.GetAttrConstantLiteral)
+          in
+          let callees = resolve_attribute_access ~state ~base ~attribute ~origin ~setter:false in
+          callees_at_location :=
+            DefineCallGraph.add_attribute_access_callees
+              ~debug
+              ~location
+              ~attribute_access:{ Name.Attribute.base; attribute; origin }
+              ~callees
+              !callees_at_location
+      | {
+       Call.callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 {
+                   base = { Node.value = Name (Name.Identifier "object"); _ };
+                   attribute = "__setattr__";
+                   _;
+                 });
+           _;
+         };
+       arguments =
+         [
+           { Call.Argument.value = self; name = None };
+           {
+             Call.Argument.value =
+               {
+                 Node.value =
+                   Expression.Constant (Constant.String { value = attribute; kind = String });
+                 _;
+               };
+             name = None;
+           };
+           { Call.Argument.value = _; name = None };
+         ];
+       origin = call_origin;
+      } ->
+          let origin =
+            Some (Origin.create ?base:call_origin ~location Origin.SetAttrConstantLiteral)
+          in
+          let callees =
+            resolve_attribute_access ~state ~base:self ~attribute ~origin ~setter:true
+          in
+          callees_at_location :=
+            DefineCallGraph.add_attribute_access_callees
+              ~debug
+              ~location
+              ~attribute_access:{ Name.Attribute.base = self; attribute; origin }
+              ~callees
+              !callees_at_location
+      | _ -> ()
+    in
+    (* Fold sub-expressions *)
+    let state =
+      match Node.value callee_expression with
+      (* Skip visiting the callee itself to avoid having duplicate call edges. We still visit
+         sub-expressions of the callee. *)
+      | Expression.Name (Name.Attribute { base; _ }) -> Folder.fold ~folder ~state base
+      | Expression.Name (Name.Identifier _) -> state
+      | _ -> Folder.fold ~folder ~state callee_expression
+    in
+    List.fold
+      ~init:state
+      ~f:(fun state { Call.Argument.value; _ } -> Folder.fold ~folder ~state value)
+      arguments
+
+
+  let fold_name
+      ~folder
+      ~state:
+        ({ State.callees_at_location; assignment_target; context = { Context.debug; _ }; _ } as
+        state)
+      ~location
+      name
+    =
+    let () = check_expression_identifier_invariant ~state ~location (Expression.Name name) in
+    match name with
+    | Name.Attribute ({ Name.Attribute.base; attribute; origin } as attribute_access) ->
+        let setter =
+          match assignment_target with
+          | Some assignment_target ->
+              ExpressionIdentifier.equal
+                assignment_target
+                (ExpressionIdentifier.of_attribute_access ~location attribute_access)
+          | None -> false
+        in
+        let callees = resolve_attribute_access ~state ~base ~attribute ~origin ~setter in
+        callees_at_location :=
+          DefineCallGraph.add_attribute_access_callees
+            ~debug
+            ~location
+            ~attribute_access
+            ~callees
+            !callees_at_location;
+        Folder.fold ~folder ~state base
+    | Name.Identifier identifier ->
+        resolve_identifier ~state ~identifier
+        >>| (fun callees ->
+              callees_at_location :=
+                DefineCallGraph.add_identifier_callees
+                  ~debug
+                  ~location
+                  ~identifier
+                  ~callees
+                  !callees_at_location)
+        |> Option.value ~default:();
+        state
+
+
+  let fold_format_string
+      ~folder
+      ~state:
+        ({
+           State.callees_at_location;
+           pyre_in_context;
+           context = { Context.debug; callables_to_definitions_map; override_graph; _ };
+           _;
+         } as state)
+      ~location
+      substrings
+    =
+    let () =
+      check_expression_identifier_invariant ~state ~location (Expression.FormatString substrings)
+    in
+    let artificial_target =
+      CallTarget.create_with_default_index
+        ~implicit_dunder_call:false
+        ~return_type:None
+        Target.ArtificialTargets.format_string
+    in
+    callees_at_location :=
+      DefineCallGraph.add_format_string_articifial_callees
+        ~debug
+        ~location
+        ~format_string:(Expression.FormatString substrings)
+        ~callees:(FormatStringArtificialCallees.from_f_string_targets [artificial_target])
+        !callees_at_location;
+    List.iter substrings ~f:(function
+        | Substring.Literal _ -> ()
+        | Substring.Format { value; format_spec } -> (
+            let register_stringify_call_targets
+                ({ Node.location = expression_location; _ } as expression)
+              =
+              let { CallCallees.call_targets; _ } =
+                let callee =
+                  let method_name, origin_kind =
+                    match
+                      resolve_stringify_call
+                        ~pyre_in_context
+                        ~callables_to_definitions_map
+                        expression
+                    with
+                    | Str -> "__str__", Origin.FormatStringImplicitStr
+                    | Repr -> "__repr__", Origin.FormatStringImplicitRepr
+                  in
+                  {
+                    Node.value =
+                      Expression.Name
+                        (Name.Attribute
+                           {
+                             base = expression;
+                             attribute = method_name;
+                             origin =
+                               Some
+                                 (Origin.create
+                                    ?base:(Ast.Expression.origin expression)
+                                    ~location:expression_location
+                                    origin_kind);
+                           });
+                    location = expression_location;
+                  }
+                in
+                resolve_regular_callees
+                  ~debug
+                  ~callables_to_definitions_map
+                  ~pyre_in_context
+                  ~override_graph
+                  ~return_type:(lazy Type.string)
+                  ~callee
+              in
+              if not (List.is_empty call_targets) then
+                callees_at_location :=
+                  DefineCallGraph.add_format_string_stringify_callees
+                    ~debug
+                    ~location:expression_location
+                    ~substring:(Node.value expression)
+                    ~callees:(FormatStringStringifyCallees.from_stringify_targets call_targets)
+                    !callees_at_location
+            in
+            register_stringify_call_targets value;
+            match format_spec with
+            | Some format_spec -> register_stringify_call_targets format_spec
+            | None -> ()));
+    Folder.default_fold_format_string ~folder ~state substrings
+
+
+  let fold_comprehension_generator
+      ~folder
+      ~state:
+        ({
+           State.pyre_in_context = outer_pyre_context;
+           context = { Context.callables_to_definitions_map; _ };
+           _;
+         } as state)
+      ({ Comprehension.Generator.conditions; _ } as generator)
+    =
+    let { Ast.Statement.Assign.target; value; _ }, inner_pyre_context =
+      preprocess_generator
+        ~pyre_in_context:outer_pyre_context
+        ~callables_to_definitions_map
+        generator
+    in
+    let state = Folder.fold ~folder ~state target in
+    let state = Folder.fold ~folder ~state (Option.value_exn value) in
+    (* conditions need to use the new pyre context *)
+    let state = { state with pyre_in_context = inner_pyre_context } in
+    let state =
+      List.fold
+        ~init:state
+        ~f:(fun state condition -> Folder.fold ~folder ~state condition)
+        conditions
+    in
+    state
+
+
+  let fold_comprehension_generators ~folder ~state generators =
+    List.fold
+      ~init:state
+      ~f:(fun state generator -> fold_comprehension_generator ~folder ~state generator)
+      generators
+
+
+  let fold_comprehension
+      ~folder
+      ~state:({ State.pyre_in_context = outer_pyre_context; _ } as state)
+      ~location:_
+      { Comprehension.element; generators }
+    =
+    let state = fold_comprehension_generators ~folder ~state generators in
+    let state = Folder.fold ~folder ~state element in
+    { state with pyre_in_context = outer_pyre_context }
+
+
+  let fold_dictionary_comprehension
+      ~folder
+      ~state:({ State.pyre_in_context = outer_pyre_context; _ } as state)
+      ~location:_
+      { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators }
+    =
+    let state = fold_comprehension_generators ~folder ~state generators in
+    let state = Folder.fold ~folder ~state key in
+    let state = Folder.fold ~folder ~state value in
+    { state with pyre_in_context = outer_pyre_context }
+
+
+  (* Build the call graph for the given expression. This mutates `callees_at_location`. *)
+  let build_for_expression
+      ~pyre_in_context
+      ~context
+      ~assignment_target
+      ~callees_at_location
+      expression
+    =
+    let state = { State.context; pyre_in_context; assignment_target; callees_at_location } in
+    let (_ : State.t) =
+      Folder.fold
+        ~folder:
+          (Folder.create
+             ~fold_call
+             ~fold_name
+             ~fold_format_string
+             ~fold_generator:fold_comprehension
+             ~fold_dictionary_comprehension
+             ~fold_list_comprehension:fold_comprehension
+             ~fold_set_comprehension:fold_comprehension
+             ())
+        ~state
+        expression
+    in
+    ()
 end
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -4426,13 +4593,19 @@ end
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
    having to hackily recompute them. *)
 module DefineCallGraphFixpoint (Context : sig
-  val node_visitor_context : NodeVisitorContext.t
+  val builder_context : CallGraphBuilder.Context.t
+
+  val pyre_api : PyrePysaEnvironment.ReadOnly.t
 
   val callees_at_location : DefineCallGraph.t ref (* This can be mutated. *)
 
   val define : Ast.Statement.Define.t Node.t
 end) =
 struct
+  let debug = Context.builder_context.debug
+
+  let callables_to_definitions_map = Context.builder_context.callables_to_definitions_map
+
   include PyrePysaLogic.Fixpoint.Make (struct
     type t = unit [@@deriving show]
 
@@ -4445,42 +4618,53 @@ struct
     let widen ~previous:_ ~next:_ ~iteration:_ = ()
 
     let forward_statement ~pyre_in_context ~statement =
-      log
-        ~debug:Context.node_visitor_context.debug
-        "Building call graph of statement: `%a`"
-        Ast.Statement.pp
-        statement;
-      let statement = redirect_assignments statement in
+      log ~debug "Building call graph of statement: `%a`" Ast.Statement.pp statement;
+      let statement =
+        preprocess_statement ~pyre_in_context ~callables_to_definitions_map statement
+      in
+      let forward_expression =
+        CallGraphBuilder.build_for_expression
+          ~pyre_in_context
+          ~context:Context.builder_context
+          ~assignment_target:None
+          ~callees_at_location:Context.callees_at_location
+      in
       match Node.value statement with
-      | Statement.Assign { Assign.target; value = Some value; origin; annotation = _ } ->
+      | Statement.Assign { target; value; annotation = _; origin } ->
           let () =
-            match origin with
-            | Some { Node.value = Assign.Origin.ChainedAssign { index }; _ } when index >= 1 ->
+            match value, origin with
+            | _, Some { Node.value = Assign.Origin.ChainedAssign { index }; _ } when index >= 1 ->
                 (* We already visited the value expression for index = 0, so skip it this time. *)
                 ()
-            | _ ->
-                CalleeVisitor.visit_expression
-                  ~pyre_in_context
-                  ~assignment_target:None
-                  ~context:Context.node_visitor_context
-                  ~callees_at_location:Context.callees_at_location
-                  value
+            | Some value, _ -> forward_expression value
+            | _ -> ()
           in
-          CalleeVisitor.visit_expression
+          CallGraphBuilder.build_for_expression
             ~pyre_in_context
-            ~assignment_target:(Some { location = Node.location target })
-            ~context:Context.node_visitor_context
+            ~context:Context.builder_context
             ~callees_at_location:Context.callees_at_location
+            ~assignment_target:(Some (ExpressionIdentifier.of_expression target))
             target
-      | Statement.Assign { Assign.target; value = None; _ } ->
-          CalleeVisitor.visit_expression
-            ~pyre_in_context
-            ~assignment_target:(Some { location = Node.location target })
-            ~context:Context.node_visitor_context
-            ~callees_at_location:Context.callees_at_location
-            target
-      | Statement.Class _
-      | Statement.Define _ ->
+      | Assert { test; _ } -> forward_expression test
+      | Delete expressions -> List.iter ~f:forward_expression expressions
+      | Expression expression -> forward_expression expression
+      | Raise { expression; from } ->
+          let () = Option.iter ~f:forward_expression from in
+          let () = Option.iter ~f:forward_expression expression in
+          ()
+      | Return { expression; is_implicit = _ } -> Option.iter ~f:forward_expression expression
+      | TypeAlias { name; type_params = _; value } ->
+          let () = forward_expression name in
+          let () = forward_expression value in
+          ()
+      | Define _
+      | Break
+      | Class _
+      | Continue
+      | Global _
+      | Import _
+      | Nonlocal _
+      | Pass ->
           ()
       | Try _ ->
           (* Try statements are lowered down in `Cfg.create`, but they are preserved in the final
@@ -4493,22 +4677,14 @@ struct
       | While _ ->
           failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
       | AugmentedAssign _ ->
-          failwith
-            "AugmentedAssign nodes should always be rewritten by `CallGraph.redirect_assignments`"
-      | _ ->
-          CalleeVisitor.visit_statement
-            ~pyre_in_context
-            ~assignment_target:None
-            ~context:Context.node_visitor_context
-            ~callees_at_location:Context.callees_at_location
-            statement
+          failwith "AugmentedAssign nodes should always be rewritten by `preprocess_assignments`"
 
 
     let forward ~statement_key _ ~statement =
       let pyre_in_context =
         PyrePysaEnvironment.InContext.create_at_statement_key
-          Context.node_visitor_context.pyre_api
-          ~define_name:(Option.value_exn Context.node_visitor_context.define_name)
+          Context.pyre_api
+          ~define_name:(Option.value_exn Context.builder_context.define_name)
           ~define:Context.define
           ~statement_key
       in
@@ -5300,8 +5476,11 @@ module HigherOrderCallGraph = struct
             (state, pyre_in_context)
             ({ Comprehension.Generator.conditions; _ } as generator)
           =
-          let ({ Assign.target; value; _ } as assignment) =
-            Statement.generator_assignment generator
+          let { Assign.target; value; _ }, inner_pyre_context =
+            preprocess_generator
+              ~pyre_in_context
+              ~callables_to_definitions_map:Context.callables_to_definitions_map
+              generator
           in
           let state =
             match value with
@@ -5310,17 +5489,13 @@ module HigherOrderCallGraph = struct
           in
           (* TODO: assign value to target *)
           let _ = target in
-          (* Since generators create variables that Pyre sees as scoped within the generator, handle
-             them by adding the generator's bindings to the resolution. *)
-          let pyre_in_context =
-            PyrePysaEnvironment.InContext.resolve_assignment pyre_in_context assignment
-          in
           (* Analyzing the conditions might have side effects. *)
           let analyze_condition state condiiton =
-            analyze_expression ~pyre_in_context ~state ~expression:condiiton |> snd
+            analyze_expression ~pyre_in_context:inner_pyre_context ~state ~expression:condiiton
+            |> snd
           in
           let state = List.fold conditions ~init:state ~f:analyze_condition in
-          state, pyre_in_context
+          state, inner_pyre_context
         in
         List.fold ~f:add_binding generators ~init:(state, pyre_in_context)
 
@@ -5361,13 +5536,7 @@ module HigherOrderCallGraph = struct
           State.pp
           state;
         let analyze_expression_inner () =
-          match
-            redirect_expressions
-              ~pyre_in_context
-              ~callables_to_definitions_map:Context.callables_to_definitions_map
-              ~location
-              value
-          with
+          match value with
           | Expression.Await { Await.operand = expression; origin = _ } ->
               analyze_expression ~pyre_in_context ~state ~expression
           | BooleanOperator { left; right; _ } ->
@@ -5575,7 +5744,12 @@ module HigherOrderCallGraph = struct
       let analyze_statement ~pyre_in_context ~state ~statement =
         log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
         let state =
-          let statement = redirect_assignments statement in
+          let statement =
+            preprocess_statement
+              ~pyre_in_context
+              ~callables_to_definitions_map:Context.callables_to_definitions_map
+              statement
+          in
           match Node.value statement with
           | Statement.Assign { Assign.target; value = Some value; _ } -> (
               match TaintAccessPath.of_expression ~self_variable target with
@@ -5713,7 +5887,7 @@ module HigherOrderCallGraph = struct
           | AugmentedAssign _ ->
               failwith
                 "AugmentedAssign nodes should always be rewritten by \
-                 `CallGraph.redirect_assignments`"
+                 `CallGraph.preprocess_statement`"
         in
         log "Finished analyzing statement `%a`: `%a`" Statement.pp statement State.pp state;
         state
@@ -5852,8 +6026,7 @@ let call_graph_of_define
   let callees_at_location = ref DefineCallGraph.empty in
   let context =
     {
-      NodeVisitorContext.pyre_api;
-      define_name = Some define_name;
+      CallGraphBuilder.Context.define_name = Some define_name;
       missing_flow_type_analysis =
         (if is_missing_flow_type_analysis then
            Some { MissingFlowTypeAnalysis.qualifier }
@@ -5870,7 +6043,9 @@ let call_graph_of_define
     }
   in
   let module DefineFixpoint = DefineCallGraphFixpoint (struct
-    let node_visitor_context = context
+    let builder_context = context
+
+    let pyre_api = pyre_api
 
     let callees_at_location = callees_at_location
 
@@ -5885,7 +6060,13 @@ let call_graph_of_define
       define.Ast.Node.value.Ast.Statement.Define.signature.parameters
       ~f:(fun { Node.value = { Parameter.value; _ }; _ } ->
         Option.iter value ~f:(fun value ->
-            CalleeVisitor.visit_expression
+            let value =
+              preprocess_parameter_default_value
+                ~pyre_in_context
+                ~callables_to_definitions_map
+                value
+            in
+            CallGraphBuilder.build_for_expression
               ~pyre_in_context
               ~assignment_target:None
               ~context
@@ -5985,11 +6166,10 @@ module DecoratorResolution = struct
       else
         Format.ifprintf Format.err_formatter format
     in
-    let resolve_callees ~call_graph =
+    let resolve_callees ~call_graph expression =
       let context =
         {
-          NodeVisitorContext.pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context;
-          define_name = None;
+          CallGraphBuilder.Context.define_name = None;
           missing_flow_type_analysis = None;
           debug;
           override_graph;
@@ -5998,11 +6178,15 @@ module DecoratorResolution = struct
           expression_identifier_invariant = None;
         }
       in
-      CalleeVisitor.visit_expression
+      let expression =
+        preprocess_expression ~pyre_in_context ~callables_to_definitions_map expression
+      in
+      CallGraphBuilder.build_for_expression
         ~pyre_in_context
         ~assignment_target:None
         ~context
         ~callees_at_location:call_graph
+        expression
     in
     let create_decorator_call previous_argument decorator =
       Node.create

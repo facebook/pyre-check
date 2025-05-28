@@ -13,15 +13,7 @@ Higher order call graphs
     },
     "60:15-60:42|artificial-call|next-call": {
       "call": {
-        "calls": [
-          {
-            "target": "typing.SupportsNext.__next__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.SupportsNext"
-          }
-        ]
+        "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
     "60:20-60:41|artificial-call|iter-call": {

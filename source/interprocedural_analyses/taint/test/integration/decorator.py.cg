@@ -37,6 +37,9 @@ Call dependencies
   "decorator._strip_first_parameter_.inner (fun)[local($parameter$f)=decorator.decorated (fun)]": [
     "decorator.decorated (fun)"
   ],
+  "decorator.add_return_source.inner (fun)": [
+    "_test_source (fun)", "int.__gt__ (method)", "int.__le__ (method)"
+  ],
   "decorator.conditional_decorator_factory.add_sink.inner (fun)": [
     "_test_sink (fun)"
   ],
@@ -129,6 +132,9 @@ Call dependencies
     "decorator.with_named_logger._inner_decorator.inner (fun)[local($parameter$f)=decorator.foo_using_decorator_factory (fun)]",
     "object.__init__ (method)", "object.__new__ (method)"
   ],
+  "decorator.return_source_via_decorator@decorated (fun)": [
+    "decorator.add_return_source (fun)[formal(callable, position=0)=decorator.return_source_via_decorator (fun)]"
+  ],
   "decorator.second_parameter_source_inlineable_decorator (fun)": [
     "_test_sink (fun)"
   ],
@@ -176,6 +182,10 @@ Call dependencies
   "decorator.sink_via_trivial_decorator (fun)": [ "_test_sink (fun)" ],
   "decorator.sink_via_trivial_decorator@decorated (fun)": [
     "decorator.trivial_decorator (fun)[formal(f, position=0)=decorator.sink_via_trivial_decorator (fun)]"
+  ],
+  "decorator.test_parameter_default_value (fun)": [
+    "_test_sink (fun)",
+    "decorator.return_source_via_decorator@decorated (fun)"
   ],
   "decorator.trivial_decorator.inner (fun)[local($parameter$f)=decorator.sink_via_trivial_decorator (fun)]": [
     "decorator.sink_via_trivial_decorator (fun)"

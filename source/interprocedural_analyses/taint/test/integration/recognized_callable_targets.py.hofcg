@@ -67,9 +67,6 @@ Higher order call graphs
         ]
       }
     },
-    "16:4-16:19|artificial-attribute-access|qualification:recognized_callable_targets.callable_target": {
-      "attribute_access": { "is_attribute": true }
-    },
     "16:4-16:37|artificial-call|pysa-call-redirect:async_task": {
       "call": {
         "calls": [

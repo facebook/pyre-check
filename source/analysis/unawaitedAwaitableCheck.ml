@@ -702,7 +702,7 @@ module State (Context : Context) = struct
           nested_awaitable_expressions = [];
         }
     | Slice slice ->
-        let lowered = Slice.lowered ~location slice in
+        let lowered = Slice.lower_to_expression ~location slice in
         forward_expression ~resolution ~state ~expression:lowered
     | Subscript { Subscript.base; index; origin = _ } ->
         let { state; nested_awaitable_expressions } =

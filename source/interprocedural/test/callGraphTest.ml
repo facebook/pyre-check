@@ -1018,15 +1018,6 @@ let test_call_graph_of_define =
                             (Target.Regular.Function { name = "test.f"; kind = Normal });
                         ]
                       ()) );
-               ( "7:10-7:11|artificial-attribute-access|qualification:test.f",
-                 ExpressionCallees.from_attribute_access
-                   (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            (Target.Regular.Function { name = "test.f"; kind = Normal });
-                        ]
-                      ()) );
              ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
@@ -1045,17 +1036,6 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "9:2-9:17|artificial-attribute-access|qualification:test.callable_target",
-                 ExpressionCallees.from_attribute_access
-                   (AttributeAccessCallees.create
-                      ~callable_targets:
-                        [
-                          CallTarget.create_regular
-                            ~return_type:(Some ReturnType.integer)
-                            (Target.Regular.Function
-                               { name = "test.callable_target"; kind = Decorated });
-                        ]
-                      ()) );
                ( "9:2-9:35|artificial-call|pysa-call-redirect:async_task",
                  ExpressionCallees.from_call
                    (CallCallees.create

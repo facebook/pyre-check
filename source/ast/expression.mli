@@ -312,7 +312,9 @@ and Slice : sig
 
   val location_insensitive_compare : t -> t -> int
 
-  val lowered : location:Location.t -> t -> Expression.t
+  val lower_to_call : location:Location.t -> t -> Call.t
+
+  val lower_to_expression : location:Location.t -> t -> Expression.t
 end
 
 and Subscript : sig
@@ -674,6 +676,14 @@ module Mapper : sig
     ?map_location:(Location.t -> Location.t) ->
     unit ->
     Expression.t t
+
+  val default_map_call_node : mapper:Expression.t t -> location:Location.t -> Call.t -> Expression.t
+
+  val default_map_comparison_operator_node
+    :  mapper:Expression.t t ->
+    location:Location.t ->
+    ComparisonOperator.t ->
+    Expression.t
 end
 
 module Folder : sig
@@ -754,6 +764,8 @@ module Folder : sig
     ?fold_location:(state:'a -> Location.t -> 'a) ->
     unit ->
     'a t
+
+  val default_fold_format_string : folder:'a t -> state:'a -> Substring.t list -> 'a
 end
 
 type t = Expression.t [@@deriving equal, compare, sexp, show, hash, to_yojson]

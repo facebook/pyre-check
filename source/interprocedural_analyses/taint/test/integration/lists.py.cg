@@ -12,8 +12,9 @@ Call dependencies
     "str.__eq__ (method)", "typing.Iterator.__next__ (method)"
   ],
   "lists.inconsistent_type_context (fun)": [
-    "list.__iter__ (method)", "lists.HasStr.__str__ (method)",
-    "lists.returns_list_repr (fun)", "typing.Iterator.__next__ (method)"
+    "list.__iter__ (method)", "lists.HasRepr.__repr__ (method)",
+    "lists.HasStr.__str__ (method)", "lists.returns_list_repr (fun)",
+    "typing.Iterator.__next__ (method)"
   ],
   "lists.list_append_wrapper (fun)": [ "list.append (method)" ],
   "lists.list_setitem_local (fun)": [

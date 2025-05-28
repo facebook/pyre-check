@@ -285,7 +285,7 @@ module State (Context : Context) = struct
               reachable_globals
               (value_errors @ errors);
         }
-    | Slice slice -> Slice.lowered ~location slice |> forward_expression
+    | Slice slice -> Slice.lower_to_expression ~location slice |> forward_expression
     | Subscript { Subscript.base; index; origin = _ } ->
         (* We assume that idiomatic python code does not mutate base in __getitem__ evaluation, and
            that globals used as index keys aren't going to be mutated later. *)
@@ -461,7 +461,8 @@ module State (Context : Context) = struct
           }
         in
         List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
-    | Expression.Slice slice -> Slice.lowered ~location slice |> forward_expression ~resolution
+    | Expression.Slice slice ->
+        Slice.lower_to_expression ~location slice |> forward_expression ~resolution
     | Expression.Subscript { Subscript.base; index; origin = subscript_origin } ->
         (* Construct a synthetic __setitem__ call. This call isn't exactly correct, because the
            arity should be 2 instead of 1 (we don't have an actual expression for the second

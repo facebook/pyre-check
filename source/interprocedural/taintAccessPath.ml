@@ -445,6 +445,31 @@ let of_expression ~self_variable expression =
         Node.value =
           Call
             {
+              Call.callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        { Name.Attribute.base; attribute = "__getitem__"; origin = _ });
+                  _;
+                };
+              arguments =
+                [
+                  {
+                    Call.Argument.name = None;
+                    value = { Node.value = Expression.Constant (Constant.String { value; _ }); _ };
+                  };
+                ];
+              origin = _;
+            };
+        _;
+      } ->
+        let path = Abstract.TreeDomain.Label.Index value :: path in
+        of_expression path base
+    | {
+        Node.value =
+          Call
+            {
               Call.callee = { Node.value = Name (Name.Identifier "super"); _ };
               arguments = [_; { Call.Argument.name = None; value = argument }];
               origin = _;

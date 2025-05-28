@@ -1417,40 +1417,54 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     analyze_expression ~pyre_in_context ~taint:value_taint ~state ~expression
 
 
-  and analyze_generators ~(pyre_in_context : PyrePysaEnvironment.InContext.t) ~state generators =
-    let handle_generator state ({ Comprehension.Generator.conditions; _ } as generator) =
+  and analyze_generators ~outer_pyre_context ~state generators =
+    let handle_generator
+        (state, outer_pyre_context)
+        ({ Comprehension.Generator.conditions; _ } as generator)
+      =
+      let { Statement.Assign.target; value; _ }, inner_pyre_context =
+        CallGraph.preprocess_generator
+          ~pyre_in_context:outer_pyre_context
+          ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
+          generator
+      in
       let state =
         List.fold conditions ~init:state ~f:(fun state condition ->
             analyze_expression
-              ~pyre_in_context
+              ~pyre_in_context:inner_pyre_context
               ~taint:BackwardState.Tree.empty
               ~state
               ~expression:condition)
       in
-      let { Statement.Assign.target; value; _ } =
-        Statement.Statement.generator_assignment generator
+      let state =
+        match value with
+        | Some value -> analyze_assignment ~pyre_in_context:outer_pyre_context ~target ~value state
+        | None -> state
       in
-      match value with
-      | Some value -> analyze_assignment ~pyre_in_context ~target ~value state
-      | None -> state
+      state, inner_pyre_context
     in
-    List.fold ~f:handle_generator generators ~init:state
+    let state, _ = List.fold ~f:handle_generator generators ~init:(state, outer_pyre_context) in
+    state
 
 
   and analyze_comprehension
-      ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
+      ~pyre_in_context:outer_pyre_context
       taint
       { Comprehension.element; generators; _ }
       state
     =
-    let pyre_in_context =
-      PyrePysaEnvironment.InContext.resolve_generators pyre_in_context generators
+    let inner_pyre_context =
+      PyrePysaEnvironment.InContext.resolve_generators outer_pyre_context generators
     in
     let element_taint = read_tree [Abstract.TreeDomain.Label.AnyIndex] taint in
     let state =
-      analyze_expression ~pyre_in_context ~taint:element_taint ~state ~expression:element
+      analyze_expression
+        ~pyre_in_context:inner_pyre_context
+        ~taint:element_taint
+        ~state
+        ~expression:element
     in
-    analyze_generators ~pyre_in_context ~state generators
+    analyze_generators ~outer_pyre_context ~state generators
 
 
   (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
@@ -2333,13 +2347,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.Tree.pp
       taint;
     let analyze_expression_inner () =
-      let value =
-        CallGraph.redirect_expressions
-          ~pyre_in_context
-          ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
-          ~location
-          value
-      in
       match value with
       | Await { Await.operand; origin = _ } ->
           analyze_expression ~pyre_in_context ~taint ~state ~expression:operand
@@ -2358,24 +2365,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Dictionary entries ->
           List.fold ~f:(analyze_dictionary_entry ~pyre_in_context taint) entries ~init:state
       | DictionaryComprehension { Comprehension.element = { key; value }; generators; _ } ->
-          let pyre_in_context =
+          let inner_pyre_context =
             PyrePysaEnvironment.InContext.resolve_generators pyre_in_context generators
           in
           let state =
             analyze_expression
-              ~pyre_in_context
+              ~pyre_in_context:inner_pyre_context
               ~taint:(read_tree [AccessPath.dictionary_keys] taint)
               ~state
               ~expression:key
           in
           let state =
             analyze_expression
-              ~pyre_in_context
+              ~pyre_in_context:inner_pyre_context
               ~taint:(read_tree [Abstract.TreeDomain.Label.AnyIndex] taint)
               ~state
               ~expression:value
           in
-          analyze_generators ~pyre_in_context ~state generators
+          analyze_generators ~outer_pyre_context:pyre_in_context ~state generators
       | Generator comprehension -> analyze_comprehension ~pyre_in_context taint comprehension state
       | Lambda { parameters = _; body } ->
           (* Ignore parameter bindings and pretend body is inlined *)
@@ -2421,12 +2428,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint = BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex] taint in
           analyze_expression ~pyre_in_context ~taint ~state ~expression
       | Slice _ ->
-          failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
+          failwith "Slice nodes should always be rewritten by `CallGraph.preprocess_statement`"
       | Subscript _ ->
-          failwith "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
+          failwith "Subscripts nodes should always be rewritten by `CallGraph.preprocess_statement`"
       | BinaryOperator _ ->
           failwith
-            "BinaryOperator nodes should always be rewritten by `CallGraph.redirect_expressions`"
+            "BinaryOperator nodes should always be rewritten by `CallGraph.preprocess_statement`"
       | FormatString substrings ->
           let substrings =
             List.concat_map substrings ~f:(function
@@ -2597,7 +2604,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let analyze_statement ~pyre_in_context state ({ Node.location; _ } as statement) =
-    let statement = CallGraph.redirect_assignments statement in
+    let statement =
+      CallGraph.preprocess_statement
+        ~pyre_in_context
+        ~callables_to_definitions_map:FunctionContext.callables_to_definitions_map
+        statement
+    in
     match Node.value statement with
     | Statement.Statement.Assign
         { value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
@@ -2711,7 +2723,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
     | AugmentedAssign _ ->
         failwith
-          "AugmentedAssign nodes should always be rewritten by `CallGraph.redirect_assignments`"
+          "AugmentedAssign nodes should always be rewritten by `CallGraph.preprocess_statement`"
 
 
   let backward ~statement_key state ~statement =

@@ -394,3 +394,22 @@ class StringWrapper:
 def issue_str_wrapper():
     x = StringWrapper(_test_source())
     x + StringWrapper("")
+
+
+def add_return_source(callable: Callable[[], str]) -> Callable[[], str]:
+    def inner() -> str:
+        if 1 > 2:
+            return callable()
+        else:
+            return _test_source()
+
+    return inner
+
+
+@add_return_source
+def return_source_via_decorator() -> str:
+    return ""
+
+
+def test_parameter_default_value(x: str = return_source_via_decorator()) -> None:
+    _test_sink(x)  # TODO(T225603360): Handle decorated function in parameter default value

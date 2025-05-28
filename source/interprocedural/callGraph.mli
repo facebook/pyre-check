@@ -461,14 +461,25 @@ val call_graph_of_define
   define:Ast.Statement.Define.t Node.t ->
   DefineCallGraph.t
 
-val redirect_expressions
+(* This must be called *once* before analyzing a statement in a control flow graph. *)
+val preprocess_statement
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
-  location:Location.t ->
-  Expression.expression ->
-  Expression.expression
+  Ast.Statement.t ->
+  Ast.Statement.t
 
-val redirect_assignments : Statement.t -> Statement.t
+(* This must be called *once* before analyzing a generator. *)
+val preprocess_generator
+  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  Ast.Expression.Comprehension.Generator.t ->
+  Ast.Statement.Assign.t * PyrePysaEnvironment.InContext.t
+
+val preprocess_parameter_default_value
+  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  Ast.Expression.t ->
+  Ast.Expression.t
 
 val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
