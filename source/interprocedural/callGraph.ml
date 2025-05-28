@@ -4800,7 +4800,7 @@ module HigherOrderCallGraph = struct
           |> initialize_from_roots ~callables_to_definitions_map
   end
 
-  module MakeFixpoint (Context : sig
+  module MakeTransferFunction (Context : sig
     (* Inputs. *)
     val qualifier : Reference.t
 
@@ -4836,6 +4836,40 @@ module HigherOrderCallGraph = struct
     val output_define_call_graph : DefineCallGraph.t ref
   end) =
   struct
+    type t = State.t [@@deriving show]
+
+    let bottom = State.bottom
+
+    let less_or_equal = State.less_or_equal
+
+    let join = State.join
+
+    let widen ~previous ~next ~iteration = State.widen ~prev:previous ~next ~iteration
+
+    let log format =
+      if Context.debug then
+        Log.dump format
+      else
+        Log.log ~section:`CallGraph format
+
+
+    let store_callees ~weak ~root ~callees state =
+      State.update state root ~f:(function
+          | None -> callees
+          | Some existing_callees ->
+              if weak then CallTarget.Set.join existing_callees callees else callees)
+
+
+    let returned_callables call_targets =
+      call_targets
+      |> List.map ~f:(fun { CallTarget.target; _ } ->
+             log "Fetching returned callables for `%a`" Target.pp_pretty target;
+             match Context.get_callee_model target with
+             | Some { returned_callables; _ } -> returned_callables
+             | None -> CallTarget.Set.bottom)
+      |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
+
+
     let self_variable =
       if Ast.Statement.Define.is_method (Node.value Context.define) then
         let { Ast.Statement.Define.signature = { parameters; _ }; _ } = Node.value Context.define in
@@ -4865,13 +4899,6 @@ module HigherOrderCallGraph = struct
       |> CallTarget.Set.join (State.get TaintAccessPath.Root.LocalResult state)
 
 
-    let log format =
-      if Context.debug then
-        Log.dump format
-      else
-        Log.log ~section:`CallGraph format
-
-
     let cartesian_product_with_limit ~limit ~message_when_exceeding_limit list =
       match limit, list with
       | Some limit, head :: tail when limit > 0 ->
@@ -4893,481 +4920,428 @@ module HigherOrderCallGraph = struct
       | _, _ -> Some (Algorithms.cartesian_product list)
 
 
-    module Fixpoint = Analysis.Fixpoint.Make (struct
-      type t = State.t [@@deriving show]
+    module AnalyzeDecoratedTargetsResult = struct
+      type t = {
+        (* A subset of the input call targets that are of `kind=Decorated`. *)
+        decorated_targets: CallTarget.t list;
+        (* A subset of the input call targets that are not of `kind=Decorated`. *)
+        non_decorated_targets: CallTarget.t list;
+        (* The result of evaluating the input call targets. *)
+        result_targets: CallTarget.t list;
+      }
+    end
 
-      let bottom = State.bottom
+    (* Analyze any list of `CallTarget.t`s, which may contain decorated targets -- we would get
+       their returned callable. The reason is that, the original call graph contains call edges to
+       `foo@decorated` targets, which are symbolic target representing the decorated callables.
+       Those need to be replaced by the actual function being called, which will usually be some
+       kind of `decorator.inner[captured(f):foo]` target. *)
+    let resolve_decorated_targets call_targets =
+      let decorated_targets, non_decorated_targets =
+        List.partition_tf
+          ~f:(fun { CallTarget.target; _ } -> Target.is_decorated target)
+          call_targets
+      in
+      log
+        "Decorated targets: `%a`"
+        Target.List.pp_pretty_with_kind
+        (List.map ~f:CallTarget.target decorated_targets);
+      {
+        AnalyzeDecoratedTargetsResult.decorated_targets;
+        non_decorated_targets;
+        result_targets =
+          non_decorated_targets
+          |> CallTarget.Set.of_list
+          |> CallTarget.Set.join (returned_callables decorated_targets)
+          |> CallTarget.Set.elements;
+      }
 
-      let less_or_equal = State.less_or_equal
 
-      let join = State.join
-
-      let widen ~previous ~next ~iteration = State.widen ~prev:previous ~next ~iteration
-
-      let store_callees ~weak ~root ~callees state =
-        State.update state root ~f:(function
-            | None -> callees
-            | Some existing_callees ->
-                if weak then CallTarget.Set.join existing_callees callees else callees)
-
-
-      let returned_callables call_targets =
-        call_targets
-        |> List.map ~f:(fun { CallTarget.target; _ } ->
-               log "Fetching returned callables for `%a`" Target.pp_pretty target;
-               match Context.get_callee_model target with
-               | Some { returned_callables; _ } -> returned_callables
-               | None -> CallTarget.Set.bottom)
-        |> Algorithms.fold_balanced ~f:CallTarget.Set.join ~init:CallTarget.Set.bottom
-
-
-      module AnalyzeDecoratedTargetsResult = struct
-        type t = {
-          (* A subset of the input call targets that are of `kind=Decorated`. *)
-          decorated_targets: CallTarget.t list;
-          (* A subset of the input call targets that are not of `kind=Decorated`. *)
-          non_decorated_targets: CallTarget.t list;
-          (* The result of evaluating the input call targets. *)
-          result_targets: CallTarget.t list;
-        }
-      end
-
-      (* Analyze any list of `CallTarget.t`s, which may contain decorated targets -- we would get
-         their returned callable. The reason is that, the original call graph contains call edges to
-         `foo@decorated` targets, which are symbolic target representing the decorated callables.
-         Those need to be replaced by the actual function being called, which will usually be some
-         kind of `decorator.inner[captured(f):foo]` target. *)
-      let resolve_decorated_targets call_targets =
-        let decorated_targets, non_decorated_targets =
-          List.partition_tf
-            ~f:(fun { CallTarget.target; _ } -> Target.is_decorated target)
-            call_targets
+    let validate_target target =
+      let exceed_depth = Target.depth target > Context.maximum_target_depth in
+      let contain_recursive_target = Target.contain_recursive_target target in
+      let skip_analysis =
+        Target.should_skip_analysis ~skip_analysis_targets:Context.skip_analysis_targets target
+      in
+      if contain_recursive_target || exceed_depth || skip_analysis then
+        let () =
+          log
+            "Invalid target: `%a` (contain_recursive_target: `%b`. exceed_depth: `%b`. \
+             skip_analysis: `%b`)"
+            Target.pp_pretty_with_kind
+            target
+            contain_recursive_target
+            exceed_depth
+            skip_analysis
         in
-        log
-          "Decorated targets: `%a`"
-          Target.List.pp_pretty_with_kind
-          (List.map ~f:CallTarget.target decorated_targets);
-        {
-          AnalyzeDecoratedTargetsResult.decorated_targets;
-          non_decorated_targets;
-          result_targets =
-            non_decorated_targets
-            |> CallTarget.Set.of_list
-            |> CallTarget.Set.join (returned_callables decorated_targets)
-            |> CallTarget.Set.elements;
-        }
+        None
+      else
+        Some target
 
 
-      let validate_target target =
-        let exceed_depth = Target.depth target > Context.maximum_target_depth in
-        let contain_recursive_target = Target.contain_recursive_target target in
-        let skip_analysis =
-          Target.should_skip_analysis ~skip_analysis_targets:Context.skip_analysis_targets target
-        in
-        if contain_recursive_target || exceed_depth || skip_analysis then
-          let () =
-            log
-              "Invalid target: `%a` (contain_recursive_target: `%b`. exceed_depth: `%b`. \
-               skip_analysis: `%b`)"
-              Target.pp_pretty_with_kind
-              target
-              contain_recursive_target
-              exceed_depth
-              skip_analysis
-          in
+    (* Results of analyzing a certain kind of call targets (e.g., `call_targets` or `init_targets`)
+       on a callee expression. *)
+    module AnalyzeCalleeResult = struct
+      type t = {
+        (* Transforming the input call targets by providing parameter targets. *)
+        parameterized_targets: CallTarget.t list;
+        (* The sublist of the input call target list that are of `kind=Decorated`. *)
+        decorated_targets: CallTarget.t list;
+        (* The sublist of the input call target list that are not transformed above. We create these
+           regular targets when (1) no parameter targets exist or (2) we cannot find function bodies
+           of the callee, so that the taint analysis can still use `higher_order_parameters`. *)
+        non_parameterized_targets: CallTarget.t list;
+        (* The sublist of the input call target list that are stubs. *)
+        stub_targets: Target.t list;
+      }
+    end
+
+    let analyze_callee_targets
+        ~location
+        ~call
+        ~arguments
+        ~unresolved
+        ~override_implicit_receiver
+        ~argument_callees
+        ~track_apply_call_step_name
+        callee_targets
+      =
+      let track_apply_call_step step f =
+        CallGraphProfiler.track_apply_call_step
+          ~profiler:Context.profiler
+          ~analysis:Forward
+          ~step
+          ~call_target:
+            (* A hack to distinguish the profiling of different calls to
+               `analyze_callee_targets`. *)
+            (Some (Target.Regular.Object track_apply_call_step_name |> Target.from_regular))
+          ~location
+          ~argument:None
+          ~f
+      in
+      let formal_arguments_if_non_stub target =
+        if Target.is_override target || Target.is_object target then
+          (* TODO(T204630385): It is possible for a target to be an `Override`, which we do not
+             handle for now, or an `Object`, such as a function-typed variable that cannot be
+             resolved by the original call graph building. *)
           None
         else
-          Some target
-
-
-      (* Results of analyzing a certain kind of call targets (e.g., `call_targets` or
-         `init_targets`) on a callee expression. *)
-      module AnalyzeCalleeResult = struct
-        type t = {
-          (* Transforming the input call targets by providing parameter targets. *)
-          parameterized_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are of `kind=Decorated`. *)
-          decorated_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are not transformed above. We create
-             these regular targets when (1) no parameter targets exist or (2) we cannot find
-             function bodies of the callee, so that the taint analysis can still use
-             `higher_order_parameters`. *)
-          non_parameterized_targets: CallTarget.t list;
-          (* The sublist of the input call target list that are stubs. *)
-          stub_targets: Target.t list;
-        }
-      end
-
-      let analyze_callee_targets
-          ~location
-          ~call
-          ~arguments
-          ~unresolved
-          ~override_implicit_receiver
-          ~argument_callees
-          ~track_apply_call_step_name
-          callee_targets
-        =
-        let track_apply_call_step step f =
-          CallGraphProfiler.track_apply_call_step
-            ~profiler:Context.profiler
-            ~analysis:Forward
-            ~step
-            ~call_target:
-              (* A hack to distinguish the profiling of different calls to
-                 `analyze_callee_targets`. *)
-              (Some (Target.Regular.Object track_apply_call_step_name |> Target.from_regular))
-            ~location
-            ~argument:None
-            ~f
-        in
-        let formal_arguments_if_non_stub target =
-          if Target.is_override target || Target.is_object target then
-            (* TODO(T204630385): It is possible for a target to be an `Override`, which we do not
-               handle for now, or an `Object`, such as a function-typed variable that cannot be
-               resolved by the original call graph building. *)
-            None
-          else
-            match
-              Target.CallablesSharedMemory.ReadOnly.get_signature
-                Context.callables_to_definitions_map
-                target
-            with
-            | None ->
-                log "Cannot find define for callable `%a`" Target.pp_pretty_with_kind target;
-                None
-            | Some { Target.CallablesSharedMemory.Signature.is_stub; parameters; _ } ->
-                if is_stub then
-                  let () = log "Callable `%a` is a stub" Target.pp_pretty_with_kind target in
-                  None
-                else
-                  Some
-                    (parameters
-                    |> TaintAccessPath.normalize_parameters
-                    |> List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root))
-        in
-        let create_parameter_target_excluding_args_kwargs (parameter_target, (_, argument_matches)) =
-          match argument_matches, parameter_target with
-          | { TaintAccessPath.root = TaintAccessPath.Root.StarParameter _; _ } :: _, _
-          | { TaintAccessPath.root = TaintAccessPath.Root.StarStarParameter _; _ } :: _, _ ->
-              (* TODO(T215864108): Since we do not distinguish paths under the same `Root`, we may
-                 run into conflicts in `of_alist_exn` below, which is avoided by excluding those
-                 cases, such as kwargs and args. *)
+          match
+            Target.CallablesSharedMemory.ReadOnly.get_signature
+              Context.callables_to_definitions_map
+              target
+          with
+          | None ->
+              log "Cannot find define for callable `%a`" Target.pp_pretty_with_kind target;
               None
-          | { TaintAccessPath.root; _ } :: _, Some parameter_target ->
-              Some (root, parameter_target.CallTarget.target)
-          | _ -> (* TODO: Consider the remaining `argument_matches`. *) None
-        in
-        let non_parameterized_targets ~parameterized_targets call_targets =
-          let regular_targets_from_parameterized =
-            List.filter_map parameterized_targets ~f:(function
-                | { CallTarget.target = Target.Parameterized { regular; _ }; _ } -> Some regular
-                | { CallTarget.target = Target.Regular _; _ } -> None)
-          in
-          let is_parameterized { CallTarget.target; _ } =
-            let regular = Target.get_regular target in
-            List.exists regular_targets_from_parameterized ~f:(Target.Regular.equal regular)
-          in
-          List.filter call_targets ~f:(fun call_target -> call_target |> is_parameterized |> not)
-        in
-        let {
-          AnalyzeDecoratedTargetsResult.decorated_targets;
-          non_decorated_targets = _;
-          result_targets = call_targets_from_callee;
-        }
-          =
-          track_apply_call_step ComputeCalleeTargets (fun () ->
-              resolve_decorated_targets callee_targets)
-        in
-        let recompute_implicit_receiver ({ CallTarget.implicit_receiver; _ } as callee_target) =
-          if not override_implicit_receiver then
-            implicit_receiver
-          else
-            match unresolved with
-            | Unresolved.True _ ->
-                (* Since the original call graphs cannot find the callees, the callee must be
-                   discovered by higher order call graph building. Since it is unclear whether the
-                   callee is always a function or a method under any context, the arguments must be
-                   explicit, unless the callee is a bound method, which is not yet handled. *)
-                log
-                  "Setting `implicit_receiver` to false for callee target `%a`"
-                  CallTarget.pp
-                  callee_target;
-                false
-            | Unresolved.False -> implicit_receiver
-        in
-        let create_call_target = function
-          | Some callee_target :: parameter_targets ->
-              let callee_regular, closure =
-                match CallTarget.target callee_target with
-                | Target.Regular regular -> regular, Target.ParameterMap.empty
-                | Target.Parameterized { regular; parameters } -> regular, parameters
-              in
-              let formal_arguments =
-                callee_regular |> Target.from_regular |> formal_arguments_if_non_stub
-              in
-              let parameter_targets, arguments =
-                match ImplicitArgument.implicit_argument ~is_implicit_new:false callee_target with
-                | ImplicitArgument.Callee ->
-                    ( None :: parameter_targets,
-                      { Call.Argument.name = None; value = call.Call.callee } :: arguments )
-                | ImplicitArgument.CalleeBase ->
-                    let { Node.value = call_expression; location } = call.Call.callee in
-                    let self =
-                      match call_expression with
-                      | Expression.Name (Name.Attribute { base; _ }) -> base
-                      | _ ->
-                          (* Default to a placeholder self if we don't understand/retain information
-                             of what self is. *)
-                          Expression.Constant Constant.NoneLiteral |> Node.create ~location
-                    in
-                    ( None :: parameter_targets,
-                      { Call.Argument.name = None; value = self } :: arguments )
-                | ImplicitArgument.None -> parameter_targets, arguments
-              in
-              log
-                "Formal arguments of callee regular `%a`: `%a`"
-                Target.Regular.pp
-                callee_regular
-                TaintAccessPath.Root.List.pp
-                (Option.value ~default:[] formal_arguments);
-              let parameters =
-                formal_arguments
-                >>| TaintAccessPath.match_actuals_to_formals arguments
-                >>| List.zip_exn parameter_targets
-                >>| List.filter_map ~f:create_parameter_target_excluding_args_kwargs
-                >>| Target.ParameterMap.of_alist_exn
-                |> Option.value ~default:Target.ParameterMap.empty
-                |> Target.ParameterMap.union
-                     (fun _ _ right ->
-                       (* The formal argument should shadow variables from the closure that share
-                          the same name. *)
-                       Some right)
-                     closure
-              in
-              log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
-              if Target.ParameterMap.is_empty parameters then
+          | Some { Target.CallablesSharedMemory.Signature.is_stub; parameters; _ } ->
+              if is_stub then
+                let () = log "Callable `%a` is a stub" Target.pp_pretty_with_kind target in
                 None
               else
-                Target.Parameterized { regular = callee_regular; parameters }
-                |> validate_target
-                >>| fun target ->
-                {
-                  callee_target with
-                  CallTarget.target;
-                  implicit_receiver = recompute_implicit_receiver callee_target;
-                }
-          | _ -> None
+                Some
+                  (parameters
+                  |> TaintAccessPath.normalize_parameters
+                  |> List.map ~f:(fun { TaintAccessPath.NormalizedParameter.root; _ } -> root))
+      in
+      let create_parameter_target_excluding_args_kwargs (parameter_target, (_, argument_matches)) =
+        match argument_matches, parameter_target with
+        | { TaintAccessPath.root = TaintAccessPath.Root.StarParameter _; _ } :: _, _
+        | { TaintAccessPath.root = TaintAccessPath.Root.StarStarParameter _; _ } :: _, _ ->
+            (* TODO(T215864108): Since we do not distinguish paths under the same `Root`, we may run
+               into conflicts in `of_alist_exn` below, which is avoided by excluding those cases,
+               such as kwargs and args. *)
+            None
+        | { TaintAccessPath.root; _ } :: _, Some parameter_target ->
+            Some (root, parameter_target.CallTarget.target)
+        | _ -> (* TODO: Consider the remaining `argument_matches`. *) None
+      in
+      let non_parameterized_targets ~parameterized_targets call_targets =
+        let regular_targets_from_parameterized =
+          List.filter_map parameterized_targets ~f:(function
+              | { CallTarget.target = Target.Parameterized { regular; _ }; _ } -> Some regular
+              | { CallTarget.target = Target.Regular _; _ } -> None)
         in
-        (* Treat an empty list as a single element list so that in each result of the cartesian
-           product, there is still one element for the empty list, which preserves the indices of
-           arguments. *)
-        let to_option_list = function
-          | [] -> [None]
-          | list -> List.map ~f:(fun target -> Some target) list
+        let is_parameterized { CallTarget.target; _ } =
+          let regular = Target.get_regular target in
+          List.exists regular_targets_from_parameterized ~f:(Target.Regular.equal regular)
         in
-        let parameterized_targets =
-          track_apply_call_step CreateParameterizedTargets (fun () ->
-              argument_callees
-              |> List.map ~f:(fun call_targets ->
-                     call_targets |> CallTarget.Set.elements |> to_option_list)
-              |> List.cons (to_option_list call_targets_from_callee)
-              |> cartesian_product_with_limit
-                   ~limit:Context.maximum_parameterized_targets_at_call_site
-                   ~message_when_exceeding_limit:
-                     "Avoid generating parameterized targets when analyzing call"
-              |> Option.value ~default:[]
-              |> List.filter_map ~f:create_call_target
-              |> List.dedup_and_sort ~compare:CallTarget.compare)
-        in
-        let non_parameterized_targets =
-          track_apply_call_step FindNonParameterizedTargets (fun () ->
-              call_targets_from_callee
-              |> non_parameterized_targets ~parameterized_targets
-              |> List.map ~f:(fun call_target ->
-                     {
-                       call_target with
-                       CallTarget.implicit_receiver = recompute_implicit_receiver call_target;
-                     }))
-        in
-        List.iter parameterized_targets ~f:(fun { CallTarget.target; _ } ->
-            log "Created parameterized target: `%a`" Target.pp_pretty target);
-        let stub_targets =
-          List.filter_map call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
-              let is_stub =
-                Target.CallablesSharedMemory.ReadOnly.is_stub
-                  Context.callables_to_definitions_map
-                  target
-                |> Option.value ~default:false
-              in
-              if is_stub then Some target else None)
-        in
-        {
-          AnalyzeCalleeResult.parameterized_targets;
-          decorated_targets;
-          non_parameterized_targets;
-          stub_targets;
-        }
-
-
-      let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
-        let track_apply_call_step step f =
-          CallGraphProfiler.track_apply_call_step
-            ~profiler:Context.profiler
-            ~analysis:Forward
-            ~step
-            ~call_target:None
-            ~location
-            ~argument:None
-            ~f
-        in
-        let analyze_argument
-            ~higher_order_parameters
-            index
-            (state_so_far, additional_higher_order_parameters)
-            { Call.Argument.value = argument; _ }
-          =
-          let callees, new_state =
-            analyze_expression ~pyre_in_context ~state:state_so_far ~expression:argument
-          in
-          let call_targets_from_higher_order_parameters =
-            match HigherOrderParameterMap.Map.find_opt index higher_order_parameters with
-            | Some { HigherOrderParameter.call_targets; _ } -> call_targets
-            | None -> []
-          in
-          let partition_called_when_parameter =
-            CallTarget.Set.fold
-              CallTarget.Set.Element
-              ~init:(CallTarget.Set.bottom, CallTarget.Set.bottom)
-              ~f:(fun call_target (called_when_parameter, not_called_when_parameter) ->
-                let is_called_when_parameter =
-                  call_target
-                  |> CallTarget.target
-                  |> Target.strip_parameters
-                  |> Core.Hash_set.mem Context.called_when_parameter
-                in
-                if is_called_when_parameter then
-                  CallTarget.Set.add call_target called_when_parameter, not_called_when_parameter
-                else
-                  called_when_parameter, CallTarget.Set.add call_target not_called_when_parameter)
-          in
-          let called_when_parameter, not_called_when_parameter =
-            call_targets_from_higher_order_parameters
-            |> CallTarget.Set.of_list
-            |> CallTarget.Set.join callees
-            |> partition_called_when_parameter
-          in
-          log
-            "Finished analyzing argument `%a` -- called_when_parameter: %a. \
-             not_called_when_parameter: %a"
-            Expression.pp
-            argument
-            CallTarget.Set.pp
-            called_when_parameter
-            CallTarget.Set.pp
-            not_called_when_parameter;
-          let additional_higher_order_parameters =
-            if CallTarget.Set.is_bottom called_when_parameter then
-              additional_higher_order_parameters
+        List.filter call_targets ~f:(fun call_target -> call_target |> is_parameterized |> not)
+      in
+      let {
+        AnalyzeDecoratedTargetsResult.decorated_targets;
+        non_decorated_targets = _;
+        result_targets = call_targets_from_callee;
+      }
+        =
+        track_apply_call_step ComputeCalleeTargets (fun () ->
+            resolve_decorated_targets callee_targets)
+      in
+      let recompute_implicit_receiver ({ CallTarget.implicit_receiver; _ } as callee_target) =
+        if not override_implicit_receiver then
+          implicit_receiver
+        else
+          match unresolved with
+          | Unresolved.True _ ->
+              (* Since the original call graphs cannot find the callees, the callee must be
+                 discovered by higher order call graph building. Since it is unclear whether the
+                 callee is always a function or a method under any context, the arguments must be
+                 explicit, unless the callee is a bound method, which is not yet handled. *)
+              log
+                "Setting `implicit_receiver` to false for callee target `%a`"
+                CallTarget.pp
+                callee_target;
+              false
+          | Unresolved.False -> implicit_receiver
+      in
+      let create_call_target = function
+        | Some callee_target :: parameter_targets ->
+            let callee_regular, closure =
+              match CallTarget.target callee_target with
+              | Target.Regular regular -> regular, Target.ParameterMap.empty
+              | Target.Parameterized { regular; parameters } -> regular, parameters
+            in
+            let formal_arguments =
+              callee_regular |> Target.from_regular |> formal_arguments_if_non_stub
+            in
+            let parameter_targets, arguments =
+              match ImplicitArgument.implicit_argument ~is_implicit_new:false callee_target with
+              | ImplicitArgument.Callee ->
+                  ( None :: parameter_targets,
+                    { Call.Argument.name = None; value = call.Call.callee } :: arguments )
+              | ImplicitArgument.CalleeBase ->
+                  let { Node.value = call_expression; location } = call.Call.callee in
+                  let self =
+                    match call_expression with
+                    | Expression.Name (Name.Attribute { base; _ }) -> base
+                    | _ ->
+                        (* Default to a placeholder self if we don't understand/retain information
+                           of what self is. *)
+                        Expression.Constant Constant.NoneLiteral |> Node.create ~location
+                  in
+                  ( None :: parameter_targets,
+                    { Call.Argument.name = None; value = self } :: arguments )
+              | ImplicitArgument.None -> parameter_targets, arguments
+            in
+            log
+              "Formal arguments of callee regular `%a`: `%a`"
+              Target.Regular.pp
+              callee_regular
+              TaintAccessPath.Root.List.pp
+              (Option.value ~default:[] formal_arguments);
+            let parameters =
+              formal_arguments
+              >>| TaintAccessPath.match_actuals_to_formals arguments
+              >>| List.zip_exn parameter_targets
+              >>| List.filter_map ~f:create_parameter_target_excluding_args_kwargs
+              >>| Target.ParameterMap.of_alist_exn
+              |> Option.value ~default:Target.ParameterMap.empty
+              |> Target.ParameterMap.union
+                   (fun _ _ right ->
+                     (* The formal argument should shadow variables from the closure that share the
+                        same name. *)
+                     Some right)
+                   closure
+            in
+            log "Parameter targets: %a" (Target.ParameterMap.pp Target.pp_pretty) parameters;
+            if Target.ParameterMap.is_empty parameters then
+              None
             else
-              HigherOrderParameterMap.add
-                additional_higher_order_parameters
-                {
-                  HigherOrderParameter.call_targets = CallTarget.Set.elements called_when_parameter;
-                  index;
-                  unresolved = Unresolved.False;
-                }
-          in
-          (new_state, additional_higher_order_parameters), not_called_when_parameter
+              Target.Parameterized { regular = callee_regular; parameters }
+              |> validate_target
+              >>| fun target ->
+              {
+                callee_target with
+                CallTarget.target;
+                implicit_receiver = recompute_implicit_receiver callee_target;
+              }
+        | _ -> None
+      in
+      (* Treat an empty list as a single element list so that in each result of the cartesian
+         product, there is still one element for the empty list, which preserves the indices of
+         arguments. *)
+      let to_option_list = function
+        | [] -> [None]
+        | list -> List.map ~f:(fun target -> Some target) list
+      in
+      let parameterized_targets =
+        track_apply_call_step CreateParameterizedTargets (fun () ->
+            argument_callees
+            |> List.map ~f:(fun call_targets ->
+                   call_targets |> CallTarget.Set.elements |> to_option_list)
+            |> List.cons (to_option_list call_targets_from_callee)
+            |> cartesian_product_with_limit
+                 ~limit:Context.maximum_parameterized_targets_at_call_site
+                 ~message_when_exceeding_limit:
+                   "Avoid generating parameterized targets when analyzing call"
+            |> Option.value ~default:[]
+            |> List.filter_map ~f:create_call_target
+            |> List.dedup_and_sort ~compare:CallTarget.compare)
+      in
+      let non_parameterized_targets =
+        track_apply_call_step FindNonParameterizedTargets (fun () ->
+            call_targets_from_callee
+            |> non_parameterized_targets ~parameterized_targets
+            |> List.map ~f:(fun call_target ->
+                   {
+                     call_target with
+                     CallTarget.implicit_receiver = recompute_implicit_receiver call_target;
+                   }))
+      in
+      List.iter parameterized_targets ~f:(fun { CallTarget.target; _ } ->
+          log "Created parameterized target: `%a`" Target.pp_pretty target);
+      let stub_targets =
+        List.filter_map call_targets_from_callee ~f:(fun { CallTarget.target; _ } ->
+            let is_stub =
+              Target.CallablesSharedMemory.ReadOnly.is_stub
+                Context.callables_to_definitions_map
+                target
+              |> Option.value ~default:false
+            in
+            if is_stub then Some target else None)
+      in
+      {
+        AnalyzeCalleeResult.parameterized_targets;
+        decorated_targets;
+        non_parameterized_targets;
+        stub_targets;
+      }
+
+
+    let rec analyze_call ~pyre_in_context ~location ~call ~arguments ~state =
+      let track_apply_call_step step f =
+        CallGraphProfiler.track_apply_call_step
+          ~profiler:Context.profiler
+          ~analysis:Forward
+          ~step
+          ~call_target:None
+          ~location
+          ~argument:None
+          ~f
+      in
+      let analyze_argument
+          ~higher_order_parameters
+          index
+          (state_so_far, additional_higher_order_parameters)
+          { Call.Argument.value = argument; _ }
+        =
+        let callees, new_state =
+          analyze_expression ~pyre_in_context ~state:state_so_far ~expression:argument
         in
-        let ({
-               CallCallees.call_targets = original_call_targets;
-               higher_order_parameters;
-               unresolved;
-               init_targets = original_init_targets;
-               _;
-             } as original_call_callees)
+        let call_targets_from_higher_order_parameters =
+          match HigherOrderParameterMap.Map.find_opt index higher_order_parameters with
+          | Some { HigherOrderParameter.call_targets; _ } -> call_targets
+          | None -> []
+        in
+        let partition_called_when_parameter =
+          CallTarget.Set.fold
+            CallTarget.Set.Element
+            ~init:(CallTarget.Set.bottom, CallTarget.Set.bottom)
+            ~f:(fun call_target (called_when_parameter, not_called_when_parameter) ->
+              let is_called_when_parameter =
+                call_target
+                |> CallTarget.target
+                |> Target.strip_parameters
+                |> Core.Hash_set.mem Context.called_when_parameter
+              in
+              if is_called_when_parameter then
+                CallTarget.Set.add call_target called_when_parameter, not_called_when_parameter
+              else
+                called_when_parameter, CallTarget.Set.add call_target not_called_when_parameter)
+        in
+        let called_when_parameter, not_called_when_parameter =
+          call_targets_from_higher_order_parameters
+          |> CallTarget.Set.of_list
+          |> CallTarget.Set.join callees
+          |> partition_called_when_parameter
+        in
+        log
+          "Finished analyzing argument `%a` -- called_when_parameter: %a. \
+           not_called_when_parameter: %a"
+          Expression.pp
+          argument
+          CallTarget.Set.pp
+          called_when_parameter
+          CallTarget.Set.pp
+          not_called_when_parameter;
+        let additional_higher_order_parameters =
+          if CallTarget.Set.is_bottom called_when_parameter then
+            additional_higher_order_parameters
+          else
+            HigherOrderParameterMap.add
+              additional_higher_order_parameters
+              {
+                HigherOrderParameter.call_targets = CallTarget.Set.elements called_when_parameter;
+                index;
+                unresolved = Unresolved.False;
+              }
+        in
+        (new_state, additional_higher_order_parameters), not_called_when_parameter
+      in
+      let ({
+             CallCallees.call_targets = original_call_targets;
+             higher_order_parameters;
+             unresolved;
+             init_targets = original_init_targets;
+             _;
+           } as original_call_callees)
+        =
+        track_apply_call_step ResolveCall (fun () ->
+            match DefineCallGraph.resolve_call ~location ~call Context.input_define_call_graph with
+            | Some callees -> callees
+            | None ->
+                failwith
+                  (Format.asprintf
+                     "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
+                     Ast.Expression.Call.pp
+                     call
+                     Reference.pp
+                     Context.qualifier
+                     Location.pp
+                     location
+                     DefineCallGraph.pp
+                     Context.input_define_call_graph))
+      in
+      (* The analysis of the callee AST handles the redirection to artifically created decorator
+         defines. *)
+      let callee_return_values, state =
+        analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
+      in
+      let (state, additional_higher_order_parameters), argument_callees_not_called_when_parameter =
+        track_apply_call_step AnalyzeArguments (fun () ->
+            List.fold_mapi
+              arguments
+              ~f:(analyze_argument ~higher_order_parameters)
+              ~init:(state, HigherOrderParameterMap.empty))
+      in
+      let ( parameterized_call_targets,
+            decorated_call_targets,
+            non_parameterized_call_targets,
+            stub_call_targets )
+        =
+        let {
+          AnalyzeCalleeResult.parameterized_targets = parameterized_callee_return_targets;
+          decorated_targets = decorated_callee_return_targets;
+          non_parameterized_targets = non_parameterized_callee_return_targets;
+          stub_targets = stub_callee_return_targets;
+        }
           =
-          track_apply_call_step ResolveCall (fun () ->
-              match
-                DefineCallGraph.resolve_call ~location ~call Context.input_define_call_graph
-              with
-              | Some callees -> callees
-              | None ->
-                  failwith
-                    (Format.asprintf
-                       "Could not find callees for `%a` in `%a` at `%a` in the call graph: `%a`"
-                       Ast.Expression.Call.pp
-                       call
-                       Reference.pp
-                       Context.qualifier
-                       Location.pp
-                       location
-                       DefineCallGraph.pp
-                       Context.input_define_call_graph))
-        in
-        (* The analysis of the callee AST handles the redirection to artifically created decorator
-           defines. *)
-        let callee_return_values, state =
-          analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
-        in
-        let (state, additional_higher_order_parameters), argument_callees_not_called_when_parameter =
-          track_apply_call_step AnalyzeArguments (fun () ->
-              List.fold_mapi
-                arguments
-                ~f:(analyze_argument ~higher_order_parameters)
-                ~init:(state, HigherOrderParameterMap.empty))
-        in
-        let ( parameterized_call_targets,
-              decorated_call_targets,
-              non_parameterized_call_targets,
-              stub_call_targets )
-          =
-          let {
-            AnalyzeCalleeResult.parameterized_targets = parameterized_callee_return_targets;
-            decorated_targets = decorated_callee_return_targets;
-            non_parameterized_targets = non_parameterized_callee_return_targets;
-            stub_targets = stub_callee_return_targets;
-          }
-            =
-            callee_return_values
-            |> CallTarget.Set.elements
-            |> analyze_callee_targets
-                 ~location
-                 ~call
-                 ~arguments
-                 ~unresolved
-                 ~override_implicit_receiver:true
-                 ~argument_callees:argument_callees_not_called_when_parameter
-                 ~track_apply_call_step_name:"callee_return_targets"
-          in
-          let {
-            AnalyzeCalleeResult.parameterized_targets = parameterized_call_targets;
-            decorated_targets = decorated_call_targets;
-            non_parameterized_targets = non_parameterized_call_targets;
-            stub_targets = stub_call_targets;
-          }
-            =
-            analyze_callee_targets
-              ~location
-              ~call
-              ~arguments
-              ~unresolved
-              ~override_implicit_receiver:false
-              ~argument_callees:argument_callees_not_called_when_parameter
-              ~track_apply_call_step_name:"call_targets"
-              original_call_targets
-          in
-          ( List.rev_append parameterized_callee_return_targets parameterized_call_targets,
-            List.rev_append decorated_callee_return_targets decorated_call_targets,
-            List.rev_append non_parameterized_callee_return_targets non_parameterized_call_targets,
-            List.rev_append stub_callee_return_targets stub_call_targets )
+          callee_return_values
+          |> CallTarget.Set.elements
+          |> analyze_callee_targets
+               ~location
+               ~call
+               ~arguments
+               ~unresolved
+               ~override_implicit_receiver:true
+               ~argument_callees:argument_callees_not_called_when_parameter
+               ~track_apply_call_step_name:"callee_return_targets"
         in
         let {
-          AnalyzeCalleeResult.parameterized_targets = parameterized_init_targets;
-          decorated_targets = decorated_init_targets;
-          non_parameterized_targets = non_parameterized_init_targets;
-          stub_targets = stub_init_targets;
+          AnalyzeCalleeResult.parameterized_targets = parameterized_call_targets;
+          decorated_targets = decorated_call_targets;
+          non_parameterized_targets = non_parameterized_call_targets;
+          stub_targets = stub_call_targets;
         }
           =
           analyze_callee_targets
@@ -5377,540 +5351,567 @@ module HigherOrderCallGraph = struct
             ~unresolved
             ~override_implicit_receiver:false
             ~argument_callees:argument_callees_not_called_when_parameter
-            ~track_apply_call_step_name:"init_targets"
-            original_init_targets
+            ~track_apply_call_step_name:"call_targets"
+            original_call_targets
         in
-        (* Discard higher order parameters only if each original target is parameterized, except for
-           the targets that must be treated as being called. *)
-        let higher_order_parameters =
-          if
-            List.is_empty non_parameterized_call_targets
-            && List.is_empty non_parameterized_init_targets
-          then
-            additional_higher_order_parameters
-          else
-            HigherOrderParameterMap.join higher_order_parameters additional_higher_order_parameters
-        in
-        let new_call_targets =
-          parameterized_call_targets
-          |> List.rev_append non_parameterized_call_targets
-          |> List.dedup_and_sort ~compare:CallTarget.compare
-        in
-        let new_init_targets =
-          parameterized_init_targets
-          |> List.rev_append non_parameterized_init_targets
-          |> List.dedup_and_sort ~compare:CallTarget.compare
-        in
-        (* Unset `unresolved` when the original call graph building cannot resolve callees under
-           cases like `f()` or `f`. *)
-        let new_unresolved =
-          match unresolved with
-          | Unresolved.True (BypassingDecorators UnknownIdentifierCallee)
-          | Unresolved.True (BypassingDecorators UnknownCallCallee)
-            when not (CallTarget.Set.is_bottom callee_return_values) ->
-              Unresolved.False
-          | _ -> unresolved
-        in
-        track_apply_call_step StoreCallCallees (fun () ->
-            Context.output_define_call_graph :=
-              DefineCallGraph.set_call_callees
-                ~location
-                ~call
-                ~callees:
-                  {
-                    original_call_callees with
-                    call_targets = new_call_targets;
-                    decorated_targets =
-                      decorated_call_targets
-                      |> List.rev_append decorated_init_targets
-                      |> List.dedup_and_sort ~compare:CallTarget.compare;
-                    init_targets = new_init_targets;
-                    higher_order_parameters;
-                    unresolved = new_unresolved;
-                  }
-                !Context.output_define_call_graph);
-        track_apply_call_step FetchReturnedCallables (fun () ->
-            let returned_callables_from_call =
-              new_call_targets |> List.rev_append new_init_targets |> returned_callables
-            in
-            (* To avoid false negatives when analyzing targets with `kind=Decorated`, sometimes
-             * we allow all function-typed arguments to be passed directly to the return values.
-             * - Case 1 is when calls might be unresolved.
-             * - Case 2 is when there exists a stub `__init__` target. The stub target's summary
-             * is considered as passing through.
-             * - Case 3 is when there exists a stub call target. The stub target's summary
-             * is considered as passing through.*)
-            let pass_through_arguments =
-              let exist_stub_init_targets = not (List.is_empty stub_init_targets) in
-              let exist_stub_call_targets = not (List.is_empty stub_call_targets) in
-              let should_pass_through =
-                is_decorated_target
-                && (exist_stub_init_targets
-                   || Unresolved.is_unresolved unresolved
-                   || exist_stub_call_targets)
-              in
-              if should_pass_through then
-                let () =
-                  log
-                    "Passing through arguments due to `is_decorated_target`: %b, \
-                     `exist_stub_init_targets`: %b, `exist_stub_call_targets`: %b, `unresolved`: \
-                     %a"
-                    is_decorated_target
-                    exist_stub_init_targets
-                    exist_stub_call_targets
-                    Unresolved.pp
-                    unresolved
-                in
-                Algorithms.fold_balanced
-                  ~f:CallTarget.Set.join
-                  ~init:CallTarget.Set.bottom
-                  argument_callees_not_called_when_parameter
-              else
-                CallTarget.Set.bottom
-            in
-            CallTarget.Set.join pass_through_arguments returned_callables_from_call, state)
-
-
-      and analyze_comprehension_generators ~pyre_in_context ~state generators =
-        let add_binding
-            (state, pyre_in_context)
-            ({ Comprehension.Generator.conditions; _ } as generator)
-          =
-          let { Assign.target; value; _ }, inner_pyre_context =
-            preprocess_generator
-              ~pyre_in_context
-              ~callables_to_definitions_map:Context.callables_to_definitions_map
-              generator
-          in
-          let state =
-            match value with
-            | Some value -> analyze_expression ~pyre_in_context ~state ~expression:value |> snd
-            | None -> state
-          in
-          (* TODO: assign value to target *)
-          let _ = target in
-          (* Analyzing the conditions might have side effects. *)
-          let analyze_condition state condiiton =
-            analyze_expression ~pyre_in_context:inner_pyre_context ~state ~expression:condiiton
-            |> snd
-          in
-          let state = List.fold conditions ~init:state ~f:analyze_condition in
-          state, inner_pyre_context
-        in
-        List.fold ~f:add_binding generators ~init:(state, pyre_in_context)
-
-
-      and analyze_dictionary_comprehension
-          ~pyre_in_context
-          ~state
-          { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators; _ }
+        ( List.rev_append parameterized_callee_return_targets parameterized_call_targets,
+          List.rev_append decorated_callee_return_targets decorated_call_targets,
+          List.rev_append non_parameterized_callee_return_targets non_parameterized_call_targets,
+          List.rev_append stub_callee_return_targets stub_call_targets )
+      in
+      let {
+        AnalyzeCalleeResult.parameterized_targets = parameterized_init_targets;
+        decorated_targets = decorated_init_targets;
+        non_parameterized_targets = non_parameterized_init_targets;
+        stub_targets = stub_init_targets;
+      }
         =
-        let state, pyre_in_context =
-          analyze_comprehension_generators ~pyre_in_context ~state generators
-        in
-        let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
-        let _, state = analyze_expression ~pyre_in_context ~state ~expression:key in
-        CallTarget.Set.bottom, state
+        analyze_callee_targets
+          ~location
+          ~call
+          ~arguments
+          ~unresolved
+          ~override_implicit_receiver:false
+          ~argument_callees:argument_callees_not_called_when_parameter
+          ~track_apply_call_step_name:"init_targets"
+          original_init_targets
+      in
+      (* Discard higher order parameters only if each original target is parameterized, except for
+         the targets that must be treated as being called. *)
+      let higher_order_parameters =
+        if
+          List.is_empty non_parameterized_call_targets
+          && List.is_empty non_parameterized_init_targets
+        then
+          additional_higher_order_parameters
+        else
+          HigherOrderParameterMap.join higher_order_parameters additional_higher_order_parameters
+      in
+      let new_call_targets =
+        parameterized_call_targets
+        |> List.rev_append non_parameterized_call_targets
+        |> List.dedup_and_sort ~compare:CallTarget.compare
+      in
+      let new_init_targets =
+        parameterized_init_targets
+        |> List.rev_append non_parameterized_init_targets
+        |> List.dedup_and_sort ~compare:CallTarget.compare
+      in
+      (* Unset `unresolved` when the original call graph building cannot resolve callees under cases
+         like `f()` or `f`. *)
+      let new_unresolved =
+        match unresolved with
+        | Unresolved.True (BypassingDecorators UnknownIdentifierCallee)
+        | Unresolved.True (BypassingDecorators UnknownCallCallee)
+          when not (CallTarget.Set.is_bottom callee_return_values) ->
+            Unresolved.False
+        | _ -> unresolved
+      in
+      track_apply_call_step StoreCallCallees (fun () ->
+          Context.output_define_call_graph :=
+            DefineCallGraph.set_call_callees
+              ~location
+              ~call
+              ~callees:
+                {
+                  original_call_callees with
+                  call_targets = new_call_targets;
+                  decorated_targets =
+                    decorated_call_targets
+                    |> List.rev_append decorated_init_targets
+                    |> List.dedup_and_sort ~compare:CallTarget.compare;
+                  init_targets = new_init_targets;
+                  higher_order_parameters;
+                  unresolved = new_unresolved;
+                }
+              !Context.output_define_call_graph);
+      track_apply_call_step FetchReturnedCallables (fun () ->
+          let returned_callables_from_call =
+            new_call_targets |> List.rev_append new_init_targets |> returned_callables
+          in
+          (* To avoid false negatives when analyzing targets with `kind=Decorated`, sometimes
+           * we allow all function-typed arguments to be passed directly to the return values.
+           * - Case 1 is when calls might be unresolved.
+           * - Case 2 is when there exists a stub `__init__` target. The stub target's summary
+           * is considered as passing through.
+           * - Case 3 is when there exists a stub call target. The stub target's summary
+           * is considered as passing through.*)
+          let pass_through_arguments =
+            let exist_stub_init_targets = not (List.is_empty stub_init_targets) in
+            let exist_stub_call_targets = not (List.is_empty stub_call_targets) in
+            let should_pass_through =
+              is_decorated_target
+              && (exist_stub_init_targets
+                 || Unresolved.is_unresolved unresolved
+                 || exist_stub_call_targets)
+            in
+            if should_pass_through then
+              let () =
+                log
+                  "Passing through arguments due to `is_decorated_target`: %b, \
+                   `exist_stub_init_targets`: %b, `exist_stub_call_targets`: %b, `unresolved`: %a"
+                  is_decorated_target
+                  exist_stub_init_targets
+                  exist_stub_call_targets
+                  Unresolved.pp
+                  unresolved
+              in
+              Algorithms.fold_balanced
+                ~f:CallTarget.Set.join
+                ~init:CallTarget.Set.bottom
+                argument_callees_not_called_when_parameter
+            else
+              CallTarget.Set.bottom
+          in
+          CallTarget.Set.join pass_through_arguments returned_callables_from_call, state)
 
 
-      and analyze_comprehension ~pyre_in_context ~state { Comprehension.element; generators; _ } =
-        let bound_state, pyre_in_context =
-          analyze_comprehension_generators ~pyre_in_context ~state generators
-        in
-        let _, state = analyze_expression ~pyre_in_context ~state:bound_state ~expression:element in
-        CallTarget.Set.bottom, state
-
-
-      (* Return possible callees and the new state. *)
-      and analyze_expression
-          ~pyre_in_context
-          ~state
-          ~expression:({ Node.value; location } as expression)
+    and analyze_comprehension_generators ~pyre_in_context ~state generators =
+      let add_binding
+          (state, pyre_in_context)
+          ({ Comprehension.Generator.conditions; _ } as generator)
         =
-        log
-          "Analyzing expression `%a` at `%a` with state `%a`"
-          Expression.pp_expression
-          expression.Node.value
-          Location.pp
-          location
-          State.pp
-          state;
-        let analyze_expression_inner () =
-          match value with
-          | Expression.Await { Await.operand = expression; origin = _ } ->
-              analyze_expression ~pyre_in_context ~state ~expression
-          | BooleanOperator { left; right; _ } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
-              CallTarget.Set.bottom, state
-          | ComparisonOperator { left; operator = _; right; origin = _ } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
-              CallTarget.Set.bottom, state
-          | Call ({ callee = _; arguments; origin = _ } as call) ->
-              analyze_call ~pyre_in_context ~location ~call ~arguments ~state
-          | Constant _ -> CallTarget.Set.bottom, state
-          | Dictionary entries ->
-              let analyze_dictionary_entry state = function
-                | Dictionary.Entry.KeyValue { key; value } ->
-                    let _, state = analyze_expression ~pyre_in_context ~state ~expression:key in
-                    let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
-                    state
-                | Splat s -> analyze_expression ~pyre_in_context ~state ~expression:s |> snd
-              in
-              let state = List.fold entries ~f:analyze_dictionary_entry ~init:state in
-              CallTarget.Set.bottom, state
-          | DictionaryComprehension comprehension ->
-              analyze_dictionary_comprehension ~pyre_in_context ~state comprehension
-          | Generator comprehension -> analyze_comprehension ~pyre_in_context ~state comprehension
-          | Lambda { parameters = _; body } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:body in
-              CallTarget.Set.bottom, state
-          | List list ->
-              let analyze_list_element state expression =
-                analyze_expression ~pyre_in_context ~state ~expression |> snd
-              in
-              let state = List.fold list ~f:analyze_list_element ~init:state in
-              CallTarget.Set.bottom, state
-          | ListComprehension comprehension ->
-              analyze_comprehension ~pyre_in_context ~state comprehension
-          | Set set ->
-              let analyze_set_element state expression =
-                analyze_expression ~pyre_in_context ~state ~expression |> snd
-              in
-              let state = List.fold ~f:analyze_set_element set ~init:state in
-              CallTarget.Set.bottom, state
-          | SetComprehension comprehension ->
-              analyze_comprehension ~pyre_in_context ~state comprehension
-          | Name (Name.Identifier identifier) ->
-              let global_callables =
-                Context.input_define_call_graph
-                |> DefineCallGraph.resolve_identifier ~location ~identifier
-                >>| (fun ({ IdentifierCallees.callable_targets; _ } as identifier_callees) ->
-                      let {
-                        AnalyzeDecoratedTargetsResult.decorated_targets;
-                        non_decorated_targets;
-                        result_targets;
-                      }
-                        =
-                        resolve_decorated_targets callable_targets
-                      in
-                      Context.output_define_call_graph :=
-                        DefineCallGraph.set_identifier_callees
-                          ~identifier
-                          ~location
-                          ~identifier_callees:
-                            {
-                              identifier_callees with
-                              callable_targets = non_decorated_targets;
-                              decorated_targets;
-                            }
-                          !Context.output_define_call_graph;
-                      CallTarget.Set.of_list result_targets)
-                |> Option.value ~default:CallTarget.Set.bottom
-              in
-              let callables_from_variable =
-                State.get (State.create_root_from_identifier identifier) state
-              in
-              CallTarget.Set.join global_callables callables_from_variable, state
-          | Name (Name.Attribute attribute_access) ->
-              let callables =
-                Context.input_define_call_graph
-                |> DefineCallGraph.resolve_attribute_access ~location ~attribute_access
-                >>| (fun ({
-                            AttributeAccessCallees.callable_targets;
-                            property_targets;
-                            is_attribute =
-                              _
-                              (* This is irrelevant. Regardless of whether this could potentially be
-                                 an attribute access, we still need to treat `property_targets` in
-                                 the same way as `callable_targets`. *);
-                            _;
-                          } as attribute_access_callees) ->
-                      let {
-                        AnalyzeDecoratedTargetsResult.decorated_targets = decorated_callable_targets;
-                        non_decorated_targets = non_decorated_callable_targets;
-                        result_targets = result_callable_targets;
-                      }
-                        =
-                        resolve_decorated_targets callable_targets
-                      in
-                      let {
-                        AnalyzeDecoratedTargetsResult.decorated_targets = decorated_property_targets;
-                        non_decorated_targets = _;
-                        result_targets = result_property_targets;
-                      }
-                        =
-                        (* Since properties can be decorated, we need to get the "inlined"
-                           properties. *)
-                        resolve_decorated_targets property_targets
-                      in
-                      Context.output_define_call_graph :=
-                        DefineCallGraph.set_attribute_access_callees
-                          ~location
-                          ~attribute_access
-                          ~attribute_access_callees:
-                            {
-                              attribute_access_callees with
-                              callable_targets = non_decorated_callable_targets;
-                              property_targets = result_property_targets;
-                              decorated_targets =
-                                List.rev_append
-                                  decorated_callable_targets
-                                  decorated_property_targets;
-                            }
-                          !Context.output_define_call_graph;
-                      (* TODO(T222400916): We need to simulate the call to the property targets (by
-                         calling `analyze_callee_targets`), which can return callables. *)
-                      (* We should NOT return the property targets here. If method `A.foo` is a
-                         property, then accessing the property `A().foo` means calling the getter,
-                         but the result of the access is not the getter itself. *)
-                      CallTarget.Set.of_list result_callable_targets)
-                |> Option.value ~default:CallTarget.Set.bottom
-              in
-              callables, state
-          | Starred (Starred.Once expression)
-          | Starred (Starred.Twice expression) ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression in
-              CallTarget.Set.bottom, state
-          | FormatString substrings ->
-              let analyze_substring state = function
-                | Substring.Literal _ -> state
-                | Substring.Format { value; format_spec } ->
-                    (* TODO: redirect decorators in the stringify target *)
-                    let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
-                    let state =
-                      match format_spec with
-                      | Some format_spec ->
-                          analyze_expression ~pyre_in_context ~state ~expression:format_spec |> snd
-                      | None -> state
-                    in
-                    state
-              in
-              let state = List.fold substrings ~init:state ~f:analyze_substring in
-              CallTarget.Set.bottom, state
-          | Ternary { target; test; alternative } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:test in
-              let value_then, state_then =
-                analyze_expression ~pyre_in_context ~state ~expression:target
-              in
-              let value_else, state_else =
-                analyze_expression ~pyre_in_context ~state ~expression:alternative
-              in
-              CallTarget.Set.join value_then value_else, join state_then state_else
-          | Tuple expressions ->
-              let analyze_tuple_element state expression =
-                analyze_expression ~pyre_in_context ~state ~expression |> snd
-              in
-              let state = List.fold ~f:analyze_tuple_element ~init:state expressions in
-              CallTarget.Set.bottom, state
-          | UnaryOperator { operand; _ } ->
-              let _, state = analyze_expression ~pyre_in_context ~state ~expression:operand in
-              CallTarget.Set.bottom, state
-          | WalrusOperator { target = _; value; origin = _ } ->
-              analyze_expression ~pyre_in_context ~state ~expression:value
-          | Yield None -> CallTarget.Set.bottom, state
-          | Yield (Some expression)
-          | YieldFrom expression ->
-              let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
-              ( callees,
-                store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state )
-          | Slice _ ->
-              failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
-          | Subscript _ ->
-              failwith
-                "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
-          | BinaryOperator _ ->
-              failwith
-                "BinaryOperator nodes should always be rewritten by \
-                 `CallGraph.redirect_expressions`"
+        let { Assign.target; value; _ }, inner_pyre_context =
+          preprocess_generator
+            ~pyre_in_context
+            ~callables_to_definitions_map:Context.callables_to_definitions_map
+            generator
         in
-        let call_targets, state =
-          CallGraphProfiler.track_expression_analysis
-            ~profiler:Context.profiler
-            ~analysis:Forward
-            ~expression
-            ~f:analyze_expression_inner
-        in
-        log
-          "Finished analyzing expression `%a`: `%a`"
-          Expression.pp
-          expression
-          CallTarget.Set.pp
-          call_targets;
-        call_targets, state
-
-
-      let analyze_statement ~pyre_in_context ~state ~statement =
-        log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
         let state =
-          let statement =
-            preprocess_statement
+          match value with
+          | Some value -> analyze_expression ~pyre_in_context ~state ~expression:value |> snd
+          | None -> state
+        in
+        (* TODO: assign value to target *)
+        let _ = target in
+        (* Analyzing the conditions might have side effects. *)
+        let analyze_condition state condiiton =
+          analyze_expression ~pyre_in_context:inner_pyre_context ~state ~expression:condiiton |> snd
+        in
+        let state = List.fold conditions ~init:state ~f:analyze_condition in
+        state, inner_pyre_context
+      in
+      List.fold ~f:add_binding generators ~init:(state, pyre_in_context)
+
+
+    and analyze_dictionary_comprehension
+        ~pyre_in_context
+        ~state
+        { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators; _ }
+      =
+      let state, pyre_in_context =
+        analyze_comprehension_generators ~pyre_in_context ~state generators
+      in
+      let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+      let _, state = analyze_expression ~pyre_in_context ~state ~expression:key in
+      CallTarget.Set.bottom, state
+
+
+    and analyze_comprehension ~pyre_in_context ~state { Comprehension.element; generators; _ } =
+      let bound_state, pyre_in_context =
+        analyze_comprehension_generators ~pyre_in_context ~state generators
+      in
+      let _, state = analyze_expression ~pyre_in_context ~state:bound_state ~expression:element in
+      CallTarget.Set.bottom, state
+
+
+    (* Return possible callees and the new state. *)
+    and analyze_expression
+        ~pyre_in_context
+        ~state
+        ~expression:({ Node.value; location } as expression)
+      =
+      log
+        "Analyzing expression `%a` at `%a` with state `%a`"
+        Expression.pp_expression
+        expression.Node.value
+        Location.pp
+        location
+        State.pp
+        state;
+      let analyze_expression_inner () =
+        match value with
+        | Expression.Await { Await.operand = expression; origin = _ } ->
+            analyze_expression ~pyre_in_context ~state ~expression
+        | BooleanOperator { left; right; _ } ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
+            CallTarget.Set.bottom, state
+        | ComparisonOperator { left; operator = _; right; origin = _ } ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:left in
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:right in
+            CallTarget.Set.bottom, state
+        | Call ({ callee = _; arguments; origin = _ } as call) ->
+            analyze_call ~pyre_in_context ~location ~call ~arguments ~state
+        | Constant _ -> CallTarget.Set.bottom, state
+        | Dictionary entries ->
+            let analyze_dictionary_entry state = function
+              | Dictionary.Entry.KeyValue { key; value } ->
+                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:key in
+                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+                  state
+              | Splat s -> analyze_expression ~pyre_in_context ~state ~expression:s |> snd
+            in
+            let state = List.fold entries ~f:analyze_dictionary_entry ~init:state in
+            CallTarget.Set.bottom, state
+        | DictionaryComprehension comprehension ->
+            analyze_dictionary_comprehension ~pyre_in_context ~state comprehension
+        | Generator comprehension -> analyze_comprehension ~pyre_in_context ~state comprehension
+        | Lambda { parameters = _; body } ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:body in
+            CallTarget.Set.bottom, state
+        | List list ->
+            let analyze_list_element state expression =
+              analyze_expression ~pyre_in_context ~state ~expression |> snd
+            in
+            let state = List.fold list ~f:analyze_list_element ~init:state in
+            CallTarget.Set.bottom, state
+        | ListComprehension comprehension ->
+            analyze_comprehension ~pyre_in_context ~state comprehension
+        | Set set ->
+            let analyze_set_element state expression =
+              analyze_expression ~pyre_in_context ~state ~expression |> snd
+            in
+            let state = List.fold ~f:analyze_set_element set ~init:state in
+            CallTarget.Set.bottom, state
+        | SetComprehension comprehension ->
+            analyze_comprehension ~pyre_in_context ~state comprehension
+        | Name (Name.Identifier identifier) ->
+            let global_callables =
+              Context.input_define_call_graph
+              |> DefineCallGraph.resolve_identifier ~location ~identifier
+              >>| (fun ({ IdentifierCallees.callable_targets; _ } as identifier_callees) ->
+                    let {
+                      AnalyzeDecoratedTargetsResult.decorated_targets;
+                      non_decorated_targets;
+                      result_targets;
+                    }
+                      =
+                      resolve_decorated_targets callable_targets
+                    in
+                    Context.output_define_call_graph :=
+                      DefineCallGraph.set_identifier_callees
+                        ~identifier
+                        ~location
+                        ~identifier_callees:
+                          {
+                            identifier_callees with
+                            callable_targets = non_decorated_targets;
+                            decorated_targets;
+                          }
+                        !Context.output_define_call_graph;
+                    CallTarget.Set.of_list result_targets)
+              |> Option.value ~default:CallTarget.Set.bottom
+            in
+            let callables_from_variable =
+              State.get (State.create_root_from_identifier identifier) state
+            in
+            CallTarget.Set.join global_callables callables_from_variable, state
+        | Name (Name.Attribute attribute_access) ->
+            let callables =
+              Context.input_define_call_graph
+              |> DefineCallGraph.resolve_attribute_access ~location ~attribute_access
+              >>| (fun ({
+                          AttributeAccessCallees.callable_targets;
+                          property_targets;
+                          is_attribute =
+                            _
+                            (* This is irrelevant. Regardless of whether this could potentially be
+                               an attribute access, we still need to treat `property_targets` in the
+                               same way as `callable_targets`. *);
+                          _;
+                        } as attribute_access_callees) ->
+                    let {
+                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_callable_targets;
+                      non_decorated_targets = non_decorated_callable_targets;
+                      result_targets = result_callable_targets;
+                    }
+                      =
+                      resolve_decorated_targets callable_targets
+                    in
+                    let {
+                      AnalyzeDecoratedTargetsResult.decorated_targets = decorated_property_targets;
+                      non_decorated_targets = _;
+                      result_targets = result_property_targets;
+                    }
+                      =
+                      (* Since properties can be decorated, we need to get the "inlined"
+                         properties. *)
+                      resolve_decorated_targets property_targets
+                    in
+                    Context.output_define_call_graph :=
+                      DefineCallGraph.set_attribute_access_callees
+                        ~location
+                        ~attribute_access
+                        ~attribute_access_callees:
+                          {
+                            attribute_access_callees with
+                            callable_targets = non_decorated_callable_targets;
+                            property_targets = result_property_targets;
+                            decorated_targets =
+                              List.rev_append decorated_callable_targets decorated_property_targets;
+                          }
+                        !Context.output_define_call_graph;
+                    (* TODO(T222400916): We need to simulate the call to the property targets (by
+                       calling `analyze_callee_targets`), which can return callables. *)
+                    (* We should NOT return the property targets here. If method `A.foo` is a
+                       property, then accessing the property `A().foo` means calling the getter, but
+                       the result of the access is not the getter itself. *)
+                    CallTarget.Set.of_list result_callable_targets)
+              |> Option.value ~default:CallTarget.Set.bottom
+            in
+            callables, state
+        | Starred (Starred.Once expression)
+        | Starred (Starred.Twice expression) ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression in
+            CallTarget.Set.bottom, state
+        | FormatString substrings ->
+            let analyze_substring state = function
+              | Substring.Literal _ -> state
+              | Substring.Format { value; format_spec } ->
+                  (* TODO: redirect decorators in the stringify target *)
+                  let _, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+                  let state =
+                    match format_spec with
+                    | Some format_spec ->
+                        analyze_expression ~pyre_in_context ~state ~expression:format_spec |> snd
+                    | None -> state
+                  in
+                  state
+            in
+            let state = List.fold substrings ~init:state ~f:analyze_substring in
+            CallTarget.Set.bottom, state
+        | Ternary { target; test; alternative } ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:test in
+            let value_then, state_then =
+              analyze_expression ~pyre_in_context ~state ~expression:target
+            in
+            let value_else, state_else =
+              analyze_expression ~pyre_in_context ~state ~expression:alternative
+            in
+            CallTarget.Set.join value_then value_else, join state_then state_else
+        | Tuple expressions ->
+            let analyze_tuple_element state expression =
+              analyze_expression ~pyre_in_context ~state ~expression |> snd
+            in
+            let state = List.fold ~f:analyze_tuple_element ~init:state expressions in
+            CallTarget.Set.bottom, state
+        | UnaryOperator { operand; _ } ->
+            let _, state = analyze_expression ~pyre_in_context ~state ~expression:operand in
+            CallTarget.Set.bottom, state
+        | WalrusOperator { target = _; value; origin = _ } ->
+            analyze_expression ~pyre_in_context ~state ~expression:value
+        | Yield None -> CallTarget.Set.bottom, state
+        | Yield (Some expression)
+        | YieldFrom expression ->
+            let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
+            callees, store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
+        | Slice _ ->
+            failwith "Slice nodes should always be rewritten by `CallGraph.redirect_expressions`"
+        | Subscript _ ->
+            failwith
+              "Subscripts nodes should always be rewritten by `CallGraph.redirect_expressions`"
+        | BinaryOperator _ ->
+            failwith
+              "BinaryOperator nodes should always be rewritten by `CallGraph.redirect_expressions`"
+      in
+      let call_targets, state =
+        CallGraphProfiler.track_expression_analysis
+          ~profiler:Context.profiler
+          ~analysis:Forward
+          ~expression
+          ~f:analyze_expression_inner
+      in
+      log
+        "Finished analyzing expression `%a`: `%a`"
+        Expression.pp
+        expression
+        CallTarget.Set.pp
+        call_targets;
+      call_targets, state
+
+
+    let analyze_parameter_default_value ~pyre_in_context ~parameter_name ~state = function
+      | None -> state
+      | Some default_value ->
+          let default_value =
+            preprocess_parameter_default_value
               ~pyre_in_context
               ~callables_to_definitions_map:Context.callables_to_definitions_map
-              statement
+              default_value
           in
-          match Node.value statement with
-          | Statement.Assign { Assign.target; value = Some value; _ } -> (
-              match TaintAccessPath.of_expression ~self_variable target with
-              | None -> state
-              | Some { root; path } ->
-                  let callees, state =
-                    analyze_expression ~pyre_in_context ~state ~expression:value
+          let callees, state =
+            analyze_expression ~pyre_in_context ~state ~expression:default_value
+          in
+          let root = parameter_name |> State.create_root_from_identifier in
+          store_callees ~weak:true ~root ~callees state
+
+
+    let analyze_statement ~pyre_in_context ~state ~statement =
+      log "Analyzing statement `%a` with state `%a`" Statement.pp statement State.pp state;
+      let state =
+        let statement =
+          preprocess_statement
+            ~pyre_in_context
+            ~callables_to_definitions_map:Context.callables_to_definitions_map
+            statement
+        in
+        match Node.value statement with
+        | Statement.Assign { Assign.target; value = Some value; _ } -> (
+            match TaintAccessPath.of_expression ~self_variable target with
+            | None -> state
+            | Some { root; path } ->
+                let callees, state = analyze_expression ~pyre_in_context ~state ~expression:value in
+                (* For now, we ignore the path entirely. Thus, we should only perform strong updates
+                   when writing to an empty path. E.g, `x = foo` should be strong update, `x.foo =
+                   bar` should be a weak update. *)
+                let strong_update = TaintAccessPath.Path.is_empty path in
+                store_callees ~weak:(not strong_update) ~root ~callees state)
+        | Assign { Assign.target; value = None; _ } -> (
+            match TaintAccessPath.of_expression ~self_variable target with
+            | None -> state
+            | Some { root; path } ->
+                let strong_update = TaintAccessPath.Path.is_empty path in
+                store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state)
+        | Assert { test; _ } -> analyze_expression ~pyre_in_context ~state ~expression:test |> snd
+        | Define ({ Define.signature = { name; _ }; _ } as define) ->
+            let delocalized_name = Reference.delocalize name in
+            let regular_target =
+              define |> Target.create delocalized_name |> Target.as_regular_exn
+            in
+            let callees =
+              (* Since `Define` statements inside another `Define` are stripped out (to avoid
+                 bloat), use this API to query the definition. *)
+              match
+                regular_target
+                |> Target.from_regular
+                |> Target.CallablesSharedMemory.ReadOnly.get_captures
+                     Context.callables_to_definitions_map
+              with
+              | Some captures ->
+                  let parameters_roots, parameters_targets =
+                    captures
+                    |> List.filter_map ~f:(fun { Define.Capture.name; _ } ->
+                           let captured = State.create_root_from_identifier name in
+                           log
+                             "Inner function `%a` captures `%a`"
+                             Reference.pp
+                             delocalized_name
+                             TaintAccessPath.Root.pp
+                             captured;
+                           let parameter_targets =
+                             state
+                             |> State.get captured
+                             |> CallTarget.Set.elements
+                             |> List.map ~f:CallTarget.target
+                           in
+                           (* Sometimes a captured variable does not have a record in `state`, but
+                              we still want to create a callee with the captured variables that have
+                              records in `state`. *)
+                           if List.is_empty parameter_targets then
+                             None
+                           else
+                             Some (captured, parameter_targets))
+                    |> List.unzip
                   in
-                  (* For now, we ignore the path entirely. Thus, we should only perform strong
-                     updates when writing to an empty path. E.g, `x = foo` should be strong update,
-                     `x.foo = bar` should be a weak update. *)
-                  let strong_update = TaintAccessPath.Path.is_empty path in
-                  store_callees ~weak:(not strong_update) ~root ~callees state)
-          | Assign { Assign.target; value = None; _ } -> (
-              match TaintAccessPath.of_expression ~self_variable target with
-              | None -> state
-              | Some { root; path } ->
-                  let strong_update = TaintAccessPath.Path.is_empty path in
-                  store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state
-              )
-          | Assert { test; _ } -> analyze_expression ~pyre_in_context ~state ~expression:test |> snd
-          | Define ({ Define.signature = { name; _ }; _ } as define) ->
-              let delocalized_name = Reference.delocalize name in
-              let regular_target =
-                define |> Target.create delocalized_name |> Target.as_regular_exn
-              in
-              let callees =
-                (* Since `Define` statements inside another `Define` are stripped out (to avoid
-                   bloat), use this API to query the definition. *)
-                match
-                  regular_target
-                  |> Target.from_regular
-                  |> Target.CallablesSharedMemory.ReadOnly.get_captures
-                       Context.callables_to_definitions_map
-                with
-                | Some captures ->
-                    let parameters_roots, parameters_targets =
-                      captures
-                      |> List.filter_map ~f:(fun { Define.Capture.name; _ } ->
-                             let captured = State.create_root_from_identifier name in
-                             log
-                               "Inner function `%a` captures `%a`"
-                               Reference.pp
-                               delocalized_name
-                               TaintAccessPath.Root.pp
-                               captured;
-                             let parameter_targets =
-                               state
-                               |> State.get captured
-                               |> CallTarget.Set.elements
-                               |> List.map ~f:CallTarget.target
-                             in
-                             (* Sometimes a captured variable does not have a record in `state`, but
-                                we still want to create a callee with the captured variables that
-                                have records in `state`. *)
-                             if List.is_empty parameter_targets then
-                               None
-                             else
-                               Some (captured, parameter_targets))
-                      |> List.unzip
-                    in
-                    if List.is_empty parameters_targets then
-                      regular_target
-                      |> Target.from_regular
-                      |> CallTarget.create
-                      |> CallTarget.Set.singleton
-                    else
-                      parameters_targets
-                      |> cartesian_product_with_limit
-                           ~limit:Context.maximum_parameterized_targets_when_analyzing_define
-                           ~message_when_exceeding_limit:
-                             "Avoid generating parameterized targets when analyzing `Define` \
-                              statement"
-                      |> Option.value ~default:[]
-                      |> List.map ~f:(fun parameters_targets ->
-                             match
-                               validate_target
-                                 (Target.Parameterized
-                                    {
-                                      regular = regular_target;
-                                      parameters =
-                                        parameters_targets
-                                        |> List.zip_exn parameters_roots
-                                        |> Target.ParameterMap.of_alist_exn;
-                                    })
-                             with
-                             | Some parameterized -> CallTarget.create parameterized
-                             | None -> CallTarget.create_regular regular_target)
-                      |> CallTarget.Set.of_list
-                | _ ->
+                  if List.is_empty parameters_targets then
                     regular_target
                     |> Target.from_regular
                     |> CallTarget.create
                     |> CallTarget.Set.singleton
-              in
-              store_callees
-                ~weak:false
-                ~root:(name |> Reference.show |> State.create_root_from_identifier)
-                ~callees
-                state
-          | Delete expressions ->
-              let analyze_delete state expression =
-                analyze_expression ~pyre_in_context ~state ~expression |> snd
-              in
-              List.fold ~f:analyze_delete ~init:state expressions
-          | Expression expression ->
-              analyze_expression ~pyre_in_context ~state ~expression |> Core.snd
-          | Global _
-          | Import _
-          | Nonlocal _
-          | Pass
-          | Raise { expression = None; _ } ->
-              state
-          | Raise { expression = Some expression; _ } ->
-              analyze_expression ~pyre_in_context ~state ~expression |> snd
-          | Return { expression = Some expression; _ } ->
-              let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
-              store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
-          | Return { expression = None; _ }
-          | Try _ ->
-              (* Try statements are lowered down in `Cfg.create`, but they are preserved in the
-                 final Cfg. They should be ignored. *)
-              state
-          | Break
-          | Class _
-          | Continue
-          | TypeAlias _ ->
-              state
-          | For _
-          | If _
-          | Match _
-          | With _
-          | While _ ->
-              failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
-          | AugmentedAssign _ ->
-              failwith
-                "AugmentedAssign nodes should always be rewritten by \
-                 `CallGraph.preprocess_statement`"
-        in
-        log "Finished analyzing statement `%a`: `%a`" Statement.pp statement State.pp state;
-        state
-
-
-      let forward ~statement_key state ~statement =
-        CallGraphProfiler.track_statement_analysis
-          ~profiler:Context.profiler
-          ~analysis:Forward
-          ~statement
-          ~f:(fun () ->
-            let pyre_in_context =
-              PyrePysaEnvironment.InContext.create_at_statement_key
-                Context.pyre_api
-                ~define_name:Context.define_name
-                ~define:Context.define
-                ~statement_key
+                  else
+                    parameters_targets
+                    |> cartesian_product_with_limit
+                         ~limit:Context.maximum_parameterized_targets_when_analyzing_define
+                         ~message_when_exceeding_limit:
+                           "Avoid generating parameterized targets when analyzing `Define` \
+                            statement"
+                    |> Option.value ~default:[]
+                    |> List.map ~f:(fun parameters_targets ->
+                           match
+                             validate_target
+                               (Target.Parameterized
+                                  {
+                                    regular = regular_target;
+                                    parameters =
+                                      parameters_targets
+                                      |> List.zip_exn parameters_roots
+                                      |> Target.ParameterMap.of_alist_exn;
+                                  })
+                           with
+                           | Some parameterized -> CallTarget.create parameterized
+                           | None -> CallTarget.create_regular regular_target)
+                    |> CallTarget.Set.of_list
+              | _ ->
+                  regular_target
+                  |> Target.from_regular
+                  |> CallTarget.create
+                  |> CallTarget.Set.singleton
             in
-            analyze_statement ~pyre_in_context ~state ~statement)
+            store_callees
+              ~weak:false
+              ~root:(name |> Reference.show |> State.create_root_from_identifier)
+              ~callees
+              state
+        | Delete expressions ->
+            let analyze_delete state expression =
+              analyze_expression ~pyre_in_context ~state ~expression |> snd
+            in
+            List.fold ~f:analyze_delete ~init:state expressions
+        | Expression expression ->
+            analyze_expression ~pyre_in_context ~state ~expression |> Core.snd
+        | Global _
+        | Import _
+        | Nonlocal _
+        | Pass
+        | Raise { expression = None; _ } ->
+            state
+        | Raise { expression = Some expression; _ } ->
+            analyze_expression ~pyre_in_context ~state ~expression |> snd
+        | Return { expression = Some expression; _ } ->
+            let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
+            store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
+        | Return { expression = None; _ }
+        | Try _ ->
+            (* Try statements are lowered down in `Cfg.create`, but they are preserved in the final
+               Cfg. They should be ignored. *)
+            state
+        | Break
+        | Class _
+        | Continue
+        | TypeAlias _ ->
+            state
+        | For _
+        | If _
+        | Match _
+        | With _
+        | While _ ->
+            failwith "For/If/Match/With/While nodes should always be rewritten by `Cfg.create`"
+        | AugmentedAssign _ ->
+            failwith
+              "AugmentedAssign nodes should always be rewritten by `CallGraph.preprocess_statement`"
+      in
+      log "Finished analyzing statement `%a`: `%a`" Statement.pp statement State.pp state;
+      state
 
 
-      let backward ~statement_key:_ _ ~statement:_ = failwith "unused"
-    end)
+    let forward ~statement_key state ~statement =
+      CallGraphProfiler.track_statement_analysis
+        ~profiler:Context.profiler
+        ~analysis:Forward
+        ~statement
+        ~f:(fun () ->
+          let pyre_in_context =
+            PyrePysaEnvironment.InContext.create_at_statement_key
+              Context.pyre_api
+              ~define_name:Context.define_name
+              ~define:Context.define
+              ~statement_key
+          in
+          analyze_statement ~pyre_in_context ~state ~statement)
+
+
+    let backward ~statement_key:_ _ ~statement:_ = failwith "unused"
   end
 end
 
@@ -5982,13 +5983,25 @@ let higher_order_call_graph_of_define
     initial_state
     DefineCallGraph.pp
     define_call_graph;
-  let module Fixpoint = HigherOrderCallGraph.MakeFixpoint (Context) in
+  let module TransferFunction = HigherOrderCallGraph.MakeTransferFunction (Context) in
+  let module Fixpoint = PyrePysaLogic.Fixpoint.Make (TransferFunction) in
+  (* Handle parameters. *)
+  let initial_state =
+    let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
+    List.fold
+      define.Ast.Node.value.Ast.Statement.Define.signature.parameters
+      ~init:initial_state
+      ~f:(fun state { Node.value = { Parameter.name; value = default_value; _ }; _ } ->
+        TransferFunction.analyze_parameter_default_value
+          ~pyre_in_context
+          ~state
+          ~parameter_name:name
+          default_value)
+  in
   let returned_callables =
-    Fixpoint.Fixpoint.forward
-      ~cfg:(PyrePysaLogic.Cfg.create (Node.value define))
-      ~initial:initial_state
-    |> Fixpoint.Fixpoint.exit
-    >>| Fixpoint.get_returned_callables
+    Fixpoint.forward ~cfg:(PyrePysaLogic.Cfg.create (Node.value define)) ~initial:initial_state
+    |> Fixpoint.exit
+    >>| TransferFunction.get_returned_callables
     |> Option.value ~default:CallTarget.Set.bottom
   in
   let call_indexer = CallTarget.Indexer.create () in

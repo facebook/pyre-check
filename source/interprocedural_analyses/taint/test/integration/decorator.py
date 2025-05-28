@@ -412,4 +412,4 @@ def return_source_via_decorator() -> str:
 
 
 def test_parameter_default_value(x: str = return_source_via_decorator()) -> None:
-    _test_sink(x)  # TODO(T225603360): Handle decorated function in parameter default value
+    _test_sink(x)

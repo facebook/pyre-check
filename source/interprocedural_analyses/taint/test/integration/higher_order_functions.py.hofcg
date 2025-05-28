@@ -461,6 +461,26 @@ Higher order call graphs
   }
 }
 {
+  "callable": "higher_order_functions.test_callable_default_value",
+  "returned_callables": [],
+  "calls": {
+    "202:4-202:19": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "202:15-202:18": {
+      "call": {
+        "unresolved": [
+          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "higher_order_functions.test_conditional_apply_backward",
   "returned_callables": [],
   "calls": {

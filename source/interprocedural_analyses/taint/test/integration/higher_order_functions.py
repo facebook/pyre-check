@@ -196,3 +196,7 @@ def test_duplicate_issues_in_different_parameterized_callables(f, flag: bool):
 
 # Expect no issues due to duplicating issues with the non-parameterized root callable
 test_duplicate_issues_in_different_parameterized_callables(print, _test_source())
+
+
+def test_callable_default_value(f = _test_source) -> None:
+    _test_sink(f())  # TODO(T225702991): False negative

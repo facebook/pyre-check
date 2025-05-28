@@ -1832,7 +1832,7 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "decorator.return_source_via_decorator@decorated",
+            "target": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -2618,6 +2618,56 @@ Higher order call graphs
     }
   ],
   "calls": {}
+}
+{
+  "callable": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
+  "returned_callables": [],
+  "calls": {
+    "401:11-401:16|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__gt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "401:11-401:16|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__le__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "402:19-402:29": {
+      "call": {
+        "calls": [
+          {
+            "target": "decorator.return_source_via_decorator",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "404:19-404:33": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
 }
 {
   "callable": "decorator.conditional_decorator_factory.add_sink[formal(f, position=0)=decorator.sink_via_conditional_decorator_factory]",

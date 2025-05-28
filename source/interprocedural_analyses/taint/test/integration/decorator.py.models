@@ -1357,6 +1357,71 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "decorator.test_parameter_default_value",
+    "callable_line": 414,
+    "code": 5002,
+    "line": 415,
+    "start": 15,
+    "end": 16,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 414, "start": 42, "end": 71 },
+              "resolves_to": [
+                "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 415, "start": 15, "end": 16 },
+            "call_site": "415:4-415:17"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "decorator.test_parameter_default_value:5002:0:Call|_test_sink|0|formal(arg):4fc147195b6af01569220f9ca58c564d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "decorator.with_logging_source.inner",
     "callable_line": 94,
     "code": 5002,
@@ -1805,6 +1870,33 @@
               { "always-via": "captured-variable" }
             ],
             "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.add_return_source.inner[local($parameter$callable)=decorator.return_source_via_decorator]",
+    "filename": "decorator.py",
+    "callable_line": 400,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 404, "start": 19, "end": 33 }
           }
         ]
       }

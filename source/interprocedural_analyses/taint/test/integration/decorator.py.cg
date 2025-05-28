@@ -40,6 +40,10 @@ Call dependencies
   "decorator.add_return_source.inner (fun)": [
     "_test_source (fun)", "int.__gt__ (method)", "int.__le__ (method)"
   ],
+  "decorator.add_return_source.inner (fun)[local($parameter$callable)=decorator.return_source_via_decorator (fun)]": [
+    "_test_source (fun)", "decorator.return_source_via_decorator (fun)",
+    "int.__gt__ (method)", "int.__le__ (method)"
+  ],
   "decorator.conditional_decorator_factory.add_sink.inner (fun)": [
     "_test_sink (fun)"
   ],
@@ -185,7 +189,7 @@ Call dependencies
   ],
   "decorator.test_parameter_default_value (fun)": [
     "_test_sink (fun)",
-    "decorator.return_source_via_decorator@decorated (fun)"
+    "decorator.add_return_source.inner (fun)[local($parameter$callable)=decorator.return_source_via_decorator (fun)]"
   ],
   "decorator.trivial_decorator.inner (fun)[local($parameter$f)=decorator.sink_via_trivial_decorator (fun)]": [
     "decorator.sink_via_trivial_decorator (fun)"

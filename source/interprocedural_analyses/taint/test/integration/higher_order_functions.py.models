@@ -1962,6 +1962,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "higher_order_functions.test_callable_default_value",
+    "filename": "higher_order_functions.py",
+    "callable_line": 201,
+    "sinks": [
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "origin": { "line": 202, "start": 15, "end": 18 },
+            "call_site": "202:4-202:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "higher_order_functions.test_conditional_apply_backward",
     "filename": "higher_order_functions.py",
     "callable_line": 138,

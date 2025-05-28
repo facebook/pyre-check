@@ -99,6 +99,9 @@ Call dependencies
     "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito (fun)",
     "object.__new__ (method)"
   ],
+  "higher_order_functions.test_callable_default_value (fun)": [
+    "_test_sink (fun)"
+  ],
   "higher_order_functions.test_conditional_apply_backward (fun)": [
     "higher_order_functions.conditional_apply (fun)[formal(f, position=0)=_test_sink (fun), formal(g, position=1)=higher_order_functions.safe (fun)]",
     "higher_order_functions.conditional_apply (fun)[formal(f, position=0)=higher_order_functions.safe (fun), formal(g, position=1)=_test_sink (fun)]"
