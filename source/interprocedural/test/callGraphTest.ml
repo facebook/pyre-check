@@ -8072,6 +8072,58 @@ let test_resolve_decorator_callees =
                  Result.Error DecoratorResolution.PropertySetterUnsupported );
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve_decorator_callees
+           ~source:
+             {|
+     def decorator(f):
+       def inner():
+         return
+       return inner
+     def main():
+       @decorator  # Test creating decorated targets for inner functions
+       def inner(x):
+         return
+  |}
+           ~expected:
+             [
+               ( Target.Regular.Function { name = "test.$toplevel"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.decorator"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.decorator.inner"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.main"; kind = Normal },
+                 Result.Error DecoratorResolution.Undecorated );
+               ( Target.Regular.Function { name = "test.main.inner"; kind = Normal },
+                 Result.Ok
+                   ( "test.decorator(test.main.inner)",
+                     Target.Regular.Function { name = "test.main.inner"; kind = Decorated },
+                     "test.main.inner.@decorated",
+                     [
+                       ( "7:3-7:12|artificial-call|for-decorated-target",
+                         ExpressionCallees.from_call
+                           (CallCallees.create
+                              ~call_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.decorator"; kind = Normal });
+                                ]
+                              ()) );
+                       ( "8:2-9:10|artificial-attribute-access|for-decorated-target-callee:test.main",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function { name = "test.main"; kind = Normal });
+                                ]
+                              ()) );
+                       (* TODO: Expect a call to `test.main.inner` *)
+                     ] ) );
+             ]
+           ();
     ]
 
 

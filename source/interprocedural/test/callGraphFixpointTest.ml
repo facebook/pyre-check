@@ -1957,6 +1957,43 @@ let test_higher_order_call_graph_fixpoint =
                };
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def decorator(f):
+       def inner():
+         return
+       return inner
+     def main():
+       @decorator
+       def inner(x):
+         return
+       inner(0)  # Test creating decorated targets for inner functions
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "10:2-10:10",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.main.inner"; kind = Normal });
+                              ]
+                            ()) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
     ]
 
 
