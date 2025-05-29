@@ -110,7 +110,7 @@ def index_json_output_file(arguments: Tuple[int, Path]) -> AnalysisOutputIndex:
                 callable = message["data"]["callable"]
                 index.call_graphs[callable] = file_position
             else:
-                raise AssertionError("Unexpected kind `{kind}` in `{file_path}`")
+                raise AssertionError(f"Unexpected kind `{kind}` in `{file_path}`")
 
     duration = time.time() - start_time
     print(f"Indexed {file_path} in {duration:.2f}s")
