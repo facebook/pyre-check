@@ -2564,6 +2564,17 @@ Higher order call graphs
   "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
   "returned_callables": [],
   "calls": {
+    "185:8-188:50": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "190:21-190:37": {
       "call": {
         "calls": [

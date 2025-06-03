@@ -375,6 +375,17 @@ Higher order call graphs
   "callable": "higher_order_functions.test_callable_class_to_obscure",
   "returned_callables": [],
   "calls": {
+    "156:4-156:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_callable_class_to_obscure.obscure_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "158:8-158:24": {
       "call": {
         "new_calls": [
@@ -427,6 +438,17 @@ Higher order call graphs
   "callable": "higher_order_functions.test_callable_class_to_perfect_tito",
   "returned_callables": [],
   "calls": {
+    "163:4-164:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_callable_class_to_perfect_tito.perfect_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "166:8-166:24": {
       "call": {
         "new_calls": [
@@ -708,6 +730,39 @@ Higher order call graphs
   "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables",
   "returned_callables": [],
   "calls": {
+    "171:4-172:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "174:4-175:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "177:4-178:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "184:4-186:5": {
       "call": {
         "calls": [
@@ -728,6 +783,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "188:4-189:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -1324,6 +1390,39 @@ Higher order call graphs
   "callable": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables[formal(f, position=0)=print]",
   "returned_callables": [],
   "calls": {
+    "171:4-172:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "174:4-175:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.foo",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "177:4-178:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.bar",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "184:4-186:5": {
       "call": {
         "calls": [
@@ -1344,6 +1443,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "188:4-189:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "higher_order_functions.test_duplicate_issues_in_different_parameterized_callables.sink_wrapper2",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },

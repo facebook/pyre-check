@@ -30,6 +30,17 @@ Higher order call graphs
   "callable": "attach_features.attach_to_returned_with_captures",
   "returned_callables": [],
   "calls": {
+    "78:4-81:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "attach_features.attach_to_returned_with_captures.nested",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "83:11-83:19": {
       "call": {
         "calls": [

@@ -685,6 +685,16 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
+                     ( "4:2-8:21",
+                       ExpressionCallees.from_define
+                         (DefineCallees.create
+                            ~define_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.outer.inner"; kind = Normal });
+                              ]
+                            ()) );
                      ( "9:9-9:16",
                        ExpressionCallees.from_call
                          (CallCallees.create
@@ -950,6 +960,15 @@ let test_higher_order_call_graph_fixpoint =
                    |> Target.from_regular;
                  call_graph =
                    [
+                     ( "7:2-8:10",
+                       ExpressionCallees.from_define
+                         (DefineCallees.create
+                            ~define_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function { name = "test.bar.g"; kind = Normal });
+                              ]
+                            ()) );
                      ( "9:9-9:15",
                        ExpressionCallees.from_call
                          (CallCallees.create
@@ -1045,7 +1064,19 @@ let test_higher_order_call_graph_fixpoint =
                  Expected.callable =
                    Target.Regular.Function { name = "test.log"; kind = Normal }
                    |> Target.from_regular;
-                 call_graph = [];
+                 call_graph =
+                   [
+                     ( "8:2-11:18",
+                       ExpressionCallees.from_define
+                         (DefineCallees.create
+                            ~define_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.log.inner"; kind = Normal });
+                              ]
+                            ()) );
+                   ];
                  returned_callables =
                    [
                      CallTarget.create_regular
@@ -1987,6 +2018,65 @@ let test_higher_order_call_graph_fixpoint =
                                 CallTarget.create_regular
                                   (Target.Regular.Function
                                      { name = "test.main.inner"; kind = Normal });
+                              ]
+                            ()) );
+                     ( "8:2-9:10",
+                       ExpressionCallees.from_define
+                         (DefineCallees.create
+                            ~define_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.main.inner"; kind = Decorated });
+                              ]
+                            ()) );
+                   ];
+                 returned_callables = [];
+               };
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_higher_order_call_graph_fixpoint
+           ~source:
+             {|
+     def decorator_factory(x: int):
+       def decorator(f):
+         def inner():
+           return
+         return inner
+       return decorator
+     def main():
+       @decorator_factory(1)
+       def inner(x):
+         return
+       inner(0)  # Test creating decorated targets for inner functions
+  |}
+           ~expected:
+             [
+               {
+                 Expected.callable =
+                   Target.Regular.Function { name = "test.main"; kind = Normal }
+                   |> Target.from_regular;
+                 call_graph =
+                   [
+                     ( "12:2-12:10",
+                       ExpressionCallees.from_call
+                         (CallCallees.create
+                            ~call_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.main.inner"; kind = Normal });
+                              ]
+                            ()) );
+                     ( "10:2-11:10",
+                       ExpressionCallees.from_define
+                         (DefineCallees.create
+                            ~define_targets:
+                              [
+                                CallTarget.create_regular
+                                  (Target.Regular.Function
+                                     { name = "test.main.inner"; kind = Decorated });
                               ]
                             ()) );
                    ];

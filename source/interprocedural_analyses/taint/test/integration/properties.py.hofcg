@@ -36,6 +36,34 @@ Higher order call graphs
   }
 }
 {
+  "callable": "properties.function_with_nested_properties",
+  "returned_callables": [],
+  "calls": {
+    "227:4-229:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "properties.function_with_nested_properties.my_property",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "232:4-234:13": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "properties.function_with_nested_properties.my_property@setter",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "properties.function_with_nested_properties.my_property",
   "returned_callables": [],
   "calls": {
@@ -701,6 +729,17 @@ Higher order call graphs
   "callable": "properties.CollidePropertySetterName.collided_property",
   "returned_callables": [],
   "calls": {
+    "248:8-249:22": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "properties.CollidePropertySetterName.collided_property.setter",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "251:8-251:17": {
       "call": {
         "calls": [

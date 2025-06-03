@@ -81,6 +81,17 @@ Higher order call graphs
         ]
       }
     },
+    "391:4-392:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "394:19-394:36": {
       "call": {
         "calls": [
@@ -125,6 +136,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "381:4-382:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -232,6 +254,24 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "103:4-104:30": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.closure.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "106:4-107:25": {
+      "define": {
+        "define_targets": [
+          { "target": "closure.closure.sink", "index": 0, "return_type": [] }
+        ]
+      }
     }
   }
 }
@@ -330,7 +370,19 @@ Higher order call graphs
   "returned_callables": [
     { "target": "closure.decorator.wrapper", "index": 0, "return_type": [] }
   ],
-  "calls": {}
+  "calls": {
+    "362:4-363:46": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.decorator.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
 }
 {
   "callable": "closure.decorator.wrapper",
@@ -367,7 +419,19 @@ Higher order call graphs
       "return_type": []
     }
   ],
-  "calls": {}
+  "calls": {
+    "368:4-369:46": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.ignored_decorator.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
 }
 {
   "callable": "closure.ignored_decorator.wrapper",
@@ -390,6 +454,28 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "291:4-294:33": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_conditional_write.conditional_write",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "296:4-298:15": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_conditional_write.clear",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -485,6 +571,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_define_before_variable_initialization",
   "returned_callables": [],
   "calls": {
+    "89:4-90:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_define_before_variable_initialization.read",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "92:8-92:22": {
       "call": {
         "calls": [
@@ -532,6 +629,28 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_flow",
   "returned_callables": [],
   "calls": {
+    "188:4-190:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_flow.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "192:4-193:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_flow.sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "195:4-195:12": {
       "call": {
         "calls": [
@@ -600,6 +719,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_inner_flow",
   "returned_callables": [],
   "calls": {
+    "216:4-219:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_inner_flow.flow",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "221:4-221:10": {
       "call": {
         "calls": [
@@ -664,11 +794,33 @@ Higher order call graphs
         ]
       }
     },
+    "71:4-75:25": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_multiple_reads.conditional_read",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "76:4-76:22": {
       "call": {
         "calls": [
           {
             "target": "closure.nonlocal_closure_multiple_reads.conditional_read",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "78:4-81:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_multiple_reads.overread",
             "index": 0,
             "return_type": []
           }
@@ -756,6 +908,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_multiple_writes",
   "returned_callables": [],
   "calls": {
+    "166:4-171:17": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_multiple_writes.conditional_write",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "173:4-173:27": {
       "call": {
         "calls": [
@@ -771,6 +934,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "176:4-179:13": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_multiple_writes.overwrite",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -864,6 +1038,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow",
   "returned_callables": [],
   "calls": {
+    "254:4-265:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_nested_flow.source1",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "267:4-267:13": {
       "call": {
         "calls": [
@@ -888,6 +1073,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow.source1",
   "returned_callables": [],
   "calls": {
+    "256:8-261:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_nested_flow.source1.source2",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "262:8-262:17": {
       "call": {
         "calls": [
@@ -922,6 +1118,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
   "returned_callables": [],
   "calls": {
+    "257:12-259:38": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_nested_flow.source1.source2.source3",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "260:12-260:21": {
       "call": {
         "calls": [
@@ -979,6 +1186,28 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_no_flow",
   "returned_callables": [],
   "calls": {
+    "202:4-204:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_no_flow.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "206:4-207:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_no_flow.sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "209:4-209:10": {
       "call": {
         "calls": [
@@ -1050,6 +1279,34 @@ Higher order call graphs
   }
 }
 {
+  "callable": "closure.nonlocal_closure_obscure",
+  "returned_callables": [],
+  "calls": {
+    "227:4-229:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_obscure.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "231:4-232:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_obscure.sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "closure.nonlocal_closure_obscure.sink",
   "returned_callables": [],
   "calls": {
@@ -1113,6 +1370,17 @@ Higher order call graphs
         ]
       }
     },
+    "13:4-15:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_read_reduction.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "16:4-16:12": {
       "call": {
         "calls": [
@@ -1160,6 +1428,28 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_reduction",
   "returned_callables": [],
   "calls": {
+    "142:4-146:19": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_reduction.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "148:4-149:25": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_reduction.tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "151:11-151:19": {
       "call": {
         "calls": [
@@ -1176,6 +1466,17 @@ Higher order call graphs
         "calls": [
           {
             "target": "closure.nonlocal_closure_reduction.tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "155:4-158:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_reduction.sink",
             "index": 0,
             "return_type": []
           }
@@ -1299,6 +1600,17 @@ Higher order call graphs
         ]
       }
     },
+    "313:4-314:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_tito.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "316:13-316:20": {
       "call": {
         "calls": [
@@ -1336,6 +1648,28 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_wrapper_flow",
   "returned_callables": [],
   "calls": {
+    "274:4-276:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_wrapper_flow.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "278:4-279:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_wrapper_flow.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "281:4-281:13": {
       "call": {
         "calls": [
@@ -1405,6 +1739,17 @@ Higher order call graphs
   "callable": "closure.nonlocal_closure_write_reduction",
   "returned_callables": [],
   "calls": {
+    "129:4-132:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.nonlocal_closure_write_reduction.source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "134:8-134:16": {
       "call": {
         "calls": [
@@ -1528,6 +1873,17 @@ Higher order call graphs
   "callable": "closure.parameter_order_swap",
   "returned_callables": [],
   "calls": {
+    "51:4-54:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.parameter_order_swap.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "55:4-55:11": {
       "call": {
         "calls": [
@@ -1572,6 +1928,17 @@ Higher order call graphs
   "callable": "closure.parameter_order_swap_different_variable_names",
   "returned_callables": [],
   "calls": {
+    "61:4-64:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.parameter_order_swap_different_variable_names.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "65:4-65:11": {
       "call": {
         "calls": [
@@ -1646,6 +2013,17 @@ Higher order call graphs
   "callable": "closure.parameter_order_swap_tito",
   "returned_callables": [],
   "calls": {
+    "347:4-348:22": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.parameter_order_swap_tito.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "349:4-349:26": {
       "call": {
         "calls": [
@@ -1805,6 +2183,17 @@ Higher order call graphs
   "callable": "closure.wrapper_for_taint_propagation",
   "returned_callables": [],
   "calls": {
+    "26:4-28:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.wrapper_for_taint_propagation.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "29:4-29:12": {
       "call": {
         "calls": [
@@ -1842,6 +2231,17 @@ Higher order call graphs
   "callable": "closure.wrapper_for_taint_propagation_hof",
   "returned_callables": [],
   "calls": {
+    "39:4-41:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.wrapper_for_taint_propagation_hof.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "43:4-43:35": {
       "call": {
         "calls": [
@@ -1879,6 +2279,17 @@ Higher order call graphs
   "callable": "closure.wrapper_for_tito_propagation",
   "returned_callables": [],
   "calls": {
+    "325:4-326:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.wrapper_for_tito_propagation.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "328:4-328:23": {
       "call": {
         "calls": [
@@ -1903,6 +2314,17 @@ Higher order call graphs
   "callable": "closure.wrapper_for_tito_propagation_hof",
   "returned_callables": [],
   "calls": {
+    "336:4-337:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure.wrapper_for_tito_propagation_hof.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "339:4-339:19": {
       "call": {
         "calls": [

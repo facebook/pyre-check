@@ -173,6 +173,17 @@ Higher order call graphs
         ]
       }
     },
+    "174:4-175:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "extra_trace.issue_via_transfom_captured_variable.nested_function",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "177:4-177:33": {
       "call": {
         "calls": [

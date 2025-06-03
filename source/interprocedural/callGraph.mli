@@ -304,6 +304,22 @@ module FormatStringStringifyCallees : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+module DefineCallees : sig
+  type t = {
+    define_targets: CallTarget.t list;
+    decorated_targets: CallTarget.t list;
+  }
+  [@@deriving eq, show]
+
+  val create
+    :  ?define_targets:CallTarget.t list ->
+    ?decorated_targets:CallTarget.t list ->
+    unit ->
+    t
+
+  val to_json : t -> Yojson.Safe.t
+end
+
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
   type t =
@@ -312,6 +328,7 @@ module ExpressionCallees : sig
     | Identifier of IdentifierCallees.t
     | FormatStringArtificial of FormatStringArtificialCallees.t
     | FormatStringStringify of FormatStringStringifyCallees.t
+    | Define of DefineCallees.t
   [@@deriving eq, show]
 
   val from_call : CallCallees.t -> t
@@ -323,6 +340,8 @@ module ExpressionCallees : sig
   val from_format_string_artificial : FormatStringArtificialCallees.t -> t
 
   val from_format_string_stringify : FormatStringStringifyCallees.t -> t
+
+  val from_define : DefineCallees.t -> t
 
   val to_json : t -> Yojson.Safe.t
 

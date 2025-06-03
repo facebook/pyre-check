@@ -1634,6 +1634,15 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
+               ( "6:2-7:12",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.foo.inner"; kind = Normal });
+                        ]
+                      ()) );
                ( "9:2-9:9",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -2179,6 +2188,15 @@ let test_call_graph_of_define =
            ~define_name:"test.outer"
            ~expected:
              [
+               ( "3:2-4:12",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.outer.inner"; kind = Normal });
+                        ]
+                      ()) );
                ( "6:2-6:10",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -2204,6 +2222,16 @@ let test_call_graph_of_define =
            ~define_name:"test.Foo.outer"
            ~expected:
              [
+               ( "4:4-5:10",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function
+                               { name = "test.Foo.outer.inner"; kind = Normal });
+                        ]
+                      ()) );
                ( "7:4-7:12",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -5433,7 +5461,18 @@ let test_call_graph_of_define =
        return inner
   |}
            ~define_name:"test.foo"
-           ~expected:[]
+           ~expected:
+             [
+               ( "3:2-3:18",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.foo.inner"; kind = Normal });
+                        ]
+                      ()) );
+             ]
            ();
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
@@ -7111,6 +7150,16 @@ let test_higher_order_call_graph_of_define =
                                });
                         ]
                       ()) );
+               ( "4:4-5:24",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function
+                               { name = "test.foo.dummy_trace"; kind = Normal });
+                        ]
+                      ()) );
                ( "6:4-6:17",
                  ExpressionCallees.from_call
                    (CallCallees.create
@@ -7167,6 +7216,24 @@ let test_higher_order_call_graph_of_define =
                                  method_name = "__next__";
                                  kind = Normal;
                                });
+                        ]
+                      ()) );
+               ( "4:4-5:16",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.foo.bar"; kind = Normal });
+                        ]
+                      ()) );
+               ( "6:4-7:16",
+                 ExpressionCallees.from_define
+                   (DefineCallees.create
+                      ~define_targets:
+                        [
+                          CallTarget.create_regular
+                            (Target.Regular.Function { name = "test.foo.baz"; kind = Normal });
                         ]
                       ()) );
                ( "8:4-8:9",

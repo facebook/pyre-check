@@ -286,7 +286,19 @@ Higher order call graphs
       "return_type": []
     }
   ],
-  "calls": {}
+  "calls": {
+    "74:8-76:49": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "partial.NestedDefineDecorator.__get__.wrapper",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
 }
 {
   "callable": "partial.PartialConstructor.__init__@decorated",

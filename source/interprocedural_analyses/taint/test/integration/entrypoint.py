@@ -9,7 +9,7 @@ glob: List[int] = []
 
 
 def MyEntrypoint(f):
-    return lambda: f()
+    return f
 
 
 class MyClass:

@@ -4,6 +4,17 @@ Higher order call graphs
   "callable": "closure_models.captured_variable_model_both_generation_parameter_source",
   "returned_callables": [],
   "calls": {
+    "166:4-167:36": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "169:4-169:60": {
       "call": {
         "calls": [
@@ -51,6 +62,17 @@ Higher order call graphs
   "callable": "closure_models.captured_variable_model_generation_source",
   "returned_callables": [],
   "calls": {
+    "154:4-156:36": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "158:4-158:46": {
       "call": {
         "calls": [
@@ -115,6 +137,17 @@ Higher order call graphs
         ]
       }
     },
+    "143:4-144:36": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "146:4-146:45": {
       "call": {
         "calls": [
@@ -169,6 +202,17 @@ Higher order call graphs
         ]
       }
     },
+    "177:4-178:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "180:4-180:33": {
       "call": {
         "calls": [
@@ -206,6 +250,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "131:4-132:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -249,6 +304,17 @@ Higher order call graphs
   "callable": "closure_models.inner_sink_wrapper",
   "returned_callables": [],
   "calls": {
+    "10:4-11:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.inner_sink_wrapper.inner_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "13:4-13:30": {
       "call": {
         "calls": [
@@ -278,7 +344,19 @@ Higher order call graphs
       "return_type": []
     }
   ],
-  "calls": {}
+  "calls": {
+    "110:4-111:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.some_decorator.wrapper_func",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
 }
 {
   "callable": "closure_models.some_decorator.wrapper_func",
@@ -297,10 +375,54 @@ Higher order call graphs
   "callable": "closure_models.test",
   "returned_callables": [],
   "calls": {
+    "41:4-42:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_taint",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "44:4-45:20": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_model_taint",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "47:13-47:27": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "49:4-50:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_model_taint_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "52:4-53:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test.return_model_query_tito",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -509,6 +631,23 @@ Higher order call graphs
   }
 }
 {
+  "callable": "closure_models.test_dsl_decorator_source",
+  "returned_callables": [],
+  "calls": {
+    "123:4-124:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
   "returned_callables": [],
   "calls": {
@@ -557,6 +696,23 @@ Higher order call graphs
   }
 }
 {
+  "callable": "closure_models.test_dsl_source",
+  "returned_callables": [],
+  "calls": {
+    "117:4-118:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_dsl_source.local_function_capturing_local_variable",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
   "returned_callables": [],
   "calls": {
@@ -577,6 +733,28 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "90:4-91:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_tito_transform.return_model_taint_tito",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "93:4-94:26": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.test_tito_transform.return_model_query_tito",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },

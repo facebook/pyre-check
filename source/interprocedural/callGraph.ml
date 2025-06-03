@@ -1556,6 +1556,73 @@ module FormatStringStringifyCallees = struct
     { targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) targets }
 end
 
+module DefineCallees = struct
+  type t = {
+    define_targets: CallTarget.t list;
+    decorated_targets: CallTarget.t list;
+  }
+  [@@deriving eq, show { with_path = false }]
+
+  let create ?(define_targets = []) ?(decorated_targets = []) () =
+    { define_targets; decorated_targets }
+
+
+  let join
+      { define_targets = left_define_targets; decorated_targets = left_decorated_targets }
+      { define_targets = right_define_targets; decorated_targets = right_decorated_targets }
+    =
+    {
+      define_targets = List.rev_append left_define_targets right_define_targets;
+      decorated_targets = List.rev_append left_decorated_targets right_decorated_targets;
+    }
+
+
+  let equal_ignoring_types
+      { define_targets = left_define_targets; decorated_targets = left_decorated_targets }
+      { define_targets = right_define_targets; decorated_targets = right_decorated_targets }
+    =
+    List.equal CallTarget.equal_ignoring_types left_define_targets right_define_targets
+    && List.equal CallTarget.equal_ignoring_types left_decorated_targets right_decorated_targets
+
+
+  let dedup_and_sort { define_targets; decorated_targets } =
+    {
+      define_targets = CallTarget.dedup_and_sort define_targets;
+      decorated_targets = CallTarget.dedup_and_sort decorated_targets;
+    }
+
+
+  let all_targets ~use_case { define_targets; decorated_targets } =
+    (match use_case with
+    | AllTargetsUseCase.CallGraphDependency -> decorated_targets
+    | AllTargetsUseCase.TaintAnalysisDependency ->
+        (* Taint analysis does not need to know this. *) []
+    | AllTargetsUseCase.Everything -> List.rev_append define_targets decorated_targets)
+    |> List.map ~f:CallTarget.target
+
+
+  let to_json { define_targets; decorated_targets } =
+    let bindings =
+      []
+      |> JsonHelper.add_list "define_targets" define_targets CallTarget.to_json
+      |> JsonHelper.add_list "decorated_targets" decorated_targets CallTarget.to_json
+    in
+    `Assoc bindings
+
+
+  let redirect_to_decorated ~decorators { define_targets; decorated_targets } =
+    {
+      define_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) define_targets;
+      decorated_targets;
+    }
+
+
+  let drop_decorated_targets callees = { callees with decorated_targets = [] }
+
+  let regenerate_call_indices ~indexer:_ callees =
+    (* No need to regenerate because these will not be used in taint analysis. *) callees
+end
+
 (** Represents a unique identifier for an expression in the control flow graph. *)
 module ExpressionIdentifier = struct
   module T = struct
@@ -1665,6 +1732,8 @@ module ExpressionIdentifier = struct
           Constant { location; constant }
       | _ -> Regular location
 
+
+    let of_define_statement define_location = Regular define_location
 
     let pp_json_key formatter = function
       | Regular location -> Location.pp formatter location
@@ -1782,6 +1851,7 @@ module ExpressionCallees = struct
     | Identifier of IdentifierCallees.t
     | FormatStringArtificial of FormatStringArtificialCallees.t
     | FormatStringStringify of FormatStringStringifyCallees.t
+    | Define of DefineCallees.t
   [@@deriving eq, show { with_path = false }]
 
   let from_call callees = Call callees
@@ -1794,6 +1864,8 @@ module ExpressionCallees = struct
 
   let from_format_string_stringify callees = FormatStringStringify callees
 
+  let from_define callees = Define callees
+
   let join left right =
     match left, right with
     | Call left, Call right -> Call (CallCallees.join left right)
@@ -1804,6 +1876,7 @@ module ExpressionCallees = struct
         FormatStringArtificial (FormatStringArtificialCallees.join left right)
     | FormatStringStringify left, FormatStringStringify right ->
         FormatStringStringify (FormatStringStringifyCallees.join left right)
+    | Define left, Define right -> Define (DefineCallees.join left right)
     | _ ->
         Format.asprintf
           "Trying to join different callee types:\n\tleft: %a\n\tright: %a"
@@ -1822,6 +1895,7 @@ module ExpressionCallees = struct
         FormatStringArtificial (FormatStringArtificialCallees.dedup_and_sort callees)
     | FormatStringStringify callees ->
         FormatStringStringify (FormatStringStringifyCallees.dedup_and_sort callees)
+    | Define callees -> Define (DefineCallees.dedup_and_sort callees)
 
 
   let all_targets ~use_case = function
@@ -1830,6 +1904,7 @@ module ExpressionCallees = struct
     | Identifier callees -> IdentifierCallees.all_targets ~use_case callees
     | FormatStringArtificial callees -> FormatStringArtificialCallees.all_targets ~use_case callees
     | FormatStringStringify callees -> FormatStringStringifyCallees.all_targets ~use_case callees
+    | Define callees -> DefineCallees.all_targets ~use_case callees
 
 
   let is_empty_attribute_access_callees = function
@@ -1847,6 +1922,7 @@ module ExpressionCallees = struct
         FormatStringArtificialCallees.equal left right
     | FormatStringStringify left, FormatStringStringify right ->
         FormatStringStringifyCallees.equal left right
+    | Define left, Define right -> DefineCallees.equal_ignoring_types left right
     | _ -> false
 
 
@@ -1858,6 +1934,7 @@ module ExpressionCallees = struct
         `Assoc ["format_string_artificial", FormatStringArtificialCallees.to_json callees]
     | FormatStringStringify callees ->
         `Assoc ["format_string_stringify", FormatStringStringifyCallees.to_json callees]
+    | Define callees -> `Assoc ["define", DefineCallees.to_json callees]
 
 
   let redirect_to_decorated ~decorators = function
@@ -1871,6 +1948,7 @@ module ExpressionCallees = struct
     | FormatStringStringify callees ->
         FormatStringStringify
           (FormatStringStringifyCallees.redirect_to_decorated ~decorators callees)
+    | Define callees -> Define (DefineCallees.redirect_to_decorated ~decorators callees)
 
 
   let drop_decorated_targets = function
@@ -1882,6 +1960,7 @@ module ExpressionCallees = struct
         FormatStringArtificial (FormatStringArtificialCallees.drop_decorated_targets callees)
     | FormatStringStringify callees ->
         FormatStringStringify (FormatStringStringifyCallees.drop_decorated_targets callees)
+    | Define callees -> Define (DefineCallees.drop_decorated_targets callees)
 
 
   let regenerate_call_indices ~indexer callees =
@@ -1897,6 +1976,7 @@ module ExpressionCallees = struct
     | FormatStringStringify callees ->
         FormatStringStringify
           (FormatStringStringifyCallees.regenerate_call_indices ~indexer callees)
+    | Define callees -> Define (DefineCallees.regenerate_call_indices ~indexer callees)
 end
 
 let log ~debug format =
@@ -2133,6 +2213,21 @@ module DefineCallGraph = struct
       ~expression_for_logging:
         (Node.create_with_default_location (Expression.Name (Name.Identifier identifier)))
       ~callees:(ExpressionCallees.from_identifier callees)
+
+
+  let add_define_callees
+      ~debug
+      ~define:{ Define.signature = { name; _ }; _ }
+      ~define_location
+      ~callees
+    =
+    add_callees
+      ~debug
+      ~expression_identifier:(ExpressionIdentifier.of_define_statement define_location)
+      ~expression_for_logging:
+        (Node.create_with_default_location
+           (Expression.Name (Name.Identifier (Format.asprintf "def %a(): ..." Reference.pp name))))
+      ~callees:(ExpressionCallees.from_define callees)
 
 
   let set_call_callees ~location ~call ~callees =
@@ -4258,6 +4353,30 @@ module CallGraphBuilder = struct
     resolve_identifier ~define:define_name ~pyre_in_context
 
 
+  let build_for_inner_define ~context:{ Context.debug; _ } ~callees_at_location = function
+    | {
+        Node.value =
+          Statement.Define
+            ({
+               Define.signature =
+                 { name; parent = (* Create targets only for inner functions. *) Function _; _ };
+               _;
+             } as define);
+        location;
+      } ->
+        let delocalized_name = Reference.delocalize name in
+        let target = Target.create delocalized_name define in
+        callees_at_location :=
+          DefineCallGraph.add_define_callees
+            ~debug
+            ~define
+            ~define_location:location
+            ~callees:
+              { DefineCallees.define_targets = [CallTarget.create target]; decorated_targets = [] }
+            !callees_at_location
+    | _ -> ()
+
+
   let check_expression_identifier_invariant
       ~state:{ State.context = { Context.define_name; expression_identifier_invariant; _ }; _ }
       ~location
@@ -4657,9 +4776,14 @@ struct
           let () = forward_expression name in
           let () = forward_expression value in
           ()
-      | Define _
+      | Define _ ->
+          CallGraphBuilder.build_for_inner_define
+            ~context:Context.builder_context
+            ~callees_at_location:Context.callees_at_location
+            statement
       | Break
-      | Class _
+      | Class _ ->
+          ()
       | Continue
       | Global _
       | Import _

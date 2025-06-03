@@ -15,6 +15,17 @@ Higher order call graphs
   "callable": "nested_callables.access_parameter_in_inner_scope_sink",
   "returned_callables": [],
   "calls": {
+    "96:4-97:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.access_parameter_in_inner_scope_sink.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "99:4-99:11": {
       "call": {
         "calls": [
@@ -45,6 +56,17 @@ Higher order call graphs
   "callable": "nested_callables.access_parameter_in_inner_scope_tito",
   "returned_callables": [],
   "calls": {
+    "107:4-108:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.access_parameter_in_inner_scope_tito.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "110:11-110:18": {
       "call": {
         "calls": [
@@ -66,6 +88,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "76:4-77:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.access_variables_in_outer_scope_issue.inner",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -113,6 +146,17 @@ Higher order call graphs
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "85:4-86:16": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.access_variables_in_outer_scope_source.inner",
+            "index": 0,
+            "return_type": []
+          }
         ]
       }
     },
@@ -183,6 +227,34 @@ Higher order call graphs
   }
 }
 {
+  "callable": "nested_callables.foo",
+  "returned_callables": [],
+  "calls": {
+    "12:4-14:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.foo.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "16:4-17:29": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.foo.inner_with_model",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "nested_callables.foo.inner",
   "returned_callables": [],
   "calls": {
@@ -219,6 +291,17 @@ Higher order call graphs
   "callable": "nested_callables.nested_global_function",
   "returned_callables": [],
   "calls": {
+    "67:4-68:20": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.nested_global_function.g",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "70:11-70:28": {
       "call": {
         "calls": [
@@ -255,6 +338,17 @@ Higher order call graphs
   "callable": "nested_callables.outer",
   "returned_callables": [],
   "calls": {
+    "21:4-22:21": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.outer.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "24:11-24:19": {
       "call": {
         "calls": [
@@ -285,6 +379,17 @@ Higher order call graphs
   "callable": "nested_callables.outer_calling_other_function",
   "returned_callables": [],
   "calls": {
+    "36:4-37:20": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.outer_calling_other_function.inner_calling_other_function",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "39:4-39:35": {
       "call": {
         "calls": [
@@ -319,6 +424,17 @@ Higher order call graphs
   "callable": "nested_callables.parameter_function",
   "returned_callables": [],
   "calls": {
+    "47:8-48:24": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.parameter_function.add",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "50:11-50:30": {
       "call": {
         "calls": [
@@ -462,6 +578,17 @@ Higher order call graphs
             "target": "object.__init__",
             "index": 0,
             "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "124:4-125:28": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "nested_callables.test_mutation_of_class.set_a",
+            "index": 0,
             "return_type": []
           }
         ]

@@ -45,22 +45,20 @@ Higher order call graphs
   }
 }
 {
-  "callable": "entrypoint.MyEntrypoint",
-  "returned_callables": [],
-  "calls": {
-    "12:19-12:22": {
-      "call": {
-        "unresolved": [
-          "BypassingDecorators", [ "UnknownIdentifierCallee" ]
-        ]
-      }
-    }
-  }
-}
-{
   "callable": "entrypoint.entrypoint_into_lambda",
   "returned_callables": [],
   "calls": {
+    "62:4-63:22": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "65:4-65:38": {
       "call": {
         "calls": [
@@ -153,7 +151,13 @@ Higher order call graphs
 }
 {
   "callable": "entrypoint.function_entrypoint_with_decorator@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "entrypoint.function_entrypoint_with_decorator",
+      "index": 0,
+      "return_type": []
+    }
+  ],
   "calls": {
     "55:1-55:13|artificial-call|for-decorated-target": {
       "call": {
@@ -354,6 +358,17 @@ Higher order call graphs
   "callable": "entrypoint.nested_run",
   "returned_callables": [],
   "calls": {
+    "25:4-26:22": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "entrypoint.nested_run.do_the_thing",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
     "28:4-28:18": {
       "call": {
         "calls": [
@@ -484,7 +499,14 @@ Higher order call graphs
 }
 {
   "callable": "entrypoint.MyClass.method_entrypoint_with_decorator@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
   "calls": {
     "19:5-19:17|artificial-call|for-decorated-target": {
       "call": {
@@ -525,35 +547,24 @@ Higher order call graphs
 }
 {
   "callable": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.function_entrypoint_with_decorator]",
-  "returned_callables": [],
-  "calls": {
-    "12:19-12:22": {
-      "call": {
-        "calls": [
-          {
-            "target": "entrypoint.function_entrypoint_with_decorator",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
+  "returned_callables": [
+    {
+      "target": "entrypoint.function_entrypoint_with_decorator",
+      "index": 0,
+      "return_type": []
     }
-  }
+  ],
+  "calls": {}
 }
 {
   "callable": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.MyClass.method_entrypoint_with_decorator]",
-  "returned_callables": [],
-  "calls": {
-    "12:19-12:22": {
-      "call": {
-        "calls": [
-          {
-            "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
-            "index": 0,
-            "return_type": []
-          }
-        ]
-      }
+  "returned_callables": [
+    {
+      "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
     }
-  }
+  ],
+  "calls": {}
 }
