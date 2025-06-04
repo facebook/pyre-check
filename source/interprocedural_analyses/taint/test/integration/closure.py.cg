@@ -12,7 +12,7 @@ Call dependencies
   "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
     "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]",
-    "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)]"
+    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)]"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
     "closure.decorator (fun)"
@@ -23,7 +23,7 @@ Call dependencies
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
   ],
-  "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)]": [
+  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)]": [
     "closure.decorator.wrapper (fun)"
   ],
   "closure.closure (fun)": [

@@ -900,8 +900,10 @@ module CallCallees = struct
     new_targets: CallTarget.t list;
     (* Call targets for calls to the `__init__` instance method. *)
     init_targets: CallTarget.t list;
-    (* Call targets for the calls to artificially created callables that call the decorators. Only
-       used by call graph building. *)
+    (* A decorated target, which is an artificially created callable that calls the decorators,
+       represents its returned callables, instead of itself, unlike other targets. This is used to
+       set the dependencies in the call graph fixpoint so that when a decorated target returns new
+       callables, those can be picked up by whoever depends on the decorated target. *)
     decorated_targets: CallTarget.t list;
     (* Information about arguments that are callables, and possibly called. *)
     higher_order_parameters: HigherOrderParameterMap.t;
@@ -5346,7 +5348,7 @@ module HigherOrderCallGraph = struct
       let analyze_argument
           ~higher_order_parameters
           index
-          (state_so_far, additional_higher_order_parameters)
+          (state_so_far, additional_higher_order_parameters, decorated_targets)
           { Call.Argument.value = argument; _ }
         =
         let callees, new_state =
@@ -5373,11 +5375,23 @@ module HigherOrderCallGraph = struct
               else
                 called_when_parameter, CallTarget.Set.add call_target not_called_when_parameter)
         in
-        let called_when_parameter, not_called_when_parameter =
+        let {
+          AnalyzeDecoratedTargetsResult.decorated_targets = new_decorated_targets;
+          non_decorated_targets = _;
+          result_targets;
+        }
+          =
           call_targets_from_higher_order_parameters
           |> CallTarget.Set.of_list
           |> CallTarget.Set.join callees
-          |> partition_called_when_parameter
+          |> CallTarget.Set.elements
+          |> resolve_decorated_targets
+        in
+        let called_when_parameter, not_called_when_parameter =
+          (* Partition on the targets after resolving decorated targets, not before resolving.
+             Resolving decorated targets may result in targets that needs to be treated as
+             `called_when_parameter`. *)
+          result_targets |> CallTarget.Set.of_list |> partition_called_when_parameter
         in
         log
           "Finished analyzing argument `%a` -- called_when_parameter: %a. \
@@ -5400,7 +5414,10 @@ module HigherOrderCallGraph = struct
                 unresolved = Unresolved.False;
               }
         in
-        (new_state, additional_higher_order_parameters), not_called_when_parameter
+        ( ( new_state,
+            additional_higher_order_parameters,
+            List.rev_append new_decorated_targets decorated_targets ),
+          not_called_when_parameter )
       in
       let ({
              CallCallees.call_targets = original_call_targets;
@@ -5431,12 +5448,14 @@ module HigherOrderCallGraph = struct
       let callee_return_values, state =
         analyze_expression ~pyre_in_context ~state ~expression:call.Call.callee
       in
-      let (state, additional_higher_order_parameters), argument_callees_not_called_when_parameter =
+      let ( (state, additional_higher_order_parameters, decorated_targets_from_arguments),
+            argument_callees_not_called_when_parameter )
+        =
         track_apply_call_step AnalyzeArguments (fun () ->
             List.fold_mapi
               arguments
               ~f:(analyze_argument ~higher_order_parameters)
-              ~init:(state, HigherOrderParameterMap.empty))
+              ~init:(state, HigherOrderParameterMap.empty, []))
       in
       let ( parameterized_call_targets,
             decorated_call_targets,
@@ -5543,6 +5562,7 @@ module HigherOrderCallGraph = struct
                   decorated_targets =
                     decorated_call_targets
                     |> List.rev_append decorated_init_targets
+                    |> List.rev_append decorated_targets_from_arguments
                     |> List.dedup_and_sort ~compare:CallTarget.compare;
                   init_targets = new_init_targets;
                   higher_order_parameters;

@@ -159,7 +159,7 @@ Higher order call graphs
             "return_type": []
           },
           {
-            "target": "closure.async_tito[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated]",
+            "target": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
             "index": 0,
             "return_type": []
           }
@@ -2373,7 +2373,7 @@ Higher order call graphs
   }
 }
 {
-  "callable": "closure.async_tito[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated]",
+  "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
   "returned_callables": [],
   "calls": {
     "374:17-374:27": {

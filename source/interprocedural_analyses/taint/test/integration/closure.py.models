@@ -1737,7 +1737,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.async_tito[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner@decorated]",
+    "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
     "filename": "closure.py",
     "callable_line": 373,
     "tito": [
