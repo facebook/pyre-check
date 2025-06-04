@@ -313,7 +313,6 @@ module StaticAnalysis : sig
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
     build_cache_only: bool;
-    inline_decorators: bool;
     infer_self_tito: bool;
     infer_argument_tito: bool;
     maximum_model_source_tree_width: int option;
@@ -364,7 +363,6 @@ module StaticAnalysis : sig
     ?dump_model_query_results:PyrePath.t ->
     ?use_cache:bool ->
     ?build_cache_only:bool ->
-    ?inline_decorators:bool ->
     ?infer_self_tito:bool ->
     ?infer_argument_tito:bool ->
     ?maximum_model_source_tree_width:int ->

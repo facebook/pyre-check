@@ -29,7 +29,6 @@ module AnalyzeConfiguration = struct
     dump_call_graph: PyrePath.t option;
     dump_model_query_results: PyrePath.t option;
     find_missing_flows: Configuration.MissingFlowKind.t option;
-    inline_decorators: bool;
     infer_self_tito: bool;
     infer_argument_tito: bool;
     maximum_model_source_tree_width: int option;
@@ -93,7 +92,6 @@ module AnalyzeConfiguration = struct
           let maximum_parameterized_targets_at_call_site =
             optional_int_member "maximum_parameterized_targets_at_call_site" json
           in
-          let inline_decorators = false in
           let infer_self_tito = bool_member "infer_self_tito" ~default:false json in
           let infer_argument_tito = bool_member "infer_argument_tito" ~default:false json in
           let maximum_model_source_tree_width =
@@ -175,7 +173,6 @@ module AnalyzeConfiguration = struct
               dump_call_graph;
               dump_model_query_results;
               find_missing_flows;
-              inline_decorators;
               infer_self_tito;
               infer_argument_tito;
               maximum_model_source_tree_width;
@@ -278,7 +275,6 @@ module AnalyzeConfiguration = struct
         taint_model_paths;
         use_cache;
         build_cache_only;
-        inline_decorators;
         infer_self_tito;
         infer_argument_tito;
         repository_root;
@@ -344,7 +340,6 @@ module AnalyzeConfiguration = struct
       dump_model_query_results;
       use_cache;
       build_cache_only;
-      inline_decorators;
       infer_self_tito;
       infer_argument_tito;
       maximum_model_source_tree_width;

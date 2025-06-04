@@ -94,7 +94,6 @@ let assert_taint ~context source expected =
         ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
         ~triggered_sinks:(Issue.TriggeredSinkForBackward.create ())
-        ~decorator_inlined:false
         ()
     in
     let model = { Model.empty_model with backward } in

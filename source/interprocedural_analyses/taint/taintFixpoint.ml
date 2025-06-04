@@ -30,8 +30,6 @@ module Context = struct
       Interprocedural.Target.t -> Interprocedural.CallGraph.DefineCallGraph.t option;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
     type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
-    (* Whether decorators are inlined during pre-processing. *)
-    decorator_inlined: bool;
     callables_to_definitions_map: Interprocedural.Target.CallablesSharedMemory.ReadOnly.t;
   }
 end
@@ -127,7 +125,6 @@ module Analysis = struct
       ~modes
       ~previous_model
       ~get_callee_model
-      ~decorator_inlined
     =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     let profiler =
@@ -186,7 +183,6 @@ module Analysis = struct
             ~get_callee_model
             ~existing_model:previous_model
             ~triggered_sinks
-            ~decorator_inlined
             ())
     in
     let forward, backward =
@@ -222,7 +218,6 @@ module Analysis = struct
           get_define_call_graph;
           global_constants;
           type_of_expression_shared_memory;
-          decorator_inlined;
           callables_to_definitions_map;
         }
       ~callable
@@ -282,7 +277,6 @@ module Analysis = struct
         ~modes
         ~previous_model
         ~get_callee_model
-        ~decorator_inlined
 
 
   let skip_additional_dependency _ = false

@@ -91,11 +91,7 @@ let verify_model_syntax ~static_analysis_configuration =
 
 let parse_model_modes
     ~static_analysis_configuration:
-      {
-        Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
-        inline_decorators;
-        _;
-      }
+      { Configuration.StaticAnalysis.configuration = { taint_model_paths; _ }; _ }
   =
   let step_logger =
     StepLogger.start
@@ -116,7 +112,7 @@ let parse_model_modes
     {
       PyrePysaLogic.DecoratorPreprocessing.Configuration.actions =
         ModelParser.decorator_actions_from_modes model_modes;
-      enable_inlining = inline_decorators;
+      enable_inlining = false;
       enable_discarding = true;
     }
   in
@@ -1071,7 +1067,6 @@ let run_taint_analysis
           get_define_call_graph;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create ();
-          decorator_inlined = false;
           callables_to_definitions_map =
             Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
         }

@@ -3027,7 +3027,6 @@ let run
     ~get_callee_model
     ~existing_model
     ~triggered_sinks
-    ~decorator_inlined
     ()
   =
   let timer = Timer.start () in
@@ -3035,12 +3034,6 @@ let run
      the forward analysis, because in case a decorator changes the parameters of the decorated
      function, the user-defined models of the function may no longer be applicable to the resultant
      function of the application (e.g., T132302522). *)
-  let define =
-    if decorator_inlined then
-      PyrePysaEnvironment.ReadOnly.decorated_define pyre_api define
-    else
-      define
-  in
   let define_name =
     PyrePysaLogic.qualified_name_of_define ~module_name:qualifier (Node.value define)
   in

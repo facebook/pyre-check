@@ -20,7 +20,6 @@ os.execv(
         "../../tools/pysa_integration_tests/run.py",
         "--require-pyre-env",
         "--check-invariants",
-        "--inline-decorators",
         "--typeshed", "../typeshed/typeshed",
     ]
     + sys.argv[1:],

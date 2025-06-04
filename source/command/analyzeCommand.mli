@@ -22,7 +22,6 @@ module AnalyzeConfiguration : sig
     dump_call_graph: PyrePath.t option;
     dump_model_query_results: PyrePath.t option;
     find_missing_flows: Configuration.MissingFlowKind.t option;
-    inline_decorators: bool;
     infer_self_tito: bool;
     infer_argument_tito: bool;
     maximum_model_source_tree_width: int option;

@@ -30,7 +30,6 @@ let test_json_parsing context =
       dump_call_graph = None;
       dump_model_query_results = None;
       find_missing_flows = None;
-      inline_decorators = false;
       infer_self_tito = false;
       infer_argument_tito = false;
       maximum_model_source_tree_width = None;

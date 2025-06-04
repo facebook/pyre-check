@@ -136,7 +136,6 @@ def _pysa_command(
         "--noninteractive",
         "analyze",
         "--check-invariants",
-        "--inline-decorators",
         "--save-results-to",
         save_results_to,
     ]
