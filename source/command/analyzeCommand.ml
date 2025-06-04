@@ -63,7 +63,6 @@ module AnalyzeConfiguration = struct
     saved_state: Configuration.StaticAnalysis.SavedState.t;
     compute_coverage: bool;
     scheduler_policies: Configuration.SchedulerPolicies.t;
-    higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
     maximum_target_depth: int option;
     maximum_parameterized_targets_at_call_site: int option;
@@ -87,7 +86,6 @@ module AnalyzeConfiguration = struct
                    Configuration.MissingFlowKind.of_string missing_flow >>| Option.some
                | None -> Ok None)
           >>= fun find_missing_flows ->
-          let higher_order_call_graph = bool_member "higher_order_call_graph" ~default:false json in
           let higher_order_call_graph_max_iterations =
             optional_int_member "higher_order_call_graph_max_iterations" json
           in
@@ -95,9 +93,7 @@ module AnalyzeConfiguration = struct
           let maximum_parameterized_targets_at_call_site =
             optional_int_member "maximum_parameterized_targets_at_call_site" json
           in
-          let inline_decorators = bool_member "inline_decorators" ~default:false json in
-          if higher_order_call_graph && inline_decorators then
-            failwith "higher_order_call_graph and inline_decorators cannot both be true";
+          let inline_decorators = false in
           let infer_self_tito = bool_member "infer_self_tito" ~default:false json in
           let infer_argument_tito = bool_member "infer_argument_tito" ~default:false json in
           let maximum_model_source_tree_width =
@@ -213,7 +209,6 @@ module AnalyzeConfiguration = struct
               saved_state;
               compute_coverage;
               scheduler_policies;
-              higher_order_call_graph;
               higher_order_call_graph_max_iterations;
               maximum_target_depth;
               maximum_parameterized_targets_at_call_site;
@@ -293,7 +288,6 @@ module AnalyzeConfiguration = struct
         saved_state;
         compute_coverage;
         scheduler_policies;
-        higher_order_call_graph;
         higher_order_call_graph_max_iterations;
         maximum_target_depth;
         maximum_parameterized_targets_at_call_site;
@@ -370,7 +364,6 @@ module AnalyzeConfiguration = struct
       saved_state;
       compute_coverage;
       scheduler_policies;
-      higher_order_call_graph;
       higher_order_call_graph_max_iterations =
         Option.value
           higher_order_call_graph_max_iterations

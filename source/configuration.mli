@@ -333,7 +333,6 @@ module StaticAnalysis : sig
     saved_state: SavedState.t;
     compute_coverage: bool;
     scheduler_policies: SchedulerPolicies.t;
-    higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int;
     maximum_target_depth: int;
     maximum_parameterized_targets_at_call_site: int option;
@@ -385,7 +384,6 @@ module StaticAnalysis : sig
     ?saved_state:SavedState.t ->
     ?compute_coverage:bool ->
     ?scheduler_policies:SchedulerPolicies.t ->
-    ?higher_order_call_graph:bool ->
     ?higher_order_call_graph_max_iterations:int ->
     ?maximum_parameterized_targets_at_call_site:int option ->
     unit ->

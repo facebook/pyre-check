@@ -56,7 +56,6 @@ module AnalyzeConfiguration : sig
     saved_state: Configuration.StaticAnalysis.SavedState.t;
     compute_coverage: bool;
     scheduler_policies: Configuration.SchedulerPolicies.t;
-    higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int option;
     maximum_target_depth: int option;
     maximum_parameterized_targets_at_call_site: int option;

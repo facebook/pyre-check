@@ -551,8 +551,6 @@ let run_taint_analysis
          saved_state;
          compute_coverage = compute_coverage_flag;
          scheduler_policies;
-         higher_order_call_graph;
-         inline_decorators;
          _;
        } as static_analysis_configuration)
     ~lookup_source
@@ -782,73 +780,67 @@ let run_taint_analysis
   in
 
   let callables_to_decorators_map =
-    if higher_order_call_graph then
-      let step_logger =
-        StepLogger.start
-          ~start_message:"Building map from callables to decorators"
-          ~end_message:"Map from callables to decorators built"
-          ()
-      in
-      let callables_to_decorators_map =
-        Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.create
-          ~callables_to_definitions_map:
-            (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
-          ~scheduler
-          ~scheduler_policy:
-            (Scheduler.Policy.from_configuration_or_default
-               scheduler_policies
-               Configuration.ScheduleIdentifier.CallableToDecoratorsMap
-               ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
-          definitions
-      in
-      let () = StepLogger.finish step_logger in
-      let () =
-        Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory
-        .save_decorator_counts_to_directory
-          ~static_analysis_configuration
-          ~scheduler
-          callables_to_decorators_map
-      in
-      callables_to_decorators_map
-    else
-      Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.empty ()
+    let step_logger =
+      StepLogger.start
+        ~start_message:"Building map from callables to decorators"
+        ~end_message:"Map from callables to decorators built"
+        ()
+    in
+    let callables_to_decorators_map =
+      Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.create
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~scheduler
+        ~scheduler_policy:
+          (Scheduler.Policy.from_configuration_or_default
+             scheduler_policies
+             Configuration.ScheduleIdentifier.CallableToDecoratorsMap
+             ~default:Interprocedural.CallGraph.SharedMemory.default_scheduler_policy)
+        definitions
+    in
+    let () = StepLogger.finish step_logger in
+    let () =
+      Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory
+      .save_decorator_counts_to_directory
+        ~static_analysis_configuration
+        ~scheduler
+        callables_to_decorators_map
+    in
+    callables_to_decorators_map
   in
 
   let decorator_resolution =
-    if higher_order_call_graph then
-      let step_logger =
-        StepLogger.start
-          ~start_message:"Building defines and call graphs of decorated targets"
-          ~end_message:"Defines and call graphs of decorated targets built"
-          ()
-      in
-      let decorator_resolution =
-        Interprocedural.CallGraph.DecoratorResolution.Results.resolve_batch_exn
-          ~debug:false
-          ~pyre_api
-          ~scheduler
-          ~scheduler_policy:
-            (Scheduler.Policy.from_configuration_or_default
-               scheduler_policies
-               Configuration.ScheduleIdentifier.DecoratorResolution
-               ~default:
-                 (Scheduler.Policy.fixed_chunk_count
-                    ~minimum_chunks_per_worker:1
-                    ~minimum_chunk_size:1
-                    ~preferred_chunks_per_worker:1
-                    ()))
-          ~override_graph:override_graph_shared_memory
-          ~callables_to_definitions_map:
-            (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
-          ~decorators:
-            (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
-               callables_to_decorators_map)
-          definitions
-      in
-      let () = StepLogger.finish step_logger in
-      decorator_resolution
-    else
-      Interprocedural.CallGraph.DecoratorResolution.Results.empty
+    let step_logger =
+      StepLogger.start
+        ~start_message:"Building defines and call graphs of decorated targets"
+        ~end_message:"Defines and call graphs of decorated targets built"
+        ()
+    in
+    let decorator_resolution =
+      Interprocedural.CallGraph.DecoratorResolution.Results.resolve_batch_exn
+        ~debug:false
+        ~pyre_api
+        ~scheduler
+        ~scheduler_policy:
+          (Scheduler.Policy.from_configuration_or_default
+             scheduler_policies
+             Configuration.ScheduleIdentifier.DecoratorResolution
+             ~default:
+               (Scheduler.Policy.fixed_chunk_count
+                  ~minimum_chunks_per_worker:1
+                  ~minimum_chunk_size:1
+                  ~preferred_chunks_per_worker:1
+                  ()))
+        ~override_graph:override_graph_shared_memory
+        ~callables_to_definitions_map:
+          (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~decorators:
+          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+             callables_to_decorators_map)
+        definitions
+    in
+    let () = StepLogger.finish step_logger in
+    decorator_resolution
   in
 
   let step_logger =
@@ -889,11 +881,7 @@ let run_taint_analysis
           ~definitions
           ~callables_to_definitions_map:
             (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
-          ~create_dependency_for:
-            (if higher_order_call_graph then
-               Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
-            else
-              Interprocedural.CallGraph.AllTargetsUseCase.TaintAnalysisDependency))
+          ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency)
   in
   let () = StepLogger.finish step_logger in
 
@@ -933,106 +921,93 @@ let run_taint_analysis
         get_define_call_graph,
         higher_order_call_graph_fixpoint )
     =
-    if higher_order_call_graph then
-      let step_logger =
-        StepLogger.start
-          ~start_message:"Computing higher order call graphs"
-          ~end_message:"Computed higher order call graphs"
-          ()
-      in
-      let {
-        Interprocedural.CallGraphFixpoint.whole_program_call_graph;
-        get_define_call_graph;
-        fixpoint;
-        _;
-      }
-        =
-        Interprocedural.CallGraphFixpoint.compute
-          ~scheduler
-          ~scheduler_policy:
-            (Scheduler.Policy.from_configuration_or_default
-               scheduler_policies
-               Configuration.ScheduleIdentifier.HigherOrderCallGraph
-               ~default:
-                 (Scheduler.Policy.fixed_chunk_size
-                    ~minimum_chunks_per_worker:1
-                    ~minimum_chunk_size:100
-                    ~preferred_chunk_size:30000
-                    ()))
-          ~static_analysis_configuration
-          ~resolve_module_path:(Some resolve_module_path)
-          ~pyre_api
-          ~call_graph:original_call_graphs
-          ~dependency_graph:original_dependency_graph
-          ~override_graph_shared_memory
-          ~skip_analysis_targets:skip_analysis_targets_hashset
-          ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
-          ~decorator_resolution
-          ~decorators:
-            (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
-               callables_to_decorators_map)
-          ~callables_to_definitions_map
-      in
-      let () = StepLogger.finish step_logger in
+    let step_logger =
+      StepLogger.start
+        ~start_message:"Computing higher order call graphs"
+        ~end_message:"Computed higher order call graphs"
+        ()
+    in
+    let {
+      Interprocedural.CallGraphFixpoint.whole_program_call_graph;
+      get_define_call_graph;
+      fixpoint;
+      _;
+    }
+      =
+      Interprocedural.CallGraphFixpoint.compute
+        ~scheduler
+        ~scheduler_policy:
+          (Scheduler.Policy.from_configuration_or_default
+             scheduler_policies
+             Configuration.ScheduleIdentifier.HigherOrderCallGraph
+             ~default:
+               (Scheduler.Policy.fixed_chunk_size
+                  ~minimum_chunks_per_worker:1
+                  ~minimum_chunk_size:100
+                  ~preferred_chunk_size:30000
+                  ()))
+        ~static_analysis_configuration
+        ~resolve_module_path:(Some resolve_module_path)
+        ~pyre_api
+        ~call_graph:original_call_graphs
+        ~dependency_graph:original_dependency_graph
+        ~override_graph_shared_memory
+        ~skip_analysis_targets:skip_analysis_targets_hashset
+        ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
+        ~decorator_resolution
+        ~decorators:
+          (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
+             callables_to_decorators_map)
+        ~callables_to_definitions_map
+    in
+    let () = StepLogger.finish step_logger in
 
-      let step_logger =
-        StepLogger.start
-          ~start_message:"Computing dependencies from higher order call graphs"
-          ~end_message:"Computed dependencies from higher order call graphs"
-          ()
-      in
-      let dependency_graph =
-        Interprocedural.DependencyGraph.build_whole_program_dependency_graph
-          ~static_analysis_configuration
-          ~prune:prune_method
-          ~initial_callables
-          ~call_graph:whole_program_call_graph
-          ~overrides:override_graph_heap
-          ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
-      in
-      let () = StepLogger.finish step_logger in
-      let () =
-        cleanup_shared_memory_after_call_graph_fixpoint
-          ~callables_to_decorators_map
-          ~original_define_call_graphs
-          ~call_graph_fixpoint:fixpoint
-      in
-      dependency_graph, get_define_call_graph, Some fixpoint
-    else
-      let get_define_call_graph define_call_graphs callable =
-        Interprocedural.CallGraph.SharedMemory.ReadOnly.get
-          define_call_graphs
-          ~cache:false
-          ~callable
-      in
-      ( original_dependency_graph,
-        get_define_call_graph
-          (Interprocedural.CallGraph.SharedMemory.read_only original_define_call_graphs),
-        None )
+    let step_logger =
+      StepLogger.start
+        ~start_message:"Computing dependencies from higher order call graphs"
+        ~end_message:"Computed dependencies from higher order call graphs"
+        ()
+    in
+    let dependency_graph =
+      Interprocedural.DependencyGraph.build_whole_program_dependency_graph
+        ~static_analysis_configuration
+        ~prune:prune_method
+        ~initial_callables
+        ~call_graph:whole_program_call_graph
+        ~overrides:override_graph_heap
+        ~decorator_resolution:Interprocedural.CallGraph.DecoratorResolution.Results.empty
+    in
+    let () = StepLogger.finish step_logger in
+    dependency_graph, get_define_call_graph, fixpoint
   in
 
   (* TODO(T215367584): Cache higher order call graphs. *)
   let () =
-    if not higher_order_call_graph then
-      Cache.save
-        ~maximum_overrides
-        ~attribute_targets
-        ~skip_type_checking_callables
-        ~skip_analysis_targets
-        ~skip_overrides_targets
-        ~analyze_all_overrides_targets
-        ~skipped_overrides
-        ~override_graph_shared_memory
-        ~initial_callables
-        ~initial_models
-        ~call_graph_shared_memory:original_define_call_graphs
-        ~whole_program_call_graph:original_whole_program_call_graph
-        ~global_constants
-        cache
+    Cache.save
+      ~maximum_overrides
+      ~attribute_targets
+      ~skip_type_checking_callables
+      ~skip_analysis_targets
+      ~skip_overrides_targets
+      ~analyze_all_overrides_targets
+      ~skipped_overrides
+      ~override_graph_shared_memory
+      ~initial_callables
+      ~initial_models
+      ~call_graph_shared_memory:original_define_call_graphs
+      ~whole_program_call_graph:original_whole_program_call_graph
+      ~global_constants
+      cache
   in
   (if use_cache && build_cache_only then
      let () = Log.info "Cache has been built. Exiting now" in
      raise Cache.BuildCacheOnly);
+  let () =
+    cleanup_shared_memory_after_call_graph_fixpoint
+      ~callables_to_decorators_map
+      ~original_define_call_graphs
+      ~call_graph_fixpoint:higher_order_call_graph_fixpoint
+  in
 
   let () = PyrePysaEnvironment.ReadWrite.purge_shared_memory pyre_read_write_api in
 
@@ -1096,7 +1071,7 @@ let run_taint_analysis
           get_define_call_graph;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create ();
-          decorator_inlined = inline_decorators || not higher_order_call_graph;
+          decorator_inlined = false;
           callables_to_definitions_map =
             Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
         }

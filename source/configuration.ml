@@ -800,7 +800,6 @@ module StaticAnalysis = struct
     saved_state: SavedState.t;
     compute_coverage: bool;
     scheduler_policies: SchedulerPolicies.t;
-    higher_order_call_graph: bool;
     higher_order_call_graph_max_iterations: int;
     maximum_target_depth: int;
     maximum_parameterized_targets_at_call_site: int option;
@@ -856,7 +855,6 @@ module StaticAnalysis = struct
       ?(saved_state = SavedState.empty)
       ?(compute_coverage = false)
       ?(scheduler_policies = SchedulerPolicies.empty)
-      ?(higher_order_call_graph = false)
       ?(higher_order_call_graph_max_iterations = default_higher_order_call_graph_max_iterations)
       ?(maximum_parameterized_targets_at_call_site = None)
       ()
@@ -898,7 +896,6 @@ module StaticAnalysis = struct
       saved_state;
       compute_coverage;
       scheduler_policies;
-      higher_order_call_graph;
       higher_order_call_graph_max_iterations;
       maximum_target_depth;
       maximum_parameterized_targets_at_call_site;

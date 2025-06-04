@@ -82,13 +82,10 @@ let initialize_for_parameterized_callables ~higher_order_call_graph_fixpoint ini
         | None -> Some TaintFixpoint.Analysis.initial_model)
     | Regular _ -> None
   in
-  match higher_order_call_graph_fixpoint with
-  | None -> initial_models
-  | Some higher_order_call_graph_fixpoint ->
-      higher_order_call_graph_fixpoint
-      |> Interprocedural.CallGraphFixpoint.analyzed_callables
-      |> List.fold ~init:(T.add_only initial_models) ~f:(fun models callable ->
-             match initial_model callable with
-             | None -> models
-             | Some model -> T.AddOnly.add models callable model)
-      |> from_add_only
+  higher_order_call_graph_fixpoint
+  |> Interprocedural.CallGraphFixpoint.analyzed_callables
+  |> List.fold ~init:(T.add_only initial_models) ~f:(fun models callable ->
+         match initial_model callable with
+         | None -> models
+         | Some model -> T.AddOnly.add models callable model)
+  |> from_add_only

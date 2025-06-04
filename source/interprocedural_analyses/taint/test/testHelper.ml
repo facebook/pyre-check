@@ -995,8 +995,7 @@ let end_to_end_integration_test path context =
     in
     let initial_models =
       SharedModels.initialize_for_parameterized_callables
-        ~higher_order_call_graph_fixpoint:
-          (Some call_graph_fixpoint_state.CallGraphFixpoint.fixpoint)
+        ~higher_order_call_graph_fixpoint:call_graph_fixpoint_state.CallGraphFixpoint.fixpoint
         initial_models
     in
     let fixpoint_state =
