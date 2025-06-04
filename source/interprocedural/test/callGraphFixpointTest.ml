@@ -2008,8 +2008,8 @@ let test_higher_order_call_graph_fixpoint =
            ~source:
              {|
      def decorator(f):
-       def inner():
-         return
+       def inner(x):
+         return f(x)
        return inner
      def main():
        @decorator
@@ -2030,9 +2030,18 @@ let test_higher_order_call_graph_fixpoint =
                          (CallCallees.create
                             ~call_targets:
                               [
-                                CallTarget.create_regular
-                                  (Target.Regular.Function
-                                     { name = "test.main.inner"; kind = Normal });
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.decorator.inner"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.main.inner"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
                               ]
                             ()) );
                      ( "8:2-9:10",
@@ -2040,9 +2049,18 @@ let test_higher_order_call_graph_fixpoint =
                          (DefineCallees.create
                             ~define_targets:
                               [
-                                CallTarget.create_regular
-                                  (Target.Regular.Function
-                                     { name = "test.main.inner"; kind = Decorated });
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          { name = "test.decorator.inner"; kind = Normal })
+                                     ~parameters:
+                                       [
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.main.inner"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
                               ]
                             ()) );
                    ];
@@ -2056,8 +2074,8 @@ let test_higher_order_call_graph_fixpoint =
              {|
      def decorator_factory(x: int):
        def decorator(f):
-         def inner():
-           return
+         def inner(x):
+           return f(x)
          return inner
        return decorator
      def main():
@@ -2082,6 +2100,21 @@ let test_higher_order_call_graph_fixpoint =
                                 CallTarget.create_regular
                                   (Target.Regular.Function
                                      { name = "test.main.inner"; kind = Normal });
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          {
+                                            name = "test.decorator_factory.decorator.inner";
+                                            kind = Normal;
+                                          })
+                                     ~parameters:
+                                       [
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.main.inner"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
                               ]
                             ()) );
                      ( "10:2-11:10",
@@ -2091,7 +2124,22 @@ let test_higher_order_call_graph_fixpoint =
                               [
                                 CallTarget.create_regular
                                   (Target.Regular.Function
-                                     { name = "test.main.inner"; kind = Decorated });
+                                     { name = "test.main.inner"; kind = Normal });
+                                CallTarget.create
+                                  (create_parameterized_target
+                                     ~regular:
+                                       (Target.Regular.Function
+                                          {
+                                            name = "test.decorator_factory.decorator.inner";
+                                            kind = Normal;
+                                          })
+                                     ~parameters:
+                                       [
+                                         ( AccessPath.Root.Variable "$parameter$f",
+                                           Target.Regular.Function
+                                             { name = "test.main.inner"; kind = Normal }
+                                           |> Target.from_regular );
+                                       ]);
                               ]
                             ()) );
                    ];

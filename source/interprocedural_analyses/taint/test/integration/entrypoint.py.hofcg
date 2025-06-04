@@ -52,7 +52,7 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated",
+            "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
             "index": 0,
             "return_type": []
           }

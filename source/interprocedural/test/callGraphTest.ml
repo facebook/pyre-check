@@ -8155,8 +8155,8 @@ let test_resolve_decorator_callees =
            ~source:
              {|
      def decorator(f):
-       def inner():
-         return
+       def inner(x):
+         return f(x)
        return inner
      def main():
        @decorator  # Test creating decorated targets for inner functions

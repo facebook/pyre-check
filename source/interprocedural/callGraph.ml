@@ -2278,6 +2278,13 @@ module DefineCallGraph = struct
       ~callees:(ExpressionCallees.from_format_string_stringify callees)
 
 
+  let set_define_callees ~define_location ~callees =
+    set_callees
+      ~error_if_existing_empty:true
+      ~expression_identifier:(ExpressionIdentifier.of_define_statement define_location)
+      ~callees:(ExpressionCallees.from_define callees)
+
+
   let filter_empty_attribute_access =
     ExpressionIdentifier.Map.filter (fun _ callees ->
         not (ExpressionCallees.is_empty_attribute_access_callees callees))
@@ -2357,6 +2364,15 @@ module DefineCallGraph = struct
     >>= function
     | ExpressionCallees.FormatStringStringify format_string_stringify ->
         Some format_string_stringify
+    | _ -> None
+
+
+  let resolve_define call_graph ~define_location =
+    resolve_expression
+      call_graph
+      ~expression_identifier:(ExpressionIdentifier.of_define_statement define_location)
+    >>= function
+    | ExpressionCallees.Define call -> Some call
     | _ -> None
 end
 
@@ -5918,31 +5934,54 @@ module HigherOrderCallGraph = struct
                 let strong_update = TaintAccessPath.Path.is_empty path in
                 store_callees ~weak:(not strong_update) ~root ~callees:CallTarget.Set.bottom state)
         | Assert { test; _ } -> analyze_expression ~pyre_in_context ~state ~expression:test |> snd
-        | Define ({ Define.signature = { name; _ }; _ } as define) ->
-            let delocalized_name = Reference.delocalize name in
-            let regular_target =
-              define |> Target.create delocalized_name |> Target.as_regular_exn
+        | Define { Define.signature = { name; _ }; _ } ->
+            let define_location = Node.location statement in
+            let callees_without_captures, captures =
+              Context.input_define_call_graph
+              |> DefineCallGraph.resolve_define ~define_location
+              >>| (fun { DefineCallees.define_targets; _ } ->
+                    let {
+                      AnalyzeDecoratedTargetsResult.decorated_targets;
+                      non_decorated_targets = _ (* Not useful to taint analysis. *);
+                      result_targets;
+                    }
+                      =
+                      resolve_decorated_targets define_targets
+                    in
+                    let () =
+                      Context.output_define_call_graph :=
+                        DefineCallGraph.set_define_callees
+                          ~define_location
+                          ~callees:
+                            { DefineCallees.define_targets = result_targets; decorated_targets }
+                          !Context.output_define_call_graph
+                    in
+                    let captures =
+                      match define_targets with
+                      | [define_target] ->
+                          define_target
+                          |> CallTarget.target
+                          |> (* Since `Define` statements inside another `Define` are stripped out
+                                (to avoid bloat), use this API to query the definition. *)
+                          Target.CallablesSharedMemory.ReadOnly.get_captures
+                            Context.callables_to_definitions_map
+                      | _ ->
+                          Format.asprintf
+                            "Expect a single `define_target` but got `[%s]`"
+                            (define_targets |> List.map ~f:CallTarget.show |> String.concat ~sep:";")
+                          |> failwith
+                    in
+                    result_targets, captures)
+              |> Option.value ~default:([], None)
             in
             let callees =
-              (* Since `Define` statements inside another `Define` are stripped out (to avoid
-                 bloat), use this API to query the definition. *)
-              match
-                regular_target
-                |> Target.from_regular
-                |> Target.CallablesSharedMemory.ReadOnly.get_captures
-                     Context.callables_to_definitions_map
-              with
+              match captures with
               | Some captures ->
                   let parameters_roots, parameters_targets =
                     captures
                     |> List.filter_map ~f:(fun { Define.Capture.name; _ } ->
                            let captured = State.create_root_from_identifier name in
-                           log
-                             "Inner function `%a` captures `%a`"
-                             Reference.pp
-                             delocalized_name
-                             TaintAccessPath.Root.pp
-                             captured;
+                           log "Inner function captures `%a`" TaintAccessPath.Root.pp captured;
                            let parameter_targets =
                              state
                              |> State.get captured
@@ -5959,10 +5998,7 @@ module HigherOrderCallGraph = struct
                     |> List.unzip
                   in
                   if List.is_empty parameters_targets then
-                    regular_target
-                    |> Target.from_regular
-                    |> CallTarget.create
-                    |> CallTarget.Set.singleton
+                    callees_without_captures
                   else
                     parameters_targets
                     |> cartesian_product_with_limit
@@ -5971,31 +6007,28 @@ module HigherOrderCallGraph = struct
                            "Avoid generating parameterized targets when analyzing `Define` \
                             statement"
                     |> Option.value ~default:[]
-                    |> List.map ~f:(fun parameters_targets ->
-                           match
-                             validate_target
-                               (Target.Parameterized
-                                  {
-                                    regular = regular_target;
-                                    parameters =
-                                      parameters_targets
-                                      |> List.zip_exn parameters_roots
-                                      |> Target.ParameterMap.of_alist_exn;
-                                  })
-                           with
-                           | Some parameterized -> CallTarget.create parameterized
-                           | None -> CallTarget.create_regular regular_target)
-                    |> CallTarget.Set.of_list
-              | _ ->
-                  regular_target
-                  |> Target.from_regular
-                  |> CallTarget.create
-                  |> CallTarget.Set.singleton
+                    |> List.concat_map ~f:(fun parameters_targets ->
+                           List.map callees_without_captures ~f:(fun call_target ->
+                               match
+                                 validate_target
+                                   (Target.Parameterized
+                                      {
+                                        regular =
+                                          call_target |> CallTarget.target |> Target.get_regular;
+                                        parameters =
+                                          parameters_targets
+                                          |> List.zip_exn parameters_roots
+                                          |> Target.ParameterMap.of_alist_exn;
+                                      })
+                               with
+                               | Some parameterized -> { call_target with target = parameterized }
+                               | None -> call_target))
+              | None -> callees_without_captures
             in
             store_callees
               ~weak:false
               ~root:(name |> Reference.show |> State.create_root_from_identifier)
-              ~callees
+              ~callees:(CallTarget.Set.of_list callees)
               state
         | Delete expressions ->
             let analyze_delete state expression =

@@ -638,7 +638,7 @@ Higher order call graphs
       "define": {
         "define_targets": [
           {
-            "target": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated",
+            "target": "closure_models.some_decorator.wrapper_func[local($parameter$func)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
             "index": 0,
             "return_type": []
           }
