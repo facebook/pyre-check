@@ -54,7 +54,7 @@ Call dependencies
     "_test_sink (fun)"
   ],
   "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated (fun)": [
-    "closure_models.some_decorator (fun)"
+    "closure_models.some_decorator (fun)[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable (fun)]"
   ],
   "closure_models.test_dsl_source.local_function_capturing_local_variable (fun)": [
     "_test_sink (fun)"

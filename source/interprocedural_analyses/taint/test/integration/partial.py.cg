@@ -14,7 +14,8 @@ Call dependencies
   ],
   "partial.PartialConstructor.__init__@decorated (method)": [
     "object.__new__ (method)",
-    "partial.PartialDecorator.__init__ (method)[formal(func, position=1)=functools.partial.__call__ (method)]"
+    "partial.PartialDecorator.__init__ (method)[formal(func, position=1)=functools.partial.__call__ (method)]",
+    "partial.PartialDecorator.__init__ (method)[formal(func, position=1)=partial.PartialConstructor.__init__ (method)]"
   ],
   "partial.PartialDecorator.__call__ (method)": [
     "typing.MutableMapping.pop (method)"

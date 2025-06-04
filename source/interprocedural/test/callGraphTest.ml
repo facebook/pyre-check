@@ -8038,6 +8038,17 @@ let test_resolve_decorator_callees =
                                      };
                                    ])
                               ()) );
+                       ( "9:2-10:12|artificial-attribute-access|for-decorated-target-callee:test.A.foo",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    ~implicit_receiver:true
+                                    (Target.Regular.Method
+                                       { class_name = "test.A"; method_name = "foo"; kind = Normal });
+                                ]
+                              ()) );
                      ] ) );
              ]
            ();
@@ -8187,7 +8198,16 @@ let test_resolve_decorator_callees =
                                     (Target.Regular.Function { name = "test.main"; kind = Normal });
                                 ]
                               ()) );
-                       (* TODO: Expect a call to `test.main.inner` *)
+                       ( "8:2-9:10|artificial-attribute-access|for-decorated-target-callee:test.main.inner",
+                         ExpressionCallees.from_attribute_access
+                           (AttributeAccessCallees.create
+                              ~callable_targets:
+                                [
+                                  CallTarget.create_regular
+                                    (Target.Regular.Function
+                                       { name = "test.main.inner"; kind = Normal });
+                                ]
+                              ()) );
                      ] ) );
              ]
            ();

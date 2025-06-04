@@ -2613,6 +2613,19 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "188:4-189:16|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.bar": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "decorator.Foo.bar",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }
@@ -2655,6 +2668,19 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "183:4-184:27|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.foo": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "decorator.Foo.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }
@@ -2694,6 +2720,19 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "192:4-193:22|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.self_has_generic_type": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "decorator.Foo.self_has_generic_type",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -2775,6 +2814,20 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "197:4-198:28|artificial-attribute-access|for-decorated-target-callee:decorator.Foo.some_class_method": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "decorator.Foo.some_class_method",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "is_class_method": true
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }
@@ -2851,6 +2904,19 @@ Higher order call graphs
             "return_type": []
           }
         ]
+      }
+    },
+    "388:4-391:54|artificial-attribute-access|for-decorated-target-callee:decorator.StringWrapper.__add__": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "decorator.StringWrapper.__add__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }

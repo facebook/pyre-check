@@ -1737,37 +1737,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.async_tito[formal(function, position=0)=closure.decorator.wrapper]",
-    "filename": "closure.py",
-    "callable_line": 373,
-    "tito": [
-      {
-        "port": "formal(function, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" },
-              { "always-via": "captured-variable" }
-            ],
-            "tito_positions": [ { "line": 374, "start": 17, "end": 27 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "closure.closure.sink",
     "filename": "closure.py",
     "callable_line": 106,

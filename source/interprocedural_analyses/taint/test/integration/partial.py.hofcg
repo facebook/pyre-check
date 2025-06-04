@@ -250,6 +250,19 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "87:4-89:18|artificial-attribute-access|for-decorated-target-callee:partial.NestedDefineConstructor.__init__": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.NestedDefineConstructor.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }
@@ -308,6 +321,12 @@ Higher order call graphs
       "index": 0,
       "implicit_receiver": true,
       "return_type": []
+    },
+    {
+      "target": "partial.PartialConstructor.__init__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
     }
   ],
   "calls": {
@@ -327,8 +346,27 @@ Higher order call graphs
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
+          },
+          {
+            "target": "partial.PartialDecorator.__init__[formal(func, position=1)=partial.PartialConstructor.__init__]",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
           }
         ]
+      }
+    },
+    "59:4-61:18|artificial-attribute-access|for-decorated-target-callee:partial.PartialConstructor.__init__": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "partial.PartialConstructor.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -393,6 +431,18 @@ Higher order call graphs
   "returned_callables": [
     {
       "target": "functools.partial.__call__",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "partial.PartialDecorator.__init__[formal(func, position=1)=partial.PartialConstructor.__init__]",
+  "returned_callables": [
+    {
+      "target": "partial.PartialConstructor.__init__",
       "index": 0,
       "implicit_receiver": true,
       "return_type": []

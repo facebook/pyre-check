@@ -6309,6 +6309,63 @@ module DecoratorResolution = struct
    * ```
    * would resolve into expression `decorator(decorator_factory(1, 2)(foo))`, along with its callees that are stored in `call_graph`.
    *)
+
+  (* If Pyre cannot resolve the callable on the callable expression, we hardcode the callable. *)
+  let add_callees_for_attribute_access_if_unresolved
+      ~debug
+      ~callables_to_definitions_map
+      ~callee
+      ~attribute_access
+      ~attribute_access_location
+      ~call_graph
+    =
+    let attribute_access =
+      match attribute_access with
+      | Name.Attribute attribute -> attribute
+      | attribute_access ->
+          Format.asprintf
+            "Expect the decorated callable to be an attribute but got `%a`"
+            Name.pp
+            attribute_access
+          |> failwith
+    in
+    let should_add_callable =
+      !call_graph
+      |> DefineCallGraph.resolve_attribute_access
+           ~location:attribute_access_location
+           ~attribute_access
+      >>| (fun { AttributeAccessCallees.callable_targets; property_targets; _ } ->
+            List.is_empty callable_targets && List.is_empty property_targets)
+      |> Option.value ~default:true
+    in
+    if should_add_callable then
+      let is_class_method, is_static_method =
+        Target.CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map callee
+      in
+      call_graph :=
+        DefineCallGraph.add_attribute_access_callees
+          ~debug
+          ~location:attribute_access_location
+          ~attribute_access
+          ~callees:
+            (AttributeAccessCallees.create
+               ~callable_targets:
+                 [
+                   CallTarget.create
+                     ~implicit_receiver:
+                       (is_implicit_receiver
+                          ~is_static_method
+                          ~is_class_method
+                          ~explicit_receiver:false
+                          callee)
+                     ~is_class_method
+                     ~is_static_method
+                     callee;
+                 ]
+               ())
+          !call_graph
+
+
   let resolve_exn
       ?(debug = false)
       ~pyre_in_context
@@ -6380,13 +6437,14 @@ module DecoratorResolution = struct
     | ( Some Target.Normal,
         Some { CallableToDecoratorsMap.decorators = _ :: _ as decorators; define_location } ) ->
         let define_name = Target.define_name_exn callable in
-        let callable_name =
+        let attribute_access_location = define_location in
+        let attribute_access =
           Ast.Expression.create_name_from_reference
-            ~location:define_location
+            ~location:attribute_access_location
             ~create_origin:(fun attributes ->
               Some
                 (Origin.create
-                   ~location:define_location
+                   ~location:attribute_access_location
                    (Origin.ForDecoratedTargetCallee attributes)))
             define_name
         in
@@ -6394,11 +6452,19 @@ module DecoratorResolution = struct
         let expression =
           List.fold
             decorators
-            ~init:(Expression.Name callable_name |> Node.create ~location:define_location)
+            ~init:
+              (Expression.Name attribute_access |> Node.create ~location:attribute_access_location)
             ~f:create_decorator_call
         in
         let call_graph = ref DefineCallGraph.empty in
         resolve_callees ~call_graph expression;
+        add_callees_for_attribute_access_if_unresolved
+          ~debug
+          ~callables_to_definitions_map
+          ~callee:callable
+          ~attribute_access
+          ~attribute_access_location
+          ~call_graph;
         let define =
           {
             Define.signature =

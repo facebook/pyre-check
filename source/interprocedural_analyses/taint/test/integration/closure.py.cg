@@ -12,10 +12,10 @@ Call dependencies
   "closure.async_nonlocal_closure_tito_with_decorator (fun)": [
     "_test_sink (fun)", "_test_source (fun)",
     "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]",
-    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)]"
+    "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]"
   ],
   "closure.async_nonlocal_closure_tito_with_decorator.inner@decorated (fun)": [
-    "closure.decorator (fun)"
+    "closure.decorator (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
   ],
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_ignore_decorator.inner (fun)"
@@ -23,8 +23,8 @@ Call dependencies
   "closure.async_tito (fun)[formal(function, position=0)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
     "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
   ],
-  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)]": [
-    "closure.decorator.wrapper (fun)"
+  "closure.async_tito (fun)[formal(function, position=0)=closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]]": [
+    "closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]"
   ],
   "closure.closure (fun)": [
     "object.__init__ (method)", "object.__new__ (method)"
@@ -33,6 +33,9 @@ Call dependencies
   "closure.closure.source (fun)": [ "_test_source (fun)" ],
   "closure.closure_flow (fun)": [ "closure.closure (fun)" ],
   "closure.closure_no_flow (fun)": [ "closure.closure (fun)" ],
+  "closure.decorator.wrapper (fun)[local($parameter$function)=closure.async_nonlocal_closure_tito_with_decorator.inner (fun)]": [
+    "closure.async_nonlocal_closure_tito_with_decorator.inner (fun)"
+  ],
   "closure.higher_order_function (fun)[formal(f, position=0)=closure.wrapper_for_taint_propagation_hof.inner (fun)]": [
     "closure.wrapper_for_taint_propagation_hof.inner (fun)"
   ],

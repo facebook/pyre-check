@@ -664,7 +664,7 @@ Higher order call graphs
   "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable@decorated",
   "returned_callables": [
     {
-      "target": "closure_models.some_decorator.wrapper_func",
+      "target": "closure_models.some_decorator.wrapper_func[local($parameter$func)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
       "index": 0,
       "return_type": []
     }
@@ -674,11 +674,23 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "closure_models.some_decorator",
+            "target": "closure_models.some_decorator[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
             "index": 0,
             "return_type": []
           }
         ]
+      }
+    },
+    "123:4-124:29|artificial-attribute-access|for-decorated-target-callee:closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
       }
     },
     "123:4-124:29|artificial-attribute-access|for-decorated-target-callee:closure_models.test_dsl_decorator_source": {
@@ -869,6 +881,29 @@ Higher order call graphs
     "23:15-23:27": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
+      }
+    }
+  }
+}
+{
+  "callable": "closure_models.some_decorator[formal(func, position=0)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+  "returned_callables": [
+    {
+      "target": "closure_models.some_decorator.wrapper_func[local($parameter$func)=closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable]",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "110:4-111:14": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "closure_models.some_decorator.wrapper_func",
+            "index": 0,
+            "return_type": []
+          }
+        ]
       }
     }
   }

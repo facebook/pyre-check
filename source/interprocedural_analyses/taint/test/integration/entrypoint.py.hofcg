@@ -98,13 +98,19 @@ Higher order call graphs
 }
 {
   "callable": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated",
-  "returned_callables": [],
+  "returned_callables": [
+    {
+      "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+      "index": 0,
+      "return_type": []
+    }
+  ],
   "calls": {
     "61:5-61:17|artificial-call|for-decorated-target": {
       "call": {
         "calls": [
           {
-            "target": "entrypoint.MyEntrypoint",
+            "target": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator]",
             "index": 0,
             "return_type": []
           }
@@ -116,6 +122,18 @@ Higher order call graphs
         "callables": [
           {
             "target": "entrypoint.entrypoint_into_lambda",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    },
+    "62:4-63:22|artificial-attribute-access|for-decorated-target-callee:entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
             "index": 0,
             "return_type": []
           }
@@ -518,6 +536,19 @@ Higher order call graphs
           }
         ]
       }
+    },
+    "20:4-21:22|artificial-attribute-access|for-decorated-target-callee:entrypoint.MyClass.method_entrypoint_with_decorator": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "entrypoint.MyClass.method_entrypoint_with_decorator",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
     }
   }
 }
@@ -544,6 +575,17 @@ Higher order call graphs
       }
     }
   }
+}
+{
+  "callable": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator]",
+  "returned_callables": [
+    {
+      "target": "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
 }
 {
   "callable": "entrypoint.MyEntrypoint[formal(f, position=0)=entrypoint.function_entrypoint_with_decorator]",

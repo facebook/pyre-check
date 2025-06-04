@@ -1299,6 +1299,21 @@ let test_higher_order_call_graph_fixpoint =
                                      });
                               ]
                             ()) );
+                     ( "16:2-17:14|artificial-attribute-access|for-decorated-target-callee:test.MyClass.bar",
+                       ExpressionCallees.from_attribute_access
+                         (AttributeAccessCallees.create
+                            ~callable_targets:
+                              [
+                                CallTarget.create_regular
+                                  ~implicit_receiver:true
+                                  (Target.Regular.Method
+                                     {
+                                       class_name = "test.MyClass";
+                                       method_name = "bar";
+                                       kind = Normal;
+                                     });
+                              ]
+                            ()) );
                    ];
                  returned_callables =
                    [

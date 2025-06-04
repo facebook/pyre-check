@@ -20,7 +20,7 @@ Call dependencies
     "list.append (method)"
   ],
   "entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator@decorated (fun)": [
-    "entrypoint.MyEntrypoint (fun)"
+    "entrypoint.MyEntrypoint (fun)[formal(f, position=0)=entrypoint.entrypoint_into_lambda.lambda_entrypoint_with_decorator (fun)]"
   ],
   "entrypoint.function_entrypoint_with_decorator (fun)": [
     "list.append (method)"
