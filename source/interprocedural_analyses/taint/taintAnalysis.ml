@@ -112,7 +112,6 @@ let parse_model_modes
     {
       PyrePysaLogic.DecoratorPreprocessing.Configuration.actions =
         ModelParser.decorator_actions_from_modes model_modes;
-      enable_inlining = false;
       enable_discarding = true;
     }
   in

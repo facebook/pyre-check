@@ -113,8 +113,7 @@ let source_of_qualifier ~string_annotation_preserve_location ~parse_result_of_qu
   | Result.Ok source ->
       expand_wildcard_imports ~parse_result_of_qualifier source
       |> Preprocessing.preprocess_after_wildcards ~string_annotation_preserve_location
-      |> DecoratorPreprocessing.preprocess_source ~get_source:(fun qualifier ->
-             parse_result_of_qualifier qualifier >>= Result.ok)
+      |> DecoratorPreprocessing.preprocess_source
   | Result.Error
       {
         Parsing.ParseResult.Error.module_path =

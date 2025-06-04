@@ -509,7 +509,7 @@ let set_up_decorator_preprocessing ~handle models =
     |> Option.value ~default:Reference.SerializableMap.empty
   in
   PyrePysaLogic.DecoratorPreprocessing.setup_preprocessing
-    { actions = decorator_actions; enable_inlining = false; enable_discarding = true }
+    { actions = decorator_actions; enable_discarding = true }
 
 
 let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_source =
