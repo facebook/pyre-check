@@ -1749,17 +1749,6 @@
     "stop_line": 36
   },
   {
-    "code": 5015,
-    "column": 32,
-    "define": "integration_test.exit_flow.test_to_response",
-    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
-    "line": 16,
-    "name": "User input returned to user",
-    "path": "fixture_source/integration_test/exit_flow.py",
-    "stop_column": 38,
-    "stop_line": 16
-  },
-  {
     "code": 5001,
     "column": 16,
     "define": "integration_test.functools.test_cached_eval",
@@ -1783,13 +1772,13 @@
   },
   {
     "code": 5001,
-    "column": 12,
+    "column": 19,
     "define": "integration_test.functools.test_cached_eval_higher_order_function",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "line": 39,
     "name": "Possible shell injection",
     "path": "fixture_source/integration_test/functools.py",
-    "stop_column": 17,
+    "stop_column": 37,
     "stop_line": 39
   },
   {
@@ -1945,5 +1934,16 @@
     "path": "fixture_source/integration_test/top_level.py",
     "stop_column": 23,
     "stop_line": 15
+  },
+  {
+    "code": 5015,
+    "column": 32,
+    "define": "integration_test.exit_flow.test_to_response",
+    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
+    "line": 16,
+    "name": "User input returned to user",
+    "path": "fixture_source/integration_test/exit_flow.py",
+    "stop_column": 38,
+    "stop_line": 16
   }
 ]
