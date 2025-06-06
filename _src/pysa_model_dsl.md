@@ -1620,10 +1620,6 @@ The available modes are:
 - [`Entrypoint`](pysa_advanced.md#filtering-the-call-graph-with-entrypoint)
   - Specifies functions or methods to be used as entrypoints for analysis, so
     only transitive calls from that function are analyzed
-- [`SkipDecoratorWhenInlining`](pysa_advanced.md#prevent-inlining-decorators-with-skipdecoratorwheninlining)
-  - Prevents the selected decorator from being inlined during analysis
-  - Note: this mode will be a no-op, since model queries are generated after
-    decorators are inlined
 - [`SkipModelBroadening`](pysa_advanced.md#model-broadening)
   - Prevents model broadening for the given function or method
 
