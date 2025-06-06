@@ -337,7 +337,6 @@ module Mode = struct
     | Obscure
     | SkipObscure (* Don't treat as obscure *)
     | SkipAnalysis (* Don't analyze at all *)
-    | SkipDecoratorWhenInlining
     | SkipOverrides (* Don't analyze any override *)
     | AnalyzeAllOverrides
       (* Force analyzing all overrides, regardless of SkipOverrides or maximum overrides *)
@@ -354,7 +353,6 @@ module Mode = struct
     | Obscure -> Format.fprintf formatter "Obscure"
     | SkipObscure -> Format.fprintf formatter "SkipObscure"
     | SkipAnalysis -> Format.fprintf formatter "SkipAnalysis"
-    | SkipDecoratorWhenInlining -> Format.fprintf formatter "SkipDecoratorWhenInlining"
     | SkipOverrides -> Format.fprintf formatter "SkipOverrides"
     | AnalyzeAllOverrides -> Format.fprintf formatter "AnalyzeAllOverrides"
     | Entrypoint -> Format.fprintf formatter "Entrypoint"
@@ -373,7 +371,6 @@ module Mode = struct
     | "Obscure" -> Some Obscure
     | "SkipObscure" -> Some SkipObscure
     | "SkipAnalysis" -> Some SkipAnalysis
-    | "SkipDecoratorWhenInlining" -> Some SkipDecoratorWhenInlining
     | "SkipOverrides" -> Some SkipOverrides
     | "Entrypoint" -> Some Entrypoint
     | "IgnoreDecorator" -> Some IgnoreDecorator

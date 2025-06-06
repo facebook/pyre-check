@@ -997,36 +997,6 @@ def decorated(x: int) -> int:
   return result
 ```
 
-### Prevent Inlining Decorators with `SkipDecoratorWhenInlining`
-
-Decorator inlining comes at the cost of increasing the analysis time and also increasing the lengths of traces. If you would like to prevent certain decorators from being inlined, you can mark them in your `.pysa` file using `@SkipDecoratorWhenInlining`:
-
-```python
-# foo.pysa
-@SkipDecoratorWhenInlining
-def foo.decorator_to_be_skipped(f): ...
-```
-
-```python
-# foo.py
-@decorator_to_be_skipped
-def bar(x: int) -> None:
-  pass
-```
-
-This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.
-
-Unfortunately, this will lead back to false negatives as described earlier.
-
-For instance:
-```python
-@decorator_to_be_skipped
-def bar(x: int) -> None:
-  sink(x)
-
-bar(source()) # False negative, issue will NOT be found!
-```
-
 ## Single trace sanitizers with `@SanitizeSingleTrace`
 
 Sanitizers, as described in the [Overview](pysa_basics.md), are applied in both

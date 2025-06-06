@@ -8,10 +8,7 @@
 open Ast
 
 module Action : sig
-  type t =
-    (* Do not try to inline that decorator, keep it as-is. *)
-    | DoNotInline
-    (* Remove that decorator from decorated function, assuming it is a no-op. *)
+  type t = (* Remove that decorator from decorated function, assuming it is a no-op. *)
     | Discard
   [@@deriving eq, show]
 

@@ -1552,18 +1552,6 @@ let test_invalid_model_queries =
              {|
       ModelQuery(
         name = "invalid_model",
-        find = "functions",
-        where = name.equals("hello"),
-        model = Modes([SkipDecoratorWhenInlining])
-      )
-    |}
-           ~expect:"`SkipDecoratorWhenInlining`: mode cannot be used in a model query";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_invalid_model
-           ~model_source:
-             {|
-      ModelQuery(
-        name = "invalid_model",
         find = "methods",
         where = read_from_cache(),
         model = Returns(TaintSource[Test])

@@ -995,10 +995,8 @@ let test_global_sanitize context =
       ]
     ();
   assert_model
-    ~model_source:
-      {|
+    ~model_source:{|
       @Sanitize
-      @SkipDecoratorWhenInlining
       def test.taint(x): ...
     |}
     ~expect:
@@ -1006,7 +1004,7 @@ let test_global_sanitize context =
         outcome
           ~kind:`Function
           ~global_sanitizer:Sanitize.all
-          ~analysis_modes:(Model.ModeSet.of_list [SkipDecoratorWhenInlining; Obscure])
+          ~analysis_modes:(Model.ModeSet.of_list [Obscure])
           "test.taint";
       ]
     ();
@@ -2831,24 +2829,6 @@ let test_modes context =
   ()
 
 
-let test_skip_inlining_decorator context =
-  let assert_model = assert_model ~context in
-  assert_model
-    ~model_source:{|
-      @SkipDecoratorWhenInlining
-      def test.my_decorator(f): ...
-    |}
-    ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~analysis_modes:(Model.ModeSet.of_list [SkipDecoratorWhenInlining; Obscure])
-          "test.my_decorator";
-      ]
-    ();
-  ()
-
-
 let test_taint_in_taint_out_update_models context =
   let assert_model = assert_model ~context in
   let positional_parameter position name =
@@ -3825,11 +3805,7 @@ let test_parse_decorator_modes _ =
   in
   assert_decorator_modes
     {|
-    @SkipDecoratorWhenInlining
-    def foo.skip_this_decorator(f): ...
-
     @SkipObscure
-    @SkipDecoratorWhenInlining
     @SkipOverrides
     def bar.skip_this_decorator2(f): ...
 
@@ -3849,10 +3825,8 @@ let test_parse_decorator_modes _ =
     def foo.ignore_decorator_class.__call__(): ...
   |}
     [
-      !&"bar.skip_this_decorator2", DecoratorPreprocessing.Action.DoNotInline;
       !&"foo.ignore_decorator_class", DecoratorPreprocessing.Action.Discard;
       !&"foo.ignore_this_decorator", DecoratorPreprocessing.Action.Discard;
-      !&"foo.skip_this_decorator", DecoratorPreprocessing.Action.DoNotInline;
     ];
   ()
 
@@ -3918,7 +3892,6 @@ let () =
          "sanitize_single_trace" >:: test_sanitize_single_trace;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "sink_models" >:: test_sink_models;
-         "skip_inlining_decorator" >:: test_skip_inlining_decorator;
          "source_breadcrumbs" >:: test_source_breadcrumbs;
          "source_models" >:: test_source_models;
          "taint_in_taint_out_models" >:: test_taint_in_taint_out_models;

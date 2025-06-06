@@ -2466,7 +2466,6 @@ let parse_model_clause
           match mode with
           | { Node.value = Expression.Name (Name.Identifier mode_name); location } -> (
               match Model.Mode.from_string mode_name with
-              | Some Model.Mode.SkipDecoratorWhenInlining
               | Some Model.Mode.IgnoreDecorator ->
                   Error
                     (model_verification_error
@@ -3026,7 +3025,6 @@ end = struct
           | ["Sanitize"]
           | ["SanitizeSingleTrace"]
           | ["SkipAnalysis"]
-          | ["SkipDecoratorWhenInlining"]
           | ["SkipOverrides"]
           | ["AnalyzeAllOverrides"]
           | ["CalledWhenParameter"]
@@ -4463,22 +4461,10 @@ let decorator_actions_from_modes model_modes =
         | Some existing -> Some (Model.ModeSet.join_user_modes define_modes existing))
       modes
   in
-  let get_decorator_action define_name modes =
+  let get_decorator_action _ modes =
     let has_ignore = Model.ModeSet.contains Model.Mode.IgnoreDecorator modes in
-    let has_skip_decorator = Model.ModeSet.contains Model.Mode.SkipDecoratorWhenInlining modes in
-    if has_ignore && not has_skip_decorator then
+    if has_ignore then
       Some PyrePysaLogic.DecoratorPreprocessing.Action.Discard
-    else if has_skip_decorator && not has_ignore then
-      Some PyrePysaLogic.DecoratorPreprocessing.Action.DoNotInline
-    else if has_skip_decorator && has_ignore then
-      let () =
-        Log.warning
-          "Found conflicting modes (IgnoreDecorator, SkipDecoratorWhenInlining) for decorator \
-           `%a`, ignoring"
-          Ast.Reference.pp
-          define_name
-      in
-      None
     else
       None
   in

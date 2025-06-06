@@ -16,15 +16,11 @@ open Statement
 
 module Action = struct
   module T = struct
-    type t =
-      (* Do not try to inline that decorator, keep it as-is. *)
-      | DoNotInline
-      (* Remove that decorator from decorated function, assuming it is a no-op. *)
+    type t = (* Remove that decorator from decorated function, assuming it is a no-op. *)
       | Discard
     [@@deriving eq, show, compare]
 
     let to_mode = function
-      | DoNotInline -> "SkipDecoratorWhenInlining"
       | Discard -> "IgnoreDecorator"
   end
 

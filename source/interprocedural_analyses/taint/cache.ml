@@ -311,10 +311,9 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
            current_configuration ->
       Ok ()
   | Some _ ->
-      (* We need to invalidate the cache since decorator modes (e.g, `@IgnoreDecorator` and
-         `@SkipDecoratorWhenInlining`) are implemented as an AST preprocessing step. Any change
-         could lead to a change in the AST, which could lead to a different type environment and so
-         on. *)
+      (* We need to invalidate the cache since decorator modes (e.g, `@IgnoreDecorator`) are
+         implemented as an AST preprocessing step. Any change could lead to a change in the AST,
+         which could lead to a different type environment and so on. *)
       Log.warning "Changes to decorator modes detected, ignoring existing cache.";
       Error SharedMemoryStatus.InvalidByDecoratorChange
   | None ->

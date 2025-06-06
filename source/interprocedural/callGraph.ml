@@ -224,7 +224,7 @@ module CallableToDecoratorsMap = struct
   let filter_decorator decorator =
     if
       Analysis.DecoratorPreprocessing.has_any_decorator_action
-        ~actions:(Analysis.DecoratorPreprocessing.Action.Set.of_list [DoNotInline; Discard])
+        ~actions:(Analysis.DecoratorPreprocessing.Action.Set.of_list [Discard])
         decorator
     then
       false
