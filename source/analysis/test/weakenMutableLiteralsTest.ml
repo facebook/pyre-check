@@ -63,6 +63,10 @@ let test_weaken_mutable_literals context =
       actual_weakened_type
   in
   assert_weaken_mutable_literals
+    ~source:"collections.OrderedDict({'d': test.D(), 'e': test.E()})"
+    ~against:"collections.OrderedDict[str, test.C]"
+    "collections.OrderedDict[str, test.C]";
+  assert_weaken_mutable_literals
     ~source:"[test.D()] * 3"
     ~against:"typing.List[test.C]"
     "typing.List[test.C]";

@@ -516,6 +516,46 @@ let rec weaken_mutable_literals
         ~actual_value_type
         ~expected_key_type
         ~expected_value_type
+  | ( Some
+        {
+          Node.value =
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.value =
+                      Expression.Name
+                        ( Identifier "OrderedDict"
+                        | Attribute
+                            {
+                              base =
+                                {
+                                  Node.value =
+                                    Expression.Name (Identifier "typing" | Identifier "collections");
+                                  _;
+                                };
+                              attribute = "OrderedDict";
+                              _;
+                            } );
+                    _;
+                  };
+                _;
+              };
+          _;
+        },
+      Type.Parametric
+        {
+          name = "typing.OrderedDict" | "collections.OrderedDict";
+          arguments = [Single actual_key; Single actual_value];
+        },
+      Type.Parametric
+        {
+          name = "typing.OrderedDict" | "collections.OrderedDict";
+          arguments = [Single expected_key; Single expected_value];
+        } )
+    when comparator ~left:actual_key ~right:expected_key
+         && comparator ~left:actual_value ~right:expected_value ->
+      make_weakened_type expected
   | ( Some { Node.value = Expression.DictionaryComprehension _; _ },
       Type.Parametric { name = "dict"; arguments = [Single actual_key; Single actual_value] },
       Type.Parametric { name = "dict"; arguments = [Single expected_key; Single expected_value] } )
@@ -753,6 +793,25 @@ and weaken_against_readonly
       Type.PyreReadOnly
         (Type.Parametric { name = "set"; arguments = [Single expected_argument_type]; _ }) ) ->
       weaken_parametric_type ~parametric_name [expected_argument_type]
+  | ( Some
+        {
+          Node.value =
+            Expression.Call
+              { callee = { Node.value = Expression.Name (Identifier "OrderedDict"); _ }; _ };
+          _;
+        },
+      Type.Parametric
+        {
+          name = ("collections.OrderedDict" | "typing.OrderedDict") as parametric_name;
+          arguments = _;
+        },
+      Type.PyreReadOnly
+        (Type.Parametric
+          {
+            name = "collections.OrderedDict" | "typing.OrderedDict";
+            arguments = [Single expected_key_type; Single expected_value_type];
+          }) ) ->
+      weaken_parametric_type ~parametric_name [expected_key_type; expected_value_type]
   | ( Some { Node.value = Expression.Dictionary _ | DictionaryComprehension _; _ },
       Type.Parametric { name = "dict" as parametric_name; arguments = _ },
       Type.PyreReadOnly
