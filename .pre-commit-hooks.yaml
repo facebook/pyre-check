@@ -9,3 +9,15 @@
   pass_filenames: false
   additional_dependencies: []
   minimum_pre_commit_version: '2.9.2'
+- id: pyre-check-no-python
+  name: pyre-check-no-python
+  description: "pyre-check: Performant type-checking for python."
+  skip_install: true # Allow yaml to be pulled without python install
+  entry: pyre check
+  language: system # Allow yaml to be pulled without python install
+  'types_or': [python, pyi]
+  args: []
+  require_serial: false
+  pass_filenames: false
+  additional_dependencies: []
+  minimum_pre_commit_version: '2.9.2'
