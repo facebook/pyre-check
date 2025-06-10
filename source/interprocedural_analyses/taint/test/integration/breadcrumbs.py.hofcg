@@ -194,7 +194,7 @@ Higher order call graphs
         ]
       }
     },
-    "57:28-57:34|artificial-call|str-call": {
+    "57:28-57:34|artificial-call|str-call-to-dunder-repr": {
       "call": {
         "calls": [
           {
@@ -341,7 +341,7 @@ Higher order call graphs
         ]
       }
     },
-    "72:24-72:30|artificial-call|str-call": {
+    "72:24-72:30|artificial-call|str-call-to-dunder-repr": {
       "call": {
         "calls": [
           {

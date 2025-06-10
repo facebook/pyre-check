@@ -1231,7 +1231,8 @@ and Origin : sig
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCall (* `str(x)` is turned into `x.__str__()` or `x.__repr__()` *)
+    | StrCallToDunderStr (* `str(x)` is turned into `x.__str__()` *)
+    | StrCallToDunderRepr (* `str(x)` is turned into `x.__repr__()` *)
     | ReprCall (* `repr(x)` is turned into `x.__repr__()` *)
     | AbsCall (* `abs(x)` is turned into `x.__abs__()` *)
     | IterCall (* `iter(x)` is turned into `x.__iter__()` *)
@@ -1339,7 +1340,8 @@ end = struct
     | MatchValueComparisonEquals
     | MatchConditionWithGuard
     | ResolveStrCall
-    | StrCall
+    | StrCallToDunderStr
+    | StrCallToDunderRepr
     | ReprCall
     | AbsCall
     | IterCall
@@ -1394,7 +1396,8 @@ end = struct
       | InIter
       | InGetItem
       | InGetItemEq
-      | StrCall
+      | StrCallToDunderStr
+      | StrCallToDunderRepr
       | ReprCall
       | AbsCall
       | IterCall
@@ -1480,7 +1483,8 @@ end = struct
     | MatchValueComparisonEquals -> Format.fprintf formatter "match-value-comparison-equals"
     | MatchConditionWithGuard -> Format.fprintf formatter "match-condition-with-guard"
     | ResolveStrCall -> Format.fprintf formatter "resolve-str-call"
-    | StrCall -> Format.fprintf formatter "str-call"
+    | StrCallToDunderStr -> Format.fprintf formatter "str-call-to-dunder-str"
+    | StrCallToDunderRepr -> Format.fprintf formatter "str-call-to-dunder-repr"
     | ReprCall -> Format.fprintf formatter "repr-call"
     | AbsCall -> Format.fprintf formatter "abs-call"
     | IterCall -> Format.fprintf formatter "iter-call"

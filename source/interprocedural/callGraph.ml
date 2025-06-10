@@ -2185,9 +2185,18 @@ module DefineCallGraph = struct
         | Some existing_callees when ExpressionCallees.equal existing_callees callees ->
             Some existing_callees
         | Some existing_callees ->
-            (* TODO(T222755472): We should error here since it means we are visiting the same
-               expression twice and getting different results. *)
-            Some (ExpressionCallees.join existing_callees callees))
+            Format.asprintf
+              "When trying to add callees for expression %a at %a, we found different existing \
+               callees.@.new callees: %a@.existing callees: %a"
+              Expression.pp
+              expression_for_logging
+              ExpressionIdentifier.pp
+              expression_identifier
+              ExpressionCallees.pp
+              callees
+              ExpressionCallees.pp
+              existing_callees
+            |> failwith)
 
 
   let set_callees ~error_if_existing_empty ~expression_identifier ~callees =
@@ -2255,11 +2264,11 @@ module DefineCallGraph = struct
       ~callees:(ExpressionCallees.from_attribute_access callees)
 
 
-  let set_attribute_access_callees ~location ~attribute_access ~attribute_access_callees =
+  let set_attribute_access_callees ~location ~attribute_access ~callees =
     set_callees
       ~error_if_existing_empty:false (* empty attribute accesses are stripped *)
       ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
-      ~callees:(ExpressionCallees.from_attribute_access attribute_access_callees)
+      ~callees:(ExpressionCallees.from_attribute_access callees)
 
 
   let add_format_string_articifial_callees ~debug ~location ~format_string ~callees =
@@ -2993,12 +3002,12 @@ let transform_special_calls
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
          redirected: https://docs.python.org/3/library/stdtypes.html#str *)
-      let method_name =
+      let method_name, origin_kind =
         match resolve_stringify_call ~pyre_in_context ~callables_to_definitions_map value with
-        | Str -> "__str__"
-        | Repr -> "__repr__"
+        | Str -> "__str__", Origin.StrCallToDunderStr
+        | Repr -> "__repr__", Origin.StrCallToDunderRepr
       in
-      let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.StrCall) in
+      let origin = Some (Origin.create ?base:call_origin ~location:call_location origin_kind) in
       let callee = attribute_access ~base:value ~method_name ~origin in
       Some { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
@@ -5803,7 +5812,7 @@ module HigherOrderCallGraph = struct
                       DefineCallGraph.set_attribute_access_callees
                         ~location
                         ~attribute_access
-                        ~attribute_access_callees:
+                        ~callees:
                           {
                             attribute_access_callees with
                             callable_targets = non_decorated_callable_targets;
@@ -6345,7 +6354,6 @@ module DecoratorResolution = struct
 
   (* If Pyre cannot resolve the callable on the callable expression, we hardcode the callable. *)
   let add_callees_for_attribute_access_if_unresolved
-      ~debug
       ~callables_to_definitions_map
       ~callee
       ~attribute_access
@@ -6376,8 +6384,7 @@ module DecoratorResolution = struct
         Target.CallablesSharedMemory.ReadOnly.get_method_kind callables_to_definitions_map callee
       in
       call_graph :=
-        DefineCallGraph.add_attribute_access_callees
-          ~debug
+        DefineCallGraph.set_attribute_access_callees
           ~location:attribute_access_location
           ~attribute_access
           ~callees:
@@ -6492,7 +6499,6 @@ module DecoratorResolution = struct
         let call_graph = ref DefineCallGraph.empty in
         resolve_callees ~call_graph expression;
         add_callees_for_attribute_access_if_unresolved
-          ~debug
           ~callables_to_definitions_map
           ~callee:callable
           ~attribute_access
