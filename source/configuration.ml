@@ -809,7 +809,7 @@ module StaticAnalysis = struct
   let default_maximum_target_depth = 10
 
   (* Maximum number of parameterized targets that can be created at a call site. *)
-  let default_maximum_parameterized_targets_at_call_site = 1000
+  let default_maximum_parameterized_targets_at_call_site = 10
 
   (* Default number of iterations of the call graph fixpoint. *)
   let default_higher_order_call_graph_max_iterations = 50
