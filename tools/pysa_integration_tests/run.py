@@ -35,7 +35,6 @@ def main(
     typeshed: Optional[Path],
     compact_ocaml_heap: bool,
     check_invariants: bool,
-    inline_decorators: bool,
     require_pyre_env: bool,
     ignore_positions: bool,
     write_actual_results_on_failure: bool,
@@ -66,7 +65,6 @@ def main(
         typeshed=typeshed,
         compact_ocaml_heap=compact_ocaml_heap,
         check_invariants=check_invariants,
-        inline_decorators=inline_decorators,
         working_directory=working_directory,
     )
 
@@ -139,12 +137,6 @@ if __name__ == "__main__":
         help="Check abstract domain invariants when running the analysis",
     )
     parser.add_argument(
-        "--inline-decorators",
-        action="store_true",
-        default=False,
-        help="Inline decorators when running the analysis",
-    )
-    parser.add_argument(
         "--typeshed",
         type=Path,
         help="Path to the typeshed to use",
@@ -161,7 +153,6 @@ if __name__ == "__main__":
         typeshed=parsed.typeshed,
         compact_ocaml_heap=parsed.compact_ocaml_heap,
         check_invariants=parsed.check_invariants,
-        inline_decorators=parsed.inline_decorators,
         require_pyre_env=parsed.require_pyre_env,
         ignore_positions=parsed.ignore_positions,
         write_actual_results_on_failure=parsed.write_actual_results_on_failure,

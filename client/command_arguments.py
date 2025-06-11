@@ -299,7 +299,6 @@ class AnalyzeArguments:
     enable_memory_profiling: bool = False
     enable_profiling: bool = False
     find_missing_flows: Optional[MissingFlowsKind] = None
-    inline_decorators: bool = False
     infer_self_tito: bool = False
     infer_argument_tito: bool = False
     log_identifier: Optional[str] = None
@@ -339,6 +338,11 @@ class AnalyzeArguments:
     scheduler_policies_path: Optional[Path] = None
     kill_buck_after_build: bool = False
     number_of_buck_threads: Optional[int] = None
+    higher_order_call_graph_max_iterations: Optional[int] = None
+    maximum_target_depth: Optional[int] = None  # Used for higher order call graphs
+    maximum_parameterized_targets_at_call_site: Optional[int] = (
+        None  # Used for higher order call graphs
+    )
 
 
 @dataclass(frozen=True)

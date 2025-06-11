@@ -43,7 +43,6 @@ class Arguments:
     dump_call_graph: Optional[str] = None
     dump_model_query_results: Optional[str] = None
     find_missing_flows: Optional[str] = None
-    inline_decorators: bool = False
     infer_self_tito: bool = False
     infer_argument_tito: bool = False
     maximum_model_source_tree_width: Optional[int] = None
@@ -79,6 +78,11 @@ class Arguments:
     )
     compute_coverage: bool = False
     scheduler_policies: Optional[configuration_module.SchedulerPolicies] = None
+    higher_order_call_graph_max_iterations: Optional[int] = None
+    maximum_target_depth: Optional[int] = None  # Used for higher order call graphs
+    maximum_parameterized_targets_at_call_site: Optional[int] = (
+        None  # Used for higher order call graphs
+    )
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -105,6 +109,13 @@ class Arguments:
         save_results_to = self.save_results_to
         output_format = self.output_format
         scheduler_policies = self.scheduler_policies
+        higher_order_call_graph_max_iterations = (
+            self.higher_order_call_graph_max_iterations
+        )
+        maximum_target_depth = self.maximum_target_depth
+        maximum_parameterized_targets_at_call_site = (
+            self.maximum_parameterized_targets_at_call_site
+        )
         return {
             **self.base_arguments.serialize(),
             **({} if dump_call_graph is None else {"dump_call_graph": dump_call_graph}),
@@ -118,7 +129,6 @@ class Arguments:
                 if find_missing_flows is None
                 else {"find_missing_flows": find_missing_flows}
             ),
-            "inline_decorators": self.inline_decorators,
             "infer_self_tito": self.infer_self_tito,
             "infer_argument_tito": self.infer_argument_tito,
             **(
@@ -212,6 +222,25 @@ class Arguments:
                 if scheduler_policies is not None
                 else {}
             ),
+            **(
+                {}
+                if higher_order_call_graph_max_iterations is None
+                else {
+                    "higher_order_call_graph_max_iterations": higher_order_call_graph_max_iterations
+                }
+            ),
+            **(
+                {}
+                if maximum_target_depth is None
+                else {"maximum_target_depth": maximum_target_depth}
+            ),
+            **(
+                {}
+                if maximum_parameterized_targets_at_call_site is None
+                else {
+                    "maximum_parameterized_targets_at_call_site": maximum_parameterized_targets_at_call_site
+                }
+            ),
         }
 
 
@@ -293,7 +322,6 @@ def create_analyze_arguments(
         find_missing_flows=(
             str(find_missing_flows.value) if find_missing_flows is not None else None
         ),
-        inline_decorators=analyze_arguments.inline_decorators,
         infer_self_tito=analyze_arguments.infer_self_tito,
         infer_argument_tito=analyze_arguments.infer_argument_tito,
         maximum_model_source_tree_width=analyze_arguments.maximum_model_source_tree_width,
@@ -331,6 +359,9 @@ def create_analyze_arguments(
             if scheduler_policies_path is not None
             else None
         ),
+        higher_order_call_graph_max_iterations=analyze_arguments.higher_order_call_graph_max_iterations,
+        maximum_target_depth=analyze_arguments.maximum_target_depth,
+        maximum_parameterized_targets_at_call_site=analyze_arguments.maximum_parameterized_targets_at_call_site,
     )
 
 

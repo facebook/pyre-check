@@ -493,12 +493,6 @@ def pyre(
     help="Build the cache and exit without computing results..",
 )
 @click.option(
-    "--inline-decorators",
-    is_flag=True,
-    default=False,
-    help="Inline decorators at use sites to catch flows through decorators.",
-)
-@click.option(
     "--infer-self-tito",
     is_flag=True,
     default=False,
@@ -606,6 +600,21 @@ def pyre(
     type=int,
     help="Limits the number of threads during Buck build.",
 )
+@click.option(
+    "--higher-order-call-graph-max-iterations",
+    type=int,
+    help="Limits the number of fixpoint iterations when building higher order call graphs.",
+)
+@click.option(
+    "--maximum-target-depth",
+    type=int,
+    help="Limits the depth of parameterized targets that are created during higher order call graph building.",
+)
+@click.option(
+    "--maximum-parameterized-targets-at-call-site",
+    type=int,
+    help="Limits the number of parameterized targets that can be created at any call site, during higher order call graph building.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -627,7 +636,6 @@ def analyze(
     dump_model_query_results: Optional[str],
     use_cache: bool,
     build_cache_only: bool,
-    inline_decorators: bool,
     infer_self_tito: bool,
     infer_argument_tito: bool,
     maximum_model_source_tree_width: Optional[int],
@@ -648,6 +656,9 @@ def analyze(
     scheduler_policies: Optional[str],
     kill_buck_after_build: bool,
     number_of_buck_threads: Optional[int],
+    higher_order_call_graph_max_iterations: Optional[int],
+    maximum_target_depth: Optional[int],
+    maximum_parameterized_targets_at_call_site: Optional[int],
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -672,7 +683,6 @@ def analyze(
                 if find_missing_flows is not None
                 else None
             ),
-            inline_decorators=inline_decorators,
             infer_self_tito=infer_self_tito,
             infer_argument_tito=infer_argument_tito,
             log_identifier=command_argument.log_identifier,
@@ -716,6 +726,9 @@ def analyze(
             ),
             kill_buck_after_build=kill_buck_after_build,
             number_of_buck_threads=number_of_buck_threads,
+            higher_order_call_graph_max_iterations=higher_order_call_graph_max_iterations,
+            maximum_target_depth=maximum_target_depth,
+            maximum_parameterized_targets_at_call_site=maximum_parameterized_targets_at_call_site,
         ),
     )
 

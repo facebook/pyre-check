@@ -213,7 +213,6 @@ def run_pysa(
     typeshed: Optional[Path] = None,
     compact_ocaml_heap: bool = False,
     check_invariants: bool = False,
-    inline_decorators: bool = False,
     maximum_trace_length: Optional[int] = None,
     maximum_tito_depth: Optional[int] = None,
     passthrough_args: Optional[Sequence[str]] = None,
@@ -264,9 +263,6 @@ def run_pysa(
 
     if check_invariants:
         command.append("--check-invariants")
-
-    if inline_decorators:
-        command.append("--inline-decorators")
 
     if maximum_trace_length is not None:
         command.append(f"--maximum-trace-length={maximum_trace_length}")

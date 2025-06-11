@@ -968,35 +968,6 @@ To ignore a decorator, use the `@IgnoreDecorator` annotation in a `.pysa` file:
 def module.decorator(): ...
 ```
 
-## Inlining decorators
-
-Pysa can try to inline decorators into decorated functions before analyzing them. This can be enabled with the `--inline-decorators` flag.
-
-Inlining will take the code of the decorator and copy it within the decorated function. For instance:
-```python
-def my_decorator(f: Callable[[int], int]) -> Callable[[int], int]:
-  def inner(x: int) -> int:
-    before(x)
-    result = f(x)
-    after(x)
-    return result
-
-  return inner
-
-@my_decorator
-def decorated(x: int) -> int:
-  return x + 1
-```
-
-Will be inlined as:
-```
-def decorated(x: int) -> int:
-  before(x)
-  result = x + 1
-  after(x)
-  return result
-```
-
 ## Single trace sanitizers with `@SanitizeSingleTrace`
 
 Sanitizers, as described in the [Overview](pysa_basics.md), are applied in both
