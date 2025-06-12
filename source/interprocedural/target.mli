@@ -115,7 +115,7 @@ val create_property_setter_override : Reference.t -> t
 
 val create_object : Reference.t -> t
 
-val create : Ast.Reference.t -> Define.t -> t
+val from_define : define_name:Ast.Reference.t -> define:Define.t -> t
 
 val from_regular : Regular.t -> t
 

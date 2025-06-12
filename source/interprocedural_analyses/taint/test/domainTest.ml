@@ -24,7 +24,13 @@ let test_partition_call_map context =
       { class_name = "test.Foo"; method_name = "bar"; kind = Normal }
     |> Interprocedural.Target.from_regular
   in
-  let type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create () in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.empty ()
+        |> Interprocedural.Target.CallablesSharedMemory.read_only)
+      ()
+  in
   let caller =
     Interprocedural.Target.from_regular
       (Interprocedural.Target.Regular.Function { name = "test.foo"; kind = Normal })

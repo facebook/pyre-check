@@ -289,12 +289,6 @@ module FormatStringArtificialCallees : sig
   val to_json : t -> Yojson.Safe.t
 end
 
-module ExpressionIdentifier : sig
-  type t [@@deriving compare, sexp, hash, show]
-
-  val of_expression : Expression.t -> t
-end
-
 (** Implicit callees for any expression that is stringified. *)
 module FormatStringStringifyCallees : sig
   type t = { targets: CallTarget.t list } [@@deriving eq, show]
@@ -475,28 +469,33 @@ val call_graph_of_define
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   check_invariants:bool ->
   qualifier:Reference.t ->
+  callable:Target.t ->
   define:Ast.Statement.Define.t Node.t ->
   DefineCallGraph.t
 
 (* This must be called *once* before analyzing a statement in a control flow graph. *)
 val preprocess_statement
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
-  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
+  callable:Target.t ->
   Ast.Statement.t ->
   Ast.Statement.t
 
 (* This must be called *once* before analyzing a generator. *)
 val preprocess_generator
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
-  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
+  callable:Target.t ->
   Ast.Expression.Comprehension.Generator.t ->
   Ast.Statement.Assign.t * PyrePysaEnvironment.InContext.t
 
 val preprocess_parameter_default_value
   :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
-  callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
+  callable:Target.t ->
   Ast.Expression.t ->
   Ast.Expression.t
 
@@ -507,6 +506,7 @@ val call_graph_of_callable
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   check_invariants:bool ->
   callable:Target.t ->
   DefineCallGraph.t
@@ -563,10 +563,11 @@ val higher_order_call_graph_of_define
   :  define_call_graph:DefineCallGraph.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   skip_analysis_targets:Target.HashSet.t ->
   called_when_parameter:Target.HashSet.t ->
-  callable:Target.t option ->
   qualifier:Reference.t ->
+  callable:Target.t ->
   define:Ast.Statement.Define.t Node.t ->
   initial_state:HigherOrderCallGraph.State.t ->
   get_callee_model:(Target.t -> HigherOrderCallGraph.t option) ->
@@ -600,6 +601,7 @@ module DecoratorResolution : sig
     pyre_in_context:PyrePysaEnvironment.InContext.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+    type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
     decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
     Target.t ->
     t
@@ -616,6 +618,7 @@ module DecoratorResolution : sig
       scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
       callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+      type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
       decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
       Target.t list ->
       t
@@ -688,6 +691,7 @@ module SharedMemory : sig
     pyre_api:PyrePysaEnvironment.ReadOnly.t ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
+    type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     store_shared_memory:bool ->
     attribute_targets:Target.Set.t ->

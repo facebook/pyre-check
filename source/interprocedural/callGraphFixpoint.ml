@@ -13,6 +13,7 @@ module CallGraphAnalysis = struct
       pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+      type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;
       skip_analysis_targets: Target.HashSet.t;
       called_when_parameter: Target.HashSet.t;
       maximum_target_depth: int;
@@ -91,6 +92,7 @@ module CallGraphAnalysis = struct
           Context.pyre_api;
           define_call_graphs;
           callables_to_definitions_map;
+          type_of_expression_shared_memory;
           skip_analysis_targets;
           called_when_parameter;
           maximum_target_depth;
@@ -136,10 +138,11 @@ module CallGraphAnalysis = struct
               ~define_call_graph
               ~pyre_api
               ~callables_to_definitions_map
+              ~type_of_expression_shared_memory
               ~skip_analysis_targets
               ~called_when_parameter
-              ~callable:(Some callable)
               ~qualifier
+              ~callable
               ~define
               ~initial_state:
                 (CallGraph.HigherOrderCallGraph.State.initialize_from_callable
@@ -317,6 +320,7 @@ let compute
     ~resolve_module_path
     ~pyre_api
     ~callables_to_definitions_map
+    ~type_of_expression_shared_memory
     ~call_graph:{ CallGraph.SharedMemory.define_call_graphs; _ }
     ~dependency_graph:
       {
@@ -403,6 +407,7 @@ let compute
           define_call_graphs = CallGraph.SharedMemory.read_only define_call_graphs;
           callables_to_definitions_map =
             Target.CallablesSharedMemory.read_only callables_to_definitions_map;
+          type_of_expression_shared_memory;
           skip_analysis_targets;
           called_when_parameter;
           maximum_target_depth;

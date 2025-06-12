@@ -21,9 +21,10 @@ type resolved_stringify =
   | Str
   | Repr
 
-let resolve_stringify_call ~resolution expression =
+let resolve_stringify_call ~resolve_expression_to_type expression =
   let string_callee =
-    Node.create_with_default_location
+    Node.create
+      ~location:(Node.location expression)
       (Expression.Name
          (Name.Attribute
             {
@@ -39,7 +40,7 @@ let resolve_stringify_call ~resolution expression =
   in
 
   try
-    match Resolution.resolve_expression_to_type resolution string_callee |> Type.callable_name with
+    match resolve_expression_to_type string_callee |> Type.callable_name with
     | Some name ->
         if Reference.equal name (Reference.create "object.__str__") then
           Repr
@@ -51,7 +52,7 @@ let resolve_stringify_call ~resolution expression =
 
 
 let redirect_special_calls
-    ~resolution
+    ~resolve_expression_to_type
     ~location:call_location
     ({ Call.callee = { Node.location = callee_location; value }; arguments; origin = call_origin }
     as call)
@@ -61,7 +62,7 @@ let redirect_special_calls
      redirected: https://docs.python.org/3/library/stdtypes.html#str *)
   | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
       let method_name, origin_kind =
-        match resolve_stringify_call ~resolution value with
+        match resolve_stringify_call ~resolve_expression_to_type value with
         | Str -> "__str__", Origin.StrCallToDunderStr
         | Repr -> "__repr__", Origin.StrCallToDunderRepr
       in

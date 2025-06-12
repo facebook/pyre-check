@@ -7,13 +7,13 @@
 
 type t
 
-val create : unit -> t
+val create : callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t -> unit -> t
 
 (* Compute the type of the given expression, or retrieve its type from the cache. `callable` is the
    callable whose source code contains the given expression. *)
 val compute_or_retrieve_type
   :  t ->
-  pyre_in_context:CallGraph.PyrePysaEnvironment.InContext.t ->
+  pyre_in_context:Analysis.PyrePysaEnvironment.InContext.t ->
   callable:Target.t ->
   Ast.Expression.t ->
   Type.t

@@ -3105,7 +3105,7 @@ end = struct
       ~define_name
       define
     =
-    let call_target = Target.create define_name define in
+    let call_target = Target.from_define ~define_name ~define in
     let taint_decorators, _ = partition_taint_decorators decorators in
     ParsedSignature
       {

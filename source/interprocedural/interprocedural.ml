@@ -30,3 +30,4 @@ module RepositoryPath = RepositoryPath
 module IntraproceduralProfiler = IntraproceduralProfiler
 module CallGraphProfiler = CallGraphProfiler
 module TypeOfExpressionSharedMemory = TypeOfExpressionSharedMemory
+module ExpressionIdentifier = ExpressionIdentifier

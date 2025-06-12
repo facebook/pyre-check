@@ -803,6 +803,12 @@ let run_taint_analysis
     in
     callables_to_decorators_map
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
 
   let decorator_resolution =
     let step_logger =
@@ -829,6 +835,7 @@ let run_taint_analysis
         ~override_graph:override_graph_shared_memory
         ~callables_to_definitions_map:
           (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~type_of_expression_shared_memory
         ~decorators:
           (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
              callables_to_decorators_map)
@@ -876,6 +883,7 @@ let run_taint_analysis
           ~definitions
           ~callables_to_definitions_map:
             (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+          ~type_of_expression_shared_memory
           ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency)
   in
   let () = StepLogger.finish step_logger in
@@ -947,13 +955,14 @@ let run_taint_analysis
         ~call_graph:original_call_graphs
         ~dependency_graph:original_dependency_graph
         ~override_graph_shared_memory
+        ~callables_to_definitions_map
+        ~type_of_expression_shared_memory
         ~skip_analysis_targets:skip_analysis_targets_hashset
         ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
         ~decorator_resolution
         ~decorators:
           (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only
              callables_to_decorators_map)
-        ~callables_to_definitions_map
     in
     let () = StepLogger.finish step_logger in
 
@@ -1065,7 +1074,7 @@ let run_taint_analysis
           class_interval_graph = class_interval_graph_shared_memory;
           get_define_call_graph;
           global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
-          type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create ();
+          type_of_expression_shared_memory;
           callables_to_definitions_map =
             Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
         }

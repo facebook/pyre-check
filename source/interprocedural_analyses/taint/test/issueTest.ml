@@ -159,7 +159,7 @@ let test_canonical_location _ =
         handle =
           {
             code = 1000;
-            callable = Interprocedural.Target.create define_name (Node.value define);
+            callable = Interprocedural.Target.from_define ~define_name ~define:(Node.value define);
             sink = IssueHandle.Sink.Return;
           };
         locations;

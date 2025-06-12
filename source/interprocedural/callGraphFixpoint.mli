@@ -20,6 +20,7 @@ val compute
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) option ->
   pyre_api:CallGraph.PyrePysaEnvironment.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.t ->
+  type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   call_graph:CallGraph.SharedMemory.call_graphs ->
   dependency_graph:DependencyGraph.whole_program_dependency_graph ->
   override_graph_shared_memory:OverrideGraph.SharedMemory.t ->

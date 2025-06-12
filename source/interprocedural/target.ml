@@ -368,7 +368,7 @@ let create_property_setter_override reference =
   Override (create_method_name ~kind:PropertySetter reference) |> from_regular
 
 
-let create define_name define =
+let from_define ~define_name ~define =
   let open Define in
   let kind = if Define.is_property_setter define then PropertySetter else Normal in
   match define.signature.legacy_parent with
@@ -585,7 +585,7 @@ let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
     qualifier;
     callables =
       bodies
-      |> List.map ~f:(fun body -> create define_name (Node.value body), body)
+      |> List.map ~f:(fun body -> from_define ~define_name ~define:(Node.value body), body)
       |> Map.of_alist ~f:resolve_multiple_defines;
   }
 

@@ -14,13 +14,14 @@ open Interprocedural
 open CallGraph
 
 let compute_define_call_graph
-    ~maximum_target_depth
+    ~module_name
+    ~callable
     ~define
     ~source
-    ~module_name
     ~pyre_api
     ~configuration
     ~object_targets
+    ~maximum_target_depth
   =
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create ~maximum_target_depth configuration ()
@@ -41,6 +42,12 @@ let compute_define_call_graph
       ~pyre_api
       definitions_and_stubs
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
   let decorators =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
@@ -60,12 +67,14 @@ let compute_define_call_graph
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~callables_to_definitions_map:
         (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~type_of_expression_shared_memory
       ~check_invariants:true
       ~qualifier:module_name
+      ~callable
       ~define
   in
   OverrideGraph.SharedMemory.cleanup override_graph_shared_memory;
-  call_graph, callables_to_definitions_map
+  call_graph, callables_to_definitions_map, type_of_expression_shared_memory
 
 
 let find_define_exn ~define_name ~module_name source =
@@ -95,15 +104,19 @@ let assert_call_graph_of_define
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let define = find_define_exn ~define_name ~module_name source in
-  let actual, callables_to_definitions_map =
+  let callable =
+    Target.from_define ~define_name:(Reference.create define_name) ~define:(Node.value define)
+  in
+  let actual, callables_to_definitions_map, _ =
     compute_define_call_graph
-      ~maximum_target_depth
+      ~module_name
+      ~callable
       ~define
       ~source
-      ~module_name
       ~pyre_api
       ~configuration
       ~object_targets
+      ~maximum_target_depth
   in
   Target.CallablesSharedMemory.cleanup callables_to_definitions_map;
   assert_equal
@@ -145,16 +158,23 @@ let assert_higher_order_call_graph_of_define
   in
   let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   let define = find_define_exn ~define_name ~module_name source in
+  let callable =
+    match callable with
+    | Some callable -> callable
+    | None ->
+        Target.from_define ~define_name:(Reference.create define_name) ~define:(Node.value define)
+  in
   let maximum_target_depth = Configuration.StaticAnalysis.default_maximum_target_depth in
-  let define_call_graph, callables_to_definitions_map =
+  let define_call_graph, callables_to_definitions_map, type_of_expression_shared_memory =
     compute_define_call_graph
-      ~maximum_target_depth
+      ~module_name
+      ~callable
       ~define
       ~source
-      ~module_name
       ~pyre_api
       ~configuration
       ~object_targets
+      ~maximum_target_depth
   in
   let actual =
     CallGraph.higher_order_call_graph_of_define
@@ -162,6 +182,7 @@ let assert_higher_order_call_graph_of_define
       ~pyre_api
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~type_of_expression_shared_memory
       ~skip_analysis_targets:(Target.HashSet.create ())
       ~called_when_parameter
       ~callable
@@ -7508,6 +7529,12 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
       ~pyre_api
       definitions
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
   let decorators =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
@@ -7528,6 +7555,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
                   (Some (OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
                 ~callables_to_definitions_map:
                   (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+                ~type_of_expression_shared_memory
                 ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
            |> TestResult.from_actual
            |> fun result -> callable, result)

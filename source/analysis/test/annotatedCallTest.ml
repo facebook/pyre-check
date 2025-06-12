@@ -28,7 +28,10 @@ let test_redirect context =
     assert_equal
       ~cmp
       ~printer
-      (AnnotatedCall.redirect_special_calls ~resolution ~location:Location.any (parse call))
+      (AnnotatedCall.redirect_special_calls
+         ~resolve_expression_to_type:(Resolution.resolve_expression_to_type resolution)
+         ~location:Location.any
+         (parse call))
       (parse expected)
   in
   assert_redirects

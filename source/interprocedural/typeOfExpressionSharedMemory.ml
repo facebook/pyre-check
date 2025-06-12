@@ -7,7 +7,7 @@
 
 module Key = struct
   type t = {
-    expression_identifier: CallGraph.ExpressionIdentifier.t;
+    expression_identifier: ExpressionIdentifier.t;
     (* Types in a parameterized version of a regular target are the same as the regular target. Race
        conditions are possible, since multiple processes can write into the same key, but this
        should be fine since they all write the same value. *)
@@ -34,22 +34,35 @@ module T =
       let description = "caching type queries over expressions"
     end)
 
-type t = T.t
+type t = {
+  handle: T.t;
+  callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+}
 
-let create = T.create
+let create ~callables_to_definitions_map () = { handle = T.create (); callables_to_definitions_map }
 
 (* Compute the type of the given expression, or retrieve its type from the cache. `callable` is the
    callable whose source code contains the given expression. *)
-let compute_or_retrieve_type type_of_expression_shared_memory ~pyre_in_context ~callable expression =
+let compute_or_retrieve_type
+    { handle; callables_to_definitions_map }
+    ~pyre_in_context
+    ~callable
+    expression
+  =
   let key =
     {
       Key.callable = Target.get_regular callable;
-      expression_identifier = CallGraph.ExpressionIdentifier.of_expression expression;
+      expression_identifier = ExpressionIdentifier.of_expression expression;
     }
   in
-  match T.get type_of_expression_shared_memory key with
+  match T.get handle key with
   | Some type_ -> type_
   | None ->
-      let type_ = CallResolution.resolve_ignoring_untracked ~pyre_in_context expression in
-      let () = T.add type_of_expression_shared_memory key type_ in
+      let type_ =
+        CallResolution.resolve_ignoring_errors
+          ~pyre_in_context
+          ~callables_to_definitions_map
+          expression
+      in
+      let () = T.add handle key type_ in
       type_

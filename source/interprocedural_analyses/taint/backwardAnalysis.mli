@@ -15,7 +15,6 @@ val run
   taint_configuration:TaintConfiguration.Heap.t ->
   string_combine_partial_sink_tree:Domains.BackwardState.Tree.t ->
   pyre_api:PyrePysaEnvironment.ReadOnly.t ->
-  callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   global_constants:Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->

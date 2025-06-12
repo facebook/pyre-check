@@ -44,11 +44,17 @@ let assert_taint ~context source expected =
       ~pyre_api
       definitions_and_stubs
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
   let analyze_and_store_in_order models define =
     let define_name =
       FunctionDefinition.qualified_name_of_define ~module_name:qualifier (Ast.Node.value define)
     in
-    let call_target = Target.create define_name (Ast.Node.value define) in
+    let call_target = Target.from_define ~define_name ~define:(Ast.Node.value define) in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       CallGraph.call_graph_of_define
@@ -66,13 +72,14 @@ let assert_taint ~context source expected =
           |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~callables_to_definitions_map:
           (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
-        ~check_invariants:true
+        ~type_of_expression_shared_memory
         ~qualifier
+        ~callable:call_target
+        ~check_invariants:true
         ~define
     in
     let cfg = Cfg.create define.value in
     let taint_configuration = TaintConfiguration.Heap.default in
-    let type_of_expression_shared_memory = Interprocedural.TypeOfExpressionSharedMemory.create () in
     let backward =
       BackwardAnalysis.run
         ?profiler:None
@@ -80,12 +87,10 @@ let assert_taint ~context source expected =
         ~string_combine_partial_sink_tree:
           (Taint.CallModel.StringFormatCall.declared_partial_sink_tree taint_configuration)
         ~pyre_api
-        ~callables_to_definitions_map:
-          (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~type_of_expression_shared_memory
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
-        ~type_of_expression_shared_memory
         ~qualifier
         ~callable:call_target
         ~define

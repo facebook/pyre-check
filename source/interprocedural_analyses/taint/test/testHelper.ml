@@ -456,6 +456,7 @@ module TestEnvironment = struct
     global_constants: GlobalConstants.SharedMemory.t;
     stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
     callables_to_definitions_map: Interprocedural.Target.CallablesSharedMemory.t;
+    type_of_expression_shared_memory: Interprocedural.TypeOfExpressionSharedMemory.t;
     decorators: Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.t;
   }
 
@@ -480,6 +481,7 @@ module TestEnvironment = struct
         global_constants;
         stubs_shared_memory_handle;
         callables_to_definitions_map;
+        type_of_expression_shared_memory = _;
         decorators;
       }
     =
@@ -602,6 +604,12 @@ let initialize
       ~pyre_api
       definitions_and_stubs
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
   let user_models, model_query_results =
     let models_source =
       match models_source, add_initial_models with
@@ -718,6 +726,7 @@ let initialize
       ~override_graph:override_graph_shared_memory
       ~callables_to_definitions_map:
         (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~type_of_expression_shared_memory
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       definitions
   in
@@ -743,6 +752,7 @@ let initialize
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~type_of_expression_shared_memory
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
   let dependency_graph =
@@ -766,12 +776,13 @@ let initialize
       ~call_graph
       ~dependency_graph
       ~override_graph_shared_memory
+      ~callables_to_definitions_map
+      ~type_of_expression_shared_memory
       ~skip_analysis_targets
       ~called_when_parameter:(SharedModels.called_when_parameter ~scheduler initial_models)
       ~decorator_resolution
       ~decorators:
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
-      ~callables_to_definitions_map
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -805,6 +816,7 @@ let initialize
     global_constants;
     stubs_shared_memory_handle;
     callables_to_definitions_map;
+    type_of_expression_shared_memory;
     decorators;
   }
 
@@ -1029,7 +1041,11 @@ let end_to_end_integration_test path context =
             global_constants =
               Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
             type_of_expression_shared_memory =
-              Interprocedural.TypeOfExpressionSharedMemory.create ();
+              Interprocedural.TypeOfExpressionSharedMemory.create
+                ~callables_to_definitions_map:
+                  (Interprocedural.Target.CallablesSharedMemory.read_only
+                     callables_to_definitions_map)
+                ();
             callables_to_definitions_map =
               Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map;
           }

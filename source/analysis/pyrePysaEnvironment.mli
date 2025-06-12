@@ -189,12 +189,6 @@ module InContext : sig
     string ->
     AnnotatedAttribute.instantiated option
 
-  val redirect_special_calls
-    :  t ->
-    location:Ast.Location.t ->
-    Ast.Expression.Call.t ->
-    Ast.Expression.Call.t
-
   val resolve_generators : t -> Ast.Expression.Comprehension.Generator.t list -> t
 end
 

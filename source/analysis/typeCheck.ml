@@ -2733,7 +2733,10 @@ module State (Context : Context) = struct
               })
       | Call call ->
           let { Call.callee; arguments; origin = _ } =
-            AnnotatedCall.redirect_special_calls ~resolution ~location call
+            AnnotatedCall.redirect_special_calls
+              ~resolve_expression_to_type:(Resolution.resolve_expression_to_type resolution)
+              ~location
+              call
           in
           let {
             Resolved.errors = callee_errors;

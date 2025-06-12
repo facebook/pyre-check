@@ -66,6 +66,12 @@ let create_call_graph ?(other_sources = []) ~context source_text =
       ~pyre_api
       definitions_and_stubs
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
   let fold call_graph callable =
     let callees =
       CallGraph.call_graph_of_callable
@@ -79,6 +85,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
           |> Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only)
         ~callables_to_definitions_map:
           (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+        ~type_of_expression_shared_memory
         ~check_invariants:true
         ~callable
       |> CallGraph.DefineCallGraph.all_targets

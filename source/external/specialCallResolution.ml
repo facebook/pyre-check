@@ -15,12 +15,12 @@ open Expression
 let recognized_callable_target_types = Type.Set.of_list [Type.Primitive "TestCallableTarget"]
 
 let redirect
-    ~pyre_in_context
+    ~resolve_expression_to_type
     ~location:call_location
     { Call.callee; arguments; origin = call_origin }
   =
   let is_async_task base =
-    PyrePysaEnvironment.InContext.resolve_expression_to_type pyre_in_context base
+    resolve_expression_to_type base
     |> fun annotation -> Set.exists recognized_callable_target_types ~f:(Type.equal annotation)
   in
   match Node.value callee with

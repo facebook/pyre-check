@@ -56,6 +56,12 @@ let assert_higher_order_call_graph_fixpoint
       ~pyre_api
       definitions_and_stubs
   in
+  let type_of_expression_shared_memory =
+    Interprocedural.TypeOfExpressionSharedMemory.create
+      ~callables_to_definitions_map:
+        (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ()
+  in
   let decorators =
     CallGraph.CallableToDecoratorsMap.SharedMemory.create
       ~callables_to_definitions_map:
@@ -74,6 +80,7 @@ let assert_higher_order_call_graph_fixpoint
       ~decorators:(CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~callables_to_definitions_map:
         (Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~type_of_expression_shared_memory
       definitions
   in
   let ({ SharedMemory.whole_program_call_graph; define_call_graphs } as call_graph) =
@@ -91,6 +98,7 @@ let assert_higher_order_call_graph_fixpoint
       ~definitions
       ~callables_to_definitions_map:
         (Interprocedural.Target.CallablesSharedMemory.read_only callables_to_definitions_map)
+      ~type_of_expression_shared_memory
       ~check_invariants:true
       ~create_dependency_for:Interprocedural.CallGraph.AllTargetsUseCase.CallGraphDependency
   in
@@ -119,6 +127,7 @@ let assert_higher_order_call_graph_fixpoint
       ~decorators:
         (Interprocedural.CallGraph.CallableToDecoratorsMap.SharedMemory.read_only decorators)
       ~callables_to_definitions_map
+      ~type_of_expression_shared_memory
   in
   List.iter expected ~f:(fun { Expected.callable; call_graph; returned_callables } ->
       let actual_call_graph =
