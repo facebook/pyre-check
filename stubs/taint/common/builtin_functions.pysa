@@ -36,3 +36,9 @@ def filter.__new__(cls, function, iterable: TaintInTaintOut[LocalReturn, Paramet
 # `next()` with a single argument is hardcoded in the analysis.
 @SkipObscure
 def next(__i: TaintInTaintOut[Collapse], __default: TaintInTaintOut[LocalReturn, NoCollapse]): ...
+
+# Don't propagate taint through .__class__
+@SkipObscure
+@Sanitize
+@property
+def object.__class__(): ...
