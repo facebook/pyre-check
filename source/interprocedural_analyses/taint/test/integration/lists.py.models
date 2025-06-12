@@ -1,341 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "lists.test_list_append_wrapper",
-    "callable_line": 107,
-    "code": 5002,
-    "line": 110,
-    "start": 15,
-    "end": 19,
-    "filename": "lists.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
-            "origin": { "line": 109, "start": 27, "end": 41 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 110, "start": 15, "end": 19 },
-            "call_site": "110:4-110:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lists.test_list_append_wrapper:5002:0:Call|_test_sink|0|formal(arg):2122b7db20885571134324ed529d6ec7"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lists.test_list_append_wrapper",
-    "callable_line": 107,
-    "code": 5002,
-    "line": 113,
-    "start": 15,
-    "end": 19,
-    "filename": "lists.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
-            "origin": { "line": 109, "start": 27, "end": 41 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 113, "start": 15, "end": 19 },
-            "call_site": "113:4-113:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lists.test_list_append_wrapper:5002:0:Call|_test_sink|1|formal(arg):8b51f64f63149f8d021435e519e5d427"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lists.test_list_setitem_wrapper",
-    "callable_line": 96,
-    "code": 5002,
-    "line": 100,
-    "start": 15,
-    "end": 19,
-    "filename": "lists.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
-            "origin": { "line": 98, "start": 31, "end": 45 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 100, "start": 15, "end": 19 },
-            "call_site": "100:4-100:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|1|formal(arg):7e52851226c3e0284e77e68611e29acd"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lists.test_list_setitem_wrapper",
-    "callable_line": 96,
-    "code": 5002,
-    "line": 99,
-    "start": 15,
-    "end": 19,
-    "filename": "lists.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
-            "origin": { "line": 98, "start": 31, "end": 45 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 99, "start": 15, "end": 19 },
-            "call_site": "99:4-99:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|0|formal(arg):ed15b1cec355bcfdefbcd4fe0a7b066d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "lists.test_setitem",
-    "callable_line": 68,
-    "code": 5002,
-    "line": 71,
-    "start": 15,
-    "end": 19,
-    "filename": "lists.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "<numeric>" }
-            ],
-            "origin": { "line": 70, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 71, "start": 15, "end": 19 },
-            "call_site": "71:4-71:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "lists.test_setitem:5002:0:Call|_test_sink|0|formal(arg):93fe32a73583c124119699bca5a42b1d"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -378,31 +42,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "list.append",
-    "filename": "builtins.pyi",
-    "callable_line": 422,
-    "tito": [
-      {
-        "port": "formal(__element, position=1, positional_only)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
           }
         ]
       }
@@ -610,6 +249,342 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "lists.test_list_append_wrapper",
+    "callable_line": 107,
+    "code": 5002,
+    "line": 110,
+    "start": 15,
+    "end": 19,
+    "filename": "lists.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
+            "origin": { "line": 109, "start": 27, "end": 41 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 110, "start": 15, "end": 19 },
+            "call_site": "110:4-110:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lists.test_list_append_wrapper:5002:0:Call|_test_sink|0|formal(arg):2122b7db20885571134324ed529d6ec7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lists.test_list_append_wrapper",
+    "callable_line": 107,
+    "code": 5002,
+    "line": 113,
+    "start": 15,
+    "end": 19,
+    "filename": "lists.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 109, "start": 27, "end": 41 } ],
+            "origin": { "line": 109, "start": 27, "end": 41 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 113, "start": 15, "end": 19 },
+            "call_site": "113:4-113:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lists.test_list_append_wrapper:5002:0:Call|_test_sink|1|formal(arg):8b51f64f63149f8d021435e519e5d427"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lists.test_list_setitem_wrapper",
+    "callable_line": 96,
+    "code": 5002,
+    "line": 99,
+    "start": 15,
+    "end": 19,
+    "filename": "lists.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
+            "origin": { "line": 98, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 99, "start": 15, "end": 19 },
+            "call_site": "99:4-99:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|0|formal(arg):ed15b1cec355bcfdefbcd4fe0a7b066d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lists.test_list_setitem_wrapper",
+    "callable_line": 96,
+    "code": 5002,
+    "line": 100,
+    "start": 15,
+    "end": 19,
+    "filename": "lists.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 98, "start": 31, "end": 45 } ],
+            "origin": { "line": 98, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 100, "start": 15, "end": 19 },
+            "call_site": "100:4-100:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lists.test_list_setitem_wrapper:5002:0:Call|_test_sink|1|formal(arg):7e52851226c3e0284e77e68611e29acd"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "lists.test_setitem",
+    "callable_line": 68,
+    "code": 5002,
+    "line": 71,
+    "start": 15,
+    "end": 19,
+    "filename": "lists.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": { "line": 70, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 71, "start": 15, "end": 19 },
+            "call_site": "71:4-71:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "lists.test_setitem:5002:0:Call|_test_sink|0|formal(arg):93fe32a73583c124119699bca5a42b1d"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "lists.zipped_element_to_sink",
@@ -674,5 +649,30 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "list.append",
+    "filename": "builtins.pyi",
+    "callable_line": 422,
+    "tito": [
+      {
+        "port": "formal(__element, position=1, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }

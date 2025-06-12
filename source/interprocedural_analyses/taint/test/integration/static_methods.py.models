@@ -1,92 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "static_methods.run_test",
-    "callable_line": 19,
-    "code": 5002,
-    "line": 20,
-    "start": 9,
-    "end": 23,
-    "filename": "static_methods.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 20, "start": 9, "end": 23 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 20, "start": 9, "end": 23 },
-              "resolves_to": [ "static_methods.test" ],
-              "port": "formal(source, position=0)",
-              "call_site": "20:4-20:24"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "static_methods.test",
-      "index": 0,
-      "parameter": "formal(source)"
-    },
-    "master_handle": "static_methods.run_test:5002:0:Call|static_methods.test|0|formal(source):e6558cd7986087b61e1685d8bafe03e4"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -330,29 +243,66 @@
   }
 }
 {
-  "kind": "model",
+  "kind": "issue",
   "data": {
-    "callable": "static_methods.StaticClass.sink",
+    "callable": "static_methods.run_test",
+    "callable_line": 19,
+    "code": 5002,
+    "line": 20,
+    "start": 9,
+    "end": 23,
     "filename": "static_methods.py",
-    "callable_line": 11,
-    "sinks": [
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
       {
-        "port": "formal(oops, position=0)",
-        "taint": [
+        "name": "forward",
+        "roots": [
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 12, "start": 19, "end": 23 },
-            "call_site": "12:8-12:24"
+            "origin": { "line": 20, "start": 9, "end": 23 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 20, "start": 9, "end": 23 },
+              "resolves_to": [ "static_methods.test" ],
+              "port": "formal(source, position=0)",
+              "call_site": "20:4-20:24"
+            }
           }
         ]
       }
-    ]
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "static_methods.test",
+      "index": 0,
+      "parameter": "formal(source)"
+    },
+    "master_handle": "static_methods.run_test:5002:0:Call|static_methods.test|0|formal(source):e6558cd7986087b61e1685d8bafe03e4"
   }
 }
 {
@@ -381,6 +331,56 @@
             }
           }
         ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "static_methods.StaticClass.sink",
+    "filename": "static_methods.py",
+    "callable_line": 11,
+    "sinks": [
+      {
+        "port": "formal(oops, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 12, "start": 19, "end": 23 },
+            "call_site": "12:8-12:24"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

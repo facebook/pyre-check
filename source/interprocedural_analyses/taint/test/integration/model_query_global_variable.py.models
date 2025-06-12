@@ -1,5 +1,35 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "model_query_global_variable.$toplevel",
@@ -108,6 +138,63 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "model_query_global_variable.fun",
+    "filename": "model_query_global_variable.py",
+    "callable_line": 48,
+    "tito": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 49, "start": 15, "end": 21 },
+              { "line": 49, "start": 19, "end": 20 }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 49, "start": 11, "end": 12 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "model_query_global_variable.g",
@@ -162,6 +249,40 @@
       "parameter": "formal(self)"
     },
     "master_handle": "model_query_global_variable.g:1001:0:Call|list.append|0|formal(self):11419e849345f9de673d477dcedef3a2"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_global_variable.returns_any",
+    "filename": "model_query_global_variable.py",
+    "callable_line": 37,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
+        ]
+      }
+    ],
+    "model_generators": [ "get_any_functions" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "list.append",
+    "filename": "builtins.pyi",
+    "callable_line": 422,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "Test1" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -265,126 +386,5 @@
       }
     ],
     "model_generators": [ "get_environ" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "list.append",
-    "filename": "builtins.pyi",
-    "callable_line": 422,
-    "sinks": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "Test1" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_global_variable.fun",
-    "filename": "model_query_global_variable.py",
-    "callable_line": 48,
-    "tito": [
-      {
-        "port": "formal(y, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 49, "start": 15, "end": 21 },
-              { "line": 49, "start": 19, "end": 20 }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 49, "start": 11, "end": 12 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_global_variable.returns_any",
-    "filename": "model_query_global_variable.py",
-    "callable_line": 37,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "SelectAny" } ], "declaration": null }
-        ]
-      }
-    ],
-    "model_generators": [ "get_any_functions" ]
   }
 }

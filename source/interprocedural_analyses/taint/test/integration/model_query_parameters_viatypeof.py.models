@@ -1,5 +1,55 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "model_query_parameters_viatypeof.test1_alarm1",
@@ -192,6 +242,65 @@
       "parameter": "formal(c)"
     },
     "master_handle": "model_query_parameters_viatypeof.test1_alarm3:5002:0:Call|model_query_parameters_viatypeof.test1_f1|0|formal(c):2d29c72d71f3145db2a63205262a151c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test1_f1",
+    "filename": "model_query_parameters_viatypeof.py",
+    "callable_line": 10,
+    "sinks": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(c)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(b)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaTypeOf", "parameter": "formal(a)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "model_generators": [ "get_test1_sinks" ]
   }
 }
 {
@@ -806,42 +915,63 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable": "model_query_parameters_viatypeof.test3_f1",
+    "filename": "model_query_parameters_viatypeof.py",
+    "callable_line": 83,
     "sinks": [
       {
-        "port": "formal(arg, position=0)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter": "formal(c)",
+                    "tag": "tag"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
             "declaration": null
           }
         ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
+      },
       {
-        "port": "result",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter": "formal(b)",
+                    "tag": "tag"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter": "formal(a)",
+                    "tag": "tag"
+                  }
+                ],
                 "kind": "Test"
               }
             ],
@@ -850,7 +980,7 @@
         ]
       }
     ],
-    "modes": [ "Obscure" ]
+    "model_generators": [ "get_test3_sinks" ]
   }
 }
 {
@@ -969,135 +1099,5 @@
       }
     ],
     "model_generators": [ "get_test2_sinks" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_viatypeof.test1_f1",
-    "filename": "model_query_parameters_viatypeof.py",
-    "callable_line": 10,
-    "sinks": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  { "kind": "ViaTypeOf", "parameter": "formal(c)" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(b, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  { "kind": "ViaTypeOf", "parameter": "formal(b)" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  { "kind": "ViaTypeOf", "parameter": "formal(a)" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "model_generators": [ "get_test1_sinks" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_viatypeof.test3_f1",
-    "filename": "model_query_parameters_viatypeof.py",
-    "callable_line": 83,
-    "sinks": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "formal(c)",
-                    "tag": "tag"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(b, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "formal(b)",
-                    "tag": "tag"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "formal(a)",
-                    "tag": "tag"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "model_generators": [ "get_test3_sinks" ]
   }
 }

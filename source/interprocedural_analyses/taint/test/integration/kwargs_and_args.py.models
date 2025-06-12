@@ -2,30 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_cookies",
     "filename": "builtins.pyi",
     "callable_line": 625,
@@ -355,6 +331,30 @@
             "call_site": "14:4-14:23"
           }
         ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

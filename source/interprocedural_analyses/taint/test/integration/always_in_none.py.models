@@ -1,5 +1,88 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "always_in_none.test",
+    "filename": "always_in_none.py",
+    "callable_line": 17,
+    "sinks": [
+      {
+        "port": "formal(complicated_service, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 21, "start": 17, "end": 36 },
+              { "line": 29, "start": 21, "end": 40 }
+            ],
+            "origin": { "line": 33, "start": 15, "end": 21 },
+            "call_site": "33:4-33:22"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "always_in_none.test",
@@ -78,56 +161,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "always_in_none.ComplicatedService.serve_tainted_request",
     "filename": "always_in_none.py",
     "callable_line": 13,
@@ -150,39 +183,6 @@
               }
             ],
             "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "always_in_none.test",
-    "filename": "always_in_none.py",
-    "callable_line": 17,
-    "sinks": [
-      {
-        "port": "formal(complicated_service, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 21, "start": 17, "end": 36 },
-              { "line": 29, "start": 21, "end": 40 }
-            ],
-            "origin": { "line": 33, "start": 15, "end": 21 },
-            "call_site": "33:4-33:22"
           }
         ]
       }

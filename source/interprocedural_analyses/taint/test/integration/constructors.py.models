@@ -1,5 +1,55 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "constructors.test_both_new_and_init_callgraph",
@@ -129,6 +179,58 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "constructors.test_class_stub:5002:0:Call|_test_sink|0|formal(arg):7f0f3f50bbd309337b7c7d7b91c0eee3"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constructors.test_construction",
+    "filename": "constructors.py",
+    "callable_line": 30,
+    "tito": [
+      {
+        "port": "formal(request, position=0)[POST][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token]": 3 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 32, "start": 41, "end": 50 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(request, position=0)[POST][2]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[oauth_token_secret]": 3 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 32, "start": 52, "end": 61 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -896,45 +998,15 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
+    "callable": "eval",
     "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable_line": 474,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
         "taint": [
           {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
             "declaration": null
           }
         ]
@@ -1778,77 +1850,5 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "constructors.test_construction",
-    "filename": "constructors.py",
-    "callable_line": 30,
-    "tito": [
-      {
-        "port": "formal(request, position=0)[POST][1]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[oauth_token]": 3 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 32, "start": 41, "end": 50 } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(request, position=0)[POST][2]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[oauth_token_secret]": 3 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 32, "start": 52, "end": 61 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "eval",
-    "filename": "builtins.pyi",
-    "callable_line": 474,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }

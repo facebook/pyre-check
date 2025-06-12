@@ -1,5 +1,95 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_attribute",
+    "filename": "attributes.py",
+    "callable_line": 39,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{attributes.Token.token}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 40, "start": 11, "end": 18 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(t, position=0)[token]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "attributes.test_attribute_union_sink",
@@ -113,6 +203,54 @@
       "index": 1
     },
     "master_handle": "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|1:cb5576984115ab71838ed9c0be98c643"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_attribute_union_source",
+    "filename": "attributes.py",
+    "callable_line": 77,
+    "sinks": [
+      {
+        "port": "formal(t, position=0)[token]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 15, "end": 22 },
+            "call_site": "78:4-78:23"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 80, "start": 19, "end": 26 },
+            "call_site": "80:8-80:27"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 82, "start": 19, "end": 26 },
+            "call_site": "82:8-82:27"
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -368,6 +506,165 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_backwards",
+    "filename": "attributes.py",
+    "callable_line": 51,
+    "sinks": [
+      {
+        "port": "formal(t, position=0)[token]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 52, "start": 15, "end": 40 },
+            "call_site": "52:4-52:41"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_backwards_default",
+    "filename": "attributes.py",
+    "callable_line": 55,
+    "sinks": [
+      {
+        "port": "formal(t, position=0)[token]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 56, "start": 15, "end": 41 },
+            "call_site": "56:4-56:42"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_default",
+    "filename": "attributes.py",
+    "callable_line": 47,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 48, "start": 35, "end": 49 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(t, position=0)[unrelated]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_getattr_forward",
+    "filename": "attributes.py",
+    "callable_line": 43,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{attributes.Token.token}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 44, "start": 11, "end": 36 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(t, position=0)[token]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.test_issue_with_text_key_of_dictionary",
+    "filename": "attributes.py",
+    "callable_line": 101,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)[dictionary][text]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "text" }
+            ],
+            "origin": { "line": 102, "start": 15, "end": 35 },
+            "call_site": "102:4-102:36"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "attributes.test_issue_with_text_key_of_dictionary",
@@ -561,503 +858,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{attributes.C.dictionary}",
-    "sources": [
-      {
-        "port": "result[text]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{attributes.D.buffer}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{attributes.Sink.token}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{attributes.Token.token}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.NoListInference.sink",
-    "filename": "attributes.py",
-    "callable_line": 125,
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[buffer]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 126, "start": 19, "end": 30 },
-            "caller_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false,
-            "call_site": "126:8-126:31"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.PartiallyZonedDict.copy",
-    "filename": "attributes.py",
-    "callable_line": 147,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.RegularForm.__init__",
-    "filename": "attributes.py",
-    "callable_line": 160,
-    "tito": [
-      {
-        "port": "formal(data, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[data]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.UseViaDict.__init__",
-    "filename": "attributes.py",
-    "callable_line": 60,
-    "tito": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[b]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.ZonedForm.__init__",
-    "filename": "attributes.py",
-    "callable_line": 152,
-    "tito": [
-      {
-        "port": "formal(data, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[_data]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.ZonedForm.data",
-    "filename": "attributes.py",
-    "callable_line": 156,
-    "tito": [
-      {
-        "port": "formal(self, position=0)[_data]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_attribute",
-    "filename": "attributes.py",
-    "callable_line": 39,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{attributes.Token.token}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 40, "start": 11, "end": 18 }
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(t, position=0)[token]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_attribute_union_source",
-    "filename": "attributes.py",
-    "callable_line": 77,
-    "sinks": [
-      {
-        "port": "formal(t, position=0)[token]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 78, "start": 15, "end": 22 },
-            "call_site": "78:4-78:23"
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 80, "start": 19, "end": 26 },
-            "call_site": "80:8-80:27"
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 82, "start": 19, "end": 26 },
-            "call_site": "82:8-82:27"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_getattr_backwards",
-    "filename": "attributes.py",
-    "callable_line": 51,
-    "sinks": [
-      {
-        "port": "formal(t, position=0)[token]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 52, "start": 15, "end": 40 },
-            "call_site": "52:4-52:41"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_getattr_backwards_default",
-    "filename": "attributes.py",
-    "callable_line": 55,
-    "sinks": [
-      {
-        "port": "formal(t, position=0)[token]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 56, "start": 15, "end": 41 },
-            "call_site": "56:4-56:42"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_getattr_default",
-    "filename": "attributes.py",
-    "callable_line": 47,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 48, "start": 35, "end": 49 }
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(t, position=0)[unrelated]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_getattr_forward",
-    "filename": "attributes.py",
-    "callable_line": 43,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{attributes.Token.token}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 44, "start": 11, "end": 36 }
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(t, position=0)[token]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attributes.test_issue_with_text_key_of_dictionary",
-    "filename": "attributes.py",
-    "callable_line": 101,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)[dictionary][text]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "text" }
-            ],
-            "origin": { "line": 102, "start": 15, "end": 35 },
-            "call_site": "102:4-102:36"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "attributes.test_no_issue_with_other_key_of_dictionary",
     "filename": "attributes.py",
     "callable_line": 105,
@@ -1227,6 +1027,158 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attributes.NoListInference.sink",
+    "filename": "attributes.py",
+    "callable_line": 125,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[buffer]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 126, "start": 19, "end": 30 },
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false,
+            "call_site": "126:8-126:31"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.PartiallyZonedDict.copy",
+    "filename": "attributes.py",
+    "callable_line": 147,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.RegularForm.__init__",
+    "filename": "attributes.py",
+    "callable_line": 160,
+    "tito": [
+      {
+        "port": "formal(data, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[data]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.UseViaDict.__init__",
+    "filename": "attributes.py",
+    "callable_line": 60,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.ZonedForm.__init__",
+    "filename": "attributes.py",
+    "callable_line": 152,
+    "tito": [
+      {
+        "port": "formal(data, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_data]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attributes.ZonedForm.data",
+    "filename": "attributes.py",
+    "callable_line": 156,
+    "tito": [
+      {
+        "port": "formal(self, position=0)[_data]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "list.append",
     "filename": "builtins.pyi",
     "callable_line": 422,
@@ -1247,5 +1199,53 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.C.dictionary}",
+    "sources": [
+      {
+        "port": "result[text]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.D.buffer}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.Sink.token}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{attributes.Token.token}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
   }
 }

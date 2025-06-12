@@ -2,57 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Overrides{obscure_tito.C.taint_parameter}",
-    "sinks": [
-      {
-        "port": "formal(tainted_parameter, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "obscure_tito.C.taint_parameter",
-                    "port": "leaf:tainted_parameter"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{obscure_tito.C.update}",
-    "tito": [
-      {
-        "port": "formal(parameter, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
     "callable_line": 618,
@@ -93,46 +42,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_tito.C.taint_parameter",
-    "filename": "obscure_tito.py",
-    "callable_line": 13,
-    "sinks": [
-      {
-        "port": "formal(tainted_parameter, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_tito.C.update",
-    "filename": "obscure_tito.py",
-    "callable_line": 10,
-    "tito": [
-      {
-        "port": "formal(parameter, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
           }
         ]
       }
@@ -230,5 +139,96 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_tito.C.taint_parameter",
+    "filename": "obscure_tito.py",
+    "callable_line": 13,
+    "sinks": [
+      {
+        "port": "formal(tainted_parameter, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_tito.C.update",
+    "filename": "obscure_tito.py",
+    "callable_line": 10,
+    "tito": [
+      {
+        "port": "formal(parameter, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{obscure_tito.C.taint_parameter}",
+    "sinks": [
+      {
+        "port": "formal(tainted_parameter, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "obscure_tito.C.taint_parameter",
+                    "port": "leaf:tainted_parameter"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{obscure_tito.C.update}",
+    "tito": [
+      {
+        "port": "formal(parameter, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }

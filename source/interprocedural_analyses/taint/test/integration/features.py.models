@@ -1,5 +1,83 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.always_feature_for_duplicate_models",
+    "filename": "features.py",
+    "callable_line": 108,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_rhs" },
+                  { "always-via": "string_concat_lhs" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "features.async_issue_bools",
@@ -74,6 +152,85 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "features.async_issue_bools:5002:0:Call|_test_sink|0|formal(arg):3bdb42078e2c8bb931dffef24589a057"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.async_tuple_of_bools",
+    "filename": "features.py",
+    "callable_line": 89,
+    "sources": [
+      {
+        "port": "result[0]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 90, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "port": "result[1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 90, "start": 27, "end": 41 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.dynamic_feature_tito",
+    "filename": "features.py",
+    "callable_line": 98,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "via": "dynamic_feature" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -428,188 +585,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "features.issue_via_in:5002:0:Call|_test_sink|1|formal(arg):8b8fbc207f24e7cd4e765e7157929554"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "features.SetItemClass.__setitem__",
-    "filename": "features.py",
-    "callable_line": 114,
-    "tito": [
-      {
-        "port": "formal(value, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "copy" } ],
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "features.always_feature_for_duplicate_models",
-    "filename": "features.py",
-    "callable_line": 108,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "string_concat_rhs" },
-                  { "always-via": "string_concat_lhs" }
-                ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "features.async_tuple_of_bools",
-    "filename": "features.py",
-    "callable_line": 89,
-    "sources": [
-      {
-        "port": "result[0]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
-            ],
-            "origin": { "line": 90, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "port": "result[1]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
-            ],
-            "origin": { "line": 90, "start": 27, "end": 41 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "features.dynamic_feature_tito",
-    "filename": "features.py",
-    "callable_line": 98,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "via": "dynamic_feature" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
   }
 }
 {
@@ -1012,6 +987,31 @@
             "tito_positions": [
               { "line": 84, "start": 19, "end": 20 },
               { "line": 84, "start": 34, "end": 35 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.SetItemClass.__setitem__",
+    "filename": "features.py",
+    "callable_line": 114,
+    "tito": [
+      {
+        "port": "formal(value, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "copy" } ],
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": {}
           }

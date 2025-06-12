@@ -1,75 +1,64 @@
 @generated
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "model_query_return_annotation_extends.Test2.test2_alarm1",
-    "callable_line": 74,
-    "code": 5002,
-    "line": 75,
-    "start": 8,
-    "end": 29,
-    "filename": "model_query_return_annotation_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
       {
-        "name": "forward",
-        "roots": [
+        "port": "formal(arg, position=0)",
+        "taint": [
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 75, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_return_annotation_extends.Test2.test2_alarm1",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 75, "start": 8, "end": 29 }
+            "declaration": null
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "model_query_return_annotation_extends.Test2.test2_alarm1:5002:0:Return:138aea895c102b7fe986c3507d068136"
+    "modes": [ "Obscure" ]
   }
 }
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "model_query_return_annotation_extends.Test2.test2_alarm2",
-    "callable_line": 77,
-    "code": 5002,
-    "line": 78,
-    "start": 8,
-    "end": 29,
-    "filename": "model_query_return_annotation_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
       {
-        "name": "forward",
-        "roots": [
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test1_alarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 31,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
           {
             "kinds": [
               {
@@ -80,35 +69,18 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 78, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_return_annotation_extends.Test2.test2_alarm2",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 78, "start": 8, "end": 29 }
+            "origin": { "line": 32, "start": 11, "end": 25 }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "model_query_return_annotation_extends.Test2.test2_alarm2:5002:0:Return:4e80f15ecfd8db0e71f8236add58c7ec"
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -166,6 +138,40 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test1_alarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 35,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 36, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "test1" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_alarm2",
@@ -217,6 +223,40 @@
     "features": [ { "always-via": "special_source" } ],
     "sink_handle": { "kind": "Return" },
     "master_handle": "model_query_return_annotation_extends.test1_alarm2:5002:0:Return:e2070f22b8189d302dca149050677e84"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test1_alarm3",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 39,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 40, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "test1" ]
   }
 }
 {
@@ -274,6 +314,40 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test1_alarm4",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 43,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 44, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "test1" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_alarm4",
@@ -325,538 +399,6 @@
     "features": [ { "always-via": "special_source" } ],
     "sink_handle": { "kind": "Return" },
     "master_handle": "model_query_return_annotation_extends.test1_alarm4:5002:0:Return:d96eb468d23553b831c552e15037255d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test3_alarm1",
-    "callable_line": 101,
-    "code": 5002,
-    "line": 102,
-    "start": 4,
-    "end": 25,
-    "filename": "model_query_return_annotation_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 102, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_return_annotation_extends.test3_alarm1",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 102, "start": 4, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "model_query_return_annotation_extends.test3_alarm1:5002:0:Return:064e0d422628610ccdf12512a40a2425"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test3_alarm2",
-    "callable_line": 105,
-    "code": 5002,
-    "line": 106,
-    "start": 4,
-    "end": 25,
-    "filename": "model_query_return_annotation_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 106, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_return_annotation_extends.test3_alarm2",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 106, "start": 4, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "model_query_return_annotation_extends.test3_alarm2:5002:0:Return:01a41950b6276ed06efb071c99bac5d0"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test3_alarm3",
-    "callable_line": 109,
-    "code": 5002,
-    "line": 110,
-    "start": 4,
-    "end": 25,
-    "filename": "model_query_return_annotation_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 110, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_return_annotation_extends.test3_alarm3",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 110, "start": 4, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "model_query_return_annotation_extends.test3_alarm3:5002:0:Return:a6e42d349c62ab2e421469e62864eaf4"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test3_alarm4",
-    "callable_line": 113,
-    "code": 5002,
-    "line": 114,
-    "start": 4,
-    "end": 25,
-    "filename": "model_query_return_annotation_extends.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 114, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_return_annotation_extends.test3_alarm4",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 114, "start": 4, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "model_query_return_annotation_extends.test3_alarm4:5002:0:Return:2ec58b88a9c4be466458ac0abf078b2e"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.Test2.test2_alarm1",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 74,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 75, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "test2" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.Test2.test2_alarm2",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 77,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 78, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "test2" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.Test2.test2_noalarm1",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 68,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 69, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.Test2.test2_noalarm2",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 71,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 72, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test1_alarm1",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 31,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 32, "start": 11, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "test1" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test1_alarm2",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 35,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 36, "start": 11, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "test1" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test1_alarm3",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 39,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 40, "start": 11, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "test1" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_return_annotation_extends.test1_alarm4",
-    "filename": "model_query_return_annotation_extends.py",
-    "callable_line": 43,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 44, "start": 11, "end": 25 }
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "test1" ]
   }
 }
 {
@@ -921,6 +463,60 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test3_alarm1",
+    "callable_line": 101,
+    "code": 5002,
+    "line": 102,
+    "start": 4,
+    "end": 25,
+    "filename": "model_query_return_annotation_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 102, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm1",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 102, "start": 4, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "model_query_return_annotation_extends.test3_alarm1:5002:0:Return:064e0d422628610ccdf12512a40a2425"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_alarm2",
@@ -952,6 +548,60 @@
       }
     ],
     "model_generators": [ "test3" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test3_alarm2",
+    "callable_line": 105,
+    "code": 5002,
+    "line": 106,
+    "start": 4,
+    "end": 25,
+    "filename": "model_query_return_annotation_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 106, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 106, "start": 4, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "model_query_return_annotation_extends.test3_alarm2:5002:0:Return:01a41950b6276ed06efb071c99bac5d0"
   }
 }
 {
@@ -989,6 +639,60 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test3_alarm3",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 110,
+    "start": 4,
+    "end": 25,
+    "filename": "model_query_return_annotation_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 110, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm3",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 110, "start": 4, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "model_query_return_annotation_extends.test3_alarm3:5002:0:Return:a6e42d349c62ab2e421469e62864eaf4"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_alarm4",
@@ -1023,6 +727,60 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_return_annotation_extends.test3_alarm4",
+    "callable_line": 113,
+    "code": 5002,
+    "line": 114,
+    "start": 4,
+    "end": 25,
+    "filename": "model_query_return_annotation_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 114, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm4",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 114, "start": 4, "end": 25 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "model_query_return_annotation_extends.test3_alarm4:5002:0:Return:2ec58b88a9c4be466458ac0abf078b2e"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_noalarm1",
@@ -1043,6 +801,248 @@
               }
             ],
             "origin": { "line": 118, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.Test2.test2_alarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 74,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 75, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "test2" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_return_annotation_extends.Test2.test2_alarm1",
+    "callable_line": 74,
+    "code": 5002,
+    "line": 75,
+    "start": 8,
+    "end": 29,
+    "filename": "model_query_return_annotation_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 75, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.Test2.test2_alarm1",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 75, "start": 8, "end": 29 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "model_query_return_annotation_extends.Test2.test2_alarm1:5002:0:Return:138aea895c102b7fe986c3507d068136"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.Test2.test2_alarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 77,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "test2" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_return_annotation_extends.Test2.test2_alarm2",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 78,
+    "start": 8,
+    "end": 29,
+    "filename": "model_query_return_annotation_extends.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.Test2.test2_alarm2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 78, "start": 8, "end": 29 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "model_query_return_annotation_extends.Test2.test2_alarm2:5002:0:Return:4e80f15ecfd8db0e71f8236add58c7ec"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.Test2.test2_noalarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 68,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 69, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_return_annotation_extends.Test2.test2_noalarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 71,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 72, "start": 15, "end": 29 },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       }

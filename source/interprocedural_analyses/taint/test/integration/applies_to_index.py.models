@@ -1,5 +1,55 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "applies_to_index.issue_only_with_a_key",
@@ -120,6 +170,35 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "applies_to_index.issue_only_with_first:5002:0:Call|_test_sink|0|formal(arg):1b20364f53d3dcf69a13dac6b9528240"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "applies_to_index.issue_only_with_nested_first",
+    "filename": "applies_to_index.py",
+    "callable_line": 33,
+    "sources": [
+      {
+        "port": "result[0][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "applies_to_index.only_applies_to_nested",
+                    "port": "leaf:return[0][1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 41, "start": 11, "end": 35 }
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -301,85 +380,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "applies_to_index.issue_with_member:5002:0:Call|_test_sink|0|formal(arg):4e6c314b245358eeea77b64cace8721b"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "applies_to_index.issue_only_with_nested_first",
-    "filename": "applies_to_index.py",
-    "callable_line": 33,
-    "sources": [
-      {
-        "port": "result[0][1]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "applies_to_index.only_applies_to_nested",
-                    "port": "leaf:return[0][1]"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 41, "start": 11, "end": 35 }
-          }
-        ]
-      }
-    ]
   }
 }
 {

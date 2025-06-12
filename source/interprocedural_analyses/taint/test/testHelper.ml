@@ -1067,9 +1067,9 @@ let end_to_end_integration_test path context =
              (Target.CallablesSharedMemory.ReadOnly.get_location callables_to_definitions_map)
            ~override_graph:override_graph_shared_memory_read_only
            ~dump_override_models:true
+           ~sorted:true
       |> List.map ~f:NewlineDelimitedJson.Line.to_json
       |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
-      |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
     let () = TaintFixpoint.State.cleanup ~keep_models:false fixpoint.TaintFixpoint.state in

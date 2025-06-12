@@ -1,94 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "overloads.g",
-    "callable_line": 45,
-    "code": 5002,
-    "line": 48,
-    "start": 18,
-    "end": 19,
-    "filename": "overloads.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 46, "start": 8, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 48, "start": 18, "end": 19 },
-              "resolves_to": [ "overloads.A.call_me" ],
-              "port": "formal(x, position=1)",
-              "call_site": "48:8-48:20"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "overloads.A.call_me",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "overloads.g:5002:0:Call|overloads.A.call_me|0|formal(x):6da1ae844af9a4d7bba8b27d3391213c"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -334,34 +245,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "overloads.A.call_me",
-    "filename": "overloads.py",
-    "callable_line": 31,
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 32, "start": 19, "end": 20 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "32:8-32:21"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "overloads.call_me",
     "filename": "overloads.py",
     "callable_line": 26,
@@ -411,6 +294,123 @@
             }
           }
         ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overloads.g",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 48,
+    "start": 18,
+    "end": 19,
+    "filename": "overloads.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 46, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 48, "start": 18, "end": 19 },
+              "resolves_to": [ "overloads.A.call_me" ],
+              "port": "formal(x, position=1)",
+              "call_site": "48:8-48:20"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overloads.A.call_me",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overloads.g:5002:0:Call|overloads.A.call_me|0|formal(x):6da1ae844af9a4d7bba8b27d3391213c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overloads.A.call_me",
+    "filename": "overloads.py",
+    "callable_line": 31,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 32, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "32:8-32:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

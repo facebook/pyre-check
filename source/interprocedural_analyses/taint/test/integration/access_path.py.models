@@ -1,5 +1,55 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "access_path.indexes_and_attributes",
@@ -383,116 +433,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "access_path.SpecialDict.__getitem__",
-    "filename": "access_path.py",
-    "callable_line": 21,
-    "tito": [
-      {
-        "port": "formal(key, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 22, "start": 29, "end": 32 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 3 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)[dict]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 22, "start": 15, "end": 24 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 3 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "access_path.positional_and_variadic1",
     "filename": "access_path.py",
     "callable_line": 38,
@@ -580,6 +520,66 @@
       {
         "port": "formal(__x, position=0, positional_only)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "access_path.SpecialDict.__getitem__",
+    "filename": "access_path.py",
+    "callable_line": 21,
+    "tito": [
+      {
+        "port": "formal(key, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 22, "start": 29, "end": 32 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)[dict]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 22, "start": 15, "end": 24 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
+          }
+        ]
       }
     ]
   }

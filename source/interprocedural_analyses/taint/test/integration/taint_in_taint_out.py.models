@@ -1,5 +1,723 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 185,
+    "tito": [
+      {
+        "port": "formal(field, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "model-shaping" },
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 187, "start": 50, "end": 55 },
+              { "line": 188, "start": 44, "end": 49 }
+            ],
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.add_feature",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 136,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "declaration": null
+          },
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_rhs" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.adds_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 82,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "taint_in_taint_out.adds_tito",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
+              { "always-type": "integer" },
+              { "always-via": "string_concat_lhs" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 82, "start": 14, "end": 28 },
+            "call_site": "82:0-83:21"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)[add_tito]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.adds_tito_inherited",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 90,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "taint_in_taint_out.adds_tito_inherited",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
+              { "always-type": "integer" },
+              { "always-via": "string_concat_lhs" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 90, "start": 24, "end": 43 },
+            "call_site": "90:0-91:21"
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)[add_tito]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 94,
+    "sinks": [
+      {
+        "port": "formal(src, position=0)[add_tito]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-via": "string_concat_lhs" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 95, "start": 18, "end": 21 },
+              "resolves_to": [ "taint_in_taint_out.indirect_sink" ],
+              "port": "formal(x, position=0)[add_tito]",
+              "call_site": "95:4-95:22"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.approximate_return_access_paths",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 107,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 321,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][b][c][d]": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 322, "start": 26, "end": 27 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.collapse_two_then_into_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 311,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 2 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 312, "start": 26, "end": 27 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.combine_collapse_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 326,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 328, "start": 26, "end": 27 },
+              { "line": 330, "start": 26, "end": 27 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.combine_collapse_one_and_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 358,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][a]": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 360, "start": 26, "end": 27 },
+              { "line": 362, "start": 26, "end": 27 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.combine_collapse_three",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 342,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][a]": 1 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 344, "start": 28, "end": 29 },
+              { "line": 346, "start": 28, "end": 29 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.combine_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 334,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][a]": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 336, "start": 26, "end": 27 },
+              { "line": 338, "start": 26, "end": 27 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.combine_collapse_two_and_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 350,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 352, "start": 26, "end": 27 },
+              { "line": 354, "start": 26, "end": 27 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.complex_argument_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 570,
+    "tito": [
+      {
+        "port": "formal(y, position=1)[bar]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "ParameterUpdate[formal(x, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferArgumentTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.evaluate_lazy",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 169,
+    "tito": [
+      {
+        "port": "formal(payload, position=0)[*]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[*]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(payload, position=0).**keys",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { ".**keys": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.get_data",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 32,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[name]": 3, "[id]": 3 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.get_related",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 74,
+    "tito": [
+      {
+        "port": "formal(select, position=0)[*][*][0][target]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[related][related][related][related]": 0,
+                  "[related][related][related][init_list]": 0,
+                  "[related][related][init_list][*]": 0,
+                  "[related][init_list][*]": 0,
+                  "[init_list][*]": 0
+                },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
+            ],
+            "tito_positions": [ { "line": 75, "start": 21, "end": 27 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.indirect_sink",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 98,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)[add_tito]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "origin": { "line": 99, "start": 15, "end": 25 },
+            "call_site": "99:4-99:26"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.into_dict_then_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 306,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 1 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 308, "start": 29, "end": 30 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 230,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 232, "start": 24, "end": 25 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 204,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 206, "start": 24, "end": 25 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_approximate_return_access_paths",
@@ -432,6 +1150,198 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.join_tito_collapse_test_1",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 387,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][b]": 1, "[a]": 2 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 390, "start": 37, "end": 38 },
+              { "line": 392, "start": 39, "end": 40 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.join_tito_collapse_test_2",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 396,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][b]": 2, "[a]": 2 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 399, "start": 37, "end": 38 },
+              { "line": 401, "start": 41, "end": 42 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.join_tito_collapse_test_3",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 419,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 2, "": 1 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 421, "start": 33, "end": 34 },
+              { "line": 423, "start": 41, "end": 42 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.loop_perfect_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 366,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[a][a][a][a]": 0,
+                  "[a][a][a]": 1,
+                  "[a][a]": 2,
+                  "[a]": 3,
+                  "": 4
+                },
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 369, "start": 25, "end": 26 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.loop_tito_collapse_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 373,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 0, "": 4 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 376, "start": 30, "end": 31 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.loop_tito_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 380,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][a]": 0, "[a]": 1, "": 4 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 383, "start": 30, "end": 31 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 461,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
@@ -505,6 +1415,283 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix:5002:0:Call|_test_sink|0|formal(arg):a05422bf6e233e2e98a1de22b95dfa33"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.perfect_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 226,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 316,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][b][c][d]": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 317, "start": 21, "end": 22 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 235,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 236, "start": 21, "end": 22 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 274,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "a" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.product_data",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 36,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[report]": 0,
+                  "[parent_data][report]": 0,
+                  "[parent_data][parent_data][report]": 0,
+                  "[parent_data][parent_data][parent_data]": 0,
+                  "[parent_data][parent_data][name]": 0,
+                  "[parent_data][parent_data][id]": 0,
+                  "[parent_data][name]": 0,
+                  "[parent_data][id]": 0,
+                  "[name]": 3,
+                  "[id]": 3
+                },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [
+              { "line": 37, "start": 20, "end": 21 },
+              { "line": 40, "start": 30, "end": 38 },
+              { "line": 44, "start": 30, "end": 37 },
+              { "line": 45, "start": 33, "end": 40 },
+              { "line": 45, "start": 51, "end": 60 },
+              { "line": 45, "start": 72, "end": 82 },
+              { "line": 47, "start": 26, "end": 38 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.product_data_wrapper",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 54,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[report]": 0,
+                  "[parent_data][report]": 0,
+                  "[parent_data][parent_data][report]": 0,
+                  "[parent_data][parent_data][parent_data]": 0,
+                  "[parent_data][parent_data][name]": 0,
+                  "[parent_data][parent_data][id]": 0,
+                  "[parent_data][name]": 0,
+                  "[parent_data][id]": 0,
+                  "[name]": 3,
+                  "[id]": 3
+                },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 55, "start": 24, "end": 25 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.return_taint",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 123,
+    "tito": [
+      {
+        "port": "formal(b2, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(b1, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(tainted, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.return_taint_in_list",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 132,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(tainted, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -1739,1620 +2926,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 178,
-    "tito": [
-      {
-        "port": "formal(field, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "obscure:unknown-callee" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 184,
-    "tito": [
-      {
-        "port": "formal(payload, position=1)[items]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { ".**keys": 0 }, "kind": "LocalReturn" }
-            ],
-            "local_features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "obscure:unknown-callee" }
-            ],
-            "tito": {}
-          },
-          {
-            "kinds": [
-              {
-                "return_paths": { "[*]": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" },
-              { "always-via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [ { "line": 190, "start": 31, "end": 36 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 3 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 185,
-    "tito": [
-      {
-        "port": "formal(field, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "model-shaping" },
-              { "via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "model-tito-shaping" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 187, "start": 50, "end": 55 },
-              { "line": 188, "start": 44, "end": 49 }
-            ],
-            "tito": {
-              "caller_interval": [ { "lower": 2, "upper": 3 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.Data.__init__",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 27,
-    "tito": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[b]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.GetQuery.__init__",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 155,
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[arg]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.GetUser.__init__",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 160,
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[arg]": 3 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 161, "start": 32, "end": 35 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 13, "upper": 14 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.Recursive.__init__",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 67,
-    "tito": [
-      {
-        "port": "formal(select, position=1)[*][*][0][target]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[init_list][*]": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "via": "broadening" },
-              { "via": "widen-broadening" }
-            ],
-            "tito": {}
-          },
-          {
-            "kinds": [
-              {
-                "return_paths": {
-                  "[related][related][related][related]": 0,
-                  "[related][related][related][init_list]": 0,
-                  "[related][related][init_list][*]": 0,
-                  "[related][init_list][*]": 0
-                },
-                "length": 2,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "widen-broadening" }
-            ],
-            "tito_positions": [ { "line": 71, "start": 35, "end": 41 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 18, "upper": 19 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.TitoClassMethod.set_a",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 542,
-    "tito": [
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(cls, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.TitoSelf.__init__",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 481,
-    "tito": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[b]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.TitoSelf.recursive_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 500,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3, "": 4 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.TitoSelf.set_a",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 485,
-    "tito": [
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.TitoSelf.set_join",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 488,
-    "tito": [
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.TitoSelf.set_subfield",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 494,
-    "tito": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][x]": 2 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 495, "start": 32, "end": 33 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 22, "upper": 23 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferSelfTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.add_feature",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 136,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_rhs" } ],
-                "kind": "Attach"
-              }
-            ],
-            "declaration": null
-          },
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "string_concat_rhs" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.adds_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 82,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "taint_in_taint_out.adds_tito",
-                    "port": "leaf:x"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-field" },
-              { "first-field": "add_tito" },
-              { "always-type": "integer" },
-              { "always-via": "string_concat_lhs" },
-              { "always-type": "scalar" }
-            ],
-            "origin": { "line": 82, "start": 14, "end": 28 },
-            "call_site": "82:0-83:21"
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(x, position=0)[add_tito]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "parameter_sources": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.adds_tito_inherited",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 90,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "taint_in_taint_out.adds_tito_inherited",
-                    "port": "leaf:x"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-field" },
-              { "first-field": "add_tito" },
-              { "always-type": "integer" },
-              { "always-via": "string_concat_lhs" },
-              { "always-type": "scalar" }
-            ],
-            "origin": { "line": 90, "start": 24, "end": 43 },
-            "call_site": "90:0-91:21"
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(x, position=0)[add_tito]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "parameter_sources": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 94,
-    "sinks": [
-      {
-        "port": "formal(src, position=0)[add_tito]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-via": "string_concat_lhs" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 95, "start": 18, "end": 21 },
-              "resolves_to": [ "taint_in_taint_out.indirect_sink" ],
-              "port": "formal(x, position=0)[add_tito]",
-              "call_site": "95:4-95:22"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.approximate_return_access_paths",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 107,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [
-              { "always-via": "model-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "model-tito-broadening" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 321,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][b][c][d]": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 322, "start": 26, "end": 27 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.collapse_two_then_into_dict",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 311,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 2 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 312, "start": 26, "end": 27 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.combine_collapse_one",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 326,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 328, "start": 26, "end": 27 },
-              { "line": 330, "start": 26, "end": 27 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.combine_collapse_one_and_two",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 358,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][a]": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 360, "start": 26, "end": 27 },
-              { "line": 362, "start": 26, "end": 27 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.combine_collapse_three",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 342,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][a]": 1 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 344, "start": 28, "end": 29 },
-              { "line": 346, "start": 28, "end": 29 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.combine_collapse_two",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 334,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][a]": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 336, "start": 26, "end": 27 },
-              { "line": 338, "start": 26, "end": 27 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.combine_collapse_two_and_one",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 350,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 352, "start": 26, "end": 27 },
-              { "line": 354, "start": 26, "end": 27 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.complex_argument_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 570,
-    "tito": [
-      {
-        "port": "formal(y, position=1)[bar]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[foo]": 3 },
-                "kind": "ParameterUpdate[formal(x, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "InferArgumentTito" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.evaluate_lazy",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 169,
-    "tito": [
-      {
-        "port": "formal(payload, position=0)[*]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[*]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(payload, position=0).**keys",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { ".**keys": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.get_data",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 32,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[name]": 3, "[id]": 3 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.get_related",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 74,
-    "tito": [
-      {
-        "port": "formal(select, position=0)[*][*][0][target]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": {
-                  "[related][related][related][related]": 0,
-                  "[related][related][related][init_list]": 0,
-                  "[related][related][init_list][*]": 0,
-                  "[related][init_list][*]": 0,
-                  "[init_list][*]": 0
-                },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "widen-broadening" }
-            ],
-            "tito_positions": [ { "line": 75, "start": 21, "end": 27 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.indirect_sink",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 98,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)[add_tito]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "origin": { "line": 99, "start": 15, "end": 25 },
-            "call_site": "99:4-99:26"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.into_dict_then_collapse_two",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 306,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 1 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 308, "start": 29, "end": 30 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 230,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 232, "start": 24, "end": 25 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 204,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 206, "start": 24, "end": 25 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.join_tito_collapse_test_1",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 387,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][b]": 1, "[a]": 2 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 390, "start": 37, "end": 38 },
-              { "line": 392, "start": 39, "end": 40 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.join_tito_collapse_test_2",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 396,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][b]": 2, "[a]": 2 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 399, "start": 37, "end": 38 },
-              { "line": 401, "start": 41, "end": 42 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.join_tito_collapse_test_3",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 419,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[foo]": 2, "": 1 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [
-              { "line": 421, "start": 33, "end": 34 },
-              { "line": 423, "start": 41, "end": 42 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.loop_perfect_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 366,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": {
-                  "[a][a][a][a]": 0,
-                  "[a][a][a]": 1,
-                  "[a][a]": 2,
-                  "[a]": 3,
-                  "": 4
-                },
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 369, "start": 25, "end": 26 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.loop_tito_collapse_one",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 373,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[a]": 0, "": 4 }, "kind": "LocalReturn" }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 376, "start": 30, "end": 31 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.loop_tito_collapse_two",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 380,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][a]": 0, "[a]": 1, "": 4 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 383, "start": 30, "end": 31 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 461,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.perfect_tito",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 226,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 316,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a][b][c][d]": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 317, "start": 21, "end": 22 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 235,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 236, "start": 21, "end": 22 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 274,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "a" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.product_data",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 36,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": {
-                  "[report]": 0,
-                  "[parent_data][report]": 0,
-                  "[parent_data][parent_data][report]": 0,
-                  "[parent_data][parent_data][parent_data]": 0,
-                  "[parent_data][parent_data][name]": 0,
-                  "[parent_data][parent_data][id]": 0,
-                  "[parent_data][name]": 0,
-                  "[parent_data][id]": 0,
-                  "[name]": 3,
-                  "[id]": 3
-                },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [
-              { "line": 37, "start": 20, "end": 21 },
-              { "line": 40, "start": 30, "end": 38 },
-              { "line": 44, "start": 30, "end": 37 },
-              { "line": 45, "start": 33, "end": 40 },
-              { "line": 45, "start": 51, "end": 60 },
-              { "line": 45, "start": 72, "end": 82 },
-              { "line": 47, "start": 26, "end": 38 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.product_data_wrapper",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 54,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": {
-                  "[report]": 0,
-                  "[parent_data][report]": 0,
-                  "[parent_data][parent_data][report]": 0,
-                  "[parent_data][parent_data][parent_data]": 0,
-                  "[parent_data][parent_data][name]": 0,
-                  "[parent_data][parent_data][id]": 0,
-                  "[parent_data][name]": 0,
-                  "[parent_data][id]": 0,
-                  "[name]": 3,
-                  "[id]": 3
-                },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 55, "start": 24, "end": 25 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.return_taint",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 123,
-    "tito": [
-      {
-        "port": "formal(b2, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(b1, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(tainted, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.return_taint_in_list",
-    "filename": "taint_in_taint_out.py",
-    "callable_line": 132,
-    "tito": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(tainted, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "taint_in_taint_out.tito",
     "filename": "taint_in_taint_out.py",
     "callable_line": 58,
@@ -4014,6 +3587,433 @@
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 178,
+    "tito": [
+      {
+        "port": "formal(field, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "obscure:unknown-callee" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 184,
+    "tito": [
+      {
+        "port": "formal(payload, position=1)[items]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { ".**keys": 0 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "[*]": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 190, "start": 31, "end": 36 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 2, "upper": 3 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.Data.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 27,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.GetQuery.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 155,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[arg]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.GetUser.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 160,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[arg]": 3 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 161, "start": 32, "end": 35 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 13, "upper": 14 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.Recursive.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 67,
+    "tito": [
+      {
+        "port": "formal(select, position=1)[*][*][0][target]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[init_list][*]": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
+            ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[related][related][related][related]": 0,
+                  "[related][related][related][init_list]": 0,
+                  "[related][related][init_list][*]": 0,
+                  "[related][init_list][*]": 0
+                },
+                "length": 2,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
+            ],
+            "tito_positions": [ { "line": 71, "start": 35, "end": 41 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 18, "upper": 19 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoClassMethod.set_a",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 542,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(cls, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 481,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.recursive_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 500,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3, "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.set_a",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 485,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.set_join",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 488,
+    "tito": [
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.TitoSelf.set_subfield",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 494,
+    "tito": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a][x]": 2 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 495, "start": 32, "end": 33 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 22, "upper": 23 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
             "tito": {}
           }
         ]

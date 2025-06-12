@@ -1,159 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "binary_operators.test1",
-    "callable_line": 14,
-    "code": 5002,
-    "line": 16,
-    "start": 10,
-    "end": 24,
-    "filename": "binary_operators.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 16, "start": 10, "end": 24 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 16, "start": 10, "end": 24 },
-              "resolves_to": [ "binary_operators.Add.__add__" ],
-              "port": "formal(other, position=1)",
-              "call_site": "16:4-16:24"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "binary_operators.Add.__add__",
-      "index": 0,
-      "parameter": "formal(other)"
-    },
-    "master_handle": "binary_operators.test1:5002:0:Call|binary_operators.Add.__add__|0|formal(other):e6a103bbaecc137e992946ecaead11e6"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "binary_operators.test2",
-    "callable_line": 19,
-    "code": 5002,
-    "line": 21,
-    "start": 11,
-    "end": 25,
-    "filename": "binary_operators.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 21, "start": 11, "end": 25 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 21, "start": 11, "end": 25 },
-              "resolves_to": [ "binary_operators.Add.__add__" ],
-              "port": "formal(other, position=1)",
-              "call_site": "21:4-21:25"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "binary_operators.Add.__add__",
-      "index": 0,
-      "parameter": "formal(other)"
-    },
-    "master_handle": "binary_operators.test2:5002:0:Call|binary_operators.Add.__add__|0|formal(other):5ef261b25d55ce37fd84795645c4c318"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -302,31 +148,133 @@
   }
 }
 {
-  "kind": "model",
+  "kind": "issue",
   "data": {
-    "callable": "binary_operators.Add.__add__",
+    "callable": "binary_operators.test1",
+    "callable_line": 14,
+    "code": 5002,
+    "line": 16,
+    "start": 10,
+    "end": 24,
     "filename": "binary_operators.py",
-    "callable_line": 10,
-    "sinks": [
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
       {
-        "port": "formal(other, position=1)",
-        "taint": [
+        "name": "forward",
+        "roots": [
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 11, "start": 19, "end": 24 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "11:8-11:25"
+            "origin": { "line": 16, "start": 10, "end": 24 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 16, "start": 10, "end": 24 },
+              "resolves_to": [ "binary_operators.Add.__add__" ],
+              "port": "formal(other, position=1)",
+              "call_site": "16:4-16:24"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
-    ]
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "binary_operators.Add.__add__",
+      "index": 0,
+      "parameter": "formal(other)"
+    },
+    "master_handle": "binary_operators.test1:5002:0:Call|binary_operators.Add.__add__|0|formal(other):e6a103bbaecc137e992946ecaead11e6"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "binary_operators.test2",
+    "callable_line": 19,
+    "code": 5002,
+    "line": 21,
+    "start": 11,
+    "end": 25,
+    "filename": "binary_operators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 21, "start": 11, "end": 25 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 21, "start": 11, "end": 25 },
+              "resolves_to": [ "binary_operators.Add.__add__" ],
+              "port": "formal(other, position=1)",
+              "call_site": "21:4-21:25"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "binary_operators.Add.__add__",
+      "index": 0,
+      "parameter": "formal(other)"
+    },
+    "master_handle": "binary_operators.test2:5002:0:Call|binary_operators.Add.__add__|0|formal(other):5ef261b25d55ce37fd84795645c4c318"
   }
 }
 {
@@ -422,5 +370,57 @@
       }
     ],
     "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "binary_operators.Add.__add__",
+    "filename": "binary_operators.py",
+    "callable_line": 10,
+    "sinks": [
+      {
+        "port": "formal(other, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 11, "start": 19, "end": 24 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "11:8-11:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
   }
 }

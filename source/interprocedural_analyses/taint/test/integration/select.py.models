@@ -1,267 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "select.return_is_RCE",
-    "callable_line": 40,
-    "code": 5001,
-    "line": 41,
-    "start": 4,
-    "end": 48,
-    "filename": "select.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{django.http.Request.GET}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "payload" }
-            ],
-            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
-            "origin": { "line": 41, "start": 11, "end": 22 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "select.return_is_RCE", "port": "leaf:return" }
-                ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 41, "start": 4, "end": 48 }
-          }
-        ]
-      }
-    ],
-    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
-    "sink_handle": { "kind": "Return" },
-    "master_handle": "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "select.view_entry_field",
-    "callable_line": 12,
-    "code": 5001,
-    "line": 13,
-    "start": 9,
-    "end": 24,
-    "filename": "select.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "select.view_entry_field",
-                    "port": "leaf:request"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-field" }, { "first-field": "payload" }
-            ],
-            "origin": { "line": 12, "start": 21, "end": 28 },
-            "call_site": "12:0-13:25"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 13, "start": 9, "end": 24 },
-            "call_site": "13:4-13:25"
-          }
-        ]
-      }
-    ],
-    "features": [ { "has": "first-field" }, { "first-field": "payload" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "select.view_entry_field:5001:0:Call|eval|0|formal(arg):164dcdb169663c76cefeb4fd4eb5fb86"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "select.view_entry_get",
-    "callable_line": 36,
-    "code": 5001,
-    "line": 37,
-    "start": 9,
-    "end": 46,
-    "filename": "select.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{django.http.Request.GET}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "payload" }
-            ],
-            "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
-            "origin": { "line": 37, "start": 9, "end": 20 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 37, "start": 9, "end": 46 },
-            "call_site": "37:4-37:47"
-          }
-        ]
-      }
-    ],
-    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "select.view_entry_get:5001:0:Call|eval|0|formal(arg):7b1a3d8fd4bd2ae19d8c755f3b339d00"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "select.view_entry_index",
-    "callable_line": 16,
-    "code": 5001,
-    "line": 17,
-    "start": 9,
-    "end": 31,
-    "filename": "select.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "select.view_entry_index",
-                    "port": "leaf:request"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "has": "first-field" },
-              { "first-field": "GET" }
-            ],
-            "origin": { "line": 16, "start": 21, "end": 28 },
-            "call_site": "16:0-17:32"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 17, "start": 9, "end": 31 },
-            "call_site": "17:4-17:32"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "payload" },
-      { "has": "first-field" },
-      { "first-field": "GET" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "select.view_entry_index:5001:0:Call|eval|0|formal(arg):d2317d02e768fc9f4945b5d8852e4363"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{django.http.Request.GET}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -309,26 +47,6 @@
       }
     ],
     "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "dict.get",
-    "filename": "builtins.pyi",
-    "callable_line": 401,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "SkipObscure" ]
   }
 }
 {
@@ -523,6 +241,63 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "select.return_is_RCE",
+    "callable_line": 40,
+    "code": 5001,
+    "line": 41,
+    "start": 4,
+    "end": 48,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": { "line": 41, "start": 11, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "select.return_is_RCE", "port": "leaf:return" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 41, "start": 4, "end": 48 }
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
+    "sink_handle": { "kind": "Return" },
+    "master_handle": "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "select.view_entry_field",
@@ -556,6 +331,67 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_field",
+    "callable_line": 12,
+    "code": 5001,
+    "line": 13,
+    "start": 9,
+    "end": 24,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "select.view_entry_field",
+                    "port": "leaf:request"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "payload" }
+            ],
+            "origin": { "line": 12, "start": 21, "end": 28 },
+            "call_site": "12:0-13:25"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 13, "start": 9, "end": 24 },
+            "call_site": "13:4-13:25"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-field" }, { "first-field": "payload" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "select.view_entry_field:5001:0:Call|eval|0|formal(arg):164dcdb169663c76cefeb4fd4eb5fb86"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "select.view_entry_get",
@@ -582,6 +418,67 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_get",
+    "callable_line": 36,
+    "code": 5001,
+    "line": 37,
+    "start": 9,
+    "end": 46,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
+            "origin": { "line": 37, "start": 9, "end": 20 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 37, "start": 9, "end": 46 },
+            "call_site": "37:4-37:47"
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "select.view_entry_get:5001:0:Call|eval|0|formal(arg):7b1a3d8fd4bd2ae19d8c755f3b339d00"
   }
 }
 {
@@ -613,6 +510,109 @@
     "parameter_sources": [
       {
         "port": "formal(request, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.view_entry_index",
+    "callable_line": 16,
+    "code": 5001,
+    "line": 17,
+    "start": 9,
+    "end": 31,
+    "filename": "select.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "select.view_entry_index",
+                    "port": "leaf:request"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "has": "first-field" },
+              { "first-field": "GET" }
+            ],
+            "origin": { "line": 16, "start": 21, "end": 28 },
+            "call_site": "16:0-17:32"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 17, "start": 9, "end": 31 },
+            "call_site": "17:4-17:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "payload" },
+      { "has": "first-field" },
+      { "first-field": "GET" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "select.view_entry_index:5001:0:Call|eval|0|formal(arg):d2317d02e768fc9f4945b5d8852e4363"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dict.get",
+    "filename": "builtins.pyi",
+    "callable_line": 401,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{django.http.Request.GET}",
+    "sources": [
+      {
+        "port": "result",
         "taint": [
           { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]

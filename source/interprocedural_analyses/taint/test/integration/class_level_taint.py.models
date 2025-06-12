@@ -1,5 +1,37 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "class_level_taint.test",
+    "filename": "class_level_taint.py",
+    "callable_line": 17,
+    "sinks": [
+      {
+        "port": "formal(class_sink, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "class_level_taint.ClassSink.sink",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 18, "start": 4, "end": 14 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "18:4-18:42"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "class_level_taint.test",
@@ -93,38 +125,6 @@
       {
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "class_level_taint.test",
-    "filename": "class_level_taint.py",
-    "callable_line": 17,
-    "sinks": [
-      {
-        "port": "formal(class_sink, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "class_level_taint.ClassSink.sink",
-                    "port": "leaf:self"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 18, "start": 4, "end": 14 },
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "18:4-18:42"
-          }
-        ]
       }
     ]
   }

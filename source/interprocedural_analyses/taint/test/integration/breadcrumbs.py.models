@@ -52,45 +52,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "breadcrumbs.TpmRequest.__init__",
-    "filename": "breadcrumbs.py",
-    "callable_line": 38,
-    "tito": [
-      {
-        "port": "formal(ids_list, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[ids_list]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(id_float, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[id_float]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-type": "scalar" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "breadcrumbs.bool_parameter",
     "filename": "breadcrumbs.py",
     "callable_line": 30,
@@ -400,5 +361,44 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.TpmRequest.__init__",
+    "filename": "breadcrumbs.py",
+    "callable_line": 38,
+    "tito": [
+      {
+        "port": "formal(ids_list, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[ids_list]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(id_float, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[id_float]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-type": "scalar" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }

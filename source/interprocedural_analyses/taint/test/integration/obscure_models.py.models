@@ -1,5 +1,83 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.should_collapse_depth_zero",
+    "filename": "obscure_models.py",
+    "callable_line": 84,
+    "tito": [
+      {
+        "port": "formal(c, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 85, "start": 11, "end": 12 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 85, "start": 21, "end": 24 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "obscure_models.test_collapse_depth",
@@ -67,6 +145,40 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "obscure_models.test_collapse_depth:5002:0:Call|_test_sink|0|formal(arg):f0ca7f9778082758757c7a7dbe167245"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.test_collapse_source",
+    "filename": "obscure_models.py",
+    "callable_line": 73,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 75, "start": 8, "end": 9 } ],
+            "origin": { "line": 76, "start": 15, "end": 21 },
+            "call_site": "76:4-76:22"
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -140,6 +252,35 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.test_issue",
+    "filename": "obscure_models.py",
+    "callable_line": 67,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 69, "start": 8, "end": 9 } ],
+            "origin": { "line": 70, "start": 15, "end": 16 },
+            "call_site": "70:4-70:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "obscure_models.test_issue",
@@ -200,6 +341,57 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.test_obscure",
+    "filename": "obscure_models.py",
+    "callable_line": 35,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 36, "start": 24, "end": 38 } ],
+            "origin": { "line": 36, "start": 24, "end": 38 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(c, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 36, "start": 11, "end": 12 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "obscure_models.test_obscure_from_model",
@@ -257,345 +449,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "obscure_models.test_obscure_from_model:5002:0:Call|_test_sink|0|formal(arg):904e6d73bedf5d24bf9b6778064af1d6"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "obscure_models.test_obscure_with_tito",
-    "callable_line": 63,
-    "code": 5002,
-    "line": 64,
-    "start": 15,
-    "end": 50,
-    "filename": "obscure_models.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "a_feature" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 64, "start": 35, "end": 49 } ],
-            "origin": { "line": 64, "start": 35, "end": 49 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 64, "start": 15, "end": 50 },
-            "call_site": "64:4-64:51"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "a_feature" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "obscure_models.test_obscure_with_tito:5002:0:Call|_test_sink|0|formal(arg):92ad60b8a716874f6e42658a1c86185f"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.C.obscure_with_multiple_models",
-    "filename": "obscure_models.py",
-    "callable_line": 28,
-    "tito": [
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.C.obscure_with_skip_obscure_and_tito",
-    "filename": "obscure_models.py",
-    "callable_line": 25,
-    "tito": [
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.C.obscure_with_source",
-    "filename": "obscure_models.py",
-    "callable_line": 19,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.C.obscure_with_tito",
-    "filename": "obscure_models.py",
-    "callable_line": 31,
-    "tito": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "a_feature" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.should_collapse_depth_zero",
-    "filename": "obscure_models.py",
-    "callable_line": 84,
-    "tito": [
-      {
-        "port": "formal(c, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 85, "start": 11, "end": 12 } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 85, "start": 21, "end": 24 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.test_collapse_source",
-    "filename": "obscure_models.py",
-    "callable_line": 73,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "b" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" }
-            ],
-            "tito_positions": [ { "line": 75, "start": 8, "end": 9 } ],
-            "origin": { "line": 76, "start": 15, "end": 21 },
-            "call_site": "76:4-76:22"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.test_issue",
-    "filename": "obscure_models.py",
-    "callable_line": 67,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 69, "start": 8, "end": 9 } ],
-            "origin": { "line": 70, "start": 15, "end": 16 },
-            "call_site": "70:4-70:17"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "obscure_models.test_obscure",
-    "filename": "obscure_models.py",
-    "callable_line": 35,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 36, "start": 24, "end": 38 } ],
-            "origin": { "line": 36, "start": 24, "end": 38 }
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(c, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 36, "start": 11, "end": 12 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
   }
 }
 {
@@ -853,6 +706,70 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "obscure_models.test_obscure_with_tito",
+    "callable_line": 63,
+    "code": 5002,
+    "line": 64,
+    "start": 15,
+    "end": 50,
+    "filename": "obscure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "a_feature" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 64, "start": 35, "end": 49 } ],
+            "origin": { "line": 64, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 64, "start": 15, "end": 50 },
+            "call_site": "64:4-64:51"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "a_feature" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "obscure_models.test_obscure_with_tito:5002:0:Call|_test_sink|0|formal(arg):92ad60b8a716874f6e42658a1c86185f"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_sink_collapse",
@@ -929,5 +846,88 @@
     ],
     "model_generators": [ "skip_obscure_model_query" ],
     "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.C.obscure_with_multiple_models",
+    "filename": "obscure_models.py",
+    "callable_line": 28,
+    "tito": [
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.C.obscure_with_skip_obscure_and_tito",
+    "filename": "obscure_models.py",
+    "callable_line": 25,
+    "tito": [
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.C.obscure_with_source",
+    "filename": "obscure_models.py",
+    "callable_line": 19,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "obscure_models.C.obscure_with_tito",
+    "filename": "obscure_models.py",
+    "callable_line": 31,
+    "tito": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "a_feature" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }

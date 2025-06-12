@@ -1,5 +1,73 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_sink_x",
+    "filename": "sanitize_parametric.py",
+    "callable_line": 15,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_sink_y",
+    "filename": "sanitize_parametric.py",
+    "callable_line": 19,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_source_x",
+    "filename": "sanitize_parametric.py",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_source_y",
+    "filename": "sanitize_parametric.py",
+    "callable_line": 11,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "sanitize_parametric.partial_issue_sanitize",
@@ -69,74 +137,6 @@
       "parameter": "formal(x)"
     },
     "master_handle": "sanitize_parametric.partial_issue_sanitize:1000:0:Call|sanitize_parametric.partial_issue_sinks|0|formal(x):c93b57613cfd1f9419c3fdbc0666235b"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_parametric.a_sink_x",
-    "filename": "sanitize_parametric.py",
-    "callable_line": 15,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_parametric.a_sink_y",
-    "filename": "sanitize_parametric.py",
-    "callable_line": 19,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_parametric.a_source_x",
-    "filename": "sanitize_parametric.py",
-    "callable_line": 7,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_parametric.a_source_y",
-    "filename": "sanitize_parametric.py",
-    "callable_line": 11,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }
 {

@@ -257,106 +257,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "multi_sink_ports.Query.params",
-    "filename": "multi_sink_ports.py",
-    "callable_line": 60,
-    "tito": [
-      {
-        "port": "formal(data, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[_params]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multi_sink_ports.Query.send",
-    "filename": "multi_sink_ports.py",
-    "callable_line": 57,
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[_params]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "c_feature" } ],
-                "length": 2,
-                "kind": "Demo"
-              },
-              {
-                "features": [ { "always-via": "b_feature" } ],
-                "length": 2,
-                "kind": "GetAttr"
-              },
-              {
-                "features": [
-                  { "via": "d_feature" },
-                  { "via": "c_feature" },
-                  { "via": "b_feature" }
-                ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 58, "start": 28, "end": 32 },
-              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x, position=0)[_params]",
-              "call_site": "58:15-58:33"
-            },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "split" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 58, "start": 28, "end": 32 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 3, "upper": 4 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "multi_sink_ports.log_call",
     "filename": "multi_sink_ports.py",
     "callable_line": 65,
@@ -895,6 +795,106 @@
             },
             "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_sink_ports.Query.params",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 60,
+    "tito": [
+      {
+        "port": "formal(data, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[_params]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multi_sink_ports.Query.send",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 57,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[_params]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "c_feature" } ],
+                "length": 2,
+                "kind": "Demo"
+              },
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "length": 2,
+                "kind": "GetAttr"
+              },
+              {
+                "features": [
+                  { "via": "d_feature" },
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
+                ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 58, "start": 28, "end": 32 },
+              "resolves_to": [ "multi_sink_ports.splitwrapper" ],
+              "port": "formal(x, position=0)[_params]",
+              "call_site": "58:15-58:33"
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 2,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "split" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 58, "start": 28, "end": 32 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 3, "upper": 4 } ],
+              "is_self_call": false
+            }
           }
         ]
       }

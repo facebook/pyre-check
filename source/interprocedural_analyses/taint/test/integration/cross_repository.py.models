@@ -1,5 +1,133 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.cross_repository_anchor_sink",
+    "filename": "cross_repository.py",
+    "callable_line": 26,
+    "sinks": [
+      {
+        "port": "formal(sink_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "crossRepositoryAnchor",
+                    "port": "anchor:formal(0)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.cross_repository_source",
+    "filename": "cross_repository.py",
+    "callable_line": 9,
+    "sinks": [
+      {
+        "port": "formal(source_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 10, "start": 15, "end": 31 },
+            "call_site": "10:4-10:32"
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(source_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
+                  }
+                ],
+                "length": 2,
+                "kind": "UserControlled"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "cross_repository.cross_repository_source",
@@ -60,6 +188,68 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "cross_repository.cross_repository_source:5002:0:Call|_test_sink|0|formal(arg):ac21fdbf72127ac5c56bafd9b43a351b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.reaches_crtex_sink",
+    "filename": "cross_repository.py",
+    "callable_line": 17,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySink",
+                    "port": "producer:1:formal(x)"
+                  }
+                ],
+                "length": 5,
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.returns_crtex_source",
+    "filename": "cross_repository.py",
+    "callable_line": 13,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
+                  }
+                ],
+                "length": 3,
+                "kind": "UserControlled"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -187,34 +377,73 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
+    "callable": "cross_repository.test_propagate_cross_repository_sink_once",
+    "filename": "cross_repository.py",
+    "callable_line": 43,
     "sinks": [
       {
-        "port": "formal(arg, position=0)",
+        "port": "formal(y, position=0)",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySink",
+                    "port": "producer:1:formal(x)"
+                  }
+                ],
+                "length": 5,
                 "kind": "Test"
               }
             ],
-            "declaration": null
+            "origin": { "line": 44, "start": 23, "end": 24 },
+            "call_site": "44:4-44:25"
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
+    "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
+    "filename": "cross_repository.py",
+    "callable_line": 47,
+    "sinks": [
+      {
+        "port": "formal(z, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "length": 6,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 48, "start": 46, "end": 47 },
+              "resolves_to": [
+                "cross_repository.test_propagate_cross_repository_sink_once"
+              ],
+              "port": "formal(y, position=0)",
+              "call_site": "48:4-48:48"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.test_propagate_cross_repository_source_once",
+    "filename": "cross_repository.py",
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -222,16 +451,53 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
+                "local_features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
+                  }
+                ],
+                "length": 3,
+                "kind": "UserControlled"
               }
             ],
-            "declaration": null
+            "origin": { "line": 36, "start": 11, "end": 33 }
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "cross_repository.test_propagate_cross_repository_source_twice",
+    "filename": "cross_repository.py",
+    "callable_line": 39,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "length": 4,
+                "kind": "UserControlled"
+              }
+            ],
+            "call": {
+              "position": { "line": 40, "start": 11, "end": 56 },
+              "resolves_to": [
+                "cross_repository.test_propagate_cross_repository_source_once"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -451,272 +717,6 @@
     "model_generators": [
       "cross_repository_taint_anchor_1", "cross_repository_taint_anchor_2",
       "cross_repository_taint_anchor_3"
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.cross_repository_anchor_sink",
-    "filename": "cross_repository.py",
-    "callable_line": 26,
-    "sinks": [
-      {
-        "port": "formal(sink_parameter, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "crossRepositoryAnchor",
-                    "port": "anchor:formal(0)"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.cross_repository_source",
-    "filename": "cross_repository.py",
-    "callable_line": 9,
-    "sinks": [
-      {
-        "port": "formal(source_parameter, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 10, "start": 15, "end": 31 },
-            "call_site": "10:4-10:32"
-          }
-        ]
-      }
-    ],
-    "parameter_sources": [
-      {
-        "port": "formal(source_parameter, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySource",
-                    "port": "producer:1:formal(0)"
-                  }
-                ],
-                "length": 2,
-                "kind": "UserControlled"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.reaches_crtex_sink",
-    "filename": "cross_repository.py",
-    "callable_line": 17,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySink",
-                    "port": "producer:1:formal(x)"
-                  }
-                ],
-                "length": 5,
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.returns_crtex_source",
-    "filename": "cross_repository.py",
-    "callable_line": 13,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySource",
-                    "port": "producer:1:result"
-                  }
-                ],
-                "length": 3,
-                "kind": "UserControlled"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.test_propagate_cross_repository_sink_once",
-    "filename": "cross_repository.py",
-    "callable_line": 43,
-    "sinks": [
-      {
-        "port": "formal(y, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySink",
-                    "port": "producer:1:formal(x)"
-                  }
-                ],
-                "length": 5,
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 44, "start": 23, "end": 24 },
-            "call_site": "44:4-44:25"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
-    "filename": "cross_repository.py",
-    "callable_line": 47,
-    "sinks": [
-      {
-        "port": "formal(z, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "crtex" } ],
-                "length": 6,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 48, "start": 46, "end": 47 },
-              "resolves_to": [
-                "cross_repository.test_propagate_cross_repository_sink_once"
-              ],
-              "port": "formal(y, position=0)",
-              "call_site": "48:4-48:48"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.test_propagate_cross_repository_source_once",
-    "filename": "cross_repository.py",
-    "callable_line": 35,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySource",
-                    "port": "producer:1:result"
-                  }
-                ],
-                "length": 3,
-                "kind": "UserControlled"
-              }
-            ],
-            "origin": { "line": 36, "start": 11, "end": 33 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "cross_repository.test_propagate_cross_repository_source_twice",
-    "filename": "cross_repository.py",
-    "callable_line": 39,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "crtex" } ],
-                "length": 4,
-                "kind": "UserControlled"
-              }
-            ],
-            "call": {
-              "position": { "line": 40, "start": 11, "end": 56 },
-              "resolves_to": [
-                "cross_repository.test_propagate_cross_repository_source_once"
-              ],
-              "port": "result"
-            }
-          }
-        ]
-      }
     ]
   }
 }

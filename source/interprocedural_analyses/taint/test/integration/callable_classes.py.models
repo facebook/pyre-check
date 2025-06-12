@@ -2,60 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "callable_classes.CallableProtocol.__call__",
-    "filename": "callable_classes.py",
-    "callable_line": 26,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  { "kind": "ViaValueOf", "parameter": "formal(arg)" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "callable_classes.P.__call__",
-    "filename": "callable_classes.py",
-    "callable_line": 10,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  { "kind": "ViaValueOf", "parameter": "formal(arg)" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "callable_classes.bar",
     "filename": "callable_classes.py",
     "callable_line": 34,
@@ -115,5 +61,59 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "callable_classes.CallableProtocol.__call__",
+    "filename": "callable_classes.py",
+    "callable_line": 26,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(arg)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "callable_classes.P.__call__",
+    "filename": "callable_classes.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaValueOf", "parameter": "formal(arg)" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }

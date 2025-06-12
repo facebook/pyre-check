@@ -155,6 +155,10 @@ val is_normal : t -> bool
 
 val is_decorated : t -> bool
 
+val is_parameterized : t -> bool
+
+val is_regular : t -> bool
+
 (* A parameterized target contains recursive targets if one of its `regular` part also appears in
    one of its `parameters` part. Such recursion may lead to non-termination in high-order call graph
    building. *)

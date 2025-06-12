@@ -2,30 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{missing_type.UnknownSinkAttribute.unknown}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{missing_type.UnknownSourceAttribute.unknown}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
     "callable_line": 618,
@@ -68,34 +44,6 @@
             "declaration": null
           }
         ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "missing_type.UnknownSinkDef.unknown",
-    "filename": "*",
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "missing_type.UnknownSourceDef.unknown",
-    "filename": "*",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -151,6 +99,58 @@
             "call_site": "19:4-19:17"
           }
         ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "missing_type.UnknownSinkDef.unknown",
+    "filename": "*",
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "missing_type.UnknownSourceDef.unknown",
+    "filename": "*",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{missing_type.UnknownSinkAttribute.unknown}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{missing_type.UnknownSourceAttribute.unknown}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

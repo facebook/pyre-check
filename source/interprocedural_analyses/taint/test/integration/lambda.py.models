@@ -1,5 +1,93 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "lambda.lambda_source",
+    "filename": "lambda.py",
+    "callable_line": 58,
+    "sources": [
+      {
+        "port": "result[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "higher-order-parameter" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [
+              { "line": 59, "start": 16, "end": 51 },
+              { "line": 59, "start": 20, "end": 34 },
+              { "line": 59, "start": 36, "end": 50 }
+            ],
+            "origin": { "line": 59, "start": 36, "end": 50 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "lambda.test_filter_lambda",
@@ -1480,56 +1568,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "filter.__init__",
     "filename": "builtins.pyi",
     "callable_line": 521,
@@ -1564,44 +1602,6 @@
       }
     ],
     "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "lambda.lambda_source",
-    "filename": "lambda.py",
-    "callable_line": 58,
-    "sources": [
-      {
-        "port": "result[*]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "via": "higher-order-parameter" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [
-              { "line": 59, "start": 16, "end": 51 },
-              { "line": 59, "start": 20, "end": 34 },
-              { "line": 59, "start": 36, "end": 50 }
-            ],
-            "origin": { "line": 59, "start": 36, "end": 50 }
-          }
-        ]
-      }
-    ]
   }
 }
 {

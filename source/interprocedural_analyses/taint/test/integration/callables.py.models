@@ -1,200 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "callables.async_execute_event_processor",
-    "callable_line": 54,
-    "code": 5002,
-    "line": 58,
-    "start": 14,
-    "end": 23,
-    "filename": "callables.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 56, "start": 42, "end": 56 } ],
-            "origin": { "line": 56, "start": 42, "end": 56 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 58, "start": 14, "end": 23 },
-              "resolves_to": [
-                "callables.ConcreteEventProcessor.async_call_tainted"
-              ],
-              "port": "formal(self, position=0)[tainted]",
-              "call_site": "58:14-58:44"
-            },
-            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "callables.AbstractEventProcessor.async_call_tainted",
-      "index": 0,
-      "parameter": "formal(self)"
-    },
-    "master_handle": "callables.async_execute_event_processor:5002:0:Call|callables.AbstractEventProcessor.async_call_tainted|0|formal(self):7a96ef90e2bb1543556804c72ef5a35c"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[tainted]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{callables.AbstractEventProcessor.async_run}",
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[benign]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{callables.ConcreteEventProcessor.async_call_tainted}",
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[tainted]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{callables.ConcreteEventProcessor.async_run}",
-    "sinks": [
-      {
-        "port": "formal(self, position=0)[benign]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -343,6 +148,172 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "callables.async_execute_event_processor",
+    "callable_line": 54,
+    "code": 5002,
+    "line": 58,
+    "start": 14,
+    "end": 23,
+    "filename": "callables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 56, "start": 42, "end": 56 } ],
+            "origin": { "line": 56, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 58, "start": 14, "end": 23 },
+              "resolves_to": [
+                "callables.ConcreteEventProcessor.async_call_tainted"
+              ],
+              "port": "formal(self, position=0)[tainted]",
+              "call_site": "58:14-58:44"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "callables.AbstractEventProcessor.async_call_tainted",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "callables.async_execute_event_processor:5002:0:Call|callables.AbstractEventProcessor.async_call_tainted|0|formal(self):7a96ef90e2bb1543556804c72ef5a35c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "copy",
+    "filename": "builtins.pyi",
+    "callable_line": 629,
+    "tito": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "copy" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "eval",
+    "filename": "builtins.pyi",
+    "callable_line": 474,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "getattr",
+    "filename": "builtins.pyi",
+    "callable_line": 476,
+    "sinks": [
+      {
+        "port": "formal(name, position=1)",
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(default, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "default" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(o, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "object" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "SkipObscure" ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "callables.AbstractEventProcessor.__init__",
@@ -463,95 +434,124 @@
 {
   "kind": "model",
   "data": {
-    "callable": "copy",
-    "filename": "builtins.pyi",
-    "callable_line": 629,
-    "tito": [
+    "callable": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
+    "sinks": [
       {
-        "port": "formal(obj, position=0)",
+        "port": "formal(self, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "copy" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
               }
             ],
-            "tito": {}
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "eval",
-    "filename": "builtins.pyi",
-    "callable_line": 474,
+    "callable": "Overrides{callables.AbstractEventProcessor.async_run}",
     "sinks": [
       {
-        "port": "formal(arg, position=0)",
+        "port": "formal(self, position=0)[benign]",
         "taint": [
           {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "getattr",
-    "filename": "builtins.pyi",
-    "callable_line": 476,
+    "callable": "Overrides{callables.ConcreteEventProcessor.async_call_tainted}",
     "sinks": [
       {
-        "port": "formal(name, position=1)",
-        "taint": [
-          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(default, position=2)",
+        "port": "formal(self, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "default" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
               }
             ],
-            "tito": {}
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
-      },
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{callables.ConcreteEventProcessor.async_run}",
+    "sinks": [
       {
-        "port": "formal(o, position=0)",
+        "port": "formal(self, position=0)[benign]",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "object" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
               }
             ],
-            "tito": {}
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
-    ],
-    "modes": [ "SkipObscure" ]
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
   }
 }

@@ -1,74 +1,81 @@
 @generated
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "overrides.testB",
-    "callable_line": 109,
-    "code": 5002,
-    "line": 111,
-    "start": 14,
-    "end": 15,
-    "filename": "overrides.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
       {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 110, "start": 8, "end": 19 },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
+        "port": "formal(arg, position=0)",
+        "taint": [
           {
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
                 "kind": "Test"
               }
             ],
-            "call": {
-              "position": { "line": 111, "start": 14, "end": 15 },
-              "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg, position=1)",
-              "call_site": "111:4-111:16"
-            },
-            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
+            "declaration": null
           }
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
     ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "overrides.C.methodA",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overrides.constructorTest",
+    "filename": "overrides.py",
+    "callable_line": 157,
+    "sources": [
+      {
+        "port": "result[r]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 158, "start": 15, "end": 29 } ],
+            "origin": { "line": 158, "start": 15, "end": 29 }
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -147,10 +154,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "overrides.testBase",
-    "callable_line": 77,
+    "callable": "overrides.testB",
+    "callable_line": 109,
     "code": 5002,
-    "line": 79,
+    "line": 111,
     "start": 14,
     "end": 15,
     "filename": "overrides.py",
@@ -171,11 +178,11 @@
               }
             ],
             "call": {
-              "position": { "line": 78, "start": 8, "end": 19 },
+              "position": { "line": 110, "start": 8, "end": 19 },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result"
             },
-            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           }
         ]
@@ -193,12 +200,12 @@
               }
             ],
             "call": {
-              "position": { "line": 79, "start": 14, "end": 15 },
-              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
+              "position": { "line": 111, "start": 14, "end": 15 },
+              "resolves_to": [ "overrides.D.methodA" ],
               "port": "formal(arg, position=1)",
-              "call_site": "79:4-79:16"
+              "call_site": "111:4-111:16"
             },
-            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
           }
         ]
@@ -209,11 +216,11 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "overrides.Base.methodA",
+      "callee": "overrides.C.methodA",
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
+    "master_handle": "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
   }
 }
 {
@@ -287,6 +294,78 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testBase",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 79,
+    "start": 14,
+    "end": 15,
+    "filename": "overrides.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 78, "start": 8, "end": 19 },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 79, "start": 14, "end": 15 },
+              "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
+              "port": "formal(arg, position=1)",
+              "call_site": "79:4-79:16"
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overrides.Base.methodA",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
   }
 }
 {
@@ -586,490 +665,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "overrides.test_overrides_with_declaration:5002:0:Call|_test_sink|0|formal(arg):f53031b332f09b6747ade697c2527eb7"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.A.methodA}",
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.AnalyzeAllOverrides.return_source}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "modes": [ "AnalyzeAllOverrides" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.AnalyzeAllOverridesChild3.return_source}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.B.classMethod}",
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.B.methodB}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.Base.classMethod}",
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.Base.methodA}",
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.Base.methodB}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.BaseWithDeclaration.return_source}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "overrides.BaseWithDeclaration.return_source",
-                    "port": "leaf:return"
-                  },
-                  {
-                    "name": "overrides.DerivedWithDeclaration.return_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.C.methodA}",
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.D.methodA}",
-    "sinks": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.D.methodB}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 15, "upper": 18 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.DerivedWithDeclaration.return_source}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "overrides.DerivedWithDeclaration.return_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{overrides.OverloadedOverride.methodA}",
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }
 {
@@ -1514,12 +1109,35 @@
 {
   "kind": "model",
   "data": {
-    "callable": "overrides.constructorTest",
-    "filename": "overrides.py",
-    "callable_line": 157,
+    "callable": "Overrides{overrides.A.methodA}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.AnalyzeAllOverrides.return_source}",
     "sources": [
       {
-        "port": "result[r]",
+        "port": "result",
         "taint": [
           {
             "kinds": [
@@ -1531,9 +1149,391 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 158, "start": 15, "end": 29 } ],
-            "origin": { "line": 158, "start": 15, "end": 29 }
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "modes": [ "AnalyzeAllOverrides" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.AnalyzeAllOverridesChild3.return_source}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.B.classMethod}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.B.methodB}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.Base.classMethod}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.Base.methodA}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.Base.methodB}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.BaseWithDeclaration.return_source}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "overrides.BaseWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "overrides.DerivedWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.C.methodA}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.D.methodA}",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.D.methodB}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.DerivedWithDeclaration.return_source}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "overrides.DerivedWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Overrides{overrides.OverloadedOverride.methodA}",
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }

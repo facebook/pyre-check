@@ -41,24 +41,39 @@ let has_significant_summary ~fixpoint_state ~trace_kind ~port:root ~path ~callee
       | None -> false)
 
 
-let issue_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph issue =
-  let json =
-    Issue.to_json
-      ~taint_configuration
-      ~expand_overrides:(Some override_graph)
-      ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-      ~resolve_module_path
-      issue
-  in
-  { NewlineDelimitedJson.Line.kind = Issue; data = json }
-
-
 let statistics ~model_verification_errors =
   let model_verification_errors =
     List.map ~f:ModelVerificationError.to_json model_verification_errors
   in
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
+
+(* Mapping from non-parameterized callables to all parameterized versions *)
+module CallableToParameters : sig
+  type t
+
+  val from_callables : Target.t list -> t
+
+  val get : t -> Target.t -> Target.t list
+end = struct
+  type t = Target.t list Target.Map.t
+
+  let from_callables callables =
+    let callables = List.filter ~f:Target.is_parameterized callables in
+    List.fold
+      ~init:Target.Map.empty
+      ~f:(fun sofar target ->
+        Target.Map.update
+          (Target.strip_parameters target)
+          (function
+            | None -> Some [target]
+            | Some existing -> Some (target :: existing))
+          sofar)
+      callables
+
+
+  let get map target = Target.Map.find_opt target map |> Option.value ~default:[]
+end
 
 let merge_issues_ignoring_callable_parameters issues =
   (* We deduplicate issues in the following cases.
@@ -126,95 +141,123 @@ let extract_errors ~scheduler ~scheduler_policies ~taint_configuration ~callable
   |> List.map ~f:(Issue.to_error ~taint_configuration)
 
 
-module Result = struct
-  type t =
-    | Model of Target.t
-    | Issue of Issue.t
-
-  let fetch_model callable =
-    (* For better performance, fetch the model only when map-reducing, instead of storing the model
-       in `Model`. *)
-    Model callable
+let filter_overrides ~dump_override_models callables =
+  if not dump_override_models then
+    List.filter ~f:(fun callable -> not (Target.is_override callable)) callables
+  else
+    callables
 
 
-  let fetch_issues ~fixpoint_state ~sorted callable =
-    let issues =
+let model_to_newline_delimited_json
+    ~fixpoint_state
+    ~resolve_module_path
+    ~resolve_callable_location
+    ~override_graph
+    callable
+  =
+  let model =
+    callable
+    |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
+    |> Option.value ~default:Model.empty_model
+  in
+  if not (Model.should_externalize model) then
+    None
+  else
+    Some
+      {
+        NewlineDelimitedJson.Line.kind = Model;
+        data =
+          Model.to_json
+            ~expand_overrides:(Some override_graph)
+            ~is_valid_callee:(has_significant_summary ~fixpoint_state)
+            ~resolve_module_path:(Some resolve_module_path)
+            ~resolve_callable_location:(Some resolve_callable_location)
+            ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
+            callable
+            model;
+      }
+
+
+let issues_to_newline_delimited_json
+    ~fixpoint_state
+    ~taint_configuration
+    ~resolve_module_path
+    ~override_graph
+    ~callable_to_parameters
+    ~sorted
+    callable
+  =
+  if Target.is_parameterized callable then
+    [] (* Issues will be exported in the non-parameterized version *)
+  else
+    let fetch_issues callable =
       callable
       |> TaintFixpoint.State.ReadOnly.get_result fixpoint_state
-      |> IssueHandle.SerializableMap.to_alist
+      |> IssueHandle.SerializableMap.data
+    in
+    let issue_to_json issue =
+      let json =
+        Issue.to_json
+          ~taint_configuration
+          ~expand_overrides:(Some override_graph)
+          ~is_valid_callee:(has_significant_summary ~fixpoint_state)
+          ~resolve_module_path
+          issue
+      in
+      { NewlineDelimitedJson.Line.kind = Issue; data = json }
+    in
+    let callables = callable :: CallableToParameters.get callable_to_parameters callable in
+    let issues =
+      List.map ~f:fetch_issues callables
+      |> List.concat_no_order
+      |> merge_issues_ignoring_callable_parameters
     in
     let issues =
       if sorted then
         List.sort
-          ~compare:(fun (left, _) (right, _) -> IssueHandle.deterministic_compare left right)
+          ~compare:(fun { Issue.handle = left; _ } { Issue.handle = right; _ } ->
+            IssueHandle.deterministic_compare left right)
           issues
       else
         issues
     in
-    List.map ~f:snd issues
+    List.map ~f:issue_to_json issues
 
 
-  let should_not_fetch ~dump_override_models callable =
-    Target.is_override callable && not dump_override_models
-
-
-  let fetch ~fixpoint_state ~sorted ~dump_override_models callables =
-    let callables =
-      List.filter
-        ~f:(fun callable -> not (should_not_fetch ~dump_override_models callable))
-        callables
-    in
-    let models = List.map ~f:fetch_model callables in
-    let issues =
-      callables
-      |> List.map ~f:(fetch_issues ~fixpoint_state ~sorted)
-      |> List.concat_no_order
-      |> merge_issues_ignoring_callable_parameters
-      |> List.map ~f:(fun issue -> Issue issue)
-    in
-    List.rev_append models issues
-
-
-  let to_newline_delimited_json
-      ~taint_configuration
+let callable_to_newline_delimited_json
+    ~fixpoint_state
+    ~taint_configuration
+    ~resolve_module_path
+    ~resolve_callable_location
+    ~override_graph
+    ~callable_to_parameters
+    ~sorted
+    callable
+  =
+  let model =
+    model_to_newline_delimited_json
       ~fixpoint_state
       ~resolve_module_path
       ~resolve_callable_location
       ~override_graph
-    = function
-    | Model callable ->
-        let model =
-          callable
-          |> TaintFixpoint.State.ReadOnly.get_model fixpoint_state
-          |> Option.value ~default:Model.empty_model
-        in
-        if not (Model.should_externalize model) then
-          []
-        else
-          [
-            {
-              NewlineDelimitedJson.Line.kind = Model;
-              data =
-                Model.to_json
-                  ~expand_overrides:(Some override_graph)
-                  ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-                  ~resolve_module_path:(Some resolve_module_path)
-                  ~resolve_callable_location:(Some resolve_callable_location)
-                  ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
-                  callable
-                  model;
-            };
-          ]
-    | Issue issue ->
-        [
-          issue_to_json
-            ~taint_configuration
-            ~fixpoint_state
-            ~resolve_module_path
-            ~override_graph
-            issue;
-        ]
-end
+      callable
+  in
+  let issues =
+    issues_to_newline_delimited_json
+      ~fixpoint_state
+      ~taint_configuration
+      ~resolve_module_path
+      ~override_graph
+      ~callable_to_parameters
+      ~sorted
+      callable
+  in
+  (* SAPP summary explorer expects issues for a callable to be stored next to the model for that
+     callable. *)
+  match model with
+  | Some model -> model :: issues
+  | None -> issues
+
 
 let fetch_and_externalize
     ~taint_configuration
@@ -223,19 +266,23 @@ let fetch_and_externalize
     ~resolve_callable_location
     ~override_graph
     ~dump_override_models
+    ~sorted
     callables
   =
+  let callables = filter_overrides ~dump_override_models callables in
+  let callable_to_parameters = CallableToParameters.from_callables callables in
   callables
-  |> Result.fetch ~fixpoint_state ~sorted:false ~dump_override_models
   |> List.map
        ~f:
-         (Result.to_newline_delimited_json
-            ~taint_configuration
+         (callable_to_newline_delimited_json
             ~fixpoint_state
+            ~taint_configuration
             ~resolve_module_path
             ~resolve_callable_location
-            ~override_graph)
-  |> List.concat_no_order
+            ~override_graph
+            ~callable_to_parameters
+            ~sorted)
+  |> List.concat
 
 
 let save_results_to_directory
@@ -269,11 +316,10 @@ let save_results_to_directory
     Out_channel.create (PyrePath.absolute path)
   in
   let save_models () =
-    let results =
-      callables
-      |> Target.Set.elements
-      |> Result.fetch ~fixpoint_state ~sorted:false ~dump_override_models:false
+    let callables =
+      callables |> Target.Set.elements |> filter_overrides ~dump_override_models:false
     in
+    let callable_to_parameters = CallableToParameters.from_callables callables in
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     match output_format with
     | Configuration.TaintOutputFormat.Json ->
@@ -281,13 +327,15 @@ let save_results_to_directory
           ~path:(PyrePath.append result_directory ~element:"taint-output.json")
           ~configuration:(`Assoc ["repo", `String root])
           ~to_json_lines:
-            (Result.to_newline_delimited_json
-               ~taint_configuration
+            (callable_to_newline_delimited_json
                ~fixpoint_state
+               ~taint_configuration
                ~resolve_module_path
                ~resolve_callable_location
-               ~override_graph)
-          results
+               ~override_graph
+               ~callable_to_parameters
+               ~sorted:false)
+          callables
     | Configuration.TaintOutputFormat.ShardedJson ->
         NewlineDelimitedJson.write_sharded_files
           ~scheduler
@@ -295,13 +343,15 @@ let save_results_to_directory
           ~filename_prefix:"taint-output"
           ~configuration:(`Assoc ["repo", `String root])
           ~to_json_lines:
-            (Result.to_newline_delimited_json
-               ~taint_configuration
+            (callable_to_newline_delimited_json
                ~fixpoint_state
+               ~taint_configuration
                ~resolve_module_path
                ~resolve_callable_location
-               ~override_graph)
-          results
+               ~override_graph
+               ~callable_to_parameters
+               ~sorted:false)
+          callables
   in
   let remove_existing_models () =
     NewlineDelimitedJson.remove_sharded_files

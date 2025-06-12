@@ -1,5 +1,75 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "eval",
+    "filename": "builtins.pyi",
+    "callable_line": 474,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "string_conversion.analyze_implicit_call",
@@ -141,6 +211,183 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.any_type",
+    "filename": "string_conversion.py",
+    "callable_line": 159,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 160, "start": 14, "end": 15 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.backward_unioned_callees",
+    "filename": "string_conversion.py",
+    "callable_line": 151,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 152, "start": 14, "end": 15 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.backward_unioned_callees_2",
+    "filename": "string_conversion.py",
+    "callable_line": 155,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 156, "start": 14, "end": 15 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.base_exception",
+    "filename": "string_conversion.py",
+    "callable_line": 173,
+    "tito": [
+      {
+        "port": "formal(e, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 174, "start": 14, "end": 21 },
+              { "line": 174, "start": 19, "end": 20 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.compute_tito",
+    "filename": "string_conversion.py",
+    "callable_line": 131,
+    "tito": [
+      {
+        "port": "formal(y, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 133, "start": 14, "end": 23 },
+              { "line": 133, "start": 21, "end": 22 }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [
+              { "line": 133, "start": 25, "end": 34 },
+              { "line": 133, "start": 32, "end": 33 }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "string_conversion.explicit_str",
@@ -214,6 +461,70 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "string_conversion.explicit_str:5001:0:Call|eval|0|formal(arg):d15763e1c2cbfc32ce62890235e81baa"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.forward_unioned_callees",
+    "filename": "string_conversion.py",
+    "callable_line": 141,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 143, "start": 14, "end": 15 } ],
+            "origin": { "line": 142, "start": 23, "end": 37 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.forward_unioned_callees_2",
+    "filename": "string_conversion.py",
+    "callable_line": 146,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 148, "start": 14, "end": 15 } ],
+            "origin": { "line": 147, "start": 23, "end": 37 }
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -523,6 +834,72 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_callees_same_location",
+    "filename": "string_conversion.py",
+    "callable_line": 185,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "tainted" }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 188, "start": 11, "end": 17 } ],
+            "call": {
+              "position": { "line": 188, "start": 11, "end": 17 },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression",
+    "filename": "string_conversion.py",
+    "callable_line": 71,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 73, "start": 12, "end": 13 } ],
+            "origin": { "line": 73, "start": 9, "end": 15 },
+            "call_site": "73:4-73:16"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression",
@@ -595,6 +972,37 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression_2",
+    "filename": "string_conversion.py",
+    "callable_line": 98,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 99, "start": 12, "end": 13 } ],
+            "origin": { "line": 99, "start": 9, "end": 15 },
+            "call_site": "99:4-99:16"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
@@ -657,6 +1065,131 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(arg):48ad7e71c84860b5b46b69082a1926f4"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression_3",
+    "filename": "string_conversion.py",
+    "callable_line": 117,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "UserControlled" } ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": { "line": 120, "start": 17, "end": 23 },
+              "resolves_to": [ "string_conversion.C.__str__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(d, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-via": "format-string" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 120, "start": 25, "end": 26 } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(b_or_c, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 120, "start": 17, "end": 23 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.object_type",
+    "filename": "string_conversion.py",
+    "callable_line": 163,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "tainted" }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": { "line": 164, "start": 14, "end": 15 },
+              "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 5, "upper": 18 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 164, "start": 14, "end": 15 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -1002,57 +1535,16 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{django.http.Request.GET}",
-    "sources": [
+    "callable": "string_conversion.tito_f",
+    "filename": "string_conversion.py",
+    "callable_line": 123,
+    "tito": [
       {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{string_conversion.C.g}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Overrides{object.__repr__}",
-    "sources": [
-      {
-        "port": "result",
+        "port": "formal(x, position=0)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{django.http.Request.GET}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "tainted" }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }
@@ -1062,103 +1554,20 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Overrides{string_conversion.ReprIsTainted.__repr__}",
-    "sources": [
+    "callable": "string_conversion.tito_g",
+    "filename": "string_conversion.py",
+    "callable_line": 127,
+    "tito": [
       {
-        "port": "result",
+        "port": "formal(y, position=0)",
         "taint": [
           {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{django.http.Request.GET}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "tainted" }
-            ],
-            "origin": { "line": -1, "start": -1, "end": -1 },
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }
     ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "eval",
-    "filename": "builtins.pyi",
-    "callable_line": 474,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }
 {
@@ -1369,186 +1778,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "string_conversion.any_type",
-    "filename": "string_conversion.py",
-    "callable_line": 159,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 160, "start": 14, "end": 15 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.backward_unioned_callees",
-    "filename": "string_conversion.py",
-    "callable_line": 151,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 152, "start": 14, "end": 15 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.backward_unioned_callees_2",
-    "filename": "string_conversion.py",
-    "callable_line": 155,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 156, "start": 14, "end": 15 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.base_exception",
-    "filename": "string_conversion.py",
-    "callable_line": 173,
-    "tito": [
-      {
-        "port": "formal(e, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 174, "start": 14, "end": 21 },
-              { "line": 174, "start": 19, "end": 20 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.compute_tito",
-    "filename": "string_conversion.py",
-    "callable_line": 131,
-    "tito": [
-      {
-        "port": "formal(y, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 133, "start": 14, "end": 23 },
-              { "line": 133, "start": 21, "end": 22 }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [
-              { "line": 133, "start": 25, "end": 34 },
-              { "line": 133, "start": 32, "end": 33 }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.forward_unioned_callees",
-    "filename": "string_conversion.py",
-    "callable_line": 141,
+    "callable": "Overrides{object.__repr__}",
     "sources": [
       {
         "port": "result",
@@ -1556,87 +1786,20 @@
           {
             "kinds": [
               {
-                "local_features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
                 ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 143, "start": 14, "end": 15 } ],
-            "origin": { "line": 142, "start": 23, "end": 37 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.forward_unioned_callees_2",
-    "filename": "string_conversion.py",
-    "callable_line": 146,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 148, "start": 14, "end": 15 } ],
-            "origin": { "line": 147, "start": 23, "end": 37 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.multiple_callees_same_location",
-    "filename": "string_conversion.py",
-    "callable_line": 185,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" }, { "first-index": "tainted" }
-                ],
-                "length": 1,
                 "kind": "UserControlled"
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "tainted" }
             ],
-            "tito_positions": [ { "line": 188, "start": 11, "end": 17 } ],
-            "call": {
-              "position": { "line": 188, "start": 11, "end": 17 },
-              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
         ]
@@ -1647,139 +1810,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "string_conversion.multiple_targets_for_single_expression",
-    "filename": "string_conversion.py",
-    "callable_line": 71,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 73, "start": 12, "end": 13 } ],
-            "origin": { "line": 73, "start": 9, "end": 15 },
-            "call_site": "73:4-73:16"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.multiple_targets_for_single_expression_2",
-    "filename": "string_conversion.py",
-    "callable_line": 98,
-    "sinks": [
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 99, "start": 12, "end": 13 } ],
-            "origin": { "line": 99, "start": 9, "end": 15 },
-            "call_site": "99:4-99:16"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.multiple_targets_for_single_expression_3",
-    "filename": "string_conversion.py",
-    "callable_line": 117,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [ { "length": 1, "kind": "UserControlled" } ],
-            "local_features": [ { "always-via": "format-string" } ],
-            "call": {
-              "position": { "line": 120, "start": 17, "end": 23 },
-              "resolves_to": [ "string_conversion.C.__str__" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(d, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "via": "obscure:model" },
-              { "always-type": "integer" },
-              { "always-via": "format-string" },
-              { "always-type": "scalar" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 120, "start": 25, "end": 26 } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(b_or_c, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 120, "start": 17, "end": 23 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.object_type",
-    "filename": "string_conversion.py",
-    "callable_line": 163,
+    "callable": "Overrides{string_conversion.ReprIsTainted.__repr__}",
     "sources": [
       {
         "port": "result",
@@ -1787,43 +1818,36 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "has": "first-index" }, { "first-index": "tainted" }
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
                 ],
-                "length": 1,
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
-            "call": {
-              "position": { "line": 164, "start": 14, "end": 15 },
-              "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
-              "port": "result"
-            },
-            "receiver_interval": [ { "lower": 5, "upper": 18 } ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "tainted" }
+            ],
+            "origin": { "line": -1, "start": -1, "end": -1 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false
           }
         ]
       }
-    ],
-    "tito": [
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{django.http.Request.GET}",
+    "sources": [
       {
-        "port": "formal(x, position=0)",
+        "port": "result",
         "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 164, "start": 14, "end": 15 } ],
-            "tito": {}
-          }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]
@@ -1832,36 +1856,12 @@
 {
   "kind": "model",
   "data": {
-    "callable": "string_conversion.tito_f",
-    "filename": "string_conversion.py",
-    "callable_line": 123,
-    "tito": [
+    "callable": "Obj{string_conversion.C.g}",
+    "sources": [
       {
-        "port": "formal(x, position=0)",
+        "port": "result",
         "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "string_conversion.tito_g",
-    "filename": "string_conversion.py",
-    "callable_line": 127,
-    "tito": [
-      {
-        "port": "formal(y, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]

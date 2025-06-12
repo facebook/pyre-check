@@ -1,5 +1,112 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_string_operations_with_filters.first_source",
+    "filename": "multiple_sources_string_operations_with_filters.py",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_string_operations_with_filters.first_source_distance_zero",
+    "filename": "multiple_sources_string_operations_with_filters.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_string_operations_with_filters.first_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 11, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_string_operations_with_filters.second_source_distance_zero",
+    "filename": "multiple_sources_string_operations_with_filters.py",
+    "callable_line": 16,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
+                ],
+                "kind": "StringMayBeSQL"
+              }
+            ],
+            "origin": { "line": 17, "start": 11, "end": 20 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_string_operations_with_filters.sink_distance_zero",
+    "filename": "multiple_sources_string_operations_with_filters.py",
+    "callable_line": 37,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source StringMayBeSQL",
+                    "origin": { "line": 38, "start": 4, "end": 13 },
+                    "leaf_kind": "StringMayBeSQL",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
+                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 38, "start": 16, "end": 17 } ],
+            "origin": { "line": 38, "start": 4, "end": 17 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_string_operations_with_filters.test_first_source_one_second_source_one",
@@ -357,112 +464,5 @@
       "parameter": "formal(x)"
     },
     "master_handle": "multiple_sources_string_operations_with_filters.test_sink_zero_first_source_zero:4324:0:Call|multiple_sources_string_operations_with_filters.sink_distance_zero|0|formal(x):1cd47a4fa7bbf5ca5f6e4e80be4fc9b1"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_string_operations_with_filters.first_source",
-    "filename": "multiple_sources_string_operations_with_filters.py",
-    "callable_line": 7,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_string_operations_with_filters.first_source_distance_zero",
-    "filename": "multiple_sources_string_operations_with_filters.py",
-    "callable_line": 10,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_string_operations_with_filters.first_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "origin": { "line": 11, "start": 11, "end": 25 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_string_operations_with_filters.second_source_distance_zero",
-    "filename": "multiple_sources_string_operations_with_filters.py",
-    "callable_line": 16,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{<literal-string>}", "port": "leaf:return" }
-                ],
-                "kind": "StringMayBeSQL"
-              }
-            ],
-            "origin": { "line": 17, "start": 11, "end": 20 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_string_operations_with_filters.sink_distance_zero",
-    "filename": "multiple_sources_string_operations_with_filters.py",
-    "callable_line": 37,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source StringMayBeSQL",
-                    "origin": { "line": 38, "start": 4, "end": 13 },
-                    "leaf_kind": "StringMayBeSQL",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [ { "name": "str.__add__", "port": "leaf:**" } ],
-                "kind": "Triggered[StringMayBeSQL]@PartialSink[UserControlledSink]"
-              }
-            ],
-            "local_features": [
-              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 38, "start": 16, "end": 17 } ],
-            "origin": { "line": 38, "start": 4, "end": 17 }
-          }
-        ]
-      }
-    ]
   }
 }

@@ -1,83 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "remote_code_execution.rce_problem",
-    "callable_line": 9,
-    "code": 5001,
-    "line": 11,
-    "start": 9,
-    "end": 10,
-    "filename": "remote_code_execution.py",
-    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "_user_controlled", "port": "leaf:return" }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "origin": { "line": 10, "start": 8, "end": 26 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "origin": { "line": 11, "start": 9, "end": 10 },
-            "call_site": "11:4-11:11"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "eval",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "remote_code_execution.rce_problem:5001:0:Call|eval|0|formal(arg):ed84aec82b00e80f14a8f4828907cb17"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -318,5 +240,83 @@
       }
     ],
     "modes": [ "SkipObscure" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "remote_code_execution.rce_problem",
+    "callable_line": 9,
+    "code": 5001,
+    "line": 11,
+    "start": 9,
+    "end": 10,
+    "filename": "remote_code_execution.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_user_controlled", "port": "leaf:return" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "origin": { "line": 10, "start": 8, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": { "line": 11, "start": 9, "end": 10 },
+            "call_site": "11:4-11:11"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "remote_code_execution.rce_problem:5001:0:Call|eval|0|formal(arg):ed84aec82b00e80f14a8f4828907cb17"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
   }
 }

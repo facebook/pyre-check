@@ -1,5 +1,101 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.attach_to_parameter_source",
+    "filename": "attach_features.py",
+    "callable_line": 86,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 87, "start": 15, "end": 16 },
+            "call_site": "87:4-87:17"
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              },
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "attach_features.attach_to_parameter_source",
@@ -62,6 +158,53 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.attach_to_returned_sink",
+    "filename": "attach_features.py",
+    "callable_line": 62,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 63, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              },
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "attach_features.attach_to_returned_sink",
@@ -118,195 +261,6 @@
     ],
     "sink_handle": { "kind": "Return" },
     "master_handle": "attach_features.attach_to_returned_sink:5002:0:Return:8218e4adbc4250811127e266f8a13911"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attach_features.HasMethods.method_with_optionals",
-    "filename": "attach_features.py",
-    "callable_line": 58,
-    "sinks": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-via": "string_concat_rhs" },
-                  { "always-type": "scalar" }
-                ],
-                "kind": "Attach"
-              }
-            ],
-            "declaration": null
-          },
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-via": "string_concat_rhs" },
-              { "always-type": "scalar" }
-            ],
-            "origin": { "line": 59, "start": 19, "end": 20 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "59:8-59:21"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attach_features.attach_to_parameter_source",
-    "filename": "attach_features.py",
-    "callable_line": 86,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 87, "start": 15, "end": 16 },
-            "call_site": "87:4-87:17"
-          }
-        ]
-      }
-    ],
-    "parameter_sources": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Attach"
-              },
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attach_features.attach_to_returned_sink",
-    "filename": "attach_features.py",
-    "callable_line": 62,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 63, "start": 8, "end": 22 }
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Attach"
-              },
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
   }
 }
 {
@@ -770,6 +724,52 @@
             ],
             "tito_positions": [ { "line": 42, "start": 30, "end": 33 } ],
             "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.HasMethods.method_with_optionals",
+    "filename": "attach_features.py",
+    "callable_line": 58,
+    "sinks": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" }
+                ],
+                "kind": "Attach"
+              }
+            ],
+            "declaration": null
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-via": "string_concat_rhs" },
+              { "always-type": "scalar" }
+            ],
+            "origin": { "line": 59, "start": 19, "end": 20 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "59:8-59:21"
           }
         ]
       }

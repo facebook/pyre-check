@@ -1,72 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
-    "callable_line": 48,
-    "code": 5002,
-    "line": 51,
-    "start": 15,
-    "end": 19,
-    "filename": "add_feature_to_argument.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "string_concat_lhs" }
-            ],
-            "origin": { "line": 49, "start": 15, "end": 29 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 51, "start": 15, "end": 19 },
-            "call_site": "51:4-51:20"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<numeric>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "string_concat_lhs" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -402,6 +335,73 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
+    "callable_line": 48,
+    "code": 5002,
+    "line": 51,
+    "start": 15,
+    "end": 19,
+    "filename": "add_feature_to_argument.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "always-via": "string_concat_lhs" }
+            ],
+            "origin": { "line": 49, "start": 15, "end": 29 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 51, "start": 15, "end": 19 },
+            "call_site": "51:4-51:20"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "string_concat_lhs" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
   }
 }
 {

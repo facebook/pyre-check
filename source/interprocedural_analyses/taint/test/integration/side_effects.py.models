@@ -52,30 +52,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "side_effects.MyList.append",
-    "filename": "side_effects.py",
-    "callable_line": 71,
-    "tito": [
-      {
-        "port": "formal(arg, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "side_effects.change_arg0",
     "filename": "side_effects.py",
     "callable_line": 62,
@@ -301,6 +277,30 @@
             "tito_positions": [ { "line": 49, "start": 19, "end": 20 } ],
             "origin": { "line": 50, "start": 15, "end": 16 },
             "call_site": "50:4-50:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.MyList.append",
+    "filename": "side_effects.py",
+    "callable_line": 71,
+    "tito": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
           }
         ]
       }

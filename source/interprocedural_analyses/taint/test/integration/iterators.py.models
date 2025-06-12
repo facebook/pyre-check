@@ -1,5 +1,55 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "iterators.test_next_iter",
@@ -554,51 +604,32 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
+    "callable": "next",
     "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
+    "callable_line": 571,
+    "tito": [
       {
-        "port": "formal(arg, position=0)",
+        "port": "formal(__default, position=1, positional_only)",
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
             ],
-            "declaration": null
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(__i, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": {}
           }
         ]
       }
     ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
+    "modes": [ "SkipObscure" ]
   }
 }
 {
@@ -657,36 +688,5 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "next",
-    "filename": "builtins.pyi",
-    "callable_line": 571,
-    "tito": [
-      {
-        "port": "formal(__default, position=1, positional_only)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(__i, position=0, positional_only)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "SkipObscure" ]
   }
 }

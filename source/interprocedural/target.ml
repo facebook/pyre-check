@@ -411,6 +411,16 @@ let is_normal target = target |> get_regular |> Regular.is_normal
 
 let is_decorated target = target |> get_regular |> Regular.is_decorated
 
+let is_parameterized = function
+  | Regular _ -> false
+  | Parameterized _ -> true
+
+
+let is_regular = function
+  | Regular _ -> true
+  | Parameterized _ -> false
+
+
 (* A parameterized target contains recursive targets if one of its `regular` part also appears in
    one of its `parameters` part. Such recursion may lead to non-termination in high-order call graph
    building. *)

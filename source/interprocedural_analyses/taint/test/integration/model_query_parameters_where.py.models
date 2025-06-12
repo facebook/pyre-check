@@ -1,951 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test1_alarm1",
-    "callable_line": 14,
-    "code": 1000,
-    "line": 15,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [
-                  { "always-type": "integer" }, { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test1_alarm1",
-                    "port": "leaf:a"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "origin": { "line": 14, "start": 17, "end": 23 },
-            "call_site": "14:0-15:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 15, "start": 15, "end": 16 },
-            "call_site": "15:4-15:17"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test1_alarm1:1000:0:Call|_test_sink|0|formal(arg):d83646d5bdbbbd25fc640ee23438fc48"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test1_alarm2",
-    "callable_line": 18,
-    "code": 1000,
-    "line": 19,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test1_alarm2",
-                    "port": "leaf:b"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 18, "start": 25, "end": 31 },
-            "call_site": "18:0-19:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 19, "start": 15, "end": 16 },
-            "call_site": "19:4-19:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test1_alarm2:1000:0:Call|_test_sink|0|formal(arg):fa69524c6675ef18297a643cd33b692c"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test1_alarm3",
-    "callable_line": 22,
-    "code": 1000,
-    "line": 23,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test1_alarm3",
-                    "port": "leaf:c"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 22, "start": 33, "end": 37 },
-            "call_site": "22:0-23:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 23, "start": 15, "end": 16 },
-            "call_site": "23:4-23:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test1_alarm3:1000:0:Call|_test_sink|0|formal(arg):d8b906ac5f2c6edb47b2cc70f7a9cd5a"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test1_alarm4",
-    "callable_line": 26,
-    "code": 1000,
-    "line": 27,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test1_alarm4",
-                    "port": "leaf:d"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 26, "start": 39, "end": 40 },
-            "call_site": "26:0-27:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 27, "start": 15, "end": 16 },
-            "call_site": "27:4-27:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test1_alarm4:1000:0:Call|_test_sink|0|formal(arg):05e120b4ce6bdf42ee37a7d9f9bae158"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test1_args_kwargs",
-    "callable_line": 34,
-    "code": 1000,
-    "line": 35,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [
-                  { "always-type": "integer" }, { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test1_args_kwargs",
-                    "port": "leaf:a"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "origin": { "line": 34, "start": 22, "end": 28 },
-            "call_site": "34:0-35:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 35, "start": 15, "end": 16 },
-            "call_site": "35:4-35:17"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test1_args_kwargs:1000:0:Call|_test_sink|0|formal(arg):8abd1c086619f7acf638306c43fdf2d3"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test1_positional_arguments",
-    "callable_line": 30,
-    "code": 1000,
-    "line": 31,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [
-                  { "always-type": "integer" }, { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test1_positional_arguments",
-                    "port": "leaf:a"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "origin": { "line": 30, "start": 31, "end": 37 },
-            "call_site": "30:0-31:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 31, "start": 15, "end": 16 },
-            "call_site": "31:4-31:17"
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test1_positional_arguments:1000:0:Call|_test_sink|0|formal(arg):5d20937c7b99084907d82668301861cb"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test3_alarm1",
-    "callable_line": 54,
-    "code": 1000,
-    "line": 55,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test3_alarm1",
-                    "port": "leaf:c"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 54, "start": 33, "end": 37 },
-            "call_site": "54:0-55:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 55, "start": 15, "end": 16 },
-            "call_site": "55:4-55:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test3_alarm1:1000:0:Call|_test_sink|0|formal(arg):c12e395755046fa9554b935fe4b2ff5e"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test3_alarm2",
-    "callable_line": 58,
-    "code": 1000,
-    "line": 59,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test3_alarm2",
-                    "port": "leaf:d"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 58, "start": 39, "end": 40 },
-            "call_site": "58:0-59:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 59, "start": 15, "end": 16 },
-            "call_site": "59:4-59:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test3_alarm2:1000:0:Call|_test_sink|0|formal(arg):93ba19555cd9f48f655bec3d7cd20a53"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test4_alarm1",
-    "callable_line": 62,
-    "code": 1000,
-    "line": 63,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test4_alarm1",
-                    "port": "leaf:a"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 62, "start": 17, "end": 29 },
-            "call_site": "62:0-63:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 63, "start": 15, "end": 16 },
-            "call_site": "63:4-63:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test4_alarm1:1000:0:Call|_test_sink|0|formal(arg):d0b038c7b8b55cbdf7c6a9f7fc0e2922"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test4_alarm2",
-    "callable_line": 70,
-    "code": 1000,
-    "line": 71,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test4_alarm2",
-                    "port": "leaf:c"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 70, "start": 33, "end": 37 },
-            "call_site": "70:0-71:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 71, "start": 15, "end": 16 },
-            "call_site": "71:4-71:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test4_alarm2:1000:0:Call|_test_sink|0|formal(arg):e8abf0f1dfc6ba5fe6137f4ed58f040a"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test6_alarm1",
-    "callable_line": 95,
-    "code": 1000,
-    "line": 96,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test6_alarm1",
-                    "port": "leaf:a"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 95, "start": 17, "end": 18 },
-            "call_site": "95:0-96:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 96, "start": 15, "end": 16 },
-            "call_site": "96:4-96:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test6_alarm1:1000:0:Call|_test_sink|0|formal(arg):efb406260b6f79b2a9a8a98afbfaf48b"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test6_alarm2",
-    "callable_line": 103,
-    "code": 1000,
-    "line": 104,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test6_alarm2",
-                    "port": "leaf:c"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 103, "start": 23, "end": 24 },
-            "call_site": "103:0-104:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 104, "start": 15, "end": 16 },
-            "call_site": "104:4-104:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test6_alarm2:1000:0:Call|_test_sink|0|formal(arg):ab5c9ddf476fdd58b2bd5b1513b34951"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test8_alarm1",
-    "callable_line": 119,
-    "code": 1000,
-    "line": 120,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test8_alarm1",
-                    "port": "leaf:a"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 119, "start": 17, "end": 18 },
-            "call_site": "119:0-120:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 120, "start": 15, "end": 16 },
-            "call_site": "120:4-120:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test8_alarm1:1000:0:Call|_test_sink|0|formal(arg):cfd8852d4263307bc7ab1819d196d19f"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test8_alarm2",
-    "callable_line": 123,
-    "code": 1000,
-    "line": 124,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test8_alarm2",
-                    "port": "leaf:b"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 123, "start": 20, "end": 21 },
-            "call_site": "123:0-124:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 124, "start": 15, "end": 16 },
-            "call_site": "124:4-124:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test8_alarm2:1000:0:Call|_test_sink|0|formal(arg):811812d0aa2679295cd060e89c1a60a3"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test8_alarm3",
-    "callable_line": 127,
-    "code": 1000,
-    "line": 128,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test8_alarm3",
-                    "port": "leaf:c"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 127, "start": 23, "end": 24 },
-            "call_site": "127:0-128:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 128, "start": 15, "end": 16 },
-            "call_site": "128:4-128:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test8_alarm3:1000:0:Call|_test_sink|0|formal(arg):2a01a3ea762199552d41a5678b384117"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query_parameters_where.test8_alarm4",
-    "callable_line": 131,
-    "code": 1000,
-    "line": 132,
-    "start": 15,
-    "end": 16,
-    "filename": "model_query_parameters_where.py",
-    "message": "[Test] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "model_query_parameters_where.test8_alarm4",
-                    "port": "leaf:d"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 131, "start": 26, "end": 27 },
-            "call_site": "131:0-132:17"
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 132, "start": 15, "end": 16 },
-            "call_site": "132:4-132:17"
-          }
-        ]
-      }
-    ],
-    "features": [],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_query_parameters_where.test8_alarm4:1000:0:Call|_test_sink|0|formal(arg):0822ca2a1636017667e0199ed28044b5"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -973,81 +27,6 @@
       }
     ],
     "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_where.Test5.test5_alarm1",
-    "filename": "model_query_parameters_where.py",
-    "callable_line": 79,
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_parameters_test5_sink" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_where.Test5.test5_alarm2",
-    "filename": "model_query_parameters_where.py",
-    "callable_line": 82,
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_parameters_test5_sink" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_where.Test5.test5_alarm3",
-    "filename": "model_query_parameters_where.py",
-    "callable_line": 85,
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_parameters_test5_sink" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_where.Test5.test5_alarm4",
-    "filename": "model_query_parameters_where.py",
-    "callable_line": 88,
-    "sinks": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_parameters_test5_sink" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parameters_where.Test7.test7_alarm1",
-    "filename": "model_query_parameters_where.py",
-    "callable_line": 112,
-    "parameter_sources": [
-      {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "model_generators": [ "get_model_query_parameters_test7_source" ]
   }
 }
 {
@@ -1218,6 +197,70 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test1_alarm1",
+    "callable_line": 14,
+    "code": 1000,
+    "line": 15,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test1_alarm1",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 14, "start": 17, "end": 23 },
+            "call_site": "14:0-15:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 15, "start": 15, "end": 16 },
+            "call_site": "15:4-15:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test1_alarm1:1000:0:Call|_test_sink|0|formal(arg):d83646d5bdbbbd25fc640ee23438fc48"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_alarm2",
@@ -1271,6 +314,64 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test1_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test1_alarm2",
+    "callable_line": 18,
+    "code": 1000,
+    "line": 19,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test1_alarm2",
+                    "port": "leaf:b"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 18, "start": 25, "end": 31 },
+            "call_site": "18:0-19:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 19, "start": 15, "end": 16 },
+            "call_site": "19:4-19:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test1_alarm2:1000:0:Call|_test_sink|0|formal(arg):fa69524c6675ef18297a643cd33b692c"
   }
 }
 {
@@ -1330,6 +431,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test1_alarm3",
+    "callable_line": 22,
+    "code": 1000,
+    "line": 23,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test1_alarm3",
+                    "port": "leaf:c"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 33, "end": 37 },
+            "call_site": "22:0-23:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 23, "start": 15, "end": 16 },
+            "call_site": "23:4-23:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test1_alarm3:1000:0:Call|_test_sink|0|formal(arg):d8b906ac5f2c6edb47b2cc70f7a9cd5a"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_alarm4",
@@ -1383,6 +542,64 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test1_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test1_alarm4",
+    "callable_line": 26,
+    "code": 1000,
+    "line": 27,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test1_alarm4",
+                    "port": "leaf:d"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 26, "start": 39, "end": 40 },
+            "call_site": "26:0-27:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 27, "start": 15, "end": 16 },
+            "call_site": "27:4-27:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test1_alarm4:1000:0:Call|_test_sink|0|formal(arg):05e120b4ce6bdf42ee37a7d9f9bae158"
   }
 }
 {
@@ -1441,6 +658,70 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test1_args_kwargs",
+    "callable_line": 34,
+    "code": 1000,
+    "line": 35,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test1_args_kwargs",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 34, "start": 22, "end": 28 },
+            "call_site": "34:0-35:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 35, "start": 15, "end": 16 },
+            "call_site": "35:4-35:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test1_args_kwargs:1000:0:Call|_test_sink|0|formal(arg):8abd1c086619f7acf638306c43fdf2d3"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_positional_arguments",
@@ -1489,6 +770,70 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test1_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test1_positional_arguments",
+    "callable_line": 30,
+    "code": 1000,
+    "line": 31,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test1_positional_arguments",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": { "line": 30, "start": 31, "end": 37 },
+            "call_site": "30:0-31:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 15, "end": 16 },
+            "call_site": "31:4-31:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-type": "integer" }, { "always-type": "scalar" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test1_positional_arguments:1000:0:Call|_test_sink|0|formal(arg):5d20937c7b99084907d82668301861cb"
   }
 }
 {
@@ -1578,6 +923,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test3_alarm1",
+    "callable_line": 54,
+    "code": 1000,
+    "line": 55,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test3_alarm1",
+                    "port": "leaf:c"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 54, "start": 33, "end": 37 },
+            "call_site": "54:0-55:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 55, "start": 15, "end": 16 },
+            "call_site": "55:4-55:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test3_alarm1:1000:0:Call|_test_sink|0|formal(arg):c12e395755046fa9554b935fe4b2ff5e"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test3_alarm2",
@@ -1611,6 +1014,64 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test3_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test3_alarm2",
+    "callable_line": 58,
+    "code": 1000,
+    "line": 59,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test3_alarm2",
+                    "port": "leaf:d"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 58, "start": 39, "end": 40 },
+            "call_site": "58:0-59:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 59, "start": 15, "end": 16 },
+            "call_site": "59:4-59:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test3_alarm2:1000:0:Call|_test_sink|0|formal(arg):93ba19555cd9f48f655bec3d7cd20a53"
   }
 }
 {
@@ -1725,6 +1186,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test4_alarm1",
+    "callable_line": 62,
+    "code": 1000,
+    "line": 63,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test4_alarm1",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 62, "start": 17, "end": 29 },
+            "call_site": "62:0-63:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 63, "start": 15, "end": 16 },
+            "call_site": "63:4-63:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test4_alarm1:1000:0:Call|_test_sink|0|formal(arg):d0b038c7b8b55cbdf7c6a9f7fc0e2922"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test4_alarm2",
@@ -1754,6 +1273,64 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test4_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test4_alarm2",
+    "callable_line": 70,
+    "code": 1000,
+    "line": 71,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test4_alarm2",
+                    "port": "leaf:c"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 70, "start": 33, "end": 37 },
+            "call_site": "70:0-71:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 71, "start": 15, "end": 16 },
+            "call_site": "71:4-71:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test4_alarm2:1000:0:Call|_test_sink|0|formal(arg):e8abf0f1dfc6ba5fe6137f4ed58f040a"
   }
 }
 {
@@ -1861,6 +1438,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test6_alarm1",
+    "callable_line": 95,
+    "code": 1000,
+    "line": 96,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test6_alarm1",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 95, "start": 17, "end": 18 },
+            "call_site": "95:0-96:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 96, "start": 15, "end": 16 },
+            "call_site": "96:4-96:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test6_alarm1:1000:0:Call|_test_sink|0|formal(arg):efb406260b6f79b2a9a8a98afbfaf48b"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test6_alarm2",
@@ -1894,6 +1529,64 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test6_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test6_alarm2",
+    "callable_line": 103,
+    "code": 1000,
+    "line": 104,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test6_alarm2",
+                    "port": "leaf:c"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 103, "start": 23, "end": 24 },
+            "call_site": "103:0-104:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 104, "start": 15, "end": 16 },
+            "call_site": "104:4-104:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test6_alarm2:1000:0:Call|_test_sink|0|formal(arg):ab5c9ddf476fdd58b2bd5b1513b34951"
   }
 }
 {
@@ -2013,6 +1706,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test8_alarm1",
+    "callable_line": 119,
+    "code": 1000,
+    "line": 120,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test8_alarm1",
+                    "port": "leaf:a"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 119, "start": 17, "end": 18 },
+            "call_site": "119:0-120:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 120, "start": 15, "end": 16 },
+            "call_site": "120:4-120:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test8_alarm1:1000:0:Call|_test_sink|0|formal(arg):cfd8852d4263307bc7ab1819d196d19f"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test8_alarm2",
@@ -2054,6 +1805,64 @@
       }
     ],
     "model_generators": [ "get_model_query_parameters_test8_source" ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test8_alarm2",
+    "callable_line": 123,
+    "code": 1000,
+    "line": 124,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test8_alarm2",
+                    "port": "leaf:b"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 123, "start": 20, "end": 21 },
+            "call_site": "123:0-124:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 124, "start": 15, "end": 16 },
+            "call_site": "124:4-124:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test8_alarm2:1000:0:Call|_test_sink|0|formal(arg):811812d0aa2679295cd060e89c1a60a3"
   }
 }
 {
@@ -2101,6 +1910,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test8_alarm3",
+    "callable_line": 127,
+    "code": 1000,
+    "line": 128,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test8_alarm3",
+                    "port": "leaf:c"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 127, "start": 23, "end": 24 },
+            "call_site": "127:0-128:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 128, "start": 15, "end": 16 },
+            "call_site": "128:4-128:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test8_alarm3:1000:0:Call|_test_sink|0|formal(arg):2a01a3ea762199552d41a5678b384117"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test8_alarm4",
@@ -2145,6 +2012,64 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_where.test8_alarm4",
+    "callable_line": 131,
+    "code": 1000,
+    "line": 132,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_parameters_where.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_parameters_where.test8_alarm4",
+                    "port": "leaf:d"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 131, "start": 26, "end": 27 },
+            "call_site": "131:0-132:17"
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 132, "start": 15, "end": 16 },
+            "call_site": "132:4-132:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parameters_where.test8_alarm4:1000:0:Call|_test_sink|0|formal(arg):0822ca2a1636017667e0199ed28044b5"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test9_f",
@@ -2175,5 +2100,80 @@
       "get_model_query_parameters_test9_SourceB",
       "get_model_query_parameters_test9_source"
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test5.test5_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 79,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test5.test5_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 82,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test5.test5_alarm3",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 85,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test5.test5_alarm4",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 88,
+    "sinks": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test5_sink" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.Test7.test7_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 112,
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "model_generators": [ "get_model_query_parameters_test7_source" ]
   }
 }

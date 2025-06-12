@@ -1,173 +1,64 @@
 @generated
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "readonly.A.self_readonly_map",
-    "callable_line": 27,
-    "code": 5002,
-    "line": 31,
-    "start": 19,
-    "end": 39,
-    "filename": "readonly.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
       {
-        "name": "forward",
-        "roots": [
+        "port": "formal(arg, position=0)",
+        "taint": [
           {
             "kinds": [
               {
-                "leaves": [
-                  {
-                    "name": "Obj{readonly.A.mapping}",
-                    "port": "leaf:return"
-                  }
-                ],
+                "features": [ { "always-via": "special_sink" } ],
                 "kind": "Test"
               }
             ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "" }
-            ],
-            "tito_positions": [ { "line": 31, "start": 19, "end": 31 } ],
-            "origin": { "line": 31, "start": 19, "end": 31 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 31, "start": 19, "end": 39 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "31:8-31:40"
+            "declaration": null
           }
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "readonly.A.self_readonly_map:5002:0:Call|_test_sink|0|formal(arg):436dfa20ddcb9215c40e5e1dfd25e576"
+    "modes": [ "Obscure" ]
   }
 }
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "readonly.A.self_readonly_str",
-    "callable_line": 17,
-    "code": 5002,
-    "line": 20,
-    "start": 19,
-    "end": 25,
-    "filename": "readonly.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
       {
-        "name": "forward",
-        "roots": [
+        "port": "result",
+        "taint": [
           {
             "kinds": [
               {
-                "leaves": [
-                  { "name": "Obj{readonly.A.B}", "port": "leaf:return" }
-                ],
+                "features": [ { "always-via": "special_source" } ],
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 20, "start": 19, "end": 25 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 20, "start": 19, "end": 25 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "20:8-20:26"
+            "declaration": null
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "readonly.A.self_readonly_str:5002:0:Call|_test_sink|0|formal(arg):9705579d187f31d8356dd61c07d21c13"
+    "modes": [ "Obscure" ]
   }
 }
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "readonly.A.self_untyped_map",
-    "callable_line": 33,
-    "code": 5002,
-    "line": 36,
-    "start": 19,
-    "end": 39,
+    "callable": "readonly.readonly_foo_not_tainted",
     "filename": "readonly.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable_line": 57,
+    "sinks": [
       {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{readonly.A.mapping}",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "" }
-            ],
-            "tito_positions": [ { "line": 36, "start": 19, "end": 31 } ],
-            "origin": { "line": 36, "start": 19, "end": 31 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
+        "port": "formal(foo, position=0)[not_tainted]",
+        "taint": [
           {
             "kinds": [
               {
@@ -176,61 +67,24 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 36, "start": 19, "end": 39 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "36:8-36:40"
+            "origin": { "line": 58, "start": 15, "end": 30 },
+            "call_site": "58:4-58:31"
           }
         ]
       }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "readonly.A.self_untyped_map:5002:0:Call|_test_sink|0|formal(arg):60ef59e24c79019bb09183155e45f6a4"
+    ]
   }
 }
 {
-  "kind": "issue",
+  "kind": "model",
   "data": {
-    "callable": "readonly.A.self_untyped_str",
-    "callable_line": 22,
-    "code": 5002,
-    "line": 25,
-    "start": 19,
-    "end": 25,
+    "callable": "readonly.readonly_foo_tainted",
     "filename": "readonly.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
+    "callable_line": 53,
+    "sinks": [
       {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{readonly.A.B}", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 25, "start": 19, "end": 25 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
+        "port": "formal(foo, position=0)[tainted]",
+        "taint": [
           {
             "kinds": [
               {
@@ -239,22 +93,12 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 25, "start": 19, "end": 25 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "call_site": "25:8-25:26"
+            "origin": { "line": 54, "start": 15, "end": 26 },
+            "call_site": "54:4-54:27"
           }
         ]
       }
-    ],
-    "features": [ { "always-via": "special_sink" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "readonly.A.self_untyped_str:5002:0:Call|_test_sink|0|formal(arg):d0784ca8d2fd22ef406414b1d941d2a0"
+    ]
   }
 }
 {
@@ -378,6 +222,58 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "readonly.regular_foo_not_tainted",
+    "filename": "readonly.py",
+    "callable_line": 65,
+    "sinks": [
+      {
+        "port": "formal(foo, position=0)[not_tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 66, "start": 15, "end": 30 },
+            "call_site": "66:4-66:31"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "readonly.regular_foo_tainted",
+    "filename": "readonly.py",
+    "callable_line": 61,
+    "sinks": [
+      {
+        "port": "formal(foo, position=0)[tainted]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 62, "start": 15, "end": 26 },
+            "call_site": "62:4-62:27"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "readonly.regular_foo_tainted",
@@ -438,92 +334,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{readonly.A.B}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{readonly.A.mapping}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{readonly.Foo.tainted}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "readonly.A.readonly_tito",
     "filename": "readonly.py",
     "callable_line": 38,
@@ -573,6 +383,76 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "readonly.A.self_readonly_map",
+    "callable_line": 27,
+    "code": 5002,
+    "line": 31,
+    "start": 19,
+    "end": 39,
+    "filename": "readonly.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{readonly.A.mapping}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "" }
+            ],
+            "tito_positions": [ { "line": 31, "start": 19, "end": 31 } ],
+            "origin": { "line": 31, "start": 19, "end": 31 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 31, "start": 19, "end": 39 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "31:8-31:40"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "readonly.A.self_readonly_map:5002:0:Call|_test_sink|0|formal(arg):436dfa20ddcb9215c40e5e1dfd25e576"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "readonly.A.self_readonly_str",
@@ -598,6 +478,65 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "readonly.A.self_readonly_str",
+    "callable_line": 17,
+    "code": 5002,
+    "line": 20,
+    "start": 19,
+    "end": 25,
+    "filename": "readonly.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{readonly.A.B}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 20, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 20, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "20:8-20:26"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "readonly.A.self_readonly_str:5002:0:Call|_test_sink|0|formal(arg):9705579d187f31d8356dd61c07d21c13"
   }
 }
 {
@@ -633,6 +572,76 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "readonly.A.self_untyped_map",
+    "callable_line": 33,
+    "code": 5002,
+    "line": 36,
+    "start": 19,
+    "end": 39,
+    "filename": "readonly.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{readonly.A.mapping}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "" }
+            ],
+            "tito_positions": [ { "line": 36, "start": 19, "end": 31 } ],
+            "origin": { "line": 36, "start": 19, "end": 31 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 36, "start": 19, "end": 39 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "36:8-36:40"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "readonly.A.self_untyped_map:5002:0:Call|_test_sink|0|formal(arg):60ef59e24c79019bb09183155e45f6a4"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "readonly.A.self_untyped_str",
@@ -661,15 +670,38 @@
   }
 }
 {
-  "kind": "model",
+  "kind": "issue",
   "data": {
-    "callable": "readonly.readonly_foo_not_tainted",
+    "callable": "readonly.A.self_untyped_str",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 25,
+    "start": 19,
+    "end": 25,
     "filename": "readonly.py",
-    "callable_line": 57,
-    "sinks": [
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
       {
-        "port": "formal(foo, position=0)[not_tainted]",
-        "taint": [
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{readonly.A.B}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 25, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
           {
             "kinds": [
               {
@@ -678,10 +710,32 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 58, "start": 15, "end": 30 },
-            "call_site": "58:4-58:31"
+            "origin": { "line": 25, "start": 19, "end": 25 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "25:8-25:26"
           }
         ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "readonly.A.self_untyped_str:5002:0:Call|_test_sink|0|formal(arg):d0784ca8d2fd22ef406414b1d941d2a0"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{readonly.A.B}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -689,25 +743,11 @@
 {
   "kind": "model",
   "data": {
-    "callable": "readonly.readonly_foo_tainted",
-    "filename": "readonly.py",
-    "callable_line": 53,
-    "sinks": [
+    "callable": "Obj{readonly.A.mapping}",
+    "sources": [
       {
-        "port": "formal(foo, position=0)[tainted]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 54, "start": 15, "end": 26 },
-            "call_site": "54:4-54:27"
-          }
-        ]
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -715,51 +755,11 @@
 {
   "kind": "model",
   "data": {
-    "callable": "readonly.regular_foo_not_tainted",
-    "filename": "readonly.py",
-    "callable_line": 65,
-    "sinks": [
+    "callable": "Obj{readonly.Foo.tainted}",
+    "sources": [
       {
-        "port": "formal(foo, position=0)[not_tainted]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 66, "start": 15, "end": 30 },
-            "call_site": "66:4-66:31"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "readonly.regular_foo_tainted",
-    "filename": "readonly.py",
-    "callable_line": 61,
-    "sinks": [
-      {
-        "port": "formal(foo, position=0)[tainted]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 62, "start": 15, "end": 26 },
-            "call_site": "62:4-62:27"
-          }
-        ]
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

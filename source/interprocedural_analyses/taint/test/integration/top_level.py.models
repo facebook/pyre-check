@@ -1,150 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "top_level.$toplevel",
-    "callable_line": 1,
-    "code": 5002,
-    "line": 17,
-    "start": 4,
-    "end": 5,
-    "filename": "top_level.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 16, "start": 4, "end": 18 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": { "line": 17, "start": 4, "end": 5 },
-              "resolves_to": [ "top_level.foo" ],
-              "port": "formal(x, position=0)",
-              "call_site": "17:0-17:6"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "top_level.foo",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle": "top_level.$toplevel:5002:0:Call|top_level.foo|0|formal(x):cafe6a91686adfadae5252ac54487cc6"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "top_level.$toplevel",
-    "callable_line": 1,
-    "code": 5002,
-    "line": 9,
-    "start": 11,
-    "end": 12,
-    "filename": "top_level.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 8, "start": 4, "end": 18 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 9, "start": 11, "end": 12 },
-            "call_site": "9:0-9:13"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "top_level.$toplevel:5002:0:Call|_test_sink|0|formal(arg):b42fca11b7ca7b29d2700571455a4452"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -388,6 +243,127 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "top_level.$toplevel",
+    "callable_line": 1,
+    "code": 5002,
+    "line": 9,
+    "start": 11,
+    "end": 12,
+    "filename": "top_level.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 8, "start": 4, "end": 18 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 9, "start": 11, "end": 12 },
+            "call_site": "9:0-9:13"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "top_level.$toplevel:5002:0:Call|_test_sink|0|formal(arg):b42fca11b7ca7b29d2700571455a4452"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "top_level.$toplevel",
+    "callable_line": 1,
+    "code": 5002,
+    "line": 17,
+    "start": 4,
+    "end": 5,
+    "filename": "top_level.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 16, "start": 4, "end": 18 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 17, "start": 4, "end": 5 },
+              "resolves_to": [ "top_level.foo" ],
+              "port": "formal(x, position=0)",
+              "call_site": "17:0-17:6"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "top_level.foo",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "top_level.$toplevel:5002:0:Call|top_level.foo|0|formal(x):cafe6a91686adfadae5252ac54487cc6"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "top_level.foo",
@@ -409,6 +385,30 @@
             "call_site": "13:4-13:17"
           }
         ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

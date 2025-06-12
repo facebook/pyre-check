@@ -52,213 +52,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "all_static_fields.A.__init__",
-    "filename": "all_static_fields.py",
-    "callable_line": 97,
-    "tito": [
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "all_static_fields.C.__init__",
-    "filename": "all_static_fields.py",
-    "callable_line": 106,
-    "tito": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[c]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 107, "start": 25, "end": 26 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 4, "upper": 5 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "all_static_fields.D.__init__",
-    "filename": "all_static_fields.py",
-    "callable_line": 114,
-    "tito": [
-      {
-        "port": "formal(d, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[d]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "length": 1,
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" },
-              { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 115, "start": 25, "end": 26 } ],
-            "tito": {
-              "caller_interval": [ { "lower": 7, "upper": 8 } ],
-              "is_self_call": false
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "all_static_fields.Dataclass.__init__",
-    "filename": "*",
-    "tito": [
-      {
-        "port": "formal(d, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[d]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(c, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[c]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "all_static_fields.RegularClass.__init__",
-    "filename": "all_static_fields.py",
-    "callable_line": 17,
-    "tito": [
-      {
-        "port": "formal(b, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[b]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(a, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[a]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "all_static_fields.parameter_sink_b",
     "filename": "all_static_fields.py",
     "callable_line": 119,
@@ -812,5 +605,212 @@
       }
     ],
     "model_generators": [ "all_return_fields_sources" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.A.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 97,
+    "tito": [
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.C.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 106,
+    "tito": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[c]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 107, "start": 25, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.D.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 114,
+    "tito": [
+      {
+        "port": "formal(d, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[d]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 115, "start": 25, "end": 26 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 7, "upper": 8 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.Dataclass.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(d, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[d]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(c, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[c]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.RegularClass.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 17,
+    "tito": [
+      {
+        "port": "formal(b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[b]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(a, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
   }
 }

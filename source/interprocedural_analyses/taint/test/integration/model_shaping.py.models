@@ -1,575 +1,5 @@
 @generated
 {
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 112,
-    "start": 15,
-    "end": 25,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": { "line": 111, "start": 31, "end": 45 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 112, "start": 15, "end": 25 },
-            "call_site": "112:4-112:26"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|0|formal(arg):2fb23a10e86f1f08b18dd6b2d500400d"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 113,
-    "start": 15,
-    "end": 25,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "bar" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": { "line": 111, "start": 31, "end": 45 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 113, "start": 15, "end": 25 },
-            "call_site": "113:4-113:26"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "bar" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|1|formal(arg):89882c854fe2c5521dd9383def348104"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 114,
-    "start": 15,
-    "end": 31,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "to_string" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
-            "origin": { "line": 111, "start": 31, "end": 45 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 114, "start": 15, "end": 31 },
-            "call_site": "114:4-114:32"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "to_string" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 2,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|2|formal(arg):8537c3d282d4556f535c4fefe5011f11"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 117,
-    "start": 15,
-    "end": 35,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 117, "start": 15, "end": 35 },
-            "call_site": "117:4-117:36"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 3,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|3|formal(arg):a322d78978dd3f84df036e41011b070c"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 118,
-    "start": 15,
-    "end": 35,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 118, "start": 15, "end": 35 },
-            "call_site": "118:4-118:36"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 4,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|4|formal(arg):d0b890045603412f754deb41ae38d5ee"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 119,
-    "start": 15,
-    "end": 25,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "bar" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 119, "start": 15, "end": 25 },
-            "call_site": "119:4-119:26"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "bar" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 5,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|5|formal(arg):8a593feeebe0b84ca4edf843f748ff3e"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_shaping.test_tito_shaping",
-    "callable_line": 110,
-    "code": 5002,
-    "line": 120,
-    "start": 15,
-    "end": 31,
-    "filename": "model_shaping.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "to_string" },
-              { "via": "obscure:model" },
-              { "via": "model-shaping" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "via": "model-tito-shaping" }
-            ],
-            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
-            "origin": { "line": 116, "start": 42, "end": 56 }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 120, "start": 15, "end": 31 },
-            "call_site": "120:4-120:32"
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "to_string" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "via": "obscure:model" },
-      { "via": "model-shaping" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "via": "model-tito-shaping" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 6,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|6|formal(arg):b42b2508aec6891d6c4e3cf853d69133"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_cookies",
@@ -1350,6 +780,552 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 112,
+    "start": 15,
+    "end": 25,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
+            "origin": { "line": 111, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 112, "start": 15, "end": 25 },
+            "call_site": "112:4-112:26"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|0|formal(arg):2fb23a10e86f1f08b18dd6b2d500400d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 113,
+    "start": 15,
+    "end": 25,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
+            "origin": { "line": 111, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 113, "start": 15, "end": 25 },
+            "call_site": "113:4-113:26"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|1|formal(arg):89882c854fe2c5521dd9383def348104"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 114,
+    "start": 15,
+    "end": 31,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "to_string" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 23, "end": 57 } ],
+            "origin": { "line": 111, "start": 31, "end": 45 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 114, "start": 15, "end": 31 },
+            "call_site": "114:4-114:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "to_string" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|2|formal(arg):8537c3d282d4556f535c4fefe5011f11"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 117,
+    "start": 15,
+    "end": 35,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 117, "start": 15, "end": 35 },
+            "call_site": "117:4-117:36"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|3|formal(arg):a322d78978dd3f84df036e41011b070c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 118,
+    "start": 15,
+    "end": 35,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 118, "start": 15, "end": 35 },
+            "call_site": "118:4-118:36"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|4|formal(arg):d0b890045603412f754deb41ae38d5ee"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 119,
+    "start": 15,
+    "end": 25,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 119, "start": 15, "end": 25 },
+            "call_site": "119:4-119:26"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 5,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|5|formal(arg):8a593feeebe0b84ca4edf843f748ff3e"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_shaping.test_tito_shaping",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 120,
+    "start": 15,
+    "end": 31,
+    "filename": "model_shaping.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "to_string" },
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "via": "model-tito-shaping" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 23, "end": 83 } ],
+            "origin": { "line": 116, "start": 42, "end": 56 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 120, "start": 15, "end": 31 },
+            "call_site": "120:4-120:32"
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "to_string" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "model-shaping" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "via": "model-tito-shaping" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 6,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_shaping.test_tito_shaping:5002:0:Call|_test_sink|6|formal(arg):b42b2508aec6891d6c4e3cf853d69133"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "model_shaping.tito_shaping",
@@ -1384,6 +1360,30 @@
             "tito": {}
           }
         ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

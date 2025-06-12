@@ -1,5 +1,76 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.complex_tito",
+    "filename": "parameter_path.py",
+    "callable_line": 172,
+    "tito": [
+      {
+        "port": "formal(arg, position=0)[a][*].**keys",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[foo]": 0 }, "kind": "LocalReturn" }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "parameter_path.issue_complex_tito",
@@ -428,6 +499,35 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "parameter_path.issue_only_with_source_key_a:5002:0:Call|_test_sink|0|formal(arg):6390b19d7a5e79dc8626d3adf9e8300b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_path.issue_only_with_source_nested_first",
+    "filename": "parameter_path.py",
+    "callable_line": 33,
+    "sources": [
+      {
+        "port": "result[0][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "parameter_path.source_on_0_1",
+                    "port": "leaf:return[0][1]"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 41, "start": 11, "end": 26 }
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -997,106 +1097,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "parameter_path.issue_with_source_member:5002:0:Call|_test_sink|0|formal(arg):7b4acae400910c29615080a6e02ce49c"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "parameter_path.complex_tito",
-    "filename": "parameter_path.py",
-    "callable_line": 172,
-    "tito": [
-      {
-        "port": "formal(arg, position=0)[a][*].**keys",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[foo]": 0 }, "kind": "LocalReturn" }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "parameter_path.issue_only_with_source_nested_first",
-    "filename": "parameter_path.py",
-    "callable_line": 33,
-    "sources": [
-      {
-        "port": "result[0][1]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "parameter_path.source_on_0_1",
-                    "port": "leaf:return[0][1]"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 41, "start": 11, "end": 26 }
-          }
-        ]
-      }
-    ]
   }
 }
 {

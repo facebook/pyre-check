@@ -1,5 +1,83 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "global_flows.append_argument",
+    "filename": "global_flows.py",
+    "callable_line": 68,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{global_flows.l}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 69, "start": 13, "end": 16 } ],
+            "origin": { "line": 69, "start": 4, "end": 5 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "global_flows.append_directly",
@@ -179,6 +257,112 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "global_flows.global_source:5002:0:Call|_test_sink|0|formal(arg):c993fb1b9abe92246f9a509c4e57bdf1"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "global_flows.indirectly_update_x_arg1",
+    "filename": "global_flows.py",
+    "callable_line": 36,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{global_flows.x}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 37, "start": 19, "end": 22 } ],
+            "origin": { "line": 37, "start": 16, "end": 17 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "global_flows.indirectly_update_x_arg2",
+    "filename": "global_flows.py",
+    "callable_line": 48,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{global_flows.x}", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 49, "start": 16, "end": 19 } ],
+            "origin": { "line": 49, "start": 21, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "global_flows.update_arg1",
+    "filename": "global_flows.py",
+    "callable_line": 9,
+    "tito": [
+      {
+        "port": "formal(arg2, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(arg1, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "global_flows.update_arg2",
+    "filename": "global_flows.py",
+    "callable_line": 13,
+    "tito": [
+      {
+        "port": "formal(arg1, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(arg2, position=1)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -432,6 +616,31 @@
 {
   "kind": "model",
   "data": {
+    "callable": "global_flows.MyList.append",
+    "filename": "global_flows.py",
+    "callable_line": 57,
+    "tito": [
+      {
+        "port": "formal(item, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Obj{global_flows.l}",
     "sinks": [
       {
@@ -463,214 +672,5 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "global_flows.MyList.append",
-    "filename": "global_flows.py",
-    "callable_line": 57,
-    "tito": [
-      {
-        "port": "formal(item, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "global_flows.append_argument",
-    "filename": "global_flows.py",
-    "callable_line": 68,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{global_flows.l}", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 69, "start": 13, "end": 16 } ],
-            "origin": { "line": 69, "start": 4, "end": 5 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "global_flows.indirectly_update_x_arg1",
-    "filename": "global_flows.py",
-    "callable_line": 36,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{global_flows.x}", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 37, "start": 19, "end": 22 } ],
-            "origin": { "line": 37, "start": 16, "end": 17 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "global_flows.indirectly_update_x_arg2",
-    "filename": "global_flows.py",
-    "callable_line": 48,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{global_flows.x}", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 49, "start": 16, "end": 19 } ],
-            "origin": { "line": 49, "start": 21, "end": 22 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "global_flows.update_arg1",
-    "filename": "global_flows.py",
-    "callable_line": 9,
-    "tito": [
-      {
-        "port": "formal(arg2, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(arg1, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "global_flows.update_arg2",
-    "filename": "global_flows.py",
-    "callable_line": 13,
-    "tito": [
-      {
-        "port": "formal(arg1, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "kind": "ParameterUpdate[formal(arg2, position=1)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }

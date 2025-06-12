@@ -1,5 +1,98 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.a_sink",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 13,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.a_source",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.add_feature",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 46,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "via": "feature" } ],
+                "return_paths": { "": 4 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.b_sink",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 16,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_tito_shaping.b_source",
+    "filename": "sanitize_tito_shaping.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "sanitize_tito_shaping.issue_multiple_titos_different_input_output_paths",
@@ -1091,99 +1184,6 @@
       "parameter": "formal(x)"
     },
     "master_handle": "sanitize_tito_shaping.issue_multiple_titos_same_path_with_transform:1002:0:Call|sanitize_tito_shaping.b_sink|0|formal(x):376cbc14eb42e66b8e2c0c54eda625ce"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_tito_shaping.a_sink",
-    "filename": "sanitize_tito_shaping.py",
-    "callable_line": 13,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_tito_shaping.a_source",
-    "filename": "sanitize_tito_shaping.py",
-    "callable_line": 7,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "TestA" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_tito_shaping.add_feature",
-    "filename": "sanitize_tito_shaping.py",
-    "callable_line": 46,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "via": "feature" } ],
-                "return_paths": { "": 4 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_tito_shaping.b_sink",
-    "filename": "sanitize_tito_shaping.py",
-    "callable_line": 16,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "sanitize_tito_shaping.b_source",
-    "filename": "sanitize_tito_shaping.py",
-    "callable_line": 10,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "TestB" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }
 {

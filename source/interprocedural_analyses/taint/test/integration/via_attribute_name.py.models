@@ -1,5 +1,35 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_sink_attribute_x",
@@ -174,6 +204,61 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_join",
+    "filename": "via_attribute_name.py",
+    "callable_line": 61,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 67, "start": 15, "end": 18 },
+            "call_site": "67:4-67:19"
+          }
+        ]
+      },
+      {
+        "port": "formal(c, position=0)[y]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 67, "start": 15, "end": 18 },
+            "call_site": "67:4-67:19"
+          }
+        ]
+      },
+      {
+        "port": "formal(c, position=0)[z]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 67, "start": 15, "end": 18 },
+            "call_site": "67:4-67:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_join",
@@ -266,6 +351,31 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_x",
+    "filename": "via_attribute_name.py",
+    "callable_line": 49,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 50, "start": 15, "end": 18 },
+            "call_site": "50:4-50:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_x",
@@ -324,6 +434,31 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_y",
+    "filename": "via_attribute_name.py",
+    "callable_line": 53,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)[y]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 54, "start": 15, "end": 18 },
+            "call_site": "54:4-54:19"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "via_attribute_name.test_source_attribute_y",
@@ -379,6 +514,31 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "via_attribute_name.test_source_attribute_y:5002:0:Call|_test_sink|0|formal(arg):dec45f508c947c9000cffaffa393bd2c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_z",
+    "filename": "via_attribute_name.py",
+    "callable_line": 57,
+    "sinks": [
+      {
+        "port": "formal(c, position=0)[z]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 58, "start": 15, "end": 18 },
+            "call_site": "58:4-58:19"
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -912,6 +1072,246 @@
 {
   "kind": "model",
   "data": {
+    "callable": "via_attribute_name.SinkAttributes.__init__",
+    "filename": "*",
+    "sinks": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via-TheZ-attribute": "z" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via-attribute": "y" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via-attribute": "x" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.SourceAttributes.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.TitoAttributeModelQuery.__init__",
+    "filename": "*",
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via-model-query-attribute": "z" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via-model-query-attribute": "y" } ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [ { "always-via-model-query-attribute": "x" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.TitoAttributes.__init__",
+    "filename": "via_attribute_name.py",
+    "callable_line": 11,
+    "tito": [
+      {
+        "port": "formal(z, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[z]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(y, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[y]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(x, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[x]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Obj{via_attribute_name.SinkAttributes.x}",
     "sinks": [
       {
@@ -1188,406 +1588,6 @@
               }
             ],
             "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.SinkAttributes.__init__",
-    "filename": "*",
-    "sinks": [
-      {
-        "port": "formal(z, position=3)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [ { "always-via-TheZ-attribute": "z" } ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [ { "always-via-attribute": "y" } ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "Test" } ],
-            "local_features": [ { "always-via-attribute": "x" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(z, position=3)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[z]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[y]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[x]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.SourceAttributes.__init__",
-    "filename": "*",
-    "tito": [
-      {
-        "port": "formal(z, position=3)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[z]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[y]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[x]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.TitoAttributeModelQuery.__init__",
-    "filename": "*",
-    "tito": [
-      {
-        "port": "formal(z, position=3)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[z]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via-model-query-attribute": "z" } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[y]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via-model-query-attribute": "y" } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[x]": 999999 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "local_features": [ { "always-via-model-query-attribute": "x" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.TitoAttributes.__init__",
-    "filename": "via_attribute_name.py",
-    "callable_line": 11,
-    "tito": [
-      {
-        "port": "formal(z, position=3)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[z]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(y, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[y]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(x, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "[x]": 3 },
-                "kind": "ParameterUpdate[formal(self, position=0)]"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.test_source_attribute_join",
-    "filename": "via_attribute_name.py",
-    "callable_line": 61,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)[x]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 67, "start": 15, "end": 18 },
-            "call_site": "67:4-67:19"
-          }
-        ]
-      },
-      {
-        "port": "formal(c, position=0)[y]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 67, "start": 15, "end": 18 },
-            "call_site": "67:4-67:19"
-          }
-        ]
-      },
-      {
-        "port": "formal(c, position=0)[z]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 67, "start": 15, "end": 18 },
-            "call_site": "67:4-67:19"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.test_source_attribute_x",
-    "filename": "via_attribute_name.py",
-    "callable_line": 49,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)[x]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 50, "start": 15, "end": 18 },
-            "call_site": "50:4-50:19"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.test_source_attribute_y",
-    "filename": "via_attribute_name.py",
-    "callable_line": 53,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)[y]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 54, "start": 15, "end": 18 },
-            "call_site": "54:4-54:19"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "via_attribute_name.test_source_attribute_z",
-    "filename": "via_attribute_name.py",
-    "callable_line": 57,
-    "sinks": [
-      {
-        "port": "formal(c, position=0)[z]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": { "line": 58, "start": 15, "end": 18 },
-            "call_site": "58:4-58:19"
           }
         ]
       }

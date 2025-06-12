@@ -1,5 +1,161 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_with_filters.first_source",
+    "filename": "multiple_sources_with_filters.py",
+    "callable_line": 7,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "FirstSource" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_with_filters.first_source_distance_zero",
+    "filename": "multiple_sources_with_filters.py",
+    "callable_line": 16,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_with_filters.first_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "FirstSource"
+              }
+            ],
+            "origin": { "line": 17, "start": 11, "end": 25 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_with_filters.multi_sink",
+    "filename": "multiple_sources_with_filters.py",
+    "callable_line": 13,
+    "sinks": [
+      {
+        "port": "formal(second, position=1)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[SecondPartialSink]" } ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(first, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "PartialSink[FirstPartialSink]" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_with_filters.second_source",
+    "filename": "multiple_sources_with_filters.py",
+    "callable_line": 10,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "SecondSource" } ], "declaration": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_with_filters.second_source_distance_zero",
+    "filename": "multiple_sources_with_filters.py",
+    "callable_line": 22,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "multiple_sources_with_filters.second_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "SecondSource"
+              }
+            ],
+            "origin": { "line": 23, "start": 11, "end": 26 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "multiple_sources_with_filters.sink_distance_zero",
+    "filename": "multiple_sources_with_filters.py",
+    "callable_line": 37,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "extra_traces": [
+                  {
+                    "message": "Triggering source FirstSource",
+                    "origin": { "line": 38, "start": 15, "end": 29 },
+                    "leaf_kind": "FirstSource",
+                    "trace_kind": "source"
+                  }
+                ],
+                "leaves": [
+                  {
+                    "name": "multiple_sources_with_filters.multi_sink",
+                    "port": "leaf:second"
+                  }
+                ],
+                "kind": "Triggered[FirstSource]@PartialSink[SecondPartialSink]"
+              }
+            ],
+            "origin": { "line": 38, "start": 31, "end": 32 },
+            "call_site": "38:4-38:33"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "multiple_sources_with_filters.test_first_source_one_second_source_one",
@@ -219,161 +375,5 @@
       "parameter": "formal(x)"
     },
     "master_handle": "multiple_sources_with_filters.test_sink_distance_one:5003:0:Call|multiple_sources_with_filters.sink_distance_zero|0|formal(x):8e2e34f211558f69ca588badb5ee5fd2"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_with_filters.first_source",
-    "filename": "multiple_sources_with_filters.py",
-    "callable_line": 7,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "FirstSource" } ], "declaration": null }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_with_filters.first_source_distance_zero",
-    "filename": "multiple_sources_with_filters.py",
-    "callable_line": 16,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_with_filters.first_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "FirstSource"
-              }
-            ],
-            "origin": { "line": 17, "start": 11, "end": 25 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_with_filters.multi_sink",
-    "filename": "multiple_sources_with_filters.py",
-    "callable_line": 13,
-    "sinks": [
-      {
-        "port": "formal(second, position=1)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "PartialSink[SecondPartialSink]" } ],
-            "declaration": null
-          }
-        ]
-      },
-      {
-        "port": "formal(first, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "PartialSink[FirstPartialSink]" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_with_filters.second_source",
-    "filename": "multiple_sources_with_filters.py",
-    "callable_line": 10,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "SecondSource" } ], "declaration": null }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_with_filters.second_source_distance_zero",
-    "filename": "multiple_sources_with_filters.py",
-    "callable_line": 22,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "multiple_sources_with_filters.second_source",
-                    "port": "leaf:return"
-                  }
-                ],
-                "kind": "SecondSource"
-              }
-            ],
-            "origin": { "line": 23, "start": 11, "end": 26 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "multiple_sources_with_filters.sink_distance_zero",
-    "filename": "multiple_sources_with_filters.py",
-    "callable_line": 37,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "extra_traces": [
-                  {
-                    "message": "Triggering source FirstSource",
-                    "origin": { "line": 38, "start": 15, "end": 29 },
-                    "leaf_kind": "FirstSource",
-                    "trace_kind": "source"
-                  }
-                ],
-                "leaves": [
-                  {
-                    "name": "multiple_sources_with_filters.multi_sink",
-                    "port": "leaf:second"
-                  }
-                ],
-                "kind": "Triggered[FirstSource]@PartialSink[SecondPartialSink]"
-              }
-            ],
-            "origin": { "line": 38, "start": 31, "end": 32 },
-            "call_site": "38:4-38:33"
-          }
-        ]
-      }
-    ]
   }
 }

@@ -1,5 +1,55 @@
 @generated
 {
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "strings.bad_1",
@@ -130,6 +180,64 @@
   }
 }
 {
+  "kind": "model",
+  "data": {
+    "callable": "strings.concatenate_lhs",
+    "filename": "strings.py",
+    "callable_line": 9,
+    "tito": [
+      {
+        "port": "formal(source, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 10, "start": 11, "end": 17 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.concatenate_rhs",
+    "filename": "strings.py",
+    "callable_line": 13,
+    "tito": [
+      {
+        "port": "formal(source, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 14, "start": 17, "end": 23 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "issue",
   "data": {
     "callable": "strings.either",
@@ -209,6 +317,156 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "strings.either:5002:0:Call|_test_sink|0|formal(arg):66d28ba04f85ddfe00f2392ff53ff9a5"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.format_sink",
+    "filename": "strings.py",
+    "callable_line": 78,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 79, "start": 22, "end": 23 } ],
+            "origin": { "line": 80, "start": 15, "end": 16 },
+            "call_site": "80:4-80:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.format_source",
+    "filename": "strings.py",
+    "callable_line": 73,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 75, "start": 25, "end": 26 } ],
+            "origin": { "line": 74, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.format_tito",
+    "filename": "strings.py",
+    "callable_line": 69,
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 70, "start": 25, "end": 26 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.iadd_lhs_infer_sink",
+    "filename": "strings.py",
+    "callable_line": 58,
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 59, "start": 4, "end": 5 } ],
+            "origin": { "line": 60, "start": 15, "end": 16 },
+            "call_site": "60:4-60:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.iadd_rhs_infer_sink",
+    "filename": "strings.py",
+    "callable_line": 63,
+    "sinks": [
+      {
+        "port": "formal(b, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 65, "start": 9, "end": 10 } ],
+            "origin": { "line": 66, "start": 15, "end": 16 },
+            "call_site": "66:4-66:17"
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -433,56 +691,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_test_sink",
-    "filename": "builtins.pyi",
-    "callable_line": 618,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_test_source",
-    "filename": "builtins.pyi",
-    "callable_line": 619,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "str.__add__",
     "filename": "builtins.pyi",
     "callable_line": 353,
@@ -519,213 +727,5 @@
       }
     ],
     "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.concatenate_lhs",
-    "filename": "strings.py",
-    "callable_line": 9,
-    "tito": [
-      {
-        "port": "formal(source, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 10, "start": 11, "end": 17 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.concatenate_rhs",
-    "filename": "strings.py",
-    "callable_line": 13,
-    "tito": [
-      {
-        "port": "formal(source, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 14, "start": 17, "end": 23 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.format_sink",
-    "filename": "strings.py",
-    "callable_line": 78,
-    "sinks": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 79, "start": 22, "end": 23 } ],
-            "origin": { "line": 80, "start": 15, "end": 16 },
-            "call_site": "80:4-80:17"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.format_source",
-    "filename": "strings.py",
-    "callable_line": 73,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 75, "start": 25, "end": 26 } ],
-            "origin": { "line": 74, "start": 8, "end": 22 }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.format_tito",
-    "filename": "strings.py",
-    "callable_line": 69,
-    "tito": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 4 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 70, "start": 25, "end": 26 } ],
-            "tito": {}
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.iadd_lhs_infer_sink",
-    "filename": "strings.py",
-    "callable_line": 58,
-    "sinks": [
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 59, "start": 4, "end": 5 } ],
-            "origin": { "line": 60, "start": 15, "end": 16 },
-            "call_site": "60:4-60:17"
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "strings.iadd_rhs_infer_sink",
-    "filename": "strings.py",
-    "callable_line": 63,
-    "sinks": [
-      {
-        "port": "formal(b, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
-            ],
-            "tito_positions": [ { "line": 65, "start": 9, "end": 10 } ],
-            "origin": { "line": 66, "start": 15, "end": 16 },
-            "call_site": "66:4-66:17"
-          }
-        ]
-      }
-    ]
   }
 }
