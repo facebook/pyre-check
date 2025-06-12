@@ -89,12 +89,17 @@ Call dependencies
     "properties.SetterMutatesValue.p (method)",
     "properties.SetterMutatesValue.p@setter (method)"
   ],
+  "properties.string_source (fun)": [ "_test_source (fun)" ],
   "properties.test_getattr_on_property (fun)": [
     "_test_sink (fun)", "getattr (fun)",
     "properties.TaintedGetterAndSetter.my_property (override)"
   ],
   "properties.test_issue_in_class_property (fun)": [
     "_test_sink (fun)", "properties.ClassProperty.my_class_property (method)"
+  ],
+  "properties.test_object_class (fun)": [
+    "_test_sink (fun)", "object.__class__ (method)",
+    "properties.string_source (fun)"
   ],
   "properties.test_property_augmented_assign (fun)": [
     "properties.PropertySetterTitoModel.my_property (method)",

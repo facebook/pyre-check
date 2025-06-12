@@ -15,3 +15,8 @@ def properties.ClassProperty.my_class_property(cls) -> TaintSource[Test, Via[str
 # Using TaintInTaintOut[LocalReturn] on property setters is equivalent to TaintInTaintOut[Updates[self]]
 @my_property.setter
 def properties.PropertySetterTitoModel.my_property(self, value: TaintInTaintOut[LocalReturn]): ...
+
+@SkipObscure
+@Sanitize
+@property
+def object.__class__(): ...

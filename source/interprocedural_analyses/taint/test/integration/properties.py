@@ -307,3 +307,11 @@ def test_property_augmented_assign(p: PropertySetterTitoModel):
     # We see two calls for the same expression/location:
     # p.my_property@setter(p.my_property@getter | 0)
     p.my_property |= 0
+
+
+def string_source() -> str:
+    return _test_source()
+
+def test_object_class() -> None:
+    x = string_source()
+    _test_sink(x.__class__)

@@ -271,6 +271,19 @@ Higher order call graphs
   }
 }
 {
+  "callable": "properties.string_source",
+  "returned_callables": [],
+  "calls": {
+    "313:11-313:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "properties.test_getattr_on_property",
   "returned_callables": [],
   "calls": {
@@ -316,6 +329,42 @@ Higher order call graphs
         "properties": [
           {
             "target": "properties.ClassProperty.my_class_property",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "properties.test_object_class",
+  "returned_callables": [],
+  "calls": {
+    "316:8-316:23": {
+      "call": {
+        "calls": [
+          {
+            "target": "properties.string_source",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "317:4-317:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "317:15-317:26": {
+      "attribute_access": {
+        "properties": [
+          {
+            "target": "object.__class__",
             "index": 0,
             "implicit_receiver": true,
             "return_type": []
