@@ -3762,7 +3762,7 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "3:9-3:15|artificial-call|str-call-to-dunder-str",
+               ( "3:9-3:15|artificial-call|str-call",
                  ExpressionCallees.from_call
                    (CallCallees.create
                       ~call_targets:

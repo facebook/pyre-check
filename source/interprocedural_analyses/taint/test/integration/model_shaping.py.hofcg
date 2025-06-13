@@ -722,7 +722,7 @@ Higher order call graphs
         ]
       }
     },
-    "106:21-106:36|artificial-call|str-call-to-dunder-repr": {
+    "106:21-106:36|artificial-call|str-call": {
       "call": {
         "calls": [
           {

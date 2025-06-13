@@ -72,7 +72,7 @@ Higher order call graphs
         ]
       }
     },
-    "22:15-22:22|artificial-call|str-call-to-dunder-str": {
+    "22:15-22:22|artificial-call|str-call": {
       "call": {
         "calls": [
           {
@@ -111,7 +111,7 @@ Higher order call graphs
         ]
       }
     },
-    "15:11-15:18|artificial-call|str-call-to-dunder-str": {
+    "15:11-15:18|artificial-call|str-call": {
       "call": {
         "calls": [
           {
@@ -161,7 +161,7 @@ Higher order call graphs
   "callable": "exception_test.test_parameter_flow",
   "returned_callables": [],
   "calls": {
-    "10:11-10:18|artificial-call|str-call-to-dunder-str": {
+    "10:11-10:18|artificial-call|str-call": {
       "call": {
         "calls": [
           {
