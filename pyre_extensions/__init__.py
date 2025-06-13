@@ -22,7 +22,7 @@ __all__ = [
     "none_throws",
     "override",
     "ParameterSpecification",
-    "ReadOnly",
+    "PyreReadOnly",
     "safe_cast",
     "safe_json",
     "tests",
