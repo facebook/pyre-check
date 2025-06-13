@@ -410,19 +410,6 @@ Higher order call graphs
         ]
       }
     },
-    "547:4-547:8|artificial-call|augmented-assign-lhs>subscript-set-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__setitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
     "547:4-547:8|artificial-call|augmented-assign-rhs>subscript-get-item": {
       "call": {
         "calls": [
@@ -445,6 +432,19 @@ Higher order call graphs
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "str"
+          }
+        ]
+      }
+    },
+    "547:4-547:13|artificial-call|augmented-assign-statement>subscript-set-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__setitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
           }
         ]
       }

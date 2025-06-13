@@ -902,7 +902,7 @@ let statement =
     let create_assign_for_target index target =
       let origin =
         if number_assignments > 1 then
-          Some (Node.create ~location (Assign.Origin.ChainedAssign { index }))
+          Some (Origin.create ~location (Origin.ChainedAssign { index }))
         else
           None
       in

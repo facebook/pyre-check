@@ -269,10 +269,10 @@ let test_assign_locations =
                                (Expression.Constant (Constant.Integer 1)));
                         origin =
                           Some
-                            (node
-                               ~start:(1, 0)
-                               ~stop:(1, 9)
-                               (Assign.Origin.ChainedAssign { index = 0 }));
+                            {
+                              Origin.location = make_location ~start:(1, 0) ~stop:(1, 9);
+                              kind = Origin.ChainedAssign { index = 0 };
+                            };
                       });
                  node
                    ~start:(1, 4)
@@ -290,10 +290,10 @@ let test_assign_locations =
                                (Expression.Constant (Constant.Integer 1)));
                         origin =
                           Some
-                            (node
-                               ~start:(1, 0)
-                               ~stop:(1, 9)
-                               (Assign.Origin.ChainedAssign { index = 1 }));
+                            {
+                              Origin.location = make_location ~start:(1, 0) ~stop:(1, 9);
+                              kind = Origin.ChainedAssign { index = 1 };
+                            };
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -847,10 +847,10 @@ let test_call_locations =
                                (Expression.Name (Name.Identifier "y")));
                         origin =
                           Some
-                            (node
-                               ~start:(1, 0)
-                               ~stop:(1, 12)
-                               (Assign.Origin.ChainedAssign { index = 0 }));
+                            {
+                              Origin.location = make_location ~start:(1, 0) ~stop:(1, 12);
+                              kind = Origin.ChainedAssign { index = 0 };
+                            };
                       });
                  node
                    ~start:(1, 4)
@@ -884,10 +884,10 @@ let test_call_locations =
                         annotation = None;
                         origin =
                           Some
-                            (node
-                               ~start:(1, 0)
-                               ~stop:(1, 12)
-                               (Assign.Origin.ChainedAssign { index = 1 }));
+                            {
+                              Origin.location = make_location ~start:(1, 0) ~stop:(1, 12);
+                              kind = Origin.ChainedAssign { index = 1 };
+                            };
                       });
                ];
         labeled_test_case __FUNCTION__ __LINE__

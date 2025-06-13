@@ -921,7 +921,9 @@ module State (Context : Context) = struct
                 value = Some call;
                 origin =
                   Some
-                    (Node.create ~location:(Node.location statement) Assign.Origin.AugmentedAssign);
+                    (Origin.create
+                       ~location:(Node.location statement)
+                       Origin.AugmentedAssignStatement);
               }
             |> Node.create ~location:(Node.location statement)
           in

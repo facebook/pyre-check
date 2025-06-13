@@ -2,11 +2,15 @@
 Call dependencies
 {
   "call_graph.IsSource.method (method)": [ "_test_source (fun)" ],
-  "call_graph.test_default_parameters (fun)": [
-    "_test_sink (fun)", "_test_source (fun)"
-  ],
-  "call_graph.test_multi_assign (fun)": [
+  "call_graph.is_dict (fun)": [ "isinstance (fun)" ],
+  "call_graph.test_chained_assign (fun)": [
     "_test_sink (fun)", "call_graph.NotSource.__init__ (method)",
     "call_graph.NotSource.method (method)", "object.__new__ (method)"
+  ],
+  "call_graph.test_chained_assign_subscript (fun)": [
+    "call_graph.is_dict (fun)", "dict.__getitem__ (method)"
+  ],
+  "call_graph.test_default_parameters (fun)": [
+    "_test_sink (fun)", "_test_source (fun)"
   ]
 }

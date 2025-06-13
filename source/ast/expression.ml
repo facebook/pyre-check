@@ -1170,21 +1170,31 @@ and Origin : sig
     | AugmentedAssignDunderCall (* `a += b` is turned into `a = a.__add__(b)` *)
     | AugmentedAssignLHS (* left hand side `a` in `a = a.__add__(b)` *)
     | AugmentedAssignRHS (* right hand side `a` in `a = a.__add__(b)` *)
+    | AugmentedAssignStatement
+    | ChainedAssign of { index: int } (* `x = y = z` is turned into `x = z; y = z` *)
     | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem (* `d[a] = b` is turned into `d.__setitem__(a, b)` *)
     | SubscriptGetItem (* `d[a]` is turned into `d.__getitem__(a)` *)
     | ForIter (* `for e in l:` is turned into `l.__iter__().__next__()` *)
     | ForNext (* `for e in l:` is turned into `l.__iter__().__next__()` *)
     | ForAwait (* `for e in l:` might be turned into `await l.__iter__().__next__()` *)
+    | ForAssign (* `for e in l:` is turned into `e = l.__iter__().__next__()` *)
     | GeneratorIter (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
     | GeneratorNext (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
     | GeneratorAwait (* `(e for e in l)` might be turned into `await l.__aiter__().__anext__()` *)
-    | With (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
+    | GeneratorAssign (* `(e for e in l)` is turned into `e = l.__iter__().__next__()` *)
+    | WithEnter (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
+    | WithAssign (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
     | InContains (* `e in l` can be turned into `l.__contains__(e)` *)
     | InIter (* `e in l` can be turned into `l.__iter__().__next__().__eq__(e)` *)
     | InGetItem (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
     | InGetItemEq (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
     | Slice (* `1:2` is turned into `slice(1,2,None)` *)
+    | TopLevelTupleAssign (* `(x, y) = (a, b)` might be turned into `x = a; y = b` *)
+    | MissingStubCallable
+    | TypedDictImplicitClass
+    | NamedTupleImplicitFields
+    | PyTorchRegisterBuffer
     | UnionShorthand (* `a | b` is turned into `typing.Union[a, b]` when in typing context *)
     | Negate (* `if cond:` is turned into `assert(cond)` and `assert(not cond)` *)
     | NegateIs (* `not(a is not b)` is turned into `a is b` *)
@@ -1193,6 +1203,7 @@ and Origin : sig
     | NormalizeNotComparison (* `not(a < b)` is turned into `a >= b` *)
     | NormalizeNotBoolOperator (* `not(a == b)` is turned into `a != b` *)
     | TryHandlerIsInstance (* `try..except X as e` is turned into `assert(isinstance(X, e))` *)
+    | TryHandlerAssign (* `try: .. except X as e` is turned into `e = ...` *)
     | NamedTupleConstructorAssignment of string
       (* `collections.namedtuple('T', 'a b')` is turned into `def __init__(self, a, b): self.a = a;
          self.b = b` *)
@@ -1238,12 +1249,16 @@ and Origin : sig
     | NextCall (* `next(x)` is turned into `x.__next__()` *)
     | ImplicitInitCall (* `A(x)` is turned into `A.__init__(..., x)` *)
     | SelfImplicitTypeVar of string
+    | SelfImplicitTypeVarAssign
+      (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
+         bound=MyClass])` *)
     | SelfImplicitTypeVarQualification of string * string list
       (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
          bound=MyClass])` *)
     | FunctionalEnumImplicitAuto of string list
-      (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
-         ...` *)
+    (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
+       ...` *)
+    | FunctionalEnumImplicitAutoAssign
     | DecoratorInlining (* Pysa inlines decorator during preprocessing *)
     | ForDecoratedTarget (* `@foo def f(): ...` is turned into `def f@decorated(): return foo(f)` *)
     | ForDecoratedTargetCallee of
@@ -1285,21 +1300,31 @@ end = struct
     | AugmentedAssignDunderCall
     | AugmentedAssignLHS
     | AugmentedAssignRHS
+    | AugmentedAssignStatement
+    | ChainedAssign of { index: int }
     | Qualification of string list
     | SubscriptSetItem
     | SubscriptGetItem
     | ForIter
     | ForNext
     | ForAwait
+    | ForAssign
     | GeneratorIter
     | GeneratorNext
     | GeneratorAwait
-    | With
+    | GeneratorAssign
+    | WithEnter
+    | WithAssign
     | InContains
     | InIter
     | InGetItem
     | InGetItemEq
     | Slice
+    | TopLevelTupleAssign
+    | MissingStubCallable
+    | TypedDictImplicitClass
+    | NamedTupleImplicitFields
+    | PyTorchRegisterBuffer
     | UnionShorthand
     | Negate
     | NegateIs
@@ -1308,6 +1333,7 @@ end = struct
     | NormalizeNotComparison
     | NormalizeNotBoolOperator
     | TryHandlerIsInstance
+    | TryHandlerAssign
     | NamedTupleConstructorAssignment of string
     | DataclassImplicitField
     | DataclassImplicitDefault
@@ -1346,8 +1372,10 @@ end = struct
     | NextCall
     | ImplicitInitCall
     | SelfImplicitTypeVar of string
+    | SelfImplicitTypeVarAssign
     | SelfImplicitTypeVarQualification of string * string list
     | FunctionalEnumImplicitAuto of string list
+    | FunctionalEnumImplicitAutoAssign
     | DecoratorInlining
     | ForDecoratedTarget
     | ForDecoratedTargetCallee of string list
@@ -1389,7 +1417,7 @@ end = struct
       | ForNext
       | GeneratorIter
       | GeneratorNext
-      | With
+      | WithEnter
       | InContains
       | InIter
       | InGetItem
@@ -1416,6 +1444,8 @@ end = struct
     | AugmentedAssignDunderCall -> Format.fprintf formatter "augmented-assign-dunder-call"
     | AugmentedAssignLHS -> Format.fprintf formatter "augmented-assign-lhs"
     | AugmentedAssignRHS -> Format.fprintf formatter "augmented-assign-rhs"
+    | AugmentedAssignStatement -> Format.fprintf formatter "augmented-assign-statement"
+    | ChainedAssign { index } -> Format.fprintf formatter "chained-assign:%d" index
     | Qualification identifiers ->
         Format.fprintf formatter "qualification:%s" (String.concat ~sep:"." (List.rev identifiers))
     | SubscriptSetItem -> Format.fprintf formatter "subscript-set-item"
@@ -1423,15 +1453,23 @@ end = struct
     | ForIter -> Format.fprintf formatter "for-iter"
     | ForNext -> Format.fprintf formatter "for-next"
     | ForAwait -> Format.fprintf formatter "for-await"
+    | ForAssign -> Format.fprintf formatter "for-assign"
     | GeneratorIter -> Format.fprintf formatter "generator-iter"
     | GeneratorNext -> Format.fprintf formatter "generator-next"
     | GeneratorAwait -> Format.fprintf formatter "generator-await"
-    | With -> Format.fprintf formatter "with"
+    | GeneratorAssign -> Format.fprintf formatter "generator-assign"
+    | WithEnter -> Format.fprintf formatter "with-enter"
+    | WithAssign -> Format.fprintf formatter "with-assign"
     | InContains -> Format.fprintf formatter "in-contains"
     | InIter -> Format.fprintf formatter "in-iter"
     | InGetItem -> Format.fprintf formatter "in-get-item"
     | InGetItemEq -> Format.fprintf formatter "in-get-item-eq"
     | Slice -> Format.fprintf formatter "slice"
+    | TopLevelTupleAssign -> Format.fprintf formatter "top-level-tuple-assign"
+    | MissingStubCallable -> Format.fprintf formatter "missing-stub-callable"
+    | TypedDictImplicitClass -> Format.fprintf formatter "typed-dict-implicit-class"
+    | NamedTupleImplicitFields -> Format.fprintf formatter "named-tuple-implicit-fields"
+    | PyTorchRegisterBuffer -> Format.fprintf formatter "pytorch-register-buffer"
     | UnionShorthand -> Format.fprintf formatter "union-shorthand"
     | Negate -> Format.fprintf formatter "negate"
     | NegateIs -> Format.fprintf formatter "negate-is"
@@ -1440,6 +1478,7 @@ end = struct
     | NormalizeNotComparison -> Format.fprintf formatter "normalize-not-comparison"
     | NormalizeNotBoolOperator -> Format.fprintf formatter "normalize-not-bool-operator"
     | TryHandlerIsInstance -> Format.fprintf formatter "try-handler-isinstance"
+    | TryHandlerAssign -> Format.fprintf formatter "try-handler-assign"
     | NamedTupleConstructorAssignment attribute ->
         Format.fprintf formatter "named-tuple-constructor-assignment:%s" attribute
     | DataclassImplicitField -> Format.fprintf formatter "dataclass-implicit-field"
@@ -1493,11 +1532,14 @@ end = struct
           "self-implicit-typevar-qualification:%s:%s"
           name
           (String.concat ~sep:"." (List.rev attributes))
+    | SelfImplicitTypeVarAssign -> Format.fprintf formatter "self-implicit-typevar-assign"
     | FunctionalEnumImplicitAuto attributes ->
         Format.fprintf
           formatter
           "functional-enum-implicit-auto:%s"
           (String.concat ~sep:"." attributes)
+    | FunctionalEnumImplicitAutoAssign ->
+        Format.fprintf formatter "functional-enum-implicit-auto-assign"
     | DecoratorInlining -> Format.fprintf formatter "decorator-inlining"
     | ForDecoratedTarget -> Format.fprintf formatter "for-decorated-target"
     | ForDecoratedTargetCallee identifiers ->

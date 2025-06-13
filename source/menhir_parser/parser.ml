@@ -462,7 +462,8 @@ module ParserToAst = struct
               origin =
                 (index_in_chain
                 >>| fun index ->
-                Node.create ~location (AstStatement.Assign.Origin.ChainedAssign { index }));
+                AstExpression.Origin.create ~location (AstExpression.Origin.ChainedAssign { index })
+                );
             }
       | Assert { Assert.test; message } ->
           AstStatement.Statement.Assert

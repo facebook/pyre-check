@@ -417,21 +417,31 @@ and Origin : sig
     | AugmentedAssignDunderCall (* `a += b` is turned into `a = a.__add__(b)` *)
     | AugmentedAssignLHS (* left hand side `a` in `a = a.__add__(b)` *)
     | AugmentedAssignRHS (* right hand side `a` in `a = a.__add__(b)` *)
+    | AugmentedAssignStatement
+    | ChainedAssign of { index: int } (* `x = y = z` is turned into `x = z; y = z` *)
     | Qualification of string list (* all symbols are turned into their fully qualified version *)
     | SubscriptSetItem (* `d[a] = b` is turned into `d.__setitem__(a, b)` *)
     | SubscriptGetItem (* `d[a]` is turned into `d.__getitem__(a)` *)
     | ForIter (* `for e in l:` is turned into `l.__iter__().__next__()` *)
     | ForNext (* `for e in l:` is turned into `l.__iter__().__next__()` *)
     | ForAwait (* `for e in l:` might be turned into `await l.__iter__().__next__()` *)
+    | ForAssign (* `for e in l:` is turned into `e = l.__iter__().__next__()` *)
     | GeneratorIter (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
     | GeneratorNext (* `(e for e in l)` is turned into `l.__iter__().__next__()` *)
     | GeneratorAwait (* `(e for e in l)` might be turned into `await l.__aiter__().__anext__()` *)
-    | With (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
+    | GeneratorAssign (* `(e for e in l)` is turned into `e = l.__iter__().__next__()` *)
+    | WithEnter (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
+    | WithAssign (* `with e1 as e2` is turned into `e2 = e1.__enter__()` *)
     | InContains (* `e in l` can be turned into `l.__contains__(e)` *)
     | InIter (* `e in l` can be turned into `l.__iter__().__next__().__eq__(e)` *)
     | InGetItem (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
     | InGetItemEq (* `e in l` can be turned into `l.__getitem__(0).__eq__(e)` *)
     | Slice (* `1:2` is turned into `slice(1,2,None)` *)
+    | TopLevelTupleAssign (* `(x, y) = (a, b)` might be turned into `x = a; y = b` *)
+    | MissingStubCallable
+    | TypedDictImplicitClass
+    | NamedTupleImplicitFields
+    | PyTorchRegisterBuffer
     | UnionShorthand (* `a | b` is turned into `typing.Union[a, b]` when in typing context *)
     | Negate (* `if cond:` is turned into `assert(cond)` and `assert(not cond)` *)
     | NegateIs (* `not(a is not b)` is turned into `a is b` *)
@@ -440,6 +450,7 @@ and Origin : sig
     | NormalizeNotComparison (* `not(a < b)` is turned into `a >= b` *)
     | NormalizeNotBoolOperator (* `not(a == b)` is turned into `a != b` *)
     | TryHandlerIsInstance (* `try..except X as e` is turned into `assert(isinstance(X, e))` *)
+    | TryHandlerAssign (* `try: .. except X as e` is turned into `e = ...` *)
     | NamedTupleConstructorAssignment of string
       (* `collections.namedtuple('T', 'a b')` is turned into `def __init__(self, a, b): self.a = a;
          self.b = b` *)
@@ -485,12 +496,16 @@ and Origin : sig
     | NextCall (* `next(x)` is turned into `x.__next__()` *)
     | ImplicitInitCall (* `A(x)` is turned into `A.__init__(..., x)` *)
     | SelfImplicitTypeVar of string
+    | SelfImplicitTypeVarAssign
+      (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
+         bound=MyClass])` *)
     | SelfImplicitTypeVarQualification of string * string list
       (* `def f(self):` is turned into `def f(self: TSelf):` with `TSelf = TypeVar["self",
          bound=MyClass])` *)
     | FunctionalEnumImplicitAuto of string list
-      (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
-         ...` *)
+    (* `Enum("Color", ("RED", "GREEN", "BLUE"))` is turned into `class Color: RED = enum.auto();
+       ...` *)
+    | FunctionalEnumImplicitAutoAssign
     | DecoratorInlining (* Pysa inlines decorator during preprocessing *)
     | ForDecoratedTarget (* `@foo def f(): ...` is turned into `def f@decorated(): return foo(f)` *)
     | ForDecoratedTargetCallee of

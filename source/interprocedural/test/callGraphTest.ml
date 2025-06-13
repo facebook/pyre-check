@@ -1801,7 +1801,7 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "4:7-4:14|artificial-call|with",
+               ( "4:7-4:14|artificial-call|with-enter",
                  ExpressionCallees.from_call
                    (CallCallees.create
                       ~call_targets:

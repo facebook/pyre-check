@@ -2194,7 +2194,7 @@ let toplevel_expand_tuple_assign = function
                 Assign.target;
                 value = Some value;
                 annotation = None;
-                origin = Some (Node.create ~location Assign.Origin.TopLevelTupleAssign);
+                origin = Some (Origin.create ~location Origin.TopLevelTupleAssign);
               };
             Node.location;
           })
@@ -2433,8 +2433,7 @@ let expand_typed_dictionary_declarations
                            annotation = Some value;
                            value =
                              Some (Node.create ~location (Expression.Constant Constant.Ellipsis));
-                           origin =
-                             Some (Node.create ~location Assign.Origin.TypedDictImplicitClass);
+                           origin = Some (Origin.create ~location Origin.TypedDictImplicitClass);
                          }
                       |> Node.create ~location)
                 | _ -> None
@@ -2774,7 +2773,7 @@ let expand_named_tuples
           Assign.target = Node.create ~location (Expression.Name (Name.Identifier "_fields"));
           annotation = Some fields_annotation;
           value = Some value;
-          origin = Some (Node.create ~location Assign.Origin.NamedTupleImplicitFields);
+          origin = Some (Origin.create ~location Origin.NamedTupleImplicitFields);
         }
       |> Node.create ~location
     in
@@ -2804,7 +2803,7 @@ let expand_named_tuples
               value =
                 (default_value
                 >>| fun _ -> Node.create (Expression.Constant Constant.Ellipsis) ~location);
-              origin = Some (Node.create ~location Assign.Origin.NamedTupleImplicitFields);
+              origin = Some (Origin.create ~location Origin.NamedTupleImplicitFields);
             }
           |> Node.create ~location
         in
@@ -2873,7 +2872,7 @@ let expand_named_tuples
                                }));
                      annotation = None;
                      value = Some (Node.create (Expression.Name (Identifier name)) ~location);
-                     origin = Some (Node.create ~location Assign.Origin.NamedTupleImplicitFields);
+                     origin = Some (Origin.create ~location Origin.NamedTupleImplicitFields);
                    })
                 ~location
             in
@@ -4381,7 +4380,7 @@ let expand_pytorch_register_buffer
                             }));
                   annotation;
                   value = Some initial_value;
-                  origin = Some (Node.create ~location Assign.Origin.PyTorchRegisterBuffer);
+                  origin = Some (Origin.create ~location Origin.PyTorchRegisterBuffer);
                 }
               |> Node.create ~location:statement_location;
             ] )
@@ -4836,7 +4835,7 @@ module SelfType = struct
                }
             |> Node.create ~location);
         annotation = None;
-        origin = Some (Node.create ~location Assign.Origin.SelfImplicitTypeVar);
+        origin = Some (Origin.create ~location Origin.SelfImplicitTypeVarAssign);
       }
     |> Node.create_with_default_location
 
@@ -4931,7 +4930,7 @@ let expand_enum_functional_syntax
                      target;
                      annotation = None;
                      value = Some value;
-                     origin = Some (Node.create ~location Assign.Origin.FunctionalEnumImplicitAuto);
+                     origin = Some (Origin.create ~location Origin.FunctionalEnumImplicitAutoAssign);
                    }
                 |> Node.create ~location)
           | _ -> None

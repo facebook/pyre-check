@@ -418,7 +418,7 @@ let test_try_block_preamble _ =
               annotation = None;
               value =
                 Some (Node.create ~location:~@"4:7-4:14" (Expression.Constant Constant.Ellipsis));
-              origin = Some (Node.create ~location:~@"4:7-4:14" Assign.Origin.TryHandler);
+              origin = Some (Origin.create ~location:~@"4:7-4:14" Origin.TryHandlerAssign);
             };
       };
       {
@@ -576,7 +576,7 @@ let test_for_loop_preamble _ =
                       };
                   location = ~@"1:4-1:10";
                 };
-            origin = Some (Node.create ~location:~@"1:4-1:10" Assign.Origin.For);
+            origin = Some (Origin.create ~location:~@"1:4-1:10" Origin.ForAssign);
           };
       location = ~@"1:4-1:10";
     };
@@ -668,7 +668,7 @@ let test_for_loop_preamble _ =
                       };
                   location = ~@"2:10-3:4";
                 };
-            origin = Some { Node.location = ~@"2:10-3:4"; value = Assign.Origin.For };
+            origin = Some { Origin.location = ~@"2:10-3:4"; kind = Origin.ForAssign };
           };
       location = ~@"2:10-3:4";
     };

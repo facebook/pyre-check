@@ -296,13 +296,15 @@ let collect_nodes_as_strings source =
   Collector.collect source
 
 
-let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
-  let location =
-    {
-      Location.start = { Location.line = start_line; Location.column = start_column };
-      stop = { Location.line = stop_line; Location.column = stop_column };
-    }
-  in
+let make_location ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
+  {
+    Location.start = { Location.line = start_line; Location.column = start_column };
+    stop = { Location.line = stop_line; Location.column = stop_column };
+  }
+
+
+let node ~start ~stop =
+  let location = make_location ~start ~stop in
   Node.create ~location
 
 

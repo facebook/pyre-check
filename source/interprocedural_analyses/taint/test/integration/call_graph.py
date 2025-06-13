@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
+from typing import Mapping
+from typing_extensions import TypeGuard
 
 # Demonstrate a (currently fixed) false positive due to type resolution.
 
@@ -23,7 +25,7 @@ class NotSource:
         pass
 
 
-def test_multi_assign():
+def test_chained_assign():
     x = NotSource()
     x = y = x.method()
     # Treating it as x = x.method(); x = y would lead to a false positive.
@@ -33,3 +35,25 @@ def test_multi_assign():
 
 def test_default_parameters(x: str = _test_source() + "") -> None:
     _test_sink(x)
+
+
+class LogRecord:
+    args: tuple[object, ...] | Mapping[str, object] | None = None
+
+    def __init__(self) -> None: ...
+
+
+def is_dict(obj: object) -> TypeGuard[dict[object, object]]:
+    return isinstance(obj, dict)
+
+
+def test_chained_assign_subscript(record: LogRecord):
+    if is_dict(record.args) and "headers" in record.args and is_dict(record.args["headers"]):
+        headers = record.args["headers"] = {**record.args["headers"]} # pyre-ignore
+        # Treated as:
+        # ```
+        # headers = {**record.args["headers"]}
+        # record.args["headers"] = {**record.args["headers"]}
+        # ```
+        # This is a corner case where the type resolution leads to different
+        # callees in the right hand side expression

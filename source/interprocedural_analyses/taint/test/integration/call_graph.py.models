@@ -150,9 +150,42 @@
 {
   "kind": "model",
   "data": {
+    "callable": "call_graph.is_dict",
+    "filename": "call_graph.py",
+    "callable_line": 46,
+    "tito": [
+      {
+        "port": "formal(obj, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "bool" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 47, "start": 22, "end": 25 } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "call_graph.test_default_parameters",
     "filename": "call_graph.py",
-    "callable_line": 34,
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -165,8 +198,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 35, "start": 15, "end": 16 },
-            "call_site": "35:4-35:17"
+            "origin": { "line": 37, "start": 15, "end": 16 },
+            "call_site": "37:4-37:17"
           }
         ]
       }
@@ -177,9 +210,9 @@
   "kind": "issue",
   "data": {
     "callable": "call_graph.test_default_parameters",
-    "callable_line": 34,
+    "callable_line": 36,
     "code": 5002,
-    "line": 35,
+    "line": 37,
     "start": 15,
     "end": 16,
     "filename": "call_graph.py",
@@ -201,8 +234,8 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 34, "start": 37, "end": 51 } ],
-            "origin": { "line": 34, "start": 37, "end": 51 }
+            "tito_positions": [ { "line": 36, "start": 37, "end": 51 } ],
+            "origin": { "line": 36, "start": 37, "end": 51 }
           }
         ]
       },
@@ -217,8 +250,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 35, "start": 15, "end": 16 },
-            "call_site": "35:4-35:17"
+            "origin": { "line": 37, "start": 15, "end": 16 },
+            "call_site": "37:4-37:17"
           }
         ]
       }
@@ -338,7 +371,7 @@
   "data": {
     "callable": "call_graph.IsSource.method",
     "filename": "call_graph.py",
-    "callable_line": 14,
+    "callable_line": 16,
     "sources": [
       {
         "port": "result",
@@ -353,7 +386,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 15, "start": 15, "end": 29 },
+            "origin": { "line": 17, "start": 15, "end": 29 },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
           }

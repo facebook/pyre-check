@@ -223,7 +223,11 @@ let test_assign_locations _ =
              value =
                Some (node ~start:(1, 8) ~stop:(1, 9) (Expression.Constant (Constant.Integer 1)));
              origin =
-               Some (node ~start:(1, 0) ~stop:(1, 9) (Assign.Origin.ChainedAssign { index = 0 }));
+               Some
+                 {
+                   Origin.location = make_location ~start:(1, 0) ~stop:(1, 9);
+                   kind = Origin.ChainedAssign { index = 0 };
+                 };
            });
       node
         ~start:(1, 4)
@@ -235,7 +239,11 @@ let test_assign_locations _ =
              value =
                Some (node ~start:(1, 8) ~stop:(1, 9) (Expression.Constant (Constant.Integer 1)));
              origin =
-               Some (node ~start:(1, 4) ~stop:(1, 9) (Assign.Origin.ChainedAssign { index = 1 }));
+               Some
+                 {
+                   Origin.location = make_location ~start:(1, 4) ~stop:(1, 9);
+                   kind = Origin.ChainedAssign { index = 1 };
+                 };
            });
     ];
   assert_source_locations
@@ -742,7 +750,11 @@ let test_call_locations _ =
              value =
                Some (node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "y")));
              origin =
-               Some (node ~start:(1, 0) ~stop:(1, 12) (Assign.Origin.ChainedAssign { index = 0 }));
+               Some
+                 {
+                   Origin.location = make_location ~start:(1, 0) ~stop:(1, 12);
+                   kind = Origin.ChainedAssign { index = 0 };
+                 };
            });
       node
         ~start:(1, 4)
@@ -765,7 +777,11 @@ let test_call_locations _ =
                Some (node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "y")));
              annotation = None;
              origin =
-               Some (node ~start:(1, 4) ~stop:(1, 12) (Assign.Origin.ChainedAssign { index = 1 }));
+               Some
+                 {
+                   Origin.location = make_location ~start:(1, 4) ~stop:(1, 12);
+                   kind = Origin.ChainedAssign { index = 1 };
+                 };
            });
     ];
   assert_source_locations
