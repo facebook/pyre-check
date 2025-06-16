@@ -14,12 +14,9 @@
 #include <caml/fail.h>
 #include <caml/mlvalues.h>
 
-#include <sqlite3.h>
-
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/types.h>
 
 #include "hh_assert.h"
 
