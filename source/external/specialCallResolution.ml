@@ -20,8 +20,7 @@ let redirect
     { Call.callee; arguments; origin = call_origin }
   =
   let is_async_task base =
-    resolve_expression_to_type base
-    |> fun annotation -> Set.exists recognized_callable_target_types ~f:(Type.equal annotation)
+    resolve_expression_to_type base |> Set.mem recognized_callable_target_types
   in
   match Node.value callee with
   | Name (Name.Attribute { base; attribute = "async_delay" | "async_schedule"; _ })
