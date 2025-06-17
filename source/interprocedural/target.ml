@@ -121,14 +121,7 @@ module Regular = struct
 
 
   let pp_external formatter = function
-    | Function { name; kind } ->
-        Format.fprintf
-          formatter
-          "%a%a"
-          Reference.pp
-          (name |> Reference.create |> Reference.delocalize)
-          pp_kind
-          kind
+    | Function { name; kind } -> Format.fprintf formatter "%s%a" name pp_kind kind
     | Method { class_name; method_name; kind } ->
         Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
     | Override { class_name; method_name; kind } ->
