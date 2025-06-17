@@ -704,6 +704,7 @@ module Unresolved = struct
     | BypassingDecorators of bypassing_decorators
     | UnrecognizedCallee
     | AnonymousCallableType
+    | UnknownCallableFromType
     | UnknownConstructorCallable
     | AnyTopCallableClass
     | UnknownCallableProtocol
@@ -2376,30 +2377,43 @@ let rec resolve_callees_from_type
               targets
           in
           CallCallees.create ~call_targets:targets ()
-      | None ->
+      | None -> (
           let target =
-            match callee_kind with
-            | Method _ -> Target.create_method_from_reference name
-            | _ -> Target.create_function name
-          in
-          let is_class_method, is_static_method =
-            Target.CallablesSharedMemory.ReadOnly.get_method_kind
+            Target.CallablesSharedMemory.ReadOnly.callable_from_reference
               callables_to_definitions_map
-              target
+              name
           in
-          CallCallees.create
-            ~call_targets:
-              [
-                CallTarget.create_with_default_index
-                  ~explicit_receiver:true
-                  ~implicit_dunder_call:dunder_call
-                  ~return_type:(Some return_type)
-                  ~is_class_method
-                  ~is_static_method
-                  ?receiver_type
-                  target;
-              ]
-            ())
+          match target with
+          | Some target ->
+              let is_class_method, is_static_method =
+                Target.CallablesSharedMemory.ReadOnly.get_method_kind
+                  callables_to_definitions_map
+                  target
+              in
+              CallCallees.create
+                ~call_targets:
+                  [
+                    CallTarget.create_with_default_index
+                      ~explicit_receiver:true
+                      ~implicit_dunder_call:dunder_call
+                      ~return_type:(Some return_type)
+                      ~is_class_method
+                      ~is_static_method
+                      ?receiver_type
+                      target;
+                  ]
+                ()
+          | None ->
+              CallCallees.unresolved
+                ~debug
+                ~message:
+                  (lazy
+                    (Format.asprintf
+                       "type resolution returned unknown callable %a"
+                       Reference.pp
+                       name))
+                ~reason:Unresolved.UnknownCallableFromType
+                ()))
   | Type.Callable { kind = Anonymous; _ } ->
       CallCallees.unresolved
         ~debug

@@ -802,6 +802,19 @@ module CallablesSharedMemory = struct
       | None -> None
 
 
+    (* Return the function or method target from a reference *)
+    let callable_from_reference { defines; _ } name =
+      let function_target = create_function name in
+      if DefinesSharedMemory.ReadOnly.mem defines function_target then
+        Some function_target
+      else
+        let method_target = create_method_from_reference name in
+        if DefinesSharedMemory.ReadOnly.mem defines method_target then
+          Some method_target
+        else
+          None
+
+
     let mem { signatures; _ } target = SignaturesSharedMemory.mem signatures target
   end
 

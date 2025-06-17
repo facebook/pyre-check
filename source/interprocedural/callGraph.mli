@@ -121,6 +121,7 @@ module Unresolved : sig
     | BypassingDecorators of bypassing_decorators
     | UnrecognizedCallee
     | AnonymousCallableType
+    | UnknownCallableFromType
     | UnknownConstructorCallable
     | AnyTopCallableClass
     | UnknownCallableProtocol

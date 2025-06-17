@@ -2,7 +2,6 @@
 Call dependencies
 {
   "call_graph.CallableKindConfusion.foo@decorated (method)": [
-    "call_graph.no_op_decorator (fun)[formal(f, position=0)=call_graph.CallableKindConfusion.foo (fun)]",
     "call_graph.no_op_decorator (fun)[formal(f, position=0)=call_graph.CallableKindConfusion.foo (method)]",
     "call_graph.no_op_decorator_factory (fun)",
     "call_graph.no_op_decorator_factory.inner (fun)[formal(original, position=0)=call_graph.CallableKindConfusion.foo (method)]"

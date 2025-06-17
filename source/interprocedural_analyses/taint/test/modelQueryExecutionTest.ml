@@ -129,8 +129,9 @@ let test_generated_annotations context =
     let source, _, pyre_api, configuration =
       TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
     in
-    let definitions =
-      FetchCallables.from_source ~configuration ~pyre_api ~source |> FetchCallables.get_definitions
+    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let definitions_and_stubs =
+      FetchCallables.get ~definitions:true ~stubs:true initial_callables
     in
     let scheduler = Test.mock_scheduler () in
     let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
@@ -139,7 +140,7 @@ let test_generated_annotations context =
         ~scheduler
         ~scheduler_policy
         ~pyre_api
-        definitions
+        definitions_and_stubs
     in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers

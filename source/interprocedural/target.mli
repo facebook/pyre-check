@@ -323,6 +323,8 @@ module CallablesSharedMemory : sig
 
     val get_captures : t -> target -> Define.Capture.t list option
 
+    val callable_from_reference : t -> Reference.t -> target option
+
     val mem : t -> target -> bool
   end
 
