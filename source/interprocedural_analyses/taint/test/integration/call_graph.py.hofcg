@@ -191,11 +191,6 @@ Higher order call graphs
       "call": {
         "calls": [
           {
-            "target": "$local_call_graph?test_localized_target$f",
-            "index": 0,
-            "return_type": []
-          },
-          {
             "target": "call_graph.test_localized_target.f",
             "index": 0,
             "return_type": []

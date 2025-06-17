@@ -134,6 +134,13 @@ let unbind_type_variable = function
   | annotation -> annotation
 
 
+let rec delocalize_callable_names = function
+  | Type.Union elements -> Type.Union (List.map ~f:delocalize_callable_names elements)
+  | Type.Callable ({ kind = Named name; _ } as callable) ->
+      Type.Callable { callable with kind = Named (Reference.delocalize name) }
+  | type_ -> type_
+
+
 (* Convert `ReadOnly[X]` back to just `X` *)
 let strip_readonly annotation =
   if Type.PyreReadOnly.is_readonly annotation then
@@ -182,4 +189,8 @@ let rec resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map e
         (* Lookup the base_type for the attribute you were interested in *))
     | _ -> resolve_expression_to_type expression
   in
-  annotation |> strip_optional |> strip_readonly |> unbind_type_variable
+  annotation
+  |> strip_optional
+  |> strip_readonly
+  |> unbind_type_variable
+  |> delocalize_callable_names
