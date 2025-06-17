@@ -183,6 +183,44 @@
 {
   "kind": "model",
   "data": {
+    "callable": "call_graph.no_op_decorator",
+    "filename": "call_graph.py",
+    "callable_line": 83,
+    "tito": [
+      {
+        "port": "formal(f, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "call_graph.no_op_decorator_factory.inner",
+    "filename": "call_graph.py",
+    "callable_line": 76,
+    "tito": [
+      {
+        "port": "formal(original, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "call_graph.test_default_parameters",
     "filename": "call_graph.py",
     "callable_line": 36,
@@ -387,7 +425,7 @@
               }
             ],
             "origin": { "line": 17, "start": 15, "end": 29 },
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
           }
         ]

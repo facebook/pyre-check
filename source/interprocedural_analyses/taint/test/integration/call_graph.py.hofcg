@@ -1,6 +1,22 @@
 @generated
 Higher order call graphs
 {
+  "callable": "call_graph.$toplevel",
+  "returned_callables": [],
+  "calls": {
+    "72:0-72:1|identifier|$local_call_graph$T": {
+      "identifier": {
+        "globals": [ { "target": "Obj{call_graph.T}", "index": 0 } ]
+      }
+    },
+    "72:4-72:16": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    }
+  }
+}
+{
   "callable": "call_graph.is_dict",
   "returned_callables": [],
   "calls": {
@@ -13,6 +29,40 @@ Higher order call graphs
             "return_type": [ "float", "integer", "boolean" ]
           }
         ]
+      }
+    }
+  }
+}
+{
+  "callable": "call_graph.no_op_decorator_factory",
+  "returned_callables": [
+    {
+      "target": "call_graph.no_op_decorator_factory.inner",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "76:4-78:23": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "call_graph.no_op_decorator_factory.inner",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "call_graph.no_op_decorator_factory.inner",
+  "returned_callables": [],
+  "calls": {
+    "77:8-77:39": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }
@@ -201,6 +251,75 @@ Higher order call graphs
   }
 }
 {
+  "callable": "call_graph.CallableKindConfusion.foo@decorated",
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "return_type": []
+    },
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "88:5-88:20|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "call_graph.no_op_decorator[formal(f, position=0)=call_graph.CallableKindConfusion.foo]",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "call_graph.no_op_decorator[formal(f, position=0)=call_graph.CallableKindConfusion.foo]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "89:5-89:31": {
+      "call": {
+        "calls": [
+          {
+            "target": "call_graph.no_op_decorator_factory",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "89:5-89:31|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "call_graph.no_op_decorator_factory.inner[formal(original, position=0)=call_graph.CallableKindConfusion.foo]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "90:4-94:14|artificial-attribute-access|for-decorated-target-callee:call_graph.CallableKindConfusion.foo": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "call_graph.CallableKindConfusion.foo",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
   "callable": "call_graph.IsSource.method",
   "returned_callables": [],
   "calls": {
@@ -209,6 +328,47 @@ Higher order call graphs
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
+      }
+    }
+  }
+}
+{
+  "callable": "call_graph.no_op_decorator[formal(f, position=0)=call_graph.CallableKindConfusion.foo]",
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "call_graph.no_op_decorator[formal(f, position=0)=call_graph.CallableKindConfusion.foo]",
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "call_graph.no_op_decorator_factory.inner[formal(original, position=0)=call_graph.CallableKindConfusion.foo]",
+  "returned_callables": [
+    {
+      "target": "call_graph.CallableKindConfusion.foo",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "77:8-77:39": {
+      "call": {
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }

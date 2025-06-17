@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Mapping
+from typing import Mapping, TypeVar, Callable
 from typing_extensions import TypeGuard
 
 # Demonstrate a (currently fixed) false positive due to type resolution.
@@ -67,3 +67,28 @@ def test_localized_target():
             return
 
     f()
+
+
+T = TypeVar("T")
+
+
+def no_op_decorator_factory(x: int) -> Callable[[T], T]: # pyre-ignore
+    def inner(original: T) -> T:
+        setattr(original, "foo", "bar")
+        return original
+
+    return inner
+
+
+def no_op_decorator(f: T) -> T:
+    return f
+
+
+class CallableKindConfusion:
+    @no_op_decorator
+    @no_op_decorator_factory(1)
+    def foo(self) -> None:
+        # Call graph for CallableKindConfusion.foo@decorated contains a call to
+        # `CallableKindConfusion.foo (fun)`. It should be
+        # `CallableKindConfusion.foo (method)` instead.
+        return
