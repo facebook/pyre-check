@@ -35,7 +35,12 @@ module Function = struct
   }
   [@@deriving show { with_path = false }, sexp, compare, hash, eq]
 
-  let create ?(kind = Normal) reference = { name = Reference.show reference; kind }
+  let create ?(kind = Normal) reference =
+    let () =
+      if Reference.is_local reference then
+        failwith (Format.asprintf "Invalid callable name: %a" Reference.pp reference)
+    in
+    { name = Reference.show reference; kind }
 end
 
 module Method = struct
@@ -47,6 +52,10 @@ module Method = struct
   [@@deriving show { with_path = false }, sexp, compare, hash, eq]
 
   let create ?(kind = Normal) class_name method_name =
+    let () =
+      if Reference.is_local class_name then
+        failwith (Format.asprintf "Invalid class name: %a" Reference.pp class_name)
+    in
     { class_name = Reference.show class_name; method_name; kind }
 end
 
@@ -238,8 +247,7 @@ module Regular = struct
 
 
   let create_derived_override_exn ~at_type = function
-    | Override { method_name; kind; _ } ->
-        Override { class_name = Reference.show at_type; method_name; kind }
+    | Override { method_name; kind; _ } -> Override (Method.create ~kind at_type method_name)
     | _ -> failwith "unexpected"
 end
 
