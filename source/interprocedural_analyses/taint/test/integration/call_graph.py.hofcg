@@ -147,6 +147,65 @@ Higher order call graphs
   }
 }
 {
+  "callable": "call_graph.test_localized_target",
+  "returned_callables": [],
+  "calls": {
+    "63:7-63:12|artificial-call|comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__lt__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "63:7-63:12|artificial-call|normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "int.__ge__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [ "float", "integer", "boolean" ],
+            "receiver_class": "int"
+          }
+        ]
+      }
+    },
+    "66:8-67:18": {
+      "define": {
+        "define_targets": [
+          {
+            "target": "call_graph.test_localized_target.f",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "69:4-69:7": {
+      "call": {
+        "calls": [
+          {
+            "target": "$local_call_graph?test_localized_target$f",
+            "index": 0,
+            "return_type": []
+          },
+          {
+            "target": "call_graph.test_localized_target.f",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "call_graph.IsSource.method",
   "returned_callables": [],
   "calls": {

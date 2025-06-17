@@ -57,3 +57,13 @@ def test_chained_assign_subscript(record: LogRecord):
         # ```
         # This is a corner case where the type resolution leads to different
         # callees in the right hand side expression
+
+
+def test_localized_target():
+    if 1 < 2:
+        f = lambda: None
+    else:
+        def f() -> None:
+            return
+
+    f()

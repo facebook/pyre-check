@@ -12,5 +12,10 @@ Call dependencies
   ],
   "call_graph.test_default_parameters (fun)": [
     "_test_sink (fun)", "_test_source (fun)"
+  ],
+  "call_graph.test_localized_target (fun)": [
+    "$local_call_graph?test_localized_target$f (fun)",
+    "call_graph.test_localized_target.f (fun)", "int.__ge__ (method)",
+    "int.__lt__ (method)"
   ]
 }
