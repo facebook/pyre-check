@@ -209,8 +209,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
           add_sink_from_attribute_model ~class_name ~positional:true (position + 1))
     in
     [
-      ( Target.Regular.Method { Target.class_name; method_name = "__init__"; kind = Normal }
-        |> Target.from_regular,
+      ( Target.create_method (Reference.create class_name) "__init__",
         {
           Model.forward = Model.Forward.empty;
           backward = { Model.Backward.taint_in_taint_out; sink_taint };
@@ -231,8 +230,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
       (* Should not omit this model. Otherwise the mode is "obscure", thus leading to a tito model,
          which joins the taint on every element of the tuple. *)
       [
-        ( Target.Regular.Method { Target.class_name; method_name = "__new__"; kind = Normal }
-          |> Target.from_regular,
+        ( Target.create_method (Reference.create class_name) "__new__",
           {
             Model.forward = Model.Forward.empty;
             backward = Model.Backward.empty;
@@ -292,8 +290,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
         ~f:(add_sink_from_attribute_model ~class_name ~positional:false)
     in
     [
-      ( Target.Regular.Method { Target.class_name; method_name = "__init__"; kind = Normal }
-        |> Target.from_regular,
+      ( Target.create_method (Reference.create class_name) "__init__",
         {
           Model.forward = Model.Forward.empty;
           backward = { Model.Backward.taint_in_taint_out; sink_taint };

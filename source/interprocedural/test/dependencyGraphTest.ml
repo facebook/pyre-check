@@ -101,8 +101,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
 
 let create_callable = function
   | `Function name -> !&name |> Target.create_function
-  | `Method name -> !&name |> Target.create_method
-  | `Override name -> !&name |> Target.create_override
+  | `Method name -> !&name |> Target.create_method_from_reference
+  | `Override name -> !&name |> Target.create_override_from_reference
 
 
 let compare_dependency_graph call_graph ~expected =
@@ -523,24 +523,27 @@ let test_prune_callables _ =
     =
     let create name =
       if String.is_prefix ~prefix:"O|" (Reference.show name) then
-        Target.create_override (String.drop_prefix (Reference.show name) 2 |> Reference.create)
+        Target.create_override_from_reference
+          (String.drop_prefix (Reference.show name) 2 |> Reference.create)
       else
-        Target.create_method name
+        Target.create_method_from_reference name
     in
     let callgraph =
       List.map callgraph ~f:(fun (key, values) ->
-          ( Target.create_method (Reference.create key),
+          ( Target.create_method_from_reference (Reference.create key),
             List.map values ~f:(fun value -> create (Reference.create value)) ))
       |> CallGraph.WholeProgramCallGraph.of_alist_exn
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->
-          ( Target.create_method (Reference.create key),
+          ( Target.create_method_from_reference (Reference.create key),
             List.map values ~f:(fun value -> Reference.create value) ))
       |> OverrideGraph.Heap.of_alist_exn
     in
     let project_callables =
-      List.map ~f:(fun name -> name |> Reference.create |> Target.create_method) project_callables
+      List.map
+        ~f:(fun name -> name |> Reference.create |> Target.create_method_from_reference)
+        project_callables
     in
     let overrides = DependencyGraph.Reversed.from_overrides overrides in
     let dependencies =

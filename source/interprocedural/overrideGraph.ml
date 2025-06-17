@@ -93,11 +93,7 @@ module Heap = struct
               else
                 Target.Normal
             in
-            Some
-              ( Target.Regular.Method
-                  { class_name = Reference.show ancestor_parent; method_name; kind }
-                |> Target.from_regular,
-                class_name )
+            Some (Target.create_method ~kind ancestor_parent method_name, class_name)
         in
         let extract_define = function
           | { Node.value = Statement.Define define; _ } -> Some define

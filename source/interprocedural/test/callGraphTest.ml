@@ -252,7 +252,7 @@ let test_call_graph_of_define =
                           CallTarget.create
                             ~implicit_receiver:true
                             ~receiver_class:"test.C"
-                            (Target.create_method (Reference.create "test.C.m"));
+                            (Target.create_method !&"test.C" "m");
                         ]
                       ()) );
              ]
@@ -419,7 +419,7 @@ let test_call_graph_of_define =
                           CallTarget.create
                             ~implicit_receiver:true
                             ~receiver_class:"test.C"
-                            (Target.create_method (Reference.create "test.C.m"));
+                            (Target.create_method !&"test.C" "m");
                         ]
                       ()) );
              ]
@@ -453,7 +453,7 @@ let test_call_graph_of_define =
                           CallTarget.create
                             ~implicit_receiver:true
                             ~receiver_class:"test.C"
-                            (Target.create_override (Reference.create "test.C.m"));
+                            (Target.create_override !&"test.C" "m");
                         ]
                       ()) );
              ]
@@ -486,11 +486,11 @@ let test_call_graph_of_define =
                           CallTarget.create
                             ~implicit_receiver:true
                             ~receiver_class:"test.D"
-                            (Target.create_method (Reference.create "test.C.m"));
+                            (Target.create_method !&"test.C" "m");
                           CallTarget.create
                             ~implicit_receiver:true
                             ~receiver_class:"test.D"
-                            (Target.create_method (Reference.create "test.E.m"));
+                            (Target.create_method !&"test.E" "m");
                         ]
                       ()) );
              ]
@@ -516,7 +516,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             ~implicit_dunder_call:true
                             ~receiver_class:"test.C"
-                            (Target.create_method (Reference.create "test.C.__call__"));
+                            (Target.create_method !&"test.C" "__call__");
                         ]
                       ()) );
              ]
@@ -543,7 +543,7 @@ let test_call_graph_of_define =
                             ~implicit_dunder_call:true
                             ~return_type:(Some ReturnType.bool)
                             ~is_static_method:true
-                            (Target.create_method (Reference.create "test.C.__call__"));
+                            (Target.create_method !&"test.C" "__call__");
                         ]
                       ()) );
              ]
@@ -569,7 +569,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             ~return_type:(Some ReturnType.bool)
                             ~receiver_class:"test.C"
-                            (Target.create_method (Reference.create "test.C.__call__"));
+                            (Target.create_method !&"test.C" "__call__");
                         ]
                       ()) );
              ]
@@ -597,7 +597,7 @@ let test_call_graph_of_define =
                             ~implicit_dunder_call:true
                             ~return_type:(Some ReturnType.bool)
                             ~receiver_class:"test.C"
-                            (Target.create_method (Reference.create "test.C.__call__"));
+                            (Target.create_method !&"test.C" "__call__");
                         ]
                       ()) );
              ]
@@ -4261,7 +4261,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Override
                                {
-                                 Target.class_name = "test.Base";
+                                 Target.Method.class_name = "test.Base";
                                  method_name = "query";
                                  kind = Normal;
                                });
@@ -4276,7 +4276,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.Base";
+                                 Target.Method.class_name = "test.Base";
                                  method_name = "query";
                                  kind = Decorated;
                                });
@@ -4284,7 +4284,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.SubChild";
+                                 Target.Method.class_name = "test.SubChild";
                                  method_name = "query";
                                  kind = Normal;
                                });
@@ -4331,7 +4331,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.BaseA";
+                                 Target.Method.class_name = "test.BaseA";
                                  method_name = "query";
                                  kind = Decorated;
                                });
@@ -4349,7 +4349,7 @@ let test_call_graph_of_define =
                                {
                                  (* Not `test.BaseC`, because `A` is the first parent class of
                                     `Child`. *)
-                                 Target.class_name = "test.BaseA";
+                                 Target.Method.class_name = "test.BaseA";
                                  method_name = "query";
                                  kind = Decorated;
                                });
@@ -4477,7 +4477,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Override
                                {
-                                 Target.class_name = "test.A";
+                                 Target.Method.class_name = "test.A";
                                  method_name = "query";
                                  kind = Normal;
                                });
@@ -4493,7 +4493,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.A";
+                                 Target.Method.class_name = "test.A";
                                  method_name = "query";
                                  kind = Decorated;
                                });
@@ -4502,7 +4502,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.D";
+                                 Target.Method.class_name = "test.D";
                                  method_name = "query";
                                  kind = Normal;
                                });
@@ -4519,7 +4519,7 @@ let test_call_graph_of_define =
                             ~receiver_class:"test.C"
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.C";
+                                 Target.Method.class_name = "test.C";
                                  method_name = "query";
                                  kind = Normal;
                                });
@@ -4537,7 +4537,7 @@ let test_call_graph_of_define =
                             ~index:1
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.D";
+                                 Target.Method.class_name = "test.D";
                                  method_name = "query";
                                  kind = Normal;
                                });
@@ -4577,7 +4577,7 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             (Target.Regular.Method
                                {
-                                 Target.class_name = "test.A";
+                                 Target.Method.class_name = "test.A";
                                  method_name = "query";
                                  kind = Decorated;
                                });
@@ -5129,7 +5129,11 @@ let test_call_graph_of_define =
                             ~implicit_receiver:true
                             ~receiver_class:"test.B"
                             (Target.Regular.Method
-                               { Target.class_name = "test.B"; method_name = "foo"; kind = Normal });
+                               {
+                                 Target.Method.class_name = "test.B";
+                                 method_name = "foo";
+                                 kind = Normal;
+                               });
                         ]
                       ()) );
              ]

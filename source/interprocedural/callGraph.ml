@@ -1134,8 +1134,8 @@ module CallCallees = struct
 
   let is_object_new = function
     | [] -> (* Unresolved call, assume it's object.__new__ *) true
-    | [call_target] -> (
-        match Target.get_regular call_target.CallTarget.target with
+    | [{ CallTarget.target; _ }] -> (
+        match Target.get_regular target with
         | Target.Regular.Method { class_name = "object"; method_name = "__new__"; kind = Normal } ->
             true
         | _ -> false)
@@ -1144,8 +1144,8 @@ module CallCallees = struct
 
   let is_object_init = function
     | [] -> (* Unresolved call, assume it's object.__init__ *) true
-    | [call_target] -> (
-        match Target.get_regular call_target.CallTarget.target with
+    | [{ CallTarget.target; _ }] -> (
+        match Target.get_regular target with
         | Target.Regular.Method { class_name = "object"; method_name = "__init__"; kind = Normal }
           ->
             true
@@ -2309,9 +2309,7 @@ let compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type imp
         in
         let override_targets =
           let create_override_target class_name =
-            get_actual_target
-              (Target.Regular.Method { class_name = Reference.show class_name; method_name; kind }
-              |> Target.from_regular)
+            get_actual_target (Target.create_method ~kind class_name method_name)
           in
           List.filter overriding_types ~f:keep_subtypes
           |> fun subtypes -> List.map subtypes ~f:create_override_target
@@ -2351,13 +2349,14 @@ let rec resolve_callees_from_type
       | Some receiver_type ->
           let targets =
             match callee_kind with
-            | CalleeKind.Method { is_direct_call = true; _ } -> [Target.create_method name]
+            | CalleeKind.Method { is_direct_call = true; _ } ->
+                [Target.create_method_from_reference name]
             | _ ->
                 compute_indirect_targets
                   ~pyre_in_context
                   ~override_graph
                   ~receiver_type
-                  (Target.create_method name)
+                  (Target.create_method_from_reference name)
           in
           let targets =
             List.map
@@ -2380,7 +2379,7 @@ let rec resolve_callees_from_type
       | None ->
           let target =
             match callee_kind with
-            | Method _ -> Target.create_method name
+            | Method _ -> Target.create_method_from_reference name
             | _ -> Target.create_function name
           in
           let is_class_method, is_static_method =
@@ -2488,13 +2487,7 @@ let rec resolve_callees_from_type
                     ~return_type
                 in
                 let target =
-                  Target.Regular.Method
-                    {
-                      Target.class_name = primitive_callable_name;
-                      method_name = "__call__";
-                      kind = Normal;
-                    }
-                  |> Target.from_regular
+                  Target.create_method (Reference.create primitive_callable_name) "__call__"
                 in
                 let is_class_method, is_static_method =
                   Target.CallablesSharedMemory.ReadOnly.get_method_kind
@@ -3294,7 +3287,6 @@ let resolve_recognized_callees
     when is_all_names (Node.value callee)
          && Set.mem SpecialCallResolution.recognized_callable_target_types callee_type ->
       Ast.Expression.name_to_reference name
-      >>| Reference.show
       >>| fun name ->
       let return_type =
         let pyre_api = PyrePysaEnvironment.InContext.pyre_api pyre_in_context in
@@ -3306,7 +3298,7 @@ let resolve_recognized_callees
             CallTarget.create_with_default_index
               ~implicit_dunder_call:false
               ~return_type:(Some return_type)
-              (Target.Regular.Function { name; kind = Normal } |> Target.from_regular);
+              (Target.create_function name);
           ]
         ()
   | _ -> None)
@@ -3354,8 +3346,7 @@ let resolve_callee_ignoring_decorators
                 CallTarget.create_with_default_index
                   ~implicit_dunder_call:false
                   ~return_type:(Some (return_type ()))
-                  (Target.Regular.Function { name = Reference.show name; kind = Normal }
-                  |> Target.from_regular);
+                  (Target.create_function name);
               ]
         | Some
             (PyrePysaLogic.ResolvedReference.ModuleAttribute
@@ -3367,8 +3358,8 @@ let resolve_callee_ignoring_decorators
                 remaining = [attribute];
                 _;
               }) -> (
-            let class_name = Reference.create ~prefix:from name |> Reference.show in
-            PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+            let class_name = Reference.create ~prefix:from name in
+            PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api (Reference.show class_name)
             >>| Node.value
             >>| PyrePysaLogic.ClassSummary.attributes
             >>= Identifier.SerializableMap.find_opt attribute
@@ -3383,9 +3374,7 @@ let resolve_callee_ignoring_decorators
                       ~return_type:(Some (return_type ()))
                       ~is_class_method
                       ~is_static_method:static
-                      (Target.Regular.Method
-                         { Target.class_name; method_name = attribute; kind = Normal }
-                      |> Target.from_regular);
+                      (Target.create_method class_name attribute);
                   ]
             | Some attribute ->
                 let () =
@@ -3456,9 +3445,7 @@ let resolve_callee_ignoring_decorators
                     { name = "type"; arguments = [Single (Type.Primitive class_name)] }
                 in
                 let targets =
-                  Target.Regular.Method
-                    { Target.class_name = base_class; method_name = attribute; kind = Normal }
-                  |> Target.from_regular
+                  Target.create_method (Reference.create base_class) attribute
                   (* Over-approximately consider that any overriding method might be called. We
                      prioritize reducing false negatives than reducing false positives. *)
                   |> compute_indirect_targets ~pyre_in_context ~override_graph ~receiver_type
@@ -3572,9 +3559,9 @@ let resolve_attribute_access_properties
     let property_targets =
       let kind = if setter then Target.PropertySetter else Target.Normal in
       if Type.is_class_type base_type_info then
-        [Target.create_method ~kind (Reference.create ~prefix:parent attribute)]
+        [Target.create_method ~kind parent attribute]
       else
-        let callee = Target.create_method ~kind (Reference.create ~prefix:parent attribute) in
+        let callee = Target.create_method ~kind parent attribute in
         compute_indirect_targets
           ~pyre_in_context
           ~override_graph

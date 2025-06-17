@@ -849,12 +849,10 @@ let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
 let find_base_methods
     ~pyre_api
     ~callables_to_definitions_map
-    { Target.class_name; method_name; kind }
+    { Target.Method.class_name; method_name; kind }
   =
   let find_instance_method parent_class =
-    let base_method =
-      Target.Regular (Target.Regular.Method { class_name = parent_class; method_name; kind })
-    in
+    let base_method = Target.create_method ~kind (Reference.create parent_class) method_name in
     match
       Target.CallablesSharedMemory.ReadOnly.get_signature callables_to_definitions_map base_method
     with

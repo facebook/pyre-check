@@ -104,10 +104,10 @@ let outcome
 let create_callable kind define_name =
   let name = Reference.create define_name in
   match kind with
-  | `Method -> Target.create_method name
+  | `Method -> Target.create_method_from_reference name
   | `Function -> Target.create_function name
-  | `PropertySetter -> Target.create_property_setter name
-  | `Override -> Target.create_override name
+  | `PropertySetter -> Target.create_method_from_reference ~kind:Target.PropertySetter name
+  | `Override -> Target.create_override_from_reference name
   | `Object -> Target.create_object name
 
 

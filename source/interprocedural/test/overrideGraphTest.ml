@@ -31,7 +31,7 @@ let test_method_overrides context =
   let assert_method_overrides ?(other_sources = []) ?(handle = "test.py") source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
-        Target.create_method !&member, List.map overriding_types ~f:Reference.create
+        Target.create_method_from_reference !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in

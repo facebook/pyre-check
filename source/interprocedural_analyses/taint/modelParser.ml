@@ -3081,8 +3081,8 @@ end = struct
       | Some _
         when Define.Signature.is_property_setter
                (create_dummy_signature ~decorators:define_decorators name) ->
-          Target.create_property_setter name
-      | Some _ -> Target.create_method name
+          Target.create_method_from_reference ~kind:Target.PropertySetter name
+      | Some _ -> Target.create_method_from_reference name
       | None -> Target.create_function name
     in
     ParsedSignature

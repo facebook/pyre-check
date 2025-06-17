@@ -15,24 +15,28 @@ type kind =
   | Decorated
 [@@deriving show, sexp, compare, hash, eq]
 
-type function_name = {
-  name: string;
-  kind: kind;
-}
-[@@deriving show, sexp, compare, hash, eq]
+module Function : sig
+  type t = {
+    name: string;
+    kind: kind;
+  }
+  [@@deriving show, sexp, compare, hash, eq]
+end
 
-type method_name = {
-  class_name: string;
-  method_name: string;
-  kind: kind;
-}
-[@@deriving show, sexp, compare, hash, eq]
+module Method : sig
+  type t = {
+    class_name: string;
+    method_name: string;
+    kind: kind;
+  }
+  [@@deriving show, sexp, compare, hash, eq]
+end
 
 module Regular : sig
   type t =
-    | Function of function_name
-    | Method of method_name
-    | Override of method_name
+    | Function of Function.t
+    | Method of Method.t
+    | Override of Method.t
     (* Represents a global variable or field of a class that we want to model, * e.g os.environ or
        HttpRequest.GET *)
     | Object of string
@@ -105,13 +109,13 @@ val pp : Format.formatter -> t -> unit
 
 val create_function : ?kind:kind -> Reference.t -> t
 
-val create_method : ?kind:kind -> Reference.t -> t
+val create_method : ?kind:kind -> Reference.t -> string -> t
 
-val create_property_setter : Reference.t -> t
+val create_method_from_reference : ?kind:kind -> Reference.t -> t
 
-val create_override : ?kind:kind -> Reference.t -> t
+val create_override : ?kind:kind -> Reference.t -> string -> t
 
-val create_property_setter_override : Reference.t -> t
+val create_override_from_reference : ?kind:kind -> Reference.t -> t
 
 val create_object : Reference.t -> t
 
