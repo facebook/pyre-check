@@ -1966,18 +1966,9 @@ module DefineCallGraph = struct
         | Some existing_callees when ExpressionCallees.equal existing_callees callees ->
             Some existing_callees
         | Some existing_callees ->
-            Format.asprintf
-              "When trying to add callees for expression %a at %a, we found different existing \
-               callees.@.new callees: %a@.existing callees: %a"
-              Expression.pp
-              expression_for_logging
-              ExpressionIdentifier.pp
-              expression_identifier
-              ExpressionCallees.pp
-              callees
-              ExpressionCallees.pp
-              existing_callees
-            |> failwith)
+            (* TODO(T228078886): We should error here since it means we are visiting the same
+               expression twice and getting different results. *)
+            Some (ExpressionCallees.join existing_callees callees))
 
 
   let set_callees ~error_if_existing_empty ~expression_identifier ~callees =
