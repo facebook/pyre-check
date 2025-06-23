@@ -1949,7 +1949,7 @@ module DefineCallGraph = struct
         | None, None -> None)
 
 
-  let add_callees ~debug ~expression_identifier ~callees ~expression_for_logging =
+  let add_callees ~debug ~caller ~expression_identifier ~callees ~expression_for_logging =
     let () =
       log
         ~debug
@@ -1967,7 +1967,15 @@ module DefineCallGraph = struct
             Some existing_callees
         | Some existing_callees ->
             (* TODO(T228078886): We should error here since it means we are visiting the same
-               expression twice and getting different results. *)
+               expression twice and getting different results. However, this is hard to fix due to
+               the amount of AST lowering we perform. Let's just give a warning for now. *)
+            Log.warning
+              "Invariant error: When trying to add callees for expression %a in callable %a, found \
+               different existing callees. This bug in Pysa might introduce false positives."
+              Target.pp_external
+              caller
+              ExpressionIdentifier.pp_json_key
+              expression_identifier;
             Some (ExpressionCallees.join existing_callees callees))
 
 
@@ -1981,17 +1989,19 @@ module DefineCallGraph = struct
         | Some _ -> Some callees)
 
 
-  let add_call_callees ~debug ~location ~call ~callees =
+  let add_call_callees ~debug ~caller ~location ~call ~callees =
     add_callees
       ~debug
+      ~caller
       ~expression_identifier:(ExpressionIdentifier.of_call ~location call)
       ~expression_for_logging:(Node.create_with_default_location (Expression.Call call))
       ~callees:(ExpressionCallees.from_call callees)
 
 
-  let add_identifier_callees ~debug ~location ~identifier ~callees =
+  let add_identifier_callees ~debug ~caller ~location ~identifier ~callees =
     add_callees
       ~debug
+      ~caller
       ~expression_identifier:(ExpressionIdentifier.of_identifier ~location identifier)
       ~expression_for_logging:
         (Node.create_with_default_location (Expression.Name (Name.Identifier identifier)))
@@ -2000,12 +2010,14 @@ module DefineCallGraph = struct
 
   let add_define_callees
       ~debug
+      ~caller
       ~define:{ Define.signature = { name; _ }; _ }
       ~define_location
       ~callees
     =
     add_callees
       ~debug
+      ~caller
       ~expression_identifier:(ExpressionIdentifier.of_define_statement define_location)
       ~expression_for_logging:
         (Node.create_with_default_location
@@ -2027,9 +2039,10 @@ module DefineCallGraph = struct
       ~callees:(ExpressionCallees.from_identifier identifier_callees)
 
 
-  let add_attribute_access_callees ~debug ~location ~attribute_access ~callees =
+  let add_attribute_access_callees ~debug ~caller ~location ~attribute_access ~callees =
     add_callees
       ~debug
+      ~caller
       ~expression_identifier:(ExpressionIdentifier.of_attribute_access ~location attribute_access)
       ~expression_for_logging:
         (Node.create_with_default_location (Expression.Name (Name.Attribute attribute_access)))
@@ -2043,17 +2056,19 @@ module DefineCallGraph = struct
       ~callees:(ExpressionCallees.from_attribute_access callees)
 
 
-  let add_format_string_articifial_callees ~debug ~location ~format_string ~callees =
+  let add_format_string_articifial_callees ~debug ~caller ~location ~format_string ~callees =
     add_callees
       ~debug
+      ~caller
       ~expression_identifier:(ExpressionIdentifier.of_format_string_artificial ~location)
       ~expression_for_logging:(Node.create_with_default_location format_string)
       ~callees:(ExpressionCallees.from_format_string_artificial callees)
 
 
-  let add_format_string_stringify_callees ~debug ~location ~substring ~callees =
+  let add_format_string_stringify_callees ~debug ~caller ~location ~substring ~callees =
     add_callees
       ~debug
+      ~caller
       ~expression_identifier:(ExpressionIdentifier.of_format_string_stringify ~location)
       ~expression_for_logging:(Node.create_with_default_location substring)
       ~callees:(ExpressionCallees.from_format_string_stringify callees)
@@ -4222,7 +4237,7 @@ module CallGraphBuilder = struct
     resolve_identifier ~define_name ~pyre_in_context
 
 
-  let build_for_inner_define ~context:{ Context.debug; _ } ~callees_at_location = function
+  let build_for_inner_define ~context:{ Context.debug; callable; _ } ~callees_at_location = function
     | {
         Node.value =
           Statement.Define
@@ -4238,6 +4253,7 @@ module CallGraphBuilder = struct
         callees_at_location :=
           DefineCallGraph.add_define_callees
             ~debug
+            ~caller:callable
             ~define
             ~define_location:location
             ~callees:
@@ -4262,14 +4278,20 @@ module CallGraphBuilder = struct
 
   let fold_call
       ~folder
-      ~state:({ State.callees_at_location; context = { Context.debug; _ }; _ } as state)
+      ~state:({ State.callees_at_location; context = { Context.debug; callable; _ }; _ } as state)
       ~location
       ({ Call.callee = callee_expression; arguments; origin = call_origin } as call)
     =
     let () = check_expression_identifier_invariant ~state ~location (Expression.Call call) in
     let callees = resolve_callees ~state ~location ~call in
     callees_at_location :=
-      DefineCallGraph.add_call_callees ~debug ~location ~call ~callees !callees_at_location;
+      DefineCallGraph.add_call_callees
+        ~debug
+        ~caller:callable
+        ~location
+        ~call
+        ~callees
+        !callees_at_location;
     (* Special-case `getattr()` and `setattr()` for the taint analysis. *)
     let () =
       match call with
@@ -4298,6 +4320,7 @@ module CallGraphBuilder = struct
           callees_at_location :=
             DefineCallGraph.add_attribute_access_callees
               ~debug
+              ~caller:callable
               ~location
               ~attribute_access:{ Name.Attribute.base; attribute; origin }
               ~callees
@@ -4340,6 +4363,7 @@ module CallGraphBuilder = struct
           callees_at_location :=
             DefineCallGraph.add_attribute_access_callees
               ~debug
+              ~caller:callable
               ~location
               ~attribute_access:{ Name.Attribute.base = self; attribute; origin }
               ~callees
@@ -4377,8 +4401,12 @@ module CallGraphBuilder = struct
   let fold_name
       ~folder
       ~state:
-        ({ State.callees_at_location; assignment_target; context = { Context.debug; _ }; _ } as
-        state)
+        ({
+           State.callees_at_location;
+           assignment_target;
+           context = { Context.debug; callable; _ };
+           _;
+         } as state)
       ~location
       name
     =
@@ -4397,6 +4425,7 @@ module CallGraphBuilder = struct
         callees_at_location :=
           DefineCallGraph.add_attribute_access_callees
             ~debug
+            ~caller:callable
             ~location
             ~attribute_access
             ~callees
@@ -4408,6 +4437,7 @@ module CallGraphBuilder = struct
               callees_at_location :=
                 DefineCallGraph.add_identifier_callees
                   ~debug
+                  ~caller:callable
                   ~location
                   ~identifier
                   ~callees
@@ -4449,6 +4479,7 @@ module CallGraphBuilder = struct
       DefineCallGraph.add_format_string_articifial_callees
         ~debug
         ~location
+        ~caller:callable
         ~format_string:(Expression.FormatString substrings)
         ~callees:(FormatStringArtificialCallees.from_f_string_targets [artificial_target])
         !callees_at_location;
@@ -4500,6 +4531,7 @@ module CallGraphBuilder = struct
                 callees_at_location :=
                   DefineCallGraph.add_format_string_stringify_callees
                     ~debug
+                    ~caller:callable
                     ~location:expression_location
                     ~substring:(Node.value expression)
                     ~callees:(FormatStringStringifyCallees.from_stringify_targets call_targets)
@@ -6023,7 +6055,6 @@ let higher_order_call_graph_of_define
 
     let maximum_parameterized_targets_at_call_site = maximum_parameterized_targets_at_call_site
 
-    (* TODO(T219483466): Make this configurable from command line. *)
     let maximum_parameterized_targets_when_analyzing_define =
       maximum_parameterized_targets_at_call_site
   end
