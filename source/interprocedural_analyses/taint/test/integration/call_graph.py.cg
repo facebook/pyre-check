@@ -21,5 +21,12 @@ Call dependencies
   "call_graph.test_localized_target (fun)": [
     "call_graph.test_localized_target.f (fun)", "int.__ge__ (method)",
     "int.__lt__ (method)"
+  ],
+  "call_graph.test_match_type_of (fun)": [
+    "_test_sink (fun)", "call_graph.namespace.A.__call__ (method)",
+    "call_graph.namespace.B.__call__ (method)",
+    "call_graph.namespace.C.__call__ (method)", "object.__eq__ (method)",
+    "object.__ne__ (method)", "type.__init__ (method)",
+    "type.__new__ (method)"
   ]
 }

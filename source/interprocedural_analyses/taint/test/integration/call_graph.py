@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Mapping, TypeVar, Callable
+from typing import Mapping, TypeVar, Callable, Union
 from typing_extensions import TypeGuard
 
 # Demonstrate a (currently fixed) false positive due to type resolution.
@@ -88,7 +88,43 @@ class CallableKindConfusion:
     @no_op_decorator
     @no_op_decorator_factory(1)
     def foo(self) -> None:
-        # Call graph for CallableKindConfusion.foo@decorated contains a call to
-        # `CallableKindConfusion.foo (fun)`. It should be
-        # `CallableKindConfusion.foo (method)` instead.
+        # In previous versions of Pysa, the Call graph for
+        # CallableKindConfusion.foo@decorated would contain a call to
+        # `CallableKindConfusion.foo (fun)` instead of
+        # `CallableKindConfusion.foo (method)`. This is now fixed.
         return
+
+
+class namespace:
+    class A:
+        def __init__(self, x): pass
+        def __call__(self): pass
+
+    class B:
+        def __init__(self, x): pass
+        def __call__(self): pass
+
+    class C:
+        def __init__(self, x): pass
+        def __call__(self): pass
+
+
+def test_match_type_of(x: Union[namespace.A, namespace.B, namespace.C]):
+    # The `match` is currently translated into:
+    # ```
+    # if type(x) == A: ..
+    # elif type(x) == B: ...
+    # elif type(x) == C: ...
+    # ```
+    # After each implicit `else`, we learn that the type is not A, or B, or C
+    # Hence each time we compute the call graph for `type(x)`, we add different
+    # higher order parameters (first one has all A,B,C, second one has B,C, etc.)
+    # This leads to having different callees for the same original expression,
+    # breaking a call graph invariant.
+    match type(x):
+        case namespace.A:
+            _test_sink(x)
+        case namespace.B:
+            _test_sink(x)
+        case namespace.C:
+            _test_sink(x)

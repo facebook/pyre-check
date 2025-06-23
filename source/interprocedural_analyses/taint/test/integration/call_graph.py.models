@@ -312,6 +312,54 @@
 {
   "kind": "model",
   "data": {
+    "callable": "call_graph.test_match_type_of",
+    "filename": "call_graph.py",
+    "callable_line": 112,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 126, "start": 23, "end": 24 },
+            "call_site": "126:12-126:25"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 128, "start": 23, "end": 24 },
+            "call_site": "128:12-128:25"
+          },
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 130, "start": 23, "end": 24 },
+            "call_site": "130:12-130:25"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "copy",
     "filename": "builtins.pyi",
     "callable_line": 629,

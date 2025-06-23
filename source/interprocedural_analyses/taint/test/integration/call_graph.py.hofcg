@@ -251,6 +251,195 @@ Higher order call graphs
   }
 }
 {
+  "callable": "call_graph.test_match_type_of",
+  "returned_callables": [],
+  "calls": {
+    "124:10-124:17": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "type.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "type.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "call_graph.namespace.A.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "call_graph.namespace.A"
+              },
+              {
+                "target": "call_graph.namespace.B.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "call_graph.namespace.B"
+              },
+              {
+                "target": "call_graph.namespace.C.__call__",
+                "index": 0,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "call_graph.namespace.C"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "125:13-125:24|artificial-call|match-value-comparison-equals>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__eq__",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "125:13-125:24|artificial-call|match-value-comparison-equals>normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__ne__",
+            "index": 0,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "126:12-126:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "call_graph.namespace.A.__call__",
+                "index": 1,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "call_graph.namespace.A"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "127:13-127:24|artificial-call|match-value-comparison-equals>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__eq__",
+            "index": 1,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "127:13-127:24|artificial-call|match-value-comparison-equals>normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__ne__",
+            "index": 1,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "128:12-128:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "call_graph.namespace.B.__call__",
+                "index": 1,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "call_graph.namespace.B"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "129:13-129:24|artificial-call|match-value-comparison-equals>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__eq__",
+            "index": 2,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "129:13-129:24|artificial-call|match-value-comparison-equals>normalize-not-comparison>comparison": {
+      "call": {
+        "calls": [
+          {
+            "target": "object.__ne__",
+            "index": 2,
+            "return_type": [ "float", "integer", "boolean" ]
+          }
+        ]
+      }
+    },
+    "130:12-130:25": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ],
+        "higher_order_parameters": [
+          {
+            "parameter_index": 0,
+            "calls": [
+              {
+                "target": "call_graph.namespace.C.__call__",
+                "index": 1,
+                "implicit_receiver": true,
+                "implicit_dunder_call": true,
+                "return_type": [],
+                "receiver_class": "call_graph.namespace.C"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+{
   "callable": "call_graph.CallableKindConfusion.foo@decorated",
   "returned_callables": [
     {
@@ -294,7 +483,7 @@ Higher order call graphs
         ]
       }
     },
-    "90:4-94:14|artificial-attribute-access|for-decorated-target-callee:call_graph.CallableKindConfusion.foo": {
+    "90:4-95:14|artificial-attribute-access|for-decorated-target-callee:call_graph.CallableKindConfusion.foo": {
       "attribute_access": {
         "callables": [
           {
