@@ -16,7 +16,7 @@ module Event : sig
     type t =
       | CreatedOrChanged
       | Deleted
-    [@@deriving sexp, compare]
+    [@@deriving sexp, compare, show]
   end
 
   type source_path = t
@@ -25,7 +25,7 @@ module Event : sig
     kind: Kind.t;
     path: source_path;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare, show]
 
   val create : kind:Kind.t -> source_path -> t
 end

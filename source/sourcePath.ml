@@ -25,16 +25,16 @@ module Event = struct
     type t =
       | CreatedOrChanged
       | Deleted
-    [@@deriving sexp, compare]
+    [@@deriving sexp, compare, show]
   end
 
-  type source_path = t [@@deriving sexp, compare]
+  type source_path = t [@@deriving sexp, compare, show]
 
   type t = {
     kind: Kind.t;
     path: source_path;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, compare, show]
 
   let create ~kind path = { kind; path }
 end
