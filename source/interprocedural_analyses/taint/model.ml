@@ -331,19 +331,10 @@ module Sanitizers = struct
 end
 
 module AddBreadcrumbsToState = struct
-  module T = Abstract.SetDomain.Make (struct
-    include Features.BreadcrumbInterned
-
-    let name = "add breadcrumbs to state"
-  end)
-
+  module T = Abstract.SetDomain.MakeWithSet (Features.BreadcrumbSet)
   include T
 
-  let empty = T.bottom
-
   let is_empty = T.is_bottom
-
-  let equal = T.equal
 
   let to_json breadcrumbs =
     `List
@@ -548,7 +539,7 @@ let empty_model =
     backward = Backward.empty;
     parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
-    add_breadcrumbs_to_state = AddBreadcrumbsToState.empty;
+    add_breadcrumbs_to_state = AddBreadcrumbsToState.bottom;
     model_generators = ModelGeneratorSet.empty;
     modes = ModeSet.empty;
   }
@@ -560,7 +551,7 @@ let empty_skip_model =
     backward = Backward.empty;
     parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
-    add_breadcrumbs_to_state = AddBreadcrumbsToState.empty;
+    add_breadcrumbs_to_state = AddBreadcrumbsToState.bottom;
     model_generators = ModelGeneratorSet.empty;
     modes = ModeSet.singleton SkipAnalysis;
   }
@@ -572,7 +563,7 @@ let obscure_model =
     backward = Backward.obscure;
     parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
-    add_breadcrumbs_to_state = AddBreadcrumbsToState.empty;
+    add_breadcrumbs_to_state = AddBreadcrumbsToState.bottom;
     model_generators = ModelGeneratorSet.empty;
     modes = ModeSet.singleton Obscure;
   }
@@ -985,28 +976,28 @@ let may_breadcrumbs_to_must
     ForwardState.transform
       Features.PropagatedBreadcrumbSet.Self
       Map
-      ~f:Features.BreadcrumbSet.over_to_under
+      ~f:Features.BreadcrumbMayAlwaysSet.over_to_under
       generations
   in
   let parameter_sources =
     ForwardState.transform
       Features.PropagatedBreadcrumbSet.Self
       Map
-      ~f:Features.BreadcrumbSet.over_to_under
+      ~f:Features.BreadcrumbMayAlwaysSet.over_to_under
       parameter_sources
   in
   let taint_in_taint_out =
     BackwardState.transform
       Features.PropagatedBreadcrumbSet.Self
       Map
-      ~f:Features.BreadcrumbSet.over_to_under
+      ~f:Features.BreadcrumbMayAlwaysSet.over_to_under
       taint_in_taint_out
   in
   let sink_taint =
     BackwardState.transform
       Features.PropagatedBreadcrumbSet.Self
       Map
-      ~f:Features.BreadcrumbSet.over_to_under
+      ~f:Features.BreadcrumbMayAlwaysSet.over_to_under
       sink_taint
   in
   {
@@ -1175,7 +1166,7 @@ let to_json
       model_json
   in
   let model_json =
-    if not (AddBreadcrumbsToState.is_empty add_breadcrumbs_to_state) then
+    if not (AddBreadcrumbsToState.is_bottom add_breadcrumbs_to_state) then
       model_json
       @ ["add_breadcrumbs_to_state", AddBreadcrumbsToState.to_json add_breadcrumbs_to_state]
     else

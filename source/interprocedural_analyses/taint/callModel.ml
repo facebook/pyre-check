@@ -40,6 +40,7 @@ let at_callsite
                  ~caller
                  ~callee:call_target
                  ~arguments
+            |> Features.BreadcrumbMayAlwaysSet.of_set
           in
           Frame.add_propagated_breadcrumbs breadcrumbs frame
         in
@@ -299,8 +300,8 @@ let taint_in_taint_out_mapping_for_argument
       let obscure_breadcrumbs =
         TaintInTaintOutMap.get_tree mapping ~kind:output_kind
         >>| BackwardState.Tree.joined_breadcrumbs
-        |> Option.value ~default:Features.BreadcrumbSet.empty
-        |> Features.BreadcrumbSet.add (Features.obscure_model ())
+        |> Option.value ~default:Features.BreadcrumbMayAlwaysSet.empty
+        |> Features.BreadcrumbMayAlwaysSet.add (Features.obscure_model ())
       in
       let mapping = TaintInTaintOutMap.remove mapping ~kind:output_kind in
       if SanitizeTransformSet.is_all obscure_sanitize then
@@ -430,11 +431,11 @@ let source_tree_of_argument
 
 
 let type_breadcrumbs_of_calls targets =
-  List.fold targets ~init:Features.BreadcrumbSet.bottom ~f:(fun so_far call_target ->
+  List.fold targets ~init:Features.BreadcrumbSet.empty ~f:(fun so_far call_target ->
       match call_target.CallGraph.CallTarget.return_type with
       | None -> so_far
       | Some return_type ->
-          return_type |> Features.type_breadcrumbs |> Features.BreadcrumbSet.join so_far)
+          return_type |> Features.type_breadcrumbs |> Features.BreadcrumbSet.union so_far)
 
 
 module ExtraTraceForTransforms = struct

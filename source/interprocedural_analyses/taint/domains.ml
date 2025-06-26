@@ -20,14 +20,14 @@
  *     nodes: ForwardTaint: Map[
  *       key: CallInfo = Declaration|Origin of {location; class_intervals}|CallSite of {port; path; callees; class_intervals},
  *       value: LocalTaint: Tuple[
- *         BreadcrumbSet,
+ *         BreadcrumbMayAlwaysSet,
  *         FirstIndexSet,
  *         FirstFieldSet,
  *         TitoPositionSet,
  *         ...,
  *         KindTaint: Map[
  *           key: Sources.t,
- *           value: Frame: Tuple[BreadcrumbSet, ViaFeatureSet, TraceLength, LeafNameSet, ...]
+ *           value: Frame: Tuple[BreadcrumbMayAlwaysSet, ViaFeatureSet, TraceLength, LeafNameSet, ...]
  *         ]
  *       ]
  *     ]
@@ -504,21 +504,24 @@ module Frame = struct
   let initial =
     create
       [
-        Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
-        Part (Features.LocalKindSpecificBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
+        Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbMayAlwaysSet.empty);
+        Part (Features.LocalKindSpecificBreadcrumbSet.Self, Features.BreadcrumbMayAlwaysSet.empty);
         Part (TraceLength.Self, 0);
       ]
 
 
   let add_propagated_breadcrumb breadcrumb =
-    transform Features.PropagatedBreadcrumbSet.Self Map ~f:(Features.BreadcrumbSet.add breadcrumb)
+    transform
+      Features.PropagatedBreadcrumbSet.Self
+      Map
+      ~f:(Features.BreadcrumbMayAlwaysSet.add breadcrumb)
 
 
   let add_propagated_breadcrumbs breadcrumbs =
     transform
       Features.PropagatedBreadcrumbSet.Self
       Map
-      ~f:(Features.BreadcrumbSet.add_set ~to_add:breadcrumbs)
+      ~f:(Features.BreadcrumbMayAlwaysSet.add_set ~to_add:breadcrumbs)
 
 
   let product_pp = pp (* shadow *)
@@ -569,7 +572,7 @@ module type TAINT_DOMAIN = sig
 
   val add_local_breadcrumb : ?add_on_tito:bool -> Features.BreadcrumbInterned.t -> t -> t
 
-  val add_local_breadcrumbs : ?add_on_tito:bool -> Features.BreadcrumbSet.t -> t -> t
+  val add_local_breadcrumbs : ?add_on_tito:bool -> Features.BreadcrumbMayAlwaysSet.t -> t -> t
 
   val add_local_first_index : Abstract.TreeDomain.Label.t -> t -> t
 
@@ -577,11 +580,11 @@ module type TAINT_DOMAIN = sig
 
   (* All breadcrumbs from all flows, accumulated with an `add`.
    * The over-under approximation is lost when accumulating. *)
-  val accumulated_breadcrumbs : t -> Features.BreadcrumbSet.t
+  val accumulated_breadcrumbs : t -> Features.BreadcrumbMayAlwaysSet.t
 
   (* All breadcrumbs from all flows, accumulated with a `join`.
    * The over-under approximation is properly preserved. *)
-  val joined_breadcrumbs : t -> Features.BreadcrumbSet.t
+  val joined_breadcrumbs : t -> Features.BreadcrumbMayAlwaysSet.t
 
   val first_indices : t -> Features.FirstIndexSet.t
 
@@ -797,7 +800,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
   let singleton kind frame =
     (* Initialize strict slots first *)
     create [Abstract.Domain.Part (KindTaintDomain.KeyValue, (kind, frame))]
-    |> update Slots.Breadcrumb Features.BreadcrumbSet.empty
+    |> update Slots.Breadcrumb Features.BreadcrumbMayAlwaysSet.empty
 
 
   let product_pp = pp (* shadow *)
@@ -868,7 +871,11 @@ end = struct
     in
     let breadcrumbs_to_json ~breadcrumbs ~first_indices ~first_fields =
       let breadcrumbs =
-        BreadcrumbSet.fold BreadcrumbSet.ElementAndUnder ~f:breadcrumb_to_json ~init:[] breadcrumbs
+        BreadcrumbMayAlwaysSet.fold
+          BreadcrumbMayAlwaysSet.ElementAndUnder
+          ~f:breadcrumb_to_json
+          ~init:[]
+          breadcrumbs
       in
       let first_index_breadcrumbs =
         first_indices
@@ -956,7 +963,10 @@ end = struct
 
         let local_breadcrumbs =
           Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame
-          |> BreadcrumbSet.fold BreadcrumbSet.ElementAndUnder ~f:breadcrumb_to_json ~init:[]
+          |> BreadcrumbMayAlwaysSet.fold
+               BreadcrumbMayAlwaysSet.ElementAndUnder
+               ~f:breadcrumb_to_json
+               ~init:[]
         in
         let json = cons_if_non_empty "local_features" local_breadcrumbs json in
 
@@ -1029,18 +1039,18 @@ end = struct
       Map.transform
         Features.LocalBreadcrumbSet.Self
         Map
-        ~f:(Features.BreadcrumbSet.add_set ~to_add:breadcrumbs)
+        ~f:(Features.BreadcrumbMayAlwaysSet.add_set ~to_add:breadcrumbs)
         taint
     else
       transform_non_tito
         Features.LocalBreadcrumbSet.Self
         Map
-        ~f:(Features.BreadcrumbSet.add_set ~to_add:breadcrumbs)
+        ~f:(Features.BreadcrumbMayAlwaysSet.add_set ~to_add:breadcrumbs)
         taint
 
 
   let add_local_breadcrumb ?add_on_tito breadcrumb taint =
-    add_local_breadcrumbs ?add_on_tito (Features.BreadcrumbSet.singleton breadcrumb) taint
+    add_local_breadcrumbs ?add_on_tito (Features.BreadcrumbMayAlwaysSet.singleton breadcrumb) taint
 
 
   let add_local_first_index index taint =
@@ -1082,9 +1092,9 @@ end = struct
       ~propagated_slot:Frame.Slots.PropagatedBreadcrumb
       ~local_kind_specific_slot:Frame.Slots.LocalKindSpecificBreadcrumb
       ~local_slot:LocalTaintDomain.Slots.Breadcrumb
-      ~bottom:Features.BreadcrumbSet.bottom
-      ~join:Features.BreadcrumbSet.sequence_join
-      ~sequence_join:Features.BreadcrumbSet.sequence_join
+      ~bottom:Features.BreadcrumbMayAlwaysSet.bottom
+      ~join:Features.BreadcrumbMayAlwaysSet.sequence_join
+      ~sequence_join:Features.BreadcrumbMayAlwaysSet.sequence_join
       taint
 
 
@@ -1093,9 +1103,9 @@ end = struct
       ~propagated_slot:Frame.Slots.PropagatedBreadcrumb
       ~local_kind_specific_slot:Frame.Slots.LocalKindSpecificBreadcrumb
       ~local_slot:LocalTaintDomain.Slots.Breadcrumb
-      ~bottom:Features.BreadcrumbSet.bottom
-      ~join:Features.BreadcrumbSet.join
-      ~sequence_join:Features.BreadcrumbSet.sequence_join
+      ~bottom:Features.BreadcrumbMayAlwaysSet.bottom
+      ~join:Features.BreadcrumbMayAlwaysSet.join
+      ~sequence_join:Features.BreadcrumbMayAlwaysSet.sequence_join
       taint
 
 
@@ -1140,7 +1150,7 @@ end = struct
 
   let transform_on_widening_collapse taint =
     let broadening =
-      Features.BreadcrumbSet.of_approximation
+      Features.BreadcrumbMayAlwaysSet.of_approximation
         [
           (* using an always-feature here would break the widening invariant: a <= a widen b *)
           { element = Features.broadening (); in_under = false };
@@ -1293,6 +1303,7 @@ end = struct
              ~caller
              ~callee
              ~arguments
+        |> Features.BreadcrumbMayAlwaysSet.of_set
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
       let local_first_indices =
@@ -1320,29 +1331,35 @@ end = struct
                 |> Frame.transform
                      Features.LocalKindSpecificBreadcrumbSet.Self
                      Map
-                     ~f:(Features.BreadcrumbSet.add_set ~to_add:user_declared_breadcrumbs)
-                |> Frame.update Frame.Slots.PropagatedBreadcrumb Features.BreadcrumbSet.empty
+                     ~f:(Features.BreadcrumbMayAlwaysSet.add_set ~to_add:user_declared_breadcrumbs)
+                |> Frame.update
+                     Frame.Slots.PropagatedBreadcrumb
+                     Features.BreadcrumbMayAlwaysSet.empty
               in
-              frame, Features.BreadcrumbSet.empty
+              frame, Features.BreadcrumbMayAlwaysSet.empty
           | _ ->
               let local_breadcrumbs = Frame.get Frame.Slots.LocalKindSpecificBreadcrumb frame in
               let frame =
                 frame
                 |> Frame.update Frame.Slots.ExtraTraceFirstHopSet ExtraTraceFirstHop.Set.bottom
-                |> Frame.update Frame.Slots.LocalKindSpecificBreadcrumb Features.BreadcrumbSet.empty
+                |> Frame.update
+                     Frame.Slots.LocalKindSpecificBreadcrumb
+                     Features.BreadcrumbMayAlwaysSet.empty
               in
               frame, local_breadcrumbs
         in
         (* Existing local breadcrumbs (kind specific or not) become "propagated" breadcrumbs *)
         let local_breadcrumbs =
-          Features.BreadcrumbSet.sequence_join kind_specific_local_breadcrumbs local_breadcrumbs
+          Features.BreadcrumbMayAlwaysSet.sequence_join
+            kind_specific_local_breadcrumbs
+            local_breadcrumbs
         in
         frame
         |> Frame.update Frame.Slots.ViaFeature Features.ViaFeatureSet.bottom
         |> Frame.transform
              Features.PropagatedBreadcrumbSet.Self
              Map
-             ~f:(Features.BreadcrumbSet.sequence_join local_breadcrumbs)
+             ~f:(Features.BreadcrumbMayAlwaysSet.sequence_join local_breadcrumbs)
         |> Frame.transform
              Features.FirstIndexSet.Self
              Map
@@ -1682,7 +1699,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let add_local_breadcrumbs ?(add_on_tito = true) breadcrumbs taint_tree =
-    if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
+    if
+      Features.BreadcrumbMayAlwaysSet.is_bottom breadcrumbs
+      || Features.BreadcrumbMayAlwaysSet.is_empty breadcrumbs
     then
       taint_tree
     else
@@ -1711,6 +1730,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
           Features.type_breadcrumbs_from_annotation
             ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
             (Some type_)
+          |> Features.BreadcrumbMayAlwaysSet.of_set
         in
         add_local_breadcrumbs type_breadcrumbs taint
     | _ -> taint
@@ -1724,16 +1744,16 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
   let accumulated_breadcrumbs taint_tree =
     let gather_breadcrumbs taint sofar =
-      Taint.accumulated_breadcrumbs taint |> Features.BreadcrumbSet.add_set ~to_add:sofar
+      Taint.accumulated_breadcrumbs taint |> Features.BreadcrumbMayAlwaysSet.add_set ~to_add:sofar
     in
-    fold Taint.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbSet.bottom taint_tree
+    fold Taint.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbMayAlwaysSet.bottom taint_tree
 
 
   let joined_breadcrumbs taint_tree =
     let gather_breadcrumbs taint sofar =
-      Taint.accumulated_breadcrumbs taint |> Features.BreadcrumbSet.join sofar
+      Taint.accumulated_breadcrumbs taint |> Features.BreadcrumbMayAlwaysSet.join sofar
     in
-    fold Taint.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbSet.bottom taint_tree
+    fold Taint.Self ~f:gather_breadcrumbs ~init:Features.BreadcrumbMayAlwaysSet.bottom taint_tree
 
 
   let add_via_features via_features taint_tree =
@@ -1907,7 +1927,9 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
 
   let add_local_breadcrumbs breadcrumbs taint_tree =
-    if Features.BreadcrumbSet.is_bottom breadcrumbs || Features.BreadcrumbSet.is_empty breadcrumbs
+    if
+      Features.BreadcrumbMayAlwaysSet.is_bottom breadcrumbs
+      || Features.BreadcrumbMayAlwaysSet.is_empty breadcrumbs
     then
       taint_tree
     else
@@ -1926,12 +1948,12 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       read ~root ~path:[] taint
       |> Tree.transform Taint.call_info Filter ~f:(CallInfo.equal CallInfo.declaration)
       |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
-      |> Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
+      |> Tree.collapse ~breadcrumbs:Features.BreadcrumbMayAlwaysSet.empty
     in
     let breadcrumbs = Taint.joined_breadcrumbs taint in
     let breadcrumbs =
       if AccessPath.Root.is_captured_variable root then
-        Features.BreadcrumbSet.add (Features.captured_variable ()) breadcrumbs
+        Features.BreadcrumbMayAlwaysSet.add (Features.captured_variable ()) breadcrumbs
       else
         breadcrumbs
     in
@@ -2035,8 +2057,8 @@ let local_return_frame ~output_path ~collapse_depth =
     [
       Part (TraceLength.Self, 0);
       Part (Features.ReturnAccessPathTree.Path, (output_path, collapse_depth));
-      Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
-      Part (Features.LocalKindSpecificBreadcrumbSet.Self, Features.BreadcrumbSet.empty);
+      Part (Features.PropagatedBreadcrumbSet.Self, Features.BreadcrumbMayAlwaysSet.empty);
+      Part (Features.LocalKindSpecificBreadcrumbSet.Self, Features.BreadcrumbMayAlwaysSet.empty);
     ]
 
 

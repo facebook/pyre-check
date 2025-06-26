@@ -13,6 +13,8 @@ type 'a approximation = {
 module type S = sig
   include AbstractSetDomain.S
 
+  type set
+
   type _ AbstractDomainCore.part += ElementAndUnder : element approximation AbstractDomainCore.part
 
   (* Distinct from bottom in that it has no elements present, which will cause joins to
@@ -28,6 +30,8 @@ module type S = sig
 
   val of_approximation : element approximation list -> t
 
+  val of_set : set -> t
+
   val add_set : t -> to_add:t -> t
 
   (* Normal join models an either/or outcome, e.g. two distinct paths, where as sequence_join models
@@ -39,6 +43,7 @@ module type S = sig
   val over_to_under : t -> t
 end
 
-module MakeWithSet (Set : AbstractSetDomain.SET) : S with type element = Set.element
+module MakeWithSet (Set : AbstractSetDomain.SET) :
+  S with type element = Set.element and type set = Set.t
 
 module Make (Element : AbstractSetDomain.ELEMENT) : S with type element = Element.t

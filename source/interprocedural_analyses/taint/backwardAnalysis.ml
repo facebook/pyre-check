@@ -406,7 +406,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       state
     else
       let breadcrumbs =
-        breadcrumbs |> Model.AddBreadcrumbsToState.elements |> Features.BreadcrumbSet.of_list
+        breadcrumbs
+        |> Model.AddBreadcrumbsToState.elements
+        |> Features.BreadcrumbMayAlwaysSet.of_list
       in
       {
         taint =
@@ -468,7 +470,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint_model;
     let call_taint =
       BackwardState.Tree.add_local_breadcrumbs
-        (Features.type_breadcrumbs (Option.value_exn return_type))
+        (Option.value_exn return_type
+        |> Features.type_breadcrumbs
+        |> Features.BreadcrumbMayAlwaysSet.of_set)
         call_taint
     in
     let initial_state =
@@ -578,7 +582,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 BackwardState.Tree.transform_non_tito
                   Features.LocalKindSpecificBreadcrumbSet.Self
                   Map
-                  ~f:(Features.BreadcrumbSet.add breadcrumb)
+                  ~f:(Features.BreadcrumbMayAlwaysSet.add breadcrumb)
                   taint_to_propagate
               in
               add_extra_traces_for_tito_transforms
@@ -717,7 +721,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
               |> BackwardTaint.joined_breadcrumbs
             in
-            if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
+            if Features.BreadcrumbMayAlwaysSet.is_bottom breadcrumbs_to_add then
               state
             else
               let taint =
@@ -1553,7 +1557,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let callees = get_call_callees ~location ~call:{ Call.callee; arguments; origin } in
 
     let add_type_breadcrumbs taint =
-      let type_breadcrumbs = CallModel.type_breadcrumbs_of_calls callees.call_targets in
+      let type_breadcrumbs =
+        CallModel.type_breadcrumbs_of_calls callees.call_targets
+        |> Features.BreadcrumbMayAlwaysSet.of_set
+      in
       BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs taint
     in
 
@@ -2045,7 +2052,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+          ~breadcrumbs:(Features.BreadcrumbMayAlwaysSet.singleton (Features.format_string ()))
           {
             CallModel.StringFormatCall.nested_expressions = arguments_formatted_string;
             string_literal = { value; location = value_location };
@@ -2079,7 +2086,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~pyre_in_context
           ~taint
           ~state
-          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
+          ~breadcrumbs:
+            (Features.BreadcrumbMayAlwaysSet.singleton (Features.string_concat_left_hand_side ()))
           {
             CallModel.StringFormatCall.nested_expressions = [expression];
             string_literal = { value; location = value_location };
@@ -2117,7 +2125,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~breadcrumbs:
-            (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
+            (Features.BreadcrumbMayAlwaysSet.singleton (Features.string_concat_right_hand_side ()))
           {
             CallModel.StringFormatCall.nested_expressions = [expression];
             string_literal = { value; location = value_location };
@@ -2141,8 +2149,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match function_name with
           | "__mod__"
           | "format" ->
-              Features.BreadcrumbSet.singleton (Features.format_string ())
-          | _ -> Features.BreadcrumbSet.empty
+              Features.BreadcrumbMayAlwaysSet.singleton (Features.format_string ())
+          | _ -> Features.BreadcrumbMayAlwaysSet.empty
         in
         let substrings =
           arguments
@@ -2474,7 +2482,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~pyre_in_context
             ~taint
             ~state
-            ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+            ~breadcrumbs:(Features.BreadcrumbMayAlwaysSet.singleton (Features.format_string ()))
             {
               CallModel.StringFormatCall.nested_expressions = substrings;
               string_literal = { value = string_literal; location };
@@ -2839,6 +2847,7 @@ let extract_tito_and_sink_models
       annotation
       >>| PyrePysaEnvironment.ReadOnly.parse_annotation pyre_api
       |> Features.type_breadcrumbs_from_annotation ~pyre_api
+      |> Features.BreadcrumbMayAlwaysSet.of_set
     in
     BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs tree
   in

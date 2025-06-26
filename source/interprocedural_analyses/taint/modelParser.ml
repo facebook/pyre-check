@@ -1179,10 +1179,10 @@ let output_path_for_tito ~input_root ~kind ~features =
 
 
 let type_breadcrumbs_from_annotations ~pyre_api annotations =
-  List.fold annotations ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar annotation ->
+  List.fold annotations ~init:Features.BreadcrumbSet.empty ~f:(fun sofar annotation ->
       CallGraph.ReturnType.from_annotation ~pyre_api annotation
       |> Features.type_breadcrumbs
-      |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+      |> Features.BreadcrumbSet.union sofar)
 
 
 let introduce_sink_taint
@@ -1235,13 +1235,16 @@ let introduce_sink_taint
     let leaf_names =
       leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
     in
-    let type_breadcrumbs = type_breadcrumbs_from_annotations ~pyre_api root_annotations in
+    let type_breadcrumbs =
+      type_breadcrumbs_from_annotations ~pyre_api root_annotations
+      |> Features.BreadcrumbMayAlwaysSet.of_set
+    in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
-      |> List.map ~f:Features.BreadcrumbSet.inject
-      |> Features.BreadcrumbSet.of_approximation
-      |> Features.BreadcrumbSet.add_set ~to_add:type_breadcrumbs
+      |> List.map ~f:Features.BreadcrumbMayAlwaysSet.inject
+      |> Features.BreadcrumbMayAlwaysSet.of_approximation
+      |> Features.BreadcrumbMayAlwaysSet.add_set ~to_add:type_breadcrumbs
     in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let leaf_taint =
@@ -1289,14 +1292,16 @@ let introduce_taint_in_taint_out
   let open Core.Result in
   (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
   let type_breadcrumbs =
-    List.append root_annotations result_annotations |> type_breadcrumbs_from_annotations ~pyre_api
+    List.append root_annotations result_annotations
+    |> type_breadcrumbs_from_annotations ~pyre_api
+    |> Features.BreadcrumbMayAlwaysSet.of_set
   in
   let breadcrumbs =
     breadcrumbs
     |> List.map ~f:Features.BreadcrumbInterned.intern
-    |> List.map ~f:Features.BreadcrumbSet.inject
-    |> Features.BreadcrumbSet.of_approximation
-    |> Features.BreadcrumbSet.add_set ~to_add:type_breadcrumbs
+    |> List.map ~f:Features.BreadcrumbMayAlwaysSet.inject
+    |> Features.BreadcrumbMayAlwaysSet.of_approximation
+    |> Features.BreadcrumbMayAlwaysSet.add_set ~to_add:type_breadcrumbs
   in
   let via_features = Features.ViaFeatureSet.of_list via_features in
   let collapse_depth =
@@ -1350,7 +1355,7 @@ let introduce_taint_in_taint_out
         in
         Ok { Model.Backward.taint_in_taint_out; sink_taint }
     | Sinks.Attach
-      when Features.BreadcrumbSet.is_empty breadcrumbs
+      when Features.BreadcrumbMayAlwaysSet.is_empty breadcrumbs
            && Features.ViaFeatureSet.is_bottom via_features ->
         Error "`Attach` must be accompanied by a list of features to attach."
     | Sinks.Attach ->
@@ -1406,13 +1411,16 @@ let introduce_source_taint
            SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind)
     |> Option.value ~default:true
   then
-    let type_breadcrumbs = type_breadcrumbs_from_annotations ~pyre_api root_annotations in
+    let type_breadcrumbs =
+      type_breadcrumbs_from_annotations ~pyre_api root_annotations
+      |> Features.BreadcrumbMayAlwaysSet.of_set
+    in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
-      |> List.map ~f:Features.BreadcrumbSet.inject
-      |> Features.BreadcrumbSet.of_approximation
-      |> Features.BreadcrumbSet.add_set ~to_add:type_breadcrumbs
+      |> List.map ~f:Features.BreadcrumbMayAlwaysSet.inject
+      |> Features.BreadcrumbMayAlwaysSet.of_approximation
+      |> Features.BreadcrumbMayAlwaysSet.add_set ~to_add:type_breadcrumbs
     in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let transform_call_information taint =

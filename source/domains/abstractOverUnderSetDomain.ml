@@ -18,6 +18,8 @@ type 'a approximation = {
 module type S = sig
   include AbstractSetDomain.S
 
+  type set
+
   type _ AbstractDomainCore.part += ElementAndUnder : element approximation AbstractDomainCore.part
 
   val empty : t
@@ -29,6 +31,8 @@ module type S = sig
   val to_approximation : t -> element approximation list
 
   val of_approximation : element approximation list -> t
+
+  val of_set : set -> t
 
   val add_set : t -> to_add:t -> t
 
@@ -47,10 +51,12 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
 
   module rec Base : (BASE with type t := biset) = MakeBase (Domain)
 
-  and Domain : (S with type t = biset and type element = Set.element) = struct
+  and Domain : (S with type t = biset and type element = Set.element and type set = Set.t) = struct
     (* Implicitly under <= over at all times. Note that Bottom is different from ({}, {}) since ({},
        {}) is not less or equal to e.g. ({a}, {a}) *)
     type t = biset
+
+    type set = Set.t
 
     type element = Set.element
 
@@ -178,6 +184,8 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
     let of_list elements = ListLabels.fold_left ~f:add elements ~init:bottom
 
     let of_approximation elements = ListLabels.fold_left ~f:add_element ~init:empty elements
+
+    let of_set set = BiSet { over = set; under = set }
 
     let over_to_under set =
       match set with

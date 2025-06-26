@@ -24,12 +24,15 @@ module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module FeatureSet = struct
   type t = {
-    breadcrumbs: Features.BreadcrumbSet.t;
+    breadcrumbs: Features.BreadcrumbMayAlwaysSet.t;
     via_features: Features.ViaFeatureSet.t;
   }
 
   let empty =
-    { breadcrumbs = Features.BreadcrumbSet.bottom; via_features = Features.ViaFeatureSet.bottom }
+    {
+      breadcrumbs = Features.BreadcrumbMayAlwaysSet.bottom;
+      via_features = Features.ViaFeatureSet.bottom;
+    }
 
 
   let from_taint taint =
@@ -245,7 +248,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
            ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:0
-           ~breadcrumbs:Features.BreadcrumbSet.bottom
+           ~breadcrumbs:Features.BreadcrumbMayAlwaysSet.bottom
            ~via_features:Features.ViaFeatureSet.bottom
       |> add_tito
            ~input_root:
@@ -255,7 +258,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
            ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[AccessPath.dictionary_keys]
            ~collapse_depth:Features.CollapseDepth.no_collapse
-           ~breadcrumbs:Features.BreadcrumbSet.bottom
+           ~breadcrumbs:Features.BreadcrumbMayAlwaysSet.bottom
            ~via_features:Features.ViaFeatureSet.bottom
       |> add_tito
            ~input_root:(AccessPath.Root.StarStarParameter { excluded = fields })
@@ -263,7 +266,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
            ~output_root:(Sinks.ParameterUpdate self)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:Features.CollapseDepth.no_collapse
-           ~breadcrumbs:Features.BreadcrumbSet.bottom
+           ~breadcrumbs:Features.BreadcrumbMayAlwaysSet.bottom
            ~via_features:Features.ViaFeatureSet.bottom
     in
     let sink_taint =

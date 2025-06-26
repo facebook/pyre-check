@@ -673,7 +673,7 @@ module Candidates = struct
 end
 
 type features = {
-  breadcrumbs: Features.BreadcrumbSet.t;
+  breadcrumbs: Features.BreadcrumbMayAlwaysSet.t;
   first_indices: Features.FirstIndexSet.t;
   first_fields: Features.FirstFieldSet.t;
 }
@@ -682,7 +682,7 @@ let get_issue_features { Flow.source_taint; sink_taint } =
   let breadcrumbs =
     let source_breadcrumbs = ForwardTaint.joined_breadcrumbs source_taint in
     let sink_breadcrumbs = BackwardTaint.joined_breadcrumbs sink_taint in
-    Features.BreadcrumbSet.sequence_join source_breadcrumbs sink_breadcrumbs
+    Features.BreadcrumbMayAlwaysSet.sequence_join source_breadcrumbs sink_breadcrumbs
   in
   let first_indices =
     let source_indices = ForwardTaint.first_indices source_taint in
@@ -773,8 +773,8 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
       let breadcrumb_json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
       breadcrumb_json :: breadcrumbs
     in
-    Features.BreadcrumbSet.fold
-      Features.BreadcrumbSet.ElementAndUnder
+    Features.BreadcrumbMayAlwaysSet.fold
+      Features.BreadcrumbMayAlwaysSet.ElementAndUnder
       ~f:get_feature_json
       ~init:[]
       features.breadcrumbs

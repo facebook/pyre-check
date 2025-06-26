@@ -401,7 +401,7 @@ end
 
 module BreadcrumbInterned = MakeInterner (Breadcrumb)
 
-module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
+module BreadcrumbSet = struct
   include Data_structures.BitSetPatriciaTreeIntSet.Make (struct
     let common_integers = TaintAnalysisFeatureStats.common_breadcrumbs
   end)
@@ -409,12 +409,14 @@ module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
   let show_element = BreadcrumbInterned.show
 
   let element_name = BreadcrumbInterned.name
-end)
+end
+
+module BreadcrumbMayAlwaysSet = Abstract.OverUnderSetDomain.MakeWithSet (BreadcrumbSet)
 
 (* Stores local breadcrumbs (also called trace breadcrumbs) inferred during the analysis of the
    current function. *)
 module LocalBreadcrumbSet = Abstract.WrapperDomain.Make (struct
-  include BreadcrumbSet
+  include BreadcrumbMayAlwaysSet
 
   let name = "local breadcrumbs"
 end)
@@ -422,14 +424,14 @@ end)
 (* Stores local breadcrumbs that are kind-specific, unlike `LocalBreadcrumbSet`. For instance,
    `via:transform-tito-depth:N` should only be emitted on transform kinds. *)
 module LocalKindSpecificBreadcrumbSet = Abstract.WrapperDomain.Make (struct
-  include BreadcrumbSet
+  include BreadcrumbMayAlwaysSet
 
   let name = "local kind-specific breadcrumbs"
 end)
 
 (* Stores breadcrumbs propagated from the callee. *)
 module PropagatedBreadcrumbSet = Abstract.WrapperDomain.Make (struct
-  include BreadcrumbSet
+  include BreadcrumbMayAlwaysSet
 
   let name = "propagated breadcrumbs"
 end)
@@ -718,11 +720,7 @@ let string_concat_right_hand_side =
 
 let memoize_breadcrumb_set breadcrumbs =
   memoize
-    (lazy
-      (breadcrumbs
-      |> List.map ~f:(fun breadcrumb ->
-             Abstract.Domain.Part (BreadcrumbSet.Element, BreadcrumbInterned.intern breadcrumb))
-      |> BreadcrumbSet.create))
+    (lazy (breadcrumbs |> List.map ~f:BreadcrumbInterned.intern |> BreadcrumbMayAlwaysSet.of_list))
 
 
 let widen_broadening_set =
@@ -781,7 +779,7 @@ let type_breadcrumbs
     else
       features
   in
-  BreadcrumbSet.bottom
+  BreadcrumbSet.empty
   |> add_if is_scalar type_scalar
   |> add_if is_boolean type_bool
   |> add_if is_integer type_integer
