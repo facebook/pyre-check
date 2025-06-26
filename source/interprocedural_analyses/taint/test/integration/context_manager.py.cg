@@ -1,0 +1,45 @@
+@generated
+Call dependencies
+{
+  "context_manager.SinkOnEnter.__enter__ (method)": [ "_test_sink (fun)" ],
+  "context_manager.SourceOnEnter.__enter__ (method)": [
+    "_test_source (fun)"
+  ],
+  "context_manager.SourceOnExit.__exit__ (method)": [ "_test_source (fun)" ],
+  "context_manager.source_on_enter_and_sink_on_exit (fun)": [
+    "_test_sink (fun)", "_test_source (fun)"
+  ],
+  "context_manager.test_generator_sink_on_exit (fun)": [
+    "_test_sink (fun)", "_test_source (fun)",
+    "context_manager.source_on_enter_and_sink_on_exit (fun)"
+  ],
+  "context_manager.test_generator_source_on_enter (fun)": [
+    "_test_sink (fun)",
+    "context_manager.source_on_enter_and_sink_on_exit (fun)"
+  ],
+  "context_manager.test_sink_on_enter (fun)": [
+    "context_manager.SinkOnEnter.__enter__ (method)",
+    "context_manager.SinkOnEnter.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "context_manager.test_source_on_enter (fun)": [
+    "_test_sink (fun)", "context_manager.SourceOnEnter.__enter__ (method)",
+    "context_manager.SourceOnEnter.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "context_manager.test_source_on_enter_as (fun)": [
+    "_test_sink (fun)", "context_manager.SourceOnEnter.__enter__ (method)",
+    "context_manager.SourceOnEnter.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "context_manager.test_source_on_enter_clear (fun)": [
+    "_test_sink (fun)", "context_manager.SourceOnEnter.__enter__ (method)",
+    "context_manager.SourceOnEnter.__init__ (method)",
+    "object.__new__ (method)"
+  ],
+  "context_manager.test_source_on_exit (fun)": [
+    "_test_sink (fun)", "context_manager.SourceOnExit.__enter__ (method)",
+    "context_manager.SourceOnExit.__init__ (method)",
+    "object.__new__ (method)"
+  ]
+}

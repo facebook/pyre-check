@@ -1,0 +1,6 @@
+@generated
+Overrides
+context_manager.SinkOnEnter.__init__ (override) -> [context_manager.SinkOnEnter.__init__ (method)]
+context_manager.SourceOnEnter.__init__ (override) -> [context_manager.SourceOnEnter.__init__ (method)]
+context_manager.SourceOnExit.__init__ (override) -> [context_manager.SourceOnExit.__init__ (method)]
+object.__init__ (override) -> [context_manager.SinkOnEnter.__init__ (override) context_manager.SourceOnEnter.__init__ (override) context_manager.SourceOnExit.__init__ (override) object.__init__ (method)]
