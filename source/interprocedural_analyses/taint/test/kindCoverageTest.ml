@@ -125,13 +125,11 @@ let test_from_transform _ =
 let test_from_model _ =
   let create_model ~generations ~taint_in_taint_out ~sink_taint =
     {
-      Model.forward = { generations };
+      Model.empty_model with
+      forward = { generations };
       backward = { taint_in_taint_out; sink_taint };
-      parameter_sources = Model.ParameterSources.empty;
       sanitizers =
         { global = Sanitize.bottom; parameters = Sanitize.bottom; roots = Sanitize.RootMap.bottom };
-      model_generators = Model.ModelGeneratorSet.empty;
-      modes = Model.ModeSet.empty;
     }
   in
   let create_source_tree source_kind =

@@ -3788,6 +3788,46 @@ let test_access_path _ =
   ()
 
 
+let test_add_breadcrumb_to_state context =
+  let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
+  assert_model
+    ~model_source:{|
+      @AddBreadcrumbToState(Via[special])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~add_breadcrumbs_to_state:["special"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
+    ();
+  assert_invalid_model
+    ~model_source:{|
+      @AddBreadcrumbToState(special)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`AddBreadcrumbToState(special)` is an invalid taint annotation: Invalid expression for \
+       breadcrumb, expected `Via[..]`"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @AddBreadcrumbToState(Via[does_not_exist])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`AddBreadcrumbToState(Via[does_not_exist])` is an invalid taint annotation: Unrecognized \
+       Via annotation `does_not_exist`"
+    ();
+  (* feature is not declared *)
+  ()
+
+
 let test_parse_decorator_modes _ =
   let open Analysis in
   let assert_decorator_modes source expected =
@@ -3900,6 +3940,7 @@ let () =
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
+         "add_breadcrumb_to_state" >:: test_add_breadcrumb_to_state;
          "top_level_models" >:: test_top_level_models;
        ]
   |> Test.run

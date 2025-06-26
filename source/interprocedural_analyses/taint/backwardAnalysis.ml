@@ -401,6 +401,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.Tree.bottom
 
 
+  let apply_add_breadcrumbs_to_state breadcrumbs state =
+    if Model.AddBreadcrumbsToState.is_empty breadcrumbs then
+      state
+    else
+      let breadcrumbs =
+        breadcrumbs |> Model.AddBreadcrumbsToState.elements |> Features.BreadcrumbSet.of_list
+      in
+      {
+        taint =
+          BackwardState.transform
+            BackwardTaint.Self
+            Map
+            ~f:(BackwardTaint.add_local_breadcrumbs breadcrumbs)
+            state.taint;
+      }
+
+
   let apply_call_target
       ?(apply_tito = true)
       ~pyre_in_context
@@ -453,6 +470,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       BackwardState.Tree.add_local_breadcrumbs
         (Features.type_breadcrumbs (Option.value_exn return_type))
         call_taint
+    in
+    let initial_state =
+      apply_add_breadcrumbs_to_state taint_model.add_breadcrumbs_to_state initial_state
     in
     let get_taint_from_argument_expression
         ~pyre_in_context

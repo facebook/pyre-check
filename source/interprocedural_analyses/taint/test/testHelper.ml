@@ -56,6 +56,7 @@ type expectation = {
   parameters_sanitizer: Sanitize.t;
   return_sanitizer: Sanitize.t;
   parameter_sanitizers: parameter_sanitize list;
+  add_breadcrumbs_to_state: string list;
   analysis_modes: Model.ModeSet.t;
 }
 
@@ -80,6 +81,7 @@ let outcome
     ?(parameters_sanitizer = Sanitize.empty)
     ?(return_sanitizer = Sanitize.empty)
     ?(parameter_sanitizers = [])
+    ?(add_breadcrumbs_to_state = [])
     ?(analysis_modes = Model.ModeSet.empty)
     define_name
   =
@@ -97,6 +99,7 @@ let outcome
     parameters_sanitizer;
     return_sanitizer;
     parameter_sanitizers;
+    add_breadcrumbs_to_state;
     analysis_modes;
   }
 
@@ -130,6 +133,7 @@ let check_expectation
       parameters_sanitizer;
       return_sanitizer;
       parameter_sanitizers;
+      add_breadcrumbs_to_state = expected_add_breadcrumbs_to_state;
       analysis_modes = expected_analysis_modes;
     }
   =
@@ -171,6 +175,7 @@ let check_expectation
     forward;
     parameter_sources = actual_parameter_sources;
     sanitizers;
+    add_breadcrumbs_to_state;
     model_generators = _;
     modes;
   }
@@ -358,6 +363,16 @@ let check_expectation
     ~printer:Sanitize.show
     return_sanitizer
     (Sanitize.RootMap.get AccessPath.Root.LocalResult sanitizers.roots);
+
+  (* Check add_breadcrumbs_to_state *)
+  assert_equal
+    ~cmp:Model.AddBreadcrumbsToState.equal
+    ~printer:Model.AddBreadcrumbsToState.show
+    (expected_add_breadcrumbs_to_state
+    |> List.map ~f:(fun name -> Features.Breadcrumb.SimpleVia name)
+    |> List.map ~f:Features.BreadcrumbInterned.intern
+    |> Model.AddBreadcrumbsToState.of_list)
+    add_breadcrumbs_to_state;
 
   assert_equal
     (Map.length expected_parameter_sanitizers)

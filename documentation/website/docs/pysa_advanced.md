@@ -1065,6 +1065,45 @@ def func_entrypoint(): ...
 
 Then issues will be found for taint in calls to `class_entrypoint` and `my_bad_func_1`, but not `my_bad_func_2`, since it isn't called by a function marked by an `@Entrypoint`.
 
+## Add a feature to all local variables on function call
+
+In some situations, one might want to filter out issues where a specific function was called,
+but that call is not directly involved in the data flow.
+
+For instance:
+
+```python
+x = some_source()
+if security_check():
+    some_sink(x)
+```
+
+The problem here is that `security_check()` does not transfer taint.
+Sanitizing this function would have no effect, Pysa will still find the issue.
+
+A solution is to use `@AddFeatureToState`:
+```
+@AddFeatureToState(Via[security_check])
+def my_module.security_check(): ...
+```
+
+This will add the feature `via:security_check` to all local variables when calling `security_check()`.
+In the example above, the issue from `some_source()` to `some_sink()` will therefore have that feature,
+and it can be filtered out in post processing (see [features](pysa_features.md)).
+
+Note that `AddFeatureToState` is not contagious (i.e it is not propagated up):
+```
+def security_check_wrapper():
+  return security_check()
+
+x = some_source()
+if security_check_wrapper():
+    some_sink(x)
+```
+The issue won't have the feature `via:security_check` in that case.
+
+Note also that `AddBreadcrumbToState` is an alias for `AddFeatureToState`.
+
 ## Taint In Taint Out Transforms
 
 Taint in taint out transforms can be used to capture more precise flows.
@@ -1193,7 +1232,7 @@ def foo():
 
 The source tree for `foo` has a width of 3. Above the provided threshold, pysa
 will collapse the taint and consider the whole dictionary tainted. When that
-happens, the breadcrumbs `model-broadening` and `model-source-broadening` will
+happens, the features `model-broadening` and `model-source-broadening` will
 be added to the flow.
 
 ### Maximum model sink tree width
@@ -1216,7 +1255,7 @@ def foo(arg):
 
 The sink tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
-whole argument leads to a sink. When that happens, the breadcrumbs
+whole argument leads to a sink. When that happens, the features
 `model-broadening` and `model-sink-broadening` will be added to the flow.
 
 ### Maximum model tito tree width
@@ -1238,7 +1277,7 @@ def foo(arg):
 The taint-in-taint-out tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
 taint on the whole argument is propagated to the return value. When that happens,
-the breadcrumbs `model-broadening` and `model-tito-broadening` will be added to
+the features `model-broadening` and `model-tito-broadening` will be added to
 the flow.
 
 ### Maximum tree depth after widening
@@ -1263,7 +1302,7 @@ def foo():
 The source tree for `variable` has a depth of 3 (i.e, `a` -> `b` -> `c`).
 Within a loop, pysa limits the depth to the provided threshold. For instance,
 if that threshold is 1, we would consider that `variable.a` is entirely tainted.
-When that happens, the breadcrumb `widen-broadening` will be added to the flow.
+When that happens, the feature `widen-broadening` will be added to the flow.
 
 ### Maximum return access path width
 
@@ -1284,7 +1323,7 @@ def foo(arg):
 The return access path tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
 whole return value is tainted whenever `arg` is tainted. When that happens,
-the breadcrumbs `model-broadening` and `model-tito-broadering` will be added to
+the features `model-broadening` and `model-tito-broadering` will be added to
 the flow.
 
 ### Maximum return access path depth after widening
@@ -1309,7 +1348,7 @@ def foo(arg):
 The return access path tree for `foo` and parameter `arg` has a depth  of 3
 (i.e, `a` -> `b` -> `c`). Within a loop, pysa limits the depth to the provided
 threshold. For instance, if that threshold is 2, we would cut the output path
-to just `a.b`. When that happens, the breadcrumb `model-broadening` and
+to just `a.b`. When that happens, the feature `model-broadening` and
 `model-tito-broadening` will be added to the flow.
 
 ### Maximum tito collapse depth

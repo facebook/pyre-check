@@ -316,7 +316,7 @@ module Breadcrumb = struct
     | TransformTitoDepth of int
     | PropagatedReturnSink
       (* Sink taint that originate from the return statements AND is propagated up *)
-  [@@deriving equal]
+  [@@deriving equal, compare]
 
   let pp formatter breadcrumb =
     let pp_via header tag value =

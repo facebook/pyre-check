@@ -1,0 +1,439 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "filename": "builtins.pyi",
+    "callable_line": 618,
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "filename": "builtins.pyi",
+    "callable_line": 619,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_breadcrumb_to_state.add_breadcrumb_to_state",
+    "filename": "add_breadcrumb_to_state.py",
+    "callable_line": 10,
+    "add_breadcrumbs_to_state": [ { "via": "add_breadcrumb_to_state" } ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_add_breadcrumb_context_manager",
+    "callable_line": 79,
+    "code": 5002,
+    "line": 82,
+    "start": 19,
+    "end": 20,
+    "filename": "add_breadcrumb_to_state.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 80, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 82, "start": 19, "end": 20 },
+            "call_site": "82:8-82:21"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "add_breadcrumb_to_state" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "add_breadcrumb_to_state.test_add_breadcrumb_context_manager:5002:0:Call|_test_sink|0|formal(arg):9265592b04343772d4665da6703304c6"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_issue",
+    "callable_line": 14,
+    "code": 5002,
+    "line": 17,
+    "start": 15,
+    "end": 16,
+    "filename": "add_breadcrumb_to_state.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 15, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 17, "start": 15, "end": 16 },
+            "call_site": "17:4-17:17"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "add_breadcrumb_to_state.test_if_issue:5002:0:Call|_test_sink|0|formal(arg):b3e752e75594d5f6c23e8364aba2e957"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_issue",
+    "callable_line": 14,
+    "code": 5002,
+    "line": 20,
+    "start": 19,
+    "end": 20,
+    "filename": "add_breadcrumb_to_state.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 15, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 20, "start": 19, "end": 20 },
+            "call_site": "20:8-20:21"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "add_breadcrumb_to_state" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "add_breadcrumb_to_state.test_if_issue:5002:0:Call|_test_sink|1|formal(arg):79ab1663c3f3a70b39d8eb7dc16a7568"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_issue",
+    "callable_line": 14,
+    "code": 5002,
+    "line": 22,
+    "start": 15,
+    "end": 16,
+    "filename": "add_breadcrumb_to_state.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 15, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 22, "start": 15, "end": 16 },
+            "call_site": "22:4-22:17"
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "add_breadcrumb_to_state" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "add_breadcrumb_to_state.test_if_issue:5002:0:Call|_test_sink|2|formal(arg):eb8c1b5187da1469d7faecd5b4ed38c4"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_sink_outside_condition",
+    "filename": "add_breadcrumb_to_state.py",
+    "callable_line": 48,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 52, "start": 15, "end": 16 },
+            "call_site": "52:4-52:17"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_sink_within_condition",
+    "filename": "add_breadcrumb_to_state.py",
+    "callable_line": 43,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 45, "start": 19, "end": 20 },
+            "call_site": "45:8-45:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_source_outside_condition",
+    "filename": "add_breadcrumb_to_state.py",
+    "callable_line": 34,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 35, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_if_source_within_condition",
+    "filename": "add_breadcrumb_to_state.py",
+    "callable_line": 25,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "add_breadcrumb_to_state" } ],
+            "origin": { "line": 26, "start": 8, "end": 22 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "add_breadcrumb_to_state.test_wrapper",
+    "callable_line": 59,
+    "code": 5002,
+    "line": 64,
+    "start": 19,
+    "end": 20,
+    "filename": "add_breadcrumb_to_state.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 60, "start": 8, "end": 22 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 64, "start": 19, "end": 20 },
+            "call_site": "64:8-64:21"
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "add_breadcrumb_to_state.test_wrapper:5002:0:Call|_test_sink|0|formal(arg):44cfbe80f4076d61e07061b4f4423ad0"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_breadcrumb_to_state.BreadcrumbOnEnter.__enter__",
+    "filename": "add_breadcrumb_to_state.py",
+    "callable_line": 72,
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "add_breadcrumbs_to_state": [ { "via": "add_breadcrumb_to_state" } ]
+  }
+}

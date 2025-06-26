@@ -194,6 +194,7 @@ module Analysis = struct
         backward;
         parameter_sources = previous_model.parameter_sources;
         sanitizers;
+        add_breadcrumbs_to_state = previous_model.add_breadcrumbs_to_state;
         model_generators = previous_model.model_generators;
         modes;
       }

@@ -330,6 +330,37 @@ module Sanitizers = struct
     && Sanitize.RootMap.less_or_equal ~left:roots_left ~right:roots_right
 end
 
+module AddBreadcrumbsToState = struct
+  module T = Abstract.SetDomain.Make (struct
+    include Features.BreadcrumbInterned
+
+    let name = "add breadcrumbs to state"
+  end)
+
+  include T
+
+  let empty = T.bottom
+
+  let is_empty = T.is_bottom
+
+  let equal = T.equal
+
+  let to_json breadcrumbs =
+    `List
+      (breadcrumbs
+      |> T.elements
+      |> List.map ~f:Features.BreadcrumbInterned.unintern
+      |> List.map ~f:(Features.Breadcrumb.to_json ~on_all_paths:false))
+
+
+  let pp_inner formatter breadcrumbs =
+    if not (is_empty breadcrumbs) then
+      Format.fprintf
+        formatter
+        "\n Add Breadcrumbs To State: %s"
+        (json_to_string ~indent:"    " (to_json breadcrumbs))
+end
+
 module Mode = struct
   let name = "modes"
 
@@ -452,14 +483,26 @@ type t = {
   backward: Backward.t;
   parameter_sources: ParameterSources.t;
   sanitizers: Sanitizers.t;
+  add_breadcrumbs_to_state: AddBreadcrumbsToState.t;
   model_generators: ModelGeneratorSet.t;
   modes: ModeSet.t;
 }
 
-let pp formatter { forward; backward; parameter_sources; sanitizers; model_generators; modes } =
+let pp
+    formatter
+    {
+      forward;
+      backward;
+      parameter_sources;
+      sanitizers;
+      add_breadcrumbs_to_state;
+      model_generators;
+      modes;
+    }
+  =
   Format.fprintf
     formatter
-    "{%a%a%a%a%a%a\n}"
+    "{%a%a%a%a%a%a%a\n}"
     Forward.pp_inner
     forward
     Backward.pp_inner
@@ -468,6 +511,8 @@ let pp formatter { forward; backward; parameter_sources; sanitizers; model_gener
     parameter_sources
     Sanitizers.pp_inner
     sanitizers
+    AddBreadcrumbsToState.pp_inner
+    add_breadcrumbs_to_state
     ModelGeneratorSet.pp_inner
     model_generators
     ModeSet.pp_inner
@@ -478,12 +523,21 @@ let show = Format.asprintf "%a" pp
 
 let is_empty
     ~with_modes
-    { forward; backward; parameter_sources; sanitizers; model_generators; modes }
+    {
+      forward;
+      backward;
+      parameter_sources;
+      sanitizers;
+      add_breadcrumbs_to_state;
+      model_generators;
+      modes;
+    }
   =
   Forward.is_empty forward
   && Backward.is_empty backward
   && ParameterSources.is_empty parameter_sources
   && Sanitizers.is_empty sanitizers
+  && AddBreadcrumbsToState.is_empty add_breadcrumbs_to_state
   && ModelGeneratorSet.is_empty model_generators
   && ModeSet.equal with_modes modes
 
@@ -494,6 +548,7 @@ let empty_model =
     backward = Backward.empty;
     parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
+    add_breadcrumbs_to_state = AddBreadcrumbsToState.empty;
     model_generators = ModelGeneratorSet.empty;
     modes = ModeSet.empty;
   }
@@ -505,6 +560,7 @@ let empty_skip_model =
     backward = Backward.empty;
     parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
+    add_breadcrumbs_to_state = AddBreadcrumbsToState.empty;
     model_generators = ModelGeneratorSet.empty;
     modes = ModeSet.singleton SkipAnalysis;
   }
@@ -516,6 +572,7 @@ let obscure_model =
     backward = Backward.obscure;
     parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
+    add_breadcrumbs_to_state = AddBreadcrumbsToState.empty;
     model_generators = ModelGeneratorSet.empty;
     modes = ModeSet.singleton Obscure;
   }
@@ -569,6 +626,8 @@ let join left right =
     backward = Backward.join left.backward right.backward;
     parameter_sources = ParameterSources.join left.parameter_sources right.parameter_sources;
     sanitizers = Sanitizers.join left.sanitizers right.sanitizers;
+    add_breadcrumbs_to_state =
+      AddBreadcrumbsToState.join left.add_breadcrumbs_to_state right.add_breadcrumbs_to_state;
     model_generators = ModelGeneratorSet.join left.model_generators right.model_generators;
     modes = ModeSet.join left.modes right.modes;
   }
@@ -584,6 +643,11 @@ let widen ~iteration ~previous ~next =
         ~previous:previous.parameter_sources
         ~next:next.parameter_sources;
     sanitizers = Sanitizers.widen ~iteration ~previous:previous.sanitizers ~next:next.sanitizers;
+    add_breadcrumbs_to_state =
+      AddBreadcrumbsToState.widen
+        ~iteration
+        ~prev:previous.add_breadcrumbs_to_state
+        ~next:next.add_breadcrumbs_to_state;
     model_generators =
       ModelGeneratorSet.widen ~iteration ~prev:previous.model_generators ~next:next.model_generators;
     modes = ModeSet.widen ~iteration ~prev:previous.modes ~next:next.modes;
@@ -595,6 +659,7 @@ let equal left right =
   && Backward.equal left.backward right.backward
   && ParameterSources.equal left.parameter_sources right.parameter_sources
   && Sanitizers.equal left.sanitizers right.sanitizers
+  && AddBreadcrumbsToState.equal left.add_breadcrumbs_to_state right.add_breadcrumbs_to_state
   && ModelGeneratorSet.equal left.model_generators right.model_generators
   && ModeSet.equal left.modes right.modes
 
@@ -604,6 +669,9 @@ let less_or_equal ~left ~right =
   && Backward.less_or_equal ~left:left.backward ~right:right.backward
   && ParameterSources.less_or_equal ~left:left.parameter_sources ~right:right.parameter_sources
   && Sanitizers.less_or_equal ~left:left.sanitizers ~right:right.sanitizers
+  && AddBreadcrumbsToState.less_or_equal
+       ~left:left.add_breadcrumbs_to_state
+       ~right:right.add_breadcrumbs_to_state
   && ModelGeneratorSet.less_or_equal ~left:left.model_generators ~right:right.model_generators
   && ModeSet.less_or_equal ~left:left.modes ~right:right.modes
 
@@ -615,6 +683,7 @@ let for_override_model
       backward = { sink_taint; taint_in_taint_out };
       parameter_sources = { parameter_sources };
       sanitizers;
+      add_breadcrumbs_to_state;
       model_generators;
       modes;
     }
@@ -629,6 +698,7 @@ let for_override_model
     parameter_sources =
       { parameter_sources = ForwardState.for_override_model ~callable parameter_sources };
     sanitizers;
+    add_breadcrumbs_to_state;
     model_generators;
     modes;
   }
@@ -641,6 +711,7 @@ let apply_sanitizers
       backward = { taint_in_taint_out; sink_taint };
       parameter_sources;
       sanitizers = { global; parameters; roots } as sanitizers;
+      add_breadcrumbs_to_state;
       model_generators;
       modes;
     }
@@ -882,16 +953,20 @@ let apply_sanitizers
     backward = { sink_taint; taint_in_taint_out };
     parameter_sources;
     sanitizers;
+    add_breadcrumbs_to_state;
     model_generators;
     modes;
   }
 
 
-let should_externalize { forward; backward; parameter_sources; sanitizers; _ } =
+let should_externalize
+    { forward; backward; parameter_sources; sanitizers; add_breadcrumbs_to_state; _ }
+  =
   (not (Forward.is_empty forward))
   || (not (Backward.is_empty backward))
   || (not (ParameterSources.is_empty parameter_sources))
-  || not (Sanitizers.is_empty sanitizers)
+  || (not (Sanitizers.is_empty sanitizers))
+  || not (AddBreadcrumbsToState.is_empty add_breadcrumbs_to_state)
 
 
 (* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
@@ -901,6 +976,7 @@ let may_breadcrumbs_to_must
       backward = { taint_in_taint_out; sink_taint };
       parameter_sources = { parameter_sources };
       sanitizers;
+      add_breadcrumbs_to_state;
       model_generators;
       modes;
     }
@@ -938,6 +1014,7 @@ let may_breadcrumbs_to_must
     backward = { taint_in_taint_out; sink_taint };
     parameter_sources = { parameter_sources };
     sanitizers;
+    add_breadcrumbs_to_state;
     model_generators;
     modes;
   }
@@ -951,6 +1028,7 @@ let join_every_frame_with_attach
       backward = { taint_in_taint_out; sink_taint };
       parameter_sources = { parameter_sources };
       sanitizers;
+      add_breadcrumbs_to_state;
       model_generators;
       modes;
     }
@@ -968,6 +1046,7 @@ let join_every_frame_with_attach
     backward = { taint_in_taint_out; sink_taint };
     parameter_sources = { parameter_sources };
     sanitizers;
+    add_breadcrumbs_to_state;
     model_generators;
     modes;
   }
@@ -994,6 +1073,7 @@ let to_json
       parameter_sources = { parameter_sources };
       sanitizers =
         { global = global_sanitizer; parameters = parameters_sanitizer; roots = root_sanitizers };
+      add_breadcrumbs_to_state;
       model_generators;
       modes;
     }
@@ -1091,6 +1171,13 @@ let to_json
   let model_json =
     if not (Sanitize.RootMap.is_bottom root_sanitizers) then
       model_json @ ["sanitizers", Sanitize.RootMap.to_json root_sanitizers]
+    else
+      model_json
+  in
+  let model_json =
+    if not (AddBreadcrumbsToState.is_empty add_breadcrumbs_to_state) then
+      model_json
+      @ ["add_breadcrumbs_to_state", AddBreadcrumbsToState.to_json add_breadcrumbs_to_state]
     else
       model_json
   in

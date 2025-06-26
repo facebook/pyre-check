@@ -47,6 +47,18 @@ module Sanitizers : sig
   val join : t -> t -> t
 end
 
+module AddBreadcrumbsToState : sig
+  type t [@@deriving show, equal]
+
+  val is_empty : t -> bool
+
+  val of_list : Features.BreadcrumbInterned.t list -> t
+
+  val elements : t -> Features.BreadcrumbInterned.t list
+
+  val join : t -> t -> t
+end
+
 module Mode : sig
   type t =
     | Obscure
@@ -118,6 +130,7 @@ type t = {
   backward: Backward.t;
   parameter_sources: ParameterSources.t;
   sanitizers: Sanitizers.t;
+  add_breadcrumbs_to_state: AddBreadcrumbsToState.t;
   model_generators: ModelGeneratorSet.t;
   modes: ModeSet.t;
 }

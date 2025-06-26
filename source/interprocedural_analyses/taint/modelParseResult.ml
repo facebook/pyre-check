@@ -408,6 +408,7 @@ module ModelAnnotation = struct
     | ReturnAnnotation of TaintAnnotation.t
     | ModeAnnotation of Model.ModeSet.t
     | SanitizeAnnotation of Model.Sanitizers.t
+    | AddBreadcrumbsToState of Features.Breadcrumb.t list
   [@@deriving show, equal]
 end
 

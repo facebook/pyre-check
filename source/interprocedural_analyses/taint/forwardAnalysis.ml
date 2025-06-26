@@ -386,6 +386,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ForwardState.Tree.bottom
 
 
+  let apply_add_breadcrumbs_to_state breadcrumbs state =
+    if Model.AddBreadcrumbsToState.is_empty breadcrumbs then
+      state
+    else
+      let breadcrumbs =
+        breadcrumbs |> Model.AddBreadcrumbsToState.elements |> Features.BreadcrumbSet.of_list
+      in
+      {
+        taint =
+          ForwardState.transform
+            ForwardTaint.Self
+            Map
+            ~f:(ForwardTaint.add_local_breadcrumbs breadcrumbs)
+            state.taint;
+      }
+
+
   let apply_call_target
       ?(apply_tito = true)
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
@@ -419,7 +436,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           { Call.Argument.name = None; value = callee } :: arguments, taint :: arguments_taint
       | CallModel.ImplicitArgument.Forward.None -> arguments, arguments_taint
     in
-    let ({ Model.forward; _ } as taint_model) =
+    let ({ Model.forward; add_breadcrumbs_to_state; _ } as taint_model) =
       TaintProfiler.track_model_fetch ~profiler ~analysis:Forward ~call_target:target ~f:(fun () ->
           CallModel.at_callsite
             ~pyre_in_context
@@ -828,7 +845,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~location:call_location
         ~argument:None
         ~f:(fun () ->
-          state |> apply_call_effects call_effects |> apply_captured_variable_side_effects)
+          state
+          |> apply_call_effects call_effects
+          |> apply_captured_variable_side_effects
+          |> apply_add_breadcrumbs_to_state add_breadcrumbs_to_state)
     in
     result_taint, state
 
