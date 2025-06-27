@@ -56,7 +56,7 @@ This first invocation will start a daemon listening for filesystem changes – 
 
 ## Introductory Video
 
-<YouTube videoId="k_xElpxw9aY" />
+<YouTube videoId="k_xElpxw9aY" containerClassName="youtubeContainer" />
 
 </OssOnly>
 

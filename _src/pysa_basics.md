@@ -12,7 +12,7 @@ analysis, more specifically called **Taint Analysis**, to identify potential sec
 The Python Static Analyzer feature of Pyre is usually abbreviated to Pysa
 (pronounced like the Leaning Tower of Pisa).
 
-<YouTube videoId="LDxAczqkBiY" />
+<YouTube videoId="LDxAczqkBiY" containerClassName="youtubeContainer" />
 
 <Internal />
 
