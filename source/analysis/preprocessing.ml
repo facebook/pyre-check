@@ -1959,8 +1959,22 @@ let expand_type_checking_imports source =
             true
         | _ -> false
       in
+      let is_type_checking_with_pyrefly { Node.value; _ } =
+        match value with
+        | Expression.Name
+            (Name.Attribute
+              {
+                base = { Node.value = Name (Name.Identifier _); _ };
+                attribute = "TYPE_CHECKING_WITH_PYREFLY";
+                _;
+              })
+        | Name (Name.Identifier "TYPE_CHECKING_WITH_PYREFLY") ->
+            true
+        | _ -> false
+      in
       match value with
       | Statement.If { If.test; body; _ } when is_type_checking test -> (), body
+      | Statement.If { If.test; orelse; _ } when is_type_checking_with_pyrefly test -> (), orelse
       | If
           {
             If.test =
@@ -1973,6 +1987,18 @@ let expand_type_checking_imports source =
           }
         when is_type_checking operand ->
           (), orelse
+      | If
+          {
+            If.test =
+              {
+                Node.value = UnaryOperator { UnaryOperator.operator = Not; operand; origin = _ };
+                _;
+              };
+            body;
+            _;
+          }
+        when is_type_checking_with_pyrefly operand ->
+          (), body
       | If
           {
             If.test =

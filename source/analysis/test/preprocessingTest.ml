@@ -3656,6 +3656,25 @@ let test_expand_type_checking_imports =
            {|
       1
     |};
+      (* Pyrefly *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_expanded
+           {|
+      from nowhere import TYPE_CHECKING_WITH_PYREFLY
+      if TYPE_CHECKING_WITH_PYREFLY:
+        1
+      else:
+        2
+      if not TYPE_CHECKING_WITH_PYREFLY:
+        3
+      else:
+        4
+    |}
+           {|
+      from nowhere import TYPE_CHECKING_WITH_PYREFLY
+      2
+      3
+    |};
     ]
 
 
