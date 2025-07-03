@@ -438,6 +438,7 @@ def _run_analyze_command(
                     output=output,
                     error_kind="model verification",
                 )
+                LOG.warning("Hint: use --no-verify to silence these errors")
                 return commands.ExitCode.MODEL_VERIFICATION_ERROR
             else:
                 LOG.error(f"Pyre exited with non-zero return code: {return_code}.")
