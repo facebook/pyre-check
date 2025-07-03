@@ -1059,6 +1059,20 @@
     ],
     "tito": [
       {
+        "port": "formal(feature, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[feature]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
         "port": "formal(self, position=0)[inner]",
         "taint": [
           {

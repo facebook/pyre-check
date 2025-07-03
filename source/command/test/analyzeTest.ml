@@ -30,7 +30,7 @@ let test_json_parsing context =
       dump_call_graph = None;
       dump_model_query_results = None;
       find_missing_flows = None;
-      infer_self_tito = false;
+      infer_self_tito = true;
       infer_argument_tito = false;
       maximum_model_source_tree_width = None;
       maximum_model_sink_tree_width = None;
@@ -92,8 +92,8 @@ let test_json_parsing context =
         find_missing_flows = Some Configuration.MissingFlowKind.Obscure;
       };
   assert_parsed
-    (`Assoc (("infer_self_tito", `Bool true) :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with infer_self_tito = true };
+    (`Assoc (("infer_self_tito", `Bool false) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with infer_self_tito = false };
   assert_parsed
     (`Assoc (("infer_argument_tito", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with infer_argument_tito = true };

@@ -834,7 +834,7 @@ module StaticAnalysis = struct
       ?dump_model_query_results
       ?(use_cache = false)
       ?(build_cache_only = false)
-      ?(infer_self_tito = false)
+      ?(infer_self_tito = true)
       ?(infer_argument_tito = false)
       ?maximum_model_source_tree_width
       ?maximum_model_sink_tree_width

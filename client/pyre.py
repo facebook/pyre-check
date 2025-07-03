@@ -493,13 +493,13 @@ def pyre(
     help="Build the cache and exit without computing results..",
 )
 @click.option(
-    "--infer-self-tito",
+    "--infer-self-tito/--no-infer-self-tito",
     is_flag=True,
-    default=False,
+    default=True,
     help="Infer taint propagations (tito) from arguments to `self` for all methods.",
 )
 @click.option(
-    "--infer-argument-tito",
+    "--infer-argument-tito/--no-infer-argument-tito",
     is_flag=True,
     default=False,
     help="Infer taint propagations (tito) from arguments to other arguments.",

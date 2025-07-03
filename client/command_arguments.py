@@ -299,7 +299,7 @@ class AnalyzeArguments:
     enable_memory_profiling: bool = False
     enable_profiling: bool = False
     find_missing_flows: Optional[MissingFlowsKind] = None
-    infer_self_tito: bool = False
+    infer_self_tito: bool = True
     infer_argument_tito: bool = False
     log_identifier: Optional[str] = None
     maximum_model_source_tree_width: Optional[int] = None

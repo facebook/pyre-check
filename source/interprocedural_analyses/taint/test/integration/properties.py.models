@@ -1644,6 +1644,39 @@
           }
         ]
       }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          },
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 280, "start": 8, "end": 12 } ],
+            "tito": {
+              "caller_interval": [ { "lower": 24, "upper": 25 } ],
+              "is_self_call": false
+            }
+          }
+        ]
+      }
     ]
   }
 }

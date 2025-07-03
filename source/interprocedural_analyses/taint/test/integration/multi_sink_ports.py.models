@@ -813,7 +813,11 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[_params]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[_params]": 3 }, "kind": "LocalReturn" },
+              {
+                "return_paths": { "[_params]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
             ],
             "tito": {}
           }

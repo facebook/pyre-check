@@ -519,7 +519,7 @@ module Heap = struct
       string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
-      infer_self_tito = false;
+      infer_self_tito = true;
       infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
       source_sink_filter = SourceSinkFilter.all;
@@ -697,7 +697,7 @@ module Heap = struct
       string_combine_partial_sinks = StringOperationPartialSinks.empty;
       find_missing_flows = None;
       dump_model_query_results_path = None;
-      infer_self_tito = false;
+      infer_self_tito = true;
       infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
       source_sink_filter =
@@ -1635,7 +1635,7 @@ let from_json_list source_json_list =
     string_combine_partial_sinks;
     find_missing_flows = None;
     dump_model_query_results_path = None;
-    infer_self_tito = false;
+    infer_self_tito = true;
     infer_argument_tito = false;
     analysis_model_constraints =
       ModelConstraints.override_with
@@ -1979,7 +1979,7 @@ let with_command_line_options
     rules;
     implicit_sources;
     implicit_sinks;
-    infer_self_tito = configuration.infer_self_tito || infer_self_tito;
+    infer_self_tito = configuration.infer_self_tito && infer_self_tito;
     infer_argument_tito = configuration.infer_argument_tito || infer_argument_tito;
     source_sink_filter;
   }

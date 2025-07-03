@@ -92,7 +92,7 @@ module AnalyzeConfiguration = struct
           let maximum_parameterized_targets_at_call_site =
             optional_int_member "maximum_parameterized_targets_at_call_site" json
           in
-          let infer_self_tito = bool_member "infer_self_tito" ~default:false json in
+          let infer_self_tito = bool_member "infer_self_tito" ~default:true json in
           let infer_argument_tito = bool_member "infer_argument_tito" ~default:false json in
           let maximum_model_source_tree_width =
             optional_int_member "maximum_model_source_tree_width" json
