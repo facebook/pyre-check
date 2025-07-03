@@ -312,6 +312,7 @@ module Breadcrumb = struct
     | ModelSinkShaping (* Sink tree was collapsed during model shaping *)
     | ModelTitoShaping (* Tito tree was collapsed during model shaping *)
     | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
+    | ShimBroadening (* Taint tree was collapsed when applying shims *)
     | Crtex (* Taint comes from the Cross Repository Taint EXchange *)
     | TransformTitoDepth of int
     | PropagatedReturnSink
@@ -348,6 +349,7 @@ module Breadcrumb = struct
     | ModelSinkShaping -> Format.fprintf formatter "ModelSinkShaping"
     | ModelTitoShaping -> Format.fprintf formatter "ModelTitoShaping"
     | IssueBroadening -> Format.fprintf formatter "IssueBroadening"
+    | ShimBroadening -> Format.fprintf formatter "ShimBroadening"
     | Crtex -> Format.fprintf formatter "Crtex"
     | TransformTitoDepth depth -> Format.fprintf formatter "TransformTitoDepth(%d)" depth
     | PropagatedReturnSink -> Format.fprintf formatter "PropagatedReturnSink"
@@ -386,6 +388,7 @@ module Breadcrumb = struct
     | ModelSinkShaping -> `Assoc [prefix ^ "via", `String "model-sink-shaping"]
     | ModelTitoShaping -> `Assoc [prefix ^ "via", `String "model-tito-shaping"]
     | IssueBroadening -> `Assoc [prefix ^ "via", `String "issue-broadening"]
+    | ShimBroadening -> `Assoc [prefix ^ "via", `String "shim-broadening"]
     | Crtex -> `Assoc [prefix ^ "via", `String "crtex"]
     | TransformTitoDepth depth ->
         `Assoc [prefix ^ "via", `String (Format.sprintf "transform-tito-depth:%d" depth)]
@@ -766,6 +769,8 @@ let model_tito_shaping_set =
 let issue_broadening_set =
   memoize_breadcrumb_set [Breadcrumb.Broadening; Breadcrumb.IssueBroadening]
 
+
+let shim_broadening_set = memoize_breadcrumb_set [Breadcrumb.Broadening; Breadcrumb.ShimBroadening]
 
 let type_bool_scalar_set = memoize_breadcrumb_set [Breadcrumb.Type "scalar"; Breadcrumb.Type "bool"]
 

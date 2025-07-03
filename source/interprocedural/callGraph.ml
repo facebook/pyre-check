@@ -864,6 +864,95 @@ module HigherOrderParameterMap = struct
     Map.map (HigherOrderParameter.regenerate_call_indices ~indexer)
 end
 
+module ShimTarget = struct
+  type t = {
+    call_targets: CallTarget.t list;
+    decorated_targets: CallTarget.t list;
+    argument_mapping: Shims.ShimArgumentMapping.t;
+  }
+  [@@deriving eq, show { with_path = false }]
+
+  let join
+      {
+        call_targets = left_call_targets;
+        decorated_targets = left_decorated_targets;
+        argument_mapping = left_argument_mapping;
+      }
+      {
+        call_targets = right_call_targets;
+        decorated_targets = right_decorated_targets;
+        argument_mapping = right_argument_mapping;
+      }
+    =
+    if not (Shims.ShimArgumentMapping.equal left_argument_mapping right_argument_mapping) then
+      failwith "Could NOT join shims with different argument mapping"
+    else
+      {
+        call_targets = List.rev_append left_call_targets right_call_targets;
+        decorated_targets = List.rev_append left_decorated_targets right_decorated_targets;
+        argument_mapping = left_argument_mapping;
+      }
+
+
+  let dedup_and_sort { call_targets; decorated_targets; argument_mapping } =
+    {
+      call_targets = CallTarget.dedup_and_sort call_targets;
+      decorated_targets = CallTarget.dedup_and_sort decorated_targets;
+      argument_mapping;
+    }
+
+
+  let all_targets ~use_case { call_targets; decorated_targets; _ } =
+    (match use_case with
+    | AllTargetsUseCase.TaintAnalysisDependency -> call_targets
+    | AllTargetsUseCase.CallGraphDependency
+    | AllTargetsUseCase.Everything ->
+        List.rev_append call_targets decorated_targets)
+    |> List.map ~f:CallTarget.target
+
+
+  let equal_ignoring_types
+      {
+        call_targets = left_call_targets;
+        decorated_targets = left_decorated_targets;
+        argument_mapping = left_argument_mapping;
+      }
+      {
+        call_targets = right_call_targets;
+        decorated_targets = right_decorated_targets;
+        argument_mapping = right_argument_mapping;
+      }
+    =
+    List.equal CallTarget.equal_ignoring_types left_call_targets right_call_targets
+    && List.equal CallTarget.equal_ignoring_types left_decorated_targets right_decorated_targets
+    && Shims.ShimArgumentMapping.equal left_argument_mapping right_argument_mapping
+
+
+  let to_json { call_targets; decorated_targets; argument_mapping } =
+    []
+    |> JsonHelper.add_list "calls" call_targets CallTarget.to_json
+    |> JsonHelper.add_list "decorated_targets" decorated_targets CallTarget.to_json
+    |> List.cons ("argument_mapping", Shims.ShimArgumentMapping.to_json argument_mapping)
+    |> fun bindings -> `Assoc (List.rev bindings)
+
+
+  let redirect_to_decorated ~decorators ({ call_targets; _ } as shim_target) =
+    {
+      shim_target with
+      call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
+    }
+
+
+  let regenerate_call_indices ~indexer ({ call_targets; _ } as shim_target) =
+    {
+      shim_target with
+      call_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) call_targets;
+    }
+
+
+  let drop_decorated_targets shim_target = { shim_target with decorated_targets = [] }
+end
+
 (** An aggregate of all possible callees at a call site. *)
 module CallCallees = struct
   module RecognizedCall = struct
@@ -908,6 +997,7 @@ module CallCallees = struct
     decorated_targets: CallTarget.t list;
     (* Information about arguments that are callables, and possibly called. *)
     higher_order_parameters: HigherOrderParameterMap.t;
+    shim_target: ShimTarget.t option;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
     unresolved: Unresolved.t;
@@ -921,6 +1011,7 @@ module CallCallees = struct
       ?(init_targets = [])
       ?(decorated_targets = [])
       ?(higher_order_parameters = HigherOrderParameterMap.empty)
+      ?(shim_target = None)
       ?(unresolved = Unresolved.False)
       ?(recognized_call = RecognizedCall.False)
       ()
@@ -931,6 +1022,7 @@ module CallCallees = struct
       init_targets;
       decorated_targets;
       higher_order_parameters;
+      shim_target;
       unresolved;
       recognized_call;
     }
@@ -948,6 +1040,7 @@ module CallCallees = struct
       init_targets = [];
       decorated_targets = [];
       higher_order_parameters = HigherOrderParameterMap.empty;
+      shim_target = None;
       unresolved = Unresolved.True reason;
       recognized_call = RecognizedCall.False;
     }
@@ -977,6 +1070,7 @@ module CallCallees = struct
         init_targets = left_init_targets;
         decorated_targets = left_decorator_targets;
         higher_order_parameters = left_higher_order_parameters;
+        shim_target = left_shim_target;
         unresolved = left_unresolved;
         recognized_call = left_recognized_call;
       }
@@ -986,6 +1080,7 @@ module CallCallees = struct
         init_targets = right_init_targets;
         decorated_targets = right_decorator_targets;
         higher_order_parameters = right_higher_order_parameters;
+        shim_target = right_shim_target;
         unresolved = right_unresolved;
         recognized_call = right_recognized_call;
       }
@@ -997,6 +1092,7 @@ module CallCallees = struct
     let higher_order_parameters =
       HigherOrderParameterMap.join left_higher_order_parameters right_higher_order_parameters
     in
+    let shim_target = Option.merge ~f:ShimTarget.join left_shim_target right_shim_target in
     let unresolved = Unresolved.join left_unresolved right_unresolved in
     let recognized_call = RecognizedCall.join left_recognized_call right_recognized_call in
     {
@@ -1005,6 +1101,7 @@ module CallCallees = struct
       init_targets;
       decorated_targets;
       higher_order_parameters;
+      shim_target;
       unresolved;
       recognized_call;
     }
@@ -1017,6 +1114,7 @@ module CallCallees = struct
         init_targets;
         decorated_targets;
         higher_order_parameters;
+        shim_target;
         unresolved;
         recognized_call;
       }
@@ -1026,12 +1124,14 @@ module CallCallees = struct
     let init_targets = CallTarget.dedup_and_sort init_targets in
     let decorated_targets = CallTarget.dedup_and_sort decorated_targets in
     let higher_order_parameters = HigherOrderParameterMap.dedup_and_sort higher_order_parameters in
+    let shim_target = Option.map ~f:ShimTarget.dedup_and_sort shim_target in
     {
       call_targets;
       new_targets;
       init_targets;
       decorated_targets;
       higher_order_parameters;
+      shim_target;
       unresolved;
       recognized_call;
     }
@@ -1039,7 +1139,15 @@ module CallCallees = struct
 
   let all_targets
       ~use_case
-      { call_targets; new_targets; init_targets; higher_order_parameters; decorated_targets; _ }
+      {
+        call_targets;
+        new_targets;
+        init_targets;
+        higher_order_parameters;
+        shim_target;
+        decorated_targets;
+        _;
+      }
     =
     call_targets
     |> List.rev_append new_targets
@@ -1047,6 +1155,7 @@ module CallCallees = struct
     |> List.rev_append decorated_targets
     |> List.map ~f:CallTarget.target
     |> List.rev_append (HigherOrderParameterMap.all_targets ~use_case higher_order_parameters)
+    |> List.rev_append (shim_target >>| ShimTarget.all_targets ~use_case |> Option.value ~default:[])
 
 
   let equal_ignoring_types
@@ -1055,7 +1164,8 @@ module CallCallees = struct
         new_targets = new_targets_left;
         init_targets = init_targets_left;
         decorated_targets = decorator_targets_left;
-        higher_order_parameters = higher_order_parameter_lefts;
+        higher_order_parameters = higher_order_parameters_left;
+        shim_target = shim_target_left;
         unresolved = unresolved_left;
         recognized_call = recognized_call_left;
       }
@@ -1064,7 +1174,8 @@ module CallCallees = struct
         new_targets = new_targets_right;
         init_targets = init_targets_right;
         decorated_targets = decorator_targets_right;
-        higher_order_parameters = higher_order_parameter_rights;
+        higher_order_parameters = higher_order_parameters_right;
+        shim_target = shim_target_right;
         unresolved = unresolved_right;
         recognized_call = recognized_call_right;
       }
@@ -1074,8 +1185,9 @@ module CallCallees = struct
     && List.equal CallTarget.equal_ignoring_types init_targets_left init_targets_right
     && List.equal CallTarget.equal_ignoring_types decorator_targets_left decorator_targets_right
     && HigherOrderParameterMap.equal_ignoring_types
-         higher_order_parameter_lefts
-         higher_order_parameter_rights
+         higher_order_parameters_left
+         higher_order_parameters_right
+    && Option.equal ShimTarget.equal_ignoring_types shim_target_left shim_target_right
     && Unresolved.equal unresolved_left unresolved_right
     && RecognizedCall.equal recognized_call_left recognized_call_right
 
@@ -1161,6 +1273,7 @@ module CallCallees = struct
         init_targets;
         decorated_targets;
         higher_order_parameters;
+        shim_target;
         unresolved;
         recognized_call;
       }
@@ -1180,6 +1293,11 @@ module CallCallees = struct
         bindings
     in
     let bindings =
+      match shim_target with
+      | Some shim_target -> ("shim", ShimTarget.to_json shim_target) :: bindings
+      | None -> bindings
+    in
+    let bindings =
       bindings
       |> JsonHelper.add_flag_if
            "unresolved"
@@ -1195,8 +1313,15 @@ module CallCallees = struct
 
   let redirect_to_decorated
       ~decorators
-      ({ call_targets; higher_order_parameters; new_targets; init_targets; recognized_call; _ } as
-      call_callees)
+      ({
+         call_targets;
+         new_targets;
+         init_targets;
+         higher_order_parameters;
+         shim_target;
+         recognized_call;
+         _;
+       } as call_callees)
     =
     if RecognizedCall.redirect_to_decorated recognized_call then
       {
@@ -1204,6 +1329,7 @@ module CallCallees = struct
         call_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) call_targets;
         higher_order_parameters =
           HigherOrderParameterMap.redirect_to_decorated ~decorators higher_order_parameters;
+        shim_target = Option.map ~f:(ShimTarget.redirect_to_decorated ~decorators) shim_target;
         new_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) new_targets;
         init_targets = List.map ~f:(CallTarget.redirect_to_decorated ~decorators) init_targets;
       }
@@ -1211,7 +1337,13 @@ module CallCallees = struct
       call_callees
 
 
-  let drop_decorated_targets call_callees = { call_callees with decorated_targets = [] }
+  let drop_decorated_targets ({ shim_target; _ } as call_callees) =
+    {
+      call_callees with
+      decorated_targets = [];
+      shim_target = Option.map ~f:ShimTarget.drop_decorated_targets shim_target;
+    }
+
 
   let regenerate_call_indices
       ~indexer
@@ -1220,6 +1352,7 @@ module CallCallees = struct
          new_targets;
          init_targets;
          higher_order_parameters;
+         shim_target;
          decorated_targets =
            _ (* No need to regenerate because they will not be used in taint analysis. *);
          _;
@@ -1232,6 +1365,7 @@ module CallCallees = struct
       init_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) init_targets;
       higher_order_parameters =
         HigherOrderParameterMap.regenerate_call_indices ~indexer higher_order_parameters;
+      shim_target = Option.map ~f:(ShimTarget.regenerate_call_indices ~indexer) shim_target;
     }
 end
 
@@ -2895,20 +3029,33 @@ let preprocess_special_calls
   | _ -> None
 
 
-let preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~callable ~location call =
-  (* First, try to perform hardcoded AST transformations. *)
+let shim_for_call ~pyre_in_context ~callables_to_definitions_map call =
+  match shim_special_calls call with
+  | Some shim -> Some shim
+  | None ->
+      SpecialCallResolution.shim_calls
+        ~resolve_expression_to_type:
+          (CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map)
+        call
+
+
+let preprocess_call
+    ~pyre_in_context
+    ~type_of_expression_shared_memory
+    ~callable
+    ~location
+    original_call
+  =
   match
     preprocess_special_calls
       ~pyre_in_context
       ~type_of_expression_shared_memory
       ~callable
       ~location
-      call
+      original_call
   with
   | Some call -> call
   | None -> (
-      (* Rewrite certain calls using the same logic used in the type checker.
-       * This should be sound for most analyses. *)
       match
         Analysis.AnnotatedCall.preprocess_special_calls
           ~resolve_expression_to_type:
@@ -2917,31 +3064,10 @@ let preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~callable
                ~pyre_in_context
                ~callable)
           ~location
-          call
+          original_call
       with
       | Some call -> call
-      | None -> (
-          (* Now, try to shim the call using hardcoded shims or user-provided shims. *)
-          let shim =
-            match shim_special_calls call with
-            | Some shim -> Some shim
-            | None ->
-                SpecialCallResolution.shim_calls
-                  ~resolve_expression_to_type:
-                    (TypeOfExpressionSharedMemory.compute_or_retrieve_type
-                       type_of_expression_shared_memory
-                       ~pyre_in_context
-                       ~callable)
-                  call
-          in
-          match
-            shim >>| Shims.ShimArgumentMapping.create_artificial_call ~call_location:location call
-          with
-          | None -> call
-          | Some (Ok call) -> call
-          | Some (Error error) ->
-              let () = Log.warning "Failed to apply shim: %s" error in
-              call))
+      | None -> original_call)
 
 
 let rec preprocess_expression
@@ -3928,13 +4054,15 @@ let resolve_callees
     ~pyre_in_context
     ~callables_to_definitions_map
     ~override_graph
+    ~caller
+    ~location
     ~call:({ Call.callee; arguments; origin = _ } as call)
   =
   log
     ~debug
     "Resolving function call `%a`"
     Expression.pp
-    (Expression.Call call |> Node.create_with_default_location);
+    (Expression.Call call |> Node.create ~location);
   (* Resolving the return type can be costly, hence we prefer the annotation on the callee when
      possible. When that does not work, we fallback to a full resolution of the call expression
      (done lazily). *)
@@ -3952,6 +4080,54 @@ let resolve_callees
       ~override_graph
       ~return_type
       ~callee
+  in
+  let shim_target =
+    shim_for_call ~pyre_in_context ~callables_to_definitions_map call
+    >>= fun shim ->
+    log ~debug "Found shim for call: %a" Shims.ShimArgumentMapping.pp shim;
+    Shims.ShimArgumentMapping.create_artificial_call ~call_location:location call shim
+    |> (function
+         | Ok { Call.callee = shim_callee_expression; _ } -> Some shim_callee_expression
+         | Error error ->
+             let () =
+               Log.warning
+                 "Error applying shim argument mapping: %s for expression `%a` in `%a` at %a"
+                 error
+                 Expression.pp
+                 (Node.create_with_default_location (Expression.Call call))
+                 Target.pp
+                 caller
+                 Location.pp
+                 location
+             in
+             None)
+    >>= fun shim_callee_expression ->
+    resolve_regular_callees
+      ~debug
+      ~callables_to_definitions_map
+      ~pyre_in_context
+      ~override_graph
+      ~return_type
+      ~callee:shim_callee_expression
+    |> function
+    | {
+        CallCallees.call_targets = _ :: _ as call_targets;
+        new_targets = [];
+        init_targets = [];
+        shim_target = None;
+        unresolved = Unresolved.False;
+        _;
+      } ->
+        Some { ShimTarget.call_targets; decorated_targets = []; argument_mapping = shim }
+    | _ ->
+        let () =
+          log
+            ~debug
+            "Failed to resolve callees for shimmed callee %a"
+            Expression.pp
+            shim_callee_expression
+        in
+        None
   in
   let higher_order_parameters =
     let filter_implicit_dunder_calls ({ CallCallees.call_targets; _ } as callees) =
@@ -4027,10 +4203,13 @@ let resolve_callees
             }
       | _ -> None
     in
-    List.filter_mapi arguments ~f:get_higher_order_function_targets
-    |> HigherOrderParameterMap.from_list
+    if Option.is_none shim_target then
+      List.filter_mapi arguments ~f:get_higher_order_function_targets
+      |> HigherOrderParameterMap.from_list
+    else (* disable higher order parameters if call is shimmed *)
+      HigherOrderParameterMap.empty
   in
-  { regular_callees with higher_order_parameters }
+  { regular_callees with higher_order_parameters; shim_target }
 
 
 let resolve_attribute_access
@@ -4210,6 +4389,7 @@ module CallGraphBuilder = struct
           State.context =
             {
               Context.debug;
+              callable;
               callables_to_definitions_map;
               override_graph;
               missing_flow_type_analysis;
@@ -4221,7 +4401,14 @@ module CallGraphBuilder = struct
       ~location
       ~call
     =
-    resolve_callees ~debug ~pyre_in_context ~callables_to_definitions_map ~override_graph ~call
+    resolve_callees
+      ~debug
+      ~pyre_in_context
+      ~callables_to_definitions_map
+      ~override_graph
+      ~caller:callable
+      ~location
+      ~call
     |> MissingFlowTypeAnalysis.add_unknown_callee
          ~missing_flow_type_analysis
          ~expression:(Expression.Call call |> Node.create ~location)
@@ -5361,9 +5548,10 @@ module HigherOrderCallGraph = struct
       in
       let ({
              CallCallees.call_targets = original_call_targets;
-             higher_order_parameters;
+             higher_order_parameters = original_higher_order_parameters;
              unresolved;
              init_targets = original_init_targets;
+             shim_target = original_shim_target;
              _;
            } as original_call_callees)
         =
@@ -5394,7 +5582,7 @@ module HigherOrderCallGraph = struct
         track_apply_call_step AnalyzeArguments (fun () ->
             List.fold_mapi
               arguments
-              ~f:(analyze_argument ~higher_order_parameters)
+              ~f:(analyze_argument ~higher_order_parameters:original_higher_order_parameters)
               ~init:(state, HigherOrderParameterMap.empty, []))
       in
       let ( parameterized_call_targets,
@@ -5461,14 +5649,25 @@ module HigherOrderCallGraph = struct
       in
       (* Discard higher order parameters only if each original target is parameterized, except for
          the targets that must be treated as being called. *)
-      let higher_order_parameters =
+      let new_higher_order_parameters =
         if
           List.is_empty non_parameterized_call_targets
           && List.is_empty non_parameterized_init_targets
         then
           additional_higher_order_parameters
         else
-          HigherOrderParameterMap.join higher_order_parameters additional_higher_order_parameters
+          HigherOrderParameterMap.join
+            original_higher_order_parameters
+            additional_higher_order_parameters
+      in
+      let new_shim_target =
+        match original_shim_target with
+        | Some { ShimTarget.call_targets = shim_call_targets; argument_mapping; _ } ->
+            let { AnalyzeDecoratedTargetsResult.result_targets; decorated_targets; _ } =
+              resolve_decorated_targets shim_call_targets
+            in
+            Some { ShimTarget.call_targets = result_targets; decorated_targets; argument_mapping }
+        | None -> None
       in
       let new_call_targets =
         parameterized_call_targets
@@ -5505,7 +5704,8 @@ module HigherOrderCallGraph = struct
                     |> List.rev_append decorated_targets_from_arguments
                     |> List.dedup_and_sort ~compare:CallTarget.compare;
                   init_targets = new_init_targets;
-                  higher_order_parameters;
+                  higher_order_parameters = new_higher_order_parameters;
+                  shim_target = new_shim_target;
                   unresolved = new_unresolved;
                 }
               !Context.output_define_call_graph);

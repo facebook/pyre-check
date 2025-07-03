@@ -1031,20 +1031,10 @@ let test_higher_order_call_graph_fixpoint =
                  call_graph =
                    [
                      ( "12:9-12:14",
-                       ExpressionCallees.from_call
-                         (CallCallees.create
-                            ~call_targets:
-                              [
-                                CallTarget.create_regular
-                                  (Target.Regular.Function { name = "test.bar"; kind = Normal });
-                              ]
-                            ()) );
+                       (* TODO(T226554045): Handle shimming in decorators *)
+                       ExpressionCallees.from_call (CallCallees.create ()) );
                    ];
-                 returned_callables =
-                   [
-                     CallTarget.create_regular
-                       (Target.Regular.Function { name = "test.foo"; kind = Normal });
-                   ];
+                 returned_callables = [];
                };
              ]
            ();

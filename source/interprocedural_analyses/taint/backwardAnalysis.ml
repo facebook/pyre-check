@@ -970,6 +970,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         init_targets;
         decorated_targets = _;
         higher_order_parameters = _;
+        shim_target = _;
         unresolved;
         recognized_call = _;
       }
@@ -1356,6 +1357,130 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_unstarred_expression ~pyre_in_context argument_taint argument state)
 
 
+  and apply_shim_callees_and_return_arguments_taint
+      ~apply_tito
+      ~pyre_in_context
+      ~call_location
+      ~original_call:({ Call.arguments = original_arguments; _ } as original_call)
+      ~state
+      ~call_taint
+      { CallGraph.ShimTarget.call_targets; decorated_targets = _; argument_mapping }
+    =
+    let { Call.callee = shim_callee; arguments = shim_arguments; origin = shim_origin } =
+      Shims.ShimArgumentMapping.create_artificial_call ~call_location original_call argument_mapping
+      |> Result.ok_or_failwith
+    in
+
+    let {
+      arguments_taint = shim_arguments_taint;
+      implicit_argument_taint = shim_implicit_argument_taint;
+      captures_taint;
+      captures;
+      state;
+    }
+      =
+      apply_callees_and_return_arguments_taint
+        ~apply_tito
+        ~pyre_in_context
+        ~callee:shim_callee
+        ~call_location
+        ~arguments:shim_arguments
+        ~origin:shim_origin
+        ~state
+        ~call_taint
+        (CallGraph.CallCallees.create ~call_targets ())
+    in
+
+    let module OriginalRoot = struct
+      type t =
+        | Callee
+        | CalleeBase
+        | Argument of int
+    end
+    in
+    let module Target = Shims.ShimArgumentMapping.Target in
+    let module ImplicitArgument = CallModel.ImplicitArgument.Backward in
+    let rec shim_argument_taint_to_original ~taint = function
+      | Target.Callee -> Some (OriginalRoot.Callee, taint)
+      | Target.Argument { index } -> Some (OriginalRoot.Argument index, taint)
+      | Target.GetAttributeBase { attribute = _; inner = Target.Callee } ->
+          Some (OriginalRoot.CalleeBase, taint)
+      | Target.GetAttributeBase { attribute = _; inner } ->
+          shim_argument_taint_to_original
+            ~taint:
+              (BackwardState.Tree.collapse ~breadcrumbs:(Features.shim_broadening_set ()) taint
+              |> BackwardState.Tree.create_leaf)
+            inner
+      | Target.AppendAttribute { attribute; inner } ->
+          shim_argument_taint_to_original
+            ~taint:(BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index attribute] taint)
+            inner
+      | Target.GetTupleElement { index; inner }
+      | Target.GetListElement { index; inner } ->
+          shim_argument_taint_to_original
+            ~taint:
+              (BackwardState.Tree.prepend
+                 [Abstract.TreeDomain.Label.Index (string_of_int index)]
+                 taint)
+            inner
+      | Target.GetDictEntryValue { index = _; key; inner } ->
+          shim_argument_taint_to_original
+            ~taint:(BackwardState.Tree.prepend [Abstract.TreeDomain.Label.Index key] taint)
+            inner
+      | Target.GetCallArgument _ ->
+          (* There is no easy way to get that taint, give up *)
+          None
+      | Target.Constant _ -> None
+      | Target.Reference _ -> None
+    in
+    let shim_callee_base_taint_to_original ~taint = function
+      | Target.AppendAttribute { attribute = _; inner } ->
+          shim_argument_taint_to_original ~taint inner
+      | target ->
+          shim_argument_taint_to_original
+            ~taint:
+              (BackwardState.Tree.collapse ~breadcrumbs:(Features.shim_broadening_set ()) taint
+              |> BackwardState.Tree.create_leaf)
+            target
+    in
+    let implicit_argument_to_original =
+      match shim_implicit_argument_taint with
+      | ImplicitArgument.CalleeBase base_taint ->
+          shim_callee_base_taint_to_original ~taint:base_taint argument_mapping.callee
+      | ImplicitArgument.Callee callee_taint ->
+          shim_argument_taint_to_original ~taint:callee_taint argument_mapping.callee
+      | ImplicitArgument.None -> None
+    in
+    let original_taint_map =
+      List.zip_exn shim_arguments_taint argument_mapping.arguments
+      |> List.map ~f:(fun (taint, { Shims.ShimArgumentMapping.Argument.value; _ }) ->
+             shim_argument_taint_to_original ~taint value)
+      |> List.cons implicit_argument_to_original
+      |> List.filter_opt
+      |> Map.Poly.of_alist_reduce ~f:BackwardState.Tree.join
+    in
+    let original_arguments_taint =
+      List.mapi original_arguments ~f:(fun index _ ->
+          Map.Poly.find original_taint_map (OriginalRoot.Argument index)
+          |> Option.value ~default:BackwardState.Tree.bottom)
+    in
+    let original_implicit_argument_taint =
+      match Map.Poly.find original_taint_map OriginalRoot.CalleeBase with
+      | Some taint -> ImplicitArgument.CalleeBase taint
+      | None -> (
+          match Map.Poly.find original_taint_map OriginalRoot.Callee with
+          | Some taint -> ImplicitArgument.Callee taint
+          | None -> ImplicitArgument.None)
+    in
+    {
+      arguments_taint = original_arguments_taint;
+      implicit_argument_taint = original_implicit_argument_taint;
+      captures_taint;
+      captures;
+      state;
+    }
+
+
   and apply_callees
       ?(apply_tito = true)
       ~(pyre_in_context : PyrePysaEnvironment.InContext.t)
@@ -1366,9 +1491,26 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~origin
       ~state:initial_state
       ~call_taint
-      callees
+      ({ CallGraph.CallCallees.higher_order_parameters; shim_target; _ } as callees)
     =
-    let { arguments_taint; implicit_argument_taint; captures_taint; captures; state } =
+    let analyze_shim_result, state =
+      match shim_target with
+      | Some shim_target ->
+          let ({ state; _ } as shim_result) =
+            apply_shim_callees_and_return_arguments_taint
+              ~apply_tito
+              ~pyre_in_context
+              ~call_location
+              ~original_call:{ Call.callee; arguments; origin }
+              ~state:initial_state
+              ~call_taint
+              shim_target
+          in
+          Some shim_result, state
+      | None -> None, initial_state
+    in
+
+    let ({ state; _ } as analyze_regular_call_result) =
       apply_callees_and_return_arguments_taint
         ~apply_tito
         ~pyre_in_context
@@ -1376,12 +1518,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_location
         ~arguments
         ~origin
-        ~state:initial_state
+        ~state
         ~call_taint
         callees
     in
+
+    let { arguments_taint; implicit_argument_taint; captures_taint; captures; _ } =
+      match analyze_shim_result with
+      | Some analyze_shim_result ->
+          join_call_target_results
+            { analyze_regular_call_result with state = bottom }
+            { analyze_shim_result with state = bottom }
+      | None -> analyze_regular_call_result
+    in
+
     let state =
-      if CallGraph.HigherOrderParameterMap.is_empty callees.higher_order_parameters then
+      if CallGraph.HigherOrderParameterMap.is_empty higher_order_parameters then
         analyze_arguments
           ~pyre_in_context
           ~arguments:(arguments @ CallModel.captures_as_arguments captures)
@@ -1394,7 +1546,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments_taint:(arguments_taint @ captures_taint)
           ~origin
           ~state
-          ~higher_order_parameters:callees.higher_order_parameters
+          ~higher_order_parameters
     in
 
     let state =

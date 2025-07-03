@@ -58,6 +58,43 @@ module ShimArgumentMapping = struct
         }
       | Constant of Constant.t
       | Reference of Reference.t
+    [@@deriving eq, show { with_path = false }]
+
+    let rec to_json = function
+      | Callee -> `Assoc ["kind", `String "callee"]
+      | Argument { index } -> `Assoc ["kind", `String "argument"; "index", `Int index]
+      | GetAttributeBase { attribute; inner } ->
+          `Assoc
+            [
+              "kind", `String "get-attribute-base";
+              "inner", to_json inner;
+              "attribute", `String attribute;
+            ]
+      | AppendAttribute { attribute; inner } ->
+          `Assoc
+            [
+              "kind", `String "append-attribute";
+              "inner", to_json inner;
+              "attribute", `String attribute;
+            ]
+      | GetTupleElement { index; inner } ->
+          `Assoc ["kind", `String "get-tuple-element"; "inner", to_json inner; "index", `Int index]
+      | GetListElement { index; inner } ->
+          `Assoc ["kind", `String "get-list-element"; "inner", to_json inner; "index", `Int index]
+      | GetDictEntryValue { index; key; inner } ->
+          `Assoc
+            [
+              "kind", `String "get-dict-entry-value";
+              "inner", to_json inner;
+              "index", `Int index;
+              "key", `String key;
+            ]
+      | GetCallArgument { index; inner } ->
+          `Assoc ["kind", `String "get-call-argument"; "inner", to_json inner; "index", `Int index]
+      | Constant constant ->
+          `Assoc ["kind", `String "constant"; "value", `String (Constant.show constant)]
+      | Reference reference ->
+          `Assoc ["kind", `String "reference"; "value", `String (Reference.show reference)]
   end
 
   module Argument = struct
@@ -65,6 +102,15 @@ module ShimArgumentMapping = struct
       name: Identifier.t option;
       value: Target.t;
     }
+    [@@deriving eq, show { with_path = false }]
+
+    let to_json { name; value } =
+      let bindings =
+        match name with
+        | Some name -> ["name", `String name]
+        | None -> []
+      in
+      `Assoc (("value", Target.to_json value) :: bindings)
   end
 
   type t = {
@@ -72,6 +118,7 @@ module ShimArgumentMapping = struct
     callee: Target.t;
     arguments: Argument.t list;
   }
+  [@@deriving eq, show { with_path = false }]
 
   let create_artificial_call
       ~call_location
@@ -181,4 +228,13 @@ module ShimArgumentMapping = struct
            (Origin.PysaCallRedirect identifier))
     in
     { Call.callee; arguments; origin }
+
+
+  let to_json { identifier; callee; arguments } =
+    `Assoc
+      [
+        "identifier", `String identifier;
+        "callee", Target.to_json callee;
+        "arguments", `List (List.map arguments ~f:Argument.to_json);
+      ]
 end

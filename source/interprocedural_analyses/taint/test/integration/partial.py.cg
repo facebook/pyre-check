@@ -22,6 +22,7 @@ Call dependencies
     "typing.MutableMapping.pop (method)"
   ],
   "partial.PartialDecorator.__get__ (method)": [
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
     "partial.PartialDecorator.__call__ (method)"
   ],
   "partial.a_flows_to_sink (fun)": [ "_test_sink (fun)" ],
@@ -29,13 +30,17 @@ Call dependencies
     "functools.partial.__call__ (method)", "object.__new__ (method)"
   ],
   "partial.multiprocessing_bound_method_issue (fun)": [
-    "_test_source (fun)", "partial.MyClass.sink_on_foo (method)"
+    "_test_source (fun)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.MyClass.sink_on_foo (method)"
   ],
   "partial.multiprocessing_bound_method_sink (fun)": [
-    "partial.MyClass.sink_on_foo (method)"
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.MyClass.sink_on_foo (method)"
   ],
   "partial.multiprocessing_infer_sinks (fun)": [
-    "partial.a_flows_to_sink (fun)"
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.multiprocessing_nested_sink (fun)": [
     "dict.__getitem__ (method)",
@@ -50,7 +55,9 @@ Call dependencies
     "partial.sink_on_foo (fun)"
   ],
   "partial.multiprocessing_not_tainted (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+    "_test_source (fun)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.multiprocessing_shim_fail (fun)": [
     "_test_source (fun)",
@@ -58,29 +65,39 @@ Call dependencies
     "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.multiprocessing_tainted (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+    "_test_source (fun)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.multiprocessing_tainted_access_path (fun)": [
-    "_test_source (fun)", "object.__new__ (method)",
-    "partial.MyClass.__init__ (method)", "partial.sink_on_foo (fun)"
+    "_test_source (fun)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.MyClass.__init__ (method)",
+    "partial.sink_on_foo (fun)"
   ],
   "partial.partial_application_bound_method_sink (fun)": [
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
     "partial.MyClass.sink_on_foo (method)"
   ],
   "partial.partial_application_bound_method_tito (fun)": [
-    "_test_source (fun)", "partial.MyClass.set_foo (method)"
+    "_test_source (fun)", "functools.partial.__init__ (method)",
+    "object.__new__ (method)", "partial.MyClass.set_foo (method)"
   ],
   "partial.partial_application_with_benign (fun)": [
+    "functools.partial.__init__ (method)", "object.__new__ (method)",
     "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_named_a (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+    "_test_source (fun)", "functools.partial.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_named_b (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+    "_test_source (fun)", "functools.partial.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.partial_application_with_tainted (fun)": [
-    "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+    "_test_source (fun)", "functools.partial.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
   ],
   "partial.sink_on_foo (fun)": [ "_test_sink (fun)" ]
 }

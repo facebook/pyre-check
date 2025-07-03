@@ -12,6 +12,7 @@ open Analysis
 open Test
 open Interprocedural
 open CallGraph
+open Shims
 
 let compute_define_call_graph
     ~module_name
@@ -1030,14 +1031,58 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "7:2-7:15|artificial-call|pysa-call-redirect:functools.partial",
-                 ExpressionCallees.from_call
-                   (CallCallees.create
-                      ~call_targets:
+               ( "7:10-7:11|artificial-attribute-access|qualification:test.f",
+                 ExpressionCallees.from_attribute_access
+                   (AttributeAccessCallees.create
+                      ~callable_targets:
                         [
                           CallTarget.create_regular
                             (Target.Regular.Function { name = "test.f"; kind = Normal });
                         ]
+                      ()) );
+               ( "7:2-7:15",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~init_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            (Target.Regular.Method
+                               {
+                                 class_name = "functools.partial";
+                                 method_name = "__init__";
+                                 kind = Normal;
+                               });
+                        ]
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__new__"; kind = Normal });
+                        ]
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   (Target.Regular.Function { name = "test.f"; kind = Normal });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "functools.partial";
+                                 callee = ShimArgumentMapping.Target.Argument { index = 0 };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 1 };
+                                     };
+                                   ];
+                               };
+                           })
                       ()) );
              ]
            ();
@@ -1057,17 +1102,51 @@ let test_call_graph_of_define =
            ~define_name:"test.foo"
            ~expected:
              [
-               ( "9:2-9:35|artificial-call|pysa-call-redirect:async_task",
-                 ExpressionCallees.from_call
-                   (CallCallees.create
-                      ~call_targets:
+               ( "9:2-9:17|artificial-attribute-access|qualification:test.callable_target",
+                 ExpressionCallees.from_attribute_access
+                   (AttributeAccessCallees.create
+                      ~callable_targets:
                         [
                           CallTarget.create_regular
                             ~return_type:(Some ReturnType.integer)
                             (Target.Regular.Function
-                               { name = "test.callable_target"; kind = Normal });
+                               { name = "test.callable_target"; kind = Decorated });
                         ]
-                      ~recognized_call:CallGraph.CallCallees.RecognizedCall.True
+                      ()) );
+               ( "9:2-9:35",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   (Target.Regular.Function
+                                      { name = "test.callable_target"; kind = Decorated });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "async_task";
+                                 callee =
+                                   ShimArgumentMapping.Target.GetAttributeBase
+                                     {
+                                       inner = ShimArgumentMapping.Target.Callee;
+                                       attribute = "async_schedule";
+                                     };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 0 };
+                                     };
+                                   ];
+                               };
+                           })
+                      ~unresolved:
+                        (Unresolved.True
+                           (Unresolved.BypassingDecorators Unresolved.CannotResolveExports))
                       ()) );
              ]
            ();
@@ -4396,18 +4475,53 @@ let test_call_graph_of_define =
                                { class_name = "test.C"; method_name = "f"; kind = Normal });
                         ]
                       ()) );
-               ( "16:4-16:33|artificial-call|pysa-call-redirect:functools.partial",
+               ( "16:4-16:33",
                  ExpressionCallees.from_call
                    (CallCallees.create
-                      ~call_targets:
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__new__"; kind = Normal });
+                        ]
+                      ~init_targets:
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~is_class_method:true
-                            ~index:1
                             (Target.Regular.Method
-                               { class_name = "test.C"; method_name = "f"; kind = Normal });
+                               {
+                                 class_name = "functools.partial";
+                                 method_name = "__init__";
+                                 kind = Normal;
+                               });
                         ]
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   ~implicit_receiver:true
+                                   ~is_class_method:true
+                                   ~index:1
+                                   (Target.Regular.Method
+                                      { class_name = "test.C"; method_name = "f"; kind = Normal });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "functools.partial";
+                                 callee = ShimArgumentMapping.Target.Argument { index = 0 };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 1 };
+                                     };
+                                   ];
+                               };
+                           })
                       ()) );
                ( "17:4-17:14",
                  ExpressionCallees.from_call
@@ -4422,19 +4536,56 @@ let test_call_graph_of_define =
                                { class_name = "test.C"; method_name = "h"; kind = Normal });
                         ]
                       ()) );
-               ( "18:4-18:33|artificial-call|pysa-call-redirect:functools.partial",
+               ( "18:4-18:33",
                  ExpressionCallees.from_call
                    (CallCallees.create
-                      ~call_targets:
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            ~index:1
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__new__"; kind = Normal });
+                        ]
+                      ~init_targets:
                         [
                           CallTarget.create_regular
                             ~implicit_receiver:true
-                            ~is_class_method:true
-                            ~receiver_class:"test.C"
                             ~index:1
                             (Target.Regular.Method
-                               { class_name = "test.C"; method_name = "h"; kind = Normal });
+                               {
+                                 class_name = "functools.partial";
+                                 method_name = "__init__";
+                                 kind = Normal;
+                               });
                         ]
+                      ~shim_target:
+                        (Some
+                           {
+                             ShimTarget.call_targets =
+                               [
+                                 CallTarget.create_regular
+                                   ~implicit_receiver:true
+                                   ~is_class_method:true
+                                   ~receiver_class:"test.C"
+                                   ~index:1
+                                   (Target.Regular.Method
+                                      { class_name = "test.C"; method_name = "h"; kind = Normal });
+                               ];
+                             decorated_targets = [];
+                             argument_mapping =
+                               {
+                                 ShimArgumentMapping.identifier = "functools.partial";
+                                 callee = ShimArgumentMapping.Target.Argument { index = 0 };
+                                 arguments =
+                                   [
+                                     {
+                                       ShimArgumentMapping.Argument.name = None;
+                                       value = ShimArgumentMapping.Target.Argument { index = 1 };
+                                     };
+                                   ];
+                               };
+                           })
                       ()) );
              ]
            ();

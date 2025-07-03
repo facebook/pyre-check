@@ -67,16 +67,39 @@ Higher order call graphs
         ]
       }
     },
-    "16:4-16:37|artificial-call|pysa-call-redirect:async_task": {
-      "call": {
-        "calls": [
+    "16:4-16:19|artificial-attribute-access|qualification:recognized_callable_targets.callable_target": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "recognized_callable_targets.callable_target",
+            "target": "recognized_callable_targets.callable_target@decorated",
             "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
+      }
+    },
+    "16:4-16:37": {
+      "call": {
+        "shim": {
+          "calls": [
+            {
+              "target": "recognized_callable_targets.callable_target",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_schedule"
+            },
+            "arguments": [ { "value": { "kind": "argument", "index": 0 } } ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     }
   }

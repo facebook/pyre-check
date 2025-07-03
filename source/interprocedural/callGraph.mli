@@ -168,6 +168,17 @@ module HigherOrderParameterMap : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+module ShimTarget : sig
+  type t = {
+    call_targets: CallTarget.t list;
+    decorated_targets: CallTarget.t list;
+    argument_mapping: Shims.ShimArgumentMapping.t;
+  }
+  [@@deriving eq, show]
+
+  val to_json : t -> Yojson.Safe.t
+end
+
 (** An aggregate of all possible callees at a call site. *)
 module CallCallees : sig
   module RecognizedCall : sig
@@ -189,6 +200,7 @@ module CallCallees : sig
     decorated_targets: CallTarget.t list;
     (* Information about arguments that are callables, and possibly called. *)
     higher_order_parameters: HigherOrderParameterMap.t;
+    shim_target: ShimTarget.t option;
     (* True if at least one callee could not be resolved.
      * Usually indicates missing type information at the call site. *)
     unresolved: Unresolved.t;
@@ -202,6 +214,7 @@ module CallCallees : sig
     ?init_targets:CallTarget.t list ->
     ?decorated_targets:CallTarget.t list ->
     ?higher_order_parameters:HigherOrderParameterMap.t ->
+    ?shim_target:ShimTarget.t option ->
     ?unresolved:Unresolved.t ->
     ?recognized_call:RecognizedCall.t ->
     unit ->

@@ -4,7 +4,7 @@ Higher order call graphs
   "callable": "partial.NestedDefineDecorator.__get__.wrapper",
   "returned_callables": [],
   "calls": {
-    "135:12-135:41|artificial-call|subscript-set-item": {
+    "138:12-138:41|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -17,7 +17,7 @@ Higher order call graphs
         ]
       }
     },
-    "136:19-136:49": {
+    "139:19-139:49": {
       "call": {
         "calls": [
           {
@@ -49,7 +49,7 @@ Higher order call graphs
   "callable": "partial.dunder_call_nested_define_constructor",
   "returned_callables": [],
   "calls": {
-    "153:11-153:40": {
+    "156:11-156:40": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
@@ -60,7 +60,7 @@ Higher order call graphs
   "callable": "partial.dunder_call_partial_constructor",
   "returned_callables": [],
   "calls": {
-    "126:11-126:35": {
+    "129:11-129:35": {
       "call": {
         "new_calls": [
           {
@@ -94,17 +94,40 @@ Higher order call graphs
         ]
       }
     },
-    "76:4-76:58|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+    "76:4-76:58": {
       "call": {
-        "calls": [
+        "new_calls": [
           {
-            "target": "partial.MyClass.sink_on_foo",
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "partial.MyClass"
+            "return_type": []
           }
-        ]
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.MyClass.sink_on_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": []
+          }
+        }
       }
     }
   }
@@ -113,17 +136,40 @@ Higher order call graphs
   "callable": "partial.multiprocessing_bound_method_sink",
   "returned_callables": [],
   "calls": {
-    "80:4-80:58|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+    "82:4-82:58": {
       "call": {
-        "calls": [
+        "new_calls": [
           {
-            "target": "partial.MyClass.sink_on_foo",
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "partial.MyClass"
+            "return_type": []
           }
-        ]
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.MyClass.sink_on_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": []
+          }
+        }
       }
     }
   }
@@ -132,15 +178,65 @@ Higher order call graphs
   "callable": "partial.multiprocessing_infer_sinks",
   "returned_callables": [],
   "calls": {
-    "71:4-71:64|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+    "71:4-71:64": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
+              },
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 1
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "71:35-71:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -149,7 +245,7 @@ Higher order call graphs
   "callable": "partial.multiprocessing_nested_sink",
   "returned_callables": [],
   "calls": {
-    "91:14-91:28": {
+    "94:14-94:28": {
       "call": {
         "new_calls": [
           {
@@ -169,7 +265,7 @@ Higher order call graphs
         ]
       }
     },
-    "92:4-92:62": {
+    "95:4-95:62": {
       "call": {
         "new_calls": [
           {
@@ -201,7 +297,7 @@ Higher order call graphs
         ]
       }
     },
-    "92:35-92:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
+    "95:35-95:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
       "attribute_access": {
         "callables": [
           { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
@@ -209,7 +305,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "92:54-92:60|artificial-call|subscript-get-item": {
+    "95:54-95:60|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -228,7 +324,7 @@ Higher order call graphs
   "callable": "partial.multiprocessing_no_sink",
   "returned_callables": [],
   "calls": {
-    "96:14-96:28": {
+    "99:14-99:28": {
       "call": {
         "new_calls": [
           {
@@ -248,7 +344,7 @@ Higher order call graphs
         ]
       }
     },
-    "97:4-97:62": {
+    "100:4-100:62": {
       "call": {
         "new_calls": [
           {
@@ -280,7 +376,7 @@ Higher order call graphs
         ]
       }
     },
-    "97:35-97:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
+    "100:35-100:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
       "attribute_access": {
         "callables": [
           { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
@@ -288,7 +384,7 @@ Higher order call graphs
         "is_attribute": true
       }
     },
-    "97:54-97:60|artificial-call|subscript-get-item": {
+    "100:54-100:60|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -307,15 +403,65 @@ Higher order call graphs
   "callable": "partial.multiprocessing_not_tainted",
   "returned_callables": [],
   "calls": {
-    "67:4-67:77|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+    "67:4-67:77": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
+              },
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 1
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "67:35-67:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     },
     "67:61-67:75": {
@@ -331,14 +477,14 @@ Higher order call graphs
   "callable": "partial.multiprocessing_shim_fail",
   "returned_callables": [],
   "calls": {
-    "84:12-84:26": {
+    "87:12-87:26": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "85:4-85:62": {
+    "88:4-88:62": {
       "call": {
         "new_calls": [
           {
@@ -370,7 +516,7 @@ Higher order call graphs
         ]
       }
     },
-    "85:35-85:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+    "88:35-88:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
       "attribute_access": {
         "callables": [
           {
@@ -388,15 +534,65 @@ Higher order call graphs
   "callable": "partial.multiprocessing_tainted",
   "returned_callables": [],
   "calls": {
-    "63:4-63:77|artificial-call|pysa-call-redirect:multiprocessing.Process": {
+    "63:4-63:77": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
+              },
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 1
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "63:35-63:50|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     },
     "63:58-63:72": {
@@ -412,19 +608,69 @@ Higher order call graphs
   "callable": "partial.multiprocessing_tainted_access_path",
   "returned_callables": [],
   "calls": {
-    "101:4-101:86|artificial-call|pysa-call-redirect:multiprocessing.Process": {
-      "call": {
-        "calls": [
-          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "101:54-101:81": {
+    "104:4-104:86": {
       "call": {
         "new_calls": [
           {
             "target": "object.__new__",
             "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
+              },
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 1
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "104:35-104:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
+      "attribute_access": {
+        "callables": [
+          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
+        ],
+        "is_attribute": true
+      }
+    },
+    "104:54-104:81": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 1,
             "return_type": [],
             "is_static_method": true
           }
@@ -439,26 +685,76 @@ Higher order call graphs
         ]
       }
     },
-    "101:66-101:80": {
+    "104:66-104:80": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "102:4-102:86|artificial-call|pysa-call-redirect:multiprocessing.Process": {
-      "call": {
-        "calls": [
-          { "target": "partial.sink_on_foo", "index": 1, "return_type": [] }
-        ]
-      }
-    },
-    "102:54-102:81": {
+    "105:4-105:86": {
       "call": {
         "new_calls": [
           {
             "target": "object.__new__",
+            "index": 2,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "multiprocessing.context.Process.__init__",
             "index": 1,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.sink_on_foo",
+              "index": 1,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "multiprocessing.Process",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 0
+                }
+              },
+              {
+                "value": {
+                  "kind": "get-tuple-element",
+                  "inner": { "kind": "argument", "index": 1 },
+                  "index": 1
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "105:35-105:46|artificial-attribute-access|qualification:partial.sink_on_foo": {
+      "attribute_access": {
+        "callables": [
+          { "target": "partial.sink_on_foo", "index": 0, "return_type": [] }
+        ],
+        "is_attribute": true
+      }
+    },
+    "105:54-105:81": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 3,
             "return_type": [],
             "is_static_method": true
           }
@@ -473,7 +769,7 @@ Higher order call graphs
         ]
       }
     },
-    "102:66-102:80": {
+    "105:66-105:80": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
@@ -486,17 +782,40 @@ Higher order call graphs
   "callable": "partial.partial_application_bound_method_sink",
   "returned_callables": [],
   "calls": {
-    "54:4-54:39|artificial-call|pysa-call-redirect:functools.partial": {
+    "54:4-54:39": {
       "call": {
-        "calls": [
+        "new_calls": [
           {
-            "target": "partial.MyClass.sink_on_foo",
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "partial.MyClass"
+            "return_type": []
           }
-        ]
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.MyClass.sink_on_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
+          }
+        }
       }
     }
   }
@@ -505,17 +824,40 @@ Higher order call graphs
   "callable": "partial.partial_application_bound_method_tito",
   "returned_callables": [],
   "calls": {
-    "58:4-58:48|artificial-call|pysa-call-redirect:functools.partial": {
+    "58:4-58:48": {
       "call": {
-        "calls": [
+        "new_calls": [
           {
-            "target": "partial.MyClass.set_foo",
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "partial.MyClass"
+            "return_type": []
           }
-        ]
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.MyClass.set_foo",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.MyClass"
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
+          }
+        }
       }
     },
     "58:33-58:47": {
@@ -531,15 +873,50 @@ Higher order call graphs
   "callable": "partial.partial_application_with_benign",
   "returned_callables": [],
   "calls": {
-    "40:4-40:41|artificial-call|pysa-call-redirect:functools.partial": {
+    "40:4-40:41": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
+          }
+        }
+      }
+    },
+    "40:22-40:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -555,15 +932,55 @@ Higher order call graphs
         ]
       }
     },
-    "45:4-45:43|artificial-call|pysa-call-redirect:functools.partial": {
+    "45:4-45:43": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": { "kind": "argument", "index": 1 },
+                "name": "$parameter$a"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "45:22-45:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -579,15 +996,55 @@ Higher order call graphs
         ]
       }
     },
-    "50:4-50:43|artificial-call|pysa-call-redirect:functools.partial": {
+    "50:4-50:43": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": { "kind": "argument", "index": 1 },
+                "name": "$parameter$b"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "50:22-50:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -603,15 +1060,50 @@ Higher order call graphs
         ]
       }
     },
-    "35:4-35:41|artificial-call|pysa-call-redirect:functools.partial": {
+    "35:4-35:41": {
       "call": {
-        "calls": [
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.a_flows_to_sink",
+              "index": 0,
+              "return_type": []
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [ { "value": { "kind": "argument", "index": 1 } } ]
+          }
+        }
+      }
+    },
+    "35:22-35:37|artificial-attribute-access|qualification:partial.a_flows_to_sink": {
+      "attribute_access": {
+        "callables": [
           {
             "target": "partial.a_flows_to_sink",
             "index": 0,
             "return_type": []
           }
-        ]
+        ],
+        "is_attribute": true
       }
     }
   }
@@ -653,7 +1145,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "146:5-146:26|artificial-call|for-decorated-target": {
+    "149:5-149:26|artificial-call|for-decorated-target": {
       "call": {
         "new_calls": [
           {
@@ -673,7 +1165,7 @@ Higher order call graphs
         ]
       }
     },
-    "147:4-149:18|artificial-attribute-access|for-decorated-target-callee:partial.NestedDefineConstructor.__init__": {
+    "150:4-152:18|artificial-attribute-access|for-decorated-target-callee:partial.NestedDefineConstructor.__init__": {
       "attribute_access": {
         "callables": [
           {
@@ -692,7 +1184,7 @@ Higher order call graphs
   "callable": "partial.NestedDefineDecorator.__call__",
   "returned_callables": [],
   "calls": {
-    "141:19-141:41": {
+    "144:19-144:41": {
       "call": {
         "calls": [
           {
@@ -705,7 +1197,7 @@ Higher order call graphs
         ]
       }
     },
-    "142:15-142:52": {
+    "145:15-145:52": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
       }
@@ -722,7 +1214,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "134:8-136:49": {
+    "137:8-139:49": {
       "define": {
         "define_targets": [
           {
@@ -752,7 +1244,7 @@ Higher order call graphs
     }
   ],
   "calls": {
-    "118:5-118:21|artificial-call|for-decorated-target": {
+    "121:5-121:21|artificial-call|for-decorated-target": {
       "call": {
         "new_calls": [
           {
@@ -778,7 +1270,7 @@ Higher order call graphs
         ]
       }
     },
-    "119:4-121:18|artificial-attribute-access|for-decorated-target-callee:partial.PartialConstructor.__init__": {
+    "122:4-124:18|artificial-attribute-access|for-decorated-target-callee:partial.PartialConstructor.__init__": {
       "attribute_access": {
         "callables": [
           {
@@ -797,7 +1289,7 @@ Higher order call graphs
   "callable": "partial.PartialDecorator.__call__",
   "returned_callables": [],
   "calls": {
-    "113:19-113:41": {
+    "116:19-116:41": {
       "call": {
         "calls": [
           {
@@ -810,7 +1302,7 @@ Higher order call graphs
         ]
       }
     },
-    "114:15-114:52": {
+    "117:15-117:52": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotFindParentClass" ] ]
       }
@@ -821,17 +1313,45 @@ Higher order call graphs
   "callable": "partial.PartialDecorator.__get__",
   "returned_callables": [],
   "calls": {
-    "110:15-110:66|artificial-call|pysa-call-redirect:functools.partial": {
+    "113:15-113:66": {
       "call": {
-        "calls": [
+        "new_calls": [
           {
-            "target": "partial.PartialDecorator.__call__",
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "functools.partial.__init__",
             "index": 0,
             "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "partial.PartialDecorator"
+            "return_type": []
           }
-        ]
+        ],
+        "shim": {
+          "calls": [
+            {
+              "target": "partial.PartialDecorator.__call__",
+              "index": 0,
+              "implicit_receiver": true,
+              "return_type": [],
+              "receiver_class": "partial.PartialDecorator"
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "functools.partial",
+            "callee": { "kind": "argument", "index": 0 },
+            "arguments": [
+              {
+                "value": { "kind": "argument", "index": 1 },
+                "name": "$parameter$instance"
+              }
+            ]
+          }
+        }
       }
     }
   }

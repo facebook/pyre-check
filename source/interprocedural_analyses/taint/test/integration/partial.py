@@ -51,7 +51,7 @@ def partial_application_with_named_b():
 
 
 def partial_application_bound_method_sink(x: MyClass):
-    functools.partial(x.sink_on_foo, 0)
+    functools.partial(x.sink_on_foo, 0)  # TODO(T226554045): Wrong port for sink
 
 
 def partial_application_bound_method_tito(x: MyClass):
@@ -74,10 +74,13 @@ def multiprocessing_infer_sinks(x):
 def multiprocessing_bound_method_issue(x: MyClass):
     x.foo = _test_source()
     multiprocessing.Process(target=x.sink_on_foo, args=())
+    # TODO(T226554045): False negative due to using the taint of `x.sink_on_foo`
+    # instead of `x` in the shim.
 
 
 def multiprocessing_bound_method_sink(x: MyClass):
     multiprocessing.Process(target=x.sink_on_foo, args=())
+    # TODO(T226554045): Wrong port for sink.
 
 
 def multiprocessing_shim_fail(x: MyClass):

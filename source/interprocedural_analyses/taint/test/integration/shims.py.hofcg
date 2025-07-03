@@ -60,28 +60,80 @@ Higher order call graphs
   "callable": "shims.test_async_delay",
   "returned_callables": [],
   "calls": {
-    "19:4-19:36|artificial-call|pysa-call-redirect:async_task": {
-      "call": {
-        "calls": [
+    "19:4-19:18|artificial-attribute-access|qualification:shims.async_callable": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "shims.async_callable",
+            "target": "shims.async_callable@decorated",
             "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
       }
     },
-    "20:4-20:49|artificial-call|pysa-call-redirect:async_task": {
+    "19:4-19:36": {
       "call": {
-        "calls": [
+        "shim": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_delay"
+            },
+            "arguments": [
+              { "value": { "kind": "argument", "index": 0 } },
+              { "value": { "kind": "argument", "index": 1 } }
+            ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "20:4-20:18|artificial-attribute-access|qualification:shims.async_callable": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "shims.async_callable",
-            "index": 1,
+            "target": "shims.async_callable@decorated",
+            "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
+      }
+    },
+    "20:4-20:49": {
+      "call": {
+        "shim": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 1,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_delay"
+            },
+            "arguments": [
+              { "value": { "kind": "argument", "index": 0 } },
+              { "value": { "kind": "argument", "index": 1 } }
+            ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
     "20:34-20:48": {
@@ -91,16 +143,42 @@ Higher order call graphs
         ]
       }
     },
-    "21:4-21:49|artificial-call|pysa-call-redirect:async_task": {
-      "call": {
-        "calls": [
+    "21:4-21:18|artificial-attribute-access|qualification:shims.async_callable": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "shims.async_callable",
-            "index": 2,
+            "target": "shims.async_callable@decorated",
+            "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
+      }
+    },
+    "21:4-21:49": {
+      "call": {
+        "shim": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 2,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_delay"
+            },
+            "arguments": [
+              { "value": { "kind": "argument", "index": 0 } },
+              { "value": { "kind": "argument", "index": 1 } }
+            ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
     "21:31-21:45": {
@@ -116,28 +194,80 @@ Higher order call graphs
   "callable": "shims.test_async_schedule",
   "returned_callables": [],
   "calls": {
-    "25:4-25:39|artificial-call|pysa-call-redirect:async_task": {
-      "call": {
-        "calls": [
+    "25:4-25:18|artificial-attribute-access|qualification:shims.async_callable": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "shims.async_callable",
+            "target": "shims.async_callable@decorated",
             "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
       }
     },
-    "26:4-26:52|artificial-call|pysa-call-redirect:async_task": {
+    "25:4-25:39": {
       "call": {
-        "calls": [
+        "shim": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 0,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_schedule"
+            },
+            "arguments": [
+              { "value": { "kind": "argument", "index": 0 } },
+              { "value": { "kind": "argument", "index": 1 } }
+            ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
+      }
+    },
+    "26:4-26:18|artificial-attribute-access|qualification:shims.async_callable": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "shims.async_callable",
-            "index": 1,
+            "target": "shims.async_callable@decorated",
+            "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
+      }
+    },
+    "26:4-26:52": {
+      "call": {
+        "shim": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 1,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_schedule"
+            },
+            "arguments": [
+              { "value": { "kind": "argument", "index": 0 } },
+              { "value": { "kind": "argument", "index": 1 } }
+            ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
     "26:37-26:51": {
@@ -147,16 +277,42 @@ Higher order call graphs
         ]
       }
     },
-    "27:4-27:52|artificial-call|pysa-call-redirect:async_task": {
-      "call": {
-        "calls": [
+    "27:4-27:18|artificial-attribute-access|qualification:shims.async_callable": {
+      "attribute_access": {
+        "callables": [
           {
-            "target": "shims.async_callable",
-            "index": 2,
+            "target": "shims.async_callable@decorated",
+            "index": 0,
             "return_type": [ "float", "integer" ]
           }
         ],
-        "recognized_call": [ "True" ]
+        "is_attribute": true
+      }
+    },
+    "27:4-27:52": {
+      "call": {
+        "shim": {
+          "calls": [
+            {
+              "target": "shims.async_callable",
+              "index": 2,
+              "return_type": [ "float", "integer" ]
+            }
+          ],
+          "argument_mapping": {
+            "identifier": "async_task",
+            "callee": {
+              "kind": "get-attribute-base",
+              "inner": { "kind": "callee" },
+              "attribute": "async_schedule"
+            },
+            "arguments": [
+              { "value": { "kind": "argument", "index": 0 } },
+              { "value": { "kind": "argument", "index": 1 } }
+            ]
+          }
+        },
+        "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
     },
     "27:34-27:48": {
