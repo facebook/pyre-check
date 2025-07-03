@@ -212,8 +212,8 @@ def MyClass.updates_foo(self, x: TaintInTaintOut[Updates[self], UpdatePath[_.foo
 
 ## Taint propagation from arguments to self
 
-By default, Pysa only infers taint propagation from arguments to self for
-constructors, property setters and the special `__setitem__` method.
+By default, Pysa infers taint propagation from arguments to self for all methods,
+including constructors, property setters and the special `__setitem__` method.
 
 For instance:
 ```python
@@ -226,22 +226,26 @@ class Foo:
 
 def issue():
   foo = Foo(source())
-  sink(foo)  # Issue found.
+  sink(foo)  # Issue (1) found.
 
   foo = Foo("")
   foo.set_x(source())
-  sink(foo)  # Issue NOT found.
+  sink(foo)  # Issue (2) found.
 ```
 
-To enable the inference of propagations from arguments to self for all methods,
-one can provide the command line argument `--infer-self-tito` or use the taint
-annotation `@InferSelfTito` in a `.pysa` file:
+To disable the inference of propagations from arguments to self for all methods - except
+constructors, property setters and `__setitem__` - one can provide the command
+line argument `--no-infer-self-tito`. This should reduce the analysis time, as well
+as reduce false positives. The counterpart is that it can also lead to false negatives.
+For instance, Pysa wouldn't find issue (2) anymore.
+
+When using `--no-infer-self-tito`, we can use the taint annotation `@InferSelfTito`
+in a `.pysa` file to enable inference for specific methods:
 ```python
 @InferSelfTito
 def my_module.Foo.set_x(): ...
 ```
-Pysa would now find the second issue properly. Note that `--infer-self-tito` can
-significantly increase the analysis time as well as the amount of false positives.
+Pysa would now find the second issue properly.
 
 ## Taint propagation between arguments
 
