@@ -224,10 +224,18 @@ module ImplicitArgument : sig
   end
 
   module Backward : sig
-    type t =
-      | CalleeBase of BackwardState.Tree.t
-      | Callee of BackwardState.Tree.t
-      | None
+    type t = {
+      (* Taint on the base of the callee (such as `obj` in `obj.method`) *)
+      callee_base: BackwardState.Tree.t;
+      (* Taint on the entire callee *)
+      callee: BackwardState.Tree.t;
+    }
+
+    val empty : t
+
+    val for_callee : BackwardState.Tree.t -> t
+
+    val for_callee_base : BackwardState.Tree.t -> t
 
     val join : t -> t -> t
   end

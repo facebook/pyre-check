@@ -753,23 +753,26 @@ module ImplicitArgument = struct
   end
 
   module Backward = struct
-    type t =
-      (* Only the base of the callee (such as `obj` in `obj.method`) is considered as the implicit
-         argument. *)
-      | CalleeBase of BackwardState.Tree.t
-      (* The entire of the callee is considered as the implicit argument. *)
-      | Callee of BackwardState.Tree.t
-      (* There is no implicit argument. *)
-      | None
+    type t = {
+      (* Taint on the base of the callee (such as `obj` in `obj.method`) *)
+      callee_base: BackwardState.Tree.t;
+      (* Taint on the entire callee *)
+      callee: BackwardState.Tree.t;
+    }
 
-    let join left right =
-      match left, right with
-      | CalleeBase left, CalleeBase right -> CalleeBase (BackwardState.Tree.join left right)
-      | Callee left, Callee right -> Callee (BackwardState.Tree.join left right)
-      | CalleeBase left, Callee right
-      | Callee left, CalleeBase right ->
-          Callee (BackwardState.Tree.join left right)
-      | None, _ -> right
-      | _, None -> left
+    let empty = { callee_base = BackwardState.Tree.bottom; callee = BackwardState.Tree.bottom }
+
+    let for_callee taint = { callee_base = BackwardState.Tree.bottom; callee = taint }
+
+    let for_callee_base taint = { callee_base = taint; callee = BackwardState.Tree.bottom }
+
+    let join
+        { callee_base = left_callee_base; callee = left_callee }
+        { callee_base = right_callee_base; callee = right_callee }
+      =
+      {
+        callee_base = BackwardState.Tree.join left_callee_base right_callee_base;
+        callee = BackwardState.Tree.join left_callee right_callee;
+      }
   end
 end
