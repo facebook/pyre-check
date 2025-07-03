@@ -2776,17 +2776,74 @@ let resolve_stringify_call ~pyre_in_context ~type_of_expression_shared_memory ~c
 
 
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
- * This may or may not be sound depending on the analysis performed. *)
-let transform_special_calls
+ * These rewrites are done symbolically during the analysis.
+ * These should be preferred over AST transformations (see `preprocess_special_calls`). *)
+let shim_special_calls { Call.callee; arguments; origin = _ } =
+  let open Shims.ShimArgumentMapping in
+  match Node.value callee, arguments with
+  | ( Expression.Name
+        (Name.Attribute
+          {
+            base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
+            attribute = "partial";
+            _;
+          }),
+      _actual_callable :: actual_arguments ) ->
+      Some
+        {
+          identifier = "functools.partial";
+          callee = Target.Argument { index = 0 };
+          arguments =
+            List.mapi actual_arguments ~f:(fun index_minus_one { Call.Argument.name; _ } ->
+                {
+                  Argument.name = name >>| Node.value;
+                  value = Target.Argument { index = index_minus_one + 1 };
+                });
+        }
+  | ( Expression.Name
+        (Name.Attribute
+          {
+            base = { Node.value = Expression.Name (Name.Identifier "multiprocessing"); _ };
+            attribute = "Process";
+            _;
+          }),
+      [
+        { Call.Argument.name = Some { Node.value = "$parameter$target"; _ }; _ };
+        {
+          Call.Argument.value = { Node.value = Expression.Tuple process_arguments; _ };
+          name = Some { Node.value = "$parameter$args"; _ };
+        };
+      ] ) ->
+      Some
+        {
+          identifier = "multiprocessing.Process";
+          callee = Target.Argument { index = 0 };
+          arguments =
+            List.mapi process_arguments ~f:(fun index _ ->
+                {
+                  Argument.name = None;
+                  value = Target.GetTupleElement { index; inner = Target.Argument { index = 1 } };
+                });
+        }
+  | _ -> None
+
+
+(* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
+ * These rewrites are done as AST transformations. In general, this should be
+ * avoided, hence this is only used for a few specific functions in the standard
+ * library. One main difference between preprocessing and shimming is that shims
+ * are considered additional calls, where preprocessing completely removes the
+ * original call. This is preferred for things like `str`/`iter`/`next`. *)
+let preprocess_special_calls
     ~pyre_in_context
     ~type_of_expression_shared_memory
     ~callable
     ~location:call_location
-    ({
-       Call.callee = { Node.location = callee_location; _ } as callee;
-       arguments;
-       origin = call_origin;
-     } as original_call)
+    {
+      Call.callee = { Node.location = callee_location; _ } as callee;
+      arguments;
+      origin = call_origin;
+    }
   =
   let attribute_access ~base ~method_name ~origin =
     {
@@ -2835,71 +2892,13 @@ let transform_special_calls
           arguments = [];
           origin;
         }
-  | ( Expression.Name
-        (Name.Attribute
-          {
-            base = { Node.value = Expression.Name (Name.Identifier "functools"); _ };
-            attribute = "partial";
-            _;
-          }),
-      { Call.Argument.value = actual_callable; _ } :: actual_arguments ) ->
-      let origin =
-        Some
-          (Origin.create
-             ?base:call_origin
-             ~location:call_location
-             (Origin.PysaCallRedirect "functools.partial"))
-      in
-      Some { Call.callee = actual_callable; arguments = actual_arguments; origin }
-  | ( Expression.Name
-        (Name.Attribute
-          {
-            base = { Node.value = Expression.Name (Name.Identifier "multiprocessing"); _ };
-            attribute = "Process";
-            _;
-          }),
-      [
-        { Call.Argument.value = process_callee; name = Some { Node.value = "$parameter$target"; _ } };
-        {
-          Call.Argument.value = { Node.value = Expression.Tuple process_arguments; _ };
-          name = Some { Node.value = "$parameter$args"; _ };
-        };
-      ] ) ->
-      let origin =
-        Some
-          (Origin.create
-             ?base:call_origin
-             ~location:call_location
-             (Origin.PysaCallRedirect "multiprocessing.Process"))
-      in
-
-      Some
-        {
-          Call.callee = process_callee;
-          arguments =
-            List.map process_arguments ~f:(fun value -> { Call.Argument.value; name = None });
-          origin;
-        }
-  | _ ->
-      SpecialCallResolution.redirect
-        ~resolve_expression_to_type:
-          (TypeOfExpressionSharedMemory.compute_or_retrieve_type
-             type_of_expression_shared_memory
-             ~pyre_in_context
-             ~callable)
-        ~location:call_location
-        original_call
+  | _ -> None
 
 
-let redirect_special_calls
-    ~pyre_in_context
-    ~type_of_expression_shared_memory
-    ~callable
-    ~location
-    call
-  =
+let preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~callable ~location call =
+  (* First, try to perform hardcoded AST transformations. *)
   match
-    transform_special_calls
+    preprocess_special_calls
       ~pyre_in_context
       ~type_of_expression_shared_memory
       ~callable
@@ -2907,17 +2906,42 @@ let redirect_special_calls
       call
   with
   | Some call -> call
-  | None ->
+  | None -> (
       (* Rewrite certain calls using the same logic used in the type checker.
        * This should be sound for most analyses. *)
-      Analysis.AnnotatedCall.redirect_special_calls
-        ~resolve_expression_to_type:
-          (TypeOfExpressionSharedMemory.compute_or_retrieve_type
-             type_of_expression_shared_memory
-             ~pyre_in_context
-             ~callable)
-        ~location
-        call
+      match
+        Analysis.AnnotatedCall.preprocess_special_calls
+          ~resolve_expression_to_type:
+            (TypeOfExpressionSharedMemory.compute_or_retrieve_type
+               type_of_expression_shared_memory
+               ~pyre_in_context
+               ~callable)
+          ~location
+          call
+      with
+      | Some call -> call
+      | None -> (
+          (* Now, try to shim the call using hardcoded shims or user-provided shims. *)
+          let shim =
+            match shim_special_calls call with
+            | Some shim -> Some shim
+            | None ->
+                SpecialCallResolution.shim_calls
+                  ~resolve_expression_to_type:
+                    (TypeOfExpressionSharedMemory.compute_or_retrieve_type
+                       type_of_expression_shared_memory
+                       ~pyre_in_context
+                       ~callable)
+                  call
+          in
+          match
+            shim >>| Shims.ShimArgumentMapping.create_artificial_call ~call_location:location call
+          with
+          | None -> call
+          | Some (Ok call) -> call
+          | Some (Error error) ->
+              let () = Log.warning "Failed to apply shim: %s" error in
+              call))
 
 
 let rec preprocess_expression
@@ -3048,12 +3072,7 @@ let rec preprocess_expression
     |> Node.create ~location
   in
   let map_call ~mapper ~location call =
-    redirect_special_calls
-      ~pyre_in_context
-      ~type_of_expression_shared_memory
-      ~callable
-      ~location
-      call
+    preprocess_call ~pyre_in_context ~type_of_expression_shared_memory ~callable ~location call
     |> Mapper.default_map_call_node ~mapper ~location
   in
   Mapper.map

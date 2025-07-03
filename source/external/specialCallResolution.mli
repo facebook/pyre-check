@@ -7,10 +7,9 @@
 
 open Ast
 
-val redirect
+val shim_calls
   :  resolve_expression_to_type:(Expression.t -> Type.t) ->
-  location:Location.t ->
   Expression.Call.t ->
-  Expression.Call.t option
+  Shims.ShimArgumentMapping.t option
 
 val recognized_callable_target_types : Type.Set.t

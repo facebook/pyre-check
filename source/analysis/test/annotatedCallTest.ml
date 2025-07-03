@@ -25,13 +25,15 @@ let test_redirect context =
     in
     let printer call = Expression.Call.sexp_of_t call |> Sexp.to_string_hum in
     let cmp left right = Int.equal 0 (Expression.Call.location_insensitive_compare left right) in
+    let parsed_call = parse call in
     assert_equal
       ~cmp
       ~printer
-      (AnnotatedCall.redirect_special_calls
+      (AnnotatedCall.preprocess_special_calls
          ~resolve_expression_to_type:(Resolution.resolve_expression_to_type resolution)
          ~location:Location.any
-         (parse call))
+         parsed_call
+      |> Option.value ~default:parsed_call)
       (parse expected)
   in
   assert_redirects

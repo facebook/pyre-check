@@ -1,6 +1,22 @@
 (library
+ (name shims)
+ (public_name pyrelib.shims)
+ (modules shims)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv
+   ppx_sexp_message
+   ppx_deriving_yojson))
+ (libraries core pyrelib.analysis pyrelib.ast))
+
+(library
  (name interprocedural)
  (public_name pyrelib.interprocedural)
+ (modules :standard \ shims)
  (preprocess
   (pps
    ppx_deriving.eq
@@ -23,6 +39,7 @@
   pyrelib.recognized
   pyrelib.scheduler
   pyrelib.specialCallResolution
+  pyrelib.shims
   pyrelib.statistics
   pyrelib.alarm
   pyrelib.version

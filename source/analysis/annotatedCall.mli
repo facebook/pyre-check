@@ -17,8 +17,8 @@ val resolve_stringify_call
   Expression.t ->
   resolved_stringify
 
-val redirect_special_calls
+val preprocess_special_calls
   :  resolve_expression_to_type:(Expression.t -> Type.t) ->
   location:Location.t ->
   Expression.Call.t ->
-  Expression.Call.t
+  Expression.Call.t option

@@ -51,11 +51,10 @@ let resolve_stringify_call ~resolve_expression_to_type expression =
   | ClassHierarchy.Untracked _ -> Str
 
 
-let redirect_special_calls
+let preprocess_special_calls
     ~resolve_expression_to_type
     ~location:call_location
-    ({ Call.callee = { Node.location = callee_location; value }; arguments; origin = call_origin }
-    as call)
+    { Call.callee = { Node.location = callee_location; value }; arguments; origin = call_origin }
   =
   match value, arguments with
   (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
@@ -68,21 +67,23 @@ let redirect_special_calls
       in
       let origin = Some (Origin.create ?base:call_origin ~location:call_location origin_kind) in
       let callee = attribute_access ~location:callee_location ~base:value ~method_name ~origin in
-      { Call.callee; arguments = []; origin }
+      Some { Call.callee; arguments = []; origin }
   | Name (Name.Identifier "abs"), [{ Call.Argument.value; _ }] ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.AbsCall) in
-      {
-        Call.callee =
-          attribute_access ~location:callee_location ~base:value ~method_name:"__abs__" ~origin;
-        arguments = [];
-        origin;
-      }
+      Some
+        {
+          Call.callee =
+            attribute_access ~location:callee_location ~base:value ~method_name:"__abs__" ~origin;
+          arguments = [];
+          origin;
+        }
   | Name (Name.Identifier "repr"), [{ Call.Argument.value; _ }] ->
       let origin = Some (Origin.create ?base:call_origin ~location:call_location Origin.ReprCall) in
-      {
-        Call.callee =
-          attribute_access ~location:callee_location ~base:value ~method_name:"__repr__" ~origin;
-        arguments = [];
-        origin;
-      }
-  | _ -> call
+      Some
+        {
+          Call.callee =
+            attribute_access ~location:callee_location ~base:value ~method_name:"__repr__" ~origin;
+          arguments = [];
+          origin;
+        }
+  | _ -> None
