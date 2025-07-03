@@ -218,6 +218,7 @@ def run_pysa(
     passthrough_args: Optional[Sequence[str]] = None,
     working_directory: Optional[Path] = None,
     silent: bool = False,
+    shard_taint_output: bool = False,
     error_help: Optional[str] = None,
 ) -> str:
     """Run pysa for the given test and produce a list of errors in JSON."""
@@ -269,6 +270,9 @@ def run_pysa(
 
     if maximum_tito_depth is not None:
         command.append(f"--maximum-tito-depth={maximum_tito_depth }")
+
+    if shard_taint_output:
+        command.append("--output-format=sharded-json")
 
     if passthrough_args is not None:
         command.extend(passthrough_args)
