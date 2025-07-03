@@ -10,6 +10,22 @@ import typing
 from builtins import _test_sink, _test_source
 
 
+class MyClass:
+    def __init__(self, foo: str = "", bar: str = "") -> None:
+        self.foo: str = foo
+        self.bar: str = bar
+
+    def sink_on_foo(self, a=None) -> None:
+        _test_sink(self.foo)
+
+    def set_foo(self, value: str) -> None:
+        self.foo = value
+
+
+def sink_on_foo(x: MyClass) -> None:
+    _test_sink(x.foo)
+
+
 def a_flows_to_sink(a, b):
     _test_sink(a)
 
@@ -34,12 +50,56 @@ def partial_application_with_named_b():
     functools.partial(a_flows_to_sink, b=x)
 
 
+def partial_application_bound_method_sink(x: MyClass):
+    functools.partial(x.sink_on_foo, 0)
+
+
+def partial_application_bound_method_tito(x: MyClass):
+    functools.partial(x.set_foo, _test_source())
+    return x
+
+
 def multiprocessing_tainted():
     multiprocessing.Process(target=a_flows_to_sink, args=(_test_source(), 1))
 
 
 def multiprocessing_not_tainted():
     multiprocessing.Process(target=a_flows_to_sink, args=(1, _test_source()))
+
+
+def multiprocessing_infer_sinks(x):
+    multiprocessing.Process(target=a_flows_to_sink, args=(x, 0))
+
+
+def multiprocessing_bound_method_issue(x: MyClass):
+    x.foo = _test_source()
+    multiprocessing.Process(target=x.sink_on_foo, args=())
+
+
+def multiprocessing_bound_method_sink(x: MyClass):
+    multiprocessing.Process(target=x.sink_on_foo, args=())
+
+
+def multiprocessing_shim_fail(x: MyClass):
+    args = (_test_source(), 1)
+    multiprocessing.Process(target=a_flows_to_sink, args=args)
+    # Shimming fails because `args` is not inlined in the call,
+    # but we still find an issue thanks to the higher order parameter heuristic.
+
+
+def multiprocessing_nested_sink(x):
+    d = {"a": MyClass(foo=x)}
+    multiprocessing.Process(target=sink_on_foo, args=(d["a"]))
+
+
+def multiprocessing_no_sink(x):
+    d = {"a": MyClass(bar=x)}
+    multiprocessing.Process(target=sink_on_foo, args=(d["a"]))
+
+
+def multiprocessing_tainted_access_path():
+    multiprocessing.Process(target=sink_on_foo, args=(MyClass(foo=_test_source()), 1))  # Issue.
+    multiprocessing.Process(target=sink_on_foo, args=(MyClass(bar=_test_source()), 1))  # No issue.
 
 
 class PartialDecorator:

@@ -2,58 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_cookies",
-    "filename": "builtins.pyi",
-    "callable_line": 625,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_rce",
-    "filename": "builtins.pyi",
-    "callable_line": 626,
-    "sinks": [
-      {
-        "port": "formal(argument, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_sql",
-    "filename": "builtins.pyi",
-    "callable_line": 627,
-    "sinks": [
-      {
-        "port": "formal(argument, position=0)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_test_sink",
     "filename": "builtins.pyi",
     "callable_line": 618,
@@ -104,150 +52,9 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_tito",
-    "filename": "builtins.pyi",
-    "callable_line": 623,
-    "tito": [
-      {
-        "port": "formal(**kwargs)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(*args, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_user_controlled",
-    "filename": "builtins.pyi",
-    "callable_line": 624,
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "copy",
-    "filename": "builtins.pyi",
-    "callable_line": 629,
-    "tito": [
-      {
-        "port": "formal(obj, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "copy" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "eval",
-    "filename": "builtins.pyi",
-    "callable_line": 474,
-    "sinks": [
-      {
-        "port": "formal(arg, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "getattr",
-    "filename": "builtins.pyi",
-    "callable_line": 476,
-    "sinks": [
-      {
-        "port": "formal(name, position=1)",
-        "taint": [
-          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(default, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "default" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      },
-      {
-        "port": "formal(o, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "object" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": {}
-          }
-        ]
-      }
-    ],
-    "modes": [ "SkipObscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "partial.NestedDefineDecorator.__get__.wrapper",
     "filename": "partial.py",
-    "callable_line": 74,
+    "callable_line": 134,
     "tito": [
       {
         "port": "captured_variable($parameter$self)[_func]",
@@ -265,9 +72,9 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 76, "start": 19, "end": 23 } ],
+            "tito_positions": [ { "line": 136, "start": 19, "end": 23 } ],
             "tito": {
-              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
             }
           }
@@ -289,9 +96,9 @@
               { "always-via": "obscure:unknown-callee" },
               { "always-via": "captured-variable" }
             ],
-            "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
+            "tito_positions": [ { "line": 136, "start": 40, "end": 48 } ],
             "tito": {
-              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
             }
           }
@@ -312,9 +119,9 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
+            "tito_positions": [ { "line": 136, "start": 40, "end": 48 } ],
             "tito": {
-              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
             }
           }
@@ -335,9 +142,9 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 76, "start": 33, "end": 38 } ],
+            "tito_positions": [ { "line": 136, "start": 33, "end": 38 } ],
             "tito": {
-              "caller_interval": [ { "lower": 4, "upper": 5 } ],
+              "caller_interval": [ { "lower": 6, "upper": 7 } ],
               "is_self_call": false
             }
           }
@@ -351,7 +158,7 @@
   "data": {
     "callable": "partial.a_flows_to_sink",
     "filename": "partial.py",
-    "callable_line": 13,
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -364,8 +171,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 14, "start": 15, "end": 16 },
-            "call_site": "14:4-14:17"
+            "origin": { "line": 30, "start": 15, "end": 16 },
+            "call_site": "30:4-30:17"
           }
         ]
       }
@@ -377,7 +184,7 @@
   "data": {
     "callable": "partial.dunder_call_nested_define_constructor",
     "filename": "partial.py",
-    "callable_line": 92,
+    "callable_line": 152,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -385,7 +192,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 93, "start": 38, "end": 39 } ],
+            "tito_positions": [ { "line": 153, "start": 38, "end": 39 } ],
             "tito": {}
           }
         ]
@@ -396,7 +203,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 93, "start": 35, "end": 36 } ],
+            "tito_positions": [ { "line": 153, "start": 35, "end": 36 } ],
             "tito": {}
           }
         ]
@@ -409,7 +216,7 @@
   "data": {
     "callable": "partial.dunder_call_partial_constructor",
     "filename": "partial.py",
-    "callable_line": 64,
+    "callable_line": 124,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -425,7 +232,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 66, "start": 33, "end": 34 } ],
+            "tito_positions": [ { "line": 126, "start": 33, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -444,7 +251,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 66, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 126, "start": 30, "end": 31 } ],
             "tito": {}
           }
         ]
@@ -455,10 +262,244 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "partial.multiprocessing_tainted",
-    "callable_line": 37,
+    "callable": "partial.multiprocessing_bound_method_issue",
+    "callable_line": 74,
     "code": 5002,
-    "line": 38,
+    "line": 76,
+    "start": 35,
+    "end": 36,
+    "filename": "partial.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 75, "start": 12, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 76, "start": 35, "end": 36 },
+              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "76:4-76:58"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.MyClass.sink_on_foo",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "partial.multiprocessing_bound_method_issue:5002:0:Call|partial.MyClass.sink_on_foo|0|formal(self):b1d9533aa5757579aad2561563c53294"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.multiprocessing_bound_method_sink",
+    "filename": "partial.py",
+    "callable_line": 79,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 80, "start": 35, "end": 36 },
+              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "80:4-80:58"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.multiprocessing_infer_sinks",
+    "filename": "partial.py",
+    "callable_line": 70,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 71, "start": 58, "end": 59 },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a, position=0)",
+              "call_site": "71:4-71:64"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.multiprocessing_nested_sink",
+    "filename": "partial.py",
+    "callable_line": 90,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" },
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 91, "start": 26, "end": 27 } ],
+            "call": {
+              "position": { "line": 92, "start": 35, "end": 46 },
+              "resolves_to": [ "partial.sink_on_foo" ],
+              "port": "formal(x, position=0)[foo]"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "partial.multiprocessing_shim_fail",
+    "callable_line": 83,
+    "code": 5002,
+    "line": 85,
+    "start": 35,
+    "end": 50,
+    "filename": "partial.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "higher-order-parameter" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "origin": { "line": 84, "start": 12, "end": 26 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 85, "start": 35, "end": 50 },
+              "resolves_to": [ "partial.a_flows_to_sink" ],
+              "port": "formal(a, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "higher-order-parameter" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.a_flows_to_sink",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle": "partial.multiprocessing_shim_fail:5002:0:Call|partial.a_flows_to_sink|0|formal(a):abc28988c28abeb0b22ef329bd8d4158"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "partial.multiprocessing_tainted",
+    "callable_line": 62,
+    "code": 5002,
+    "line": 63,
     "start": 58,
     "end": 72,
     "filename": "partial.py",
@@ -477,7 +518,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 38, "start": 58, "end": 72 }
+            "origin": { "line": 63, "start": 58, "end": 72 }
           }
         ]
       },
@@ -494,10 +535,10 @@
               }
             ],
             "call": {
-              "position": { "line": 38, "start": 58, "end": 72 },
+              "position": { "line": 63, "start": 58, "end": 72 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "38:4-38:77"
+              "call_site": "63:4-63:77"
             }
           }
         ]
@@ -518,10 +559,149 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "partial.partial_application_with_named_a",
-    "callable_line": 27,
+    "callable": "partial.multiprocessing_tainted_access_path",
+    "callable_line": 100,
     "code": 5002,
-    "line": 29,
+    "line": 101,
+    "start": 54,
+    "end": 81,
+    "filename": "partial.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 101, "start": 66, "end": 80 } ],
+            "origin": { "line": 101, "start": 66, "end": 80 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 101, "start": 54, "end": 81 },
+              "resolves_to": [ "partial.sink_on_foo" ],
+              "port": "formal(x, position=0)[foo]",
+              "call_site": "101:4-101:86"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.sink_on_foo",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "partial.multiprocessing_tainted_access_path:5002:0:Call|partial.sink_on_foo|0|formal(x):b3be09b6804e36d59c7eaeefb8a08f69"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.partial_application_bound_method_sink",
+    "filename": "partial.py",
+    "callable_line": 53,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 54, "start": 22, "end": 23 },
+              "resolves_to": [ "partial.MyClass.sink_on_foo" ],
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "54:4-54:39"
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.partial_application_bound_method_tito",
+    "filename": "partial.py",
+    "callable_line": 57,
+    "sources": [
+      {
+        "port": "result[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 58, "start": 33, "end": 47 } ],
+            "origin": { "line": 58, "start": 33, "end": 47 }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "partial.partial_application_with_named_a",
+    "callable_line": 43,
+    "code": 5002,
+    "line": 45,
     "start": 41,
     "end": 42,
     "filename": "partial.py",
@@ -540,7 +720,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 28, "start": 8, "end": 22 }
+            "origin": { "line": 44, "start": 8, "end": 22 }
           }
         ]
       },
@@ -557,10 +737,10 @@
               }
             ],
             "call": {
-              "position": { "line": 29, "start": 41, "end": 42 },
+              "position": { "line": 45, "start": 41, "end": 42 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "29:4-29:43"
+              "call_site": "45:4-45:43"
             }
           }
         ]
@@ -582,9 +762,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_tainted",
-    "callable_line": 17,
+    "callable_line": 33,
     "code": 5002,
-    "line": 19,
+    "line": 35,
     "start": 39,
     "end": 40,
     "filename": "partial.py",
@@ -603,7 +783,7 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 18, "start": 8, "end": 22 }
+            "origin": { "line": 34, "start": 8, "end": 22 }
           }
         ]
       },
@@ -620,10 +800,10 @@
               }
             ],
             "call": {
-              "position": { "line": 19, "start": 39, "end": 40 },
+              "position": { "line": 35, "start": 39, "end": 40 },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a, position=0)",
-              "call_site": "19:4-19:41"
+              "call_site": "35:4-35:41"
             }
           }
         ]
@@ -644,9 +824,128 @@
 {
   "kind": "model",
   "data": {
+    "callable": "partial.sink_on_foo",
+    "filename": "partial.py",
+    "callable_line": 25,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 26, "start": 15, "end": 20 },
+            "call_site": "26:4-26:21"
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.MyClass.__init__",
+    "filename": "partial.py",
+    "callable_line": 14,
+    "tito": [
+      {
+        "port": "formal(bar, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[bar]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      },
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.MyClass.set_foo",
+    "filename": "partial.py",
+    "callable_line": 21,
+    "tito": [
+      {
+        "port": "formal(value, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[foo]": 3 },
+                "kind": "ParameterUpdate[formal(self, position=0)]"
+              }
+            ],
+            "tito": {}
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.MyClass.sink_on_foo",
+    "filename": "partial.py",
+    "callable_line": 18,
+    "sinks": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "local_features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": { "line": 19, "start": 19, "end": 27 },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "call_site": "19:8-19:28"
+          }
+        ]
+      }
+    ],
+    "modes": [ "InferSelfTito" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "partial.NestedDefineConstructor.__init__",
     "filename": "partial.py",
-    "callable_line": 87,
+    "callable_line": 147,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -684,7 +983,7 @@
   "data": {
     "callable": "partial.NestedDefineDecorator.__call__",
     "filename": "partial.py",
-    "callable_line": 80,
+    "callable_line": 140,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])[*]",
@@ -692,7 +991,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 82, "start": 43, "end": 51 } ],
+            "tito_positions": [ { "line": 142, "start": 43, "end": 51 } ],
             "tito": {}
           }
         ]
@@ -703,7 +1002,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 82, "start": 26, "end": 34 } ],
+            "tito_positions": [ { "line": 142, "start": 26, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -714,7 +1013,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 82, "start": 36, "end": 41 } ],
+            "tito_positions": [ { "line": 142, "start": 36, "end": 41 } ],
             "tito": {}
           }
         ]
@@ -737,7 +1036,7 @@
   "data": {
     "callable": "partial.NestedDefineDecorator.__init__",
     "filename": "partial.py",
-    "callable_line": 70,
+    "callable_line": 130,
     "tito": [
       {
         "port": "formal(func, position=1)",
@@ -761,7 +1060,7 @@
   "data": {
     "callable": "partial.PartialConstructor.__init__",
     "filename": "partial.py",
-    "callable_line": 59,
+    "callable_line": 119,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -799,7 +1098,7 @@
   "data": {
     "callable": "partial.PartialDecorator.__call__",
     "filename": "partial.py",
-    "callable_line": 52,
+    "callable_line": 112,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])[*]",
@@ -807,7 +1106,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 54, "start": 43, "end": 51 } ],
+            "tito_positions": [ { "line": 114, "start": 43, "end": 51 } ],
             "tito": {}
           }
         ]
@@ -818,7 +1117,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 54, "start": 26, "end": 34 } ],
+            "tito_positions": [ { "line": 114, "start": 26, "end": 34 } ],
             "tito": {}
           }
         ]
@@ -829,7 +1128,7 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
-            "tito_positions": [ { "line": 54, "start": 36, "end": 41 } ],
+            "tito_positions": [ { "line": 114, "start": 36, "end": 41 } ],
             "tito": {}
           }
         ]
@@ -852,7 +1151,7 @@
   "data": {
     "callable": "partial.PartialDecorator.__get__",
     "filename": "partial.py",
-    "callable_line": 49,
+    "callable_line": 109,
     "tito": [
       {
         "port": "formal(instance, position=1)",
@@ -869,9 +1168,9 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 50, "start": 57, "end": 65 } ],
+            "tito_positions": [ { "line": 110, "start": 57, "end": 65 } ],
             "tito": {
-              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "caller_interval": [ { "lower": 10, "upper": 11 } ],
               "is_self_call": false
             }
           }
@@ -892,9 +1191,9 @@
               { "always-via": "tito" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 50, "start": 33, "end": 37 } ],
+            "tito_positions": [ { "line": 110, "start": 33, "end": 37 } ],
             "tito": {
-              "caller_interval": [ { "lower": 8, "upper": 9 } ],
+              "caller_interval": [ { "lower": 10, "upper": 11 } ],
               "is_self_call": false
             }
           }
@@ -908,7 +1207,7 @@
   "data": {
     "callable": "partial.PartialDecorator.__init__",
     "filename": "partial.py",
-    "callable_line": 46,
+    "callable_line": 106,
     "tito": [
       {
         "port": "formal(func, position=1)",
@@ -923,30 +1222,6 @@
             "tito": {}
           }
         ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

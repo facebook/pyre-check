@@ -1,6 +1,7 @@
 @generated
 Call dependencies
 {
+  "partial.MyClass.sink_on_foo (method)": [ "_test_sink (fun)" ],
   "partial.NestedDefineConstructor.__init__@decorated (method)": [
     "object.__new__ (method)",
     "partial.NestedDefineDecorator.__init__ (method)[formal(func, position=1)=partial.NestedDefineConstructor.__init__ (method)]"
@@ -27,11 +28,47 @@ Call dependencies
   "partial.dunder_call_partial_constructor (fun)": [
     "functools.partial.__call__ (method)", "object.__new__ (method)"
   ],
+  "partial.multiprocessing_bound_method_issue (fun)": [
+    "_test_source (fun)", "partial.MyClass.sink_on_foo (method)"
+  ],
+  "partial.multiprocessing_bound_method_sink (fun)": [
+    "partial.MyClass.sink_on_foo (method)"
+  ],
+  "partial.multiprocessing_infer_sinks (fun)": [
+    "partial.a_flows_to_sink (fun)"
+  ],
+  "partial.multiprocessing_nested_sink (fun)": [
+    "dict.__getitem__ (method)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.MyClass.__init__ (method)",
+    "partial.sink_on_foo (fun)"
+  ],
+  "partial.multiprocessing_no_sink (fun)": [
+    "dict.__getitem__ (method)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.MyClass.__init__ (method)",
+    "partial.sink_on_foo (fun)"
+  ],
   "partial.multiprocessing_not_tainted (fun)": [
     "_test_source (fun)", "partial.a_flows_to_sink (fun)"
   ],
+  "partial.multiprocessing_shim_fail (fun)": [
+    "_test_source (fun)",
+    "multiprocessing.context.Process.__init__ (method)",
+    "object.__new__ (method)", "partial.a_flows_to_sink (fun)"
+  ],
   "partial.multiprocessing_tainted (fun)": [
     "_test_source (fun)", "partial.a_flows_to_sink (fun)"
+  ],
+  "partial.multiprocessing_tainted_access_path (fun)": [
+    "_test_source (fun)", "object.__new__ (method)",
+    "partial.MyClass.__init__ (method)", "partial.sink_on_foo (fun)"
+  ],
+  "partial.partial_application_bound_method_sink (fun)": [
+    "partial.MyClass.sink_on_foo (method)"
+  ],
+  "partial.partial_application_bound_method_tito (fun)": [
+    "_test_source (fun)", "partial.MyClass.set_foo (method)"
   ],
   "partial.partial_application_with_benign (fun)": [
     "partial.a_flows_to_sink (fun)"
@@ -44,5 +81,6 @@ Call dependencies
   ],
   "partial.partial_application_with_tainted (fun)": [
     "_test_source (fun)", "partial.a_flows_to_sink (fun)"
-  ]
+  ],
+  "partial.sink_on_foo (fun)": [ "_test_sink (fun)" ]
 }
