@@ -4,12 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 from django.http import HttpRequest
+from typing import Any
 
 
-def source() -> str:
+def source() -> Any:
     request = HttpRequest()
     return request.GET["bad"]
 
 
-def sink(argument: str) -> None:
+def sink(argument: Any) -> None:
     eval(argument)  # noqa

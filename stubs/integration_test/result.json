@@ -887,7 +887,7 @@
     "line": 119,
     "name": "Possible shell injection",
     "path": "fixture_source/integration_test/containers.py",
-    "stop_column": 17,
+    "stop_column": 20,
     "stop_line": 119
   },
   {

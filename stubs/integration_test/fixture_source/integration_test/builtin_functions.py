@@ -41,11 +41,11 @@ def test_sorted(i: int):
 
 def test_reversed(i: int):
     elements = ["a", "b", source()]
-    elements = reversed(elements)
+    elements = list(reversed(elements))
     sink(elements[0])
 
     elements = [(0, "a"), (0, source())]
-    elements = reversed(elements)
+    elements = list(reversed(elements))
     sink(elements[0][0])  # This is NOT an issue.
     sink(elements[1][0])  # This is NOT an issue.
     sink(elements[i][0])  # This is NOT an issue.
@@ -55,7 +55,7 @@ def test_reversed(i: int):
     sink(elements[i][1])  # This is an issue.
 
     d = {(0, 0): "a", (0, source()): "b"}
-    elements = reversed(d)
+    elements = list(reversed(d))
     sink(elements[i][1])  # This is an issue.
     sink(elements[i][0])  # This is NOT an issue.
 

@@ -11,7 +11,7 @@ from integration_test.taint import source, sink
 
 
 def ignore_decorator(f):
-    return
+    return lambda x: None
 
 
 def test_ignore_decorator():

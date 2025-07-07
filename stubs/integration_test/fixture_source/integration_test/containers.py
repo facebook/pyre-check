@@ -78,22 +78,22 @@ def dict_setdefault(i: int):
     sink(d[0])  # This is NOT an issue.
     sink(d.keys())  # This is an issue.
 
-    d = {0: 0}
+    d = {0: ""}
     d.setdefault(i, source())
     sink(d[i])
 
-    d = {0: 0}
+    d = {0: {}}
     d.setdefault(i, {"a": source()})
     sink(d[i]["a"])  # This is an issue.
     sink(d[i]["b"])  # This is NOT an issue.
 
-    d = {0: 0}
+    d = {0: {}}
     result = d.setdefault(i, {"a": source()})
     sink(result["a"])  # This is an issue.
     sink(result["b"])  # This is NOT an issue.
 
     d = {0: {"a": source()}}
-    result = d.setdefault(i, 0)
+    result = d.setdefault(i, {})
     sink(result["a"])  # This is an issue.
     sink(result["b"])  # This is NOT an issue.
 
@@ -116,11 +116,11 @@ def ordereddict_popitem():
     d = collections.OrderedDict()
     d["a"] = {"bad": source(), "good": ""}
     e = d.popitem()
-    sink(e["bad"])  # This is an issue.
-    sink(e["good"])  # This is NOT an issue.
+    sink(e[1]["bad"])  # This is an issue.
+    sink(e[1]["good"])  # This is NOT an issue.
 
 
-def defaultdict_constructor():
+def defaultdict_constructor(x):
     d = collections.defaultdict(lambda: source())
     sink(d["a"])  # This is an issue.
 
