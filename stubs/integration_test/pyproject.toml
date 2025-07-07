@@ -1,0 +1,6 @@
+[tool.pyrefly]
+project-includes = ["fixture_source"]
+search_path = [
+  "fixture_source",
+  "fixture_stubs",
+]
