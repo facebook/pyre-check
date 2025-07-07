@@ -186,8 +186,8 @@ def _create_and_check_configuration(
     "--version",
     is_flag=False,
     type=click.Choice([kind.value for kind in command_arguments.VersionKind]),
-    flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY,
-    default=command_arguments.VersionKind.NONE,
+    flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY.value,
+    default=command_arguments.VersionKind.NONE.value,
     help="Print the versions of Pyre.",
 )
 @click.option("--debug/--no-debug", default=False, hidden=True)
@@ -426,8 +426,8 @@ def pyre(
     "--version",
     is_flag=False,
     type=click.Choice([kind.value for kind in command_arguments.VersionKind]),
-    flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY,
-    default=command_arguments.VersionKind.NONE,
+    flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY.value,
+    default=command_arguments.VersionKind.NONE.value,
     help="Print the versions of Pysa.",
 )
 @click.option(
