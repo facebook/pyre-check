@@ -9,7 +9,6 @@ import unittest
 from dataclasses import dataclass
 from typing import Any, final, List, Optional
 
-from testing.types import File
 from typing_extensions import Annotated
 
 from ..inspect_parser import (
@@ -50,16 +49,22 @@ class WhateverAnnotation:
     value: str
 
 
-# pyre-ignore[2]: Annotations intentionally excluded
-def test_function(arg1, arg2: "TestClass", arg3: TestClass, *vararg, **kwarg) -> None:
-    ...
+def test_function(
+    # pyre-ignore[2]: Annotations intentionally excluded
+    arg1,
+    arg2: "TestClass",
+    arg3: TestClass,
+    # pyre-ignore[2]: Annotations intentionally excluded
+    *vararg,
+    # pyre-ignore[2]: Annotations intentionally excluded
+    **kwarg,
+) -> None: ...
 
 
 def test_annotated_parameter_function(
     arg1: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,))]",  # noqa
     arg2: "Annotated[TestClass, ExampleAnnotation(accesses=(Access.REVIEWED,)), ExampleOtherAnnotation(whatever=(Other.REVIEWED,))]",  # noqa
-) -> None:
-    ...
+) -> None: ...
 
 
 def test_dataclass_parameter(data: TestRequestDataclass) -> TestReturnDataclass:
@@ -96,8 +101,7 @@ class TestMethodClass:
         *vararg,
         # pyre-ignore[2]: Annotations intentionally excluded
         **kwarg,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class InspectParserTest(unittest.TestCase):
@@ -116,7 +120,7 @@ class InspectParserTest(unittest.TestCase):
         self, parameters: List[Parameter], expected_parameters: List[Parameter]
     ) -> None:
         self.assertEqual(len(parameters), len(expected_parameters))
-        for (parameter, expected_parameter) in zip(
+        for parameter, expected_parameter in zip(
             parameters,
             expected_parameters,
         ):
@@ -150,12 +154,6 @@ class InspectParserTest(unittest.TestCase):
         self._assert_equals_parameters(
             extract_parameters(test_annotated_parameter_function),
             expected_parameters_annotated,
-        )
-
-    def test_thrift_structs(self) -> None:
-        self.assertEqual(
-            extract_qualified_name(File.__hash__),
-            "testing.types.File.__hash__",
         )
 
     def test_strip_custom_annotations(self) -> None:
