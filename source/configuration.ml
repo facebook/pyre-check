@@ -766,6 +766,7 @@ module StaticAnalysis = struct
     repository_root: PyrePath.t option;
     save_results_to: PyrePath.t option;
     output_format: TaintOutputFormat.t;
+    pyrefly_results: PyrePath.t option;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
     verify_dsl: bool;
@@ -822,6 +823,7 @@ module StaticAnalysis = struct
       ?repository_root
       ?save_results_to
       ?(output_format = TaintOutputFormat.Json)
+      ?pyrefly_results
       ?dump_call_graph
       ?(verify_models = true)
       ?(verify_dsl = true)
@@ -861,6 +863,7 @@ module StaticAnalysis = struct
       repository_root;
       save_results_to;
       output_format;
+      pyrefly_results;
       dump_call_graph;
       verify_models;
       verify_dsl;

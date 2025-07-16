@@ -66,6 +66,7 @@ class Arguments:
     transform_filter: Optional[Sequence[str]] = None
     save_results_to: Optional[str] = None
     output_format: Optional[str] = None
+    pyrefly_results: Optional[str] = None
     strict: bool = False
     taint_model_paths: Sequence[str] = dataclasses.field(default_factory=list)
     use_cache: bool = False
@@ -108,6 +109,7 @@ class Arguments:
         transform_filter = self.transform_filter
         save_results_to = self.save_results_to
         output_format = self.output_format
+        pyrefly_results = self.pyrefly_results
         scheduler_policies = self.scheduler_policies
         higher_order_call_graph_max_iterations = (
             self.higher_order_call_graph_max_iterations
@@ -208,6 +210,7 @@ class Arguments:
             ),
             **({} if save_results_to is None else {"save_results_to": save_results_to}),
             **({} if output_format is None else {"output_format": output_format}),
+            **({} if pyrefly_results is None else {"pyrefly_results": pyrefly_results}),
             "strict": self.strict,
             "taint_model_paths": self.taint_model_paths,
             "use_cache": self.use_cache,
@@ -255,12 +258,6 @@ def create_analyze_arguments(
     nonexistent directories. It is idempotent though, since it does not alter
     any filesystem state.
     """
-    source_paths = backend_arguments.get_source_path_for_check(
-        configuration,
-        kill_buck_after_build=analyze_arguments.kill_buck_after_build,
-        number_of_buck_threads=analyze_arguments.number_of_buck_threads,
-    )
-
     log_directory = configuration.get_log_directory()
     profiling_output = (
         backend_arguments.get_profiling_log_path(log_directory)
@@ -295,14 +292,21 @@ def create_analyze_arguments(
     repository_root = analyze_arguments.repository_root
     if repository_root is not None:
         repository_root = str(Path(repository_root).resolve(strict=False))
-    return Arguments(
-        base_arguments=backend_arguments.BaseArguments(
+
+    pyrefly_results = analyze_arguments.pyrefly_results
+    if pyrefly_results is None:
+        source_paths = backend_arguments.get_source_path_for_check(
+            configuration,
+            kill_buck_after_build=analyze_arguments.kill_buck_after_build,
+            number_of_buck_threads=analyze_arguments.number_of_buck_threads,
+        )
+        base_arguments = backend_arguments.BaseArguments(
             log_path=str(log_directory),
             global_root=str(configuration.get_global_root()),
             checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
                 configuration, source_paths
             ),
-            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
+            checked_directory_blocklist=configuration.get_ignore_all_errors(),
             debug=analyze_arguments.debug,
             excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
@@ -316,7 +320,31 @@ def create_analyze_arguments(
             remote_logging=remote_logging,
             search_paths=configuration.get_existent_search_paths(),
             source_paths=source_paths,
-        ),
+        )
+    else:
+        # When a pyrefly result directory is provided, ignore most configuration options.
+        base_arguments = backend_arguments.BaseArguments(
+            log_path=str(log_directory),
+            global_root=str(configuration.get_global_root()),
+            checked_directory_allowlist=[],
+            checked_directory_blocklist=[],
+            debug=analyze_arguments.debug,
+            excludes=[],
+            extensions=[],
+            relative_local_root=None,
+            memory_profiling_output=memory_profiling_output,
+            number_of_workers=configuration.get_number_of_workers(),
+            parallel=not analyze_arguments.sequential,
+            profiling_output=profiling_output,
+            python_version=configuration.get_python_version(),
+            shared_memory=configuration.get_shared_memory(),
+            remote_logging=remote_logging,
+            search_paths=[],
+            source_paths=backend_arguments.SimpleSourcePath(elements=[]),
+        )
+
+    return Arguments(
+        base_arguments=base_arguments,
         dump_call_graph=analyze_arguments.dump_call_graph,
         dump_model_query_results=analyze_arguments.dump_model_query_results,
         find_missing_flows=(
@@ -345,6 +373,7 @@ def create_analyze_arguments(
         transform_filter=None if len(transform) == 0 else transform,
         save_results_to=analyze_arguments.save_results_to,
         output_format=str(output_format.value) if output_format is not None else None,
+        pyrefly_results=pyrefly_results,
         strict=configuration.is_strict(),
         taint_model_paths=taint_models_path,
         use_cache=analyze_arguments.use_cache,

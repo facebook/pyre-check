@@ -27,6 +27,7 @@ let test_json_parsing context =
   let dummy_analyze_configuration =
     {
       AnalyzeConfiguration.base = BaseConfigurationTest.dummy_base_configuration;
+      pyrefly_results = None;
       dump_call_graph = None;
       dump_model_query_results = None;
       find_missing_flows = None;
@@ -266,6 +267,10 @@ let test_json_parsing context =
                   } );
             ];
       };
+  assert_parsed
+    (`Assoc (("pyrefly_results", `String "/foo") :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      { dummy_analyze_configuration with pyrefly_results = Some (PyrePath.create_absolute "/foo") };
   ()
 
 

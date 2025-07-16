@@ -324,6 +324,7 @@ class AnalyzeArguments:
     transform: List[str] = field(default_factory=list)
     save_results_to: Optional[str] = None
     output_format: Optional[TaintOutputFormat] = None
+    pyrefly_results: Optional[str] = None
     sequential: bool = False
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False

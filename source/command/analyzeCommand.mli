@@ -45,6 +45,7 @@ module AnalyzeConfiguration : sig
     transform_filter: string list option;
     save_results_to: PyrePath.t option;
     output_format: Configuration.TaintOutputFormat.t;
+    pyrefly_results: PyrePath.t option;
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;

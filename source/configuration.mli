@@ -299,6 +299,7 @@ module StaticAnalysis : sig
     (* A directory to write files in. *)
     save_results_to: PyrePath.t option;
     output_format: TaintOutputFormat.t;
+    pyrefly_results: PyrePath.t option;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
     verify_dsl: bool;
@@ -351,6 +352,7 @@ module StaticAnalysis : sig
     ?repository_root:PyrePath.t ->
     ?save_results_to:PyrePath.t ->
     ?output_format:TaintOutputFormat.t ->
+    ?pyrefly_results:PyrePath.t ->
     ?dump_call_graph:PyrePath.t ->
     ?verify_models:bool ->
     ?verify_dsl:bool ->

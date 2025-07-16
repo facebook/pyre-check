@@ -441,6 +441,11 @@ def pyre(
     help="Format of the taint output file(s).",
 )
 @click.option(
+    "--pyrefly-results",
+    type=click.Path(),
+    help="Directory to pyrefly results (pyrefly --report-pysa).",
+)
+@click.option(
     "--dump-call-graph",
     type=str,
     help="Dump the call graph in the given file.",
@@ -626,6 +631,7 @@ def analyze(
     version: command_arguments.VersionKind,
     save_results_to: Optional[str],
     output_format: Optional[str],
+    pyrefly_results: Optional[str],
     dump_call_graph: Optional[str],
     repository_root: Optional[str],
     rule: Iterable[int],
@@ -712,6 +718,7 @@ def analyze(
                 if output_format is not None
                 else None
             ),
+            pyrefly_results=pyrefly_results,
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),
             use_cache=use_cache,

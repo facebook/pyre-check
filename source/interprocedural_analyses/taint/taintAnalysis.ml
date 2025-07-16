@@ -539,6 +539,7 @@ let run_taint_analysis
     ~static_analysis_configuration:
       ({
          Configuration.StaticAnalysis.configuration;
+         pyrefly_results;
          use_cache;
          build_cache_only;
          limit_entrypoints;
@@ -552,6 +553,14 @@ let run_taint_analysis
     ~scheduler
     ()
   =
+  let () =
+    match pyrefly_results with
+    | Some path ->
+        failwith
+          (Format.asprintf "Using pyrefly results from `%a`. Not yet implemented." PyrePath.pp path)
+    | None -> ()
+  in
+
   let taint_configuration = initialize_and_verify_configuration ~static_analysis_configuration in
 
   (* In order to save time, sanity check models before starting the analysis. *)

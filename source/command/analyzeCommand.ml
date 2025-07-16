@@ -52,6 +52,7 @@ module AnalyzeConfiguration = struct
     transform_filter: string list option;
     save_results_to: PyrePath.t option;
     output_format: Configuration.TaintOutputFormat.t;
+    pyrefly_results: PyrePath.t option;
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;
@@ -136,6 +137,7 @@ module AnalyzeConfiguration = struct
           |> Configuration.TaintOutputFormat.of_string
           >>= fun output_format ->
           let strict = bool_member "strict" ~default:false json in
+          let pyrefly_results = optional_path_member "pyrefly_results" json in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
           let use_cache = bool_member "use_cache" ~default:false json in
           let build_cache_only = bool_member "build_cache_only" ~default:false json in
@@ -170,6 +172,7 @@ module AnalyzeConfiguration = struct
           Result.Ok
             {
               base;
+              pyrefly_results;
               dump_call_graph;
               dump_model_query_results;
               find_missing_flows;
@@ -271,6 +274,7 @@ module AnalyzeConfiguration = struct
         transform_filter;
         save_results_to;
         output_format;
+        pyrefly_results;
         strict;
         taint_model_paths;
         use_cache;
@@ -328,6 +332,7 @@ module AnalyzeConfiguration = struct
       repository_root;
       save_results_to;
       output_format;
+      pyrefly_results;
       dump_call_graph;
       verify_models = not no_verify;
       verify_dsl;
