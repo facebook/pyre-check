@@ -91,25 +91,27 @@ def update_parameter(arg):
     arg.update({"a": _test_source()})
 
 
-def dict_update_arg():
-    x = {"a": _test_source(), "b": "safe"}
-    x.update({"a": "safe"})
-    return x["a"]
-
-
-def dict_update_whole_dict():
-    x = {"a": _test_source(), "b": "safe"}
+def dict_update_with_literal_safe_source():
+    x = {
+        "a": _test_source(),
+        "b": _test_source(),
+    }
     x.update({"a": "safe"})
     return x
 
 
-def dict_update_sinks(x, y, z):
+def dict_update_with_literal_source():
+    x = {"a": "safe", "b": "safe"}
+    x.update({"a": _test_source()})
+    return x
+
+
+def dict_update_with_literal_flows_to_sink(x, y, z):
     d = {"a": x, "b": y}
     d.update({"a": "safe", "c": z})
     _test_sink(d["a"])
     _test_sink(d["b"])
     _test_sink(d["c"])
-    return
 
 
 def dict_update_sinks_cycle(x):
@@ -119,19 +121,13 @@ def dict_update_sinks_cycle(x):
     _test_sink(d["a"])
 
 
-def dict_update_cycle():
+def dict_update_source_cycle():
     d = {"b": _test_source()}
     d.update({"a": d["b"], "b": "safe"})
     return d
 
 
-def dict_update_taint():
-    x = {"a": "safe", "b": "safe"}
-    x.update({"a": _test_source()})
-    return x
-
-
-def dict_update_multiple():
+def dict_update_with_literal_multiple():
     x = {
         "a": _test_source(),
         "b": "safe",
@@ -162,6 +158,36 @@ def dict_only_key_of_parameter_sink(x: Dict[str, Any]):
     d.update({"a": x["A"]})
     _test_sink(d)
     _test_sink(d["a"])
+
+
+def dict_update_with_expression_erase_source():
+    a = {
+        "a": _test_source(),
+        "b": _test_source(),
+    }
+    b = {"a": "safe"}
+    a.update(b)
+    return a  # TODO(T231035683): False positive, result[a] is still tainted.
+
+
+def dict_update_with_expression_add_source(k: str):
+    a = {
+        "a": _test_source(),
+        "b": "safe",
+    }
+    b = {"b": _test_source()}
+    a.update(b)
+    return a  # TODO(T231035683): False positive, result[*] is tainted.
+
+
+def dict_update_with_expression_tito(x, y):
+    a = {
+        "a": x,
+        "b": "safe",
+    }
+    b = {"b": y}
+    a.update(b)
+    return a  # TODO(T231035683): False positive, x and y flow to result[*]
 
 
 def flow_through_keywords():

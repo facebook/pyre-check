@@ -11,12 +11,12 @@ Higher order call graphs
         ]
       }
     },
-    "293:0-293:2|identifier|$local_dictionary$TV": {
+    "319:0-319:2|identifier|$local_dictionary$TV": {
       "identifier": {
         "globals": [ { "target": "Obj{dictionary.TV}", "index": 0 } ]
       }
     },
-    "293:5-293:18": {
+    "319:5-319:18": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "CannotResolveExports" ] ]
       }
@@ -27,7 +27,7 @@ Higher order call graphs
   "callable": "dictionary.analyze_getitem_index_backward",
   "returned_callables": [],
   "calls": {
-    "457:8-457:24|artificial-call|subscript-get-item": {
+    "483:8-483:24|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -40,7 +40,7 @@ Higher order call graphs
         ]
       }
     },
-    "457:10-457:23": {
+    "483:10-483:23": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
@@ -53,14 +53,14 @@ Higher order call graphs
   "callable": "dictionary.analyze_getitem_index_issue",
   "returned_callables": [],
   "calls": {
-    "450:8-450:22": {
+    "476:8-476:22": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "452:8-452:24|artificial-call|subscript-get-item": {
+    "478:8-478:24|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -73,7 +73,7 @@ Higher order call graphs
         ]
       }
     },
-    "452:10-452:23": {
+    "478:10-478:23": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
@@ -86,7 +86,7 @@ Higher order call graphs
   "callable": "dictionary.backward_weak_update",
   "returned_callables": [],
   "calls": {
-    "430:4-430:14|artificial-call|subscript-set-item": {
+    "456:4-456:14|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -99,14 +99,14 @@ Higher order call graphs
         ]
       }
     },
-    "431:4-431:24": {
+    "457:4-457:24": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "431:15-431:23": {
+    "457:15-457:23": {
       "call": {
         "calls": [
           {
@@ -125,7 +125,7 @@ Higher order call graphs
   "callable": "dictionary.backwards_field_assignment",
   "returned_callables": [],
   "calls": {
-    "280:4-280:25|artificial-call|subscript-set-item": {
+    "306:4-306:25|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -144,22 +144,22 @@ Higher order call graphs
   "callable": "dictionary.backwards_model_for_dictionary_comprehension",
   "returned_callables": [],
   "calls": {
-    "251:19-251:23|artificial-call|subscript-get-item": {
+    "277:19-277:23|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "251:33-251:34|artificial-call|generator-iter": {
+    "277:33-277:34|artificial-call|generator-iter": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "251:33-251:34|artificial-call|generator-next": {
+    "277:33-277:34|artificial-call|generator-next": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "252:4-252:42": {
+    "278:4-278:42": {
       "call": {
         "calls": [
           {
@@ -176,7 +176,7 @@ Higher order call graphs
   "callable": "dictionary.big_dict_update_arg",
   "returned_callables": [],
   "calls": {
-    "154:28-154:38": {
+    "150:28-150:38": {
       "call": {
         "new_calls": [
           {
@@ -196,7 +196,7 @@ Higher order call graphs
         ]
       }
     },
-    "154:28-154:38|artificial-call|generator-iter": {
+    "150:28-150:38|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -209,7 +209,7 @@ Higher order call graphs
         ]
       }
     },
-    "154:28-154:38|artificial-call|generator-next": {
+    "150:28-150:38|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -222,7 +222,7 @@ Higher order call graphs
         ]
       }
     },
-    "155:4-155:27|artificial-call|subscript-set-item": {
+    "151:4-151:27|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -235,14 +235,14 @@ Higher order call graphs
         ]
       }
     },
-    "155:13-155:27": {
+    "151:13-151:27": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "156:4-156:27": {
+    "152:4-152:27": {
       "call": {
         "calls": [
           {
@@ -261,14 +261,14 @@ Higher order call graphs
   "callable": "dictionary.copy_untainted_values_with_tainted_keys",
   "returned_callables": [],
   "calls": {
-    "214:9-214:23": {
+    "240:9-240:23": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "216:15-216:16|artificial-call|for-iter": {
+    "242:15-242:16|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -281,7 +281,7 @@ Higher order call graphs
         ]
       }
     },
-    "216:15-216:16|artificial-call|for-next": {
+    "242:15-242:16|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -294,7 +294,7 @@ Higher order call graphs
         ]
       }
     },
-    "217:8-217:40|artificial-call|subscript-set-item": {
+    "243:8-243:40|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -307,7 +307,7 @@ Higher order call graphs
         ]
       }
     },
-    "217:34-217:40|artificial-call|subscript-get-item": {
+    "243:34-243:40|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -326,7 +326,7 @@ Higher order call graphs
   "callable": "dictionary.dict_get_foo",
   "returned_callables": [],
   "calls": {
-    "516:11-516:23": {
+    "542:11-542:23": {
       "call": {
         "calls": [
           {
@@ -345,7 +345,7 @@ Higher order call graphs
   "callable": "dictionary.dict_get_foo_with_default",
   "returned_callables": [],
   "calls": {
-    "520:11-520:32": {
+    "546:11-546:32": {
       "call": {
         "calls": [
           {
@@ -364,7 +364,7 @@ Higher order call graphs
   "callable": "dictionary.dict_getitem_mutate",
   "returned_callables": [],
   "calls": {
-    "546:40-546:49": {
+    "572:40-572:49": {
       "call": {
         "new_calls": [
           {
@@ -384,7 +384,7 @@ Higher order call graphs
         ]
       }
     },
-    "546:40-546:49|artificial-call|generator-iter": {
+    "572:40-572:49|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -397,7 +397,7 @@ Higher order call graphs
         ]
       }
     },
-    "546:40-546:49|artificial-call|generator-next": {
+    "572:40-572:49|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -410,7 +410,7 @@ Higher order call graphs
         ]
       }
     },
-    "547:4-547:8|artificial-call|augmented-assign-rhs>subscript-get-item": {
+    "573:4-573:8|artificial-call|augmented-assign-rhs>subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -423,7 +423,7 @@ Higher order call graphs
         ]
       }
     },
-    "547:4-547:13|artificial-call|augmented-assign-dunder-call": {
+    "573:4-573:13|artificial-call|augmented-assign-dunder-call": {
       "call": {
         "calls": [
           {
@@ -436,7 +436,7 @@ Higher order call graphs
         ]
       }
     },
-    "547:4-547:13|artificial-call|augmented-assign-statement>subscript-set-item": {
+    "573:4-573:13|artificial-call|augmented-assign-statement>subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -449,7 +449,7 @@ Higher order call graphs
         ]
       }
     },
-    "548:11-548:15|artificial-call|subscript-get-item": {
+    "574:11-574:15|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -468,7 +468,7 @@ Higher order call graphs
   "callable": "dictionary.dict_only_key_of_parameter_sink",
   "returned_callables": [],
   "calls": {
-    "162:4-162:27": {
+    "158:4-158:27": {
       "call": {
         "calls": [
           {
@@ -481,7 +481,7 @@ Higher order call graphs
         ]
       }
     },
-    "162:19-162:25|artificial-call|subscript-get-item": {
+    "158:19-158:25|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -494,21 +494,21 @@ Higher order call graphs
         ]
       }
     },
-    "163:4-163:17": {
+    "159:4-159:17": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "164:4-164:22": {
+    "160:4-160:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "164:15-164:21|artificial-call|subscript-get-item": {
+    "160:15-160:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -524,88 +524,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "dictionary.dict_update_arg",
-  "returned_callables": [],
-  "calls": {
-    "95:14-95:28": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "96:4-96:27": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.MutableMapping.update",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "97:11-97:17|artificial-call|subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "dictionary.dict_update_cycle",
-  "returned_callables": [],
-  "calls": {
-    "123:14-123:28": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "124:4-124:40": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.MutableMapping.update",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "124:19-124:25|artificial-call|subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    }
-  }
-}
-{
   "callable": "dictionary.dict_update_keys",
   "returned_callables": [],
   "calls": {
-    "506:43-506:54": {
+    "532:43-532:54": {
       "call": {
         "calls": [
           {
@@ -618,7 +540,7 @@ Higher order call graphs
         ]
       }
     },
-    "506:43-506:54|artificial-call|generator-iter": {
+    "532:43-532:54|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -631,7 +553,7 @@ Higher order call graphs
         ]
       }
     },
-    "506:43-506:54|artificial-call|generator-next": {
+    "532:43-532:54|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -647,31 +569,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "dictionary.dict_update_multiple",
+  "callable": "dictionary.dict_update_sinks_cycle",
   "returned_callables": [],
   "calls": {
-    "136:13-136:27": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "138:13-138:27": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 1, "return_type": [] }
-        ]
-      }
-    },
-    "140:13-140:27": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 2, "return_type": [] }
-        ]
-      }
-    },
-    "142:4-149:5": {
+    "120:4-120:40": {
       "call": {
         "calls": [
           {
@@ -684,47 +585,7 @@ Higher order call graphs
         ]
       }
     },
-    "145:17-145:31": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 3, "return_type": [] }
-        ]
-      }
-    },
-    "146:17-146:31": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 4, "return_type": [] }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "dictionary.dict_update_sinks",
-  "returned_callables": [],
-  "calls": {
-    "108:4-108:35": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.MutableMapping.update",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "109:4-109:22": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "109:15-109:21|artificial-call|subscript-get-item": {
+    "120:19-120:25|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -737,14 +598,197 @@ Higher order call graphs
         ]
       }
     },
-    "110:4-110:22": {
+    "121:4-121:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "121:15-121:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.dict_update_source_cycle",
+  "returned_callables": [],
+  "calls": {
+    "125:14-125:28": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "126:4-126:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.update",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "126:19-126:25|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.dict_update_with_expression_add_source",
+  "returned_callables": [],
+  "calls": {
+    "175:13-175:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "178:14-178:28": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "179:4-179:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.update",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.dict_update_with_expression_erase_source",
+  "returned_callables": [],
+  "calls": {
+    "165:13-165:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "166:13-166:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "169:4-169:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.update",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.dict_update_with_expression_tito",
+  "returned_callables": [],
+  "calls": {
+    "189:4-189:15": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.update",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.dict_update_with_literal_flows_to_sink",
+  "returned_callables": [],
+  "calls": {
+    "111:4-111:35": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.MutableMapping.update",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "112:4-112:22": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "112:15-112:21|artificial-call|subscript-get-item": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.__getitem__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "113:4-113:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "110:15-110:21|artificial-call|subscript-get-item": {
+    "113:15-113:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -757,14 +801,14 @@ Higher order call graphs
         ]
       }
     },
-    "111:4-111:22": {
+    "114:4-114:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "111:15-111:21|artificial-call|subscript-get-item": {
+    "114:15-114:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -780,10 +824,31 @@ Higher order call graphs
   }
 }
 {
-  "callable": "dictionary.dict_update_sinks_cycle",
+  "callable": "dictionary.dict_update_with_literal_multiple",
   "returned_callables": [],
   "calls": {
-    "118:4-118:40": {
+    "132:13-132:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "134:13-134:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "136:13-136:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "138:4-145:5": {
       "call": {
         "calls": [
           {
@@ -796,32 +861,46 @@ Higher order call graphs
         ]
       }
     },
-    "118:19-118:25|artificial-call|subscript-get-item": {
+    "141:17-141:31": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 3, "return_type": [] }
+        ]
+      }
+    },
+    "142:17-142:31": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 4, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.dict_update_with_literal_safe_source",
+  "returned_callables": [],
+  "calls": {
+    "96:13-96:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "97:13-97:27": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "99:4-99:27": {
       "call": {
         "calls": [
           {
-            "target": "dict.__getitem__",
+            "target": "typing.MutableMapping.update",
             "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "119:4-119:22": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "119:15-119:21|artificial-call|subscript-get-item": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.__getitem__",
-            "index": 1,
             "implicit_receiver": true,
             "return_type": [],
             "receiver_class": "dict"
@@ -832,10 +911,10 @@ Higher order call graphs
   }
 }
 {
-  "callable": "dictionary.dict_update_taint",
+  "callable": "dictionary.dict_update_with_literal_source",
   "returned_callables": [],
   "calls": {
-    "130:4-130:35": {
+    "105:4-105:35": {
       "call": {
         "calls": [
           {
@@ -848,36 +927,10 @@ Higher order call graphs
         ]
       }
     },
-    "130:19-130:33": {
+    "105:19-105:33": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "dictionary.dict_update_whole_dict",
-  "returned_callables": [],
-  "calls": {
-    "101:14-101:28": {
-      "call": {
-        "calls": [
-          { "target": "_test_source", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "102:4-102:27": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.MutableMapping.update",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
         ]
       }
     }
@@ -887,14 +940,14 @@ Higher order call graphs
   "callable": "dictionary.dict_with_tainted_key_flows_to_sink",
   "returned_callables": [],
   "calls": {
-    "222:9-222:23": {
+    "248:9-248:23": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "223:4-223:17": {
+    "249:4-249:17": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
@@ -907,7 +960,7 @@ Higher order call graphs
   "callable": "dictionary.dict_with_tainted_key_flows_to_sink_via_setitem",
   "returned_callables": [],
   "calls": {
-    "228:4-228:25|artificial-call|subscript-set-item": {
+    "254:4-254:25|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -920,14 +973,14 @@ Higher order call graphs
         ]
       }
     },
-    "228:6-228:20": {
+    "254:6-254:20": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "229:4-229:17": {
+    "255:4-255:17": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
@@ -1005,21 +1058,21 @@ Higher order call graphs
   "callable": "dictionary.dictionary_bool_key",
   "returned_callables": [],
   "calls": {
-    "478:15-478:29": {
+    "504:15-504:29": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "479:4-479:20": {
+    "505:4-505:20": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "479:15-479:19|artificial-call|subscript-get-item": {
+    "505:15-505:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1032,14 +1085,14 @@ Higher order call graphs
         ]
       }
     },
-    "480:4-480:20": {
+    "506:4-506:20": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "480:15-480:19|artificial-call|subscript-get-item": {
+    "506:15-506:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1071,21 +1124,21 @@ Higher order call graphs
   "callable": "dictionary.dictionary_int_key",
   "returned_callables": [],
   "calls": {
-    "472:12-472:26": {
+    "498:12-498:26": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "473:4-473:20": {
+    "499:4-499:20": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "473:15-473:19|artificial-call|subscript-get-item": {
+    "499:15-499:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1098,14 +1151,14 @@ Higher order call graphs
         ]
       }
     },
-    "474:4-474:20": {
+    "500:4-500:20": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "474:15-474:19|artificial-call|subscript-get-item": {
+    "500:15-500:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1124,7 +1177,7 @@ Higher order call graphs
   "callable": "dictionary.dictionary_keys_and_any_index_bug",
   "returned_callables": [],
   "calls": {
-    "510:8-510:29": {
+    "536:8-536:29": {
       "call": {
         "calls": [
           {
@@ -1135,14 +1188,14 @@ Higher order call graphs
         ]
       }
     },
-    "511:4-511:24": {
+    "537:4-537:24": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "511:15-511:23": {
+    "537:15-537:23": {
       "call": {
         "calls": [
           {
@@ -1355,7 +1408,7 @@ Higher order call graphs
   "callable": "dictionary.dictionary_tito_any_index",
   "returned_callables": [],
   "calls": {
-    "468:28-468:37": {
+    "494:28-494:37": {
       "call": {
         "new_calls": [
           {
@@ -1375,7 +1428,7 @@ Higher order call graphs
         ]
       }
     },
-    "468:28-468:37|artificial-call|generator-iter": {
+    "494:28-494:37|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1388,7 +1441,7 @@ Higher order call graphs
         ]
       }
     },
-    "468:28-468:37|artificial-call|generator-next": {
+    "494:28-494:37|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1407,7 +1460,7 @@ Higher order call graphs
   "callable": "dictionary.dictionary_update_iterable",
   "returned_callables": [],
   "calls": {
-    "494:4-494:37": {
+    "520:4-520:37": {
       "call": {
         "calls": [
           {
@@ -1420,21 +1473,21 @@ Higher order call graphs
         ]
       }
     },
-    "494:20-494:34": {
+    "520:20-520:34": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "495:4-495:22": {
+    "521:4-521:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "495:15-495:21|artificial-call|subscript-get-item": {
+    "521:15-521:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1447,14 +1500,14 @@ Higher order call graphs
         ]
       }
     },
-    "496:4-496:22": {
+    "522:4-522:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "496:15-496:21|artificial-call|subscript-get-item": {
+    "522:15-522:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1467,7 +1520,7 @@ Higher order call graphs
         ]
       }
     },
-    "499:4-499:47": {
+    "525:4-525:47": {
       "call": {
         "calls": [
           {
@@ -1480,21 +1533,21 @@ Higher order call graphs
         ]
       }
     },
-    "499:30-499:44": {
+    "525:30-525:44": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "500:4-500:22": {
+    "526:4-526:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "500:15-500:21|artificial-call|subscript-get-item": {
+    "526:15-526:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1507,14 +1560,14 @@ Higher order call graphs
         ]
       }
     },
-    "501:4-501:22": {
+    "527:4-527:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 3, "return_type": [] }
         ]
       }
     },
-    "501:15-501:21|artificial-call|subscript-get-item": {
+    "527:15-527:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1527,14 +1580,14 @@ Higher order call graphs
         ]
       }
     },
-    "502:4-502:22": {
+    "528:4-528:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 4, "return_type": [] }
         ]
       }
     },
-    "502:15-502:21|artificial-call|subscript-get-item": {
+    "528:15-528:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1553,7 +1606,7 @@ Higher order call graphs
   "callable": "dictionary.dictionary_update_keyword",
   "returned_callables": [],
   "calls": {
-    "485:4-485:37": {
+    "511:4-511:37": {
       "call": {
         "calls": [
           {
@@ -1566,21 +1619,21 @@ Higher order call graphs
         ]
       }
     },
-    "485:21-485:35": {
+    "511:21-511:35": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "486:4-486:27": {
+    "512:4-512:27": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "486:15-486:21|artificial-call|subscript-get-item": {
+    "512:15-512:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1593,19 +1646,19 @@ Higher order call graphs
         ]
       }
     },
-    "486:15-486:26|artificial-call|subscript-get-item": {
+    "512:15-512:26|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "488:4-488:22": {
+    "514:4-514:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "488:15-488:21|artificial-call|subscript-get-item": {
+    "514:15-514:21|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1624,21 +1677,21 @@ Higher order call graphs
   "callable": "dictionary.flow_through_keywords",
   "returned_callables": [],
   "calls": {
-    "168:24-168:38": {
+    "194:24-194:38": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "170:4-170:32": {
+    "196:4-196:32": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "170:15-170:31|artificial-call|subscript-get-item": {
+    "196:15-196:31|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -1657,14 +1710,14 @@ Higher order call graphs
   "callable": "dictionary.forward_comprehension_key_sink",
   "returned_callables": [],
   "calls": {
-    "198:9-198:22": {
+    "224:9-224:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "198:35-198:40|artificial-call|generator-iter": {
+    "224:35-224:40|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1677,7 +1730,7 @@ Higher order call graphs
         ]
       }
     },
-    "198:35-198:40|artificial-call|generator-next": {
+    "224:35-224:40|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1696,14 +1749,14 @@ Higher order call graphs
   "callable": "dictionary.forward_comprehension_key_source",
   "returned_callables": [],
   "calls": {
-    "189:9-189:23": {
+    "215:9-215:23": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "189:36-189:38|artificial-call|generator-iter": {
+    "215:36-215:38|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1716,7 +1769,7 @@ Higher order call graphs
         ]
       }
     },
-    "189:36-189:38|artificial-call|generator-next": {
+    "215:36-215:38|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1735,14 +1788,14 @@ Higher order call graphs
   "callable": "dictionary.forward_comprehension_value_sink",
   "returned_callables": [],
   "calls": {
-    "194:14-194:27": {
+    "220:14-220:27": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "194:37-194:42|artificial-call|generator-iter": {
+    "220:37-220:42|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1755,7 +1808,7 @@ Higher order call graphs
         ]
       }
     },
-    "194:37-194:42|artificial-call|generator-next": {
+    "220:37-220:42|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1774,14 +1827,14 @@ Higher order call graphs
   "callable": "dictionary.forward_comprehension_value_source",
   "returned_callables": [],
   "calls": {
-    "184:14-184:28": {
+    "210:14-210:28": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "184:38-184:40|artificial-call|generator-iter": {
+    "210:38-210:40|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1794,7 +1847,7 @@ Higher order call graphs
         ]
       }
     },
-    "184:38-184:40|artificial-call|generator-next": {
+    "210:38-210:40|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1813,7 +1866,7 @@ Higher order call graphs
   "callable": "dictionary.forward_weak_update",
   "returned_callables": [],
   "calls": {
-    "444:4-444:25|artificial-call|subscript-set-item": {
+    "470:4-470:25|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -1826,14 +1879,14 @@ Higher order call graphs
         ]
       }
     },
-    "444:6-444:20": {
+    "470:6-470:20": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "445:4-445:14|artificial-call|subscript-set-item": {
+    "471:4-471:14|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -1852,7 +1905,7 @@ Higher order call graphs
   "callable": "dictionary.get_keys",
   "returned_callables": [],
   "calls": {
-    "237:23-237:24|artificial-call|generator-iter": {
+    "263:23-263:24|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1865,7 +1918,7 @@ Higher order call graphs
         ]
       }
     },
-    "237:23-237:24|artificial-call|generator-next": {
+    "263:23-263:24|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1908,7 +1961,7 @@ Higher order call graphs
   "callable": "dictionary.issue_in_keys",
   "returned_callables": [],
   "calls": {
-    "462:4-462:29|artificial-call|subscript-set-item": {
+    "488:4-488:29|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -1921,14 +1974,14 @@ Higher order call graphs
         ]
       }
     },
-    "462:6-462:20": {
+    "488:6-488:20": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "463:4-463:27": {
+    "489:4-489:27": {
       "call": {
         "calls": [
           {
@@ -1939,14 +1992,14 @@ Higher order call graphs
         ]
       }
     },
-    "464:4-464:24": {
+    "490:4-490:24": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "464:15-464:23": {
+    "490:15-490:23": {
       "call": {
         "calls": [
           {
@@ -1965,14 +2018,14 @@ Higher order call graphs
   "callable": "dictionary.lists_of_dictionary_iteration_is_precise",
   "returned_callables": [],
   "calls": {
-    "202:38-202:52": {
+    "228:38-228:52": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "202:85-202:87|artificial-call|generator-iter": {
+    "228:85-228:87|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -1985,7 +2038,7 @@ Higher order call graphs
         ]
       }
     },
-    "202:85-202:87|artificial-call|generator-next": {
+    "228:85-228:87|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -1998,7 +2051,7 @@ Higher order call graphs
         ]
       }
     },
-    "203:16-203:29|artificial-call|for-iter": {
+    "229:16-229:29|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -2011,7 +2064,7 @@ Higher order call graphs
         ]
       }
     },
-    "203:16-203:29|artificial-call|for-next": {
+    "229:16-229:29|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -2024,14 +2077,14 @@ Higher order call graphs
         ]
       }
     },
-    "204:8-204:40": {
+    "230:8-230:40": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "204:19-204:39|artificial-call|subscript-get-item": {
+    "230:19-230:39|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2044,14 +2097,14 @@ Higher order call graphs
         ]
       }
     },
-    "205:8-205:43": {
+    "231:8-231:43": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "205:19-205:42|artificial-call|subscript-get-item": {
+    "231:19-231:42|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2070,19 +2123,19 @@ Higher order call graphs
   "callable": "dictionary.reassignment_removes_backwards_taint",
   "returned_callables": [],
   "calls": {
-    "209:4-209:14|artificial-call|subscript-set-item": {
+    "235:4-235:14|artificial-call|subscript-set-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
     },
-    "210:4-210:22": {
+    "236:4-236:22": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "210:15-210:21|artificial-call|subscript-get-item": {
+    "236:15-236:21|artificial-call|subscript-get-item": {
       "call": {
         "unresolved": [ "BypassingDecorators", [ "UnknownBaseType" ] ]
       }
@@ -2093,14 +2146,14 @@ Higher order call graphs
   "callable": "dictionary.return_comprehension_with_tained_keys",
   "returned_callables": [],
   "calls": {
-    "241:9-241:23": {
+    "267:9-267:23": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "242:23-242:24|artificial-call|generator-iter": {
+    "268:23-268:24|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -2113,7 +2166,7 @@ Higher order call graphs
         ]
       }
     },
-    "242:23-242:24|artificial-call|generator-next": {
+    "268:23-268:24|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -2132,14 +2185,14 @@ Higher order call graphs
   "callable": "dictionary.return_comprehension_with_untainted_keys",
   "returned_callables": [],
   "calls": {
-    "246:12-246:26": {
+    "272:12-272:26": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "247:23-247:24|artificial-call|generator-iter": {
+    "273:23-273:24|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -2152,7 +2205,7 @@ Higher order call graphs
         ]
       }
     },
-    "247:23-247:24|artificial-call|generator-next": {
+    "273:23-273:24|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -2171,7 +2224,7 @@ Higher order call graphs
   "callable": "dictionary.setitem_models",
   "returned_callables": [],
   "calls": {
-    "414:9-414:17": {
+    "440:9-440:17": {
       "call": {
         "new_calls": [
           {
@@ -2191,7 +2244,7 @@ Higher order call graphs
         ]
       }
     },
-    "415:4-415:15|artificial-call|subscript-set-item": {
+    "441:4-441:15|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -2204,7 +2257,7 @@ Higher order call graphs
         ]
       }
     },
-    "419:4-419:15|artificial-call|subscript-set-item": {
+    "445:4-445:15|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -2217,7 +2270,7 @@ Higher order call graphs
         ]
       }
     },
-    "423:4-423:15|artificial-call|subscript-set-item": {
+    "449:4-449:15|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -2236,14 +2289,14 @@ Higher order call graphs
   "callable": "dictionary.sink_dictionary_through_keys",
   "returned_callables": [],
   "calls": {
-    "233:5-233:18": {
+    "259:5-259:18": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "233:28-233:29|artificial-call|generator-iter": {
+    "259:28-259:29|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -2256,7 +2309,7 @@ Higher order call graphs
         ]
       }
     },
-    "233:28-233:29|artificial-call|generator-next": {
+    "259:28-259:29|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -2275,14 +2328,14 @@ Higher order call graphs
   "callable": "dictionary.taint_dict_keys",
   "returned_callables": [],
   "calls": {
-    "397:4-397:26": {
+    "423:4-423:26": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "397:15-397:25": {
+    "423:15-423:25": {
       "call": {
         "calls": [
           {
@@ -2301,14 +2354,14 @@ Higher order call graphs
   "callable": "dictionary.taint_dict_keys_no_issue",
   "returned_callables": [],
   "calls": {
-    "401:14-401:28": {
+    "427:14-427:28": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "402:4-402:28": {
+    "428:4-428:28": {
       "call": {
         "calls": [
           {
@@ -2325,7 +2378,7 @@ Higher order call graphs
   "callable": "dictionary.tainted_setitem",
   "returned_callables": [],
   "calls": {
-    "179:4-179:25|artificial-call|subscript-set-item": {
+    "205:4-205:25|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -2338,7 +2391,7 @@ Higher order call graphs
         ]
       }
     },
-    "179:6-179:20": {
+    "205:6-205:20": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -2351,14 +2404,14 @@ Higher order call graphs
   "callable": "dictionary.test_dict_get_foo_tito",
   "returned_callables": [],
   "calls": {
-    "524:4-524:53": {
+    "550:4-550:53": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "524:15-524:52": {
+    "550:15-550:52": {
       "call": {
         "calls": [
           {
@@ -2369,21 +2422,21 @@ Higher order call graphs
         ]
       }
     },
-    "524:36-524:50": {
+    "550:36-550:50": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "525:4-525:53": {
+    "551:4-551:53": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "525:15-525:52": {
+    "551:15-551:52": {
       "call": {
         "calls": [
           {
@@ -2394,7 +2447,7 @@ Higher order call graphs
         ]
       }
     },
-    "525:36-525:50": {
+    "551:36-551:50": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
@@ -2407,21 +2460,21 @@ Higher order call graphs
   "callable": "dictionary.test_dict_get_source",
   "returned_callables": [],
   "calls": {
-    "529:16-529:30": {
+    "555:16-555:30": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "530:4-530:28": {
+    "556:4-556:28": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "530:15-530:27": {
+    "556:15-556:27": {
       "call": {
         "calls": [
           {
@@ -2434,14 +2487,14 @@ Higher order call graphs
         ]
       }
     },
-    "531:4-531:28": {
+    "557:4-557:28": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "531:15-531:27": {
+    "557:15-557:27": {
       "call": {
         "calls": [
           {
@@ -2460,14 +2513,14 @@ Higher order call graphs
   "callable": "dictionary.test_dict_getitem_mutate",
   "returned_callables": [],
   "calls": {
-    "552:4-552:54": {
+    "578:4-578:54": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "552:15-552:53": {
+    "578:15-578:53": {
       "call": {
         "calls": [
           {
@@ -2478,7 +2531,7 @@ Higher order call graphs
         ]
       }
     },
-    "552:35-552:49": {
+    "578:35-578:49": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -2491,7 +2544,7 @@ Higher order call graphs
   "callable": "dictionary.test_dict_multiple_targets",
   "returned_callables": [],
   "calls": {
-    "537:4-537:12|artificial-call|subscript-get-item": {
+    "563:4-563:12|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2504,7 +2557,7 @@ Higher order call graphs
         ]
       }
     },
-    "537:14-537:22|artificial-call|subscript-get-item": {
+    "563:14-563:22|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2517,28 +2570,28 @@ Higher order call graphs
         ]
       }
     },
-    "537:25-537:39": {
+    "563:25-563:39": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "537:41-537:55": {
+    "563:41-563:55": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "539:4-539:24": {
+    "565:4-565:24": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "539:15-539:23|artificial-call|subscript-get-item": {
+    "565:15-565:23|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2551,14 +2604,14 @@ Higher order call graphs
         ]
       }
     },
-    "539:26-539:46": {
+    "565:26-565:46": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "539:37-539:45|artificial-call|subscript-get-item": {
+    "565:37-565:45|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2571,7 +2624,7 @@ Higher order call graphs
         ]
       }
     },
-    "541:4-541:12|artificial-call|subscript-get-item": {
+    "567:4-567:12|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2584,7 +2637,7 @@ Higher order call graphs
         ]
       }
     },
-    "541:14-541:22|artificial-call|subscript-get-item": {
+    "567:14-567:22|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2597,14 +2650,14 @@ Higher order call graphs
         ]
       }
     },
-    "542:4-542:24": {
+    "568:4-568:24": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "542:15-542:23|artificial-call|subscript-get-item": {
+    "568:15-568:23|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2617,14 +2670,14 @@ Higher order call graphs
         ]
       }
     },
-    "542:26-542:46": {
+    "568:26-568:46": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 3, "return_type": [] }
         ]
       }
     },
-    "542:37-542:45|artificial-call|subscript-get-item": {
+    "568:37-568:45|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2643,14 +2696,14 @@ Higher order call graphs
   "callable": "dictionary.test_dict_sanitize_get",
   "returned_callables": [],
   "calls": {
-    "373:4-373:37": {
+    "399:4-399:37": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "373:15-373:36": {
+    "399:15-399:36": {
       "call": {
         "calls": [
           {
@@ -2663,7 +2716,7 @@ Higher order call graphs
         ]
       }
     },
-    "373:21-373:35": {
+    "399:21-399:35": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -2676,14 +2729,14 @@ Higher order call graphs
   "callable": "dictionary.test_dict_sanitize_getitem",
   "returned_callables": [],
   "calls": {
-    "377:4-377:33": {
+    "403:4-403:33": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "377:15-377:32|artificial-call|subscript-get-item": {
+    "403:15-403:32|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -2696,7 +2749,7 @@ Higher order call graphs
         ]
       }
     },
-    "377:17-377:31": {
+    "403:17-403:31": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -2709,28 +2762,28 @@ Higher order call graphs
   "callable": "dictionary.test_index_from_tito",
   "returned_callables": [],
   "calls": {
-    "327:14-327:28": {
+    "353:14-353:28": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "327:35-327:49": {
+    "353:35-353:49": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "328:4-328:34": {
+    "354:4-354:34": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "328:15-328:33": {
+    "354:15-354:33": {
       "call": {
         "calls": [
           {
@@ -2747,230 +2800,20 @@ Higher order call graphs
   "callable": "dictionary.test_items",
   "returned_callables": [],
   "calls": {
-    "332:22-332:36": {
+    "358:22-358:36": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "333:29-333:43": {
+    "359:29-359:43": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "334:16-334:38": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.items",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "334:16-334:38|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterable.__iter__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterable"
-          }
-        ]
-      }
-    },
-    "334:16-334:38|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "336:8-336:21": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "338:8-338:21": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
-        ]
-      }
-    },
-    "340:16-340:40": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.items",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "340:16-340:40|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterable.__iter__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterable"
-          }
-        ]
-      }
-    },
-    "340:16-340:40|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "342:8-342:21": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 2, "return_type": [] }
-        ]
-      }
-    },
-    "344:8-344:21": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 3, "return_type": [] }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "dictionary.test_items_backward_keys",
-  "returned_callables": [],
-  "calls": {
-    "350:16-350:38": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.items",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "350:16-350:38|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterable.__iter__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterable"
-          }
-        ]
-      }
-    },
-    "350:16-350:38|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 0,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "351:8-351:21": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 0, "return_type": [] }
-        ]
-      }
-    },
-    "353:16-353:40": {
-      "call": {
-        "calls": [
-          {
-            "target": "dict.items",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "dict"
-          }
-        ]
-      }
-    },
-    "353:16-353:40|artificial-call|for-iter": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterable.__iter__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterable"
-          }
-        ]
-      }
-    },
-    "353:16-353:40|artificial-call|for-next": {
-      "call": {
-        "calls": [
-          {
-            "target": "typing.Iterator.__next__",
-            "index": 1,
-            "implicit_receiver": true,
-            "return_type": [],
-            "receiver_class": "typing.Iterator"
-          }
-        ]
-      }
-    },
-    "354:8-354:21": {
-      "call": {
-        "calls": [
-          { "target": "_test_sink", "index": 1, "return_type": [] }
-        ]
-      }
-    }
-  }
-}
-{
-  "callable": "dictionary.test_items_backward_values",
-  "returned_callables": [],
-  "calls": {
     "360:16-360:38": {
       "call": {
         "calls": [
@@ -3010,14 +2853,21 @@ Higher order call graphs
         ]
       }
     },
-    "361:8-361:21": {
+    "362:8-362:21": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "363:16-363:40": {
+    "364:8-364:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    },
+    "366:16-366:40": {
       "call": {
         "calls": [
           {
@@ -3030,7 +2880,7 @@ Higher order call graphs
         ]
       }
     },
-    "363:16-363:40|artificial-call|for-iter": {
+    "366:16-366:40|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -3043,7 +2893,7 @@ Higher order call graphs
         ]
       }
     },
-    "363:16-363:40|artificial-call|for-next": {
+    "366:16-366:40|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -3056,7 +2906,210 @@ Higher order call graphs
         ]
       }
     },
-    "364:8-364:21": {
+    "368:8-368:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 2, "return_type": [] }
+        ]
+      }
+    },
+    "370:8-370:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 3, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.test_items_backward_keys",
+  "returned_callables": [],
+  "calls": {
+    "376:16-376:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.items",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "376:16-376:38|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterable"
+          }
+        ]
+      }
+    },
+    "376:16-376:38|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "377:8-377:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "379:16-379:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.items",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "379:16-379:40|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterable"
+          }
+        ]
+      }
+    },
+    "379:16-379:40|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "380:8-380:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 1, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "dictionary.test_items_backward_values",
+  "returned_callables": [],
+  "calls": {
+    "386:16-386:38": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.items",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "386:16-386:38|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterable"
+          }
+        ]
+      }
+    },
+    "386:16-386:38|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "387:8-387:21": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "389:16-389:40": {
+      "call": {
+        "calls": [
+          {
+            "target": "dict.items",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "dict"
+          }
+        ]
+      }
+    },
+    "389:16-389:40|artificial-call|for-iter": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterable.__iter__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterable"
+          }
+        ]
+      }
+    },
+    "389:16-389:40|artificial-call|for-next": {
+      "call": {
+        "calls": [
+          {
+            "target": "typing.Iterator.__next__",
+            "index": 1,
+            "implicit_receiver": true,
+            "return_type": [],
+            "receiver_class": "typing.Iterator"
+          }
+        ]
+      }
+    },
+    "390:8-390:21": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
@@ -3069,21 +3122,21 @@ Higher order call graphs
   "callable": "dictionary.test_keys_and_values",
   "returned_callables": [],
   "calls": {
-    "256:43-256:57": {
+    "282:43-282:57": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "258:4-258:39": {
+    "284:4-284:39": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "258:15-258:38": {
+    "284:15-284:38": {
       "call": {
         "calls": [
           {
@@ -3096,14 +3149,14 @@ Higher order call graphs
         ]
       }
     },
-    "260:4-260:37": {
+    "286:4-286:37": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 1, "return_type": [] }
         ]
       }
     },
-    "260:15-260:36": {
+    "286:15-286:36": {
       "call": {
         "calls": [
           {
@@ -3116,7 +3169,7 @@ Higher order call graphs
         ]
       }
     },
-    "261:16-261:39": {
+    "287:16-287:39": {
       "call": {
         "calls": [
           {
@@ -3129,7 +3182,7 @@ Higher order call graphs
         ]
       }
     },
-    "261:16-261:39|artificial-call|for-iter": {
+    "287:16-287:39|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -3142,7 +3195,7 @@ Higher order call graphs
         ]
       }
     },
-    "261:16-261:39|artificial-call|for-next": {
+    "287:16-287:39|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -3155,14 +3208,14 @@ Higher order call graphs
         ]
       }
     },
-    "262:8-262:27": {
+    "288:8-288:27": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 2, "return_type": [] }
         ]
       }
     },
-    "262:19-262:26|artificial-call|subscript-get-item": {
+    "288:19-288:26|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -3175,21 +3228,21 @@ Higher order call graphs
         ]
       }
     },
-    "264:20-264:34": {
+    "290:20-290:34": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 1, "return_type": [] }
         ]
       }
     },
-    "266:4-266:35": {
+    "292:4-292:35": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 3, "return_type": [] }
         ]
       }
     },
-    "266:15-266:34": {
+    "292:15-292:34": {
       "call": {
         "calls": [
           {
@@ -3202,14 +3255,14 @@ Higher order call graphs
         ]
       }
     },
-    "268:4-268:37": {
+    "294:4-294:37": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 4, "return_type": [] }
         ]
       }
     },
-    "268:15-268:36": {
+    "294:15-294:36": {
       "call": {
         "calls": [
           {
@@ -3222,14 +3275,14 @@ Higher order call graphs
         ]
       }
     },
-    "270:27-270:41": {
+    "296:27-296:41": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 2, "return_type": [] }
         ]
       }
     },
-    "271:15-271:40": {
+    "297:15-297:40": {
       "call": {
         "calls": [
           {
@@ -3242,7 +3295,7 @@ Higher order call graphs
         ]
       }
     },
-    "271:15-271:40|artificial-call|for-iter": {
+    "297:15-297:40|artificial-call|for-iter": {
       "call": {
         "calls": [
           {
@@ -3255,7 +3308,7 @@ Higher order call graphs
         ]
       }
     },
-    "271:15-271:40|artificial-call|for-next": {
+    "297:15-297:40|artificial-call|for-next": {
       "call": {
         "calls": [
           {
@@ -3268,14 +3321,14 @@ Higher order call graphs
         ]
       }
     },
-    "273:8-273:26": {
+    "299:8-299:26": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 5, "return_type": [] }
         ]
       }
     },
-    "273:19-273:25|artificial-call|subscript-get-item": {
+    "299:19-299:25|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -3288,14 +3341,14 @@ Higher order call graphs
         ]
       }
     },
-    "275:8-275:26": {
+    "301:8-301:26": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 6, "return_type": [] }
         ]
       }
     },
-    "275:19-275:25|artificial-call|subscript-get-item": {
+    "301:19-301:25|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -3314,14 +3367,14 @@ Higher order call graphs
   "callable": "dictionary.test_mapping_sanitize_get",
   "returned_callables": [],
   "calls": {
-    "381:4-381:37": {
+    "407:4-407:37": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "381:15-381:36": {
+    "407:15-407:36": {
       "call": {
         "calls": [
           {
@@ -3334,7 +3387,7 @@ Higher order call graphs
         ]
       }
     },
-    "381:21-381:35": {
+    "407:21-407:35": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -3347,14 +3400,14 @@ Higher order call graphs
   "callable": "dictionary.test_mapping_sanitize_getitem",
   "returned_callables": [],
   "calls": {
-    "385:4-385:33": {
+    "411:4-411:33": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "385:15-385:32|artificial-call|subscript-get-item": {
+    "411:15-411:32|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -3367,7 +3420,7 @@ Higher order call graphs
         ]
       }
     },
-    "385:17-385:31": {
+    "411:17-411:31": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -3380,7 +3433,7 @@ Higher order call graphs
   "callable": "dictionary.test_service_with_dict",
   "returned_callables": [],
   "calls": {
-    "312:14-312:23": {
+    "338:14-338:23": {
       "call": {
         "new_calls": [
           {
@@ -3400,14 +3453,14 @@ Higher order call graphs
         ]
       }
     },
-    "313:4-313:54": {
+    "339:4-339:54": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "313:15-313:53": {
+    "339:15-339:53": {
       "call": {
         "calls": [
           {
@@ -3420,7 +3473,7 @@ Higher order call graphs
         ]
       }
     },
-    "313:38-313:52": {
+    "339:38-339:52": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -3433,7 +3486,7 @@ Higher order call graphs
   "callable": "dictionary.test_service_with_mapping",
   "returned_callables": [],
   "calls": {
-    "317:14-317:23": {
+    "343:14-343:23": {
       "call": {
         "new_calls": [
           {
@@ -3453,14 +3506,14 @@ Higher order call graphs
         ]
       }
     },
-    "318:4-318:57": {
+    "344:4-344:57": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
         ]
       }
     },
-    "318:15-318:56": {
+    "344:15-344:56": {
       "call": {
         "calls": [
           {
@@ -3473,7 +3526,7 @@ Higher order call graphs
         ]
       }
     },
-    "318:41-318:55": {
+    "344:41-344:55": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -3486,14 +3539,14 @@ Higher order call graphs
   "callable": "dictionary.test_with_issue_in_dict_comprehension",
   "returned_callables": [],
   "calls": {
-    "289:15-289:29": {
+    "315:15-315:29": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "290:21-290:28|artificial-call|generator-iter": {
+    "316:21-316:28|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -3506,7 +3559,7 @@ Higher order call graphs
         ]
       }
     },
-    "290:21-290:28|artificial-call|generator-next": {
+    "316:21-316:28|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -3519,7 +3572,7 @@ Higher order call graphs
         ]
       }
     },
-    "290:32-290:45": {
+    "316:32-316:45": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }
@@ -3532,14 +3585,14 @@ Higher order call graphs
   "callable": "dictionary.test_with_issue_in_dict_items_comprehension",
   "returned_callables": [],
   "calls": {
-    "368:20-368:34": {
+    "394:20-394:34": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
         ]
       }
     },
-    "369:29-369:44": {
+    "395:29-395:44": {
       "call": {
         "calls": [
           {
@@ -3552,7 +3605,7 @@ Higher order call graphs
         ]
       }
     },
-    "369:29-369:44|artificial-call|generator-iter": {
+    "395:29-395:44|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -3565,7 +3618,7 @@ Higher order call graphs
         ]
       }
     },
-    "369:29-369:44|artificial-call|generator-next": {
+    "395:29-395:44|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -3584,7 +3637,7 @@ Higher order call graphs
   "callable": "dictionary.tito_with_index",
   "returned_callables": [],
   "calls": {
-    "322:13-322:19|artificial-call|subscript-get-item": {
+    "348:13-348:19|artificial-call|subscript-get-item": {
       "call": {
         "calls": [
           {
@@ -3720,7 +3773,7 @@ Higher order call graphs
   "callable": "dictionary.walrus_operator",
   "returned_callables": [],
   "calls": {
-    "436:4-436:39|artificial-call|subscript-set-item": {
+    "462:4-462:39|artificial-call|subscript-set-item": {
       "call": {
         "calls": [
           {
@@ -3733,7 +3786,7 @@ Higher order call graphs
         ]
       }
     },
-    "436:12-436:26": {
+    "462:12-462:26": {
       "call": {
         "calls": [
           { "target": "_test_source", "index": 0, "return_type": [] }
@@ -3746,7 +3799,7 @@ Higher order call graphs
   "callable": "dictionary.Service.async_get_dict",
   "returned_callables": [],
   "calls": {
-    "305:15-305:68": {
+    "331:15-331:68": {
       "call": {
         "calls": [
           {
@@ -3759,7 +3812,7 @@ Higher order call graphs
         ]
       }
     },
-    "305:22-305:58": {
+    "331:22-331:58": {
       "call": {
         "calls": [
           {
@@ -3778,19 +3831,19 @@ Higher order call graphs
   "callable": "dictionary.Service.async_get_many_dict",
   "returned_callables": [],
   "calls": {
-    "302:21-302:34": {
+    "328:21-328:34": {
       "call": {
         "calls": [
           { "target": "typing.cast", "index": 0, "return_type": [] }
         ]
       }
     },
-    "302:26-302:28|identifier|$local_dictionary$TV": {
+    "328:26-328:28|identifier|$local_dictionary$TV": {
       "identifier": {
         "globals": [ { "target": "Obj{dictionary.TV}", "index": 0 } ]
       }
     },
-    "302:46-302:50|artificial-call|generator-iter": {
+    "328:46-328:50|artificial-call|generator-iter": {
       "call": {
         "calls": [
           {
@@ -3803,7 +3856,7 @@ Higher order call graphs
         ]
       }
     },
-    "302:46-302:50|artificial-call|generator-next": {
+    "328:46-328:50|artificial-call|generator-next": {
       "call": {
         "calls": [
           {
@@ -3822,14 +3875,14 @@ Higher order call graphs
   "callable": "dictionary.Service.async_get_mapping",
   "returned_callables": [],
   "calls": {
-    "308:15-308:65": {
+    "334:15-334:65": {
       "call": {
         "calls": [
           { "target": "dictionary.to_map", "index": 0, "return_type": [] }
         ]
       }
     },
-    "308:15-308:74": {
+    "334:15-334:74": {
       "call": {
         "calls": [
           {
@@ -3842,7 +3895,7 @@ Higher order call graphs
         ]
       }
     },
-    "308:28-308:64": {
+    "334:28-334:64": {
       "call": {
         "calls": [
           {
@@ -3861,7 +3914,7 @@ Higher order call graphs
   "callable": "dictionary.SpecialSetitemDict.__setitem__",
   "returned_callables": [],
   "calls": {
-    "175:8-175:23": {
+    "201:8-201:23": {
       "call": {
         "calls": [
           { "target": "_test_sink", "index": 0, "return_type": [] }

@@ -54,33 +54,38 @@ Call dependencies
     "_test_sink (fun)", "dict.__getitem__ (method)",
     "typing.MutableMapping.update (method)"
   ],
-  "dictionary.dict_update_arg (fun)": [
-    "_test_source (fun)", "dict.__getitem__ (method)",
-    "typing.MutableMapping.update (method)"
-  ],
-  "dictionary.dict_update_cycle (fun)": [
-    "_test_source (fun)", "dict.__getitem__ (method)",
-    "typing.MutableMapping.update (method)"
-  ],
   "dictionary.dict_update_keys (fun)": [
     "dict.items (method)", "typing.Iterable.__iter__ (method)",
     "typing.Iterator.__next__ (method)"
-  ],
-  "dictionary.dict_update_multiple (fun)": [
-    "_test_source (fun)", "typing.MutableMapping.update (method)"
-  ],
-  "dictionary.dict_update_sinks (fun)": [
-    "_test_sink (fun)", "dict.__getitem__ (method)",
-    "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_update_sinks_cycle (fun)": [
     "_test_sink (fun)", "dict.__getitem__ (method)",
     "typing.MutableMapping.update (method)"
   ],
-  "dictionary.dict_update_taint (fun)": [
+  "dictionary.dict_update_source_cycle (fun)": [
+    "_test_source (fun)", "dict.__getitem__ (method)",
+    "typing.MutableMapping.update (method)"
+  ],
+  "dictionary.dict_update_with_expression_add_source (fun)": [
     "_test_source (fun)", "typing.MutableMapping.update (method)"
   ],
-  "dictionary.dict_update_whole_dict (fun)": [
+  "dictionary.dict_update_with_expression_erase_source (fun)": [
+    "_test_source (fun)", "typing.MutableMapping.update (method)"
+  ],
+  "dictionary.dict_update_with_expression_tito (fun)": [
+    "typing.MutableMapping.update (method)"
+  ],
+  "dictionary.dict_update_with_literal_flows_to_sink (fun)": [
+    "_test_sink (fun)", "dict.__getitem__ (method)",
+    "typing.MutableMapping.update (method)"
+  ],
+  "dictionary.dict_update_with_literal_multiple (fun)": [
+    "_test_source (fun)", "typing.MutableMapping.update (method)"
+  ],
+  "dictionary.dict_update_with_literal_safe_source (fun)": [
+    "_test_source (fun)", "typing.MutableMapping.update (method)"
+  ],
+  "dictionary.dict_update_with_literal_source (fun)": [
     "_test_source (fun)", "typing.MutableMapping.update (method)"
   ],
   "dictionary.dict_with_tainted_key_flows_to_sink (fun)": [
