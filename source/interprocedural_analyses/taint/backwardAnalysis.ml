@@ -1972,9 +1972,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       when CallGraph.CallCallees.is_mapping_method callees
            && Option.is_some (Dictionary.string_literal_keys entries) ->
         let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
-        let access_path =
-          Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] }
-        in
         let dict_taint =
           let global_taint =
             GlobalModel.from_expression
@@ -1990,7 +1987,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  ~caller:FunctionContext.callable
             |> SinkTreeWithHandle.join
           in
-          BackwardState.Tree.join global_taint (get_taint access_path state)
+          let state_taint =
+            get_taint
+              (Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] })
+              state
+          in
+          BackwardState.Tree.join global_taint state_taint
         in
         let override_taint_from_update (taint, state) (key, value) =
           let path = [Abstract.TreeDomain.Label.Index key] in
@@ -2014,6 +2016,62 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           List.fold entries ~init:(dict_taint, state) ~f:override_taint_from_update
         in
         store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+    | {
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               {
+                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 attribute = "update";
+                 _;
+               });
+         _;
+       };
+     arguments = [{ Call.Argument.value = argument; name = None }];
+     origin = _;
+    }
+      when CallGraph.CallCallees.is_mapping_method callees
+           && Type.is_dictionary_or_mapping
+                (Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_type
+                   FunctionContext.type_of_expression_shared_memory
+                   ~pyre_in_context
+                   ~callable:FunctionContext.callable
+                   argument) ->
+        let dict_taint =
+          let global_taint =
+            GlobalModel.from_expression
+              ~pyre_in_context
+              ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+              ~caller:FunctionContext.callable
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~get_callee_model:FunctionContext.get_callee_model
+              ~expression:base
+              ~interval:FunctionContext.caller_class_interval
+            |> GlobalModel.get_sinks
+                 ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+                 ~caller:FunctionContext.callable
+            |> SinkTreeWithHandle.join
+          in
+          let state_taint =
+            get_taint
+              (Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] })
+              state
+          in
+          BackwardState.Tree.join global_taint state_taint
+        in
+        let state =
+          let dict_taint =
+            BackwardState.Tree.transform
+              Features.TitoPositionSet.Element
+              Add
+              ~f:argument.Node.location
+              dict_taint
+          in
+          analyze_expression ~pyre_in_context ~taint:dict_taint ~state ~expression:argument
+        in
+        store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] dict_taint state
     | {
      callee =
        {

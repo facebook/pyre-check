@@ -177,7 +177,7 @@ def dict_update_with_expression_add_source(k: str):
     }
     b = {"b": _test_source()}
     a.update(b)
-    return a  # TODO(T231035683): False positive, result[*] is tainted.
+    return a
 
 
 def dict_update_with_expression_tito(x, y):
@@ -187,7 +187,7 @@ def dict_update_with_expression_tito(x, y):
     }
     b = {"b": y}
     a.update(b)
-    return a  # TODO(T231035683): False positive, x and y flow to result[*]
+    return a
 
 
 def flow_through_keywords():

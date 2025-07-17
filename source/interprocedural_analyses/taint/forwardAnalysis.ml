@@ -2143,6 +2143,54 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            Name
              (Name.Attribute
                {
+                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 attribute = "update";
+                 _;
+               });
+         _;
+       };
+     arguments = [{ Call.Argument.value = argument; name = None }];
+     origin = _;
+    }
+      when CallGraph.CallCallees.is_mapping_method callees
+           && Type.is_dictionary_or_mapping
+                (Interprocedural.TypeOfExpressionSharedMemory.compute_or_retrieve_type
+                   FunctionContext.type_of_expression_shared_memory
+                   ~pyre_in_context
+                   ~callable:FunctionContext.callable
+                   argument) ->
+        let base_taint =
+          ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint
+        in
+        let argument_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:argument
+        in
+        let argument_taint =
+          ForwardState.Tree.transform
+            Features.TitoPositionSet.Element
+            Add
+            ~f:argument.Node.location
+            argument_taint
+        in
+        let taint = ForwardState.Tree.join base_taint argument_taint in
+        GlobalModel.from_expression
+          ~pyre_in_context
+          ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+          ~caller:FunctionContext.callable
+          ~call_graph:FunctionContext.call_graph_of_define
+          ~get_callee_model:FunctionContext.get_callee_model
+          ~expression:base
+          ~interval:FunctionContext.caller_class_interval
+        |> check_flow_to_global ~location:base.Node.location ~source_tree:taint;
+        let state = store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state in
+        taint, state
+    | {
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               {
                  base = { Node.value = Name (Name.Identifier identifier); _ };
                  attribute = "pop";
                  _;

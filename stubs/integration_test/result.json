@@ -686,44 +686,11 @@
     "column": 9,
     "define": "integration_test.containers.dictionary_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 53,
-    "name": "Possible shell injection",
-    "path": "fixture_source/integration_test/containers.py",
-    "stop_column": 27,
-    "stop_line": 53
-  },
-  {
-    "code": 5001,
-    "column": 9,
-    "define": "integration_test.containers.dictionary_update",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 54,
-    "name": "Possible shell injection",
-    "path": "fixture_source/integration_test/containers.py",
-    "stop_column": 27,
-    "stop_line": 54
-  },
-  {
-    "code": 5001,
-    "column": 9,
-    "define": "integration_test.containers.dictionary_update",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "line": 55,
     "name": "Possible shell injection",
     "path": "fixture_source/integration_test/containers.py",
     "stop_column": 27,
     "stop_line": 55
-  },
-  {
-    "code": 5001,
-    "column": 9,
-    "define": "integration_test.containers.dictionary_update",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 56,
-    "name": "Possible shell injection",
-    "path": "fixture_source/integration_test/containers.py",
-    "stop_column": 26,
-    "stop_line": 56
   },
   {
     "code": 5001,

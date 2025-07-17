@@ -50,10 +50,10 @@ def dictionary_update():
     argument = {"new": {"b": source()}}
     result.update(argument)
     sink(result["old"]["a"])  # This is an issue.
-    sink(result["old"]["b"])  # This is an issue (false positive).
-    sink(result["new"]["a"])  # This is an issue (false positive).
+    sink(result["old"]["b"])  # This is NOT an issue.
+    sink(result["new"]["a"])  # This is NOT an issue.
     sink(result["new"]["b"])  # This is an issue.
-    sink(result["unknown"])  # This is an issue (false positive).
+    sink(result["unknown"])  # This is NOT an issue.
 
     result = {}
     argument = [("a", {"b": source()})]

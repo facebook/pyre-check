@@ -430,25 +430,6 @@
     "callable_line": 173,
     "sources": [
       {
-        "port": "result[*]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "local_features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 179, "start": 13, "end": 14 } ],
-            "origin": { "line": 178, "start": 14, "end": 28 }
-          }
-        ]
-      },
-      {
         "port": "result[a]",
         "taint": [
           {
@@ -462,7 +443,12 @@
               }
             ],
             "origin": { "line": 175, "start": 13, "end": 27 }
-          },
+          }
+        ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [
           {
             "kinds": [
               {
@@ -473,7 +459,6 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 179, "start": 13, "end": 14 } ],
             "origin": { "line": 178, "start": 14, "end": 28 }
           }
@@ -538,13 +523,8 @@
         "taint": [
           {
             "kinds": [
-              {
-                "return_paths": { "[*]": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": { "[b]": 3 }, "kind": "LocalReturn" }
             ],
-            "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [ { "line": 189, "start": 13, "end": 14 } ],
             "tito": {}
           }
