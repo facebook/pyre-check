@@ -17,11 +17,11 @@ open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
 module AccessPath = Interprocedural.AccessPath
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 
 type t = {
   models: Model.WithCallTarget.t list;
-  pyre_in_context: PyrePysaEnvironment.InContext.t;
+  pyre_in_context: PyrePysaApi.InContext.t;
   location: Location.t;
   interval: Interprocedural.ClassIntervalSet.t;
 }

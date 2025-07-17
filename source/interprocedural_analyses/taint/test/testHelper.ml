@@ -14,7 +14,7 @@ open Ast
 open Pyre
 open Taint
 open Interprocedural
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type parameter_sinks = {
@@ -390,7 +390,7 @@ let check_expectation
     let to_analysis_error =
       Error.instantiate
         ~show_error_traces:true
-        ~lookup:(PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api)
+        ~lookup:(PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api)
     in
     get_errors callable
     |> List.map ~f:(Issue.to_error ~taint_configuration)
@@ -429,7 +429,9 @@ let initial_models_source =
 
 let get_initial_models ~context =
   let pyre_api =
-    Test.ScratchProject.setup ~context [] |> Test.ScratchProject.pyre_pysa_read_only_api
+    Test.ScratchProject.setup ~context []
+    |> Test.ScratchProject.pyre_pysa_read_only_api
+    |> PyrePysaApi.ReadOnly.from_pyre1_api
   in
   let { ModelParseResult.models; errors; _ } =
     ModelParser.parse
@@ -469,7 +471,7 @@ module TestEnvironment = struct
     stubs: Target.t list;
     initial_models: TaintFixpoint.SharedModels.t;
     model_query_results: ModelQueryExecution.ExecutionResult.t;
-    pyre_api: PyrePysaEnvironment.ReadOnly.t;
+    pyre_api: PyrePysaApi.ReadOnly.t;
     class_interval_graph: ClassIntervalSetGraph.Heap.t;
     class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
     global_constants: GlobalConstants.SharedMemory.t;
@@ -539,7 +541,7 @@ let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_
     set_up_decorator_preprocessing ~handle models_source;
     let _, errors = Test.ScratchProject.build_type_environment_and_postprocess project in
     ( Test.ScratchProject.configuration_of project,
-      Test.ScratchProject.pyre_pysa_read_only_api project,
+      project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api,
       errors )
   in
   (if not (List.is_empty errors) then
@@ -549,7 +551,7 @@ let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_
               let error =
                 PyrePysaLogic.Testing.AnalysisError.instantiate
                   ~show_error_traces:false
-                  ~lookup:(PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api)
+                  ~lookup:(PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api)
                   error
               in
               Format.asprintf
@@ -564,7 +566,7 @@ let initialize_pyre_and_fail_on_errors ~context ~handle ~source_content ~models_
 
 
 let source_from_qualifier ~pyre_api qualifier =
-  qualifier |> PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api |> Option.value_exn
+  qualifier |> PyrePysaApi.ReadOnly.source_of_qualifier pyre_api |> Option.value_exn
 
 
 let initialize
@@ -603,7 +605,7 @@ let initialize
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
-  let qualifiers = PyrePysaEnvironment.ReadOnly.explicit_qualifiers pyre_api in
+  let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
   let all_initial_callables =
     (* Also include typeshed stubs so that we can build `qualifiers_defines` for them. *)
     Interprocedural.FetchCallables.from_qualifiers
@@ -641,7 +643,7 @@ let initialize
     | None -> SharedModels.create (), ModelQueryExecution.ExecutionResult.create_empty ()
     | Some source ->
         let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs in
-        PyrePysaEnvironment.ModelQueries.invalidate_cache ();
+        PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
         let { ModelParseResult.models = regular_models; errors; queries } =
           ModelParser.parse
             ~pyre_api
@@ -1075,7 +1077,7 @@ let end_to_end_integration_test path context =
         ~state:fixpoint_state
     in
     let resolve_module_path qualifier =
-      PyrePysaEnvironment.ReadOnly.relative_path_of_qualifier pyre_api qualifier
+      PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in
@@ -1161,6 +1163,8 @@ let end_to_end_test_paths_found relative_path _ =
 let setup_single_py_file ~file_name ~context ~source =
   let test_module_name = Reference.create (String.chop_suffix_exn file_name ~suffix:".py") in
   let project = Test.ScratchProject.setup ~context [file_name, source] in
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let test_source = source_from_qualifier ~pyre_api test_module_name in
   test_source, test_module_name, pyre_api, Test.ScratchProject.configuration_of project

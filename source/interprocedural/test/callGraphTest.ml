@@ -6345,7 +6345,9 @@ let test_call_graph_of_define_foo_and_bar =
 let test_return_type_from_annotation =
   let assert_from_annotation annotation expected context =
     let project = Test.ScratchProject.setup ~context [] in
-    let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+    let pyre_api =
+      project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+    in
     let actual = ReturnType.from_annotation ~pyre_api annotation in
     assert_equal ~printer:ReturnType.show ~cmp:ReturnType.equal expected actual
   in
@@ -7610,7 +7612,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
   let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
-  let pyre_in_context = PyrePysaEnvironment.InContext.create_at_global_scope pyre_api in
+  let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
   let override_graph_shared_memory =
     OverrideGraph.Heap.from_source ~pyre_api ~source |> OverrideGraph.SharedMemory.from_heap
   in

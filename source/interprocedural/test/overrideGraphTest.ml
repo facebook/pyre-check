@@ -19,7 +19,9 @@ let setup ?(other_sources = []) ~context ~handle source =
   let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
     ScratchProject.build_type_environment project
   in
-  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let source =
     List.find_exn sources ~f:(fun { Source.module_path; _ } ->
         String.equal (ModulePath.relative module_path) handle)

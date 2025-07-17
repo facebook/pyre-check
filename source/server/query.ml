@@ -1067,7 +1067,9 @@ let rec process_request_exn
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | ModelQuery { path; query_name } -> (
         let pyre_api =
-          PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api
+          Interprocedural.PyrePysaApi.ReadOnly.from_pyre1_environment
+            ~type_environment
+            ~global_module_paths_api
         in
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
@@ -1312,7 +1314,9 @@ let rec process_request_exn
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | ValidateTaintModels { path; verify_dsl } ->
         let pyre_api =
-          PyrePysaEnvironment.ReadOnly.create ~type_environment ~global_module_paths_api
+          Interprocedural.PyrePysaApi.ReadOnly.from_pyre1_environment
+            ~type_environment
+            ~global_module_paths_api
         in
         let paths =
           match path with

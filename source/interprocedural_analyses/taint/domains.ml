@@ -38,7 +38,6 @@
 open Core
 open Ast
 open Interprocedural
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let location_to_json
     {
@@ -623,7 +622,7 @@ module type TAINT_DOMAIN = sig
 
   (* Add trace info at call-site *)
   val apply_call
-    :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+    :  pyre_in_context:PyrePysaApi.InContext.t ->
     type_of_expression_shared_memory:Interprocedural.TypeOfExpressionSharedMemory.t ->
     caller:Target.t ->
     call_site:CallSite.t ->
@@ -1728,7 +1727,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
               expression
           in
           Features.type_breadcrumbs_from_annotation
-            ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
+            ~pyre_api:(PyrePysaApi.InContext.pyre_api pyre_in_context)
             (Some type_)
           |> Features.BreadcrumbMayAlwaysSet.of_set
         in

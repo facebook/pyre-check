@@ -18,7 +18,9 @@ let setup ?(other_sources = []) ~context ~handle source =
     let external_sources = List.map other_sources ~f:(fun { handle; source } -> handle, source) in
     ScratchProject.setup ~context ~external_sources [handle, source]
   in
-  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
     ScratchProject.build_type_environment project
   in

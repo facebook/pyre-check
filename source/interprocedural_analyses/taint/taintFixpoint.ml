@@ -17,13 +17,13 @@
 
 open Core
 open Pyre
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module Context = struct
   type t = {
     taint_configuration: TaintConfiguration.SharedMemory.t;
-    pyre_api: PyrePysaEnvironment.ReadOnly.t;
+    pyre_api: PyrePysaApi.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     (* Avoid copying a large-sized closure for each worker, to reduce the memory usage. *)
     get_define_call_graph:
@@ -240,7 +240,7 @@ module Analysis = struct
     let open Ast in
     let module_reference =
       define_qualifier
-      |> PyrePysaEnvironment.ReadOnly.location_of_global pyre_api
+      |> PyrePysaApi.ReadOnly.location_of_global pyre_api
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in

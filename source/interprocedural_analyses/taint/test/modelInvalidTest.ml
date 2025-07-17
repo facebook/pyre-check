@@ -10,7 +10,7 @@ open Core
 open OUnit2
 open Test
 open Taint
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 
 let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect context =
   let source =
@@ -46,7 +46,11 @@ let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect con
             |}
   in
   let sources = ("test.py", source) :: sources in
-  let pyre_api = ScratchProject.setup ~context sources |> ScratchProject.pyre_pysa_read_only_api in
+  let pyre_api =
+    ScratchProject.setup ~context sources
+    |> ScratchProject.pyre_pysa_read_only_api
+    |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let taint_configuration =
     TaintConfiguration.Heap.
       {
@@ -68,7 +72,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~model_source ~expect con
   in
   let error_message =
     let path = path >>| PyrePath.create_absolute in
-    PyrePysaEnvironment.ModelQueries.invalidate_cache ();
+    PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
     ModelParser.parse
       ~pyre_api
       ~taint_configuration

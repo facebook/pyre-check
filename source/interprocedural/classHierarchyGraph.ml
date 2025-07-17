@@ -11,7 +11,6 @@
 open Core
 open Ast
 open Statement
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type class_name = string
@@ -92,7 +91,7 @@ module Heap = struct
   let roots { roots; _ } = roots
 
   let from_source ~pyre_api ~source =
-    if PyrePysaEnvironment.ReadOnly.source_is_unit_test pyre_api ~source then
+    if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
       empty
     else
       let register_immediate_subclasses
@@ -100,7 +99,7 @@ module Heap = struct
           { Node.value = { Class.name = class_name; _ }; _ }
         =
         let class_name = Reference.show class_name in
-        let parents = PyrePysaEnvironment.ReadOnly.immediate_parents pyre_api class_name in
+        let parents = PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name in
         List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
             add accumulator ~parent ~child:class_name)
       in
@@ -145,7 +144,7 @@ module Heap = struct
   let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
     let build_class_hierarchy_graph qualifiers =
       List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
-          match PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier with
+          match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
           | Some source ->
               let graph = from_source ~pyre_api ~source in
               join accumulator graph

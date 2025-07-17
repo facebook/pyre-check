@@ -19,7 +19,7 @@ open Pyre
 open Ast
 open Interprocedural
 open Domains
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module FeatureSet = struct
@@ -174,7 +174,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
     | None -> existing_state
   in
   let get_attributes_in_alphabetical_order class_name =
-    PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
     >>| Node.value
     >>| PyrePysaLogic.ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
     |> Option.value ~default:Identifier.SerializableMap.empty
@@ -229,7 +229,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
   in
   let compute_typed_dict_models class_name =
     let fields =
-      PyrePysaEnvironment.ReadOnly.typed_dictionary_field_names pyre_api (Type.Primitive class_name)
+      PyrePysaApi.ReadOnly.typed_dictionary_field_names pyre_api (Type.Primitive class_name)
     in
     let self =
       AccessPath.Root.PositionalParameter { position = 0; name = "self"; positional_only = false }
@@ -282,7 +282,7 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
   in
   let compute_models class_name class_summary =
     if
-      PyrePysaEnvironment.ReadOnly.exists_matching_class_decorator
+      PyrePysaApi.ReadOnly.exists_matching_class_decorator
         pyre_api
         ~names:["dataclasses.dataclass"; "dataclass"]
         class_summary
@@ -313,11 +313,11 @@ let infer ~scheduler ~scheduler_policies ~pyre_api ~user_models =
       []
   in
   let inferred_models class_name =
-    PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
     >>| compute_models class_name
     |> Option.value ~default:[]
   in
-  let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api ~scheduler in
+  let all_classes = PyrePysaApi.ReadOnly.all_classes pyre_api ~scheduler in
   let models =
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default

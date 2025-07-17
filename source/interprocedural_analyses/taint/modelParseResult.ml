@@ -864,7 +864,7 @@ module CallableDecorator = struct
         lazy Type.Any
       in
       Interprocedural.CallGraph.resolve_callees_from_type_external
-        ~pyre_in_context:(Analysis.PyrePysaEnvironment.InContext.create_at_global_scope pyre_api)
+        ~pyre_in_context:(Interprocedural.PyrePysaApi.InContext.create_at_global_scope pyre_api)
         ~callables_to_definitions_map
         ~override_graph:None
         ~return_type
@@ -938,7 +938,7 @@ module Modelable = struct
             annotation
         | _ -> None
       in
-      Analysis.PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+      Interprocedural.PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
       >>| Node.value
       >>= fun class_summary ->
       match
@@ -966,7 +966,7 @@ module Modelable = struct
   let create_global ~pyre_api target =
     let name = Target.object_name target in
     let get_type_annotation reference =
-      match Analysis.PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api reference with
+      match Interprocedural.PyrePysaApi.ReadOnly.get_unannotated_global pyre_api reference with
       | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
       | _ -> None
     in

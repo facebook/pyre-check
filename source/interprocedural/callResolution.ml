@@ -13,7 +13,6 @@ open Core
 open Ast
 open Expression
 open Pyre
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* Check whether `successor` extends `predecessor`.
@@ -23,7 +22,7 @@ let has_transitive_successor_ignoring_untracked ~pyre_api ~reflexive ~predecesso
   if String.equal predecessor successor then
     reflexive
   else
-    try PyrePysaEnvironment.ReadOnly.has_transitive_successor pyre_api ~successor predecessor with
+    try PyrePysaApi.ReadOnly.has_transitive_successor pyre_api ~successor predecessor with
     | PyrePysaLogic.UntrackedClass untracked_type ->
         Log.warning
           "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
@@ -41,7 +40,7 @@ let is_super ~pyre_in_context ~define expression =
   | _ ->
       (* We also support explicit calls to superclass constructors. *)
       let annotation =
-        PyrePysaEnvironment.InContext.resolve_expression_to_type pyre_in_context expression
+        PyrePysaApi.InContext.resolve_expression_to_type pyre_in_context expression
       in
       if Type.is_class_type annotation then
         let type_parameter = Type.single_argument annotation in
@@ -54,7 +53,7 @@ let is_super ~pyre_in_context ~define expression =
             class_name
             >>| (fun class_name ->
                   has_transitive_successor_ignoring_untracked
-                    ~pyre_api:(PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
+                    ~pyre_api:(PyrePysaApi.InContext.pyre_api pyre_in_context)
                     ~reflexive:false
                     ~predecessor:class_name
                     ~successor:parent_name)
@@ -69,14 +68,14 @@ let is_nonlocal ~pyre_in_context ~define variable =
   let define_list = Reference.as_list (Reference.delocalize define) in
   let variable_list = Reference.as_list (Reference.delocalize variable) in
   let is_prefix = List.is_prefix ~equal:String.equal ~prefix:define_list variable_list in
-  let is_global = PyrePysaEnvironment.InContext.is_global pyre_in_context ~reference:variable in
+  let is_global = PyrePysaApi.InContext.is_global pyre_in_context ~reference:variable in
   let is_nonlocal = (not is_prefix) && (not is_global) && Reference.is_local variable in
   is_nonlocal
 
 
 (* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
 let resolve_ignoring_untracked ~pyre_in_context expression =
-  try PyrePysaEnvironment.InContext.resolve_expression_to_type pyre_in_context expression with
+  try PyrePysaApi.InContext.resolve_expression_to_type pyre_in_context expression with
   | PyrePysaLogic.UntrackedClass untracked_type ->
       Log.warning
         "Found untracked type `%s` when resolving the type of `%a`. This could lead to false \
@@ -89,9 +88,7 @@ let resolve_ignoring_untracked ~pyre_in_context expression =
 
 (* Resolve an attribute access into a type. Untracked types are resolved into `Any`. *)
 let resolve_attribute_access_ignoring_untracked ~pyre_in_context ~base_type ~attribute =
-  try
-    PyrePysaEnvironment.InContext.resolve_attribute_access pyre_in_context ~base_type ~attribute
-  with
+  try PyrePysaApi.InContext.resolve_attribute_access pyre_in_context ~base_type ~attribute with
   | PyrePysaLogic.UntrackedClass untracked_type ->
       Log.warning
         "Found untracked type `%s` when resolving the type of attribute `%s` in `%a`. This could \
@@ -109,8 +106,8 @@ let defining_attribute ~pyre_in_context type_for_lookup attribute =
   |> Type.primitive_name
   >>= fun class_name ->
   let instantiated_attribute =
-    PyrePysaEnvironment.ReadOnly.attribute_from_class_name
-      (PyrePysaEnvironment.InContext.pyre_api pyre_in_context)
+    PyrePysaApi.ReadOnly.attribute_from_class_name
+      (PyrePysaApi.InContext.pyre_api pyre_in_context)
       ~transitive:true
       ~name:attribute
       ~type_for_lookup
@@ -121,7 +118,7 @@ let defining_attribute ~pyre_in_context type_for_lookup attribute =
   if PyrePysaLogic.AnnotatedAttribute.defined instantiated_attribute then
     Some instantiated_attribute
   else
-    PyrePysaEnvironment.InContext.fallback_attribute pyre_in_context ~name:attribute class_name
+    PyrePysaApi.InContext.fallback_attribute pyre_in_context ~name:attribute class_name
 
 
 let strip_optional annotation =

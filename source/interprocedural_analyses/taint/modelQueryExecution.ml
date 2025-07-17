@@ -17,7 +17,7 @@ open Pyre
 open Ast
 open Interprocedural
 open ModelParseResult
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 (* Represents results from model queries, stored in the ocaml heap. *)
@@ -737,9 +737,7 @@ let matches_annotation_constraint
             extract_class_name (extract_readonly t)
         | extracted_class_name -> Some extracted_class_name
       in
-      let parsed_type =
-        PyrePysaEnvironment.ReadOnly.parse_annotation pyre_api annotation_expression
-      in
+      let parsed_type = PyrePysaApi.ReadOnly.parse_annotation pyre_api annotation_expression in
       match extract_class_name parsed_type with
       | Some extracted_class_name ->
           find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
@@ -812,7 +810,7 @@ let rec normalized_parameter_matches_constraint
 
 
 let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_constraint class_name =
-  PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+  PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
   >>| Node.value
   >>| (fun { decorators; _ } ->
         List.exists decorators ~f:(fun decorator ->
@@ -833,9 +831,9 @@ let class_matches_decorator_constraint ~name_captures ~pyre_api ~decorator_const
 let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
   let parents =
     if is_transitive then
-      PyrePysaEnvironment.ReadOnly.successors pyre_api class_name
+      PyrePysaApi.ReadOnly.successors pyre_api class_name
     else
-      PyrePysaEnvironment.ReadOnly.immediate_parents pyre_api class_name
+      PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name
   in
   let parents =
     if includes_self then
@@ -1212,14 +1210,14 @@ module type QUERY_KIND = sig
   val schedule_identifier : Configuration.ScheduleIdentifier.t
 
   val make_modelable
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Target.t ->
     Modelable.t
 
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
     class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
     name_captures:NameCaptures.t ->
     modelable:Modelable.t ->
@@ -1227,7 +1225,7 @@ module type QUERY_KIND = sig
     annotation list
 
   val generate_model_from_annotations
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
     source_sink_filter:SourceSinkFilter.t option ->
     stubs:Target.HashsetSharedMemory.ReadOnly.t ->
     target:Target.t ->
@@ -2053,7 +2051,7 @@ module AttributeQueryExecutor = struct
     let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
       let class_summary =
-        PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name >>| Node.value
+        PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name >>| Node.value
       in
       match class_summary with
       | None -> []
@@ -2074,7 +2072,7 @@ module AttributeQueryExecutor = struct
           in
           Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
     in
-    let all_classes = PyrePysaEnvironment.ReadOnly.all_classes pyre_api ~scheduler in
+    let all_classes = PyrePysaApi.ReadOnly.all_classes pyre_api ~scheduler in
     let scheduler_policy =
       Scheduler.Policy.fixed_chunk_count
         ~minimum_chunks_per_worker:1
@@ -2143,13 +2141,13 @@ module GlobalVariableQueryExecutor = struct
   let get_globals ~scheduler ~pyre_api =
     let () = Log.info "Fetching all globals..." in
     let filter_global global_reference =
-      match PyrePysaEnvironment.ReadOnly.get_unannotated_global pyre_api global_reference with
+      match PyrePysaApi.ReadOnly.get_unannotated_global pyre_api global_reference with
       | Some (TupleAssign _)
       | Some (SimpleAssign _) ->
           true
       | _ -> false
     in
-    PyrePysaEnvironment.ReadOnly.all_unannotated_globals pyre_api ~scheduler
+    PyrePysaApi.ReadOnly.all_unannotated_globals pyre_api ~scheduler
     |> List.filter ~f:filter_global
     |> List.map ~f:Target.create_object
 

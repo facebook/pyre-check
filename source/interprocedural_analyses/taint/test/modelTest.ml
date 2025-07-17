@@ -11,14 +11,16 @@ open OUnit2
 open Test
 open TestHelper
 open Taint
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module AccessPath = Interprocedural.AccessPath
 
 let get_stubs_and_definitions ~source_file_name ~project =
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let ast_source =
-    PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
+    PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
     |> fun option -> Option.value_exn option
   in
   let initial_callables =
@@ -49,7 +51,9 @@ let set_up_environment
   in
   let source_file_name = "test.py" in
   let project = ScratchProject.setup ~context [source_file_name, source] in
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let taint_configuration =
     let named name = { AnnotationParser.KindDefinition.name; kind = Named; location = None } in
     let sources =
@@ -120,7 +124,7 @@ let set_up_environment
   in
   let source = Test.trim_extra_indentation model_source in
 
-  PyrePysaEnvironment.ModelQueries.invalidate_cache ();
+  PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
@@ -142,7 +146,9 @@ let set_up_environment
        (List.to_string errors ~f:ModelVerificationError.display))
     (List.is_empty errors);
 
-  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   parse_result, pyre_api, taint_configuration
 
 
@@ -219,7 +225,11 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
             |}
   in
   let sources = ("test.py", source) :: sources in
-  let pyre_api = ScratchProject.setup ~context sources |> ScratchProject.pyre_pysa_read_only_api in
+  let pyre_api =
+    ScratchProject.setup ~context sources
+    |> ScratchProject.pyre_pysa_read_only_api
+    |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let taint_configuration =
     TaintConfiguration.Heap.
       {
@@ -241,7 +251,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   in
   let error_message =
     let path = path >>| PyrePath.create_absolute in
-    PyrePysaEnvironment.ModelQueries.invalidate_cache ();
+    PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
     ModelParser.parse
       ~pyre_api
       ~taint_configuration

@@ -16,7 +16,9 @@ let test_from_source context =
   let assert_class_hierarchy ~source ~expected =
     let test_source, pyre_api =
       let project = Test.ScratchProject.setup ~context ["test.py", source] in
-      let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+      let pyre_api =
+        project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+      in
       let test_source =
         let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
           ScratchProject.build_type_environment project

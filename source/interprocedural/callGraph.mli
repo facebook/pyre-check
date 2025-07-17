@@ -7,7 +7,6 @@
 
 open Ast
 open Expression
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (** Represents type information about the return type of a call. *)
 module ReturnType : sig
@@ -27,7 +26,7 @@ module ReturnType : sig
 
   val integer : t
 
-  val from_annotation : pyre_api:PyrePysaEnvironment.ReadOnly.t -> Type.t -> t
+  val from_annotation : pyre_api:PyrePysaApi.ReadOnly.t -> Type.t -> t
 
   val to_json : t -> Yojson.Safe.t
 end
@@ -360,7 +359,7 @@ end
 
 (* Exposed for rare use cases, such as resolving the callees of decorators. *)
 val resolve_callees_from_type_external
-  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   return_type:Type.t lazy_t ->
@@ -478,7 +477,7 @@ end
 
 val call_graph_of_define
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  pyre_api:PyrePysaApi.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
@@ -492,7 +491,7 @@ val call_graph_of_define
 
 (* This must be called *once* before analyzing a statement in a control flow graph. *)
 val preprocess_statement
-  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   callable:Target.t ->
   Ast.Statement.t ->
@@ -500,14 +499,14 @@ val preprocess_statement
 
 (* This must be called *once* before analyzing a generator. *)
 val preprocess_generator
-  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   callable:Target.t ->
   Ast.Expression.Comprehension.Generator.t ->
-  Ast.Statement.Assign.t * PyrePysaEnvironment.InContext.t
+  Ast.Statement.Assign.t * PyrePysaApi.InContext.t
 
 val preprocess_parameter_default_value
-  :  pyre_in_context:PyrePysaEnvironment.InContext.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   callable:Target.t ->
   Ast.Expression.t ->
@@ -515,7 +514,7 @@ val preprocess_parameter_default_value
 
 val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  pyre_api:PyrePysaApi.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
   attribute_targets:Target.HashSet.t ->
   decorators:CallableToDecoratorsMap.SharedMemory.ReadOnly.t ->
@@ -575,7 +574,7 @@ val debug_higher_order_call_graph : Ast.Statement.Define.t -> bool
 
 val higher_order_call_graph_of_define
   :  define_call_graph:DefineCallGraph.t ->
-  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  pyre_api:PyrePysaApi.ReadOnly.t ->
   callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
   type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
   skip_analysis_targets:Target.HashSet.t ->
@@ -612,7 +611,7 @@ module DecoratorResolution : sig
    *)
   val resolve_exn
     :  ?debug:bool ->
-    pyre_in_context:PyrePysaEnvironment.InContext.t ->
+    pyre_in_context:PyrePysaApi.InContext.t ->
     override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
     callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
     type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->
@@ -627,7 +626,7 @@ module DecoratorResolution : sig
 
     val resolve_batch_exn
       :  debug:bool ->
-      pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+      pyre_api:PyrePysaApi.ReadOnly.t ->
       scheduler:Scheduler.t ->
       scheduler_policy:Scheduler.Policy.t ->
       override_graph:OverrideGraph.SharedMemory.t ->
@@ -702,7 +701,7 @@ module SharedMemory : sig
   val build_whole_program_call_graph
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    pyre_api:PyrePysaApi.ReadOnly.t ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.t ->
     type_of_expression_shared_memory:TypeOfExpressionSharedMemory.t ->

@@ -10,7 +10,7 @@ open Core
 module CallGraphAnalysis = struct
   module Context = struct
     type t = {
-      pyre_api: Analysis.PyrePysaEnvironment.ReadOnly.t;
+      pyre_api: PyrePysaApi.ReadOnly.t;
       define_call_graphs: CallGraph.SharedMemory.ReadOnly.t;
       callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
       type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;

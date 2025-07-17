@@ -18,7 +18,9 @@ let assert_taint ~context source expected =
   let qualifier = Ast.Reference.create "qualifier" in
   let project = Test.ScratchProject.setup ~context [handle, source] in
   let configuration = Test.ScratchProject.configuration_of project in
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create
       ~maximum_target_depth:Configuration.StaticAnalysis.default_maximum_target_depth
@@ -26,7 +28,7 @@ let assert_taint ~context source expected =
       ()
   in
   let source =
-    PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
+    PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
     |> fun option -> Option.value_exn option
   in
   let initial_models = TestHelper.get_initial_models ~context in

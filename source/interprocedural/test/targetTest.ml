@@ -17,6 +17,7 @@ let test_get_module_and_definition context =
     let pyre_api =
       Test.ScratchProject.setup ~context ["test.py", source]
       |> Test.ScratchProject.pyre_pysa_read_only_api
+      |> PyrePysaApi.ReadOnly.from_pyre1_api
     in
     let actual =
       target
@@ -71,6 +72,7 @@ let test_resolve_method context =
     let pyre_api =
       Test.ScratchProject.setup ~context ["test.py", source]
       |> Test.ScratchProject.pyre_pysa_read_only_api
+      |> PyrePysaApi.ReadOnly.from_pyre1_api
     in
     assert_equal
       ~printer:(show_optional Target.show_pretty)

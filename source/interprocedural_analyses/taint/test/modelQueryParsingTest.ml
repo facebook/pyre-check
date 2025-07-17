@@ -9,15 +9,17 @@ open Core
 open OUnit2
 open Test
 module Target = Interprocedural.Target
+module PyrePysaApi = Interprocedural.PyrePysaApi
 open Taint
 open ModelParseResult.ModelQuery
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let get_stubs_and_definitions ~source_file_name ~project =
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let ast_source =
-    PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
+    PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
     |> fun option -> Option.value_exn option
   in
   let initial_callables =
@@ -46,9 +48,11 @@ let set_up_environment ?source ~context ~model_source ~validate () =
     TaintConfiguration.Heap.{ empty with sources; sinks; transforms }
   in
   let source = Test.trim_extra_indentation model_source in
-  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
 
-  PyrePysaEnvironment.ModelQueries.invalidate_cache ();
+  PyrePysaApi.ModelQueries.invalidate_cache pyre_api;
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse

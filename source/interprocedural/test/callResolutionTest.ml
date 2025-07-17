@@ -10,14 +10,14 @@ open Interprocedural
 open Test
 open Ast
 open Core
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 let test_resolve_ignoring_errors context =
   let assert_resolved ~source ~expression ~expected =
     let pyre_in_context =
       ScratchProject.setup ~context ["x.py", source]
       |> ScratchProject.pyre_pysa_read_only_api
-      |> PyrePysaEnvironment.InContext.create_at_global_scope
+      |> PyrePysaApi.ReadOnly.from_pyre1_api
+      |> PyrePysaApi.InContext.create_at_global_scope
     in
     CallResolution.resolve_ignoring_errors
       ~pyre_in_context
@@ -94,7 +94,8 @@ let test_is_nonlocal context =
   let project = Test.ScratchProject.setup ~context [handle, source] in
   let pyre_in_context =
     ScratchProject.pyre_pysa_read_only_api project
-    |> PyrePysaEnvironment.InContext.create_at_global_scope
+    |> PyrePysaApi.ReadOnly.from_pyre1_api
+    |> PyrePysaApi.InContext.create_at_global_scope
   in
   let assert_nonlocal define variable () =
     variable

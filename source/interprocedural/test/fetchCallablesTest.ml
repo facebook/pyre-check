@@ -13,12 +13,14 @@ module PyrePysaLogic = Analysis.PyrePysaLogic
 let test_callables context =
   let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
     let configuration, source_code_api, pyre_api =
-      let scratch_project =
+      let project =
         Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
       in
-      ( Test.ScratchProject.configuration_of scratch_project,
-        Test.ScratchProject.get_untracked_source_code_api scratch_project,
-        Test.ScratchProject.pyre_pysa_read_only_api scratch_project )
+      ( Test.ScratchProject.configuration_of project,
+        Test.ScratchProject.get_untracked_source_code_api project,
+        project
+        |> Test.ScratchProject.pyre_pysa_read_only_api
+        |> PyrePysaApi.ReadOnly.from_pyre1_api )
     in
     let source =
       PyrePysaLogic.Testing.SourceCodeApi.source_of_qualifier

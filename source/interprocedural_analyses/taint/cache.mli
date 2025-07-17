@@ -6,7 +6,6 @@
  *)
 
 open Interprocedural
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type t
@@ -18,6 +17,7 @@ val try_load
   scheduler_policies:Configuration.SchedulerPolicies.t ->
   saved_state:Configuration.StaticAnalysis.SavedState.t ->
   configuration:Configuration.Analysis.t ->
+  pyrefly_results:PyrePath.t option ->
   decorator_configuration:PyrePysaLogic.DecoratorPreprocessing.Configuration.t ->
   skip_type_checking_callables:Ast.Reference.SerializableSet.t ->
   enabled:bool ->
@@ -40,10 +40,7 @@ val save
   t ->
   unit
 
-val pyre_read_write_api
-  :  t ->
-  (unit -> PyrePysaEnvironment.ReadWrite.t) ->
-  PyrePysaEnvironment.ReadWrite.t * t
+val pyre_read_write_api : t -> (unit -> PyrePysaApi.ReadWrite.t) -> PyrePysaApi.ReadWrite.t * t
 
 val class_hierarchy_graph
   :  t ->

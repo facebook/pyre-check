@@ -13,7 +13,7 @@
 open Core
 open Ast
 open Pyre
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module AccessPath = Interprocedural.AccessPath
 
 module MakeInterner (T : sig
@@ -530,7 +530,7 @@ module ViaFeature = struct
     let feature =
       object_target
       |> Reference.create
-      |> PyrePysaEnvironment.InContext.resolve_reference pyre_in_context
+      |> PyrePysaApi.InContext.resolve_reference pyre_in_context
       |> Type.weaken_literals
       |> Type.show
     in

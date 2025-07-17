@@ -11,7 +11,7 @@ open Core
 open Pyre
 open Ast
 open Expression
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 module AccessPath = Interprocedural.AccessPath
 
@@ -215,17 +215,17 @@ let verify_signature
 
 let verify_global ~path ~location ~pyre_api ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
-  let global = PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global pyre_api name in
+  let global = PyrePysaApi.ModelQueries.resolve_qualified_name_to_global pyre_api name in
   match global with
-  | Some PyrePysaEnvironment.ModelQueries.Global.Class ->
+  | Some PyrePysaApi.ModelQueries.Global.Class ->
       Error
         (model_verification_error ~path ~location (ModelingClassAsAttribute (Reference.show name)))
-  | Some PyrePysaEnvironment.ModelQueries.Global.Module ->
+  | Some PyrePysaApi.ModelQueries.Global.Module ->
       Error
         (model_verification_error ~path ~location (ModelingModuleAsAttribute (Reference.show name)))
-  | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable _))
+  | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable _))
   | Some
-      (PyrePysaEnvironment.ModelQueries.Global.Attribute
+      (PyrePysaApi.ModelQueries.Global.Attribute
         (Type.Parametric
           { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable _); _] })) ->
       Error
@@ -233,12 +233,12 @@ let verify_global ~path ~location ~pyre_api ~name =
            ~path
            ~location
            (ModelingCallableAsAttribute (Reference.show name)))
-  | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute _)
+  | Some (PyrePysaApi.ModelQueries.Global.Attribute _)
   | None -> (
       let class_summary =
         Reference.prefix name
         >>| Reference.show
-        >>= PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api
+        >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
         >>| Node.value
       in
       match class_summary, global with
@@ -266,7 +266,7 @@ let verify_global ~path ~location ~pyre_api ~name =
       | None, None -> (
           let module_name = Reference.first name in
           let module_resolved =
-            PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global
+            PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
               pyre_api
               (Reference.create module_name)
           in

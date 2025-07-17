@@ -7,7 +7,6 @@
 
 open Ast
 open Statement
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type kind =
   | Normal
@@ -208,19 +207,19 @@ type definitions_result = {
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 val get_definitions
-  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   warn_multiple_definitions:bool ->
   Reference.t ->
   definitions_result option
 
 (* Exposed for testing purposes only. *)
 val get_module_and_definition_for_test
-  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   t ->
   (Reference.t * Define.t Node.t) option
 
 val resolve_method
-  :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   class_type:Type.t ->
   method_name:string ->
   t option
@@ -333,7 +332,7 @@ module CallablesSharedMemory : sig
   val from_callables
     :  scheduler:Scheduler.t ->
     scheduler_policy:Scheduler.Policy.t ->
-    pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    pyre_api:PyrePysaApi.ReadOnly.t ->
     target list ->
     t
 

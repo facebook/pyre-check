@@ -11,7 +11,7 @@ open Core
 open Pyre
 open Taint
 module Target = Interprocedural.Target
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 let initialize_and_verify_configuration
@@ -219,7 +219,7 @@ let write_functions_to_file
 let create_pyre_read_write_api_and_perform_type_analysis
     ~scheduler
     ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; save_results_to; _ } as
+      ({ Configuration.StaticAnalysis.configuration; pyrefly_results; save_results_to; _ } as
       static_analysis_configuration)
     ~lookup_source
     ~decorator_configuration
@@ -241,9 +241,10 @@ let create_pyre_read_write_api_and_perform_type_analysis
         ()
     | None -> ()
   in
-  PyrePysaEnvironment.ReadWrite.create_with_cold_start
+  PyrePysaApi.ReadWrite.create_with_cold_start
     ~scheduler
     ~configuration
+    ~pyrefly_results
     ~decorator_configuration
     ~skip_type_checking_callables
     ~callback_with_qualifiers_and_definitions:save_qualifiers_and_definitions
@@ -553,14 +554,6 @@ let run_taint_analysis
     ~scheduler
     ()
   =
-  let () =
-    match pyrefly_results with
-    | Some path ->
-        failwith
-          (Format.asprintf "Using pyrefly results from `%a`. Not yet implemented." PyrePath.pp path)
-    | None -> ()
-  in
-
   let taint_configuration = initialize_and_verify_configuration ~static_analysis_configuration in
 
   (* In order to save time, sanity check models before starting the analysis. *)
@@ -582,9 +575,18 @@ let run_taint_analysis
       ~scheduler_policies
       ~saved_state
       ~configuration
+      ~pyrefly_results
       ~decorator_configuration
       ~skip_type_checking_callables
       ~enabled:use_cache
+  in
+
+  let () =
+    match pyrefly_results with
+    | Some path ->
+        failwith
+          (Format.asprintf "Using pyrefly results from `%a`. Not yet implemented." PyrePath.pp path)
+    | None -> ()
   in
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
@@ -598,7 +600,7 @@ let run_taint_analysis
           ~decorator_configuration
           ~skip_type_checking_callables)
   in
-  let pyre_api = PyrePysaEnvironment.ReadOnly.of_read_write_api pyre_read_write_api in
+  let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"after type check";
@@ -609,7 +611,7 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let qualifiers = PyrePysaEnvironment.ReadOnly.explicit_qualifiers pyre_api in
+  let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
@@ -779,7 +781,7 @@ let run_taint_analysis
     resolve_module_path
       ~lookup_source
       ~absolute_source_path_of_qualifier:
-        (PyrePysaEnvironment.ReadOnly.absolute_source_path_of_qualifier pyre_api)
+        (PyrePysaApi.ReadOnly.absolute_source_path_of_qualifier pyre_api)
       ~static_analysis_configuration
   in
 
@@ -1022,7 +1024,7 @@ let run_taint_analysis
       ~call_graph_fixpoint:higher_order_call_graph_fixpoint
   in
 
-  let () = PyrePysaEnvironment.ReadWrite.purge_shared_memory pyre_read_write_api in
+  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -1031,7 +1033,7 @@ let run_taint_analysis
       ~initial_models
   in
 
-  let () = PyrePysaEnvironment.ReadWrite.purge_shared_memory pyre_read_write_api in
+  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   let step_logger =
     StepLogger.start

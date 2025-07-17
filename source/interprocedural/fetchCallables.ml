@@ -13,7 +13,6 @@ open Core
 open Pyre
 open Ast
 open Statement
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 type t = {
   (* All callables:
@@ -97,7 +96,7 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
       callables_left
       callables_right
   in
-  PyrePysaEnvironment.ReadOnly.get_define_names_for_qualifier pyre_api qualifier
+  PyrePysaApi.ReadOnly.get_define_names_for_qualifier pyre_api qualifier
   |> Reference.Set.of_list
   |> Set.elements
   |> List.filter ~f:filter_parameters
@@ -107,7 +106,7 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
 
 (** Traverse the AST to find all callables (functions and methods). *)
 let from_source ~configuration ~pyre_api ~source =
-  if PyrePysaEnvironment.ReadOnly.source_is_unit_test pyre_api ~source then
+  if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
     empty
   else
     let definitions = gather_raw_definitions ~pyre_api ~source in
@@ -144,7 +143,7 @@ let from_source ~configuration ~pyre_api ~source =
 let from_qualifiers ~scheduler ~scheduler_policy ~pyre_api ~configuration ~qualifiers =
   let map qualifiers =
     let callables_of_qualifier callables qualifier =
-      PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
+      PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
       >>| (fun source -> from_source ~configuration ~pyre_api ~source)
       |> Option.value ~default:empty
       |> join callables

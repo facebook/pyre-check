@@ -7,7 +7,6 @@
 
 open Core
 open Ast
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 
 (* Exposed for testing. *)
 val demangle_class_attribute : string -> string
@@ -23,6 +22,6 @@ val verify_signature
 val verify_global
   :  path:PyrePath.t option ->
   location:Location.t ->
-  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
   name:Reference.t ->
   (unit, ModelVerificationError.t) result

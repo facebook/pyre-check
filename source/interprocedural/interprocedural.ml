@@ -8,6 +8,7 @@
 (* Taint: here we expose modules for the `pyrelib.interprocedural` library *)
 
 module AccessPath = TaintAccessPath
+module PyrePysaApi = PyrePysaApi
 module FixpointAnalysis = FixpointAnalysis
 module Target = Target
 module CallGraph = CallGraph

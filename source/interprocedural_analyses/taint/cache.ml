@@ -13,7 +13,7 @@
 module CamlUnix = Unix
 open Core
 open Pyre
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
+module PyrePysaApi = Interprocedural.PyrePysaApi
 module PyrePysaLogic = Analysis.PyrePysaLogic
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
@@ -82,6 +82,7 @@ module SharedMemoryStatus = struct
     | InvalidBySkipAnalysisChange
     | TypeEnvironmentLoadError
     | LoadError
+    | UnsupportedForPyrefly
     | NotFound
     | Disabled
     | Loaded of {
@@ -94,6 +95,7 @@ module SharedMemoryStatus = struct
     | InvalidByCodeChange -> `String "InvalidByCodeChange"
     | InvalidBySkipAnalysisChange -> `String "InvalidBySkipAnalysisChange"
     | TypeEnvironmentLoadError -> `String "TypeEnvironmentLoadError"
+    | UnsupportedForPyrefly -> `String "UnsupportedForPyrefly"
     | LoadError -> `String "LoadError"
     | NotFound -> `String "NotFound"
     | Disabled -> `String "Disabled"
@@ -149,9 +151,9 @@ module ChangedFiles = struct
     Interprocedural.ChangedPaths.compute_locally_changed_paths
       ~scheduler
       ~scheduler_policies
-      ~configuration:(PyrePysaEnvironment.ReadWrite.configuration pyre_read_write_api)
-      ~old_module_paths:(PyrePysaEnvironment.ReadWrite.module_paths pyre_read_write_api)
-      ~new_module_paths:(PyrePysaEnvironment.ReadWrite.module_paths_from_disk pyre_read_write_api)
+      ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
+      ~old_module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api)
+      ~new_module_paths:(PyrePysaApi.ReadWrite.module_paths_from_disk pyre_read_write_api)
     |> List.map ~f:ArtifactPath.raw
     |> List.filter ~f:should_invalidate_if_changed
 end
@@ -162,6 +164,7 @@ type t = {
   scheduler: Scheduler.t;
   scheduler_policies: Configuration.SchedulerPolicies.t;
   configuration: Configuration.Analysis.t;
+  pyrefly_results: PyrePath.t option;
   no_file_changes_reported_by_watchman: bool;
 }
 
@@ -342,6 +345,7 @@ let try_load
     ~scheduler_policies
     ~saved_state
     ~configuration
+    ~pyrefly_results
     ~decorator_configuration
     ~skip_type_checking_callables
     ~enabled
@@ -354,6 +358,18 @@ let try_load
       scheduler;
       scheduler_policies;
       configuration;
+      pyrefly_results;
+      no_file_changes_reported_by_watchman = false;
+    }
+  else if Option.is_some pyrefly_results then
+    let () = Log.info "Caching is not supported when using pyrefly results" in
+    {
+      status = SharedMemoryStatus.UnsupportedForPyrefly;
+      save_cache = false;
+      scheduler;
+      scheduler_policies;
+      configuration;
+      pyrefly_results;
       no_file_changes_reported_by_watchman = false;
     }
   else
@@ -423,16 +439,17 @@ let try_load
       scheduler;
       scheduler_policies;
       configuration;
+      pyrefly_results;
       no_file_changes_reported_by_watchman;
     }
 
 
-let load_pyre_read_write_api ~configuration =
+let load_pyre_read_write_api ~configuration ~pyrefly_results =
   let open Result in
   SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
-    ~f:(fun () -> Ok (PyrePysaEnvironment.ReadWrite.load_from_cache ~configuration))
+    ~f:(fun () -> Ok (PyrePysaApi.ReadWrite.load_from_cache ~configuration ~pyrefly_results))
 
 
 let save_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api =
@@ -444,9 +461,9 @@ let save_pyre_read_write_api ~scheduler ~scheduler_policies pyre_read_write_api 
       Interprocedural.ChangedPaths.save_current_paths
         ~scheduler
         ~scheduler_policies
-        ~configuration:(PyrePysaEnvironment.ReadWrite.configuration pyre_read_write_api)
-        ~module_paths:(PyrePysaEnvironment.ReadWrite.module_paths pyre_read_write_api);
-      PyrePysaEnvironment.ReadWrite.save pyre_read_write_api;
+        ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
+        ~module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api);
+      PyrePysaApi.ReadWrite.save pyre_read_write_api;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
 
@@ -458,6 +475,7 @@ let pyre_read_write_api
        scheduler;
        scheduler_policies;
        configuration;
+       pyrefly_results;
        no_file_changes_reported_by_watchman;
      } as cache)
     f
@@ -485,7 +503,7 @@ let pyre_read_write_api
   let environment, status =
     match status with
     | Loaded _ -> (
-        match load_pyre_read_write_api ~configuration with
+        match load_pyre_read_write_api ~configuration ~pyrefly_results with
         | Ok environment ->
             if
               no_file_changes_reported_by_watchman

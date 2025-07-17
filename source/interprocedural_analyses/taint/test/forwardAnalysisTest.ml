@@ -34,7 +34,9 @@ let assert_taint ?models ?models_source ~context source expect =
     PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre_api qualifier
     |> fun option -> Option.value_exn option
   in
-  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let pyre_api =
+    project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+  in
   let models =
     models >>| Test.trim_extra_indentation |> Option.value ~default:TestHelper.initial_models_source
   in

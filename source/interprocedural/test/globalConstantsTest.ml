@@ -95,7 +95,9 @@ let test_from_qualifiers context =
     let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
       ScratchProject.build_type_environment project
     in
-    let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+    let pyre_api =
+      project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+    in
     let qualifiers =
       List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     in

@@ -20,7 +20,6 @@ open Interprocedural
 open Statement
 open Domains
 open ModelParseResult
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module PythonVersion = struct
@@ -996,7 +995,7 @@ let rec class_names_from_annotation = function
 let get_class_attributes ~pyre_api = function
   | "object" -> Some []
   | class_name ->
-      PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api class_name
+      PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
       >>| Node.value
       >>| fun class_summary ->
       let attributes =
@@ -1018,7 +1017,7 @@ let get_class_attributes ~pyre_api = function
 
 
 let get_class_attributes_transitive ~pyre_api class_name =
-  let successors = PyrePysaEnvironment.ReadOnly.successors pyre_api class_name in
+  let successors = PyrePysaApi.ReadOnly.successors pyre_api class_name in
   class_name :: successors |> List.filter_map ~f:(get_class_attributes ~pyre_api) |> List.concat
 
 
@@ -2992,7 +2991,7 @@ module ParsedStatement : sig
   val partition_taint_decorators : Expression.t list -> Decorator.t list * Expression.t list
 
   val create_parsed_signature_from_name
-    :  pyre_api:PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:PyrePysaApi.ReadOnly.t ->
     parameters:Ast.Expression.Parameter.t list ->
     return_annotation:Ast.Expression.t option ->
     decorators:Ast.Expression.t list ->
@@ -3088,10 +3087,10 @@ end = struct
     let name = mangle_top_level_name name in
     let class_candidate =
       Reference.prefix name
-      >>| PyrePysaEnvironment.ReadOnly.parse_reference pyre_api
+      >>| PyrePysaApi.ReadOnly.parse_reference pyre_api
       >>= fun parsed ->
       let parent, _ = Type.split parsed in
-      Type.primitive_name parent >>| PyrePysaEnvironment.ReadOnly.get_class_summary pyre_api
+      Type.primitive_name parent >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
     in
     let taint_decorators, define_decorators = partition_taint_decorators decorators in
     (* To ensure that the start/stop lines can be used for commenting out models,
@@ -3165,22 +3164,19 @@ let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decora
   let define_name = Target.define_name_exn callable in
   let signature = create_dummy_signature ~decorators define_name in
   if signature_is_property signature then
-    PyrePysaEnvironment.ModelQueries.find_method_definitions
-      pyre_api
-      ~predicate:is_property
-      define_name
+    PyrePysaApi.ModelQueries.find_method_definitions pyre_api ~predicate:is_property define_name
     |> List.hd
     >>| Type.Callable.create_from_implementation
-    >>| (fun callable -> PyrePysaEnvironment.ModelQueries.Global.Attribute callable)
+    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Attribute callable)
     |> Core.Result.return
   else if Define.Signature.is_property_setter signature then
-    PyrePysaEnvironment.ModelQueries.find_method_definitions
+    PyrePysaApi.ModelQueries.find_method_definitions
       pyre_api
       ~predicate:Define.is_property_setter
       define_name
     |> List.hd
     >>| Type.Callable.create_from_implementation
-    >>| (fun callable -> PyrePysaEnvironment.ModelQueries.Global.Attribute callable)
+    >>| (fun callable -> PyrePysaApi.ModelQueries.Global.Attribute callable)
     |> Core.Result.return
   else if verify_decorators && not (List.is_empty decorators) then
     (* Ensure that models don't declare decorators that our taint analyses doesn't understand. We
@@ -3192,7 +3188,7 @@ let resolve_global_callable ~path ~location ~verify_decorators ~pyre_api ~decora
          ~location
          (UnexpectedDecorators { name = define_name; unexpected_decorators = decorators }))
   else
-    Ok (PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global pyre_api define_name)
+    Ok (PyrePysaApi.ModelQueries.resolve_qualified_name_to_global pyre_api define_name)
 
 
 let parse_decorator_annotations
@@ -3447,7 +3443,6 @@ let create_model_from_signature
     }
   =
   let open Core.Result in
-  let open ModelVerifier in
   (* Make sure we know about what we model. *)
   let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
   let callable_name = Target.define_name_exn call_target in
@@ -3463,7 +3458,7 @@ let create_model_from_signature
     | None -> (
         let module_name = Reference.first callable_name in
         let module_resolved =
-          PyrePysaEnvironment.ModelQueries.resolve_qualified_name_to_global
+          PyrePysaApi.ModelQueries.resolve_qualified_name_to_global
             pyre_api
             (Reference.create module_name)
         in
@@ -3474,19 +3469,19 @@ let create_model_from_signature
         | None ->
             model_verification_error
               (NotInEnvironment { module_name; name = Reference.show callable_name }))
-    | Some PyrePysaEnvironment.ModelQueries.Global.Class ->
+    | Some PyrePysaApi.ModelQueries.Global.Class ->
         model_verification_error (ModelingClassAsDefine (Reference.show callable_name))
-    | Some PyrePysaEnvironment.ModelQueries.Global.Module ->
+    | Some PyrePysaApi.ModelQueries.Global.Module ->
         model_verification_error (ModelingModuleAsDefine (Reference.show callable_name))
-    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))
+    | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable t))
     | Some
-        (PyrePysaEnvironment.ModelQueries.Global.Attribute
+        (PyrePysaApi.ModelQueries.Global.Attribute
           (Type.Parametric
             { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] })) ->
         Ok (Some t)
-    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute Type.Any) -> Ok None
-    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute Type.Top) -> Ok None
-    | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute _) ->
+    | Some (PyrePysaApi.ModelQueries.Global.Attribute Type.Any) -> Ok None
+    | Some (PyrePysaApi.ModelQueries.Global.Attribute Type.Top) -> Ok None
+    | Some (PyrePysaApi.ModelQueries.Global.Attribute _) ->
         model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
@@ -3596,7 +3591,7 @@ let create_model_from_signature
     in
     let parse_annotation ~generation_if_source taint_annotation =
       let captured_variables =
-        match PyrePysaEnvironment.ReadOnly.get_define_body pyre_api callable_name with
+        match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
         | Some { Node.value = { Define.captures; _ }; _ } ->
             List.map ~f:(fun capture -> capture.Define.Capture.name) captures
         | _ -> []
@@ -3994,7 +3989,7 @@ let rec parse_statement
         || not (List.is_empty extra_decorators)
       then
         name
-        |> PyrePysaEnvironment.ModelQueries.class_summaries pyre_api
+        |> PyrePysaApi.ModelQueries.class_summaries pyre_api
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =
@@ -4584,7 +4579,6 @@ let create_callable_model_from_annotations
     annotations
   =
   let open Core.Result in
-  let open ModelVerifier in
   let target = Modelable.target modelable in
   let decorators = Modelable.decorator_expressions_after_inlining modelable in
   resolve_global_callable
@@ -4595,9 +4589,9 @@ let create_callable_model_from_annotations
     ~decorators
     target
   >>| (function
-        | Some (PyrePysaEnvironment.ModelQueries.Global.Attribute (Type.Callable t))
+        | Some (PyrePysaApi.ModelQueries.Global.Attribute (Type.Callable t))
         | Some
-            (PyrePysaEnvironment.ModelQueries.Global.Attribute
+            (PyrePysaApi.ModelQueries.Global.Attribute
               (Type.Parametric
                 { name = "BoundMethod"; arguments = [Type.Argument.Single (Type.Callable t); _] }))
           ->

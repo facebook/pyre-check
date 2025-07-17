@@ -74,7 +74,9 @@ let test_find_globals =
           (* Without this, we'll pick up all the globals in the test typeshed. *)
         ~include_typeshed_stubs:false
     in
-    let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+    let pyre_api =
+      project |> ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
+    in
     let is_uninteresting_global name =
       not
         (List.exists uninteresting_globals_prefix ~f:(fun exclude_prefix ->

@@ -17,7 +17,6 @@ open Core
 open Ast
 open Statement
 open Pyre
-module PyrePysaEnvironment = Analysis.PyrePysaEnvironment
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type kind =
@@ -555,7 +554,7 @@ type definitions_result = {
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
-  PyrePysaEnvironment.ReadOnly.get_function_definition pyre_api define_name
+  PyrePysaApi.ReadOnly.get_function_definition pyre_api define_name
   >>| PyrePysaLogic.qualifier_and_bodies_of_function_definition
   >>| fun (qualifier, bodies) ->
   let get_priority define =
@@ -616,7 +615,7 @@ let resolve_method ~pyre_api ~class_type ~method_name =
     Type.split class_type
     |> fst
     |> Type.primitive_name
-    >>= PyrePysaEnvironment.ReadOnly.attribute_from_class_name
+    >>= PyrePysaApi.ReadOnly.attribute_from_class_name
           pyre_api
           ~transitive:true
           ~name:method_name

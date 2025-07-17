@@ -434,7 +434,7 @@ module CallableDecorator : sig
   type t
 
   val create
-    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Ast.Statement.Decorator.t ->
     t
@@ -450,18 +450,18 @@ module Modelable : sig
   type t
 
   val create_callable
-    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
     callables_to_definitions_map:Interprocedural.Target.CallablesSharedMemory.ReadOnly.t ->
     Interprocedural.Target.t ->
     t
 
   val create_attribute
-    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
     Interprocedural.Target.t ->
     t
 
   val create_global
-    :  pyre_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
+    :  pyre_api:Interprocedural.PyrePysaApi.ReadOnly.t ->
     Interprocedural.Target.t ->
     t
 

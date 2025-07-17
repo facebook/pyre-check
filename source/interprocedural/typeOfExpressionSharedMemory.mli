@@ -13,7 +13,7 @@ val create : callables_to_definitions_map:Target.CallablesSharedMemory.ReadOnly.
    callable whose source code contains the given expression. *)
 val compute_or_retrieve_type
   :  t ->
-  pyre_in_context:Analysis.PyrePysaEnvironment.InContext.t ->
+  pyre_in_context:PyrePysaApi.InContext.t ->
   callable:Target.t ->
   Ast.Expression.t ->
   Type.t
