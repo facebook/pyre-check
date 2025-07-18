@@ -242,6 +242,8 @@ module ScheduleIdentifier : sig
     | DecoratorResolution
     | CallableToDecoratorsMap
     | CallablesSharedMemory
+    | ParseSourceFiles
+    | ParsePyreflyModuleInfo
   [@@deriving sexp, compare, hash]
 
   val of_string : string -> t option

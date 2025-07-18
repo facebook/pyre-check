@@ -631,6 +631,8 @@ module ScheduleIdentifier = struct
     | DecoratorResolution
     | CallableToDecoratorsMap
     | CallablesSharedMemory
+    | ParseSourceFiles
+    | ParsePyreflyModuleInfo
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -651,6 +653,8 @@ module ScheduleIdentifier = struct
     | "taint_collect_errors" -> Some TaintCollectErrors
     | "taint_file_coverage" -> Some TaintFileCoverage
     | "taint_kind_coverage" -> Some TaintKindCoverage
+    | "parse_source_files" -> Some ParseSourceFiles
+    | "parse_pyrefly_module_info" -> Some ParsePyreflyModuleInfo
     | _ -> None
 
 
@@ -677,6 +681,8 @@ module ScheduleIdentifier = struct
     | DecoratorResolution -> "decorator_resolution"
     | CallableToDecoratorsMap -> "callable_to_decorators_map"
     | CallablesSharedMemory -> "callables_to_definitions_map"
+    | ParseSourceFiles -> "parse_source_files"
+    | ParsePyreflyModuleInfo -> "parse_pyrefly_module_info"
 end
 
 module SchedulerPolicies = struct

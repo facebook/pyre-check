@@ -14,7 +14,7 @@ module Pyre1Api = Analysis.PyrePysaEnvironment
 module ReadWrite = struct
   type t =
     | Pyre1 of Pyre1Api.ReadWrite.t
-    | Pyrefly of unit
+    | Pyrefly of PyreflyApi.ReadWrite.t
 
   let load_from_cache ~configuration ~pyrefly_results =
     match pyrefly_results with
@@ -33,8 +33,13 @@ module ReadWrite = struct
     =
     match pyrefly_results with
     | Some pyrefly_results ->
-        let _ = PyreflyApi.create_from_directory pyrefly_results in
-        Pyrefly ()
+        Pyrefly
+          (PyreflyApi.ReadWrite.create_from_directory
+             ~scheduler
+             ~scheduler_policies
+             ~configuration
+             ~decorator_configuration
+             pyrefly_results)
     | None ->
         Pyre1
           (Pyre1Api.ReadWrite.create_with_cold_start

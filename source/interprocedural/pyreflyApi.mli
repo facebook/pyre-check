@@ -8,8 +8,6 @@
 (* Module that implements the PyrePysaApi using the results from a pyrefly run with
    --report-pysa. *)
 
-type t
-
 module FormatError : sig
   type t =
     | UnexpectedJsonType of {
@@ -34,4 +32,16 @@ exception
     error: Error.t;
   }
 
-val create_from_directory : PyrePath.t -> t
+(* API handle stored in the main process. The type `t` should not be sent to workers, since it's
+   expensive to copy. *)
+module ReadWrite : sig
+  type t
+
+  val create_from_directory
+    :  scheduler:Scheduler.t ->
+    scheduler_policies:Configuration.SchedulerPolicies.t ->
+    configuration:Configuration.Analysis.t ->
+    decorator_configuration:Analysis.DecoratorPreprocessing.Configuration.t ->
+    PyrePath.t ->
+    t
+end
