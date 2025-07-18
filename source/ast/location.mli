@@ -16,6 +16,8 @@ type position = {
 
 val any_position : position
 
+val position_from_string : string -> (position, string) Result.t
+
 type t = {
   start: position;
   stop: position;
@@ -41,6 +43,8 @@ val stop_column : t -> int
 val pp_start : Format.formatter -> t -> unit
 
 val pp_line_and_column : Format.formatter -> t -> unit
+
+val from_string : string -> (t, string) Result.t
 
 module T : sig
   type nonrec t = t [@@deriving compare, sexp, hash, to_yojson]

@@ -581,14 +581,6 @@ let run_taint_analysis
       ~enabled:use_cache
   in
 
-  let () =
-    match pyrefly_results with
-    | Some path ->
-        failwith
-          (Format.asprintf "Using pyrefly results from `%a`. Not yet implemented." PyrePath.pp path)
-    | None -> ()
-  in
-
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
   let pyre_read_write_api, cache =
     Cache.pyre_read_write_api cache (fun () ->
@@ -601,6 +593,14 @@ let run_taint_analysis
           ~skip_type_checking_callables)
   in
   let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
+
+  let () =
+    match pyrefly_results with
+    | Some path ->
+        failwith
+          (Format.asprintf "Using pyrefly results from `%a`. Not yet implemented." PyrePath.pp path)
+    | None -> ()
+  in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"after type check";

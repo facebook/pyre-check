@@ -32,7 +32,9 @@ module ReadWrite = struct
       ~callback_with_qualifiers_and_definitions
     =
     match pyrefly_results with
-    | Some _ -> Pyrefly ()
+    | Some pyrefly_results ->
+        let _ = PyreflyApi.create_from_directory pyrefly_results in
+        Pyrefly ()
     | None ->
         Pyre1
           (Pyre1Api.ReadWrite.create_with_cold_start

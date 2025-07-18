@@ -469,6 +469,9 @@ def _run_analyze_command(
                 )
                 LOG.warning("Hint: use --no-verify to silence these errors")
                 return commands.ExitCode.MODEL_VERIFICATION_ERROR
+            elif return_code == 12:
+                # error is printed in the binary.
+                return commands.ExitCode.PYREFLY_FILE_FORMAT_ERROR
             else:
                 LOG.error(f"Pyre exited with non-zero return code: {return_code}.")
                 return commands.ExitCode.FAILURE

@@ -12,6 +12,7 @@ module ExitStatus : sig
     | CheckStatus of CheckCommand.ExitStatus.t
     | TaintConfigurationError
     | ModelVerificationError
+    | PyreflyFileFormatError
 
   val exit_code : t -> int
 end

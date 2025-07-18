@@ -225,15 +225,17 @@ let parse_callable ?name ?(aliases = Type.resolved_empty_aliases) callable =
 
 
 let parse_position position =
-  match String.split ~on:':' position |> List.map ~f:int_of_string with
-  | [line_; column_] -> Location.{ line = line_; column = column_ }
-  | _ -> failwith "expected line:column"
+  Location.position_from_string position
+  |> function
+  | Ok position -> position
+  | Error error -> failwith error
 
 
 let parse_location location =
-  match String.split ~on:'-' location |> List.map ~f:parse_position with
-  | [start_; stop_] -> Location.{ start = start_; stop = stop_ }
-  | _ -> failwith "expected <position>-<position>"
+  Location.from_string location
+  |> function
+  | Ok location -> location
+  | Error error -> failwith error
 
 
 let parse_location_with_module location =

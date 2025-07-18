@@ -11,6 +11,11 @@ open Core
 open Sexplib.Std
 module AstReference = Reference
 
+let safe_int_of_string s =
+  try Ok (int_of_string s) with
+  | Failure error -> Error error
+
+
 module T = struct
   type position = {
     line: int;
@@ -24,6 +29,16 @@ module T = struct
   let show_position { line; column } = Format.sprintf "%d:%d" line column
 
   let pp_position format { line; column } = Format.fprintf format "%d:%d" line column
+
+  let position_from_string position =
+    let open Core.Result.Monad_infix in
+    String.split ~on:':' position
+    |> List.map ~f:safe_int_of_string
+    |> Result.all
+    >>= function
+    | [line_; column_] -> Ok { line = line_; column = column_ }
+    | _ -> Error "expected line:column"
+
 
   type t = {
     start: position;
@@ -66,6 +81,15 @@ module T = struct
   let column { start = { column; _ }; _ } = column
 
   let stop_column { stop = { column; _ }; _ } = column
+
+  let from_string location =
+    let open Core.Result.Monad_infix in
+    String.split ~on:'-' location
+    |> List.map ~f:position_from_string
+    |> Result.all
+    >>= function
+    | [start_; stop_] -> Ok { start = start_; stop = stop_ }
+    | _ -> Error "expected <position>-<position>"
 end
 
 include T

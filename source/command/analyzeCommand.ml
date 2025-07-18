@@ -15,12 +15,14 @@ module ExitStatus = struct
     | CheckStatus of CheckCommand.ExitStatus.t
     | TaintConfigurationError
     | ModelVerificationError
+    | PyreflyFileFormatError
 
   let exit_code = function
     (* 1-9 are reserved for CheckCommand.ExitStatus *)
     | CheckStatus status -> CheckCommand.ExitStatus.exit_code status
     | TaintConfigurationError -> 10
     | ModelVerificationError -> 11
+    | PyreflyFileFormatError -> 12
 end
 
 module AnalyzeConfiguration = struct
@@ -423,6 +425,7 @@ let run_analyze analyze_configuration =
           | Taint.TaintConfiguration.TaintConfigurationError _ -> false
           | Taint.ModelVerificationError.ModelVerificationErrors _ -> false
           | Taint.Cache.BuildCacheOnly -> false
+          | Interprocedural.PyreflyApi.PyreflyFileFormatError _ -> false
           | _ -> true)
         ~f:(fun scheduler ->
           with_performance_tracking ~debug ~f:(fun () ->
@@ -449,6 +452,9 @@ let on_exception = function
       |> Log.print "%s";
       ExitStatus.ModelVerificationError
   | Taint.Cache.BuildCacheOnly -> ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok
+  | Interprocedural.PyreflyApi.PyreflyFileFormatError { path; error } ->
+      Log.error "%a: %a" PyrePath.pp path Interprocedural.PyreflyApi.Error.pp error;
+      ExitStatus.PyreflyFileFormatError
   | exn -> ExitStatus.CheckStatus (CheckCommand.on_exception exn)
 
 
