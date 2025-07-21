@@ -287,7 +287,7 @@ module ModuleInfoFile = struct
     | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
 end
 
-module ModulesSharedMemory = struct
+module ModuleInfosSharedMemory = struct
   module Module = struct
     type t = { source_path: ArtifactPath.t (* The path of source code as seen by the analyzer. *) }
   end
@@ -300,9 +300,20 @@ module ModulesSharedMemory = struct
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
-        let description = "pyrefly modules"
+        let description = "pyrefly module infos"
       end)
 end
+
+module ModuleListSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (Memory.SingletonKey)
+    (struct
+      type t = Ast.Reference.t list
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly all modules"
+    end)
 
 module TypeOfExpressionsSharedMemory = struct
   module Key = struct
@@ -355,7 +366,8 @@ module ReadWrite = struct
 
   type t = {
     modules: Module.t Ast.Reference.Map.t;
-    modules_shared_memory: ModulesSharedMemory.t;
+    module_infos_shared_memory: ModuleInfosSharedMemory.t;
+    module_list_shared_memory: ModuleListSharedMemory.t;
     asts_shared_memory: AstsSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
   }
@@ -452,14 +464,17 @@ module ReadWrite = struct
     handle
 
 
-  let write_modules_to_shared_memory ~modules =
+  let write_module_infos_to_shared_memory ~modules =
     let timer = Timer.start () in
     let () = Log.info "Writing modules to shared memory..." in
-    let handle = ModulesSharedMemory.create () in
+    let handle = ModuleInfosSharedMemory.create () in
     let () =
       Map.data modules
       |> List.iter ~f:(fun { Module.module_name; source_path; _ } ->
-             ModulesSharedMemory.add handle module_name { ModulesSharedMemory.Module.source_path })
+             ModuleInfosSharedMemory.add
+               handle
+               module_name
+               { ModuleInfosSharedMemory.Module.source_path })
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
     handle
@@ -469,7 +484,7 @@ module ReadWrite = struct
       ~scheduler
       ~scheduler_policies
       ~configuration
-      ~modules_shared_memory
+      ~module_infos_shared_memory
       ~modules
     =
     let timer = Timer.start () in
@@ -482,8 +497,8 @@ module ReadWrite = struct
         configuration
     in
     let parse_module module_name =
-      let { ModulesSharedMemory.Module.source_path; _ } =
-        Option.value_exn (ModulesSharedMemory.get modules_shared_memory module_name)
+      let { ModuleInfosSharedMemory.Module.source_path; _ } =
+        Option.value_exn (ModuleInfosSharedMemory.get module_infos_shared_memory module_name)
       in
       let load_result =
         try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
@@ -572,27 +587,85 @@ module ReadWrite = struct
       ~integers:["modules", Map.length modules]
       ();
 
-    let modules_shared_memory = write_modules_to_shared_memory ~modules in
+    let module_infos_shared_memory = write_module_infos_to_shared_memory ~modules in
+
+    let module_list_shared_memory =
+      let handle = ModuleListSharedMemory.create () in
+      let () = ModuleListSharedMemory.add handle Memory.SingletonKey.key (Map.keys modules) in
+      handle
+    in
 
     let asts_shared_memory =
       parse_source_files
         ~scheduler
         ~scheduler_policies
         ~configuration
-        ~modules_shared_memory
+        ~module_infos_shared_memory
         ~modules
     in
 
-    { modules; modules_shared_memory; asts_shared_memory; type_of_expressions_shared_memory }
+    {
+      modules;
+      module_infos_shared_memory;
+      module_list_shared_memory;
+      asts_shared_memory;
+      type_of_expressions_shared_memory;
+    }
 
 
   (* TODO(T225700656): Remove this, this is to silence the unused value warning *)
   let unused
-      { modules; modules_shared_memory; asts_shared_memory; type_of_expressions_shared_memory }
+      {
+        modules;
+        module_infos_shared_memory;
+        module_list_shared_memory;
+        asts_shared_memory;
+        type_of_expressions_shared_memory;
+      }
     =
-    let _ = modules, modules_shared_memory, asts_shared_memory, type_of_expressions_shared_memory in
+    let _ =
+      ( modules,
+        module_infos_shared_memory,
+        module_list_shared_memory,
+        asts_shared_memory,
+        type_of_expressions_shared_memory )
+    in
     ()
 
 
   let _ = unused
+end
+
+module ReadOnly = struct
+  type t = {
+    module_infos_shared_memory: ModuleInfosSharedMemory.t;
+    module_list_shared_memory: ModuleListSharedMemory.t;
+    asts_shared_memory: AstsSharedMemory.t;
+  }
+
+  let of_read_write_api
+      { ReadWrite.module_infos_shared_memory; module_list_shared_memory; asts_shared_memory; _ }
+    =
+    { module_infos_shared_memory; module_list_shared_memory; asts_shared_memory }
+
+
+  let absolute_source_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
+    ModuleInfosSharedMemory.get module_infos_shared_memory qualifier
+    >>| (fun { ModuleInfosSharedMemory.Module.source_path; _ } -> source_path)
+    (* TODO(T225700656): We currently return the artifact path, it should be translated back into a
+       source path by buck *)
+    >>| ArtifactPath.raw
+    >>| PyrePath.absolute
+
+
+  (* Return all modules with source code *)
+  let explicit_qualifiers { module_list_shared_memory; _ } =
+    Option.value_exn (ModuleListSharedMemory.get module_list_shared_memory Memory.SingletonKey.key)
+
+
+  let source_of_qualifier { asts_shared_memory; _ } qualifier =
+    AstsSharedMemory.get asts_shared_memory qualifier
+    >>= function
+    | Result.Ok source -> Some source
+    | Result.Error _ -> None
 end

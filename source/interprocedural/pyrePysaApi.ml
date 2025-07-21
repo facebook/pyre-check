@@ -56,24 +56,16 @@ module ReadWrite = struct
     | Pyrefly _ -> failwith "unimplemented: ReadWrite.configuration"
 
 
+  (* Only used for caching *)
   let module_paths = function
     | Pyre1 pyre_api -> Pyre1Api.ReadWrite.module_paths pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadWrite.module_paths"
 
 
+  (* Only used for caching *)
   let module_paths_from_disk = function
     | Pyre1 pyre_api -> Pyre1Api.ReadWrite.module_paths_from_disk pyre_api
     | Pyrefly _ -> failwith "unimplemented"
-
-
-  let all_module_paths = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadWrite.all_module_paths pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadWrite.all_module_paths"
-
-
-  let artifact_path_of_module_path = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadWrite.artifact_path_of_module_path pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadWrite.artifact_path_of_module_path"
 
 
   let save = function
@@ -81,19 +73,19 @@ module ReadWrite = struct
     | Pyrefly _ -> failwith "unimplemented: ReadWrite.save"
 
 
-  let purge_shared_memory = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadWrite.purge_shared_memory pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadWrite.purge_shared_memory"
+  let purge_sources_from_shared_memory = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadWrite.purge_sources_from_shared_memory pyre_api
+    | Pyrefly _ -> failwith "unimplemented: ReadWrite.purge_sources_from_shared_memory"
 end
 
 module ReadOnly = struct
   type t =
     | Pyre1 of Pyre1Api.ReadOnly.t
-    | Pyrefly of unit
+    | Pyrefly of PyreflyApi.ReadOnly.t
 
   let of_read_write_api = function
     | ReadWrite.Pyre1 pyre_api -> Pyre1 (Pyre1Api.ReadOnly.of_read_write_api pyre_api)
-    | Pyrefly _ -> Pyrefly ()
+    | Pyrefly pyrefly_api -> Pyrefly (PyreflyApi.ReadOnly.of_read_write_api pyrefly_api)
 
 
   let from_pyre1_environment ~type_environment ~global_module_paths_api =
@@ -104,12 +96,17 @@ module ReadOnly = struct
 
   let absolute_source_path_of_qualifier ~lookup_source = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.absolute_source_path_of_qualifier ~lookup_source pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.absolute_source_path_of_qualifier"
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.absolute_source_path_of_qualifier pyrefly_api
 
 
   let explicit_qualifiers = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.explicit_qualifiers pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.explicit_qualifiers"
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.explicit_qualifiers pyrefly_api
+
+
+  let module_exists = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.module_exists pyre_api
+    | Pyrefly _ -> failwith "unimplemented: ReadOnly.module_exists"
 
 
   let parse_annotation = function
@@ -140,11 +137,6 @@ module ReadOnly = struct
   let parse_reference = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.parse_reference pyre_api
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.parse_reference"
-
-
-  let module_exists = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.module_exists pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.module_exists"
 
 
   let class_exists = function
@@ -239,7 +231,7 @@ module ReadOnly = struct
 
   let source_of_qualifier = function
     | Pyre1 pyre_api -> Pyre1Api.ReadOnly.source_of_qualifier pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.source_of_qualifier"
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.source_of_qualifier pyrefly_api
 
 
   let relative_path_of_qualifier = function

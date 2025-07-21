@@ -33,17 +33,16 @@ module ReadWrite : sig
 
   val configuration : t -> Configuration.Analysis.t
 
+  (* Only used for caching *)
   val module_paths : t -> Ast.ModulePath.t list
 
+  (* Only used for caching *)
   val module_paths_from_disk : t -> Ast.ModulePath.t list
 
-  val all_module_paths : t -> Ast.ModulePath.t list
-
-  val artifact_path_of_module_path : t -> Ast.ModulePath.t -> ArtifactPath.t
-
+  (* Only used for caching *)
   val save : t -> unit
 
-  val purge_shared_memory : t -> unit
+  val purge_sources_from_shared_memory : t -> unit
 end
 
 module ReadOnly : sig
@@ -66,6 +65,8 @@ module ReadOnly : sig
 
   val explicit_qualifiers : t -> Ast.Reference.t list
 
+  val module_exists : t -> Ast.Reference.t -> bool
+
   val parse_annotation
     :  t ->
     ?validation:Analysis.AttributeResolution.type_validation_policy ->
@@ -81,8 +82,6 @@ module ReadOnly : sig
   val get_define_names_for_qualifier : t -> Ast.Reference.t -> Ast.Reference.t list
 
   val parse_reference : t -> Ast.Reference.t -> Type.t
-
-  val module_exists : t -> Ast.Reference.t -> bool
 
   val class_exists : t -> string -> bool
 

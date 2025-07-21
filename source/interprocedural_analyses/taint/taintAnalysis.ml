@@ -594,14 +594,6 @@ let run_taint_analysis
   in
   let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
 
-  let () =
-    match pyrefly_results with
-    | Some path ->
-        failwith
-          (Format.asprintf "Using pyrefly results from `%a`. Not yet implemented." PyrePath.pp path)
-    | None -> ()
-  in
-
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"after type check";
 
@@ -1024,7 +1016,7 @@ let run_taint_analysis
       ~call_graph_fixpoint:higher_order_call_graph_fixpoint
   in
 
-  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
+  let () = PyrePysaApi.ReadWrite.purge_sources_from_shared_memory pyre_read_write_api in
 
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -1032,8 +1024,6 @@ let run_taint_analysis
       ~call_graph:original_whole_program_call_graph
       ~initial_models
   in
-
-  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   let step_logger =
     StepLogger.start

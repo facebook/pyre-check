@@ -45,3 +45,16 @@ module ReadWrite : sig
     PyrePath.t ->
     t
 end
+
+module ReadOnly : sig
+  type t
+
+  val of_read_write_api : ReadWrite.t -> t
+
+  val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
+
+  (* Return all modules with source code *)
+  val explicit_qualifiers : t -> Ast.Reference.t list
+
+  val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
+end

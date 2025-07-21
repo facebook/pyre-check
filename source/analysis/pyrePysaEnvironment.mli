@@ -35,7 +35,7 @@ module ReadWrite : sig
 
   val save : t -> unit
 
-  val purge_shared_memory : t -> unit
+  val purge_sources_from_shared_memory : t -> unit
 end
 
 module ReadOnly : sig

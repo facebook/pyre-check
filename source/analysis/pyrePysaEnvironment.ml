@@ -158,8 +158,8 @@ module ReadWrite = struct
 
 
   (* Aggressively shrink shared memory by dropping all raw sources *)
-  let purge_shared_memory api =
-    Log.info "Purging shared memory...";
+  let purge_sources_from_shared_memory api =
+    Log.info "Purging source files from shared memory...";
     let timer = Timer.start () in
     let ast_environment =
       read_write_type_environment api |> TypeEnvironment.AssumeAstEnvironment.ast_environment
@@ -172,8 +172,8 @@ module ReadWrite = struct
     AstEnvironment.remove_sources ast_environment qualifiers;
     Memory.SharedMemory.collect `aggressive;
     Statistics.performance
-      ~name:"Purged shared memory"
-      ~phase_name:"Purging shared memory"
+      ~name:"Purged source files from shared memory"
+      ~phase_name:"Purging source files from shared memory"
       ~timer
       ();
     ()
