@@ -1587,10 +1587,6 @@ static char* save_start() {
   return (char*)hashtbl;
 }
 
-static size_t save_size() {
-  return hashtbl_size_b;
-}
-
 void hh_save_table(value out_filename) {
   CAMLparam1(out_filename);
   FILE* fp = fopen(String_val(out_filename), "wb");
