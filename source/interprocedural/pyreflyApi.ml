@@ -225,6 +225,10 @@ module ProjectFile = struct
     match from_json json with
     | Ok project -> project
     | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
+
+
+  (* TODO(T225700656): Remove this, this is to silence the unused value warning *)
+  let _ = Module.pp, ModuleId.show, ModuleInfoPath.show
 end
 
 (* Represents information from pyrefly about a given module, stored as a `module:id.json` file. This
@@ -623,6 +627,7 @@ module ReadWrite = struct
         type_of_expressions_shared_memory;
       }
     =
+    let _ = Module.pp in
     let _ =
       ( modules,
         module_infos_shared_memory,
