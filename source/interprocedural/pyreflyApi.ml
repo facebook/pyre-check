@@ -10,6 +10,7 @@
 
 open Core
 open Pyre
+open Data_structures
 
 module FormatError = struct
   type t =
@@ -140,7 +141,8 @@ module ModulePath = struct
           |> ArtifactPath.create)
 end
 
-(* Represents the unique identifier for a module (e.g specific module name + path) *)
+(* Represents the unique identifier assigned to a module by pyrefly. This represents a specific
+   module name and path. *)
 module ModuleId : sig
   type t [@@deriving compare, sexp, hash, show]
 
@@ -149,6 +151,65 @@ end = struct
   type t = int [@@deriving compare, sexp, hash, show]
 
   let from_int = Fn.id
+end
+
+(* Represents the unique identifier assigned to a module by pysa. This represents a specific module
+   name and path. Note that this is converted into `Ast.Reference.t` during the taint analysis for
+   backward compatibility with the old Pyre1 API, which assumes a module name can only map to one
+   source file. *)
+module Qualifier : sig
+  type t [@@deriving compare, sexp, hash, show]
+
+  val create : path:string option -> Ast.Reference.t -> t
+
+  (* The taint analysis uses Reference.t to uniquely represent modules, so we use
+     to_reference/from_reference to convert to that type *)
+  val to_reference : t -> Ast.Reference.t
+
+  val from_reference : Ast.Reference.t -> t
+
+  module Map : Map.S with type Key.t = t
+end = struct
+  module T = struct
+    type t = {
+      path: string option;
+      module_name: Ast.Reference.t;
+    }
+    [@@deriving compare, sexp, hash, show]
+
+    let create ~path module_name = { path; module_name }
+
+    let to_reference { path; module_name } =
+      match path with
+      | None -> module_name
+      | Some path ->
+          Format.sprintf "%s:%s" path (Ast.Reference.show module_name) |> Ast.Reference.create
+
+
+    let from_reference reference =
+      if List.exists (Ast.Reference.as_list reference) ~f:(fun s -> String.contains s ':') then
+        reference
+        |> Ast.Reference.show
+        |> String.rsplit2_exn ~on:':'
+        |> fun (path, reference) ->
+        { path = Some path; module_name = Ast.Reference.create reference }
+      else
+        { path = None; module_name = reference }
+  end
+
+  include T
+  module Map = Map.Make (T)
+end
+
+module QualifierSharedMemoryKey = struct
+  type t = Qualifier.t [@@deriving compare]
+
+  let to_string key =
+    key |> Qualifier.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
+
+
+  let from_string s =
+    s |> Analysis.SharedMemoryKeys.ReferenceKey.from_string |> Qualifier.from_reference
 end
 
 (* Represents the path to a pyrefly module information file *)
@@ -293,12 +354,14 @@ end
 
 module ModuleInfosSharedMemory = struct
   module Module = struct
-    type t = { source_path: ArtifactPath.t (* The path of source code as seen by the analyzer. *) }
+    type t = {
+      source_path: ArtifactPath.t option (* The path of source code as seen by the analyzer. *);
+    }
   end
 
   include
     Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
-      (Analysis.SharedMemoryKeys.ReferenceKey)
+      (QualifierSharedMemoryKey)
       (struct
         type t = Module.t
 
@@ -308,11 +371,11 @@ module ModuleInfosSharedMemory = struct
       end)
 end
 
-module ModuleListSharedMemory =
+module QualifiersWithSourceSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (Memory.SingletonKey)
     (struct
-      type t = Ast.Reference.t list
+      type t = Qualifier.t list
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -322,7 +385,7 @@ module ModuleListSharedMemory =
 module TypeOfExpressionsSharedMemory = struct
   module Key = struct
     type t = {
-      module_name: Ast.Reference.t;
+      qualifier: Qualifier.t;
       location: Ast.Location.t;
     }
     [@@deriving compare, sexp]
@@ -344,11 +407,17 @@ module TypeOfExpressionsSharedMemory = struct
       end)
 end
 
+module OptionalSource = struct
+  type 'a t =
+    | Some of 'a
+    | NoSource
+end
+
 module AstsSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
-    (Analysis.SharedMemoryKeys.ReferenceKey)
+    (QualifierSharedMemoryKey)
     (struct
-      type t = Analysis.Parsing.ParseResult.t
+      type t = Analysis.Parsing.ParseResult.t OptionalSource.t
 
       let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -362,71 +431,97 @@ module ReadWrite = struct
     type t = {
       module_id: ModuleId.t;
       module_name: Ast.Reference.t;
-      source_path: ArtifactPath.t; (* The path of source code as seen by the analyzer. *)
-      pyrefly_info_path: ModuleInfoPath.t;
+      source_path: ArtifactPath.t option; (* The path of source code as seen by the analyzer. *)
+      pyrefly_info_path: ModuleInfoPath.t option;
     }
     [@@deriving show]
+
+    let from_project
+        ~pyrefly_directory
+        { ProjectFile.Module.module_id; module_name; module_path; info_path }
+      =
+      {
+        module_id;
+        module_name;
+        source_path = ModulePath.artifact_file_path ~pyrefly_directory module_path;
+        pyrefly_info_path = info_path;
+      }
   end
 
   type t = {
-    modules: Module.t Ast.Reference.Map.t;
+    qualifier_to_module_map: Module.t Qualifier.Map.t;
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
-    module_list_shared_memory: ModuleListSharedMemory.t;
+    qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     asts_shared_memory: AstsSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
   }
 
-  (* Build a mapping from module name (i.e, qualifier) to the module id, source path, etc. *)
+  (* Build a mapping from a qualifier (module name + path prefix) to the module id, source path,
+     etc. *)
   let create_module_mapping ~pyrefly_directory { ProjectFile.modules } =
-    let handle_duplicate_module_names
-        ({ Module.source_path = left_source_path; module_name; _ } as left)
-        ({ Module.source_path = right_source_path; _ } as right)
-      =
-      let left_path_string = left_source_path |> ArtifactPath.raw |> PyrePath.absolute in
-      let right_path_string = right_source_path |> ArtifactPath.raw |> PyrePath.absolute in
-      (* Prefer .pyi files over .py files, for consistency with pyre1 *)
-      if
-        String.is_suffix ~suffix:".pyi" left_path_string
-        && String.is_suffix ~suffix:".py" right_path_string
-      then
-        left
-      else if
-        String.is_suffix ~suffix:".py" left_path_string
-        && String.is_suffix ~suffix:".pyi" right_path_string
-      then
-        right
-      else (* TODO(T225700656): Handle source files with conflicting module name. *)
-        let () =
-          Log.warning
-            "Ignoring source file `%s` because module `%a` already maps to `%s`"
-            right_path_string
-            Ast.Reference.pp
-            module_name
-            left_path_string
-        in
-        left
+    let make_unique_qualifiers (module_name, modules) =
+      match modules with
+      | [module_info] -> [Qualifier.create ~path:None module_name, module_info]
+      | _ ->
+          (* From a list of modules with the same module name, make unique qualifiers for each
+             module, using the path as a prefix *)
+          let number_modules = List.length modules in
+          let pyre_path_elements path = path |> PyrePath.absolute |> String.split ~on:'/' in
+          let module_path_elements = function
+            | ModulePath.Filesystem path -> path |> ArtifactPath.raw |> pyre_path_elements
+            | ModulePath.Namespace path -> "namespace:/" :: pyre_path_elements path
+            | ModulePath.Memory path -> "memory:/" :: pyre_path_elements path
+            | ModulePath.BundledTypeshed path -> "typeshed:/" :: pyre_path_elements path
+          in
+          let rec find_shortest_unique_prefix ~prefix_length modules_with_path =
+            let map =
+              modules_with_path
+              |> List.fold ~init:SerializableStringMap.empty ~f:(fun sofar (path, module_info) ->
+                     SerializableStringMap.update
+                       (List.take path prefix_length |> List.rev |> String.concat ~sep:"/")
+                       (function
+                         | None -> Some module_info
+                         | Some existing -> Some existing)
+                       sofar)
+            in
+            if Int.equal number_modules (SerializableStringMap.cardinal map) then
+              SerializableStringMap.to_alist map
+            else if prefix_length >= 1000 then
+              failwith "Could not make a unique qualifier for a module after 1000 iterations"
+            else
+              find_shortest_unique_prefix ~prefix_length:(prefix_length + 1) modules_with_path
+          in
+          modules
+          |> List.map ~f:(fun ({ ProjectFile.Module.module_path; _ } as module_info) ->
+                 List.rev (module_path_elements module_path), module_info)
+          |> find_shortest_unique_prefix ~prefix_length:1
+          |> List.map ~f:(fun (path, module_info) ->
+                 Qualifier.create ~path:(Some path) module_name, module_info)
     in
-    let add_module
-        ~key:module_id
-        ~data:{ ProjectFile.Module.module_name; module_path; info_path; _ }
+    let add_to_module_name_mapping
+        ~key:_
+        ~data:({ ProjectFile.Module.module_name; _ } as module_info)
         sofar
       =
-      match ModulePath.artifact_file_path ~pyrefly_directory module_path with
-      | None -> sofar
-      | Some source_path ->
-          (* Modules with an actual source path should have an associated info file *)
-          let pyrefly_info_path =
-            Option.value_exn ~message:"Missing pyrefly info path for module" info_path
-          in
-          let new_module = { Module.module_id; module_name; source_path; pyrefly_info_path } in
-          Map.update sofar module_name ~f:(function
-              | Some existing_module -> handle_duplicate_module_names existing_module new_module
-              | None -> new_module)
+      Map.update sofar module_name ~f:(function
+          | None -> [module_info]
+          | Some existing -> module_info :: existing)
     in
-    Map.fold ~init:Ast.Reference.Map.empty ~f:add_module modules
+    modules
+    |> Map.fold ~init:Ast.Reference.Map.empty ~f:add_to_module_name_mapping
+    |> Map.to_alist
+    |> List.map ~f:make_unique_qualifiers
+    |> List.concat
+    |> Qualifier.Map.of_alist_exn
+    |> Qualifier.Map.map ~f:(Module.from_project ~pyrefly_directory)
 
 
-  let parse_module_info_files ~scheduler ~scheduler_policies ~pyrefly_directory ~modules =
+  let parse_module_info_files
+      ~scheduler
+      ~scheduler_policies
+      ~pyrefly_directory
+      ~qualifier_to_module_map
+    =
     let handle = TypeOfExpressionsSharedMemory.create () in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -439,21 +534,23 @@ module ReadWrite = struct
              ~preferred_chunks_per_worker:1
              ())
     in
-    let parse_module_info (module_name, pyrefly_info_path) =
+    let parse_module_info (qualifier, pyrefly_info_path) =
       let { ModuleInfoFile.type_of_expression; module_id = _; module_name = _; source_path = _ } =
         ModuleInfoFile.from_path_exn ~pyrefly_directory pyrefly_info_path
       in
       Map.iteri type_of_expression ~f:(fun ~key:location ~data:ty ->
           TypeOfExpressionsSharedMemory.add
             handle
-            { TypeOfExpressionsSharedMemory.Key.module_name; location }
+            { TypeOfExpressionsSharedMemory.Key.qualifier; location }
             ty)
     in
     let inputs =
-      modules
-      |> Map.data
-      |> List.map ~f:(fun { Module.module_name; pyrefly_info_path; _ } ->
-             module_name, pyrefly_info_path)
+      qualifier_to_module_map
+      |> Map.to_alist
+      |> List.filter_map ~f:(fun (qualifier, { Module.pyrefly_info_path; _ }) ->
+             match pyrefly_info_path with
+             | Some pyrefly_info_path -> Some (qualifier, pyrefly_info_path)
+             | None -> None)
     in
     let () =
       Scheduler.map_reduce
@@ -468,16 +565,16 @@ module ReadWrite = struct
     handle
 
 
-  let write_module_infos_to_shared_memory ~modules =
+  let write_module_infos_to_shared_memory ~qualifier_to_module_map =
     let timer = Timer.start () in
     let () = Log.info "Writing modules to shared memory..." in
     let handle = ModuleInfosSharedMemory.create () in
     let () =
-      Map.data modules
-      |> List.iter ~f:(fun { Module.module_name; source_path; _ } ->
+      Map.to_alist qualifier_to_module_map
+      |> List.iter ~f:(fun (qualifier, { Module.source_path; _ }) ->
              ModuleInfosSharedMemory.add
                handle
-               module_name
+               qualifier
                { ModuleInfosSharedMemory.Module.source_path })
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
@@ -489,7 +586,7 @@ module ReadWrite = struct
       ~scheduler_policies
       ~configuration
       ~module_infos_shared_memory
-      ~modules
+      ~qualifier_to_module_map
     =
     let timer = Timer.start () in
     let () = Log.info "Parsing source files..." in
@@ -500,40 +597,48 @@ module ReadWrite = struct
         ~string_annotation_preserve_location:false
         configuration
     in
-    let parse_module module_name =
-      let { ModuleInfosSharedMemory.Module.source_path; _ } =
-        Option.value_exn (ModuleInfosSharedMemory.get module_infos_shared_memory module_name)
-      in
-      let load_result =
-        try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
-        | Sys_error error ->
-            Error
-              (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp source_path error)
-      in
-      let pyre1_module_path =
-        Ast.ModulePath.create
-          ~should_type_check:true
-          {
-            Ast.ModulePath.Raw.relative = source_path |> ArtifactPath.raw |> PyrePath.absolute;
-            priority = 0;
-          }
-      in
+    let parse_module qualifier =
       let parse_result =
-        Analysis.Parsing.parse_result_of_load_result ~controls pyre1_module_path load_result
+        match ModuleInfosSharedMemory.get module_infos_shared_memory qualifier with
+        | None -> failwith "unexpected: missing module info for qualifier"
+        | Some { ModuleInfosSharedMemory.Module.source_path = None } -> OptionalSource.NoSource
+        | Some { ModuleInfosSharedMemory.Module.source_path = Some source_path } ->
+            let load_result =
+              try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
+              | Sys_error error ->
+                  Error
+                    (Format.asprintf
+                       "Cannot open file `%a` due to: %s"
+                       ArtifactPath.pp
+                       source_path
+                       error)
+            in
+            let pyre1_module_path =
+              Ast.ModulePath.create
+                ~should_type_check:true
+                {
+                  Ast.ModulePath.Raw.relative = source_path |> ArtifactPath.raw |> PyrePath.absolute;
+                  priority = 0;
+                }
+            in
+            let parse_result =
+              Analysis.Parsing.parse_result_of_load_result ~controls pyre1_module_path load_result
+            in
+            let () =
+              match parse_result with
+              | Ok _ -> ()
+              | Error { Analysis.Parsing.ParseResult.Error.location; message; _ } ->
+                  Log.error
+                    "%a:%a: %s"
+                    PyrePath.pp
+                    (source_path |> ArtifactPath.raw)
+                    Ast.Location.pp
+                    location
+                    message
+            in
+            OptionalSource.Some parse_result
       in
-      let () =
-        match parse_result with
-        | Ok _ -> ()
-        | Error { Analysis.Parsing.ParseResult.Error.location; message; _ } ->
-            Log.error
-              "%a:%a: %s"
-              PyrePath.pp
-              (source_path |> ArtifactPath.raw)
-              Ast.Location.pp
-              location
-              message
-      in
-      AstsSharedMemory.add handle module_name parse_result
+      AstsSharedMemory.add handle qualifier parse_result
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -553,7 +658,7 @@ module ReadWrite = struct
         ~initial:()
         ~map:(List.iter ~f:parse_module)
         ~reduce:(fun () () -> ())
-        ~inputs:(Map.keys modules)
+        ~inputs:(Map.keys qualifier_to_module_map)
         ()
     in
     Log.info "Parsed source files: %.3fs" (Timer.stop_in_sec timer);
@@ -578,9 +683,13 @@ module ReadWrite = struct
     let project =
       ProjectFile.from_path_exn (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
-    let modules = create_module_mapping ~pyrefly_directory project in
+    let qualifier_to_module_map = create_module_mapping ~pyrefly_directory project in
     let type_of_expressions_shared_memory =
-      parse_module_info_files ~scheduler ~scheduler_policies ~pyrefly_directory ~modules
+      parse_module_info_files
+        ~scheduler
+        ~scheduler_policies
+        ~pyrefly_directory
+        ~qualifier_to_module_map
     in
     Log.info "Parsed results from pyrefly: %.3fs" (Timer.stop_in_sec timer);
     Statistics.performance
@@ -588,14 +697,20 @@ module ReadWrite = struct
       ~phase_name:"Parsing results from pyrefly"
       ~command:"analyze"
       ~timer
-      ~integers:["modules", Map.length modules]
+      ~integers:["modules", Map.length qualifier_to_module_map]
       ();
 
-    let module_infos_shared_memory = write_module_infos_to_shared_memory ~modules in
+    let module_infos_shared_memory = write_module_infos_to_shared_memory ~qualifier_to_module_map in
 
-    let module_list_shared_memory =
-      let handle = ModuleListSharedMemory.create () in
-      let () = ModuleListSharedMemory.add handle Memory.SingletonKey.key (Map.keys modules) in
+    let qualifiers_with_source_shared_memory =
+      let handle = QualifiersWithSourceSharedMemory.create () in
+      let qualifiers =
+        qualifier_to_module_map
+        |> Map.to_alist
+        |> List.filter ~f:(fun (_, { Module.source_path; _ }) -> Option.is_some source_path)
+        |> List.map ~f:fst
+      in
+      let () = QualifiersWithSourceSharedMemory.add handle Memory.SingletonKey.key qualifiers in
       handle
     in
 
@@ -605,13 +720,13 @@ module ReadWrite = struct
         ~scheduler_policies
         ~configuration
         ~module_infos_shared_memory
-        ~modules
+        ~qualifier_to_module_map
     in
 
     {
-      modules;
+      qualifier_to_module_map;
       module_infos_shared_memory;
-      module_list_shared_memory;
+      qualifiers_with_source_shared_memory;
       asts_shared_memory;
       type_of_expressions_shared_memory;
     }
@@ -620,18 +735,18 @@ module ReadWrite = struct
   (* TODO(T225700656): Remove this, this is to silence the unused value warning *)
   let unused
       {
-        modules;
+        qualifier_to_module_map;
         module_infos_shared_memory;
-        module_list_shared_memory;
+        qualifiers_with_source_shared_memory;
         asts_shared_memory;
         type_of_expressions_shared_memory;
       }
     =
     let _ = Module.pp in
     let _ =
-      ( modules,
+      ( qualifier_to_module_map,
         module_infos_shared_memory,
-        module_list_shared_memory,
+        qualifiers_with_source_shared_memory,
         asts_shared_memory,
         type_of_expressions_shared_memory )
     in
@@ -644,33 +759,52 @@ end
 module ReadOnly = struct
   type t = {
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
-    module_list_shared_memory: ModuleListSharedMemory.t;
+    qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     asts_shared_memory: AstsSharedMemory.t;
   }
 
   let of_read_write_api
-      { ReadWrite.module_infos_shared_memory; module_list_shared_memory; asts_shared_memory; _ }
+      {
+        ReadWrite.module_infos_shared_memory;
+        qualifiers_with_source_shared_memory;
+        asts_shared_memory;
+        _;
+      }
     =
-    { module_infos_shared_memory; module_list_shared_memory; asts_shared_memory }
+    { module_infos_shared_memory; qualifiers_with_source_shared_memory; asts_shared_memory }
+
+
+  (* This is called when we expect the key to be present in shared memory *)
+  let assert_shared_memory_key_exists message = function
+    | Some value -> value
+    | None -> failwith (Format.sprintf "unexpected: %s" message)
 
 
   let absolute_source_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
-    ModuleInfosSharedMemory.get module_infos_shared_memory qualifier
-    >>| (fun { ModuleInfosSharedMemory.Module.source_path; _ } -> source_path)
+    ModuleInfosSharedMemory.get module_infos_shared_memory (Qualifier.from_reference qualifier)
+    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> fun { ModuleInfosSharedMemory.Module.source_path; _ } ->
+    source_path
     (* TODO(T225700656): We currently return the artifact path, it should be translated back into a
        source path by buck *)
     >>| ArtifactPath.raw
     >>| PyrePath.absolute
 
 
-  (* Return all modules with source code *)
-  let explicit_qualifiers { module_list_shared_memory; _ } =
-    Option.value_exn (ModuleListSharedMemory.get module_list_shared_memory Memory.SingletonKey.key)
+  (* Return all qualifiers with source code *)
+  let explicit_qualifiers { qualifiers_with_source_shared_memory; _ } =
+    QualifiersWithSourceSharedMemory.get
+      qualifiers_with_source_shared_memory
+      Memory.SingletonKey.key
+    |> assert_shared_memory_key_exists "missing qualifiers with source in shared memory"
+    |> List.map ~f:Qualifier.to_reference
 
 
   let source_of_qualifier { asts_shared_memory; _ } qualifier =
-    AstsSharedMemory.get asts_shared_memory qualifier
-    >>= function
-    | Result.Ok source -> Some source
-    | Result.Error _ -> None
+    AstsSharedMemory.get asts_shared_memory (Qualifier.from_reference qualifier)
+    |> assert_shared_memory_key_exists "missing source for qualifier"
+    |> function
+    | OptionalSource.Some (Result.Ok source) -> Some source
+    | OptionalSource.Some (Result.Error _) -> None
+    | OptionalSource.NoSource -> None
 end

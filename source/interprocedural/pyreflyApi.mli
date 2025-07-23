@@ -53,7 +53,7 @@ module ReadOnly : sig
 
   val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
 
-  (* Return all modules with source code *)
+  (* Return all qualifiers with source code *)
   val explicit_qualifiers : t -> Ast.Reference.t list
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
