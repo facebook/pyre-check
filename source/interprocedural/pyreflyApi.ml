@@ -742,7 +742,7 @@ module ReadWrite = struct
         type_of_expressions_shared_memory;
       }
     =
-    let _ = Module.pp in
+    let _ = Module.pp, Qualifier.show, Qualifier.pp in
     let _ =
       ( qualifier_to_module_map,
         module_infos_shared_memory,

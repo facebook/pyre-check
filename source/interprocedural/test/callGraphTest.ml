@@ -5705,6 +5705,89 @@ let test_call_graph_of_define =
                       ()) );
              ]
            ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+      from typing import Callable
+      def decorator_1(callable: Callable[[int], int]):
+        return callable
+      def decorator_2(callable: Callable[[int], int]):
+        return callable
+      def decorator_3(callable: Callable[[int], int]):
+        return callable
+
+      class Foo:
+        @decorator_2
+        def callee_1(self, x: int) -> int:
+          return x
+        @decorator_2
+        def callee_2(self, x: int) -> int:
+          return x
+        def not_callee_1(self, x: int) -> int:
+          return x
+        @decorator_3
+        def not_callee_2(self, x: int) -> int:
+          return x
+
+      @decorator_1
+      def caller(foo: Foo) -> Foo:  # Test return callees
+        return foo
+    |}
+           ~define_name:"test.caller"
+           ~expected:
+             [
+               ( "25:9-25:12|identifier|$parameter$foo",
+                 ExpressionCallees.from_return
+                   {
+                     ReturnShimCallees.call_targets =
+                       [
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee_1"; kind = Normal });
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee_2"; kind = Normal });
+                       ];
+                     arguments = [ReturnShimCallees.ReturnExpression];
+                   } );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+      from typing import Callable, Optional
+      def decorator_1(callable: Callable[[int], int]):
+        return callable
+      def decorator_2(callable: Callable[[int], int]):
+        return callable
+
+      class Foo:
+        @decorator_2
+        def callee(self, x: int) -> int:
+          return x
+
+      @decorator_1
+      def caller(foo: Foo) -> Optional[Foo]:  # Test stripping
+        return foo
+    |}
+           ~define_name:"test.caller"
+           ~expected:
+             [
+               ( "15:9-15:12|identifier|$parameter$foo",
+                 ExpressionCallees.from_return
+                   {
+                     ReturnShimCallees.call_targets =
+                       [
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee"; kind = Normal });
+                       ];
+                     arguments = [ReturnShimCallees.ReturnExpression];
+                   } );
+             ]
+           ();
     ]
 
 

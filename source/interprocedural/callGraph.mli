@@ -327,6 +327,17 @@ module DefineCallees : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+(* Artificial callees on returned expressions. *)
+module ReturnShimCallees : sig
+  type argument_mapping = ReturnExpression
+
+  type t = {
+    call_targets: CallTarget.t list;
+    arguments: argument_mapping list;
+  }
+  [@@deriving eq, show]
+end
+
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
   type t =
@@ -336,6 +347,7 @@ module ExpressionCallees : sig
     | FormatStringArtificial of FormatStringArtificialCallees.t
     | FormatStringStringify of FormatStringStringifyCallees.t
     | Define of DefineCallees.t
+    | Return of ReturnShimCallees.t
   [@@deriving eq, show]
 
   val from_call : CallCallees.t -> t
@@ -349,6 +361,8 @@ module ExpressionCallees : sig
   val from_format_string_stringify : FormatStringStringifyCallees.t -> t
 
   val from_define : DefineCallees.t -> t
+
+  val from_return : ReturnShimCallees.t -> t
 
   val to_json : t -> Yojson.Safe.t
 

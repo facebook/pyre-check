@@ -31,3 +31,5 @@ val readonly_entrypoint_decorators : String.Set.t
 val readonly_modules_to_ignore : String.Set.t
 
 val classes_safe_to_coerce_readonly_to_mutable : String.Set.t
+
+val graphql_decorators : (string * string) list

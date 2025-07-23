@@ -30,9 +30,11 @@ module JsonHelper = struct
     | None -> bindings
 
 
+  let add name value bindings = (name, value) :: bindings
+
   let add_flag_if name value condition bindings =
     if condition then
-      (name, value) :: bindings
+      add name value bindings
     else
       bindings
 
@@ -1759,6 +1761,39 @@ module DefineCallees = struct
     (* No need to regenerate because these will not be used in taint analysis. *) callees
 end
 
+(* Artificial callees on returned expressions. *)
+module ReturnShimCallees = struct
+  type argument_mapping = ReturnExpression [@@deriving eq, show { with_path = false }]
+
+  type t = {
+    call_targets: CallTarget.t list;
+    arguments: argument_mapping list;
+  }
+  [@@deriving eq, show { with_path = false }]
+
+  let dedup_and_sort ({ call_targets; _ } as return_callees) =
+    { return_callees with call_targets = CallTarget.dedup_and_sort call_targets }
+
+
+  let all_targets ~use_case:_ { call_targets; _ } = List.map ~f:CallTarget.target call_targets
+
+  let to_json { call_targets; arguments } =
+    let bindings =
+      []
+      |> JsonHelper.add_list "call_targets" call_targets CallTarget.to_json
+      |> JsonHelper.add_list "arguments_mapping" arguments (fun argument_mapping ->
+             `String (show_argument_mapping argument_mapping))
+    in
+    `Assoc bindings
+
+
+  let regenerate_call_indices ~indexer ({ call_targets; _ } as return_callees) =
+    {
+      return_callees with
+      call_targets = List.map ~f:(CallTarget.Indexer.regenerate_index ~indexer) call_targets;
+    }
+end
+
 (** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees = struct
   type t =
@@ -1768,6 +1803,7 @@ module ExpressionCallees = struct
     | FormatStringArtificial of FormatStringArtificialCallees.t
     | FormatStringStringify of FormatStringStringifyCallees.t
     | Define of DefineCallees.t
+    | Return of ReturnShimCallees.t
   [@@deriving eq, show { with_path = false }]
 
   let from_call callees = Call callees
@@ -1781,6 +1817,8 @@ module ExpressionCallees = struct
   let from_format_string_stringify callees = FormatStringStringify callees
 
   let from_define callees = Define callees
+
+  let from_return callees = Return callees
 
   let join left right =
     match left, right with
@@ -1812,6 +1850,7 @@ module ExpressionCallees = struct
     | FormatStringStringify callees ->
         FormatStringStringify (FormatStringStringifyCallees.dedup_and_sort callees)
     | Define callees -> Define (DefineCallees.dedup_and_sort callees)
+    | Return callees -> Return (ReturnShimCallees.dedup_and_sort callees)
 
 
   let all_targets ~use_case = function
@@ -1821,6 +1860,7 @@ module ExpressionCallees = struct
     | FormatStringArtificial callees -> FormatStringArtificialCallees.all_targets ~use_case callees
     | FormatStringStringify callees -> FormatStringStringifyCallees.all_targets ~use_case callees
     | Define callees -> DefineCallees.all_targets ~use_case callees
+    | Return callees -> ReturnShimCallees.all_targets ~use_case callees
 
 
   let is_empty_attribute_access_callees = function
@@ -1851,6 +1891,7 @@ module ExpressionCallees = struct
     | FormatStringStringify callees ->
         `Assoc ["format_string_stringify", FormatStringStringifyCallees.to_json callees]
     | Define callees -> `Assoc ["define", DefineCallees.to_json callees]
+    | Return callees -> `Assoc ["return", ReturnShimCallees.to_json callees]
 
 
   let redirect_to_decorated ~decorators = function
@@ -1865,6 +1906,7 @@ module ExpressionCallees = struct
         FormatStringStringify
           (FormatStringStringifyCallees.redirect_to_decorated ~decorators callees)
     | Define callees -> Define (DefineCallees.redirect_to_decorated ~decorators callees)
+    | Return callees -> Return callees
 
 
   let drop_decorated_targets = function
@@ -1877,6 +1919,7 @@ module ExpressionCallees = struct
     | FormatStringStringify callees ->
         FormatStringStringify (FormatStringStringifyCallees.drop_decorated_targets callees)
     | Define callees -> Define (DefineCallees.drop_decorated_targets callees)
+    | Return callees -> Return callees
 
 
   let regenerate_call_indices ~indexer callees =
@@ -1893,6 +1936,7 @@ module ExpressionCallees = struct
         FormatStringStringify
           (FormatStringStringifyCallees.regenerate_call_indices ~indexer callees)
     | Define callees -> Define (DefineCallees.regenerate_call_indices ~indexer callees)
+    | Return callees -> Return (ReturnShimCallees.regenerate_call_indices ~indexer callees)
 end
 
 let log ~debug format =
@@ -2156,6 +2200,15 @@ module DefineCallGraph = struct
         (Node.create_with_default_location
            (Expression.Name (Name.Identifier (Format.asprintf "def %a(): ..." Reference.pp name))))
       ~callees:(ExpressionCallees.from_define callees)
+
+
+  let add_return_callees ~debug ~caller ~return_expression ~callees =
+    add_callees
+      ~debug
+      ~caller
+      ~expression_identifier:(ExpressionIdentifier.of_expression return_expression)
+      ~expression_for_logging:return_expression
+      ~callees:(ExpressionCallees.from_return callees)
 
 
   let set_call_callees ~location ~call ~callees =
@@ -4357,6 +4410,7 @@ module CallGraphBuilder = struct
       missing_flow_type_analysis: MissingFlowTypeAnalysis.t option;
       attribute_targets: Target.HashSet.t;
       callables_to_definitions_map: Target.CallablesSharedMemory.ReadOnly.t;
+      callables_to_decorators_map: CallableToDecoratorsMap.SharedMemory.ReadOnly.t;
       type_of_expression_shared_memory: TypeOfExpressionSharedMemory.t;
       expression_identifier_invariant: ExpressionIdentifierInvariant.t option;
     }
@@ -4829,6 +4883,90 @@ module CallGraphBuilder = struct
     ()
 end
 
+(* On return expressions, we may want to have additional callees to simulate the usage of the
+   returned values. For example, when returning a GraphQL query entrypoint object, the object will
+   be used for querying but the queries are not explicit in the source code. Here we explicate the
+   queries by calling the methods in the returned object. *)
+let register_callees_on_return
+    ~debug
+    ~pyre_in_context
+    ~callables_to_decorators_map
+    ~callables_to_definitions_map
+    ~callable
+    ~return_expression
+    callees_at_location
+  =
+  let get_decorator_names callable =
+    callable
+    |> CallableToDecoratorsMap.SharedMemory.ReadOnly.get callables_to_decorators_map
+    >>| (fun { decorators; _ } ->
+          List.filter_map decorators ~f:(fun decorator ->
+              match Ast.Statement.Decorator.from_expression decorator with
+              | Some { Decorator.name = { Node.value = decorator_name; _ }; _ } ->
+                  Some (Reference.show decorator_name)
+              | _ -> None))
+    |> Option.value ~default:[]
+    |> Data_structures.SerializableStringSet.of_list
+  in
+  let decorator_names = get_decorator_names callable in
+  let method_decorator =
+    List.find_map Recognized.graphql_decorators ~f:(fun (callable_decorator, method_decorator) ->
+        if Data_structures.SerializableStringSet.mem callable_decorator decorator_names then
+          Some method_decorator
+        else
+          None)
+  in
+  match return_expression, method_decorator with
+  | Some return_expression, Some method_decorator ->
+      let return_expression_type =
+        return_expression
+        |> CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map
+        |> CallResolution.strip_optional (* TODO: Strip Sequence, List, ... *)
+      in
+      let return_expression_type_string = Type.primitive_name return_expression_type in
+      let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
+      let has_decorator_with_name ~decorator_name:name callable =
+        callable |> get_decorator_names |> Data_structures.SerializableStringSet.mem name
+      in
+      let methods_in_return_expression_type =
+        return_expression_type
+        |> Type.primitive_name
+        >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
+        |> Option.join
+        >>| Node.value
+        >>| PyrePysaLogic.ClassSummary.attributes
+        >>| Identifier.SerializableMap.data
+        |> Option.value ~default:[]
+        |> List.filter_map
+             ~f:(fun { Node.value = { PyrePysaLogic.ClassSummary.Attribute.kind; name }; _ } ->
+               match kind with
+               | PyrePysaLogic.ClassSummary.Attribute.Method _ -> (
+                   let target =
+                     return_expression_type_string
+                     >>| fun return_expression_type_string ->
+                     Target.create_method (Reference.create return_expression_type_string) name
+                   in
+                   match target with
+                   | Some target
+                     when has_decorator_with_name ~decorator_name:method_decorator target ->
+                       Some (CallTarget.create target)
+                   | _ -> None)
+               | _ -> None)
+      in
+      callees_at_location :=
+        DefineCallGraph.add_return_callees
+          ~debug
+          ~caller:callable
+          ~return_expression
+          ~callees:
+            {
+              ReturnShimCallees.call_targets = methods_in_return_expression_type;
+              arguments = [ReturnExpression];
+            }
+          !callees_at_location
+  | _ -> ()
+
+
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -4895,7 +5033,19 @@ struct
           let () = Option.iter ~f:forward_expression from in
           let () = Option.iter ~f:forward_expression expression in
           ()
-      | Return { expression; is_implicit = _ } -> Option.iter ~f:forward_expression expression
+      | Return { expression = return_expression; is_implicit = _ } ->
+          let () = Option.iter ~f:forward_expression return_expression in
+          let () =
+            register_callees_on_return
+              ~debug
+              ~pyre_in_context
+              ~callables_to_decorators_map:Context.builder_context.callables_to_decorators_map
+              ~callables_to_definitions_map:Context.builder_context.callables_to_definitions_map
+              ~callable
+              ~return_expression
+              Context.callees_at_location
+          in
+          ()
       | TypeAlias { name; type_params = _; value } ->
           let () = forward_expression name in
           let () = forward_expression value in
@@ -6165,6 +6315,8 @@ module HigherOrderCallGraph = struct
         | Raise { expression = Some expression; _ } ->
             analyze_expression ~pyre_in_context ~state ~expression |> snd
         | Return { expression = Some expression; _ } ->
+            (* No need to propagate `ReturnShimCallees`, since the taint analysis only need to
+               analyze them once. TODO(T231956685): Resolve decorated targets. *)
             let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
             store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
         | Return { expression = None; _ }
@@ -6350,6 +6502,7 @@ let call_graph_of_define
       override_graph;
       attribute_targets;
       callables_to_definitions_map;
+      callables_to_decorators_map = decorators;
       type_of_expression_shared_memory;
       expression_identifier_invariant =
         (if check_invariants then Some (ExpressionIdentifierInvariant.create ()) else None);
@@ -6549,6 +6702,7 @@ module DecoratorResolution = struct
           override_graph;
           attribute_targets = Target.HashSet.create ();
           callables_to_definitions_map;
+          callables_to_decorators_map = decorators_map;
           type_of_expression_shared_memory;
           expression_identifier_invariant = None;
         }

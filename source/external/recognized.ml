@@ -55,3 +55,12 @@ let classes_safe_to_coerce_readonly_to_mutable =
       "readonly_stubs_for_testing.MySafeReadOnlyInt";
       "readonly_stubs_for_testing.MySafeReadOnlyIdType";
     ]
+
+
+(* Tuples of decorators. For any tuple (x, y), it means if a callable is decorated by x, then find
+   all callables that are decorated with y in the return type of the callable. *)
+let graphql_decorators =
+  [
+    "graphqlserver.types.graphql_root_field", "graphqlserver.types.graphql_field";
+    "test.decorator_1", "test.decorator_2" (* For testing only *);
+  ]
