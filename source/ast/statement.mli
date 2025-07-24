@@ -331,6 +331,13 @@ and Define : sig
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
 
   val has_return_annotation : t -> bool
+
+  val create_class_toplevel
+    :  unbound_names:NameAccess.t list ->
+    module_name:Reference.t ->
+    local_context:NestingContext.t ->
+    statements:Statement.t list ->
+    t
 end
 
 and For : sig
