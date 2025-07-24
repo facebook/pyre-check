@@ -11,6 +11,7 @@
 open Core
 open Pyre
 open Data_structures
+open Ast
 
 module FormatError = struct
   type t =
@@ -159,11 +160,11 @@ end
 module Qualifier : sig
   type t [@@deriving compare, sexp, hash, show]
 
-  val create : path:string option -> Ast.Reference.t -> t
+  val create : path:string option -> Reference.t -> t
 
   (* The taint analysis uses Reference.t to uniquely represent modules, so we use
      to_reference/from_reference to convert to that type *)
-  val to_reference : t -> Ast.Reference.t
+  val to_reference : t -> Reference.t
 
   val from_reference : Ast.Reference.t -> t
 
@@ -232,7 +233,7 @@ module ProjectFile = struct
   module Module = struct
     type t = {
       module_id: ModuleId.t;
-      module_name: Ast.Reference.t;
+      module_name: Reference.t;
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
     }
@@ -252,7 +253,7 @@ module ProjectFile = struct
       >>| fun module_path ->
       {
         module_id = ModuleId.from_int module_id;
-        module_name = Ast.Reference.create module_name;
+        module_name = Reference.create module_name;
         module_path;
         info_path = Option.map ~f:ModuleInfoPath.create info_path;
       }
@@ -298,9 +299,9 @@ module ModuleInfoFile = struct
     (* TODO(T225700656): module_id, module_name and source_path are already specified in the Project
        module. We should probably remove those from the file format. *)
     module_id: ModuleId.t;
-    module_name: Ast.Reference.t;
+    module_name: Reference.t;
     source_path: ModulePath.t;
-    type_of_expression: string Ast.Location.Map.t;
+    type_of_expression: string Location.Map.t;
   }
 
   let from_json json =
@@ -308,12 +309,12 @@ module ModuleInfoFile = struct
     let parse_type_of_expression type_of_expression =
       type_of_expression
       |> List.map ~f:(fun (location, ty) ->
-             Ast.Location.from_string location
+             Location.from_string location
              |> Result.map_error ~f:(fun error ->
                     FormatError.UnexpectedJsonType { json = `String location; message = error })
              >>= fun location -> JsonUtil.as_string ty >>| fun ty -> location, ty)
       |> Result.all
-      >>| Ast.Location.Map.of_alist_exn
+      >>| Location.Map.of_alist_exn
     in
     JsonUtil.check_object json
     >>= fun () ->
@@ -332,7 +333,7 @@ module ModuleInfoFile = struct
     >>| fun type_of_expression ->
     {
       module_id = ModuleId.from_int module_id;
-      module_name = Ast.Reference.create module_name;
+      module_name = Reference.create module_name;
       source_path;
       type_of_expression;
     }
@@ -351,6 +352,7 @@ module ModuleInfoFile = struct
     | Error error -> raise (PyreflyFileFormatError { path; error = Error.FormatError error })
 end
 
+(* Information about a module, stored in shared memory. *)
 module ModuleInfosSharedMemory = struct
   module Module = struct
     type t = {
@@ -387,7 +389,7 @@ module TypeOfExpressionsSharedMemory = struct
   module Key = struct
     type t = {
       qualifier: Qualifier.t;
-      location: Ast.Location.t;
+      location: Location.t;
     }
     [@@deriving compare, sexp]
 
@@ -432,7 +434,7 @@ module ReadWrite = struct
   module Module = struct
     type t = {
       module_id: ModuleId.t;
-      module_name: Ast.Reference.t;
+      module_name: Reference.t;
       source_path: ArtifactPath.t option; (* The path of source code as seen by the analyzer. *)
       pyrefly_info_path: ModuleInfoPath.t option;
     }
@@ -510,7 +512,7 @@ module ReadWrite = struct
           | Some existing -> module_info :: existing)
     in
     modules
-    |> Map.fold ~init:Ast.Reference.Map.empty ~f:add_to_module_name_mapping
+    |> Map.fold ~init:Reference.Map.empty ~f:add_to_module_name_mapping
     |> Map.to_alist
     |> List.map ~f:make_unique_qualifiers
     |> List.concat
