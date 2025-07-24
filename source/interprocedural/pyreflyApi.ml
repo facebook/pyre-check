@@ -110,7 +110,8 @@ module JsonUtil = struct
         Error (FormatError.UnexpectedJsonType { json; message = "expected root to be an object" })
 end
 
-(* Represents the `pyrefly_python::module_path::ModulePathDetails` rust type. *)
+(* Path of a module, equivalent of the `pyrefly_python::module_path::ModulePathDetails` rust
+   type. *)
 module ModulePath = struct
   type t =
     | Filesystem of ArtifactPath.t
@@ -141,8 +142,7 @@ module ModulePath = struct
           |> ArtifactPath.create)
 end
 
-(* Represents the unique identifier assigned to a module by pyrefly. This represents a specific
-   module name and path. *)
+(* Unique identifier for a module, assigned by pyrefly. This maps to a source file. *)
 module ModuleId : sig
   type t [@@deriving compare, sexp, hash, show]
 
@@ -153,10 +153,9 @@ end = struct
   let from_int = Fn.id
 end
 
-(* Represents the unique identifier assigned to a module by pysa. This represents a specific module
-   name and path. Note that this is converted into `Ast.Reference.t` during the taint analysis for
-   backward compatibility with the old Pyre1 API, which assumes a module name can only map to one
-   source file. *)
+(* Unique identifier for a module, assigned by pysa. This maps to a specific source file. Note that
+   this is converted into `Reference.t` during the taint analysis for backward compatibility with
+   the old Pyre1 API, which assumes a module name can only map to one source file. *)
 module Qualifier : sig
   type t [@@deriving compare, sexp, hash, show]
 
@@ -212,7 +211,7 @@ module QualifierSharedMemoryKey = struct
     s |> Analysis.SharedMemoryKeys.ReferenceKey.from_string |> Qualifier.from_reference
 end
 
-(* Represents the path to a pyrefly module information file *)
+(* Path to a pyrefly module information file. *)
 module ModuleInfoPath : sig
   type t [@@deriving compare, sexp, hash, show]
 
@@ -227,7 +226,7 @@ end = struct
   let raw = Fn.id
 end
 
-(* Represents the content of the `pyrefly.pysa.json` file. This matches the
+(* Content of the `pyrefly.pysa.json` file exported by pyrefly. This matches the
    `pyrefly::report::pysa::PysaProjectFile` rust type. *)
 module ProjectFile = struct
   module Module = struct
@@ -292,8 +291,8 @@ module ProjectFile = struct
   let _ = Module.pp, ModuleId.show, ModuleInfoPath.show
 end
 
-(* Represents information from pyrefly about a given module, stored as a `module:id.json` file. This
-   matches the `pyrefly::report::pysa::PysaModuleFile` rust type. *)
+(* Information from pyrefly about a given module, stored as a `module:id.json` file. This matches
+   the `pyrefly::report::pysa::PysaModuleFile` rust type. *)
 module ModuleInfoFile = struct
   type t = {
     (* TODO(T225700656): module_id, module_name and source_path are already specified in the Project
@@ -371,6 +370,7 @@ module ModuleInfosSharedMemory = struct
       end)
 end
 
+(* List of module qualifiers with soruce code, stored in shared memory. *)
 module QualifiersWithSourceSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (Memory.SingletonKey)
@@ -382,6 +382,7 @@ module QualifiersWithSourceSharedMemory =
       let description = "pyrefly all modules"
     end)
 
+(* Type of expression at a given module qualifier and location, stored in shared memory. *)
 module TypeOfExpressionsSharedMemory = struct
   module Key = struct
     type t = {
@@ -413,6 +414,7 @@ module OptionalSource = struct
     | NoSource
 end
 
+(* Abstract Syntax Tree of a module, stored in shared memory. *)
 module AstsSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (QualifierSharedMemoryKey)
