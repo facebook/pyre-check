@@ -19,7 +19,7 @@ type t =
       (* Invariant: not a transform. *)
       base: t;
     }
-[@@deriving compare, eq, show]
+[@@deriving compare, equal, show]
 
 val name : string
 

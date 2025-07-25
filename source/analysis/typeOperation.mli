@@ -9,7 +9,7 @@ type callable_and_self_argument = {
   callable: Type.Callable.t;
   self_argument: Type.t option;
 }
-[@@deriving show, eq]
+[@@deriving show, equal]
 
 module TypeOperation : sig
   module Compose : sig

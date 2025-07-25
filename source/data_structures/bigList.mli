@@ -7,7 +7,7 @@
 
 (** A BigList is a list that keeps a "length" integer, so that BigList.length can be O(1) rather
     than O(n). *)
-type 'a t [@@deriving sexp, hash, eq]
+type 'a t [@@deriving sexp, hash, equal]
 
 val empty : 'a t
 

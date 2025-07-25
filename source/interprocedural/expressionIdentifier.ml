@@ -44,7 +44,7 @@ module T = struct
         location: Location.t;
         constant: Constant.t;
       }
-  [@@deriving compare, eq, sexp, hash, show { with_path = false }]
+  [@@deriving compare, equal, sexp, hash, show { with_path = false }]
 
   let location = function
     | Regular location

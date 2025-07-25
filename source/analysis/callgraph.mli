@@ -23,13 +23,13 @@ and callee =
       class_name: Type.t;
       direct_target: Reference.t;
     }
-[@@deriving sexp, compare, eq, show]
+[@@deriving sexp, compare, equal, show]
 
 type callee_with_locations = {
   callee: callee;
   locations: Location.WithModule.t list;
 }
-[@@deriving eq]
+[@@deriving equal]
 
 val callee_to_yojson : ?locations:Location.WithPath.t list -> callee -> Yojson.Safe.t
 

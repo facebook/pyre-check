@@ -17,7 +17,7 @@ open Pyre
 type analysis =
   | Forward
   | Backward
-[@@deriving eq, sexp, compare]
+[@@deriving equal, sexp, compare]
 
 module StepEvent = struct
   type t = {

@@ -13,7 +13,7 @@ type 'a t = {
   length: Core.Int.t;
   list: 'a List.t;
 }
-[@@deriving sexp, hash, eq]
+[@@deriving sexp, hash, equal]
 
 let empty = { length = 0; list = [] }
 

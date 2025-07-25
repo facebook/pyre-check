@@ -12,14 +12,14 @@ type kind =
   | Normal
   | PropertySetter
   | Decorated
-[@@deriving show, sexp, compare, hash, eq]
+[@@deriving show, sexp, compare, hash, equal]
 
 module Function : sig
   type t = {
     name: string;
     kind: kind;
   }
-  [@@deriving show, sexp, compare, hash, eq]
+  [@@deriving show, sexp, compare, hash, equal]
 end
 
 module Method : sig
@@ -28,7 +28,7 @@ module Method : sig
     method_name: string;
     kind: kind;
   }
-  [@@deriving show, sexp, compare, hash, eq]
+  [@@deriving show, sexp, compare, hash, equal]
 end
 
 module Regular : sig
@@ -39,7 +39,7 @@ module Regular : sig
     (* Represents a global variable or field of a class that we want to model, * e.g os.environ or
        HttpRequest.GET *)
     | Object of string
-  [@@deriving sexp, compare, hash, eq, show]
+  [@@deriving sexp, compare, hash, equal, show]
 
   val override_to_method : t -> t
 
@@ -66,10 +66,10 @@ type t =
     }
     (* This represents a regular callable with its function-typed parameters being instantited with
        `parameters`. *)
-[@@deriving sexp, compare, hash, eq]
+[@@deriving sexp, compare, hash, equal]
 
 module T : sig
-  type nonrec t = t [@@deriving sexp, compare, hash, eq]
+  type nonrec t = t [@@deriving sexp, compare, hash, equal]
 end
 
 module Map : sig

@@ -15,7 +15,7 @@ type t =
       root: PyrePath.t;
       submodule: string;
     }
-[@@deriving sexp, compare, hash, show, eq]
+[@@deriving sexp, compare, hash, show, equal]
 
 type search_result = {
   relative_path: string;  (** The relative path to one of the search root *)

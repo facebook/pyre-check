@@ -38,7 +38,7 @@ module type Context = sig
 end
 
 module type Signature = sig
-  type t [@@deriving eq]
+  type t [@@deriving equal]
 
   val create : resolution:Resolution.t -> t
 

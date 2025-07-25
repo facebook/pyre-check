@@ -25,14 +25,14 @@ type kind =
   | Decorated
     (* This represents a callable but with all its decorators applied (i.e., the decorated
        function). By contrast, we use `Normal` to represent the undecorated function. *)
-[@@deriving show { with_path = false }, sexp, compare, hash, eq]
+[@@deriving show { with_path = false }, sexp, compare, hash, equal]
 
 module Function = struct
   type t = {
     name: string;
     kind: kind;
   }
-  [@@deriving show { with_path = false }, sexp, compare, hash, eq]
+  [@@deriving show { with_path = false }, sexp, compare, hash, equal]
 
   let create ?(kind = Normal) reference =
     let () =
@@ -48,7 +48,7 @@ module Method = struct
     method_name: string;
     kind: kind;
   }
-  [@@deriving show { with_path = false }, sexp, compare, hash, eq]
+  [@@deriving show { with_path = false }, sexp, compare, hash, equal]
 
   let create ?(kind = Normal) class_name method_name =
     let () =
@@ -66,7 +66,7 @@ module Regular = struct
     (* Represents a global variable or field of a class that we want to model,
      * e.g os.environ or HttpRequest.GET *)
     | Object of string
-  [@@deriving show { with_path = false }, sexp, compare, hash, eq]
+  [@@deriving show { with_path = false }, sexp, compare, hash, equal]
 
   (* Lower priority appears earlier in comparison. *)
   let priority = function
@@ -261,7 +261,7 @@ module T = struct
       }
       (* This represents a regular callable with its function-typed parameters being instantited
          with `parameters`. *)
-  [@@deriving show { with_path = false }, sexp, compare, hash, eq]
+  [@@deriving show { with_path = false }, sexp, compare, hash, equal]
 end
 
 include T

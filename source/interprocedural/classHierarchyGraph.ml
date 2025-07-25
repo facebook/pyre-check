@@ -39,7 +39,7 @@ module Heap = struct
     roots: ClassNameSet.t;
     edges: ClassNameSet.t ClassNameMap.t;
   }
-  [@@deriving eq]
+  [@@deriving equal]
 
   let pp_set formatter set =
     ClassNameSet.iter (fun element -> Format.fprintf formatter "@[%s,@]" element) set

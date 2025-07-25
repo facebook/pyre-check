@@ -52,7 +52,7 @@ module ShimArgumentMapping : sig
         }
       | Constant of Constant.t
       | Reference of Reference.t
-    [@@deriving eq, show { with_path = false }]
+    [@@deriving equal, show { with_path = false }]
 
     val to_json : t -> Yojson.Safe.t
   end
@@ -62,7 +62,7 @@ module ShimArgumentMapping : sig
       name: Identifier.t option;
       value: Target.t;
     }
-    [@@deriving eq, show { with_path = false }]
+    [@@deriving equal, show { with_path = false }]
 
     val to_json : t -> Yojson.Safe.t
   end
@@ -72,7 +72,7 @@ module ShimArgumentMapping : sig
     callee: Target.t;
     arguments: Argument.t list;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   val create_artificial_call : call_location:Location.t -> Call.t -> t -> (Call.t, string) result
 

@@ -39,7 +39,7 @@ module UpdateResult = struct
       | NewExplicit of Ast.ModulePath.t
       | NewImplicit of Ast.Reference.t
       | Delete of Ast.Reference.t
-    [@@deriving show, sexp, compare, eq]
+    [@@deriving show, sexp, compare, equal]
   end
 
   type t = {

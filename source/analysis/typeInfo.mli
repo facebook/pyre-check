@@ -16,7 +16,7 @@ module Unit : sig
     annotation: Type.t;
     mutability: Mutability.t;
   }
-  [@@deriving compare, eq, show, hash, sexp]
+  [@@deriving compare, equal, show, hash, sexp]
 
   val display_as_revealed_type : t -> string
 
@@ -57,7 +57,7 @@ module Unit : sig
 end
 
 module LocalOrGlobal : sig
-  type t [@@deriving eq, show]
+  type t [@@deriving equal, show]
 
   val empty : t
 
@@ -91,7 +91,7 @@ module Store : sig
     type_info: LocalOrGlobal.t Reference.Map.Tree.t;
     temporary_type_info: LocalOrGlobal.t Reference.Map.Tree.t;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val print_as_json : Format.formatter -> t -> unit
 

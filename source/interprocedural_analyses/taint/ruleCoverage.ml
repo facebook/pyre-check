@@ -14,7 +14,7 @@ module CoveredRule = struct
       (* Evidence about why the rule is considered as being "covered". *)
       kind_coverage: KindCoverage.t;
     }
-    [@@deriving eq, show, compare, sexp, hash]
+    [@@deriving equal, show, compare, sexp, hash]
   end
 
   include T
@@ -59,7 +59,7 @@ type t = {
   covered_rules: CoveredRule.Set.t;
   uncovered_rule_codes: IntSet.t;
 }
-[@@deriving eq, show]
+[@@deriving equal, show]
 
 let empty = { covered_rules = CoveredRule.Set.empty; uncovered_rule_codes = IntSet.empty }
 

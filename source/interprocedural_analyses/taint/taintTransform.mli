@@ -12,7 +12,7 @@ type t =
   | TriggeredPartialSink of { triggering_source: string }
     (* We represent triggered partial sinks as partial sinks with TriggeredPartialSink
        transforms. *)
-[@@deriving compare, eq, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
 val pp : Format.formatter -> t -> unit
 

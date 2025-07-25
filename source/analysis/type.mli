@@ -15,7 +15,7 @@ module Record : sig
       | P_Contravariant
       | P_Invariant
       | P_Undefined
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     val show_lowercase : t -> string
   end
@@ -26,7 +26,7 @@ module Record : sig
       | Contravariant
       | Invariant
       | Bivariant
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     val show_lowercase : t -> string
   end
@@ -37,14 +37,14 @@ module Record : sig
       | Explicit of 'annotation list
       | Unconstrained
       | LiteralIntegers
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 
   module Variable : sig
-    type state [@@deriving compare, eq, sexp, show, hash]
+    type state [@@deriving compare, equal, sexp, show, hash]
 
     module Namespace : sig
-      type t [@@deriving compare, eq, sexp, show, hash]
+      type t [@@deriving compare, equal, sexp, show, hash]
     end
 
     module TypeVar : sig
@@ -54,33 +54,33 @@ module Record : sig
         state: state;
         namespace: Namespace.t;
       }
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
     end
 
     module ParamSpec : sig
-      type 'annotation record [@@deriving compare, eq, sexp, show, hash]
+      type 'annotation record [@@deriving compare, equal, sexp, show, hash]
 
       module Components : sig
-        type t [@@deriving compare, eq, sexp, show, hash]
+        type t [@@deriving compare, equal, sexp, show, hash]
       end
     end
 
     module TypeVarTuple : sig
-      type 'annotation record [@@deriving compare, eq, sexp, show, hash]
+      type 'annotation record [@@deriving compare, equal, sexp, show, hash]
     end
 
     type 'a record =
       | TypeVarVariable of 'a TypeVar.record
       | ParamSpecVariable of 'a ParamSpec.record
       | TypeVarTupleVariable of 'a TypeVarTuple.record
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 
   module OrderedTypes : sig
     module Concatenation : sig
-      type 'annotation record_unpackable [@@deriving compare, eq, sexp, show, hash]
+      type 'annotation record_unpackable [@@deriving compare, equal, sexp, show, hash]
 
-      type 'annotation t [@@deriving compare, eq, sexp, show, hash]
+      type 'annotation t [@@deriving compare, equal, sexp, show, hash]
 
       val create_unpackable
         :  'annotation Variable.TypeVarTuple.record ->
@@ -110,7 +110,7 @@ module Record : sig
     type 'annotation record =
       | Concrete of 'annotation list
       | Concatenation of 'annotation Concatenation.t
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     val create_unbounded_concatenation : 'annotation -> 'annotation record
   end
@@ -126,7 +126,7 @@ module Record : sig
       and 'annotation variable =
         | Concrete of 'annotation
         | Concatenation of 'annotation OrderedTypes.Concatenation.t
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       and 'annotation t =
         | PositionalOnly of {
@@ -138,7 +138,7 @@ module Record : sig
         | KeywordOnly of 'annotation named
         | Variable of 'annotation variable
         | Keywords of 'annotation
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       val annotation : 'annotation t -> 'annotation option
 
@@ -163,14 +163,14 @@ module Record : sig
       annotation: 'annotation;
       parameters: 'annotation record_parameters;
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     and 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 
   module Argument : sig
@@ -181,7 +181,7 @@ module Record : sig
   end
 
   module RecursiveType : sig
-    type 'annotation record [@@deriving compare, eq, sexp, show, hash]
+    type 'annotation record [@@deriving compare, equal, sexp, show, hash]
 
     val name : 'annotation record -> Identifier.t
 
@@ -191,16 +191,16 @@ module Record : sig
   module TypeOperation : sig
     module Compose : sig
       type 'annotation t = 'annotation OrderedTypes.record
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
     end
 
     type 'annotation record = Compose of 'annotation Compose.t
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 end
 
 module Primitive : sig
-  type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
+  type t = Identifier.t [@@deriving compare, equal, sexp, show, hash]
 
   include Hashable with type t := t
 
@@ -242,9 +242,9 @@ and t =
   | TypeOperation of t Record.TypeOperation.record
   | Union of t list
   | Variable of t Record.Variable.TypeVar.record
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, equal, sexp, show, hash]
 
-type type_t = t [@@deriving compare, eq, sexp, show]
+type type_t = t [@@deriving compare, equal, sexp, show]
 
 module Map : Map.S with type Key.t = t
 
@@ -257,7 +257,7 @@ module Argument : sig
     include Record.Argument
   end
 
-  type t = type_t Record.Argument.record [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Argument.record [@@deriving compare, equal, sexp, show, hash]
 
   val all_singles : t list -> type_t list option
 
@@ -389,7 +389,7 @@ module Callable : sig
 
     val show_concise : type_t t -> string
 
-    type parameter = type_t t [@@deriving compare, eq, sexp, show, hash]
+    type parameter = type_t t [@@deriving compare, equal, sexp, show, hash]
 
     module Map : Core.Map.S with type Key.t = parameter
 
@@ -408,10 +408,10 @@ module Callable : sig
       [ `Both of 'a t * 'b t | `Left of 'a t | `Right of 'b t ] list
   end
 
-  type t = type_t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Callable.record [@@deriving compare, equal, sexp, show, hash]
 
   type parameters = type_t Record.Callable.record_parameters
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   module Overload : sig
     val parameters : type_t overload -> CallableParamType.parameter list option
@@ -625,7 +625,7 @@ module OrderedTypes : sig
     val is_fully_unbounded : 'annotation t -> bool
   end
 
-  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t record [@@deriving compare, equal, sexp, show, hash]
 
   type ordered_types_t = t
 
@@ -655,7 +655,7 @@ module OrderedTypes : sig
     middle_pair: 'annotation record * 'annotation record;
     suffix_pairs: ('annotation * 'annotation) list;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   val split_matching_elements_by_length
     :  'annotation record ->
@@ -703,30 +703,31 @@ module Variable : sig
     val create_fresh : unit -> t
   end
 
-  type unary_t = type_t Record.Variable.TypeVar.record [@@deriving compare, eq, sexp, show, hash]
+  type unary_t = type_t Record.Variable.TypeVar.record [@@deriving compare, equal, sexp, show, hash]
 
-  type unary_domain = type_t [@@deriving compare, eq, sexp, show, hash]
+  type unary_domain = type_t [@@deriving compare, equal, sexp, show, hash]
 
   type parameter_variadic_t = type_t Record.Variable.ParamSpec.record
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
-  type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
+  type parameter_variadic_domain = Callable.parameters [@@deriving compare, equal, sexp, show, hash]
 
   type tuple_variadic_t = type_t Record.Variable.TypeVarTuple.record
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
-  type tuple_variadic_domain = type_t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
+  type tuple_variadic_domain = type_t OrderedTypes.record
+  [@@deriving compare, equal, sexp, show, hash]
 
   type pair =
     | TypeVarPair of unary_t * unary_domain
     | ParamSpecPair of parameter_variadic_t * parameter_variadic_domain
     | TypeVarTuplePair of tuple_variadic_t * tuple_variadic_domain
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
-  type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Variable.record [@@deriving compare, equal, sexp, show, hash]
 
   module type VariableKind = sig
-    type t [@@deriving compare, eq, sexp, show, hash]
+    type t [@@deriving compare, equal, sexp, show, hash]
 
     module Map : Core.Map.S with type Key.t = t
 
@@ -744,7 +745,7 @@ module Variable : sig
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
 
-    type domain [@@deriving compare, eq, sexp, show, hash]
+    type domain [@@deriving compare, equal, sexp, show, hash]
 
     val any : domain
 
@@ -845,7 +846,7 @@ module Variable : sig
         }
       | DTypeVarTuple of { name: Identifier.t }
       | DParamSpec of { name: Identifier.t }
-    [@@deriving equal, compare, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     val parse : Expression.t -> target:Reference.t -> t option
   end
@@ -854,7 +855,7 @@ module Variable : sig
     variable_pair: pair;
     received_argument: Argument.t;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   module Set : Core.Set.S with type Elt.t = t
 
@@ -923,7 +924,7 @@ module GenericParameter : sig
       }
     | GpTypeVarTuple of { name: Identifier.t }
     | GpParamSpec of { name: Identifier.t }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   val of_declaration : Variable.Declaration.t -> create_type:(Expression.t -> type_t) -> t
 
@@ -986,13 +987,13 @@ module TypedDictionary : sig
     required: bool;
     readonly: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   type t = {
     name: Identifier.t;
     fields: typed_dictionary_field list;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   val base_typed_dictionary : type_t
 

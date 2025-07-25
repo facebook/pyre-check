@@ -58,7 +58,7 @@ module ShimArgumentMapping = struct
         }
       | Constant of Constant.t
       | Reference of Reference.t
-    [@@deriving eq, show { with_path = false }]
+    [@@deriving equal, show { with_path = false }]
 
     let rec to_json = function
       | Callee -> `Assoc ["kind", `String "callee"]
@@ -102,7 +102,7 @@ module ShimArgumentMapping = struct
       name: Identifier.t option;
       value: Target.t;
     }
-    [@@deriving eq, show { with_path = false }]
+    [@@deriving equal, show { with_path = false }]
 
     let to_json { name; value } =
       let bindings =
@@ -118,7 +118,7 @@ module ShimArgumentMapping = struct
     callee: Target.t;
     arguments: Argument.t list;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let create_artificial_call
       ~call_location

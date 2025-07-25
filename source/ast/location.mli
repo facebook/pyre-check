@@ -90,7 +90,7 @@ module WithModule : sig
     start: position;
     stop: position;
   }
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, equal, sexp, hash, to_yojson]
 
   val any : t
 

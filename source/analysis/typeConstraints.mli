@@ -13,7 +13,7 @@ val empty : t
 val exists_in_bounds : t -> variables:Type.Variable.t list -> bool
 
 module Solution : sig
-  type t [@@deriving show, eq, sexp]
+  type t [@@deriving show, equal, sexp]
 
   val empty : t
 

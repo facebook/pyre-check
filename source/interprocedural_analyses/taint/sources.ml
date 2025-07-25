@@ -29,7 +29,7 @@ module T = struct
         (* Invariant: not a transform. *)
         base: t;
       }
-  [@@deriving compare, eq, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"

@@ -57,7 +57,7 @@ module Record = struct
       | Contravariant
       | Invariant
       | Bivariant
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     let show_lowercase = function
       | Covariant -> "covariant"
@@ -72,7 +72,7 @@ module Record = struct
       | P_Contravariant
       | P_Invariant
       | P_Undefined
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     let show_lowercase = function
       | P_Covariant -> "P_covariant"
@@ -87,17 +87,17 @@ module Record = struct
       | Explicit of 'annotation list
       | Unconstrained
       | LiteralIntegers
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 
   module Variable = struct
     type state =
       | Free of { escaped: bool }
       | InFunction
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     module Namespace = struct
-      type t = int [@@deriving compare, eq, sexp, show, hash]
+      type t = int [@@deriving compare, equal, sexp, show, hash]
     end
 
     module TypeVar = struct
@@ -107,7 +107,7 @@ module Record = struct
         state: state;
         namespace: Namespace.t;
       }
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       let create ?(constraints = TypeVarConstraints.Unconstrained) name =
         { name; constraints; state = Free { escaped = false }; namespace = 0 }
@@ -119,20 +119,20 @@ module Record = struct
         state: state;
         namespace: Namespace.t;
       }
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       module Components = struct
         type component =
           | KeywordArguments
           | PositionalArguments
-        [@@deriving compare, eq, sexp, show, hash]
+        [@@deriving compare, equal, sexp, show, hash]
 
         type t = {
           component: component;
           variable_name: Identifier.t;
           variable_namespace: Namespace.t;
         }
-        [@@deriving compare, eq, sexp, show, hash]
+        [@@deriving compare, equal, sexp, show, hash]
       end
 
       let create name = { name; state = Free { escaped = false }; namespace = 1 }
@@ -144,7 +144,7 @@ module Record = struct
         state: state;
         namespace: Namespace.t;
       }
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       let create name = { name; state = Free { escaped = false }; namespace = 1 }
     end
@@ -153,7 +153,7 @@ module Record = struct
       | TypeVarVariable of 'a TypeVar.record
       | ParamSpecVariable of 'a ParamSpec.record
       | TypeVarTupleVariable of 'a TypeVarTuple.record
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 
   module OrderedTypes = struct
@@ -173,7 +173,7 @@ module Record = struct
       type 'annotation record_unpackable =
         | Variadic of 'annotation Variable.TypeVarTuple.record
         | UnboundedElements of 'annotation
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       (* We guarantee that there is exactly one top-level unpacked variadic in this concatenation.
 
@@ -185,7 +185,7 @@ module Record = struct
         middle: 'annotation record_unpackable;
         suffix: 'annotation list;
       }
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       let create_unpackable variadic = Variadic variadic
 
@@ -206,7 +206,7 @@ module Record = struct
     type 'annotation record =
       | Concrete of 'annotation list
       | Concatenation of 'annotation Concatenation.t
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     let create_unbounded_concatenation annotation =
       Concatenation (Concatenation.create_from_unbounded_element annotation)
@@ -219,12 +219,12 @@ module Record = struct
         annotation: 'annotation;
         default: bool;
       }
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       type 'annotation variable =
         | Concrete of 'annotation
         | Concatenation of 'annotation OrderedTypes.Concatenation.t
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       type 'annotation t =
         | PositionalOnly of {
@@ -236,7 +236,7 @@ module Record = struct
         | KeywordOnly of 'annotation named
         | Variable of 'annotation variable
         | Keywords of 'annotation
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
 
       let annotation = function
         | PositionalOnly { annotation; _ } -> Some annotation
@@ -285,7 +285,7 @@ module Record = struct
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 
   module Argument = struct
@@ -293,7 +293,7 @@ module Record = struct
       | Single of 'annotation
       | CallableParameters of 'annotation Callable.record_parameters
       | Unpacked of 'annotation OrderedTypes.Concatenation.record_unpackable
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     let is_single = function
       | Single single -> Some single
@@ -307,7 +307,7 @@ module Record = struct
       name: Identifier.t;
       body: 'annotation;
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
     let name { name; _ } = name
 
@@ -317,18 +317,18 @@ module Record = struct
   module TypeOperation = struct
     module Compose = struct
       type 'annotation t = 'annotation OrderedTypes.record
-      [@@deriving compare, eq, sexp, show, hash]
+      [@@deriving compare, equal, sexp, show, hash]
     end
 
     type 'annotation record = Compose of 'annotation Compose.t
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
   end
 end
 
 module CallableParamType = Record.Callable.CallableParamType
 
 module Primitive = struct
-  type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
+  type t = Identifier.t [@@deriving compare, equal, sexp, show, hash]
 
   include Hashable.Make (struct
     type t = Identifier.t [@@deriving compare, hash, sexp]
@@ -376,7 +376,7 @@ module T = struct
     | TypeOperation of t Record.TypeOperation.record
     | Union of t list
     | Variable of t Record.Variable.TypeVar.record
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 end
 
 module Containers = struct
@@ -1453,7 +1453,7 @@ module Argument = struct
   open T
   include Record.Argument
 
-  type t = T.t record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t record [@@deriving compare, equal, sexp, show, hash]
 
   let all_singles arguments = List.map arguments ~f:is_single |> Option.all
 
@@ -1508,7 +1508,7 @@ module Callable = struct
   module CallableParamType = struct
     include Record.Callable.CallableParamType
 
-    type parameter = T.t t [@@deriving compare, eq, sexp, show, hash]
+    type parameter = T.t t [@@deriving compare, equal, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
       type t = parameter [@@deriving compare, sexp]
@@ -1674,9 +1674,10 @@ module Callable = struct
       left_matches @ right_matches
   end
 
-  type t = T.t Record.Callable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t Record.Callable.record [@@deriving compare, equal, sexp, show, hash]
 
-  type parameters = T.t Record.Callable.record_parameters [@@deriving compare, eq, sexp, show, hash]
+  type parameters = T.t Record.Callable.record_parameters
+  [@@deriving compare, equal, sexp, show, hash]
 
   module Overload = struct
     let parameters { parameters; _ } =
@@ -1919,7 +1920,7 @@ module OrderedTypes = struct
       extract_sole_unbounded_annotation concatenation |> Option.is_some
   end
 
-  type t = T.t record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t record [@@deriving compare, equal, sexp, show, hash]
 
   type ordered_types_t = t
 
@@ -2052,7 +2053,7 @@ module OrderedTypes = struct
     middle_pair: 'annotation record * 'annotation record;
     suffix_pairs: ('annotation * 'annotation) list;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   let concatenate ~left ~right =
     match left, right with
@@ -2520,28 +2521,28 @@ module Variable = struct
       namespace
   end
 
-  type unary_t = T.t Record.Variable.TypeVar.record [@@deriving compare, eq, sexp, show, hash]
+  type unary_t = T.t Record.Variable.TypeVar.record [@@deriving compare, equal, sexp, show, hash]
 
-  type unary_domain = T.t [@@deriving compare, eq, sexp, show, hash]
+  type unary_domain = T.t [@@deriving compare, equal, sexp, show, hash]
 
   type parameter_variadic_t = T.t Record.Variable.ParamSpec.record
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
-  type parameter_variadic_domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
+  type parameter_variadic_domain = Callable.parameters [@@deriving compare, equal, sexp, show, hash]
 
   type tuple_variadic_t = T.t Record.Variable.TypeVarTuple.record
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
-  type tuple_variadic_domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
+  type tuple_variadic_domain = T.t OrderedTypes.record [@@deriving compare, equal, sexp, show, hash]
 
   type pair =
     | TypeVarPair of unary_t * unary_domain
     | ParamSpecPair of parameter_variadic_t * parameter_variadic_domain
     | TypeVarTuplePair of tuple_variadic_t * tuple_variadic_domain
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   module type VariableKind = sig
-    type t [@@deriving compare, eq, sexp, show, hash]
+    type t [@@deriving compare, equal, sexp, show, hash]
 
     module Map : Core.Map.S with type Key.t = t
 
@@ -2559,7 +2560,7 @@ module Variable = struct
 
     val dequalify : t -> dequalify_map:Reference.t Reference.Map.t -> t
 
-    type domain [@@deriving compare, eq, sexp, show, hash]
+    type domain [@@deriving compare, equal, sexp, show, hash]
 
     val any : domain
 
@@ -2571,9 +2572,9 @@ module Variable = struct
   module TypeVar = struct
     include Record.Variable.TypeVar
 
-    type t = T.t record [@@deriving compare, eq, sexp, show, hash]
+    type t = T.t record [@@deriving compare, equal, sexp, show, hash]
 
-    type domain = T.t [@@deriving compare, eq, sexp, show, hash]
+    type domain = T.t [@@deriving compare, equal, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
       type t = T.t record [@@deriving compare, sexp]
@@ -2637,9 +2638,9 @@ module Variable = struct
   module ParamSpec = struct
     include Record.Variable.ParamSpec
 
-    type t = T.t record [@@deriving compare, eq, sexp, show, hash]
+    type t = T.t record [@@deriving compare, equal, sexp, show, hash]
 
-    type domain = Callable.parameters [@@deriving compare, eq, sexp, show, hash]
+    type domain = Callable.parameters [@@deriving compare, equal, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
       type t = T.t record [@@deriving compare, sexp]
@@ -2789,9 +2790,9 @@ module Variable = struct
   module TypeVarTuple = struct
     include Record.Variable.TypeVarTuple
 
-    type t = T.t record [@@deriving compare, eq, sexp, show, hash]
+    type t = T.t record [@@deriving compare, equal, sexp, show, hash]
 
-    type domain = T.t OrderedTypes.record [@@deriving compare, eq, sexp, show, hash]
+    type domain = T.t OrderedTypes.record [@@deriving compare, equal, sexp, show, hash]
 
     module Map = Core.Map.Make (struct
       type t = T.t record [@@deriving compare, sexp]
@@ -3092,7 +3093,7 @@ module Variable = struct
     module TypeVarTuple = Make (TypeVarTuple)
   end
 
-  type t = T.t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
+  type t = T.t Record.Variable.record [@@deriving compare, equal, sexp, show, hash]
 
   module Set = Core.Set.Make (struct
     type t = T.t Record.Variable.record [@@deriving compare, sexp]
@@ -3285,7 +3286,7 @@ module Variable = struct
     variable_pair: pair;
     received_argument: Argument.t;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   let of_declaration declaration ~create_type =
     match declaration with
@@ -3606,7 +3607,7 @@ module GenericParameter = struct
       }
     | GpTypeVarTuple of { name: Identifier.t }
     | GpParamSpec of { name: Identifier.t }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   let parameter_name = function
     | GpTypeVar { name; _ } -> name
@@ -3621,7 +3622,7 @@ module GenericParameter = struct
         Record.Variable.TypeVarTupleVariable (Record.Variable.TypeVarTuple.create name)
     | GpParamSpec { name : Identifier.t } ->
         Record.Variable.ParamSpecVariable (Record.Variable.ParamSpec.create name)
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, equal, sexp, show, hash]
 
 
   let of_declaration declaration ~create_type =
@@ -3992,13 +3993,13 @@ module TypedDictionary = struct
     required: bool;
     readonly: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   type t = {
     name: Identifier.t;
     fields: typed_dictionary_field list;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, equal, sexp, show, hash]
 
   open T
 
@@ -5633,6 +5634,6 @@ let show_concise = PrettyPrinting.show_concise
 (* We always send types in the pretty printed form *)
 let to_yojson annotation = `String (PrettyPrinting.show annotation)
 
-type type_t = T.t [@@deriving compare, eq, sexp, show, hash]
+type type_t = T.t [@@deriving compare, equal, sexp, show, hash]
 
 let expression = ToExpression.expression

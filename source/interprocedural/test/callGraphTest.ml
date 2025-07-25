@@ -7762,7 +7762,7 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
         }
       | PropertySetterUnsupported
       | Undecorated
-    [@@deriving show, eq]
+    [@@deriving show, equal]
 
     let from_actual = function
       | CallGraph.DecoratorResolution.PropertySetterUnsupported -> PropertySetterUnsupported

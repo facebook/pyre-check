@@ -12,7 +12,7 @@ open Expression
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 module Heap = struct
-  type t = StringLiteral.t Reference.Map.t [@@deriving show, eq]
+  type t = StringLiteral.t Reference.Map.t [@@deriving show, equal]
 
   let of_alist_exn alist =
     alist

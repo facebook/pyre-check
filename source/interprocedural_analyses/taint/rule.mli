@@ -9,7 +9,7 @@ type filters = {
   maximum_source_distance: int option;
   maximum_sink_distance: int option;
 }
-[@@deriving eq, compare, show]
+[@@deriving equal, compare, show]
 
 type t = {
   sources: Sources.t list;

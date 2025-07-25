@@ -84,7 +84,7 @@ module AssumedRecursiveInstantiations = struct
     candidate: Type.t;
     target: Identifier.t;
   }
-  [@@deriving compare, sexp, hash, show, eq]
+  [@@deriving compare, sexp, hash, show, equal]
 
   type t = (assumption * target_parameters) list [@@deriving compare, equal, sexp, hash, show]
 

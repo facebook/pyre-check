@@ -8,7 +8,7 @@
 open Ast
 open Expression
 
-type t [@@deriving compare, eq, sexp, hash, show]
+type t [@@deriving compare, equal, sexp, hash, show]
 
 val location : t -> Location.t
 

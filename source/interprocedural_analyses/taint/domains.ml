@@ -89,7 +89,7 @@ module ClassIntervals = struct
     (* Whether this call site is a call on `cls` *)
     is_cls_call: bool;
   }
-  [@@deriving compare, eq]
+  [@@deriving compare, equal]
 
   (* If we are not sure if a call is on `self` or `cls`, then we should treat it as a call not on
      `self` or `cls`, such that SAPP will not intersect class intervals. *)
@@ -561,7 +561,7 @@ end
 module type TAINT_DOMAIN = sig
   include Abstract.Domain.S
 
-  type kind [@@deriving eq]
+  type kind [@@deriving equal]
 
   val kind : kind Abstract.Domain.part
 
@@ -827,7 +827,7 @@ module MakeTaint (Kind : KIND_ARG) : sig
 
   val singleton : CallInfo.t -> Kind.t -> Frame.t -> t
 end = struct
-  type kind = Kind.t [@@deriving compare, eq]
+  type kind = Kind.t [@@deriving compare, equal]
 
   module CallInfoKey = struct
     include CallInfo

@@ -20,7 +20,7 @@ type invalid_decorator_reason =
       callable: Type.Callable.t;
       reason: SignatureSelectionTypes.reason option;
     }
-[@@deriving eq, show, compare, sexp]
+[@@deriving equal, show, compare, sexp]
 
 type problem =
   | DifferingDecorators of { offender: Type.t Type.Callable.overload }
@@ -28,7 +28,7 @@ type problem =
       index: int;
       reason: invalid_decorator_reason;
     }
-[@@deriving eq, show, compare, sexp]
+[@@deriving equal, show, compare, sexp]
 
 type decorated_method = {
   undecorated_signature: Type.Callable.t;
@@ -66,24 +66,24 @@ end
 type read_only =
   | Refinable of { overridable: bool }
   | Unrefinable
-[@@deriving eq, show, compare, sexp]
+[@@deriving equal, show, compare, sexp]
 
 type visibility =
   | ReadOnly of read_only
   | ReadWrite
-[@@deriving eq, show, compare, sexp]
+[@@deriving equal, show, compare, sexp]
 
 type initialized =
   | OnClass
   | OnlyOnInstance
   | NotInitialized
-[@@deriving eq, show, compare, sexp]
+[@@deriving equal, show, compare, sexp]
 
-type 'a t [@@deriving eq, show, compare, sexp]
+type 'a t [@@deriving equal, show, compare, sexp]
 
 type uninstantiated = UninstantiatedAnnotation.t t [@@deriving compare, sexp]
 
-type instantiated = InstantiatedAnnotation.t t [@@deriving eq, show, compare, sexp]
+type instantiated = InstantiatedAnnotation.t t [@@deriving equal, show, compare, sexp]
 
 val create_instantiated
   :  abstract:bool ->

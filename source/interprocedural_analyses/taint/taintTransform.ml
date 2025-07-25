@@ -20,7 +20,7 @@ type t =
   | TriggeredPartialSink of { triggering_source: string }
     (* We represent triggered partial sinks as partial sinks with TriggeredPartialSink
        transforms. *)
-[@@deriving compare, eq, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
 let pp formatter = function
   | Named transform -> Format.fprintf formatter "%s" transform

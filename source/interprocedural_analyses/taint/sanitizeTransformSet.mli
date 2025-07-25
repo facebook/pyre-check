@@ -9,11 +9,11 @@ type sets = {
   sources: SanitizeTransform.SourceSet.t;
   sinks: SanitizeTransform.SinkSet.t;
 }
-[@@deriving compare, eq, hash, sexp, show]
+[@@deriving compare, equal, hash, sexp, show]
 
 include Abstract.Domain.S with type t = sets
 
-type t = sets [@@deriving compare, eq, hash, sexp, show]
+type t = sets [@@deriving compare, equal, hash, sexp, show]
 
 val empty : t
 

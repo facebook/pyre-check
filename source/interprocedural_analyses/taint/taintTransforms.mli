@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = TaintTransform.t list [@@deriving compare, eq, hash, sexp]
+type t = TaintTransform.t list [@@deriving compare, equal, hash, sexp]
 
 module Order : sig
   type t =

@@ -140,7 +140,7 @@ module WithModule = struct
       start: position;
       stop: position;
     }
-    [@@deriving compare, eq, sexp, hash, to_yojson]
+    [@@deriving compare, equal, sexp, hash, to_yojson]
 
     let any = { module_reference = Reference.empty; start = any_position; stop = any_position }
 

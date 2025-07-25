@@ -13,7 +13,7 @@ module HigherOrderCallGraphForTest = struct
     returned_callables: CallTarget.Set.t;
     call_graph: DefineCallGraphForTest.t;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   let from_actual { HigherOrderCallGraph.returned_callables; call_graph; _ } =
     { returned_callables; call_graph = DefineCallGraph.for_test call_graph }

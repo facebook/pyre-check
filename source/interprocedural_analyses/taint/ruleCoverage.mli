@@ -10,7 +10,7 @@ module CoveredRule : sig
     rule_code: int;
     kind_coverage: KindCoverage.t;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val is_covered : kind_coverage_from_models:KindCoverage.t -> Rule.t -> t option
 
@@ -23,7 +23,7 @@ type t = {
   covered_rules: CoveredRule.Set.t;
   uncovered_rule_codes: IntSet.t;
 }
-[@@deriving eq, show]
+[@@deriving equal, show]
 
 val empty : t
 

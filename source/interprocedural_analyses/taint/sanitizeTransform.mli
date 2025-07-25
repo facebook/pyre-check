@@ -6,11 +6,11 @@
  *)
 
 module Source : sig
-  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
+  type t = Named of string [@@deriving compare, equal, hash, sexp, show]
 end
 
 module Sink : sig
-  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
+  type t = Named of string [@@deriving compare, equal, hash, sexp, show]
 end
 
 type t =
@@ -21,11 +21,11 @@ type t =
 module type S = sig
   type elt
 
-  type set [@@deriving compare, eq, hash, sexp, show]
+  type set [@@deriving compare, equal, hash, sexp, show]
 
   include Abstract.Domain.S with type t = set
 
-  type t = set [@@deriving compare, eq, hash, sexp, show]
+  type t = set [@@deriving compare, equal, hash, sexp, show]
 
   val empty : t
 

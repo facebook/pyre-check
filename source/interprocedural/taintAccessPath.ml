@@ -36,7 +36,7 @@ module Root = struct
       | StarStarParameter of { excluded: Identifier.t list }
       | Variable of Identifier.t
       | CapturedVariable of { name: Identifier.t }
-    [@@deriving compare, eq, hash, sexp]
+    [@@deriving compare, equal, hash, sexp]
 
     let parameter_prefix = "$parameter$"
 
@@ -383,7 +383,7 @@ type t = {
   root: Root.t;
   path: Path.t;
 }
-[@@deriving compare, eq, sexp, hash]
+[@@deriving compare, equal, sexp, hash]
 
 let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp root Path.pp path
 

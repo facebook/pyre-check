@@ -13,7 +13,7 @@ type sets = {
   sources: SanitizeTransform.SourceSet.t;
   sinks: SanitizeTransform.SinkSet.t;
 }
-[@@deriving compare, eq, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
 let pp_sets formatter { sources; sinks } =
   let is_empty_sources = SanitizeTransform.SourceSet.is_empty sources in
@@ -83,7 +83,7 @@ include Abstract.SimpleDomain.Make (struct
       }
 end)
 
-type t = sets [@@deriving compare, eq, hash, sexp]
+type t = sets [@@deriving compare, equal, hash, sexp]
 
 let empty = bottom
 

@@ -19,7 +19,7 @@ end
 
 (** Graph of root classes and their children, stored in the ocaml heap. *)
 module Heap : sig
-  type t [@@deriving eq]
+  type t [@@deriving equal]
 
   val empty : t
 

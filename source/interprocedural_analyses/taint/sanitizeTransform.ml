@@ -15,7 +15,7 @@
 open Core
 
 module type TAINT_KIND = sig
-  type t = Named of string [@@deriving compare, eq, hash, sexp]
+  type t = Named of string [@@deriving compare, equal, hash, sexp]
 
   val name : string
 
@@ -29,7 +29,7 @@ end
 module Source : sig
   include TAINT_KIND
 end = struct
-  type t = Named of string [@@deriving compare, eq, hash, sexp]
+  type t = Named of string [@@deriving compare, equal, hash, sexp]
 
   let name = "Source"
 
@@ -43,7 +43,7 @@ end
 module Sink : sig
   include TAINT_KIND
 end = struct
-  type t = Named of string [@@deriving compare, eq, hash, sexp]
+  type t = Named of string [@@deriving compare, equal, hash, sexp]
 
   let name = "Sink"
 
@@ -62,11 +62,11 @@ type t =
 module type S = sig
   type elt
 
-  type set [@@deriving compare, eq, hash, sexp, show]
+  type set [@@deriving compare, equal, hash, sexp, show]
 
   include Abstract.Domain.S with type t = set
 
-  type t = set [@@deriving compare, eq, hash, sexp, show]
+  type t = set [@@deriving compare, equal, hash, sexp, show]
 
   val empty : t
 
@@ -100,7 +100,7 @@ module MakeSet (Kind : TAINT_KIND) = struct
     | All
     (* Represent a set of taint kinds to sanitize. *)
     | Specific of Set.t
-  [@@deriving compare, eq, hash, sexp, show]
+  [@@deriving compare, equal, hash, sexp, show]
 
   type elt = Kind.t
 
@@ -144,7 +144,7 @@ module MakeSet (Kind : TAINT_KIND) = struct
         | Specific left, Specific right -> Specific (Set.inter left right)
   end)
 
-  type t = set [@@deriving compare, eq, hash, sexp]
+  type t = set [@@deriving compare, equal, hash, sexp]
 
   let empty = bottom
 

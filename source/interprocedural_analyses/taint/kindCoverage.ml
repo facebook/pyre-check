@@ -68,7 +68,7 @@ type t = {
          internally for dropping taint. `TriggeredPartialSink` transforms are used to represent
          partial sinks that have a flow, which is irrelevant with the kind coverage. *)
 }
-[@@deriving eq, show, compare, sexp, hash]
+[@@deriving equal, show, compare, sexp, hash]
 
 let empty =
   {

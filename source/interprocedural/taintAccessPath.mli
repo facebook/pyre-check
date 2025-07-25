@@ -22,7 +22,7 @@ module Root : sig
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
     | CapturedVariable of { name: Identifier.t }
-  [@@deriving compare, eq, hash, sexp, show]
+  [@@deriving compare, equal, hash, sexp, show]
 
   val is_parameter : t -> bool
 
@@ -65,7 +65,7 @@ end
 val normalize_parameters : Parameter.t list -> NormalizedParameter.t list
 
 module Path : sig
-  type t = Abstract.TreeDomain.Label.t list [@@deriving compare, eq, show]
+  type t = Abstract.TreeDomain.Label.t list [@@deriving compare, equal, show]
 
   val empty : t
 
@@ -78,7 +78,7 @@ type t = {
   root: Root.t;
   path: Path.t;
 }
-[@@deriving compare, eq, sexp, hash]
+[@@deriving compare, equal, sexp, hash]
 
 val pp : Format.formatter -> t -> unit
 

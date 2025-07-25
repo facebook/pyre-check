@@ -64,7 +64,7 @@ module Mutability = struct
         original: Type.t;
         final: bool;
       }
-  [@@deriving compare, eq, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 
   let pp format = function
     | Mutable -> Format.fprintf format "m"
@@ -117,7 +117,7 @@ module Unit = struct
     annotation: Type.t;
     mutability: Mutability.t;
   }
-  [@@deriving compare, eq, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 
   let pp format { annotation; mutability } =
     Format.fprintf format "(%a: %a)" Type.pp annotation Mutability.pp mutability
@@ -226,7 +226,7 @@ module LocalOrGlobal = struct
     base: Unit.t option;
     attributes: t Identifier.Map.Tree.t;
   }
-  [@@deriving eq]
+  [@@deriving equal]
 
   let empty = { base = None; attributes = IdentifierMap.empty }
 
@@ -356,7 +356,7 @@ module Store = struct
     type_info: LocalOrGlobal.t Reference.Map.Tree.t;
     temporary_type_info: LocalOrGlobal.t Reference.Map.Tree.t;
   }
-  [@@deriving eq]
+  [@@deriving equal]
 
   let empty = { type_info = ReferenceMap.empty; temporary_type_info = ReferenceMap.empty }
 
@@ -575,7 +575,7 @@ module AroundStatement = struct
     precondition: Store.t;
     postcondition: Store.t;
   }
-  [@@deriving eq]
+  [@@deriving equal]
 
   let pp formatter { precondition; postcondition } =
     Format.fprintf

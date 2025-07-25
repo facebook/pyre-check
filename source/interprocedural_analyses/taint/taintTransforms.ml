@@ -12,7 +12,7 @@
 open Core
 
 module T = struct
-  type t = TaintTransform.t list [@@deriving compare, eq, hash, sexp]
+  type t = TaintTransform.t list [@@deriving compare, equal, hash, sexp]
 end
 
 include T

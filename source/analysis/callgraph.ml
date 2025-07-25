@@ -28,13 +28,13 @@ and callee =
       class_name: Type.t;
       direct_target: Reference.t;
     }
-[@@deriving compare, hash, sexp, eq, show, to_yojson]
+[@@deriving compare, hash, sexp, equal, show, to_yojson]
 
 type callee_with_locations = {
   callee: callee;
   locations: Location.WithModule.t list;
 }
-[@@deriving eq]
+[@@deriving equal]
 
 let callee_to_yojson ?locations callee =
   let locations =

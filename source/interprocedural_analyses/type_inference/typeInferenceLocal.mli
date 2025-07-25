@@ -18,7 +18,7 @@ module type Context = sig
 end
 
 module type Signature = sig
-  type t [@@deriving eq]
+  type t [@@deriving equal]
 
   val create : ?bottom:bool -> resolution:Analysis.Resolution.t -> unit -> t
 

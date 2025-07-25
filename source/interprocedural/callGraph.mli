@@ -16,7 +16,7 @@ module ReturnType : sig
     is_float: bool;
     is_enumeration: bool;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val any : t
 
@@ -50,12 +50,12 @@ module CallTarget : sig
     (* True if calling a static method. *)
     is_static_method: bool;
   }
-  [@@deriving eq, show, compare]
+  [@@deriving equal, show, compare]
 
   module Set : sig
     type call_target = t
 
-    type t [@@deriving show, eq]
+    type t [@@deriving show, equal]
 
     val of_list : call_target list -> t
 
@@ -114,7 +114,7 @@ module Unresolved : sig
     | UnknownCallCallee
     | UnknownIdentifierCallee
     | UnknownCalleeAST
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   type reason =
     | BypassingDecorators of bypassing_decorators
@@ -131,7 +131,7 @@ module Unresolved : sig
   type t =
     | True of reason
     | False
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val is_unresolved : t -> bool
 end
@@ -145,14 +145,14 @@ module HigherOrderParameter : sig
      * Usually indicates missing type information at the call site. *)
     unresolved: Unresolved.t;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val to_json : t -> Yojson.Safe.t
 end
 
 (** Mapping from a parameter index to its HigherOrderParameter, if any. *)
 module HigherOrderParameterMap : sig
-  type t [@@deriving eq, show]
+  type t [@@deriving equal, show]
 
   val empty : t
 
@@ -173,7 +173,7 @@ module ShimTarget : sig
     decorated_targets: CallTarget.t list;
     argument_mapping: Shims.ShimArgumentMapping.t;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val to_json : t -> Yojson.Safe.t
 end
@@ -205,7 +205,7 @@ module CallCallees : sig
     unresolved: Unresolved.t;
     recognized_call: RecognizedCall.t;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val create
     :  ?call_targets:CallTarget.t list ->
@@ -253,7 +253,7 @@ module AttributeAccessCallees : sig
        used by call graph building. *)
     decorated_targets: CallTarget.t list;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val create
     :  ?property_targets:CallTarget.t list ->
@@ -280,7 +280,7 @@ module IdentifierCallees : sig
        used by call graph building. *)
     decorated_targets: CallTarget.t list;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val create
     :  ?global_targets:CallTarget.t list ->
@@ -295,7 +295,7 @@ end
 
 (** Artificial callees for distinguishing f-strings within a function. *)
 module FormatStringArtificialCallees : sig
-  type t = { targets: CallTarget.t list } [@@deriving eq, show]
+  type t = { targets: CallTarget.t list } [@@deriving equal, show]
 
   val from_f_string_targets : CallTarget.t list -> t
 
@@ -304,7 +304,7 @@ end
 
 (** Implicit callees for any expression that is stringified. *)
 module FormatStringStringifyCallees : sig
-  type t = { targets: CallTarget.t list } [@@deriving eq, show]
+  type t = { targets: CallTarget.t list } [@@deriving equal, show]
 
   val from_stringify_targets : CallTarget.t list -> t
 
@@ -316,7 +316,7 @@ module DefineCallees : sig
     define_targets: CallTarget.t list;
     decorated_targets: CallTarget.t list;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val create
     :  ?define_targets:CallTarget.t list ->
@@ -335,7 +335,7 @@ module ReturnShimCallees : sig
     call_targets: CallTarget.t list;
     arguments: argument_mapping list;
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -348,7 +348,7 @@ module ExpressionCallees : sig
     | FormatStringStringify of FormatStringStringifyCallees.t
     | Define of DefineCallees.t
     | Return of ReturnShimCallees.t
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val from_call : CallCallees.t -> t
 
@@ -383,7 +383,7 @@ val resolve_callees_from_type_external
 
 (** The call graph of a function or method definition. This is for testing purpose only. *)
 module DefineCallGraphForTest : sig
-  type t [@@deriving eq, show]
+  type t [@@deriving equal, show]
 
   val empty : t
 
@@ -401,7 +401,7 @@ end
 
 (** The call graph of a function or method definition. *)
 module DefineCallGraph : sig
-  type t [@@deriving show, eq]
+  type t [@@deriving show, equal]
 
   val empty : t
 
@@ -452,7 +452,7 @@ module DecoratorDefine : sig
     (* `Target` representation of the above define. *)
     call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
   }
-  [@@deriving show, eq]
+  [@@deriving show, equal]
 end
 
 (* A map from each callable to its decorators. *)
@@ -546,7 +546,7 @@ module HigherOrderCallGraph : sig
         (* Higher order function callees (i.e., parameterized targets) and potentially regular
            callees. *)
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val empty : t
 
@@ -610,7 +610,7 @@ module DecoratorResolution : sig
     | Undecorated
       (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
          ignored. *)
-  [@@deriving show, eq]
+  [@@deriving show, equal]
 
   (**
    * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.

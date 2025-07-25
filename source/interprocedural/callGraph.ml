@@ -53,7 +53,7 @@ module ReturnType = struct
     is_float: bool;
     is_enumeration: bool;
   }
-  [@@deriving compare, eq, sexp, hash]
+  [@@deriving compare, equal, sexp, hash]
 
   let pp formatter { is_boolean; is_integer; is_float; is_enumeration } =
     let add_if condition tag tags =
@@ -420,7 +420,7 @@ module CallTarget = struct
       (* True if calling a static method. *)
       is_static_method: bool;
     }
-    [@@deriving compare, eq, show { with_path = false }, sexp, hash]
+    [@@deriving compare, equal, show { with_path = false }, sexp, hash]
   end
 
   include T
@@ -699,7 +699,7 @@ module Unresolved = struct
     | UnknownCallCallee
     | UnknownIdentifierCallee
     | UnknownCalleeAST
-  [@@deriving eq, show, to_yojson]
+  [@@deriving equal, show, to_yojson]
 
   type reason =
     | BypassingDecorators of bypassing_decorators
@@ -712,12 +712,12 @@ module Unresolved = struct
     | UnknownCallableClass
     | LambdaArgument
     | NoRecordInCallGraph
-  [@@deriving eq, show, to_yojson]
+  [@@deriving equal, show, to_yojson]
 
   type t =
     | True of reason
     | False
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   let is_unresolved = function
     | True _ -> true
@@ -753,7 +753,7 @@ module HigherOrderParameter = struct
      * Usually indicates missing type information at the call site. *)
     unresolved: Unresolved.t;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let all_targets ~use_case:_ { call_targets; _ } = List.map ~f:CallTarget.target call_targets
 
@@ -871,7 +871,7 @@ module ShimTarget = struct
     decorated_targets: CallTarget.t list;
     argument_mapping: Shims.ShimArgumentMapping.t;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let join
       {
@@ -961,7 +961,7 @@ module CallCallees = struct
       | True
       | False
       | Unknown
-    [@@deriving eq, show { with_path = false }, to_yojson]
+    [@@deriving equal, show { with_path = false }, to_yojson]
 
     let join left right =
       match left, right with
@@ -1004,7 +1004,7 @@ module CallCallees = struct
     unresolved: Unresolved.t;
     recognized_call: RecognizedCall.t;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let create
       ?(call_targets = [])
@@ -1385,7 +1385,7 @@ module AttributeAccessCallees = struct
        used by call graph building. *)
     decorated_targets: CallTarget.t list;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let empty =
     {
@@ -1538,7 +1538,7 @@ module IdentifierCallees = struct
        used by call graph building. *)
     decorated_targets: CallTarget.t list;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   module Reference = struct
     type t =
@@ -1636,7 +1636,7 @@ end
 
 (** Artificial callees for distinguishing f-strings within a function. *)
 module FormatStringArtificialCallees = struct
-  type t = { targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
+  type t = { targets: CallTarget.t list } [@@deriving equal, show { with_path = false }]
 
   let dedup_and_sort { targets } = { targets = CallTarget.dedup_and_sort targets }
 
@@ -1666,7 +1666,7 @@ end
 
 (** Implicit callees for any expression that is stringified. *)
 module FormatStringStringifyCallees = struct
-  type t = { targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
+  type t = { targets: CallTarget.t list } [@@deriving equal, show { with_path = false }]
 
   let dedup_and_sort { targets } = { targets = CallTarget.dedup_and_sort targets }
 
@@ -1699,7 +1699,7 @@ module DefineCallees = struct
     define_targets: CallTarget.t list;
     decorated_targets: CallTarget.t list;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let create ?(define_targets = []) ?(decorated_targets = []) () =
     { define_targets; decorated_targets }
@@ -1763,13 +1763,13 @@ end
 
 (* Artificial callees on returned expressions. *)
 module ReturnShimCallees = struct
-  type argument_mapping = ReturnExpression [@@deriving eq, show { with_path = false }]
+  type argument_mapping = ReturnExpression [@@deriving equal, show { with_path = false }]
 
   type t = {
     call_targets: CallTarget.t list;
     arguments: argument_mapping list;
   }
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let dedup_and_sort ({ call_targets; _ } as return_callees) =
     { return_callees with call_targets = CallTarget.dedup_and_sort call_targets }
@@ -1804,7 +1804,7 @@ module ExpressionCallees = struct
     | FormatStringStringify of FormatStringStringifyCallees.t
     | Define of DefineCallees.t
     | Return of ReturnShimCallees.t
-  [@@deriving eq, show { with_path = false }]
+  [@@deriving equal, show { with_path = false }]
 
   let from_call callees = Call callees
 
@@ -1948,7 +1948,7 @@ let log ~debug format =
 
 (** The call graph of a function or method definition. This is for testing purpose only. *)
 module DefineCallGraphForTest = struct
-  type t = ExpressionCallees.t String.Map.t [@@deriving eq]
+  type t = ExpressionCallees.t String.Map.t [@@deriving equal]
 
   let pp formatter call_graph =
     let pp_pair formatter (expression_identifier, callees) =
@@ -2066,7 +2066,7 @@ end
 
 (** The call graph of a function or method definition. *)
 module DefineCallGraph = struct
-  type t = ExpressionCallees.t ExpressionIdentifier.Map.t [@@deriving eq]
+  type t = ExpressionCallees.t ExpressionIdentifier.Map.t [@@deriving equal]
 
   let to_json call_graph =
     let bindings =
@@ -5104,7 +5104,7 @@ module HigherOrderCallGraph = struct
         (* Higher order function callees (i.e., parameterized targets) and potentially regular
            callees. *)
   }
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   let empty = { returned_callables = CallTarget.Set.bottom; call_graph = DefineCallGraph.empty }
 
@@ -6602,7 +6602,7 @@ module DecoratorDefine = struct
     (* `Target` representation of the above define. *)
     call_graph: DefineCallGraph.t; (* Call graph of the above define. *)
   }
-  [@@deriving show, eq]
+  [@@deriving show, equal]
 end
 
 module DecoratorResolution = struct
@@ -6612,7 +6612,7 @@ module DecoratorResolution = struct
     | Undecorated
       (* A callable is `Undecorated` if it does not have any decorator, or all of its decorators are
          ignored. *)
-  [@@deriving show, eq]
+  [@@deriving show, equal]
 
   (**
    * For any target that might be decorated, return the `ResolvedExpression` for the expression that calls the decorators.

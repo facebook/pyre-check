@@ -9,7 +9,7 @@ open Ast
 open Expression
 
 module Heap : sig
-  type t [@@deriving show, eq]
+  type t [@@deriving show, equal]
 
   val of_alist_exn : (Reference.t * string) list -> t
 

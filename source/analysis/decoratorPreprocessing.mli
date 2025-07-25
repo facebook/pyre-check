@@ -10,7 +10,7 @@ open Ast
 module Action : sig
   type t = (* Remove that decorator from decorated function, assuming it is a no-op. *)
     | Discard
-  [@@deriving eq, show]
+  [@@deriving equal, show]
 
   val to_mode : t -> string
 
@@ -22,7 +22,7 @@ module Configuration : sig
     actions: Action.t Reference.SerializableMap.t;
     enable_discarding: bool;
   }
-  [@@deriving eq]
+  [@@deriving equal]
 
   val disable_preprocessing : t
 end

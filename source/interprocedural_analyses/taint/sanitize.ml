@@ -16,7 +16,7 @@ type sanitize = {
   sinks: SanitizeTransform.SinkSet.t;
   tito: SanitizeTransformSet.t;
 }
-[@@deriving show, eq]
+[@@deriving show, equal]
 
 module T = struct
   include Abstract.SimpleDomain.Make (struct
