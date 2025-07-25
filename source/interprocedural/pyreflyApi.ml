@@ -119,7 +119,7 @@ module ModulePath = struct
     | Namespace of PyrePath.t
     | Memory of PyrePath.t
     | BundledTypeshed of PyrePath.t
-  [@@deriving show]
+  [@@deriving compare, equal, show]
 
   let from_json = function
     | `Assoc [("FileSystem", `String path)] ->
@@ -145,11 +145,11 @@ end
 
 (* Unique identifier for a module, assigned by pyrefly. This maps to a source file. *)
 module ModuleId : sig
-  type t [@@deriving compare, sexp, hash, show]
+  type t [@@deriving compare, equal, sexp, hash, show]
 
   val from_int : int -> t
 end = struct
-  type t = int [@@deriving compare, sexp, hash, show]
+  type t = int [@@deriving compare, equal, sexp, hash, show]
 
   let from_int = Fn.id
 end
@@ -158,7 +158,7 @@ end
    this is converted into `Reference.t` during the taint analysis for backward compatibility with
    the old Pyre1 API, which assumes a module name can only map to one source file. *)
 module ModuleQualifier : sig
-  type t [@@deriving compare, sexp, hash, show]
+  type t [@@deriving compare, equal, sexp, hash, show]
 
   val create : path:string option -> Reference.t -> t
 
@@ -176,7 +176,7 @@ end = struct
     (* For now, this is stored as a reference internally, because Pyre1 uses references everywhere.
        It doesn't really make a lot of sense though, because the path might have dots. For instance:
        'a/b.py:a.b' will be stored as ['a/b', 'py:a', 'b']. *)
-    type t = Reference.t [@@deriving compare, sexp, hash, show]
+    type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
 
     let create ~path module_name =
       let () =
@@ -213,13 +213,13 @@ end
 
 (* Path to a pyrefly module information file. *)
 module ModuleInfoPath : sig
-  type t [@@deriving compare, sexp, hash, show]
+  type t [@@deriving compare, equal, sexp, hash, show]
 
   val create : string -> t
 
   val raw : t -> string
 end = struct
-  type t = string [@@deriving compare, sexp, hash, show]
+  type t = string [@@deriving compare, equal, sexp, hash, show]
 
   let create = Fn.id
 
@@ -236,6 +236,7 @@ module ProjectFile = struct
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
     }
+    [@@deriving equal, show]
 
     let from_json json =
       let open Core.Result.Monad_infix in
@@ -434,7 +435,7 @@ module AstsSharedMemory =
  * - If the name of the class or define might clash with another definition in a different module, we will add a
  *   separator between the module name and local name, such as `my.module#MyClass.foo`. *)
 module FullyQualifiedName : sig
-  type t [@@deriving compare, sexp, hash, show]
+  type t [@@deriving compare, equal, sexp, hash, show]
 
   val create
     :  module_qualifier:ModuleQualifier.t ->
@@ -446,7 +447,7 @@ module FullyQualifiedName : sig
 end = struct
   (* Same as ModuleQualifier, it is stored as a reference, but it doesn't really make sense
      either. *)
-  type t = Reference.t [@@deriving compare, sexp, hash, show]
+  type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
 
   let create ~module_qualifier ~local_name ~add_module_separator =
     if not add_module_separator then
@@ -498,9 +499,8 @@ module ReadWrite = struct
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
   }
 
-  (* Build a mapping from a qualifier (module name + path prefix) to the module id, source path,
-     etc. *)
-  let create_module_mapping ~pyrefly_directory { ProjectFile.modules } =
+  (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
+  let create_module_qualifiers modules =
     let make_unique_qualifiers (module_name, modules) =
       match modules with
       | [module_info] -> [ModuleQualifier.create ~path:None module_name, module_info]
@@ -540,22 +540,17 @@ module ReadWrite = struct
           |> List.map ~f:(fun (path, module_info) ->
                  ModuleQualifier.create ~path:(Some path) module_name, module_info)
     in
-    let add_to_module_name_mapping
-        ~key:_
-        ~data:({ ProjectFile.Module.module_name; _ } as module_info)
-        sofar
-      =
+    let add_to_module_name_mapping sofar ({ ProjectFile.Module.module_name; _ } as module_info) =
       Map.update sofar module_name ~f:(function
           | None -> [module_info]
           | Some existing -> module_info :: existing)
     in
     modules
-    |> Map.fold ~init:Reference.Map.empty ~f:add_to_module_name_mapping
+    |> List.fold ~init:Reference.Map.empty ~f:add_to_module_name_mapping
     |> Map.to_alist
     |> List.map ~f:make_unique_qualifiers
     |> List.concat
     |> ModuleQualifier.Map.of_alist_exn
-    |> ModuleQualifier.Map.map ~f:(Module.from_project ~pyrefly_directory)
 
 
   let parse_module_info_files
@@ -1094,7 +1089,10 @@ module ReadWrite = struct
     let project =
       ProjectFile.from_path_exn (PyrePath.append pyrefly_directory ~element:"pyrefly.pysa.json")
     in
-    let qualifier_to_module_map = create_module_mapping ~pyrefly_directory project in
+    let qualifier_to_module_map =
+      create_module_qualifiers (Map.data project.modules)
+      |> ModuleQualifier.Map.map ~f:(Module.from_project ~pyrefly_directory)
+    in
     let type_of_expressions_shared_memory =
       parse_module_info_files
         ~scheduler
@@ -1214,4 +1212,9 @@ module ReadOnly = struct
     | OptionalSource.Some (Result.Ok source) -> Some source
     | OptionalSource.Some (Result.Error _) -> None
     | OptionalSource.NoSource -> None
+end
+
+(* Exposed for testing purposes *)
+module Testing = struct
+  let create_module_qualifiers = ReadWrite.create_module_qualifiers
 end

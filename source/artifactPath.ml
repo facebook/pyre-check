@@ -14,7 +14,7 @@
 (* TODO(T170743593) new warning with ppx_conv_sexp.v0.16.X *)
 [@@@warning "-name-out-of-scope"]
 
-type t = ArtifactPath of PyrePath.t [@@deriving sexp, compare, hash, show]
+type t = ArtifactPath of PyrePath.t [@@deriving sexp, compare, equal, hash, show]
 
 let create raw = ArtifactPath raw
 

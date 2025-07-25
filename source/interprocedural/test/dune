@@ -13,7 +13,8 @@
   overrideGraphTest
   changedPathsTest
   globalConstantsTest
-  taintAccessPathTest)
+  taintAccessPathTest
+  pyreflyApiTest)
  (preprocess
   (pps
    ppx_deriving.eq

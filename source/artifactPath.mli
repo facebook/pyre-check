@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t [@@deriving sexp, compare, hash, show]
+type t [@@deriving sexp, compare, equal, hash, show]
 
 val create : PyrePath.t -> t
 
