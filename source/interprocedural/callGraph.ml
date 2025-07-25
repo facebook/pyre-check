@@ -2202,11 +2202,11 @@ module DefineCallGraph = struct
       ~callees:(ExpressionCallees.from_define callees)
 
 
-  let add_return_callees ~debug ~caller ~return_expression ~callees =
+  let add_return_callees ~debug ~caller ~return_expression ~statement_location ~callees =
     add_callees
       ~debug
       ~caller
-      ~expression_identifier:(ExpressionIdentifier.of_expression return_expression)
+      ~expression_identifier:(ExpressionIdentifier.of_return_statement statement_location)
       ~expression_for_logging:return_expression
       ~callees:(ExpressionCallees.from_return callees)
 
@@ -4894,6 +4894,7 @@ let register_callees_on_return
     ~callables_to_definitions_map
     ~callable
     ~return_expression
+    ~statement_location
     callees_at_location
   =
   let get_decorator_names callable =
@@ -4958,6 +4959,7 @@ let register_callees_on_return
           ~debug
           ~caller:callable
           ~return_expression
+          ~statement_location
           ~callees:
             {
               ReturnShimCallees.call_targets = methods_in_return_expression_type;
@@ -5043,6 +5045,7 @@ struct
               ~callables_to_definitions_map:Context.builder_context.callables_to_definitions_map
               ~callable
               ~return_expression
+              ~statement_location:statement.Node.location
               Context.callees_at_location
           in
           ()

@@ -26,6 +26,8 @@ val of_format_string_stringify : location:Location.t -> t
 
 val of_define_statement : Location.t -> t
 
+val of_return_statement : Location.t -> t
+
 val pp_json_key : Format.formatter -> t -> unit
 
 val json_key : t -> string

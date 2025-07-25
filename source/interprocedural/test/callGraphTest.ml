@@ -5709,12 +5709,12 @@ let test_call_graph_of_define =
       @@ assert_call_graph_of_define
            ~source:
              {|
-      from typing import Callable
-      def decorator_1(callable: Callable[[int], int]):
+      from typing import Callable, Any
+      def decorator_1(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
         return callable
-      def decorator_2(callable: Callable[[int], int]):
+      def decorator_2(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
         return callable
-      def decorator_3(callable: Callable[[int], int]):
+      def decorator_3(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
         return callable
 
       class Foo:
@@ -5737,7 +5737,7 @@ let test_call_graph_of_define =
            ~define_name:"test.caller"
            ~expected:
              [
-               ( "25:9-25:12|identifier|$parameter$foo",
+               ( "25:2-25:12",
                  ExpressionCallees.from_return
                    {
                      ReturnShimCallees.call_targets =
@@ -5758,9 +5758,9 @@ let test_call_graph_of_define =
            ~source:
              {|
       from typing import Callable, Optional
-      def decorator_1(callable: Callable[[int], int]):
+      def decorator_1(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
         return callable
-      def decorator_2(callable: Callable[[int], int]):
+      def decorator_2(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
         return callable
 
       class Foo:
@@ -5775,7 +5775,60 @@ let test_call_graph_of_define =
            ~define_name:"test.caller"
            ~expected:
              [
-               ( "15:9-15:12|identifier|$parameter$foo",
+               ( "15:2-15:12",
+                 ExpressionCallees.from_return
+                   {
+                     ReturnShimCallees.call_targets =
+                       [
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee"; kind = Normal });
+                       ];
+                     arguments = [ReturnShimCallees.ReturnExpression];
+                   } );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+      from typing import Callable
+      def decorator_1(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        return callable
+      def decorator_2(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
+        return callable
+
+      class Foo:
+        @decorator_2
+        def callee(self, x: int) -> int:
+          return x
+
+      @decorator_1
+      def caller() -> Foo:
+        return Foo()  # Test co-existence of return callees and expression callees
+    |}
+           ~define_name:"test.caller"
+           ~expected:
+             [
+               ( "15:9-15:14",
+                 ExpressionCallees.from_call
+                   (CallCallees.create
+                      ~init_targets:
+                        [
+                          CallTarget.create_regular
+                            ~implicit_receiver:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__init__"; kind = Normal });
+                        ]
+                      ~new_targets:
+                        [
+                          CallTarget.create_regular
+                            ~is_static_method:true
+                            (Target.Regular.Method
+                               { class_name = "object"; method_name = "__new__"; kind = Normal });
+                        ]
+                      ()) );
+               ( "15:2-15:14",
                  ExpressionCallees.from_return
                    {
                      ReturnShimCallees.call_targets =

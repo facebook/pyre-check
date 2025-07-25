@@ -93,6 +93,8 @@ module T = struct
 
   let of_define_statement define_location = Regular define_location
 
+  let of_return_statement return_location = Regular return_location
+
   let of_expression { Node.value; location } =
     match value with
     | Expression.Call { Call.origin = Some origin; _ } -> ArtificialCall origin
