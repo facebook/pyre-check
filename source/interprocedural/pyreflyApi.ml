@@ -181,8 +181,14 @@ end = struct
     let create ~path module_name =
       let () =
         (* Sanity check our naming scheme *)
-        if List.exists (Reference.as_list module_name) ~f:(fun s -> String.contains s ':') then
-          failwith "unexpected: module name contains `:`"
+        if
+          List.exists (Reference.as_list module_name) ~f:(fun s ->
+              String.contains s ':'
+              || String.contains s '#'
+              || String.contains s '$'
+              || String.contains s '@')
+        then
+          failwith "unexpected: module name contains an invalid character (`:#$@`)"
       in
       match path with
       | None -> module_name
@@ -450,6 +456,11 @@ end = struct
   type t = Reference.t [@@deriving compare, equal, sexp, hash, show]
 
   let create ~module_qualifier ~local_name ~add_module_separator =
+    let () =
+      (* Sanity check *)
+      if List.exists local_name ~f:(fun s -> String.contains s '#' || String.contains s ':') then
+        failwith "unexpected: local name contains an invalid character (`:#`)"
+    in
     if not add_module_separator then
       Reference.combine
         (ModuleQualifier.to_reference module_qualifier)
