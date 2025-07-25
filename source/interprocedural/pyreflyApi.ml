@@ -748,15 +748,15 @@ module ReadWrite = struct
     module State = struct
       type t = {
         module_qualifier: ModuleQualifier.t;
-        module_infos_shared_memory: ModuleInfosSharedMemory.t;
+        module_exists: ModuleQualifier.t -> bool;
         definitions: Definition.t list;
         scope_stack: Scope.t list;
       }
 
-      let initial ~module_infos_shared_memory ~module_qualifier =
+      let initial ~module_exists ~module_qualifier =
         {
           module_qualifier;
-          module_infos_shared_memory;
+          module_exists;
           definitions = [];
           scope_stack =
             [
@@ -770,10 +770,10 @@ module ReadWrite = struct
         }
 
 
-      let definitions { definitions; _ } = definitions
+      let definitions { definitions; _ } = List.rev definitions
 
       let add_definition_and_enter_scope
-          ({ module_qualifier; module_infos_shared_memory; definitions; scope_stack; _ } as state)
+          ({ module_qualifier; module_exists; definitions; scope_stack; _ } as state)
           symbol_name
           ast_node
         =
@@ -850,17 +850,16 @@ module ReadWrite = struct
             let name =
               FullyQualifiedName.create ~module_qualifier ~local_name ~add_module_separator:false
             in
-            match
-              ModuleInfosSharedMemory.get
-                module_infos_shared_memory
+            if
+              module_exists
                 (name |> FullyQualifiedName.to_reference |> ModuleQualifier.from_reference_unchecked)
-            with
-            | Some _ ->
-                let name =
-                  FullyQualifiedName.create ~module_qualifier ~local_name ~add_module_separator:true
-                in
-                name, true
-            | None -> name, false
+            then
+              let name =
+                FullyQualifiedName.create ~module_qualifier ~local_name ~add_module_separator:true
+              in
+              name, true
+            else
+              name, false
         in
         let current_scope = { current_scope with name_indices } in
         let new_scope =
@@ -981,14 +980,12 @@ module ReadWrite = struct
 
 
     let collect_from_source
-        ~module_infos_shared_memory
         ~module_qualifier
+        ~module_exists
         ({ Ast.Source.statements; _ } as source)
       =
       let definitions =
-        collect_from_statements
-          (State.initial ~module_infos_shared_memory ~module_qualifier)
-          statements
+        collect_from_statements (State.initial ~module_exists ~module_qualifier) statements
         |> State.definitions
       in
       let top_level_definition =
@@ -1022,7 +1019,8 @@ module ReadWrite = struct
       | Some (OptionalSource.Some (Ok source)) ->
           let definitions =
             DefinitionCollector.collect_from_source
-              ~module_infos_shared_memory
+              ~module_exists:(fun qualifier ->
+                ModuleInfosSharedMemory.get module_infos_shared_memory qualifier |> Option.is_some)
               ~module_qualifier
               source
           in
@@ -1170,6 +1168,7 @@ module ReadWrite = struct
   let _ = unused
 end
 
+(* Read-only API that can be sent to workers. Cheap to copy. *)
 module ReadOnly = struct
   type t = {
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
@@ -1228,4 +1227,8 @@ end
 (* Exposed for testing purposes *)
 module Testing = struct
   let create_module_qualifiers = ReadWrite.create_module_qualifiers
+
+  module QualifiedDefinition = ReadWrite.DefinitionCollector.Definition
+
+  let create_fully_qualified_names = ReadWrite.DefinitionCollector.collect_from_source
 end

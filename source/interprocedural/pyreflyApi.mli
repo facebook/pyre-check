@@ -48,6 +48,7 @@ module ReadWrite : sig
     t
 end
 
+(* Read-only API that can be sent to workers. Cheap to copy. *)
 module ReadOnly : sig
   type t
 
@@ -106,7 +107,16 @@ module ModuleQualifier : sig
 
   val from_reference_unchecked : Ast.Reference.t -> t
 
+  val to_reference : t -> Ast.Reference.t
+
   module Map : Map.S with type Key.t = t
+end
+
+(* Exposed for testing purposes *)
+module FullyQualifiedName : sig
+  type t [@@deriving compare, equal, show]
+
+  val to_reference : t -> Ast.Reference.t
 end
 
 (* Exposed for testing purposes *)
@@ -115,4 +125,18 @@ module Testing : sig
   val create_module_qualifiers
     :  ProjectFile.Module.t list ->
     ProjectFile.Module.t ModuleQualifier.Map.t
+
+  module QualifiedDefinition : sig
+    type t = {
+      qualified_name: FullyQualifiedName.t;
+      local_name: Ast.Reference.t; (* a non-unique name, more user-friendly. *)
+      ast_node: Ast.Statement.t; (* class or def *)
+    }
+  end
+
+  val create_fully_qualified_names
+    :  module_qualifier:ModuleQualifier.t ->
+    module_exists:(ModuleQualifier.t -> bool) ->
+    Ast.Source.t ->
+    QualifiedDefinition.t list
 end
