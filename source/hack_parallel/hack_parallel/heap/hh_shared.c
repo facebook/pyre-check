@@ -755,8 +755,9 @@ static void raise_dep_table_full(void) {
       dep_size);
 
   static const value* exn = NULL;
-  if (!exn)
+  if (!exn) {
     exn = caml_named_value("dep_table_full");
+  }
   caml_raise_constant(*exn);
 }
 
@@ -800,8 +801,9 @@ static int add_binding(uint64_t value) {
     uint64_t slot_val = table[slot];
 
     // The binding exists, done!
-    if (slot_val == value)
+    if (slot_val == value) {
       return 0;
+    }
 
     if (*dcounter >= dep_size) {
       raise_dep_table_full();
@@ -1124,8 +1126,9 @@ CAMLprim value hh_collect(void) {
 
 static void raise_heap_full(void) {
   static const value* exn = NULL;
-  if (!exn)
+  if (!exn) {
     exn = caml_named_value("heap_full");
+  }
   caml_raise_constant(*exn);
 }
 
@@ -1212,8 +1215,9 @@ static heap_entry_t* hh_store_ocaml(
   // We temporarily allocate memory using malloc to serialize the Ocaml object.
   // When we have finished copying the serialized data into our heap we need
   // to free the memory we allocated to avoid a leak.
-  if (kind == KIND_SERIALIZED)
+  if (kind == KIND_SERIALIZED) {
     free(value);
+  }
 
   return addr;
 }
@@ -1259,8 +1263,9 @@ static value write_at(unsigned int slot, value data) {
 
 static void raise_hash_table_full(void) {
   static const value* exn = NULL;
-  if (!exn)
+  if (!exn) {
     exn = caml_named_value("hash_table_full");
+  }
   slots_stats_t stats = get_slots_stats();
   fprintf(
       stderr,

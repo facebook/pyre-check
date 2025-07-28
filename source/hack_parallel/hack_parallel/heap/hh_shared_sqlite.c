@@ -53,8 +53,9 @@ void make_all_tables(sqlite3* db) {
 }
 
 void assert_sql_with_line(int result, int correct_result, int line_number) {
-  if (result == correct_result)
+  if (result == correct_result) {
     return;
+  }
   fprintf(
       stderr,
       "SQL assertion failure: Line: %d -> Expected: %d, Got: %d\n",
@@ -62,8 +63,9 @@ void assert_sql_with_line(int result, int correct_result, int line_number) {
       correct_result,
       result);
   static const value* exn = NULL;
-  if (!exn)
+  if (!exn) {
     exn = caml_named_value("sql_assertion_failure");
+  }
   caml_raise_with_arg(*exn, Val_long(result));
 }
 
