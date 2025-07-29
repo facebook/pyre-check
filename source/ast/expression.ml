@@ -1277,9 +1277,10 @@ and Origin : sig
         head: kind;
         tail: kind;
       }
-      (* In some rare cases, AST lowering happens in multiple steps.
-       * For instance: `match x: case 0: pass` turns into `if x == 0:` which then turns into `if x.__equals__(0):`.
-       * We keep a trace of all AST transforms. *)
+    (* In some rare cases, AST lowering happens in multiple steps.
+     * For instance: `match x: case 0: pass` turns into `if x == 0:` which then turns into `if x.__equals__(0):`.
+     * We keep a trace of all AST transforms. *)
+    | PysaReturnShim (* Additional ASTs on the return statements. *)
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
@@ -1393,6 +1394,7 @@ end = struct
         head: kind;
         tail: kind;
       }
+    | PysaReturnShim
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
@@ -1561,6 +1563,7 @@ end = struct
     | ForTestPurpose -> Format.fprintf formatter "for-test-purpose"
     | ForTypeChecking -> Format.fprintf formatter "for-type-checking"
     | Nested { head; tail } -> Format.fprintf formatter "%a>%a" pp_kind_json tail pp_kind_json head
+    | PysaReturnShim -> Format.fprintf formatter "return-statement"
 end
 
 and Expression : sig

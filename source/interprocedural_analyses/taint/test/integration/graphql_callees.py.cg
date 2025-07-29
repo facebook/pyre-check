@@ -1,0 +1,35 @@
+@generated
+Call dependencies
+{
+  "graphql_callees.GraphQLEntrypoint.callee (method)": [ "_test_sink (fun)" ],
+  "graphql_callees.GraphQLEntrypoint.callee@decorated (method)": [
+    "graphql_callees.method_decorator (fun)[formal(callable, position=0)=graphql_callees.GraphQLEntrypoint.callee (method)]"
+  ],
+  "graphql_callees.GraphQLEntrypoint.not_callee (method)": [
+    "_test_sink (fun)"
+  ],
+  "graphql_callees.return_graphql_entrypoint_1 (fun)": [
+    "_test_source (fun)",
+    "graphql_callees.GraphQLEntrypoint.__init__ (method)",
+    "graphql_callees.GraphQLEntrypoint.callee (method)",
+    "object.__new__ (method)"
+  ],
+  "graphql_callees.return_graphql_entrypoint_1@decorated (fun)": [
+    "graphql_callees.entrypoint_decorator (fun)[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_1 (fun)]"
+  ],
+  "graphql_callees.return_graphql_entrypoint_2 (fun)": [
+    "_test_source (fun)",
+    "graphql_callees.GraphQLEntrypoint.__init__ (method)",
+    "graphql_callees.GraphQLEntrypoint.callee (method)",
+    "object.__new__ (method)"
+  ],
+  "graphql_callees.return_graphql_entrypoint_2@decorated (fun)": [
+    "graphql_callees.entrypoint_decorator (fun)[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_2 (fun)]"
+  ],
+  "graphql_callees.return_graphql_entrypoint_3 (fun)": [
+    "graphql_callees.GraphQLEntrypoint.callee (method)"
+  ],
+  "graphql_callees.return_graphql_entrypoint_3@decorated (fun)": [
+    "graphql_callees.entrypoint_decorator (fun)[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_3 (fun)]"
+  ]
+}

@@ -1,0 +1,323 @@
+@generated
+Higher order call graphs
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_1",
+  "returned_callables": [],
+  "calls": {
+    "35:17-35:50": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "35:35-35:49": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "36:4-36:21": {
+      "return": {
+        "arguments_mapping": [ "ReturnExpression" ],
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_1@decorated",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_1",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "33:1-33:21|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_1]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "34:0-36:21|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_1": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "graphql_callees.return_graphql_entrypoint_1",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_2",
+  "returned_callables": [],
+  "calls": {
+    "42:4-42:44": {
+      "return": {
+        "arguments_mapping": [ "ReturnExpression" ],
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "42:11-42:44": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "42:29-42:43": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_2@decorated",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_2",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "39:1-39:21|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_2]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "40:0-42:44|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_2": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "graphql_callees.return_graphql_entrypoint_2",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_3",
+  "returned_callables": [],
+  "calls": {
+    "48:4-48:21": {
+      "return": {
+        "arguments_mapping": [ "ReturnExpression" ],
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_3@decorated",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_3",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "45:1-45:21|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_3]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "46:0-48:21|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_3": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "graphql_callees.return_graphql_entrypoint_3",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.GraphQLEntrypoint.callee",
+  "returned_callables": [],
+  "calls": {
+    "22:8-22:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.GraphQLEntrypoint.callee@decorated",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.GraphQLEntrypoint.callee",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "20:5-20:21|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "graphql_callees.method_decorator[formal(callable, position=0)=graphql_callees.GraphQLEntrypoint.callee]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "21:4-22:24|artificial-attribute-access|for-decorated-target-callee:graphql_callees.GraphQLEntrypoint.callee": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.GraphQLEntrypoint.not_callee",
+  "returned_callables": [],
+  "calls": {
+    "26:8-26:24": {
+      "call": {
+        "calls": [
+          { "target": "_test_sink", "index": 0, "return_type": [] }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_1]",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_1",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_2]",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_2",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_3]",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_3",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "graphql_callees.method_decorator[formal(callable, position=0)=graphql_callees.GraphQLEntrypoint.callee]",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.GraphQLEntrypoint.callee",
+      "index": 0,
+      "implicit_receiver": true,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}

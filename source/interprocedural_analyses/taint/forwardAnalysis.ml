@@ -3167,6 +3167,65 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_definition ~define:_ state = state
 
+  let analyze_return ~pyre_in_context ~return_expression ~statement_location state =
+    let taint, state_after_expression =
+      analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:return_expression
+    in
+    let state_after_return_shim =
+      FunctionContext.call_graph_of_define
+      |> CallGraph.DefineCallGraph.resolve_return ~statement_location
+      >>| (fun { CallGraph.ReturnShimCallees.call_targets; arguments = arguments_mapping } ->
+            let state_after_arguments = state_after_expression in
+            let arguments, arguments_taint =
+              List.fold
+                arguments_mapping
+                ~init:([], [])
+                ~f:(fun (arguments, arguments_taint) argument ->
+                  match argument with
+                  | CallGraph.ReturnShimCallees.ReturnExpression ->
+                      ( { Call.Argument.name = None; value = return_expression } :: arguments,
+                        taint :: arguments_taint ))
+            in
+            let arguments = List.rev arguments in
+            let arguments_taint = List.rev arguments_taint in
+            CallGraph.CallCallees.create ~call_targets ()
+            |> apply_callees_with_arguments_taint
+                 ~pyre_in_context
+                 ~is_result_used:false
+                 ~callee:
+                   (Expression.Constant Constant.NoneLiteral
+                   |> Node.create ~location:statement_location)
+                   (* Fabricate an expression that ensures the correct analysis. *)
+                 ~call_location:statement_location
+                 ~arguments
+                 ~origin:(Some (Origin.create ~location:statement_location Origin.PysaReturnShim))
+                 ~self_taint:None (* The fabricated callee has no taint *)
+                 ~callee_taint:None (* The fabricated callee has no taint *)
+                 ~arguments_taint
+                 ~state:state_after_arguments
+            |> snd)
+      |> Option.value ~default:state
+    in
+    check_flow
+      ~location:
+        (Location.with_module ~module_reference:FunctionContext.qualifier statement_location)
+      ~sink_handle:IssueHandle.Sink.Return
+      ~source_tree:taint
+      ~sink_tree:
+        (CallModel.return_sink
+           ~pyre_in_context
+           ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+           ~caller:FunctionContext.callable
+           ~location:statement_location
+           ~callee:FunctionContext.callable
+           ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint);
+    store_taint
+      ~root:AccessPath.Root.LocalResult
+      ~path:[]
+      taint
+      (join state_after_return_shim state_after_expression)
+
+
   let analyze_statement ~pyre_in_context ({ Node.location; _ } as statement) state =
     let statement =
       CallGraph.preprocess_statement
@@ -3276,23 +3335,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression
         in
         state
-    | Return { expression = Some expression; _ } ->
-        let taint, state =
-          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
-        in
-        check_flow
-          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
-          ~sink_handle:IssueHandle.Sink.Return
-          ~source_tree:taint
-          ~sink_tree:
-            (CallModel.return_sink
-               ~pyre_in_context
-               ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
-               ~caller:FunctionContext.callable
-               ~location
-               ~callee:FunctionContext.callable
-               ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint);
-        store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
+    | Return { expression = Some return_expression; _ } ->
+        analyze_return ~pyre_in_context ~return_expression ~statement_location:location state
     | Return { expression = None; _ } -> state
     | Break
     | Class _

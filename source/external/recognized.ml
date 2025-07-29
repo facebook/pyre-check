@@ -63,4 +63,6 @@ let graphql_decorators =
   [
     "graphqlserver.types.graphql_root_field", "graphqlserver.types.graphql_field";
     "test.decorator_1", "test.decorator_2" (* For testing only *);
+    ( "graphql_callees.entrypoint_decorator",
+      "graphql_callees.method_decorator" (* For testing only *) );
   ]

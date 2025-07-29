@@ -440,6 +440,8 @@ module DefineCallGraph : sig
     location:Ast.Location.t ->
     FormatStringStringifyCallees.t option
 
+  val resolve_return : t -> statement_location:Location.t -> ReturnShimCallees.t option
+
   (* Ensure the taint analysis does not use these targets. *)
   val drop_decorated_targets : t -> t
 end

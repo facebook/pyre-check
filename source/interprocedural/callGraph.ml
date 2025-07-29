@@ -2356,6 +2356,15 @@ module DefineCallGraph = struct
     >>= function
     | ExpressionCallees.Define call -> Some call
     | _ -> None
+
+
+  let resolve_return call_graph ~statement_location =
+    resolve_expression
+      call_graph
+      ~expression_identifier:(ExpressionIdentifier.of_return_statement statement_location)
+    >>= function
+    | ExpressionCallees.Return call -> Some call
+    | _ -> None
 end
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
@@ -4884,9 +4893,17 @@ module CallGraphBuilder = struct
 end
 
 (* On return expressions, we may want to have additional callees to simulate the usage of the
-   returned values. For example, when returning a GraphQL query entrypoint object, the object will
-   be used for querying but the queries are not explicit in the source code. Here we explicate the
-   queries by calling the methods in the returned object. *)
+ * returned values. For example, consider method
+ * @graphql_root_field(...)
+ * def foo():
+ *   return LazyUserDict()
+ * that returns a GraphQL query entrypoint object. Object `LazyUserDict` will be used for querying
+ * but the queries are not explicit in the source code. Hence we explicate the queries by calling
+ * the methods in the returned object, which can be realized by rewriting the return statement into
+ *   LazyUserDict().async_phone_number()
+ *   return LazyUserDict()
+ * Here method `async_phone_number` in class `LazyUserDict` is decorated by `@graphql_field` to
+ * declare it is a query. *)
 let register_callees_on_return
     ~debug
     ~pyre_in_context
@@ -4924,7 +4941,6 @@ let register_callees_on_return
         |> CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map
         |> CallResolution.strip_optional (* TODO: Strip Sequence, List, ... *)
       in
-      let return_expression_type_string = Type.primitive_name return_expression_type in
       let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
       let has_decorator_with_name ~decorator_name:name callable =
         callable |> get_decorator_names |> Data_structures.SerializableStringSet.mem name
@@ -4932,8 +4948,8 @@ let register_callees_on_return
       let methods_in_return_expression_type =
         return_expression_type
         |> Type.primitive_name
-        >>| PyrePysaApi.ReadOnly.get_class_summary pyre_api
-        |> Option.join
+        >>| fun class_name ->
+        PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
         >>| Node.value
         >>| PyrePysaLogic.ClassSummary.attributes
         >>| Identifier.SerializableMap.data
@@ -4941,17 +4957,12 @@ let register_callees_on_return
         |> List.filter_map
              ~f:(fun { Node.value = { PyrePysaLogic.ClassSummary.Attribute.kind; name }; _ } ->
                match kind with
-               | PyrePysaLogic.ClassSummary.Attribute.Method _ -> (
-                   let target =
-                     return_expression_type_string
-                     >>| fun return_expression_type_string ->
-                     Target.create_method (Reference.create return_expression_type_string) name
-                   in
-                   match target with
-                   | Some target
-                     when has_decorator_with_name ~decorator_name:method_decorator target ->
-                       Some (CallTarget.create target)
-                   | _ -> None)
+               | PyrePysaLogic.ClassSummary.Attribute.Method _ ->
+                   let target = Target.create_method (Reference.create class_name) name in
+                   if has_decorator_with_name ~decorator_name:method_decorator target then
+                     Some (CallTarget.create target)
+                   else
+                     None
                | _ -> None)
       in
       callees_at_location :=
@@ -4962,7 +4973,8 @@ let register_callees_on_return
           ~statement_location
           ~callees:
             {
-              ReturnShimCallees.call_targets = methods_in_return_expression_type;
+              ReturnShimCallees.call_targets =
+                Option.value ~default:[] methods_in_return_expression_type;
               arguments = [ReturnExpression];
             }
           !callees_at_location
@@ -6321,6 +6333,20 @@ module HigherOrderCallGraph = struct
             (* No need to propagate `ReturnShimCallees`, since the taint analysis only need to
                analyze them once. TODO(T231956685): Resolve decorated targets. *)
             let callees, state = analyze_expression ~pyre_in_context ~state ~expression in
+            let () =
+              Context.input_define_call_graph
+              |> DefineCallGraph.resolve_return ~statement_location:statement.Node.location
+              >>| (fun callees ->
+                    Context.output_define_call_graph :=
+                      DefineCallGraph.add_return_callees
+                        ~debug:Context.debug
+                        ~caller:Context.callable
+                        ~return_expression:expression
+                        ~statement_location:statement.Node.location
+                        ~callees
+                        !Context.output_define_call_graph)
+              |> Option.value ~default:()
+            in
             store_callees ~weak:true ~root:TaintAccessPath.Root.LocalResult ~callees state
         | Return { expression = None; _ }
         | Try _ ->

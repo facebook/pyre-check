@@ -1161,7 +1161,7 @@ module ReadWrite = struct
 
   (* TODO(T225700656): Remove this, this is to silence the unused value warning *)
   let unused { qualifier_to_module_map; type_of_expressions_shared_memory; _ } =
-    let _ = qualifier_to_module_map, type_of_expressions_shared_memory in
+    let _ = Module.pp, qualifier_to_module_map, type_of_expressions_shared_memory in
     ()
 
 

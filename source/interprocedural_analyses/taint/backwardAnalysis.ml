@@ -2811,6 +2811,52 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     analyze_expression ~pyre_in_context ~taint ~state ~expression:value
 
 
+  let analyze_return ~pyre_in_context ~return_expression ~statement_location state =
+    let access_path = { AccessPath.root = AccessPath.Root.LocalResult; path = [] } in
+    let return_taint = get_taint (Some access_path) state in
+    let return_sink =
+      CallModel.return_sink
+        ~pyre_in_context
+        ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
+        ~caller:FunctionContext.callable
+        ~location:statement_location
+        ~callee:FunctionContext.callable
+        ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint
+      |> BackwardState.Tree.add_local_breadcrumb (Features.propagated_return_sink ())
+    in
+    let state_after_return_shim =
+      FunctionContext.call_graph_of_define
+      |> CallGraph.DefineCallGraph.resolve_return ~statement_location
+      >>| (fun { CallGraph.ReturnShimCallees.call_targets; arguments = arguments_mapping } ->
+            let arguments =
+              List.map arguments_mapping ~f:(function ReturnExpression ->
+                  { Call.Argument.name = None; value = return_expression })
+            in
+            let { state; arguments_taint; _ } =
+              apply_callees_and_return_arguments_taint
+                ~pyre_in_context
+                ~callee:
+                  (Expression.Constant Constant.NoneLiteral
+                  |> Node.create ~location:statement_location)
+                  (* Fabricate an expression that ensures the correct analysis. *)
+                ~call_location:statement_location
+                ~arguments
+                ~origin:(Some (Origin.create ~location:statement_location Origin.PysaReturnShim))
+                ~state
+                ~call_taint:BackwardState.Tree.bottom
+                (CallGraph.CallCallees.create ~call_targets ())
+            in
+            analyze_arguments ~pyre_in_context ~arguments ~arguments_taint ~state)
+      |> Option.value ~default:state
+    in
+    analyze_expression
+      ~pyre_in_context
+      ~taint:(BackwardState.Tree.join return_taint return_sink)
+      ~state
+      ~expression:return_expression
+    |> join state_after_return_shim
+
+
   let analyze_statement ~pyre_in_context state ({ Node.location; _ } as statement) =
     let statement =
       CallGraph.preprocess_statement
@@ -2892,24 +2938,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Raise { expression = None; _ } -> state
     | Raise { expression = Some expression; _ } ->
         analyze_expression ~pyre_in_context ~taint:BackwardState.Tree.empty ~state ~expression
-    | Return { expression = Some expression; _ } ->
-        let access_path = { AccessPath.root = AccessPath.Root.LocalResult; path = [] } in
-        let return_taint = get_taint (Some access_path) state in
-        let return_sink =
-          CallModel.return_sink
-            ~pyre_in_context
-            ~type_of_expression_shared_memory:FunctionContext.type_of_expression_shared_memory
-            ~caller:FunctionContext.callable
-            ~location
-            ~callee:FunctionContext.callable
-            ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint
-          |> BackwardState.Tree.add_local_breadcrumb (Features.propagated_return_sink ())
-        in
-        analyze_expression
-          ~pyre_in_context
-          ~taint:(BackwardState.Tree.join return_taint return_sink)
-          ~state
-          ~expression
+    | Return { expression = Some return_expression; _ } ->
+        analyze_return ~pyre_in_context ~return_expression ~statement_location:location state
     | Return { expression = None; _ }
     | Break
     | Class _
