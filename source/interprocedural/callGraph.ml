@@ -1763,7 +1763,10 @@ end
 
 (* Artificial callees on returned expressions. *)
 module ReturnShimCallees = struct
-  type argument_mapping = ReturnExpression [@@deriving equal, show { with_path = false }]
+  type argument_mapping =
+    | ReturnExpression
+    | ReturnExpressionElement
+  [@@deriving equal, show { with_path = false }]
 
   type t = {
     call_targets: CallTarget.t list;
@@ -4939,17 +4942,30 @@ let register_callees_on_return
       let return_expression_type =
         return_expression
         |> CallResolution.resolve_ignoring_errors ~pyre_in_context ~callables_to_definitions_map
-        |> CallResolution.strip_optional (* TODO: Strip Sequence, List, ... *)
+        |> CallResolution.strip_optional
+      in
+      let return_expression_inner_type, argument =
+        return_expression_type
+        |> Type.split
+        |> fun (annotation, parameters) ->
+        (Type.primitive_name annotation, parameters)
+        |> function
+        | Some "list", [Type.Record.Argument.Single parameter]
+        | Some "set", [Type.Record.Argument.Single parameter] ->
+            parameter, ReturnShimCallees.ReturnExpressionElement
+        | Some _, _ (* Unable to identify the base type *)
+        | None, _ ->
+            return_expression_type, ReturnShimCallees.ReturnExpression
       in
       let pyre_api = PyrePysaApi.InContext.pyre_api pyre_in_context in
       let has_decorator_with_name ~decorator_name:name callable =
         callable |> get_decorator_names |> Data_structures.SerializableStringSet.mem name
       in
       let methods_in_return_expression_type =
-        return_expression_type
+        return_expression_inner_type
         |> Type.primitive_name
-        >>| fun class_name ->
-        PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
+        >>| fun return_expression_inner_class_name ->
+        PyrePysaApi.ReadOnly.get_class_summary pyre_api return_expression_inner_class_name
         >>| Node.value
         >>| PyrePysaLogic.ClassSummary.attributes
         >>| Identifier.SerializableMap.data
@@ -4958,7 +4974,9 @@ let register_callees_on_return
              ~f:(fun { Node.value = { PyrePysaLogic.ClassSummary.Attribute.kind; name }; _ } ->
                match kind with
                | PyrePysaLogic.ClassSummary.Attribute.Method _ ->
-                   let target = Target.create_method (Reference.create class_name) name in
+                   let target =
+                     Target.create_method (Reference.create return_expression_inner_class_name) name
+                   in
                    if has_decorator_with_name ~decorator_name:method_decorator target then
                      Some (CallTarget.create target)
                    else
@@ -4975,7 +4993,7 @@ let register_callees_on_return
             {
               ReturnShimCallees.call_targets =
                 Option.value ~default:[] methods_in_return_expression_type;
-              arguments = [ReturnExpression];
+              arguments = [argument];
             }
           !callees_at_location
   | _ -> ()

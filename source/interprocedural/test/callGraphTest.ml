@@ -5769,7 +5769,7 @@ let test_call_graph_of_define =
           return x
 
       @decorator_1
-      def caller(foo: Foo) -> Optional[Foo]:  # Test stripping
+      def caller(foo: Optional[Foo]) -> Optional[Foo]:  # Test stripping
         return foo
     |}
            ~define_name:"test.caller"
@@ -5785,6 +5785,111 @@ let test_call_graph_of_define =
                               { class_name = "test.Foo"; method_name = "callee"; kind = Normal });
                        ];
                      arguments = [ReturnShimCallees.ReturnExpression];
+                   } );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+      from typing import Callable, List
+      def decorator_1(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        return callable
+      def decorator_2(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
+        return callable
+
+      class Foo:
+        @decorator_2
+        def callee(self, x: int) -> int:
+          return x
+
+      @decorator_1
+      def caller(foo: Foo) -> List[Foo]:  # Test stripping
+        return [foo]
+    |}
+           ~define_name:"test.caller"
+           ~expected:
+             [
+               ( "15:2-15:14",
+                 ExpressionCallees.from_return
+                   {
+                     ReturnShimCallees.call_targets =
+                       [
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee"; kind = Normal });
+                       ];
+                     arguments = [ReturnShimCallees.ReturnExpressionElement];
+                   } );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+      from typing import Callable, Sequence
+      def decorator_1(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        return callable
+      def decorator_2(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
+        return callable
+
+      class Foo:
+        @decorator_2
+        def callee(self, x: int) -> int:
+          return x
+
+      @decorator_1
+      def caller(foo: Foo) -> Sequence[Foo]:  # Test stripping
+        return [foo]
+    |}
+           ~define_name:"test.caller"
+           ~expected:
+             [
+               ( "15:2-15:14",
+                 ExpressionCallees.from_return
+                   {
+                     ReturnShimCallees.call_targets =
+                       [
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee"; kind = Normal });
+                       ];
+                     arguments = [ReturnShimCallees.ReturnExpressionElement];
+                   } );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:
+             {|
+      from typing import Callable, Set
+      def decorator_1(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        return callable
+      def decorator_2(callable: Callable[[Any, int], int]) -> Callable[[Any, int], int]:
+        return callable
+
+      class Foo:
+        @decorator_2
+        def callee(self, x: int) -> int:
+          return x
+
+      @decorator_1
+      def caller(foo: Foo) -> Set[Foo]:  # Test stripping
+        return {foo}
+    |}
+           ~define_name:"test.caller"
+           ~expected:
+             [
+               ( "15:2-15:14",
+                 ExpressionCallees.from_return
+                   {
+                     ReturnShimCallees.call_targets =
+                       [
+                         CallTarget.create_regular
+                           (Target.Regular.Method
+                              { class_name = "test.Foo"; method_name = "callee"; kind = Normal });
+                       ];
+                     arguments = [ReturnShimCallees.ReturnExpressionElement];
                    } );
              ]
            ();

@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 
 def method_decorator(callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -46,3 +46,18 @@ def return_graphql_entrypoint_2(x: Any) -> GraphQLEntrypoint:
 def return_graphql_entrypoint_3(entrypoint: GraphQLEntrypoint) -> GraphQLEntrypoint:
     # Test sink
     return entrypoint
+
+
+@entrypoint_decorator
+def return_graphql_entrypoint_strip_list(x: Any) -> List[GraphQLEntrypoint]:
+    # Test stripping from list types
+    entrypoint = GraphQLEntrypoint(_test_source())
+    return [entrypoint]
+
+
+@entrypoint_decorator
+def return_graphql_entrypoint_strip_list_with_sink(
+    entrypoints: List[GraphQLEntrypoint],
+) -> List[GraphQLEntrypoint]:
+    # Test stripping from list types and test sink
+    return entrypoints

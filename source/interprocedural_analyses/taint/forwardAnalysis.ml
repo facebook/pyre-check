@@ -3184,7 +3184,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   match argument with
                   | CallGraph.ReturnShimCallees.ReturnExpression ->
                       ( { Call.Argument.name = None; value = return_expression } :: arguments,
-                        taint :: arguments_taint ))
+                        taint :: arguments_taint )
+                  | ReturnExpressionElement ->
+                      ( {
+                          Call.Argument.name = None;
+                          value =
+                            Expression.Constant Constant.NoneLiteral
+                            |> Node.create ~location:statement_location;
+                        }
+                        :: arguments,
+                        ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex] taint
+                        :: arguments_taint ))
             in
             let arguments = List.rev arguments in
             let arguments_taint = List.rev arguments_taint in

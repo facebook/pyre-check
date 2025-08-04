@@ -214,6 +214,139 @@ Higher order call graphs
   }
 }
 {
+  "callable": "graphql_callees.return_graphql_entrypoint_strip_list",
+  "returned_callables": [],
+  "calls": {
+    "54:17-54:50": {
+      "call": {
+        "new_calls": [
+          {
+            "target": "object.__new__",
+            "index": 0,
+            "return_type": [],
+            "is_static_method": true
+          }
+        ],
+        "init_calls": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.__init__",
+            "index": 0,
+            "implicit_receiver": true,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "54:35-54:49": {
+      "call": {
+        "calls": [
+          { "target": "_test_source", "index": 0, "return_type": [] }
+        ]
+      }
+    },
+    "55:4-55:23": {
+      "return": {
+        "arguments_mapping": [ "ReturnExpressionElement" ],
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_strip_list@decorated",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_strip_list",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "51:1-51:21|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_strip_list]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "52:0-55:23|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_strip_list": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "graphql_callees.return_graphql_entrypoint_strip_list",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
+  "returned_callables": [],
+  "calls": {
+    "63:4-63:22": {
+      "return": {
+        "arguments_mapping": [ "ReturnExpressionElement" ],
+        "call_targets": [
+          {
+            "target": "graphql_callees.GraphQLEntrypoint.callee",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    }
+  }
+}
+{
+  "callable": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink@decorated",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {
+    "58:1-58:21|artificial-call|for-decorated-target": {
+      "call": {
+        "calls": [
+          {
+            "target": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_strip_list_with_sink]",
+            "index": 0,
+            "return_type": []
+          }
+        ]
+      }
+    },
+    "59:0-63:22|artificial-attribute-access|for-decorated-target-callee:graphql_callees.return_graphql_entrypoint_strip_list_with_sink": {
+      "attribute_access": {
+        "callables": [
+          {
+            "target": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
+            "index": 0,
+            "return_type": []
+          }
+        ],
+        "is_attribute": true
+      }
+    }
+  }
+}
+{
   "callable": "graphql_callees.GraphQLEntrypoint.callee",
   "returned_callables": [],
   "calls": {
@@ -303,6 +436,28 @@ Higher order call graphs
   "returned_callables": [
     {
       "target": "graphql_callees.return_graphql_entrypoint_3",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_strip_list]",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_strip_list",
+      "index": 0,
+      "return_type": []
+    }
+  ],
+  "calls": {}
+}
+{
+  "callable": "graphql_callees.entrypoint_decorator[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_strip_list_with_sink]",
+  "returned_callables": [
+    {
+      "target": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
       "index": 0,
       "return_type": []
     }

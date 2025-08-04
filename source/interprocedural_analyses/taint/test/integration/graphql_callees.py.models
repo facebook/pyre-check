@@ -299,6 +299,137 @@
 {
   "kind": "model",
   "data": {
+    "callable": "graphql_callees.return_graphql_entrypoint_strip_list",
+    "filename": "graphql_callees.py",
+    "callable_line": 52,
+    "sources": [
+      {
+        "port": "result[0][x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 54, "start": 35, "end": 49 } ],
+            "origin": { "line": 54, "start": 35, "end": 49 }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "graphql_callees.return_graphql_entrypoint_strip_list",
+    "callable_line": 52,
+    "code": 5002,
+    "line": 55,
+    "start": 4,
+    "end": 23,
+    "filename": "graphql_callees.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 54, "start": 35, "end": 49 } ],
+            "origin": { "line": 54, "start": 35, "end": 49 }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": { "line": 55, "start": 4, "end": 23 },
+              "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
+              "port": "formal(self, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "graphql_callees.GraphQLEntrypoint.callee",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "graphql_callees.return_graphql_entrypoint_strip_list:5002:0:Call|graphql_callees.GraphQLEntrypoint.callee|0|formal(self):43fdf420421c2b87fdcb2a89a5e91687"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "graphql_callees.return_graphql_entrypoint_strip_list_with_sink",
+    "filename": "graphql_callees.py",
+    "callable_line": 59,
+    "sinks": [
+      {
+        "port": "formal(entrypoints, position=0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "call": {
+              "position": { "line": 63, "start": 11, "end": 22 },
+              "resolves_to": [ "graphql_callees.GraphQLEntrypoint.callee" ],
+              "port": "formal(self, position=0)",
+              "call_site": "63:4-63:22"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(entrypoints, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": {}
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "graphql_callees.GraphQLEntrypoint.__init__",
     "filename": "graphql_callees.py",
     "callable_line": 17,

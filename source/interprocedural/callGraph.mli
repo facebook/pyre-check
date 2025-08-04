@@ -329,7 +329,9 @@ end
 
 (* Artificial callees on returned expressions. *)
 module ReturnShimCallees : sig
-  type argument_mapping = ReturnExpression
+  type argument_mapping =
+    | ReturnExpression
+    | ReturnExpressionElement
 
   type t = {
     call_targets: CallTarget.t list;

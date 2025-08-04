@@ -31,5 +31,20 @@ Call dependencies
   ],
   "graphql_callees.return_graphql_entrypoint_3@decorated (fun)": [
     "graphql_callees.entrypoint_decorator (fun)[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_3 (fun)]"
+  ],
+  "graphql_callees.return_graphql_entrypoint_strip_list (fun)": [
+    "_test_source (fun)",
+    "graphql_callees.GraphQLEntrypoint.__init__ (method)",
+    "graphql_callees.GraphQLEntrypoint.callee (method)",
+    "object.__new__ (method)"
+  ],
+  "graphql_callees.return_graphql_entrypoint_strip_list@decorated (fun)": [
+    "graphql_callees.entrypoint_decorator (fun)[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_strip_list (fun)]"
+  ],
+  "graphql_callees.return_graphql_entrypoint_strip_list_with_sink (fun)": [
+    "graphql_callees.GraphQLEntrypoint.callee (method)"
+  ],
+  "graphql_callees.return_graphql_entrypoint_strip_list_with_sink@decorated (fun)": [
+    "graphql_callees.entrypoint_decorator (fun)[formal(callable, position=0)=graphql_callees.return_graphql_entrypoint_strip_list_with_sink (fun)]"
   ]
 }

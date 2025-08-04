@@ -2829,8 +2829,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> CallGraph.DefineCallGraph.resolve_return ~statement_location
       >>| (fun { CallGraph.ReturnShimCallees.call_targets; arguments = arguments_mapping } ->
             let arguments =
-              List.map arguments_mapping ~f:(function ReturnExpression ->
-                  { Call.Argument.name = None; value = return_expression })
+              List.map arguments_mapping ~f:(function
+                  | CallGraph.ReturnShimCallees.ReturnExpression ->
+                      { Call.Argument.name = None; value = return_expression }
+                  | ReturnExpressionElement ->
+                      (* TODO(T233446271): Allow updating the entry in the state for `expression` so
+                         that later we can read from it. *)
+                      { Call.Argument.name = None; value = return_expression })
             in
             let { state; arguments_taint; _ } =
               apply_callees_and_return_arguments_taint
@@ -2845,6 +2850,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~state
                 ~call_taint:BackwardState.Tree.bottom
                 (CallGraph.CallCallees.create ~call_targets ())
+            in
+            let arguments_taint =
+              arguments_taint
+              |> List.zip_exn arguments_mapping
+              |> List.map ~f:(fun (argument_mapping, argument_taint) ->
+                     match argument_mapping with
+                     | CallGraph.ReturnShimCallees.ReturnExpression -> argument_taint
+                     | ReturnExpressionElement ->
+                         BackwardState.Tree.prepend
+                           [Abstract.TreeDomain.Label.AnyIndex]
+                           argument_taint)
             in
             analyze_arguments ~pyre_in_context ~arguments ~arguments_taint ~state)
       |> Option.value ~default:state
