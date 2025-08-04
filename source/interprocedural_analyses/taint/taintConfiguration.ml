@@ -270,6 +270,16 @@ module ModelConstraints = struct
     }
 end
 
+module PartialFlow = struct
+  type t = {
+    full_issue_code: int;
+    partial_issue_code: int;
+    full_issue_transform: TaintTransform.t;
+    is_prefix_flow: bool;
+    feature: string;
+  }
+end
+
 (* A map from partial sink kinds to other partial sinks that "match" them. Two partial sinks match
    only if both appear in a multi-source rule. *)
 module RegisteredPartialSinks = struct
@@ -499,6 +509,7 @@ module Heap = struct
     infer_argument_tito: bool;
     analysis_model_constraints: ModelConstraints.t;
     source_sink_filter: SourceSinkFilter.t;
+    partial_flows: PartialFlow.t list;
   }
 
   let empty =
@@ -523,6 +534,7 @@ module Heap = struct
       infer_argument_tito = false;
       analysis_model_constraints = ModelConstraints.default;
       source_sink_filter = SourceSinkFilter.all;
+      partial_flows = [];
     }
 
 
@@ -707,6 +719,7 @@ module Heap = struct
           ~filtered_sources:None
           ~filtered_sinks:None
           ~filtered_transforms:None;
+      partial_flows = [];
     }
 end
 
@@ -976,6 +989,13 @@ let from_json_list source_json_list =
         Result.Error
           [Error.create ~path ~kind:(Error.UnexpectedJsonType { json; message; section })]
   in
+  let json_bool_member ~path key value =
+    json_exception_to_error ~path ~section:key (fun () ->
+        JsonAst.Json.Util.member_exn key value
+        |> JsonAst.Json.Util.to_bool
+        |> Option.value_exn
+        |> Result.return)
+  in
   let json_string_member ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
         JsonAst.Json.Util.member_exn key value |> JsonAst.Json.Util.to_string_exn |> Result.return)
@@ -986,6 +1006,10 @@ let from_json_list source_json_list =
         let value = JsonAst.Json.Util.to_string_exn node in
         let location = JsonAst.Json.Util.to_location_exn node in
         Result.return (value, location))
+  in
+  let json_int_member ~path key value =
+    json_exception_to_error ~path ~section:key (fun () ->
+        JsonAst.Json.Util.member_exn key value |> JsonAst.Json.Util.to_int_exn |> Result.return)
   in
   let json_integer_member_with_location ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
@@ -1099,6 +1123,36 @@ let from_json_list source_json_list =
     >>= fun () ->
     json_string_member ~path "name" json >>= fun name -> Result.Ok (TaintTransform.Named name)
   in
+  let parse_partial_flow ~path ~section json =
+    let required_keys =
+      ["full_issue_code"; "partial_issue_code"; "full_issue_transform"; "is_prefix_flow"; "feature"]
+    in
+    check_keys
+      ~path
+      ~section
+      ~required_keys
+      ~current_keys:(JsonAst.Json.Util.keys json)
+      ~valid_keys:required_keys
+    >>= fun () ->
+    json_int_member ~path "full_issue_code" json
+    >>= fun full_issue_code ->
+    json_int_member ~path "partial_issue_code" json
+    >>= fun partial_issue_code ->
+    json_string_member ~path "full_issue_transform" json
+    >>= fun full_issue_transform ->
+    json_bool_member ~path "is_prefix_flow" json
+    >>= fun is_prefix_flow ->
+    json_string_member ~path "feature" json
+    >>= fun feature ->
+    Result.Ok
+      {
+        PartialFlow.full_issue_code;
+        partial_issue_code;
+        full_issue_transform = TaintTransform.Named full_issue_transform;
+        is_prefix_flow;
+        feature;
+      }
+  in
   let parse_transforms (path, json) =
     array_member ~path "transforms" json
     >>= fun json ->
@@ -1110,6 +1164,13 @@ let from_json_list source_json_list =
     array_member ~path "features" json
     >>= fun json ->
     List.map ~f:(json_string_member ~path "name") json
+    |> Result.combine_errors
+    |> Result.map_error ~f:List.concat
+  in
+  let parse_partial_flows (path, json) =
+    array_member ~path "partial_flows" json
+    >>= fun json ->
+    List.map ~f:(parse_partial_flow ~path ~section:"partial_flows") json
     |> Result.combine_errors
     |> Result.map_error ~f:List.concat
   in
@@ -1525,6 +1586,11 @@ let from_json_list source_json_list =
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun features ->
+  List.map source_json_list ~f:parse_partial_flows
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.concat
+  >>= fun partial_flows ->
   List.map
     source_json_list
     ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~allowed_transforms:transforms)
@@ -1658,6 +1724,7 @@ let from_json_list source_json_list =
         ~filtered_sources:None
         ~filtered_sinks:None
         ~filtered_transforms:None;
+    partial_flows;
   }
 
 

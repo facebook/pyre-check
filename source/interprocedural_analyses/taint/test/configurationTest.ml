@@ -2633,6 +2633,76 @@ let test_matching_kinds _ =
   ()
 
 
+let test_partial_flows _ =
+  let { TaintConfiguration.Heap.partial_flows; _ } =
+    assert_parse
+      {|
+    {
+      "sources": [
+        {"name": "SourceA"}
+      ],
+      "sinks": [
+        {"name": "SinkB"},
+        {"name": "SinkC"}
+      ],
+      "transforms": [
+        { "name": "TransformB" }
+      ],
+      "rules": [
+        {"name": "SourceA -> SinkB",
+         "sources": ["SourceA"],
+         "sinks": ["SinkB"],
+         "message_format": "[{$sources}] to [{$sinks}]",
+         "code": 4100
+        },
+        {"name": "SourceA -> TransformB -> SinkC",
+         "sources": ["SourceA"],
+         "sinks": ["SinkC"],
+         "transforms": ["TransformB"],
+         "message_format": "[{$sources}] transformed by [{$transforms}] to [{$sinks}]",
+         "code": 4101
+        }
+      ],
+      "partial_flows": [
+          {
+            "full_issue_code": 4101,
+            "partial_issue_code": 4100,
+            "full_issue_transform": "TransformB",
+            "is_prefix_flow": true,
+            "feature": "some_feature"
+          },
+          {
+            "full_issue_code": 1000,
+            "partial_issue_code": 1001,
+            "full_issue_transform": "TransformNonExistent",
+            "is_prefix_flow": false,
+            "feature": "another_feature"
+          }
+      ]
+    }
+  |}
+  in
+  assert_equal
+    partial_flows
+    [
+      {
+        TaintConfiguration.PartialFlow.full_issue_code = 4101;
+        partial_issue_code = 4100;
+        full_issue_transform = TaintTransform.Named "TransformB";
+        is_prefix_flow = true;
+        feature = "some_feature";
+      };
+      {
+        (* TODO(T233445666): Verify if the codes and the transforms exist. *)
+        TaintConfiguration.PartialFlow.full_issue_code = 1000;
+        partial_issue_code = 1001;
+        full_issue_transform = TaintTransform.Named "TransformNonExistent";
+        is_prefix_flow = false;
+        feature = "another_feature";
+      };
+    ]
+
+
 let test_filters _ =
   let configuration =
     assert_parse
@@ -2794,5 +2864,6 @@ let () =
          "validate" >:: test_validate;
          "matching_kinds" >:: test_matching_kinds;
          "filters" >:: test_filters;
+         "partial_flows" >:: test_partial_flows;
        ]
   |> Test.run
