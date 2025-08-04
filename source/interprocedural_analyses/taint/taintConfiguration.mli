@@ -106,6 +106,8 @@ module PartialFlow : sig
     is_prefix_flow: bool;
     feature: string;
   }
+
+  val to_json : t -> Yojson.Safe.t
 end
 
 (** Taint configuration, stored in the ocaml heap. *)

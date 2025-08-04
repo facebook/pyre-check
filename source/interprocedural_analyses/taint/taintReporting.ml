@@ -377,6 +377,10 @@ let save_results_to_directory
       in
       Yojson.Safe.Util.combine global_statistics (statistics ~model_verification_errors)
     in
+    let ({ TaintConfiguration.Heap.partial_flows; _ } as taint_configuration_heap) =
+      TaintConfiguration.SharedMemory.get taint_configuration
+    in
+    let partial_flows = List.map partial_flows ~f:TaintConfiguration.PartialFlow.to_json in
     let metadata_json =
       `Assoc
         [
@@ -388,11 +392,9 @@ let save_results_to_directory
           "tool", `String "pysa";
           "version", `String (Version.version ());
           "stats", statistics;
-          ( "codes",
-            taint_configuration
-            |> TaintConfiguration.SharedMemory.get
-            |> TaintConfiguration.code_metadata );
+          "codes", TaintConfiguration.code_metadata taint_configuration_heap;
           "cache", Cache.metadata_to_json cache;
+          "partial_flows", `List partial_flows;
         ]
     in
     Yojson.Safe.to_channel out_channel metadata_json;

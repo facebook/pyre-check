@@ -278,6 +278,17 @@ module PartialFlow = struct
     is_prefix_flow: bool;
     feature: string;
   }
+
+  let to_json { full_issue_code; partial_issue_code; full_issue_transform; is_prefix_flow; feature }
+    =
+    `Assoc
+      [
+        "full_issue_code", `Int full_issue_code;
+        "partial_issue_code", `Int partial_issue_code;
+        "full_issue_transform", `String (TaintTransform.show full_issue_transform);
+        "is_prefix_flow", `Bool is_prefix_flow;
+        "feature", `String feature;
+      ]
 end
 
 (* A map from partial sink kinds to other partial sinks that "match" them. Two partial sinks match
