@@ -262,6 +262,7 @@ module ProjectFile = struct
       module_name: Reference.t;
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
+      is_test: bool;
     }
     [@@deriving equal, show]
 
@@ -276,12 +277,15 @@ module ProjectFile = struct
       JsonUtil.get_object_member json "source_path"
       >>= fun source_path ->
       ModulePath.from_json (`Assoc source_path)
-      >>| fun module_path ->
+      >>= fun module_path ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_test"
+      >>| fun is_test ->
       {
         module_id = ModuleId.from_int module_id;
         module_name = Reference.create module_name;
         module_path;
         info_path = Option.map ~f:ModuleInfoPath.create info_path;
+        is_test;
       }
   end
 
@@ -526,6 +530,7 @@ module ModuleInfosSharedMemory = struct
   module Module = struct
     type t = {
       source_path: ArtifactPath.t option (* The path of source code as seen by the analyzer. *);
+      is_test: bool; (* Is this a test file? *)
     }
   end
 
@@ -582,7 +587,8 @@ end
 module OptionalSource = struct
   type 'a t =
     | Some of 'a
-    | NoSource
+    | TestFile (* Module marked with is_test = true *)
+    | NoSource (* Module with source_path = None *)
 end
 
 (* Abstract Syntax Tree of a module, stored in shared memory. *)
@@ -728,6 +734,28 @@ module ClassMetadataSharedMemory = struct
       end)
 end
 
+module ModuleCallablesSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (ModuleQualifierSharedMemoryKey)
+    (struct
+      type t = FullyQualifiedName.t list
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly callables in module"
+    end)
+
+module ModuleClassesSharedMemory =
+  Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+    (ModuleQualifierSharedMemoryKey)
+    (struct
+      type t = FullyQualifiedName.t list
+
+      let prefix = Hack_parallel.Std.Prefix.make ()
+
+      let description = "pyrefly classes in module"
+    end)
+
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
    expensive to copy. *)
 module ReadWrite = struct
@@ -737,18 +765,20 @@ module ReadWrite = struct
       module_name: Reference.t;
       source_path: ArtifactPath.t option; (* The path of source code as seen by the analyzer. *)
       pyrefly_info_path: ModuleInfoPath.t option;
+      is_test: bool;
     }
     [@@deriving show]
 
     let from_project
         ~pyrefly_directory
-        { ProjectFile.Module.module_id; module_name; module_path; info_path }
+        { ProjectFile.Module.module_id; module_name; module_path; info_path; is_test }
       =
       {
         module_id;
         module_name;
         source_path = ModulePath.artifact_file_path ~pyrefly_directory module_path;
         pyrefly_info_path = info_path;
+        is_test;
       }
   end
 
@@ -760,6 +790,8 @@ module ReadWrite = struct
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
     callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
     class_metadata_shared_memory: ClassMetadataSharedMemory.t;
+    module_callables_shared_memory: ModuleCallablesSharedMemory.t;
+    module_classes_shared_memory: ModuleClassesSharedMemory.t;
   }
 
   (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
@@ -909,11 +941,11 @@ module ReadWrite = struct
     let handle = ModuleInfosSharedMemory.create () in
     let () =
       Map.to_alist qualifier_to_module_map
-      |> List.iter ~f:(fun (qualifier, { Module.source_path; _ }) ->
+      |> List.iter ~f:(fun (qualifier, { Module.source_path; is_test; _ }) ->
              ModuleInfosSharedMemory.add
                handle
                qualifier
-               { ModuleInfosSharedMemory.Module.source_path })
+               { ModuleInfosSharedMemory.Module.source_path; is_test })
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
     handle
@@ -939,8 +971,9 @@ module ReadWrite = struct
       let parse_result =
         match ModuleInfosSharedMemory.get module_infos_shared_memory qualifier with
         | None -> failwith "unexpected: missing module info for qualifier"
-        | Some { ModuleInfosSharedMemory.Module.source_path = None } -> OptionalSource.NoSource
-        | Some { ModuleInfosSharedMemory.Module.source_path = Some source_path } ->
+        | Some { ModuleInfosSharedMemory.Module.source_path = None; _ } -> OptionalSource.NoSource
+        | Some { ModuleInfosSharedMemory.Module.is_test = true; _ } -> OptionalSource.TestFile
+        | Some { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false } ->
             let load_result =
               try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
               | Sys_error error ->
@@ -1347,14 +1380,6 @@ module ReadWrite = struct
 
     let empty = { number_callables = 0; number_classes = 0 }
 
-    let increment_callable { number_callables; number_classes } =
-      { number_callables = number_callables + 1; number_classes }
-
-
-    let increment_class { number_callables; number_classes } =
-      { number_callables; number_classes = number_classes + 1 }
-
-
     let add
         { number_callables = left_number_callables; number_classes = left_number_classes }
         { number_callables = right_number_callables; number_classes = right_number_classes }
@@ -1375,6 +1400,8 @@ module ReadWrite = struct
     let timer = Timer.start () in
     let callable_metadata_shared_memory = CallableMetadataSharedMemory.create () in
     let class_metadata_shared_memory = ClassMetadataSharedMemory.create () in
+    let module_callables_shared_memory = ModuleCallablesSharedMemory.create () in
+    let module_classes_shared_memory = ModuleClassesSharedMemory.create () in
     let () = Log.info "Collecting classes and definitions..." in
     let parse_module_info (module_qualifier, pyrefly_info_path) =
       let { ModuleInfoFile.function_definitions; class_definitions; _ } =
@@ -1391,7 +1418,7 @@ module ReadWrite = struct
         |> DefinitionCollector.add_toplevel_defines ~module_qualifier
       in
       let store_definition
-          counts
+          (callables, classes)
           { DefinitionCollector.QualifiedDefinition.qualified_name; definition; location; _ }
         =
         match definition with
@@ -1419,15 +1446,21 @@ module ReadWrite = struct
                 is_toplevel;
                 is_class_toplevel;
               };
-            DefinitionCount.increment_callable counts
+            qualified_name :: callables, classes
         | Class { class_id; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
               { ClassMetadataSharedMemory.Metadata.location; class_id };
-            DefinitionCount.increment_class counts
+            callables, qualified_name :: classes
       in
-      List.fold definitions ~init:DefinitionCount.empty ~f:store_definition
+      let callables, classes = List.fold definitions ~init:([], []) ~f:store_definition in
+      ModuleCallablesSharedMemory.add module_callables_shared_memory module_qualifier callables;
+      ModuleClassesSharedMemory.add module_classes_shared_memory module_qualifier classes;
+      {
+        DefinitionCount.number_callables = List.length callables;
+        number_classes = List.length classes;
+      }
     in
     let parse_module_infos modules =
       List.map ~f:parse_module_info modules
@@ -1470,7 +1503,10 @@ module ReadWrite = struct
       ~timer
       ~integers:["callables", number_callables; "classes", number_classes]
       ();
-    callable_metadata_shared_memory, class_metadata_shared_memory
+    ( callable_metadata_shared_memory,
+      class_metadata_shared_memory,
+      module_callables_shared_memory,
+      module_classes_shared_memory )
 
 
   let create_from_directory
@@ -1505,7 +1541,11 @@ module ReadWrite = struct
         ~qualifier_to_module_map
     in
 
-    let callable_metadata_shared_memory, class_metadata_shared_memory =
+    let ( callable_metadata_shared_memory,
+          class_metadata_shared_memory,
+          module_callables_shared_memory,
+          module_classes_shared_memory )
+      =
       collect_classes_and_definitions
         ~scheduler
         ~scheduler_policies
@@ -1530,6 +1570,8 @@ module ReadWrite = struct
       type_of_expressions_shared_memory;
       callable_metadata_shared_memory;
       class_metadata_shared_memory;
+      module_callables_shared_memory;
+      module_classes_shared_memory;
     }
 
 
@@ -1540,6 +1582,8 @@ module ReadWrite = struct
         type_of_expressions_shared_memory;
         callable_metadata_shared_memory;
         class_metadata_shared_memory;
+        module_callables_shared_memory;
+        module_classes_shared_memory;
         _;
       }
     =
@@ -1551,7 +1595,9 @@ module ReadWrite = struct
         qualifier_to_module_map,
         type_of_expressions_shared_memory,
         callable_metadata_shared_memory,
-        class_metadata_shared_memory )
+        class_metadata_shared_memory,
+        module_callables_shared_memory,
+        module_classes_shared_memory )
     in
     ()
 
@@ -1565,6 +1611,7 @@ module ReadOnly = struct
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     asts_shared_memory: AstsSharedMemory.t;
+    module_classes_shared_memory: ModuleClassesSharedMemory.t;
   }
 
   let of_read_write_api
@@ -1572,10 +1619,16 @@ module ReadOnly = struct
         ReadWrite.module_infos_shared_memory;
         qualifiers_with_source_shared_memory;
         asts_shared_memory;
+        module_classes_shared_memory;
         _;
       }
     =
-    { module_infos_shared_memory; qualifiers_with_source_shared_memory; asts_shared_memory }
+    {
+      module_infos_shared_memory;
+      qualifiers_with_source_shared_memory;
+      asts_shared_memory;
+      module_classes_shared_memory;
+    }
 
 
   (* This is called when we expect the key to be present in shared memory *)
@@ -1606,6 +1659,28 @@ module ReadOnly = struct
     |> List.map ~f:ModuleQualifier.to_reference
 
 
+  let classes_of_qualifier
+      { module_infos_shared_memory; module_classes_shared_memory; _ }
+      ~exclude_test_modules
+      qualifier
+    =
+    let is_test () =
+      ModuleInfosSharedMemory.get
+        module_infos_shared_memory
+        (ModuleQualifier.from_reference_unchecked qualifier)
+      |> assert_shared_memory_key_exists "missing module info for qualifier"
+      |> fun { ModuleInfosSharedMemory.Module.is_test; _ } -> is_test
+    in
+    if exclude_test_modules && is_test () then
+      []
+    else
+      ModuleClassesSharedMemory.get
+        module_classes_shared_memory
+        (ModuleQualifier.from_reference_unchecked qualifier)
+      |> assert_shared_memory_key_exists "missing module classes for qualifier"
+      |> List.map ~f:FullyQualifiedName.to_reference
+
+
   let source_of_qualifier { asts_shared_memory; _ } qualifier =
     AstsSharedMemory.get asts_shared_memory (ModuleQualifier.from_reference_unchecked qualifier)
     |> assert_shared_memory_key_exists "missing source for qualifier"
@@ -1613,6 +1688,7 @@ module ReadOnly = struct
     | OptionalSource.Some (Result.Ok source) -> Some source
     | OptionalSource.Some (Result.Error _) -> None
     | OptionalSource.NoSource -> None
+    | OptionalSource.TestFile -> failwith "cannot fetch source of test module"
 end
 
 (* Exposed for testing purposes *)

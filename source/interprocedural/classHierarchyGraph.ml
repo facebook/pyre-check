@@ -10,7 +10,6 @@
 
 open Core
 open Ast
-open Statement
 module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type class_name = string
@@ -90,20 +89,15 @@ module Heap = struct
 
   let roots { roots; _ } = roots
 
-  let from_source ~pyre_api ~source =
-    if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
-      empty
-    else
-      let register_immediate_subclasses
-          accumulator
-          { Node.value = { Class.name = class_name; _ }; _ }
-        =
-        let class_name = Reference.show class_name in
-        let parents = PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name in
-        List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
-            add accumulator ~parent ~child:class_name)
-      in
-      Preprocessing.classes source |> List.fold ~init:empty ~f:register_immediate_subclasses
+  let from_qualifier ~pyre_api ~qualifier =
+    let register_immediate_subclasses accumulator class_name =
+      let class_name = Reference.show class_name in
+      let parents = PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name in
+      List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
+          add accumulator ~parent ~child:class_name)
+    in
+    PyrePysaApi.ReadOnly.classes_of_qualifier pyre_api ~exclude_test_modules:true qualifier
+    |> List.fold ~init:empty ~f:register_immediate_subclasses
 
 
   let create ~roots ~edges =
@@ -144,11 +138,8 @@ module Heap = struct
   let from_qualifiers ~scheduler ~scheduler_policies ~pyre_api ~qualifiers =
     let build_class_hierarchy_graph qualifiers =
       List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
-          match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
-          | Some source ->
-              let graph = from_source ~pyre_api ~source in
-              join accumulator graph
-          | None -> accumulator)
+          let graph = from_qualifier ~pyre_api ~qualifier in
+          join accumulator graph)
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default

@@ -36,6 +36,7 @@ let test_module_qualifiers _ =
         module_name = Reference.create module_name;
         module_path = path;
         info_path = None;
+        is_test = false;
       }
     in
     let to_string map =

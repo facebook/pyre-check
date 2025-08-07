@@ -601,7 +601,7 @@ let initialize
   let initial_callables_in_source = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let stubs = FetchCallables.get_stubs initial_callables_in_source in
   let definitions = FetchCallables.get_definitions initial_callables_in_source in
-  let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
+  let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_qualifier ~pyre_api ~qualifier in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in

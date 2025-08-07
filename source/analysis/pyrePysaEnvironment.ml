@@ -292,6 +292,17 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.has_transitive_successor
 
 
+  let exists_matching_class_decorator api =
+    unannotated_global_environment api
+    |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
+
+
+  let generic_parameters_as_variables api =
+    global_resolution api |> GlobalResolution.generic_parameters_as_variables
+
+
+  let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier
+
   (* There isn't a great way of testing whether a file only contains tests in Python.
    * We currently use the following heuristics:
    * - If a class inherits from `unittest.TestCase`, we assume this is a test file.
@@ -335,16 +346,16 @@ module ReadOnly = struct
     is_unittest () || is_pytest ()
 
 
-  let exists_matching_class_decorator api =
-    unannotated_global_environment api
-    |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
+  let classes_of_qualifier api ~exclude_test_modules qualifier =
+    match source_of_qualifier api qualifier with
+    | None -> []
+    | Some source ->
+        if exclude_test_modules && source_is_unit_test api ~source then
+          []
+        else
+          Preprocessing.classes source
+          |> List.map ~f:(fun { Ast.Node.value = { Ast.Statement.Class.name; _ }; _ } -> name)
 
-
-  let generic_parameters_as_variables api =
-    global_resolution api |> GlobalResolution.generic_parameters_as_variables
-
-
-  let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier
 
   let relative_path_of_qualifier api =
     source_code_api api |> SourceCodeApi.relative_path_of_qualifier

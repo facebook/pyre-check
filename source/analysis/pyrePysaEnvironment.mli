@@ -138,6 +138,12 @@ module ReadOnly : sig
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
 
+  val classes_of_qualifier
+    :  t ->
+    exclude_test_modules:bool ->
+    Ast.Reference.t ->
+    Ast.Reference.t list
+
   val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
   val decorated_define : t -> Ast.Statement.Define.t Ast.Node.t -> Ast.Statement.Define.t Ast.Node.t

@@ -54,12 +54,18 @@ module ReadOnly : sig
 
   val of_read_write_api : ReadWrite.t -> t
 
-  val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
-
   (* Return all qualifiers with source code *)
   val explicit_qualifiers : t -> Ast.Reference.t list
 
+  val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
+
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
+
+  val classes_of_qualifier
+    :  t ->
+    exclude_test_modules:bool ->
+    Ast.Reference.t ->
+    Ast.Reference.t list
 end
 
 (* Exposed for testing purposes *)
@@ -101,6 +107,7 @@ module ProjectFile : sig
       module_name: Ast.Reference.t;
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
+      is_test: bool;
     }
     [@@deriving equal, show]
   end

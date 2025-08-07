@@ -31,7 +31,7 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source : pyre_api:PyrePysaApi.ReadOnly.t -> source:Source.t -> t
+  val from_qualifier : pyre_api:PyrePysaApi.ReadOnly.t -> qualifier:Reference.t -> t
 
   val create : roots:class_name list -> edges:(class_name * class_name list) list -> t
 
