@@ -1339,6 +1339,32 @@ module ReadWrite = struct
       :: definitions
   end
 
+  module DefinitionCount = struct
+    type t = {
+      number_callables: int;
+      number_classes: int;
+    }
+
+    let empty = { number_callables = 0; number_classes = 0 }
+
+    let increment_callable { number_callables; number_classes } =
+      { number_callables = number_callables + 1; number_classes }
+
+
+    let increment_class { number_callables; number_classes } =
+      { number_callables; number_classes = number_classes + 1 }
+
+
+    let add
+        { number_callables = left_number_callables; number_classes = left_number_classes }
+        { number_callables = right_number_callables; number_classes = right_number_classes }
+      =
+      {
+        number_callables = left_number_callables + right_number_callables;
+        number_classes = left_number_classes + right_number_classes;
+      }
+  end
+
   let collect_classes_and_definitions
       ~scheduler
       ~scheduler_policies
@@ -1365,6 +1391,7 @@ module ReadWrite = struct
         |> DefinitionCollector.add_toplevel_defines ~module_qualifier
       in
       let store_definition
+          counts
           { DefinitionCollector.QualifiedDefinition.qualified_name; definition; location; _ }
         =
         match definition with
@@ -1391,14 +1418,20 @@ module ReadWrite = struct
                 is_property_setter;
                 is_toplevel;
                 is_class_toplevel;
-              }
+              };
+            DefinitionCount.increment_callable counts
         | Class { class_id; _ } ->
             ClassMetadataSharedMemory.add
               class_metadata_shared_memory
               qualified_name
-              { ClassMetadataSharedMemory.Metadata.location; class_id }
+              { ClassMetadataSharedMemory.Metadata.location; class_id };
+            DefinitionCount.increment_class counts
       in
-      List.iter definitions ~f:store_definition
+      List.fold definitions ~init:DefinitionCount.empty ~f:store_definition
+    in
+    let parse_module_infos modules =
+      List.map ~f:parse_module_info modules
+      |> List.fold ~init:DefinitionCount.empty ~f:DefinitionCount.add
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -1419,13 +1452,13 @@ module ReadWrite = struct
              | Some pyrefly_info_path -> Some (qualifier, pyrefly_info_path)
              | None -> None)
     in
-    let () =
+    let { DefinitionCount.number_callables; number_classes } =
       Scheduler.map_reduce
         scheduler
         ~policy:scheduler_policy
-        ~initial:()
-        ~map:(List.iter ~f:parse_module_info)
-        ~reduce:(fun () () -> ())
+        ~initial:DefinitionCount.empty
+        ~map:parse_module_infos
+        ~reduce:DefinitionCount.add
         ~inputs
         ()
     in
@@ -1435,7 +1468,7 @@ module ReadWrite = struct
       ~phase_name:"Collecting classes and definitions"
       ~command:"analyze"
       ~timer
-      (* TODO(T225700656): log number of classes and definitions *)
+      ~integers:["callables", number_callables; "classes", number_classes]
       ();
     callable_metadata_shared_memory, class_metadata_shared_memory
 
