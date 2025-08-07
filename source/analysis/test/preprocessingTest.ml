@@ -553,6 +553,8 @@ let test_qualify_source =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement "lambda b: b" "lambda $parameter$b: $parameter$b";
       labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_qualify_statement "lambda b=b: b" "lambda $parameter$b=a: $parameter$b";
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_qualify_statement "lambda a: a + b" "lambda $parameter$a: $parameter$a + a";
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_qualify_statement "[b, b]" "[a, a]";
       labeled_test_case __FUNCTION__ __LINE__

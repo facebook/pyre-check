@@ -22,6 +22,17 @@ let test_simple =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_uninitialized_errors
            {|
+      def func() -> None:
+        [
+          lambda value=value: value
+          for value in []
+        ]
+        value = 1
+    |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_uninitialized_errors
+           {|
       def f():
         x = y
         y = 5

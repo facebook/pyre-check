@@ -795,6 +795,7 @@ module Qualify = struct
 
 
   and qualify_parameters ~scope parameters =
+    let initial_scope = scope in
     (* Rename parameters to prevent aliasing. *)
     let parameters =
       let qualify_annotation { Node.location; value = { Parameter.annotation; _ } as parameter } =
@@ -822,7 +823,8 @@ module Qualify = struct
               Node.value =
                 {
                   Parameter.name = renamed;
-                  value = value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
+                  value =
+                    value >>| qualify_expression ~qualify_strings:DoNotQualify ~scope:initial_scope;
                   annotation;
                 };
             }
