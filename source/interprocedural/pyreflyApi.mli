@@ -70,6 +70,13 @@ module ModuleId : sig
 end
 
 (* Exposed for testing purposes *)
+module ClassId : sig
+  type t [@@deriving compare, equal, show]
+
+  val from_int : int -> t
+end
+
+(* Exposed for testing purposes *)
 module ModulePath : sig
   type t =
     | Filesystem of ArtifactPath.t
@@ -94,6 +101,41 @@ module ProjectFile : sig
       module_name: Ast.Reference.t;
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
+    }
+    [@@deriving equal, show]
+  end
+end
+
+(* Exposed for testing purposes *)
+module ModuleInfoFile : sig
+  module ParentScope : sig
+    type t =
+      | TopLevel
+      | Class of Ast.Location.t
+      | Function of Ast.Location.t
+    [@@deriving equal, show]
+  end
+
+  module FunctionDefinition : sig
+    type t = {
+      name: string;
+      parent: ParentScope.t;
+      is_overload: bool;
+      is_staticmethod: bool;
+      is_classmethod: bool;
+      is_property_getter: bool;
+      is_property_setter: bool;
+      is_toplevel: bool;
+      is_class_toplevel: bool;
+    }
+    [@@deriving equal, show]
+  end
+
+  module ClassDefinition : sig
+    type t = {
+      name: string;
+      parent: ParentScope.t;
+      class_id: ClassId.t;
     }
     [@@deriving equal, show]
   end
@@ -126,17 +168,26 @@ module Testing : sig
     :  ProjectFile.Module.t list ->
     ProjectFile.Module.t ModuleQualifier.Map.t
 
+  module Definition : sig
+    type t =
+      | Function of ModuleInfoFile.FunctionDefinition.t
+      | Class of ModuleInfoFile.ClassDefinition.t
+    [@@deriving equal, show]
+  end
+
   module QualifiedDefinition : sig
     type t = {
       qualified_name: FullyQualifiedName.t;
       local_name: Ast.Reference.t; (* a non-unique name, more user-friendly. *)
-      ast_node: Ast.Statement.t; (* class or def *)
+      definition: Definition.t; (* class or def *)
+      location: Ast.Location.t;
     }
   end
 
   val create_fully_qualified_names
     :  module_qualifier:ModuleQualifier.t ->
     module_exists:(ModuleQualifier.t -> bool) ->
-    Ast.Source.t ->
+    class_definitions:ModuleInfoFile.ClassDefinition.t Ast.Location.Map.t ->
+    function_definitions:ModuleInfoFile.FunctionDefinition.t Ast.Location.Map.t ->
     QualifiedDefinition.t list
 end
