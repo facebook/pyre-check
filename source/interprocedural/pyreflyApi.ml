@@ -541,7 +541,7 @@ module ModuleInfosSharedMemory = struct
       end)
 end
 
-(* List of module qualifiers with soruce code, stored in shared memory. *)
+(* List of module qualifiers with source code, stored in shared memory. *)
 module QualifiersWithSourceSharedMemory =
   Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
     (Memory.SingletonKey)
@@ -622,6 +622,10 @@ module FullyQualifiedName : sig
   val create_class_toplevel : t -> t
 
   val to_reference : t -> Reference.t
+
+  (* This is marked `unchecked` because it doesn't actually validate that the reference is a valid
+     fully qualifide name. *)
+  val from_reference_unchecked : Reference.t -> t
 end = struct
   (* Same as ModuleQualifier, it is stored as a reference, but it doesn't really make sense
      either. *)
@@ -659,6 +663,69 @@ end = struct
 
 
   let to_reference = Fn.id
+
+  let from_reference_unchecked = Fn.id
+end
+
+module FullyQualifiedNameSharedMemoryKey = struct
+  type t = FullyQualifiedName.t [@@deriving compare]
+
+  let to_string key =
+    key |> FullyQualifiedName.to_reference |> Analysis.SharedMemoryKeys.ReferenceKey.to_string
+
+
+  let from_string s =
+    s
+    |> Analysis.SharedMemoryKeys.ReferenceKey.from_string
+    |> FullyQualifiedName.from_reference_unchecked
+end
+
+module CallableMetadataSharedMemory = struct
+  module Metadata = struct
+    type t = {
+      location: Location.t;
+      is_overload: bool;
+      is_staticmethod: bool;
+      is_classmethod: bool;
+      is_property_getter: bool;
+      is_property_setter: bool;
+      is_toplevel: bool;
+      is_class_toplevel: bool;
+    }
+    [@@deriving show]
+  end
+
+  include
+    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+      (FullyQualifiedNameSharedMemoryKey)
+      (struct
+        type t = Metadata.t
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "pyrefly callable metadata"
+      end)
+end
+
+module ClassMetadataSharedMemory = struct
+  module Metadata = struct
+    type t = {
+      location: Location.t;
+      class_id: ClassId.t;
+    }
+    [@@deriving show]
+  end
+
+  include
+    Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
+      (FullyQualifiedNameSharedMemoryKey)
+      (struct
+        type t = Metadata.t
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "pyrefly class metadata"
+      end)
 end
 
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
@@ -691,6 +758,8 @@ module ReadWrite = struct
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     asts_shared_memory: AstsSharedMemory.t;
     type_of_expressions_shared_memory: TypeOfExpressionsSharedMemory.t;
+    callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
+    class_metadata_shared_memory: ClassMetadataSharedMemory.t;
   }
 
   (* Build a mapping from unique module qualifiers (module name + path prefix) to module. *)
@@ -1278,6 +1347,8 @@ module ReadWrite = struct
       ~module_infos_shared_memory
     =
     let timer = Timer.start () in
+    let callable_metadata_shared_memory = CallableMetadataSharedMemory.create () in
+    let class_metadata_shared_memory = ClassMetadataSharedMemory.create () in
     let () = Log.info "Collecting classes and definitions..." in
     let parse_module_info (module_qualifier, pyrefly_info_path) =
       let { ModuleInfoFile.function_definitions; class_definitions; _ } =
@@ -1293,30 +1364,41 @@ module ReadWrite = struct
         |> DefinitionCollector.Tree.collect_definitions ~module_qualifier
         |> DefinitionCollector.add_toplevel_defines ~module_qualifier
       in
-      (* TODO(T225700656): Store information to shared memory. *)
-      List.iter
-        definitions
-        ~f:(fun
-             {
-               DefinitionCollector.QualifiedDefinition.qualified_name;
-               local_name;
-               location;
-               definition;
-             }
-           ->
-          Log.dump
-            "In module %a, found %s %a (non-unique: %a) at location %a"
-            ModuleQualifier.pp
-            module_qualifier
-            (match definition with
-            | DefinitionCollector.Definition.Function _ -> "define"
-            | DefinitionCollector.Definition.Class _ -> "class")
-            FullyQualifiedName.pp
-            qualified_name
-            Reference.pp
-            local_name
-            Location.pp
-            location)
+      let store_definition
+          { DefinitionCollector.QualifiedDefinition.qualified_name; definition; location; _ }
+        =
+        match definition with
+        | Function
+            {
+              is_overload;
+              is_staticmethod;
+              is_classmethod;
+              is_property_getter;
+              is_property_setter;
+              is_toplevel;
+              is_class_toplevel;
+              _;
+            } ->
+            CallableMetadataSharedMemory.add
+              callable_metadata_shared_memory
+              qualified_name
+              {
+                CallableMetadataSharedMemory.Metadata.location;
+                is_overload;
+                is_staticmethod;
+                is_classmethod;
+                is_property_getter;
+                is_property_setter;
+                is_toplevel;
+                is_class_toplevel;
+              }
+        | Class { class_id; _ } ->
+            ClassMetadataSharedMemory.add
+              class_metadata_shared_memory
+              qualified_name
+              { ClassMetadataSharedMemory.Metadata.location; class_id }
+      in
+      List.iter definitions ~f:store_definition
     in
     let scheduler_policy =
       Scheduler.Policy.from_configuration_or_default
@@ -1355,7 +1437,7 @@ module ReadWrite = struct
       ~timer
       (* TODO(T225700656): log number of classes and definitions *)
       ();
-    ()
+    callable_metadata_shared_memory, class_metadata_shared_memory
 
 
   let create_from_directory
@@ -1390,7 +1472,7 @@ module ReadWrite = struct
         ~qualifier_to_module_map
     in
 
-    let () =
+    let callable_metadata_shared_memory, class_metadata_shared_memory =
       collect_classes_and_definitions
         ~scheduler
         ~scheduler_policies
@@ -1413,12 +1495,28 @@ module ReadWrite = struct
       qualifiers_with_source_shared_memory;
       asts_shared_memory;
       type_of_expressions_shared_memory;
+      callable_metadata_shared_memory;
+      class_metadata_shared_memory;
     }
 
 
   (* TODO(T225700656): Remove this, this is to silence the unused value warning *)
-  let unused { qualifier_to_module_map; type_of_expressions_shared_memory; _ } =
-    let _ = Module.pp, qualifier_to_module_map, type_of_expressions_shared_memory in
+  let unused
+      {
+        qualifier_to_module_map;
+        type_of_expressions_shared_memory;
+        callable_metadata_shared_memory;
+        class_metadata_shared_memory;
+        _;
+      }
+    =
+    let _ =
+      ( Module.pp,
+        qualifier_to_module_map,
+        type_of_expressions_shared_memory,
+        callable_metadata_shared_memory,
+        class_metadata_shared_memory )
+    in
     ()
 
 
