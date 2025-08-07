@@ -87,7 +87,7 @@ module ReadOnly : sig
 
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
-  val immediate_parents : t -> string -> string list
+  val class_immediate_parents : t -> string -> string list
 
   val get_define_names_for_qualifier : t -> Ast.Reference.t -> Ast.Reference.t list
 

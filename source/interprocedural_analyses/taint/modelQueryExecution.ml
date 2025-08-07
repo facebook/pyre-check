@@ -833,7 +833,7 @@ let find_parents ~pyre_api ~is_transitive ~includes_self class_name =
     if is_transitive then
       PyrePysaApi.ReadOnly.successors pyre_api class_name
     else
-      PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name
+      PyrePysaApi.ReadOnly.class_immediate_parents pyre_api class_name
   in
   let parents =
     if includes_self then

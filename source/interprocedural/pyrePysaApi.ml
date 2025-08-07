@@ -139,9 +139,9 @@ module ReadOnly = struct
     | Pyrefly _ -> failwith "unimplemented: ReadOnly.source_is_unit_test"
 
 
-  let immediate_parents = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.immediate_parents pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.immediate_parents"
+  let class_immediate_parents = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.class_immediate_parents pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.class_immediate_parents pyrefly_api
 
 
   let get_define_names_for_qualifier = function

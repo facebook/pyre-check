@@ -294,7 +294,12 @@ let test_fully_qualified_names _ =
   in
   let create_class ?(parent = ModuleInfoFile.ParentScope.TopLevel) name =
     PyreflyApi.Testing.Definition.Class
-      { ModuleInfoFile.ClassDefinition.name; parent; class_id = PyreflyApi.ClassId.from_int 0 }
+      {
+        ModuleInfoFile.ClassDefinition.name;
+        parent;
+        local_class_id = PyreflyApi.LocalClassId.from_int 0;
+        bases = [];
+      }
   in
   let class_parent ~line = ModuleInfoFile.ParentScope.Class (location_at_line line) in
   let function_parent ~line = ModuleInfoFile.ParentScope.Function (location_at_line line) in

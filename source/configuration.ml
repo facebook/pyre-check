@@ -634,6 +634,7 @@ module ScheduleIdentifier = struct
     | PyreflyParseSources
     | ParsePyreflyModuleInfo
     | PyreflyCollectDefinitions
+    | PyreflyParseClassParents
   [@@deriving sexp, compare, hash]
 
   let of_string = function
@@ -657,6 +658,7 @@ module ScheduleIdentifier = struct
     | "pyrefly_parse_sources" -> Some PyreflyParseSources
     | "parse_pyrefly_module_info" -> Some ParsePyreflyModuleInfo
     | "pyrefly_collect_definitions" -> Some PyreflyCollectDefinitions
+    | "pyrefly_parse_class_parents" -> Some PyreflyParseClassParents
     | _ -> None
 
 
@@ -686,6 +688,7 @@ module ScheduleIdentifier = struct
     | PyreflyParseSources -> "pyrefly_parse_sources"
     | ParsePyreflyModuleInfo -> "parse_pyrefly_module_info"
     | PyreflyCollectDefinitions -> "pyrefly_collect_definitions"
+    | PyreflyParseClassParents -> "pyrefly_parse_class_parents"
 end
 
 module SchedulerPolicies = struct

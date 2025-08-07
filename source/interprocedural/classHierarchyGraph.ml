@@ -92,7 +92,7 @@ module Heap = struct
   let from_qualifier ~pyre_api ~qualifier =
     let register_immediate_subclasses accumulator class_name =
       let class_name = Reference.show class_name in
-      let parents = PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name in
+      let parents = PyrePysaApi.ReadOnly.class_immediate_parents pyre_api class_name in
       List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
           add accumulator ~parent ~child:class_name)
     in

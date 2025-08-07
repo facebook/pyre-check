@@ -66,6 +66,8 @@ module ReadOnly : sig
     exclude_test_modules:bool ->
     Ast.Reference.t ->
     Ast.Reference.t list
+
+  val class_immediate_parents : t -> string -> string list
 end
 
 (* Exposed for testing purposes *)
@@ -76,10 +78,15 @@ module ModuleId : sig
 end
 
 (* Exposed for testing purposes *)
-module ClassId : sig
+module LocalClassId : sig
   type t [@@deriving compare, equal, show]
 
   val from_int : int -> t
+end
+
+(* Exposed for testing purposes *)
+module GlobalClassId : sig
+  type t [@@deriving compare, equal, show]
 end
 
 (* Exposed for testing purposes *)
@@ -142,7 +149,8 @@ module ModuleInfoFile : sig
     type t = {
       name: string;
       parent: ParentScope.t;
-      class_id: ClassId.t;
+      local_class_id: LocalClassId.t;
+      bases: GlobalClassId.t list;
     }
     [@@deriving equal, show]
   end

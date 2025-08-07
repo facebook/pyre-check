@@ -232,7 +232,7 @@ module ReadOnly = struct
 
   let get_class_summary api = global_resolution api |> GlobalResolution.get_class_summary
 
-  let immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
+  let class_immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
   let get_define_names_for_qualifier api =
     (* In Pysa, all qualifiers are "in project" so this is always safe to use. *)
