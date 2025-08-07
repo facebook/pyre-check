@@ -1409,3 +1409,21 @@ def foo():
 
 In this example, we have 2 tito positions. Above the provided threshold,
 pysa simply discards all positions. Note that the taint is still propagated.
+
+## Partial Flows
+
+SAPP supports the concept of partial flows, which helps with triaging issues from different rules with a common flow. Details are described [here](https://github.com/facebook/sapp#readme).
+
+To leverage this capability in an end-to-end run (i.e., first running Pysa and then SAPP), you can add the following section to your `taint.config` file, so that they can be passed into the Pysa output files and then be picked up by SAPP:
+```json
+"partial_flows": [
+  {
+    "full_issue_code": 4101,
+    "partial_issue_code": 4100,
+    "full_issue_transform": "TransformB",
+    "is_prefix_flow": true,
+    "feature": "some_feature"
+  }
+]
+```
+In other words, the above configuration is *not* used by Pysa at all. Pysa simply passes them into the output files so that SAPP can read them.
