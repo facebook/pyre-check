@@ -767,11 +767,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     { arguments_taint; implicit_argument_taint; captures_taint; captures; state }
 
 
-  let apply_obscure_call ~apply_tito ~callee ~arguments ~state:initial_state ~call_taint =
+  let apply_obscure_call ~apply_tito ~callee_location ~arguments ~state:initial_state ~call_taint =
     log
-      "Backward analysis of obscure call to `%a` with arguments (%a)"
-      Expression.pp
-      callee
+      "Backward analysis of obscure call at `%a` with arguments (%a)"
+      Location.pp
+      callee_location
       Ast.Expression.pp_expression_argument_list
       arguments;
     let obscure_taint =
@@ -1010,7 +1010,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Apply an obscure call if the call was not fully resolved. *)
     let call_target_result =
       if CallGraph.Unresolved.is_unresolved unresolved then
-        apply_obscure_call ~apply_tito ~callee ~arguments ~state:initial_state ~call_taint
+        apply_obscure_call
+          ~apply_tito
+          ~callee_location:callee.Node.location
+          ~arguments
+          ~state:initial_state
+          ~call_taint
         |> join_call_target_results call_target_result
       else
         call_target_result

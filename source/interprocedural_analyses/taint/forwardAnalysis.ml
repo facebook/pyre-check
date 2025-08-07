@@ -860,22 +860,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let apply_obscure_call
       ~apply_tito
-      ~callee
+      ~callee_location
       ~callee_taint
       ~arguments
       ~arguments_taint
       ~state:initial_state
     =
     log
-      "Forward analysis of obscure call to `%a` with arguments (%a)"
-      Expression.pp
-      callee
+      "Forward analysis of obscure call at `%a` with arguments (%a)"
+      Location.pp
+      callee_location
       Ast.Expression.pp_expression_argument_list
       arguments;
     let callee_taint =
       Option.value_exn callee_taint
       |> ForwardState.Tree.collapse ~breadcrumbs:(Features.tito_broadening_set ())
-      |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:callee.Node.location
+      |> ForwardTaint.transform Features.TitoPositionSet.Element Add ~f:callee_location
     in
     let analyze_argument taint_accumulator ({ Call.Argument.value = argument; _ }, argument_taint) =
       let argument_taint =
@@ -1065,7 +1065,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let obscure_taint, new_state =
           apply_obscure_call
             ~apply_tito
-            ~callee
+            ~callee_location:callee.Node.location
             ~callee_taint
             ~arguments
             ~arguments_taint
