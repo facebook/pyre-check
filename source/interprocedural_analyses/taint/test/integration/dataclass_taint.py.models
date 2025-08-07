@@ -280,9 +280,10 @@
               { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
-              "position": { "line": 61, "start": 10, "end": 42 },
+              "position": { "line": 61, "start": 10, "end": 24 },
               "resolves_to": [ "dataclass_taint.WeirdDataClass.__init__" ],
-              "port": "formal(self, position=0)[bad]"
+              "port": "formal(self, position=0)[bad]",
+              "call_site": "61:10-61:42"
             }
           }
         ]
@@ -924,9 +925,10 @@
               }
             ],
             "call": {
-              "position": { "line": 57, "start": 11, "end": 43 },
+              "position": { "line": 57, "start": 11, "end": 25 },
               "resolves_to": [ "dataclass_taint.WeirdDataClass.__init__" ],
-              "port": "formal(self, position=0)[bad]"
+              "port": "formal(self, position=0)[bad]",
+              "call_site": "57:11-57:43"
             }
           }
         ]

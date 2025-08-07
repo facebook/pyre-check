@@ -269,9 +269,10 @@
               }
             ],
             "call": {
-              "position": { "line": 81, "start": 4, "end": 7 },
+              "position": { "line": 81, "start": 4, "end": 5 },
               "resolves_to": [ "supers.A.__init__" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "81:4-81:7"
             }
           }
         ]
@@ -339,9 +340,10 @@
               }
             ],
             "call": {
-              "position": { "line": 106, "start": 4, "end": 7 },
+              "position": { "line": 106, "start": 4, "end": 5 },
               "resolves_to": [ "supers.A.__init__" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "106:4-106:7"
             }
           }
         ]
@@ -409,9 +411,10 @@
               }
             ],
             "call": {
-              "position": { "line": 116, "start": 8, "end": 11 },
+              "position": { "line": 116, "start": 8, "end": 9 },
               "resolves_to": [ "supers.A.__init__" ],
-              "port": "formal(self, position=0)[attribute]"
+              "port": "formal(self, position=0)[attribute]",
+              "call_site": "116:8-116:11"
             }
           }
         ]

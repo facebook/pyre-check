@@ -3578,26 +3578,6 @@ let delocalize_qualified = function
   | expression -> expression
 
 
-(* TODO(T114580705): Better precision when deciding if an expression is `self` *)
-let is_self_call ~callee:{ Node.value; _ } =
-  match value with
-  | Expression.Name
-      (Name.Attribute
-        { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
-      String.equal (Identifier.sanitized identifier) "self"
-  | _ -> false
-
-
-(* TODO(T114580705): Better precision when deciding if an expression is `cls` *)
-let is_cls_call ~callee:{ Node.value; _ } =
-  match value with
-  | Expression.Name
-      (Name.Attribute
-        { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
-      String.equal (Identifier.sanitized identifier) "cls"
-  | _ -> false
-
-
 let exists_in_list ?(match_prefix = false) ~expression_list target_string =
   let flatten =
     let rec flatten flattened expression =

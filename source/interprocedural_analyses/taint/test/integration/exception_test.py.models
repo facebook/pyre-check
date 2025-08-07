@@ -204,7 +204,8 @@
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito_positions": [ { "line": 15, "start": 15, "end": 17 } ],
-            "origin": { "line": 14, "start": 9, "end": 29 }
+            "origin": { "line": 14, "start": 9, "end": 18 },
+            "call_site": "14:9-14:29"
           },
           {
             "kinds": [

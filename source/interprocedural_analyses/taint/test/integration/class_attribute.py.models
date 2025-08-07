@@ -174,9 +174,10 @@
               }
             ],
             "call": {
-              "position": { "line": 77, "start": 4, "end": 7 },
+              "position": { "line": 77, "start": 4, "end": 5 },
               "resolves_to": [ "class_attribute.A.__init__" ],
-              "port": "formal(self, position=0)[d]"
+              "port": "formal(self, position=0)[d]",
+              "call_site": "77:4-77:7"
             }
           }
         ]

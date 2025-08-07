@@ -776,3 +776,78 @@ module ImplicitArgument = struct
       }
   end
 end
+
+module Callee = struct
+  type t = {
+    (* Treat a callee expression at a call site as a `Name.t`, when applicable. *)
+    name: Name.t option;
+    location: Location.t;
+  }
+
+  let from_callee_expression { Node.value; location } =
+    {
+      name =
+        (match value with
+        | Expression.Name name -> Some name
+        | _ -> None);
+      location;
+    }
+
+
+  let from_stringify_call_target
+      ~base
+      ~stringify_origin
+      ~location
+      { CallGraph.CallTarget.target; _ }
+    =
+    let callee_name_from_method_name method_name =
+      Some (Name.Attribute { base; attribute = method_name; origin = stringify_origin })
+    in
+    let name =
+      match Interprocedural.Target.get_regular target with
+      | Interprocedural.Target.Regular.Method { method_name; _ } ->
+          callee_name_from_method_name method_name
+      | Override { method_name; _ } -> callee_name_from_method_name method_name
+      | Function { name; _ } -> Some (Name.Identifier name)
+      | Object _ -> failwith "callees should be either methods or functions"
+    in
+    { name; location }
+
+
+  (* We do not expect such expressions to affect taint analysis, such as attaching breadcrumbs or
+     having global taint. *)
+  let placeholder_expression = Expression.Constant Constant.NoneLiteral
+
+  let as_argument { name; location } =
+    let callee =
+      match name with
+      | Some name -> Expression.Name name
+      | None -> placeholder_expression
+    in
+    { Call.Argument.name = None; value = Node.create ~location callee }
+
+
+  let get_base = function
+    | { name = Some (Name.Attribute { base; _ }); _ } -> base
+    | { location; _ } -> Node.create ~location placeholder_expression
+
+
+  (* TODO(T114580705): Better precision when deciding if an expression is `self` *)
+  let is_self_call { name; _ } =
+    match name with
+    | Some
+        (Name.Attribute
+          { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+        String.equal (Identifier.sanitized identifier) "self"
+    | _ -> false
+
+
+  (* TODO(T114580705): Better precision when deciding if an expression is `cls` *)
+  let is_cls_call { name; _ } =
+    match name with
+    | Some
+        (Name.Attribute
+          { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+        String.equal (Identifier.sanitized identifier) "cls"
+    | _ -> false
+end

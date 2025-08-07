@@ -412,7 +412,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~implicit_returns_self
       ~triggered_sinks_for_call
       ~call_location
-      ~self
       ~callee
       ~implicit_argument_taint
       ~arguments
@@ -432,10 +431,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let arguments, arguments_taint =
       match implicit_argument_taint with
       | CallModel.ImplicitArgument.Forward.CalleeBase taint ->
-          ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
+          ( {
+              Call.Argument.name = None;
+              value =
+                (* This could for example be the self argument. *) CallModel.Callee.get_base callee;
+            }
+            :: arguments,
             taint :: arguments_taint )
       | CallModel.ImplicitArgument.Forward.Callee taint ->
-          { Call.Argument.name = None; value = callee } :: arguments, taint :: arguments_taint
+          CallModel.Callee.as_argument callee :: arguments, taint :: arguments_taint
       | CallModel.ImplicitArgument.Forward.None -> arguments, arguments_taint
     in
     let ({ Model.forward; add_breadcrumbs_to_state; _ } as taint_model) =
@@ -458,8 +462,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint_model;
     let call_info_intervals =
       {
-        Domains.ClassIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
-        is_cls_call = Ast.Expression.is_cls_call ~callee;
+        Domains.ClassIntervals.is_self_call = CallModel.Callee.is_self_call callee;
+        is_cls_call = CallModel.Callee.is_cls_call callee;
         caller_interval = FunctionContext.caller_class_interval;
         receiver_interval =
           receiver_class
@@ -911,7 +915,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee_taint
       ~arguments
       ~arguments_taint
-      ~origin
       ~new_targets
       ~init_targets
       ~state:initial_state
@@ -921,7 +924,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* If both `is_object_new` and `is_object_init` are true, this is probably a stub
      * class (e.g, `class X: ...`), in which case, we treat it as an obscure call. *)
-
     (* Call `__new__`. Add the `cls` implicit argument. *)
     let new_return_taint, state =
       if is_object_new then
@@ -934,7 +936,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~implicit_returns_self:false
               ~triggered_sinks_for_call
               ~call_location
-              ~self:(Some callee)
               ~implicit_argument_taint:
                 (CallModel.ImplicitArgument.Forward.from_call_target
                    ~is_implicit_new:true
@@ -956,16 +957,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if is_object_init && not is_object_new then
         new_return_taint, state
       else
-        let call_expression =
-          Expression.Call
-            {
-              Call.callee;
-              arguments;
-              origin =
-                Some (Origin.create ?base:origin ~location:call_location Origin.ImplicitInitCall);
-            }
-          |> Node.create ~location:call_location
-        in
         List.map init_targets ~f:(fun target ->
             apply_call_target
               ~pyre_in_context
@@ -973,7 +964,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~implicit_returns_self:true
               ~triggered_sinks_for_call
               ~call_location
-              ~self:(Some call_expression)
               ~callee
               ~implicit_argument_taint:
                 (CallModel.ImplicitArgument.Forward.from_call_target
@@ -997,10 +987,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ?(apply_tito = true)
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
-      ~callee
+      ~callee:({ CallModel.Callee.name = callee_name; location = callee_location } as callee)
       ~call_location
       ~arguments
-      ~origin
       ~self_taint
       ~callee_taint
       ~arguments_taint
@@ -1020,17 +1009,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      * a partial sink) for the current call expression. *)
     let triggered_sinks_for_call = Issue.TriggeredSinkForCall.create () in
 
-    (* Extract the implicit self, if any *)
-    let self =
-      match callee.Node.value with
-      | Expression.Name (Name.Attribute { base; _ }) -> Some base
-      | _ ->
-          (* Default to a benign self if we don't understand/retain information of what self is. *)
-          Expression.Constant Constant.NoneLiteral
-          |> Node.create ~location:callee.Node.location
-          |> Option.some
-    in
-
     (* Apply regular call targets. *)
     let taint, state =
       List.map call_targets ~f:(function call_target ->
@@ -1041,7 +1019,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~implicit_returns_self:false
             ~triggered_sinks_for_call
             ~call_location
-            ~self
             ~callee
             ~implicit_argument_taint:
               (CallModel.ImplicitArgument.Forward.from_call_target
@@ -1065,7 +1042,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let obscure_taint, new_state =
           apply_obscure_call
             ~apply_tito
-            ~callee_location:callee.Node.location
+            ~callee_location
             ~callee_taint
             ~arguments
             ~arguments_taint
@@ -1091,7 +1068,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~callee_taint
               ~arguments
               ~arguments_taint
-              ~origin
               ~new_targets
               ~init_targets
               ~state:initial_state
@@ -1101,8 +1077,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let taint =
       (* Add index breadcrumb if appropriate. *)
-      match Node.value callee, arguments with
-      | Expression.Name (Name.Attribute { attribute = "get"; _ }), index :: _ ->
+      match callee_name, arguments with
+      | Some (Name.Attribute { attribute = "get"; _ }), index :: _ ->
           let label = AccessPath.get_index index.value in
           ForwardState.Tree.add_local_first_index label taint
       | _ -> taint
@@ -1374,7 +1350,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   and analyze_arguments_with_higher_order_parameters
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~arguments
-      ~origin
       ~state
       ~higher_order_parameters
     =
@@ -1490,15 +1465,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           apply_callees_with_arguments_taint
             ~pyre_in_context
             ~is_result_used:true
-            ~callee:argument
+            ~callee:(CallModel.Callee.from_callee_expression argument)
             ~call_location:argument_location
             ~arguments
-            ~origin:
-              (Some
-                 (Origin.create
-                    ?base:origin
-                    ~location:argument_location
-                    (Origin.PysaHigherOrderParameter index)))
             ~self_taint
             ~callee_taint:(Some callee_taint)
             ~arguments_taint
@@ -1543,7 +1512,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state
       { CallGraph.ShimTarget.call_targets; decorated_targets = _; argument_mapping }
     =
-    let { Call.callee = shim_callee; arguments = shim_arguments; origin = shim_origin } =
+    let { Call.callee = shim_callee; arguments = shim_arguments; origin = _ } =
       Shims.ShimArgumentMapping.create_artificial_call ~call_location original_call argument_mapping
       |> Result.ok_or_failwith
     in
@@ -1614,10 +1583,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~apply_tito
       ~pyre_in_context
       ~is_result_used
-      ~callee:shim_callee
+      ~callee:(CallModel.Callee.from_callee_expression shim_callee)
       ~call_location
       ~arguments:shim_arguments
-      ~origin:shim_origin
       ~self_taint:shim_self_taint
       ~callee_taint:(Some shim_callee_taint)
       ~arguments_taint:shim_arguments_taint
@@ -1653,7 +1621,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_arguments_with_higher_order_parameters
           ~pyre_in_context
           ~arguments
-          ~origin
           ~state
           ~higher_order_parameters
     in
@@ -1663,10 +1630,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~apply_tito
         ~pyre_in_context
         ~is_result_used
-        ~callee
+        ~callee:(CallModel.Callee.from_callee_expression callee)
         ~call_location
         ~arguments
-        ~origin
         ~self_taint
         ~callee_taint
         ~arguments_taint
@@ -2544,7 +2510,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~is_attribute_used
       ~resolve_properties
       ~location
-      ~attribute_access:({ Name.Attribute.base; attribute; origin } as attribute_access)
+      ~attribute_access:({ Name.Attribute.base; attribute; origin = _ } as attribute_access)
     =
     let expression = Expression.Name (Name.Attribute attribute_access) |> Node.create ~location in
     let base_taint, state =
@@ -2561,10 +2527,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             apply_callees_with_arguments_taint
               ~pyre_in_context
               ~is_result_used:is_attribute_used
-              ~callee:expression
+              ~callee:{ CallModel.Callee.name = Some (Name.Attribute attribute_access); location }
               ~call_location:location
               ~arguments:[]
-              ~origin
               ~self_taint:(Some base_taint)
               ~callee_taint:None
               ~arguments_taint:[]
@@ -2704,35 +2669,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~location:call_location
              Origin.FormatStringImplicitStr)
       in
-      let callee =
-        let callee_from_method_name method_name =
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute { base; attribute = method_name; origin = stringify_origin });
-            location = call_location;
-          }
-        in
-        match Interprocedural.Target.get_regular call_target.target with
-        | Interprocedural.Target.Regular.Method { method_name; _ } ->
-            callee_from_method_name method_name
-        | Override { method_name; _ } -> callee_from_method_name method_name
-        | Function { name; _ } ->
-            { Node.value = Name (Name.Identifier name); location = call_location }
-        | Object _ -> failwith "callees should be either methods or functions"
-      in
       let new_taint, new_state =
         apply_callees_with_arguments_taint
           ~pyre_in_context
           ~is_result_used:true
           ~call_location
           ~arguments:[]
-          ~origin:stringify_origin
           ~self_taint:(Some base_taint)
           ~callee_taint:None
           ~arguments_taint:[]
           ~state:base_state
-          ~callee
+          ~callee:
+            (CallModel.Callee.from_stringify_call_target
+               ~base
+               ~stringify_origin
+               ~location:call_location
+               call_target)
           callees
       in
       ForwardState.Tree.join taint_to_join new_taint, join state_to_join new_state
@@ -3202,13 +3154,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> apply_callees_with_arguments_taint
                  ~pyre_in_context
                  ~is_result_used:false
-                 ~callee:
-                   (Expression.Constant Constant.NoneLiteral
-                   |> Node.create ~location:statement_location)
-                   (* Fabricate an expression that ensures the correct analysis. *)
+                 ~callee:{ CallModel.Callee.name = None; location = statement_location }
                  ~call_location:statement_location
                  ~arguments
-                 ~origin:(Some (Origin.create ~location:statement_location Origin.PysaReturnShim))
                  ~self_taint:None (* The fabricated callee has no taint *)
                  ~callee_taint:None (* The fabricated callee has no taint *)
                  ~arguments_taint

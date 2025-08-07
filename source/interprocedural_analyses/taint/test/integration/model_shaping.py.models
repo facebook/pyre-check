@@ -627,7 +627,7 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 79, "start": 11, "end": 20 },
+              { "line": 79, "start": 11, "end": 15 },
               { "line": 79, "start": 16, "end": 19 }
             ],
             "tito": {}

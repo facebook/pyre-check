@@ -1545,6 +1545,9 @@ module ReadWrite = struct
     =
     let _ =
       ( Module.pp,
+        CallableMetadataSharedMemory.Metadata.pp,
+        ClassMetadataSharedMemory.Metadata.pp,
+        DefinitionCollector.Tree.QualifiedNode.pp,
         qualifier_to_module_map,
         type_of_expressions_shared_memory,
         callable_metadata_shared_memory,

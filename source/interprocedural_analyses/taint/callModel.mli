@@ -240,3 +240,28 @@ module ImplicitArgument : sig
     val join : t -> t -> t
   end
 end
+
+module Callee : sig
+  type t = {
+    (* Treat a callee expression at a call site as a `Name.t`, when applicable. *)
+    name: Ast.Expression.Name.t option;
+    location: Location.t;
+  }
+
+  val from_callee_expression : Expression.t -> t
+
+  val from_stringify_call_target
+    :  base:Expression.t ->
+    stringify_origin:Ast.Expression.Origin.t option ->
+    location:Location.t ->
+    CallGraph.CallTarget.t ->
+    t
+
+  val as_argument : t -> Expression.Call.Argument.t
+
+  val get_base : t -> Expression.t
+
+  val is_self_call : t -> bool
+
+  val is_cls_call : t -> bool
+end

@@ -57,7 +57,7 @@
     "code": 5002,
     "line": 75,
     "start": 4,
-    "end": 20,
+    "end": 18,
     "filename": "constructors.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -96,9 +96,10 @@
               }
             ],
             "call": {
-              "position": { "line": 75, "start": 4, "end": 20 },
+              "position": { "line": 75, "start": 4, "end": 18 },
               "resolves_to": [ "constructors.BothNewAndInit.__init__" ],
-              "port": "formal(self, position=0)[foo]"
+              "port": "formal(self, position=0)[foo]",
+              "call_site": "75:4-75:20"
             }
           }
         ]
@@ -260,7 +261,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 123, "start": 15, "end": 43 }
+            "origin": { "line": 123, "start": 15, "end": 41 },
+            "call_site": "123:15-123:43"
           }
         ]
       },
@@ -318,7 +320,8 @@
                 "kind": "Test"
               }
             ],
-            "origin": { "line": 124, "start": 8, "end": 36 }
+            "origin": { "line": 124, "start": 8, "end": 34 },
+            "call_site": "124:8-124:36"
           }
         ]
       },
@@ -956,9 +959,10 @@
               { "has": "first-field" }, { "first-field": "x" }
             ],
             "call": {
-              "position": { "line": 44, "start": 8, "end": 29 },
+              "position": { "line": 44, "start": 8, "end": 27 },
               "resolves_to": [ "constructors.SourceInConstructor.__init__" ],
-              "port": "formal(self, position=0)[x]"
+              "port": "formal(self, position=0)[x]",
+              "call_site": "44:8-44:29"
             }
           }
         ]
