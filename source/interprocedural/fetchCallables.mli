@@ -10,10 +10,10 @@ open Ast
 type t
 
 (** Traverse the AST to find all callables (functions and methods). *)
-val from_source
+val from_qualifier
   :  configuration:Configuration.Analysis.t ->
   pyre_api:PyrePysaApi.ReadOnly.t ->
-  source:Source.t ->
+  qualifier:Reference.t ->
   t
 
 val from_qualifiers

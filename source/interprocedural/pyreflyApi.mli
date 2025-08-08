@@ -34,6 +34,22 @@ exception
     error: Error.t;
   }
 
+module CallableMetadata : sig
+  type t = {
+    location: Ast.Location.t;
+    is_overload: bool;
+    is_staticmethod: bool;
+    is_classmethod: bool;
+    is_property_getter: bool;
+    is_property_setter: bool;
+    is_toplevel: bool;
+    is_class_toplevel: bool;
+    is_stub: bool; (* Is this a stub definition, e.g `def foo(): ...` *)
+    parent_is_class: bool;
+  }
+  [@@deriving show]
+end
+
 (* API handle stored in the main process. The type `t` should not be sent to workers, since it's
    expensive to copy. *)
 module ReadWrite : sig
@@ -57,17 +73,30 @@ module ReadOnly : sig
   (* Return all qualifiers with source code *)
   val explicit_qualifiers : t -> Ast.Reference.t list
 
+  val artifact_path_of_qualifier : t -> Ast.Reference.t -> ArtifactPath.t option
+
   val absolute_source_path_of_qualifier : t -> Ast.Reference.t -> string option
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
 
-  val classes_of_qualifier
+  val get_class_names_for_qualifier
+    :  t ->
+    exclude_test_modules:bool ->
+    Ast.Reference.t ->
+    Ast.Reference.t list
+
+  val get_define_names_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
     Ast.Reference.t ->
     Ast.Reference.t list
 
   val class_immediate_parents : t -> string -> string list
+
+  val get_callable_metadata : t -> Ast.Reference.t -> CallableMetadata.t
+
+  (* Is this a stub module, i.e a `.pyi` file. *)
+  val is_stub_qualifier : t -> Ast.Reference.t -> bool
 end
 
 (* Exposed for testing purposes *)
@@ -115,6 +144,8 @@ module ProjectFile : sig
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
       is_test: bool;
+      is_interface: bool;
+      is_init: bool;
     }
     [@@deriving equal, show]
   end
@@ -139,6 +170,7 @@ module ModuleInfoFile : sig
       is_classmethod: bool;
       is_property_getter: bool;
       is_property_setter: bool;
+      is_stub: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
     }

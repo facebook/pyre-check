@@ -31,10 +31,12 @@ let sink name =
 
 let test_generated_annotations context =
   let assert_generated_annotations ~source ~query ~callable ~expected =
-    let source, _, pyre_api, configuration =
+    let _, _, pyre_api, configuration =
       TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
     in
-    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let initial_callables =
+      FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+    in
     let scheduler = Test.mock_scheduler () in
     let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
     let definitions_and_stubs =
@@ -78,10 +80,12 @@ let test_generated_annotations context =
       actual
   in
   let assert_generated_annotations_for_attributes ~source ~query ~name ~expected =
-    let source, _, pyre_api, configuration =
+    let _, _, pyre_api, configuration =
       TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
     in
-    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let initial_callables =
+      FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+    in
     let scheduler = Test.mock_scheduler () in
     let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
     let definitions_and_stubs =
@@ -126,10 +130,12 @@ let test_generated_annotations context =
       actual
   in
   let assert_generated_annotations_for_globals ~source ~query ~name ~expected =
-    let source, _, pyre_api, configuration =
+    let _, _, pyre_api, configuration =
       TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
     in
-    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let initial_callables =
+      FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+    in
     let definitions_and_stubs =
       FetchCallables.get ~definitions:true ~stubs:true initial_callables
     in
@@ -5313,10 +5319,12 @@ let test_partition_cache_queries _ =
 
 let test_generated_cache context =
   let assert_generated_cache ~source ~queries ~regular_callables ~expected =
-    let source, _, pyre_api, configuration =
+    let _, _, pyre_api, configuration =
       TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
     in
-    let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+    let initial_callables =
+      FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+    in
     let scheduler = Test.mock_scheduler () in
     let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
     let definitions_and_stubs =

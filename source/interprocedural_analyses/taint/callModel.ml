@@ -236,8 +236,8 @@ let treat_tito_return_as_self_update target =
   | Target.Regular.Override { method_name = "__init__"; _ }
   | Target.Regular.Method { method_name = "__setitem__"; _ }
   | Target.Regular.Override { method_name = "__setitem__"; _ }
-  | Target.Regular.Method { kind = PropertySetter; _ }
-  | Target.Regular.Override { kind = PropertySetter; _ } ->
+  | Target.Regular.Method { kind = Pyre1PropertySetter | PyreflyPropertySetter; _ }
+  | Target.Regular.Override { kind = Pyre1PropertySetter | PyreflyPropertySetter; _ } ->
       true
   | _ -> false
 

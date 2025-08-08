@@ -318,6 +318,8 @@ module ProjectFile = struct
       module_path: ModulePath.t;
       info_path: ModuleInfoPath.t option;
       is_test: bool;
+      is_interface: bool;
+      is_init: bool;
     }
     [@@deriving equal, show]
 
@@ -334,13 +336,19 @@ module ProjectFile = struct
       ModulePath.from_json (`Assoc source_path)
       >>= fun module_path ->
       JsonUtil.get_optional_bool_member ~default:false json "is_test"
-      >>| fun is_test ->
+      >>= fun is_test ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_interface"
+      >>= fun is_interface ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_init"
+      >>| fun is_init ->
       {
         module_id = ModuleId.from_int module_id;
         module_name = Reference.create module_name;
         module_path;
         info_path = Option.map ~f:ModuleInfoPath.create info_path;
         is_test;
+        is_interface;
+        is_init;
       }
   end
 
@@ -424,6 +432,7 @@ module ModuleInfoFile = struct
       is_classmethod: bool;
       is_property_getter: bool;
       is_property_setter: bool;
+      is_stub: bool;
       is_toplevel: bool;
       is_class_toplevel: bool;
     }
@@ -444,7 +453,9 @@ module ModuleInfoFile = struct
       JsonUtil.get_optional_bool_member ~default:false json "is_property_getter"
       >>= fun is_property_getter ->
       JsonUtil.get_optional_bool_member ~default:false json "is_property_setter"
-      >>| fun is_property_setter ->
+      >>= fun is_property_setter ->
+      JsonUtil.get_optional_bool_member ~default:false json "is_stub"
+      >>| fun is_stub ->
       {
         name;
         parent;
@@ -453,6 +464,7 @@ module ModuleInfoFile = struct
         is_classmethod;
         is_property_getter;
         is_property_setter;
+        is_stub;
         is_toplevel = false;
         is_class_toplevel = false;
       }
@@ -467,6 +479,7 @@ module ModuleInfoFile = struct
         is_classmethod = false;
         is_property_getter = false;
         is_property_setter = false;
+        is_stub = false;
         is_toplevel = true;
         is_class_toplevel = false;
       }
@@ -481,6 +494,7 @@ module ModuleInfoFile = struct
         is_classmethod = false;
         is_property_getter = false;
         is_property_setter = false;
+        is_stub = false;
         is_toplevel = false;
         is_class_toplevel = true;
       }
@@ -606,6 +620,7 @@ module ModuleInfosSharedMemory = struct
     type t = {
       source_path: ArtifactPath.t option (* The path of source code as seen by the analyzer. *);
       is_test: bool; (* Is this a test file? *)
+      is_stub: bool;
     }
   end
 
@@ -761,26 +776,28 @@ module FullyQualifiedNameSharedMemoryKey = struct
     |> FullyQualifiedName.from_reference_unchecked
 end
 
-module CallableMetadataSharedMemory = struct
-  module Metadata = struct
-    type t = {
-      location: Location.t;
-      is_overload: bool;
-      is_staticmethod: bool;
-      is_classmethod: bool;
-      is_property_getter: bool;
-      is_property_setter: bool;
-      is_toplevel: bool;
-      is_class_toplevel: bool;
-    }
-    [@@deriving show]
-  end
+module CallableMetadata = struct
+  type t = {
+    location: Location.t;
+    is_overload: bool;
+    is_staticmethod: bool;
+    is_classmethod: bool;
+    is_property_getter: bool;
+    is_property_setter: bool;
+    is_toplevel: bool;
+    is_class_toplevel: bool;
+    is_stub: bool;
+    parent_is_class: bool;
+  }
+  [@@deriving show]
+end
 
+module CallableMetadataSharedMemory = struct
   include
     Hack_parallel.Std.SharedMemory.FirstClass.NoCache.Make
       (FullyQualifiedNameSharedMemoryKey)
       (struct
-        type t = Metadata.t
+        type t = CallableMetadata.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
@@ -865,12 +882,21 @@ module ReadWrite = struct
       source_path: ArtifactPath.t option; (* The path of source code as seen by the analyzer. *)
       pyrefly_info_path: ModuleInfoPath.t option;
       is_test: bool;
+      is_stub: bool;
     }
     [@@deriving show]
 
     let from_project
         ~pyrefly_directory
-        { ProjectFile.Module.module_id; module_name; module_path; info_path; is_test }
+        {
+          ProjectFile.Module.module_id;
+          module_name;
+          module_path;
+          info_path;
+          is_test;
+          is_interface;
+          _;
+        }
       =
       {
         module_id;
@@ -878,6 +904,7 @@ module ReadWrite = struct
         source_path = ModulePath.artifact_file_path ~pyrefly_directory module_path;
         pyrefly_info_path = info_path;
         is_test;
+        is_stub = is_interface;
       }
   end
 
@@ -1047,11 +1074,11 @@ module ReadWrite = struct
     let handle = ModuleInfosSharedMemory.create () in
     let () =
       Map.to_alist qualifier_to_module_map
-      |> List.iter ~f:(fun (qualifier, { Module.source_path; is_test; _ }) ->
+      |> List.iter ~f:(fun (qualifier, { Module.source_path; is_test; is_stub; _ }) ->
              ModuleInfosSharedMemory.add
                handle
                qualifier
-               { ModuleInfosSharedMemory.Module.source_path; is_test })
+               { ModuleInfosSharedMemory.Module.source_path; is_test; is_stub })
     in
     Log.info "Wrote modules to shared memory: %.3fs" (Timer.stop_in_sec timer);
     handle
@@ -1079,7 +1106,8 @@ module ReadWrite = struct
         | None -> failwith "unexpected: missing module info for qualifier"
         | Some { ModuleInfosSharedMemory.Module.source_path = None; _ } -> OptionalSource.NoSource
         | Some { ModuleInfosSharedMemory.Module.is_test = true; _ } -> OptionalSource.TestFile
-        | Some { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false } ->
+        | Some { ModuleInfosSharedMemory.Module.source_path = Some source_path; is_test = false; _ }
+          ->
             let load_result =
               try Ok (ArtifactPath.raw source_path |> File.create |> File.content_exn) with
               | Sys_error error ->
@@ -1537,15 +1565,17 @@ module ReadWrite = struct
               is_classmethod;
               is_property_getter;
               is_property_setter;
+              is_stub;
               is_toplevel;
               is_class_toplevel;
+              parent;
               _;
             } ->
             CallableMetadataSharedMemory.add
               callable_metadata_shared_memory
               qualified_name
               {
-                CallableMetadataSharedMemory.Metadata.location;
+                CallableMetadata.location;
                 is_overload;
                 is_staticmethod;
                 is_classmethod;
@@ -1553,6 +1583,11 @@ module ReadWrite = struct
                 is_property_setter;
                 is_toplevel;
                 is_class_toplevel;
+                is_stub;
+                parent_is_class =
+                  (match parent with
+                  | ModuleInfoFile.ParentScope.Class _ -> true
+                  | _ -> false);
               };
             qualified_name :: callables, classes
         | Class { local_class_id; _ } ->
@@ -1760,7 +1795,7 @@ module ReadWrite = struct
     =
     let _ =
       ( Module.pp,
-        CallableMetadataSharedMemory.Metadata.pp,
+        CallableMetadata.pp,
         ClassMetadataSharedMemory.Metadata.pp,
         DefinitionCollector.Tree.QualifiedNode.pp,
         qualifier_to_module_map,
@@ -1783,6 +1818,8 @@ module ReadOnly = struct
     module_infos_shared_memory: ModuleInfosSharedMemory.t;
     qualifiers_with_source_shared_memory: QualifiersWithSourceSharedMemory.t;
     asts_shared_memory: AstsSharedMemory.t;
+    callable_metadata_shared_memory: CallableMetadataSharedMemory.t;
+    module_callables_shared_memory: ModuleCallablesSharedMemory.t;
     module_classes_shared_memory: ModuleClassesSharedMemory.t;
     class_immediate_parents_shared_memory: ClassImmediateParentsSharedMemory.t;
     object_class: FullyQualifiedName.t;
@@ -1793,6 +1830,8 @@ module ReadOnly = struct
         ReadWrite.module_infos_shared_memory;
         qualifiers_with_source_shared_memory;
         asts_shared_memory;
+        callable_metadata_shared_memory;
+        module_callables_shared_memory;
         module_classes_shared_memory;
         class_immediate_parents_shared_memory;
         object_class;
@@ -1803,6 +1842,8 @@ module ReadOnly = struct
       module_infos_shared_memory;
       qualifiers_with_source_shared_memory;
       asts_shared_memory;
+      callable_metadata_shared_memory;
+      module_callables_shared_memory;
       module_classes_shared_memory;
       class_immediate_parents_shared_memory;
       object_class;
@@ -1815,17 +1856,18 @@ module ReadOnly = struct
     | None -> failwith (Format.sprintf "unexpected: %s" message)
 
 
-  let absolute_source_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
+  let artifact_path_of_qualifier { module_infos_shared_memory; _ } qualifier =
     ModuleInfosSharedMemory.get
       module_infos_shared_memory
       (ModuleQualifier.from_reference_unchecked qualifier)
     |> assert_shared_memory_key_exists "missing module info for qualifier"
-    |> fun { ModuleInfosSharedMemory.Module.source_path; _ } ->
-    source_path
+    |> fun { ModuleInfosSharedMemory.Module.source_path; _ } -> source_path
+
+
+  let absolute_source_path_of_qualifier api qualifier =
     (* TODO(T225700656): We currently return the artifact path, it should be translated back into a
        source path by buck *)
-    >>| ArtifactPath.raw
-    >>| PyrePath.absolute
+    artifact_path_of_qualifier api qualifier >>| ArtifactPath.raw >>| PyrePath.absolute
 
 
   (* Return all qualifiers with source code *)
@@ -1837,25 +1879,49 @@ module ReadOnly = struct
     |> List.map ~f:ModuleQualifier.to_reference
 
 
-  let classes_of_qualifier
-      { module_infos_shared_memory; module_classes_shared_memory; _ }
+  let is_test_qualifier { module_infos_shared_memory; _ } qualifier =
+    ModuleInfosSharedMemory.get
+      module_infos_shared_memory
+      (ModuleQualifier.from_reference_unchecked qualifier)
+    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> fun { ModuleInfosSharedMemory.Module.is_test; _ } -> is_test
+
+
+  let is_stub_qualifier { module_infos_shared_memory; _ } qualifier =
+    ModuleInfosSharedMemory.get
+      module_infos_shared_memory
+      (ModuleQualifier.from_reference_unchecked qualifier)
+    |> assert_shared_memory_key_exists "missing module info for qualifier"
+    |> fun { ModuleInfosSharedMemory.Module.is_stub; _ } -> is_stub
+
+
+  let get_class_names_for_qualifier
+      ({ module_classes_shared_memory; _ } as api)
       ~exclude_test_modules
       qualifier
     =
-    let is_test () =
-      ModuleInfosSharedMemory.get
-        module_infos_shared_memory
-        (ModuleQualifier.from_reference_unchecked qualifier)
-      |> assert_shared_memory_key_exists "missing module info for qualifier"
-      |> fun { ModuleInfosSharedMemory.Module.is_test; _ } -> is_test
-    in
-    if exclude_test_modules && is_test () then
+    if exclude_test_modules && is_test_qualifier api qualifier then
       []
     else
       ModuleClassesSharedMemory.get
         module_classes_shared_memory
         (ModuleQualifier.from_reference_unchecked qualifier)
       |> assert_shared_memory_key_exists "missing module classes for qualifier"
+      |> List.map ~f:FullyQualifiedName.to_reference
+
+
+  let get_define_names_for_qualifier
+      ({ module_callables_shared_memory; _ } as api)
+      ~exclude_test_modules
+      qualifier
+    =
+    if exclude_test_modules && is_test_qualifier api qualifier then
+      []
+    else
+      ModuleCallablesSharedMemory.get
+        module_callables_shared_memory
+        (ModuleQualifier.from_reference_unchecked qualifier)
+      |> assert_shared_memory_key_exists "missing module callables for qualifier"
       |> List.map ~f:FullyQualifiedName.to_reference
 
 
@@ -1879,6 +1945,13 @@ module ReadOnly = struct
          | parents -> parents)
     |> List.map ~f:FullyQualifiedName.to_reference
     |> List.map ~f:Reference.show
+
+
+  let get_callable_metadata { callable_metadata_shared_memory; _ } define_name =
+    CallableMetadataSharedMemory.get
+      callable_metadata_shared_memory
+      (FullyQualifiedName.from_reference_unchecked define_name)
+    |> assert_shared_memory_key_exists "missing callable metadata"
 end
 
 (* Exposed for testing purposes *)

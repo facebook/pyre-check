@@ -346,7 +346,7 @@ module ReadOnly = struct
     is_unittest () || is_pytest ()
 
 
-  let classes_of_qualifier api ~exclude_test_modules qualifier =
+  let get_class_names_for_qualifier api ~exclude_test_modules qualifier =
     match source_of_qualifier api qualifier with
     | None -> []
     | Some source ->

@@ -37,6 +37,8 @@ let test_module_qualifiers _ =
         module_path = path;
         info_path = None;
         is_test = false;
+        is_interface = false;
+        is_init = false;
       }
     in
     let to_string map =
@@ -288,6 +290,7 @@ let test_fully_qualified_names _ =
         is_classmethod = false;
         is_property_getter;
         is_property_setter;
+        is_stub = false;
         is_toplevel = false;
         is_class_toplevel = false;
       }

@@ -54,7 +54,9 @@ let create_call_graph ?(other_sources = []) ~context source_text =
         errors
       |> failwith
   in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let initial_callables =
+    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:module_name
+  in
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in

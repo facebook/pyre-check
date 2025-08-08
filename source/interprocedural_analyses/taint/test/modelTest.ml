@@ -19,15 +19,11 @@ let get_stubs_and_definitions ~source_file_name ~project =
     project |> Test.ScratchProject.pyre_pysa_read_only_api |> PyrePysaApi.ReadOnly.from_pyre1_api
   in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
-  let ast_source =
-    PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
-    |> fun option -> Option.value_exn option
-  in
   let initial_callables =
-    Interprocedural.FetchCallables.from_source
+    Interprocedural.FetchCallables.from_qualifier
       ~configuration:(Test.ScratchProject.configuration_of project)
       ~pyre_api
-      ~source:ast_source
+      ~qualifier
   in
   ( Interprocedural.FetchCallables.get_stubs initial_callables,
     Interprocedural.FetchCallables.get_definitions initial_callables )

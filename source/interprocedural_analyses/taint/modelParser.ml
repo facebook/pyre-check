@@ -3108,7 +3108,7 @@ end = struct
       | Some _
         when Define.Signature.is_property_setter
                (create_dummy_signature ~decorators:define_decorators name) ->
-          Target.create_method_from_reference ~kind:Target.PropertySetter name
+          Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
       | Some _ -> Target.create_method_from_reference name
       | None -> Target.create_function name
     in

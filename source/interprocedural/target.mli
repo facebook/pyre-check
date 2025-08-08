@@ -10,7 +10,8 @@ open Statement
 
 type kind =
   | Normal
-  | PropertySetter
+  | Pyre1PropertySetter
+  | PyreflyPropertySetter
   | Decorated
 [@@deriving show, sexp, compare, hash, equal]
 
@@ -120,6 +121,8 @@ val create_object : Reference.t -> t
 
 val from_define : define_name:Ast.Reference.t -> define:Define.t -> t
 
+val from_define_name : pyrefly_api:PyreflyApi.ReadOnly.t -> Reference.t -> t
+
 val from_regular : Regular.t -> t
 
 (* Return `Regular.t` when called on any `t`. *)
@@ -207,7 +210,7 @@ type definitions_result = {
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 val get_definitions
-  :  pyre_api:PyrePysaApi.ReadOnly.t ->
+  :  pyre1_api:Analysis.PyrePysaEnvironment.ReadOnly.t ->
   warn_multiple_definitions:bool ->
   Reference.t ->
   definitions_result option

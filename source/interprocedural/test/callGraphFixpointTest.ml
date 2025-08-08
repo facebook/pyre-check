@@ -42,7 +42,9 @@ let assert_higher_order_call_graph_fixpoint
   in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let initial_callables =
+    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+  in
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in

@@ -33,7 +33,7 @@ let assert_taint ~context source expected =
   in
   let initial_models = TestHelper.get_initial_models ~context in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let initial_callables = FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
   let definitions_and_stubs =

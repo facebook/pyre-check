@@ -114,9 +114,9 @@ module ReadOnly = struct
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.source_of_qualifier pyrefly_api
 
 
-  let classes_of_qualifier = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.classes_of_qualifier pyre_api
-    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.classes_of_qualifier pyrefly_api
+  let get_class_names_for_qualifier = function
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_class_names_for_qualifier pyre_api
+    | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.get_class_names_for_qualifier pyrefly_api
 
 
   let module_exists = function
@@ -144,9 +144,18 @@ module ReadOnly = struct
     | Pyrefly pyrefly_api -> PyreflyApi.ReadOnly.class_immediate_parents pyrefly_api
 
 
-  let get_define_names_for_qualifier = function
-    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_define_names_for_qualifier pyre_api
-    | Pyrefly _ -> failwith "unimplemented: ReadOnly.get_define_names_for_qualifier"
+  let get_define_names_for_qualifier api ~exclude_test_modules qualifier =
+    match api with
+    | Pyre1 _ when exclude_test_modules ->
+        failwith
+          "exclude_test_modules=true is not supported for \
+           PyrePysaEnvironment.ReadOnly.get_define_names_for_qualifier"
+    | Pyre1 pyre_api -> Pyre1Api.ReadOnly.get_define_names_for_qualifier pyre_api qualifier
+    | Pyrefly pyrefly_api ->
+        PyreflyApi.ReadOnly.get_define_names_for_qualifier
+          pyrefly_api
+          ~exclude_test_modules
+          qualifier
 
 
   let parse_reference = function

@@ -8,27 +8,19 @@
 open OUnit2
 open Core
 open Interprocedural
-module PyrePysaLogic = Analysis.PyrePysaLogic
 
 let test_callables context =
   let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
-    let configuration, source_code_api, pyre_api =
+    let configuration, pyre_api =
       let project =
         Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
       in
       ( Test.ScratchProject.configuration_of project,
-        Test.ScratchProject.get_untracked_source_code_api project,
         project
         |> Test.ScratchProject.pyre_pysa_read_only_api
         |> PyrePysaApi.ReadOnly.from_pyre1_api )
     in
-    let source =
-      PyrePysaLogic.Testing.SourceCodeApi.source_of_qualifier
-        source_code_api
-        (Ast.Reference.create "test")
-      |> Option.value_exn
-    in
-    FetchCallables.from_source ~configuration ~pyre_api ~source
+    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:(Ast.Reference.create "test")
     |> FetchCallables.get ~definitions:true ~stubs:true
     |> List.sort ~compare:Target.compare
     |> assert_equal

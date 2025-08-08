@@ -109,7 +109,7 @@ let create_callable kind define_name =
   match kind with
   | `Method -> Target.create_method_from_reference name
   | `Function -> Target.create_function name
-  | `PropertySetter -> Target.create_method_from_reference ~kind:Target.PropertySetter name
+  | `PropertySetter -> Target.create_method_from_reference ~kind:Target.Pyre1PropertySetter name
   | `Override -> Target.create_override_from_reference name
   | `Object -> Target.create_object name
 
@@ -598,7 +598,9 @@ let initialize
   in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source = source_from_qualifier ~pyre_api qualifier in
-  let initial_callables_in_source = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let initial_callables_in_source =
+    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier
+  in
   let stubs = FetchCallables.get_stubs initial_callables_in_source in
   let definitions = FetchCallables.get_definitions initial_callables_in_source in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_qualifier ~pyre_api ~qualifier in

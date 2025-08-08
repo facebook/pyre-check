@@ -46,7 +46,9 @@ module ReadWrite : sig
 end
 
 module ReadOnly : sig
-  type t
+  type t =
+    | Pyre1 of Analysis.PyrePysaEnvironment.ReadOnly.t
+    | Pyrefly of PyreflyApi.ReadOnly.t
 
   val of_read_write_api : ReadWrite.t -> t
 
@@ -69,7 +71,13 @@ module ReadOnly : sig
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
 
-  val classes_of_qualifier
+  val get_class_names_for_qualifier
+    :  t ->
+    exclude_test_modules:bool ->
+    Ast.Reference.t ->
+    Ast.Reference.t list
+
+  val get_define_names_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
     Ast.Reference.t ->
@@ -88,8 +96,6 @@ module ReadOnly : sig
   val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
   val class_immediate_parents : t -> string -> string list
-
-  val get_define_names_for_qualifier : t -> Ast.Reference.t -> Ast.Reference.t list
 
   val parse_reference : t -> Ast.Reference.t -> Type.t
 

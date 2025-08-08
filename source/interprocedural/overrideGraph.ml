@@ -85,7 +85,7 @@ module Heap = struct
           else
             let kind =
               if Define.is_property_setter child_method then
-                Target.PropertySetter
+                Target.Pyre1PropertySetter
               else
                 Target.Normal
             in

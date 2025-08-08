@@ -3779,7 +3779,7 @@ let resolve_attribute_access_properties
     in
     let parent = PyrePysaLogic.AnnotatedAttribute.parent property |> Reference.create in
     let property_targets =
-      let kind = if setter then Target.PropertySetter else Target.Normal in
+      let kind = if setter then Target.Pyre1PropertySetter else Target.Normal in
       if Type.is_class_type base_type_info then
         [Target.create_method ~kind parent attribute]
       else
@@ -6795,7 +6795,8 @@ module DecoratorResolution = struct
         CallableToDecoratorsMap.SharedMemory.ReadOnly.get decorators_map callable )
     with
     | None, _ -> Format.asprintf "Do not support `Override` or `Object` targets." |> failwith
-    | Some Target.PropertySetter, _ -> PropertySetterUnsupported
+    | Some (Target.Pyre1PropertySetter | Target.PyreflyPropertySetter), _ ->
+        PropertySetterUnsupported
     | Some Target.Decorated, _ -> failwith "unexpected"
     | _, None
     | Some Target.Normal, Some { CallableToDecoratorsMap.decorators = []; _ } ->

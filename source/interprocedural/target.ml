@@ -21,7 +21,8 @@ module PyrePysaLogic = Analysis.PyrePysaLogic
 
 type kind =
   | Normal
-  | PropertySetter
+  | Pyre1PropertySetter
+  | PyreflyPropertySetter
   | Decorated
     (* This represents a callable but with all its decorators applied (i.e., the decorated
        function). By contrast, we use `Normal` to represent the undecorated function. *)
@@ -91,7 +92,10 @@ module Regular = struct
 
   let pp_kind formatter = function
     | Normal -> ()
-    | PropertySetter -> Format.fprintf formatter "@setter"
+    | Pyre1PropertySetter -> Format.fprintf formatter "@setter"
+    | PyreflyPropertySetter ->
+        (* Property setters already have '@setter' in their define name when using pyrefly. *)
+        ()
     | Decorated -> Format.fprintf formatter "@decorated"
 
 
@@ -381,10 +385,26 @@ let create_override_from_reference ?kind reference =
 
 let from_define ~define_name ~define =
   let open Define in
-  let kind = if Define.is_property_setter define then PropertySetter else Normal in
+  let kind = if Define.is_property_setter define then Pyre1PropertySetter else Normal in
   match define.signature.legacy_parent with
   | Some _ -> create_method_from_reference ~kind define_name
   | None -> create_function ~kind define_name
+
+
+let from_define_name ~pyrefly_api name =
+  let { PyreflyApi.CallableMetadata.is_property_setter; parent_is_class; _ } =
+    PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api name
+  in
+  let kind =
+    if is_property_setter then
+      PyreflyPropertySetter
+    else
+      Normal
+  in
+  if parent_is_class then
+    create_method_from_reference ~kind name
+  else
+    create_function ~kind name
 
 
 let create_object reference = Object (Reference.show reference) |> from_regular
@@ -553,8 +573,8 @@ type definitions_result = {
 
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
-let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
-  PyrePysaApi.ReadOnly.get_function_definition pyre_api define_name
+let get_definitions ~pyre1_api ~warn_multiple_definitions define_name =
+  Analysis.PyrePysaEnvironment.ReadOnly.get_function_definition pyre1_api define_name
   >>| PyrePysaLogic.qualifier_and_bodies_of_function_definition
   >>| fun (qualifier, bodies) ->
   let get_priority define =
@@ -602,10 +622,13 @@ let get_definitions ~pyre_api ~warn_multiple_definitions define_name =
 
 
 let get_module_and_definition ~pyre_api callable =
-  define_name_exn callable
-  |> get_definitions ~pyre_api ~warn_multiple_definitions:false
-  >>= fun { qualifier; callables; _ } ->
-  Map.find_opt callable callables >>| fun define -> qualifier, define
+  match pyre_api with
+  | PyrePysaApi.ReadOnly.Pyrefly _ -> failwith "unimplemented: Target.get_module_and_definition"
+  | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+      define_name_exn callable
+      |> get_definitions ~pyre1_api ~warn_multiple_definitions:false
+      >>= fun { qualifier; callables; _ } ->
+      Map.find_opt callable callables >>| fun define -> qualifier, define
 
 
 let get_module_and_definition_for_test = get_module_and_definition

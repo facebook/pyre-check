@@ -96,7 +96,7 @@ module Heap = struct
       List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
           add accumulator ~parent ~child:class_name)
     in
-    PyrePysaApi.ReadOnly.classes_of_qualifier pyre_api ~exclude_test_modules:true qualifier
+    PyrePysaApi.ReadOnly.get_class_names_for_qualifier pyre_api ~exclude_test_modules:true qualifier
     |> List.fold ~init:empty ~f:register_immediate_subclasses
 
 

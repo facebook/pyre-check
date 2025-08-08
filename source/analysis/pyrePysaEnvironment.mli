@@ -138,7 +138,7 @@ module ReadOnly : sig
 
   val source_of_qualifier : t -> Ast.Reference.t -> Ast.Source.t option
 
-  val classes_of_qualifier
+  val get_class_names_for_qualifier
     :  t ->
     exclude_test_modules:bool ->
     Ast.Reference.t ->

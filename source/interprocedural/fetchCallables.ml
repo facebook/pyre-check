@@ -38,7 +38,9 @@ let join left right =
   }
 
 
-let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
+let gather_raw_definitions
+    ~pyre1_api
+    ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
   =
   (* Ignoring parameters that are also function definitions,
    * i.e def f(g): if not g: def g(): ...; g() *)
@@ -61,7 +63,7 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
     let { Target.qualifier = define_qualifier; callables } =
       Option.value_exn
         ~message:"Missing definitions for define name"
-        (Target.get_definitions ~pyre_api ~warn_multiple_definitions:true define_name)
+        (Target.get_definitions ~pyre1_api ~warn_multiple_definitions:true define_name)
     in
     if not (Reference.equal qualifier define_qualifier) then
       let () =
@@ -96,7 +98,7 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
       callables_left
       callables_right
   in
-  PyrePysaApi.ReadOnly.get_define_names_for_qualifier pyre_api qualifier
+  Analysis.PyrePysaEnvironment.ReadOnly.get_define_names_for_qualifier pyre1_api qualifier
   |> Reference.Set.of_list
   |> Set.elements
   |> List.filter ~f:filter_parameters
@@ -105,11 +107,11 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
 
 
 (** Traverse the AST to find all callables (functions and methods). *)
-let from_source ~configuration ~pyre_api ~source =
-  if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
+let from_source_with_pyre1 ~configuration ~pyre1_api ~source =
+  if Analysis.PyrePysaEnvironment.ReadOnly.source_is_unit_test pyre1_api ~source then
     empty
   else
-    let definitions = gather_raw_definitions ~pyre_api ~source in
+    let definitions = gather_raw_definitions ~pyre1_api ~source in
     let definitions =
       if Ast.ModulePath.is_stub source.module_path then
         Target.Map.filter
@@ -140,13 +142,48 @@ let from_source ~configuration ~pyre_api ~source =
     Target.Map.fold add_definition definitions empty
 
 
+let from_qualifier_with_pyrefly ~pyrefly_api ~qualifier =
+  let define_names =
+    PyreflyApi.ReadOnly.get_define_names_for_qualifier
+      pyrefly_api
+      ~exclude_test_modules:true
+      qualifier
+  in
+  let is_stub_module = PyreflyApi.ReadOnly.is_stub_qualifier pyrefly_api qualifier in
+  let add_target result define_name =
+    let target = Target.from_define_name ~pyrefly_api define_name in
+    let { PyreflyApi.CallableMetadata.is_stub = is_stub_define; is_toplevel; is_class_toplevel; _ } =
+      PyreflyApi.ReadOnly.get_callable_metadata pyrefly_api define_name
+    in
+    if is_stub_module && (is_toplevel || is_class_toplevel) then
+      result
+    else if is_stub_define then
+      { result with stubs = target :: result.stubs }
+    else
+      (* TODO(T225700656): For now, all modules are considered internal. We could potentially use
+         the "roots" of pyrefly to determine if a callable is internal or not. *)
+      {
+        result with
+        internals = target :: result.internals;
+        definitions = target :: result.definitions;
+      }
+  in
+  List.fold define_names ~init:empty ~f:add_target
+
+
+let from_qualifier ~configuration ~pyre_api ~qualifier =
+  match pyre_api with
+  | PyrePysaApi.ReadOnly.Pyrefly pyrefly_api -> from_qualifier_with_pyrefly ~pyrefly_api ~qualifier
+  | PyrePysaApi.ReadOnly.Pyre1 pyre1_api ->
+      Analysis.PyrePysaEnvironment.ReadOnly.source_of_qualifier pyre1_api qualifier
+      >>| (fun source -> from_source_with_pyre1 ~configuration ~pyre1_api ~source)
+      |> Option.value ~default:empty
+
+
 let from_qualifiers ~scheduler ~scheduler_policy ~pyre_api ~configuration ~qualifiers =
   let map qualifiers =
     let callables_of_qualifier callables qualifier =
-      PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
-      >>| (fun source -> from_source ~configuration ~pyre_api ~source)
-      |> Option.value ~default:empty
-      |> join callables
+      from_qualifier ~configuration ~pyre_api ~qualifier |> join callables
     in
     List.fold qualifiers ~f:callables_of_qualifier ~init:empty
   in

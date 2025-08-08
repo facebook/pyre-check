@@ -29,7 +29,9 @@ let compute_define_call_graph
   in
   let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let initial_callables =
+    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:module_name
+  in
   let definitions = FetchCallables.get_definitions initial_callables in
   let scheduler = Test.mock_scheduler () in
   let scheduler_policy = Scheduler.Policy.legacy_fixed_chunk_count () in
@@ -796,7 +798,11 @@ let test_call_graph_of_define =
                            ~implicit_receiver:true
                            ~return_type:(Some ReturnType.none)
                            (Target.Regular.Method
-                              { class_name = "test.C"; method_name = "p"; kind = PropertySetter });
+                              {
+                                class_name = "test.C";
+                                method_name = "p";
+                                kind = Pyre1PropertySetter;
+                              });
                        ];
                      global_targets = [];
                      is_attribute = false;
@@ -1952,7 +1958,11 @@ let test_call_graph_of_define =
                            ~implicit_receiver:true
                            ~return_type:(Some ReturnType.none)
                            (Target.Regular.Method
-                              { class_name = "test.C"; method_name = "p"; kind = PropertySetter });
+                              {
+                                class_name = "test.C";
+                                method_name = "p";
+                                kind = Pyre1PropertySetter;
+                              });
                        ];
                      global_targets = [];
                      is_attribute = false;
@@ -7852,7 +7862,9 @@ let assert_resolve_decorator_callees ?(debug = false) ~source ~expected () conte
   let source, _, pyre_api, configuration =
     TestHelper.setup_single_py_file ~file_name:"test.py" ~context ~source
   in
-  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
+  let initial_callables =
+    FetchCallables.from_qualifier ~configuration ~pyre_api ~qualifier:!&"test"
+  in
   let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
   let override_graph_shared_memory =
     OverrideGraph.Heap.from_source ~pyre_api ~source |> OverrideGraph.SharedMemory.from_heap
@@ -8585,7 +8597,11 @@ let test_resolve_decorator_callees =
                    { class_name = "test.MyClass"; method_name = "my_attr"; kind = Normal },
                  Result.Error DecoratorResolution.Undecorated );
                ( Target.Regular.Method
-                   { class_name = "test.MyClass"; method_name = "my_attr"; kind = PropertySetter },
+                   {
+                     class_name = "test.MyClass";
+                     method_name = "my_attr";
+                     kind = Pyre1PropertySetter;
+                   },
                  Result.Error DecoratorResolution.PropertySetterUnsupported );
              ]
            ();

@@ -51,7 +51,8 @@ let test_get_module_and_definition context =
         self._foo = value
   |}
     ~target:
-      (Target.Regular.Method { class_name = "test.C"; method_name = "foo"; kind = PropertySetter })
+      (Target.Regular.Method
+         { class_name = "test.C"; method_name = "foo"; kind = Pyre1PropertySetter })
     ~expected:
       (Some
          ( Reference.create "test",
