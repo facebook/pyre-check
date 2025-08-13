@@ -119,64 +119,8 @@ let collect_typecheck_units { Source.statements; module_path = { ModulePath.qual
     | Return _ ->
         sofar
   in
-  let drop_nested_body { Node.value = { Define.body; _ } as define; location } =
-    let new_define =
-      let rec drop_nested_body_in_statement = function
-        | Statement.Class definition -> Statement.Class { definition with body = [] }
-        | Define { Define.signature; _ } ->
-            Statement.Define { Define.signature; captures = []; unbound_names = []; body = [] }
-        | For ({ For.body; orelse; _ } as for_statement) ->
-            Statement.For
-              {
-                for_statement with
-                body = drop_nested_body_in_statements body;
-                orelse = drop_nested_body_in_statements orelse;
-              }
-        | Match ({ Match.cases; _ } as match_statement) ->
-            Statement.Match
-              {
-                match_statement with
-                cases =
-                  List.map cases ~f:(fun ({ Match.Case.body; _ } as case) ->
-                      { case with Match.Case.body = drop_nested_body_in_statements body });
-              }
-        | If ({ If.body; orelse; _ } as if_statement) ->
-            Statement.If
-              {
-                if_statement with
-                body = drop_nested_body_in_statements body;
-                orelse = drop_nested_body_in_statements orelse;
-              }
-        | While ({ While.body; orelse; _ } as while_statement) ->
-            Statement.While
-              {
-                while_statement with
-                body = drop_nested_body_in_statements body;
-                orelse = drop_nested_body_in_statements orelse;
-              }
-        | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
-            Statement.Try
-              {
-                Try.body = drop_nested_body_in_statements body;
-                handlers =
-                  List.map handlers ~f:(fun ({ Try.Handler.body; _ } as handler) ->
-                      { handler with Try.Handler.body = drop_nested_body_in_statements body });
-                orelse = drop_nested_body_in_statements orelse;
-                finally = drop_nested_body_in_statements finally;
-                handles_exception_group;
-              }
-        | With ({ With.body; _ } as with_statement) ->
-            Statement.With { with_statement with body = drop_nested_body_in_statements body }
-        | _ as statement -> statement
-      and drop_nested_body_in_statements statements =
-        List.map statements ~f:(Node.map ~f:drop_nested_body_in_statement)
-      in
-      { define with Define.body = drop_nested_body_in_statements body }
-    in
-    { Node.value = new_define; location }
-  in
   List.fold statements ~init:[] ~f:(collect_from_statement ~ignore_class:false)
-  |> List.map ~f:drop_nested_body
+  |> List.map ~f:Preprocessing.drop_nested_body
 
 
 let collect_defines ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =

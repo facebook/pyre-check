@@ -129,3 +129,5 @@ module SelfType : sig
 end
 
 val expand_enum_functional_syntax : Source.t -> Source.t
+
+val drop_nested_body : Statement.Define.t Node.t -> Statement.Define.t Node.t
